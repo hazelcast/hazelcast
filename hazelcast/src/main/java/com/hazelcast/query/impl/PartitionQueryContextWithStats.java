@@ -54,8 +54,8 @@ public class PartitionQueryContextWithStats extends QueryContext {
     }
 
     @Override
-    public Index matchIndex(String pattern, IndexMatchHint matchHint) {
-        InternalIndex index = indexes.matchIndex(pattern, matchHint);
+    public Index matchIndex(String pattern, IndexMatchHint matchHint, int ownedPartitionCount) {
+        InternalIndex index = indexes.matchIndex(pattern, matchHint, ownedPartitionCount);
         if (index == null) {
             return null;
         }

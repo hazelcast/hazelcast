@@ -112,10 +112,10 @@ public class QueryRunnerTest extends HazelcastTestSupport {
 
         Predicate predicate = new EqualPredicate("this", value) {
             @Override
-            public Set<QueryableEntry> filter(QueryContext queryContext) {
+            public Set<QueryableEntry> filter(QueryContext queryContext, int ownedPartitionCount) {
                 // start a new migration while executing an indexed query
                 mapService.beforeMigration(new PartitionMigrationEvent(MigrationEndpoint.SOURCE, partitionId, 0, 1));
-                return super.filter(queryContext);
+                return super.filter(queryContext, ownedPartitionCount);
             }
         };
         Query query = Query.of().mapName(map.getName()).predicate(predicate).iterationType(IterationType.ENTRY).build();

@@ -59,21 +59,25 @@ public interface IndexAwarePredicate<K, V> extends Predicate<K, V> {
      * The query engine assumes this method produces the result set faster than
      * a simple evaluation of the predicate on every entry.
      *
-     * @param queryContext the query context to access the indexes. The passed
-     *                     query context is valid only for a duration of a single
-     *                     call to the method.
+     * @param queryContext        the query context to access the indexes. The passed
+     *                            query context is valid only for a duration of a single
+     *                            call to the method.
+     * @param ownedPartitionCount a count of owned partitions a query runs on.
+     *                            Negative value indicates that the value is not defined.
      * @return the produced filtered entry set.
      */
-    Set<QueryableEntry<K, V>> filter(QueryContext queryContext);
+    Set<QueryableEntry<K, V>> filter(QueryContext queryContext, int ownedPartitionCount);
 
     /**
      * Signals to the query engine that this predicate is able to utilize the
      * indexes available while executing the query in the given query context.
      *
-     * @param queryContext the query context to consult for the available
-     *                     indexes.
+     * @param queryContext        the query context to consult for the available
+     *                            indexes.
+     * @param ownedPartitionCount a count of owned partitions a query runs on.
+     *                            Negative value indicates that the value is not defined.
      * @return {@code true} if this predicate is able to use the indexes to
      * speed up the processing, {@code false} otherwise.
      */
-    boolean isIndexed(QueryContext queryContext);
+    boolean isIndexed(QueryContext queryContext, int ownedPartitionCount);
 }

@@ -16,17 +16,17 @@
 
 package com.hazelcast.query.impl.predicates;
 
+import com.hazelcast.internal.serialization.BinaryInterface;
+import com.hazelcast.internal.util.IterationType;
+import com.hazelcast.internal.util.SortingUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
-import com.hazelcast.internal.util.IterationType;
-import com.hazelcast.internal.util.SortingUtil;
 
 import java.io.IOException;
 import java.util.AbstractMap.SimpleImmutableEntry;
@@ -183,12 +183,12 @@ public class PagingPredicateImpl<K, V>
      * @return
      */
     @Override
-    public Set<QueryableEntry<K, V>> filter(QueryContext queryContext) {
+    public Set<QueryableEntry<K, V>> filter(QueryContext queryContext, int ownedPartitionCount) {
         if (!(predicate instanceof IndexAwarePredicate)) {
             return null;
         }
 
-        Set<QueryableEntry<K, V>> set = ((IndexAwarePredicate<K, V>) predicate).filter(queryContext);
+        Set<QueryableEntry<K, V>> set = ((IndexAwarePredicate<K, V>) predicate).filter(queryContext, ownedPartitionCount);
         if (set == null || set.isEmpty()) {
             return set;
         }
@@ -212,9 +212,9 @@ public class PagingPredicateImpl<K, V>
      * @param queryContext
      * @return
      */
-    public boolean isIndexed(QueryContext queryContext) {
+    public boolean isIndexed(QueryContext queryContext, int ownedPartitionCount) {
         if (predicate instanceof IndexAwarePredicate) {
-            return ((IndexAwarePredicate) predicate).isIndexed(queryContext);
+            return ((IndexAwarePredicate) predicate).isIndexed(queryContext, ownedPartitionCount);
         }
         return false;
     }

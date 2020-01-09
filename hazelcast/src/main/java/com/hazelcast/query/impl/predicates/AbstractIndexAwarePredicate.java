@@ -30,17 +30,17 @@ public abstract class AbstractIndexAwarePredicate<K, V> extends AbstractPredicat
         super(attributeName);
     }
 
-    protected Index getIndex(QueryContext queryContext) {
-        return matchIndex(queryContext, QueryContext.IndexMatchHint.NONE);
+    protected Index getIndex(QueryContext queryContext, int ownedPartitionCount) {
+        return matchIndex(queryContext, QueryContext.IndexMatchHint.NONE, ownedPartitionCount);
     }
 
-    protected Index matchIndex(QueryContext queryContext, QueryContext.IndexMatchHint matchHint) {
-        return queryContext.matchIndex(attributeName, matchHint);
+    protected Index matchIndex(QueryContext queryContext, QueryContext.IndexMatchHint matchHint, int ownedPartitionCount) {
+        return queryContext.matchIndex(attributeName, matchHint, ownedPartitionCount);
     }
 
     @Override
-    public boolean isIndexed(QueryContext queryContext) {
-        return getIndex(queryContext) != null;
+    public boolean isIndexed(QueryContext queryContext, int ownedPartitionCount) {
+        return getIndex(queryContext, ownedPartitionCount) != null;
     }
 
 }

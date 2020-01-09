@@ -307,6 +307,11 @@ public class AttributeIndexRegistry {
         }
 
         @Override
+        public boolean allPartitionsIndexed(int ownedPartitionCount) {
+            return delegate.allPartitionsIndexed(ownedPartitionCount);
+        }
+
+        @Override
         public void markPartitionAsIndexed(int partitionId) {
             throw newUnsupportedException();
         }

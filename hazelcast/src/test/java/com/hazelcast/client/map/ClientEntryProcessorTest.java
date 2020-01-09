@@ -17,9 +17,9 @@
 package com.hazelcast.client.map;
 
 import com.hazelcast.config.IndexType;
-import com.hazelcast.map.IMap;
 import com.hazelcast.core.ReadOnly;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.IMap;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
@@ -162,12 +162,12 @@ public class ClientEntryProcessorTest extends AbstractClientMapTest {
         static final AtomicBoolean INDEX_CALLED = new AtomicBoolean(false);
 
         @Override
-        public Set<QueryableEntry> filter(QueryContext queryContext) {
+        public Set<QueryableEntry> filter(QueryContext queryContext, int ownedPartitionCount) {
             return null;
         }
 
         @Override
-        public boolean isIndexed(QueryContext queryContext) {
+        public boolean isIndexed(QueryContext queryContext, int ownedPartitionCount) {
             INDEX_CALLED.set(true);
             return true;
         }

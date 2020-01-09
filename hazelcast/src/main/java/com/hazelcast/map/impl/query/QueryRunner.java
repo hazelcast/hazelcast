@@ -118,7 +118,8 @@ public class QueryRunner {
         Predicate predicate = queryOptimizer.optimize(query.getPredicate(), indexes);
 
         // then we try to run using an index, but if that doesn't work, we'll try a full table scan
-        Collection<QueryableEntry> entries = runUsingGlobalIndexSafely(predicate, mapContainer, migrationStamp);
+        Collection<QueryableEntry> entries = runUsingGlobalIndexSafely(predicate, mapContainer,
+                migrationStamp, initialPartitions.size());
 
         Result result;
         if (entries == null) {
@@ -165,7 +166,8 @@ public class QueryRunner {
         Predicate predicate = queryOptimizer.optimize(query.getPredicate(), indexes);
 
         // then we try to run using an index
-        Collection<QueryableEntry> entries = runUsingGlobalIndexSafely(predicate, mapContainer, migrationStamp);
+        Collection<QueryableEntry> entries = runUsingGlobalIndexSafely(predicate, mapContainer,
+                migrationStamp, initialPartitions.size());
 
         Result result;
         if (entries == null) {
@@ -191,7 +193,7 @@ public class QueryRunner {
         Collection<QueryableEntry> entries = null;
         Indexes indexes = mapContainer.getIndexes(partitionId);
         if (indexes != null && !indexes.isGlobal()) {
-            entries = indexes.query(predicate);
+            entries = indexes.query(predicate, partitions.size());
         }
 
         Result result;
@@ -223,7 +225,7 @@ public class QueryRunner {
     }
 
     protected Collection<QueryableEntry> runUsingGlobalIndexSafely(Predicate predicate, MapContainer mapContainer,
-                                                                   int migrationStamp) {
+                                                                   int migrationStamp, int ownedPartitionCount) {
 
         // If a migration is in progress or migration ownership changes,
         // do not attempt to use an index as they may have not been created yet.
@@ -241,7 +243,7 @@ public class QueryRunner {
             // leverage index on this node in a global way.
             return null;
         }
-        Collection<QueryableEntry> entries = indexes.query(predicate);
+        Collection<QueryableEntry> entries = indexes.query(predicate, ownedPartitionCount);
         if (entries == null) {
             return null;
         }

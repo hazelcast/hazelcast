@@ -52,8 +52,8 @@ public class GlobalQueryContextWithStats extends QueryContext {
     }
 
     @Override
-    public Index matchIndex(String pattern, IndexMatchHint matchHint) {
-        InternalIndex delegate = indexes.matchIndex(pattern, matchHint);
+    public Index matchIndex(String pattern, IndexMatchHint matchHint, int ownedPartitionCount) {
+        InternalIndex delegate = indexes.matchIndex(pattern, matchHint, ownedPartitionCount);
         if (delegate == null) {
             return null;
         }
@@ -171,6 +171,11 @@ public class GlobalQueryContextWithStats extends QueryContext {
         @Override
         public boolean hasPartitionIndexed(int partitionId) {
             return delegate.hasPartitionIndexed(partitionId);
+        }
+
+        @Override
+        public boolean allPartitionsIndexed(int ownedPartitionCount) {
+            return delegate.allPartitionsIndexed(ownedPartitionCount);
         }
 
         @Override

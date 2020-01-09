@@ -16,9 +16,9 @@
 
 package com.hazelcast.query.impl.predicates;
 
+import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
@@ -54,12 +54,12 @@ public class FalsePredicate<K, V> implements IdentifiedDataSerializable, IndexAw
     }
 
     @Override
-    public Set<QueryableEntry<K, V>> filter(QueryContext queryContext) {
+    public Set<QueryableEntry<K, V>> filter(QueryContext queryContext, int ownedPartitionCount) {
         return Collections.emptySet();
     }
 
     @Override
-    public boolean isIndexed(QueryContext queryContext) {
+    public boolean isIndexed(QueryContext queryContext, int ownedPartitionCount) {
         return true;
     }
 

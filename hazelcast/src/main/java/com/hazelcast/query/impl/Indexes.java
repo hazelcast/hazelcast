@@ -19,13 +19,13 @@ package com.hazelcast.query.impl;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.TypeConverter;
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.map.impl.StoreAdapter;
 import com.hazelcast.internal.monitor.impl.GlobalIndexesStats;
 import com.hazelcast.internal.monitor.impl.IndexesStats;
 import com.hazelcast.internal.monitor.impl.PartitionIndexesStats;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.map.impl.StoreAdapter;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.IndexAwarePredicate;
@@ -122,12 +122,12 @@ public class Indexes {
         }
 
         index = indexProvider.createIndex(
-            indexConfig,
-            extractors,
-            serializationService,
-            indexCopyBehavior,
-            stats.createPerIndexStats(indexConfig.getType() == IndexType.SORTED, usesCachedQueryableEntries),
-            partitionStoreAdapter
+                indexConfig,
+                extractors,
+                serializationService,
+                indexCopyBehavior,
+                stats.createPerIndexStats(indexConfig.getType() == IndexType.SORTED, usesCachedQueryableEntries),
+                partitionStoreAdapter
         );
 
         indexesByName.put(name, index);
@@ -302,12 +302,14 @@ public class Indexes {
     /**
      * Performs a query on this indexes instance using the given predicate.
      *
-     * @param predicate the predicate to evaluate.
+     * @param predicate           the predicate to evaluate.
+     * @param ownedPartitionCount a count of owned partitions a query runs on.
+     *                            Negative value indicates that the value is not defined.
      * @return the produced result set or {@code null} if the query can't be
      * performed using the indexes known to this indexes instance.
      */
     @SuppressWarnings("unchecked")
-    public Set<QueryableEntry> query(Predicate predicate) {
+    public Set<QueryableEntry> query(Predicate predicate, int ownedPartitionCount) {
         stats.incrementQueryCount();
 
         if (!haveAtLeastOneIndex() || !(predicate instanceof IndexAwarePredicate)) {
@@ -316,11 +318,11 @@ public class Indexes {
 
         IndexAwarePredicate indexAwarePredicate = (IndexAwarePredicate) predicate;
         QueryContext queryContext = queryContextProvider.obtainContextFor(this);
-        if (!indexAwarePredicate.isIndexed(queryContext)) {
+        if (!indexAwarePredicate.isIndexed(queryContext, ownedPartitionCount)) {
             return null;
         }
 
-        Set<QueryableEntry> result = indexAwarePredicate.filter(queryContext);
+        Set<QueryableEntry> result = indexAwarePredicate.filter(queryContext, ownedPartitionCount);
         if (result != null) {
             stats.incrementIndexedQueryCount();
             queryContext.applyPerQueryStats();
@@ -332,19 +334,28 @@ public class Indexes {
     /**
      * Matches an index for the given pattern and match hint.
      *
-     * @param pattern   the pattern to match an index for. May be either an
-     *                  attribute name or an exact index name.
-     * @param matchHint the match hint.
+     * @param pattern             the pattern to match an index for. May be either an
+     *                            attribute name or an exact index name.
+     * @param matchHint           the match hint.
+     * @param ownedPartitionCount a count of owned partitions a query runs on.
+     *                            Negative value indicates that the value is not defined.
      * @return the matched index or {@code null} if nothing matched.
      * @see QueryContext.IndexMatchHint
      * @see Indexes#matchIndex
      */
-    public InternalIndex matchIndex(String pattern, QueryContext.IndexMatchHint matchHint) {
+    public InternalIndex matchIndex(String pattern, QueryContext.IndexMatchHint matchHint, int ownedPartitionCount) {
+        InternalIndex index;
         if (matchHint == QueryContext.IndexMatchHint.EXACT_NAME) {
-            return indexesByName.get(pattern);
+            index = indexesByName.get(pattern);
         } else {
-            return attributeIndexRegistry.match(pattern, matchHint);
+            index = attributeIndexRegistry.match(pattern, matchHint);
         }
+
+        if (index == null || !index.allPartitionsIndexed(ownedPartitionCount)) {
+            return null;
+        }
+
+        return index;
     }
 
     /**

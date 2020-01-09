@@ -113,7 +113,7 @@ public class PartitionWideEntryOperation extends MapOperation
 
         // we use the partitioned-index to operate on the selected keys only
         Indexes indexes = mapContainer.getIndexes(getPartitionId());
-        Set<QueryableEntry> entries = indexes.query(queryOptimizer.optimize(predicate, indexes));
+        Set<QueryableEntry> entries = indexes.query(queryOptimizer.optimize(predicate, indexes), 1);
         if (entries == null) {
             return false;
         }

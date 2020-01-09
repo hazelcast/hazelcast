@@ -16,9 +16,9 @@
 
 package com.hazelcast.query.impl.predicates;
 
+import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.query.impl.Comparables;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.QueryContext;
@@ -72,8 +72,8 @@ public class InPredicate extends AbstractIndexAwarePredicate {
     }
 
     @Override
-    public Set<QueryableEntry> filter(QueryContext queryContext) {
-        Index index = matchIndex(queryContext, QueryContext.IndexMatchHint.PREFER_UNORDERED);
+    public Set<QueryableEntry> filter(QueryContext queryContext, int ownedPartitionCount) {
+        Index index = matchIndex(queryContext, QueryContext.IndexMatchHint.PREFER_UNORDERED, ownedPartitionCount);
         if (index != null) {
             return index.getRecords(values);
         } else {

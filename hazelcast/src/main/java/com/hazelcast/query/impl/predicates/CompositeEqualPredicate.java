@@ -80,8 +80,8 @@ public class CompositeEqualPredicate implements IndexAwarePredicate {
     }
 
     @Override
-    public Set<QueryableEntry> filter(QueryContext queryContext) {
-        Index index = queryContext.matchIndex(indexName, QueryContext.IndexMatchHint.EXACT_NAME);
+    public Set<QueryableEntry> filter(QueryContext queryContext, int ownedPartitionCount) {
+        Index index = queryContext.matchIndex(indexName, QueryContext.IndexMatchHint.EXACT_NAME, ownedPartitionCount);
         return index.getRecords(value);
     }
 
@@ -91,7 +91,7 @@ public class CompositeEqualPredicate implements IndexAwarePredicate {
     }
 
     @Override
-    public boolean isIndexed(QueryContext queryContext) {
+    public boolean isIndexed(QueryContext queryContext, int ownedPartitionCount) {
         return true;
     }
 
