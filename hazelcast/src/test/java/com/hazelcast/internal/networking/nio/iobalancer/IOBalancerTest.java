@@ -36,27 +36,27 @@ import static org.mockito.Mockito.mock;
 public class IOBalancerTest {
     private final LoggingService loggingService = new LoggingServiceImpl("somegroup", "log4j2", BuildInfoProvider.getBuildInfo());
 
-    // https://github.com/hazelcast/hazelcast/issues/11501
-    @Test
-    public void whenChannelAdded_andDisabled_thenSkipTaskCreation() {
-        IOBalancer ioBalancer = new IOBalancer(new NioThread[1], new NioThread[1], "foo", 1, loggingService);
-        MigratablePipeline inboundPipeline = mock(MigratablePipeline.class);
-        MigratablePipeline outboundPipeline = mock(MigratablePipeline.class);
-
-        ioBalancer.channelAdded(inboundPipeline, outboundPipeline);
-
-        assertTrue(ioBalancer.getWorkQueue().isEmpty());
-    }
-
-    // https://github.com/hazelcast/hazelcast/issues/11501
-    @Test
-    public void whenChannelRemoved_andDisabled_thenSkipTaskCreation() {
-        IOBalancer ioBalancer = new IOBalancer(new NioThread[1], new NioThread[1], "foo", 1, loggingService);
-        MigratablePipeline inboundPipeline = mock(MigratablePipeline.class);
-        MigratablePipeline outboundPipelines = mock(MigratablePipeline.class);
-
-        ioBalancer.channelRemoved(inboundPipeline, outboundPipelines);
-
-        assertTrue(ioBalancer.getWorkQueue().isEmpty());
-    }
+//    // https://github.com/hazelcast/hazelcast/issues/11501
+//    @Test
+//    public void whenChannelAdded_andDisabled_thenSkipTaskCreation() {
+//        IOBalancer ioBalancer = new IOBalancer(new NioThread[1], new NioThread[1], "foo", 1, loggingService);
+//        MigratablePipeline inboundPipeline = mock(MigratablePipeline.class);
+//        MigratablePipeline outboundPipeline = mock(MigratablePipeline.class);
+//
+//        ioBalancer.channelAdded(inboundPipeline, outboundPipeline);
+//
+//        assertTrue(ioBalancer.getWorkQueue().isEmpty());
+//    }
+//
+//    // https://github.com/hazelcast/hazelcast/issues/11501
+//    @Test
+//    public void whenChannelRemoved_andDisabled_thenSkipTaskCreation() {
+//        IOBalancer ioBalancer = new IOBalancer(new NioThread[1], new NioThread[1], "foo", 1, loggingService);
+//        MigratablePipeline inboundPipeline = mock(MigratablePipeline.class);
+//        MigratablePipeline outboundPipelines = mock(MigratablePipeline.class);
+//
+//        ioBalancer.channelRemoved(inboundPipeline, outboundPipelines);
+//
+//        assertTrue(ioBalancer.getWorkQueue().isEmpty());
+//    }
 }
