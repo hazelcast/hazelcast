@@ -65,6 +65,7 @@ public class AwsDiscoveryStrategyFactoryTest
         props.put("access-key", "test-value");
         props.put("secret-key", "test-value");
         props.put("host-header", "test-value");
+        props.put("region", "test-value");
         createStrategy(props);
     }
 
@@ -72,6 +73,7 @@ public class AwsDiscoveryStrategyFactoryTest
     public void testMinimalOk()
             throws Exception {
         final Map<String, Comparable> props = new HashMap<String, Comparable>();
+        props.put("region", "test-value");
         createStrategy(props);
     }
 
@@ -79,6 +81,7 @@ public class AwsDiscoveryStrategyFactoryTest
     public void testOnlyGivenRoleOk() {
         final Map<String, Comparable> props = new HashMap<String, Comparable>();
         props.put("iam-role", "test-value");
+        props.put("region", "test-value");
         createStrategy(props);
     }
 
@@ -87,6 +90,7 @@ public class AwsDiscoveryStrategyFactoryTest
         final Map<String, Comparable> props = new HashMap<String, Comparable>();
         props.put("secret-key", "test-value");
         props.put("access-key", "test-value");
+        props.put("region", "test-value");
         createStrategy(props);
     }
 
