@@ -207,10 +207,10 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
     }
 
     private void checkKeyFormat(K key) {
-        if (!serializeKeys) {
-            checkNotInstanceOf(Data.class, key, "key cannot be of type Data!");
-        } else {
+        if (serializeKeys) {
             checkInstanceOf(Data.class, key, "key must be of type Data!");
+        } else {
+            checkNotInstanceOf(Data.class, key, "key cannot be of type Data!");
         }
     }
 
