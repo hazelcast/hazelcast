@@ -61,8 +61,11 @@ public class EqualPredicate extends AbstractIndexAwarePredicate
     }
 
     @Override
-    public Set<QueryableEntry> filter(QueryContext queryContext, int ownedPartitionCount) {
-        Index index = matchIndex(queryContext, QueryContext.IndexMatchHint.PREFER_UNORDERED, ownedPartitionCount);
+    public Set<QueryableEntry> filter(QueryContext queryContext) {
+        Index index = matchIndex(queryContext, QueryContext.IndexMatchHint.PREFER_UNORDERED);
+        if (index == null) {
+            return null;
+        }
         return index.getRecords(value);
     }
 

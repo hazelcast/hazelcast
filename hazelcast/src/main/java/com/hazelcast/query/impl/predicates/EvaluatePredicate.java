@@ -71,14 +71,17 @@ public final class EvaluatePredicate implements Predicate, IndexAwarePredicate {
     }
 
     @Override
-    public Set<QueryableEntry> filter(QueryContext queryContext, int ownedPartitionCount) {
-        Index index = queryContext.matchIndex(indexName, QueryContext.IndexMatchHint.EXACT_NAME, ownedPartitionCount);
-        return index == null ? null : index.evaluate(predicate);
+    public Set<QueryableEntry> filter(QueryContext queryContext) {
+        Index index = queryContext.matchIndex(indexName, QueryContext.IndexMatchHint.EXACT_NAME);
+        if (index == null) {
+            return null;
+        }
+        return index.evaluate(predicate);
     }
 
     @Override
-    public boolean isIndexed(QueryContext queryContext, int ownedPartitionCount) {
-        return true;
+    public boolean isIndexed(QueryContext queryContext) {
+        return queryContext.matchIndex(indexName, QueryContext.IndexMatchHint.EXACT_NAME) != null;
     }
 
     @Override

@@ -183,12 +183,12 @@ public class PagingPredicateImpl<K, V>
      * @return
      */
     @Override
-    public Set<QueryableEntry<K, V>> filter(QueryContext queryContext, int ownedPartitionCount) {
+    public Set<QueryableEntry<K, V>> filter(QueryContext queryContext) {
         if (!(predicate instanceof IndexAwarePredicate)) {
             return null;
         }
 
-        Set<QueryableEntry<K, V>> set = ((IndexAwarePredicate<K, V>) predicate).filter(queryContext, ownedPartitionCount);
+        Set<QueryableEntry<K, V>> set = ((IndexAwarePredicate<K, V>) predicate).filter(queryContext);
         if (set == null || set.isEmpty()) {
             return set;
         }
@@ -212,9 +212,9 @@ public class PagingPredicateImpl<K, V>
      * @param queryContext
      * @return
      */
-    public boolean isIndexed(QueryContext queryContext, int ownedPartitionCount) {
+    public boolean isIndexed(QueryContext queryContext) {
         if (predicate instanceof IndexAwarePredicate) {
-            return ((IndexAwarePredicate) predicate).isIndexed(queryContext, ownedPartitionCount);
+            return ((IndexAwarePredicate) predicate).isIndexed(queryContext);
         }
         return false;
     }

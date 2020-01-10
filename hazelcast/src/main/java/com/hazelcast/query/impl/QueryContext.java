@@ -22,14 +22,16 @@ package com.hazelcast.query.impl;
 public class QueryContext {
 
     protected Indexes indexes;
+    protected int ownedPartitionCount = -1;
 
     /**
      * Creates a new query context with the given available indexes.
      *
      * @param indexes the indexes available for the query context.
      */
-    public QueryContext(Indexes indexes) {
+    public QueryContext(Indexes indexes, int ownedPartitionCount) {
         this.indexes = indexes;
+        this.ownedPartitionCount = ownedPartitionCount;
     }
 
     /**
@@ -39,12 +41,31 @@ public class QueryContext {
     }
 
     /**
+     * @return a count of owned partitions a query runs on.
+     */
+    public int getOwnedPartitionCount() {
+        return ownedPartitionCount;
+    }
+
+    /**
+     * Sets owned partitions count a query runs on.
+     * @param ownedPartitionCount a count of owned partitions.
+     */
+    public void setOwnedPartitionCount(int ownedPartitionCount) {
+        this.ownedPartitionCount = ownedPartitionCount;
+    }
+
+    /**
      * Attaches this index context to the given indexes.
      *
      * @param indexes the indexes to attach to.
+     * @param ownedPartitionCount a count of owned partitions a query runs on.
+     *                            Negative value indicates that the value is not defined.
+     *
      */
-    void attachTo(Indexes indexes) {
+    void attachTo(Indexes indexes, int ownedPartitionCount) {
         this.indexes = indexes;
+        this.ownedPartitionCount = ownedPartitionCount;
     }
 
     /**
@@ -59,13 +80,11 @@ public class QueryContext {
      * context.
      *
      * @param attribute the attribute to obtain the index for.
-     * @param ownedPartitionCount a count of owned partitions a query runs on.
-     * Negative value indicates that the value is not defined.
      * @return the obtained index or {@code null} if there is no index available
      * for the given attribute.
      */
-    public Index getIndex(String attribute, int ownedPartitionCount) {
-        return matchIndex(attribute, IndexMatchHint.NONE, ownedPartitionCount);
+    public Index getIndex(String attribute) {
+        return matchIndex(attribute, IndexMatchHint.NONE);
     }
 
     /**
@@ -74,12 +93,10 @@ public class QueryContext {
      * @param pattern   the pattern to match an index for. May be either an
      *                  attribute name or an exact index name.
      * @param matchHint the match hint.
-     * @param ownedPartitionCount a count of owned partitions a query runs on.
-     * Negative value indicates that the value is not defined.
      * @return the matched index or {@code null} if nothing matched.
      * @see QueryContext.IndexMatchHint
      */
-    public Index matchIndex(String pattern, IndexMatchHint matchHint, int ownedPartitionCount) {
+    public Index matchIndex(String pattern, IndexMatchHint matchHint) {
         return indexes.matchIndex(pattern, matchHint, ownedPartitionCount);
     }
 

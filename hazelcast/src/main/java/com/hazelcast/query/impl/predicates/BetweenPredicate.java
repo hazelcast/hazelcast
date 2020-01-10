@@ -68,8 +68,11 @@ public class BetweenPredicate extends AbstractIndexAwarePredicate implements Vis
     }
 
     @Override
-    public Set<QueryableEntry> filter(QueryContext queryContext, int ownedPartitionCount) {
-        Index index = matchIndex(queryContext, QueryContext.IndexMatchHint.PREFER_ORDERED, ownedPartitionCount);
+    public Set<QueryableEntry> filter(QueryContext queryContext) {
+        Index index = matchIndex(queryContext, QueryContext.IndexMatchHint.PREFER_ORDERED);
+        if (index == null) {
+            return null;
+        }
         return index.getRecords(from, true, to, true);
     }
 

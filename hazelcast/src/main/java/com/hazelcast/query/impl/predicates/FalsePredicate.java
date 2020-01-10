@@ -54,12 +54,12 @@ public class FalsePredicate<K, V> implements IdentifiedDataSerializable, IndexAw
     }
 
     @Override
-    public Set<QueryableEntry<K, V>> filter(QueryContext queryContext, int ownedPartitionCount) {
+    public Set<QueryableEntry<K, V>> filter(QueryContext queryContext) {
         return Collections.emptySet();
     }
 
     @Override
-    public boolean isIndexed(QueryContext queryContext, int ownedPartitionCount) {
+    public boolean isIndexed(QueryContext queryContext) {
         return true;
     }
 

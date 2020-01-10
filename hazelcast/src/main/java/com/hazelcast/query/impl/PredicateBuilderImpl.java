@@ -109,19 +109,19 @@ public class PredicateBuilderImpl
     }
 
     @Override
-    public Set<QueryableEntry> filter(QueryContext queryContext, int ownedPartitionCount) {
+    public Set<QueryableEntry> filter(QueryContext queryContext) {
         Predicate p = lsPredicates.get(0);
         if (p instanceof IndexAwarePredicate) {
-            return ((IndexAwarePredicate) p).filter(queryContext, ownedPartitionCount);
+            return ((IndexAwarePredicate) p).filter(queryContext);
         }
         return null;
     }
 
     @Override
-    public boolean isIndexed(QueryContext queryContext, int ownedPartitionCount) {
+    public boolean isIndexed(QueryContext queryContext) {
         Predicate p = lsPredicates.get(0);
         if (p instanceof IndexAwarePredicate) {
-            return ((IndexAwarePredicate) p).isIndexed(queryContext, ownedPartitionCount);
+            return ((IndexAwarePredicate) p).isIndexed(queryContext);
         }
         return false;
     }

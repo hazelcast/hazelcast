@@ -42,14 +42,14 @@ class TestPredicate implements IndexAwarePredicate<String, TestData> {
 
     @Override
     @SuppressWarnings("unchecked")
-    public Set<QueryableEntry<String, TestData>> filter(QueryContext queryContext, int ownedPartitionCount) {
+    public Set<QueryableEntry<String, TestData>> filter(QueryContext queryContext) {
         filtered = true;
-        return (Set) queryContext.getIndex("attr1", ownedPartitionCount).getRecords(value);
+        return (Set) queryContext.getIndex("attr1").getRecords(value);
     }
 
     @Override
-    public boolean isIndexed(QueryContext queryContext, int ownedPartitionCount) {
-        return queryContext.getIndex("attr1", ownedPartitionCount) != null;
+    public boolean isIndexed(QueryContext queryContext) {
+        return queryContext.getIndex("attr1") != null;
     }
 
     boolean isFilteredAndApplied(int times) {

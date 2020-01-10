@@ -91,16 +91,16 @@ public class SqlPredicate
     }
 
     @Override
-    public boolean isIndexed(QueryContext queryContext, int ownedPartitionCount) {
+    public boolean isIndexed(QueryContext queryContext) {
         if (predicate instanceof IndexAwarePredicate) {
-            return ((IndexAwarePredicate) predicate).isIndexed(queryContext, ownedPartitionCount);
+            return ((IndexAwarePredicate) predicate).isIndexed(queryContext);
         }
         return false;
     }
 
     @Override
-    public Set<QueryableEntry> filter(QueryContext queryContext, int ownedPartitionCount) {
-        return ((IndexAwarePredicate) predicate).filter(queryContext, ownedPartitionCount);
+    public Set<QueryableEntry> filter(QueryContext queryContext) {
+        return ((IndexAwarePredicate) predicate).filter(queryContext);
     }
 
     @Override

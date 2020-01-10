@@ -27,9 +27,11 @@ public interface QueryContextProvider {
      * The returned query context instance is valid for a duration of a single
      * query and should be re-obtained for every query.
      *
-     * @param indexes the indexes to obtain the query context for.
+     * @param indexes             the indexes to obtain the query context for.
+     * @param ownedPartitionCount a count of owned partitions a query runs on.
+     *                            Negative value indicates that the value is not defined.
      * @return the obtained query context.
      */
-    QueryContext obtainContextFor(Indexes indexes);
+    QueryContext obtainContextFor(Indexes indexes, int ownedPartitionCount);
 
 }

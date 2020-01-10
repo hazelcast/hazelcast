@@ -27,6 +27,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.query.impl.Indexes.SKIP_PARTITIONS_COUNT_CHECK;
+
 /**
  * Tries to divide the predicate tree into isolated subtrees every of which can
  * be evaluated by {@link Index#evaluate} method in a single go.
@@ -51,7 +53,7 @@ public class EvaluateVisitor extends AbstractVisitor {
 
             EvaluatePredicate evaluatePredicate = (EvaluatePredicate) subPredicate;
             String indexName = evaluatePredicate.getIndexName();
-            Index index = indexes.matchIndex(indexName, QueryContext.IndexMatchHint.EXACT_NAME, -1);
+            Index index = indexes.matchIndex(indexName, QueryContext.IndexMatchHint.EXACT_NAME, SKIP_PARTITIONS_COUNT_CHECK);
             if (!index.canEvaluate(andPredicate.getClass())) {
                 continue;
             }
@@ -85,7 +87,7 @@ public class EvaluateVisitor extends AbstractVisitor {
 
             EvaluatePredicate evaluatePredicate = (EvaluatePredicate) subPredicate;
             String indexName = evaluatePredicate.getIndexName();
-            Index index = indexes.matchIndex(indexName, QueryContext.IndexMatchHint.EXACT_NAME, -1);
+            Index index = indexes.matchIndex(indexName, QueryContext.IndexMatchHint.EXACT_NAME, SKIP_PARTITIONS_COUNT_CHECK);
             if (!index.canEvaluate(andPredicate.getClass())) {
                 output.add(subPredicate);
             }
@@ -128,7 +130,7 @@ public class EvaluateVisitor extends AbstractVisitor {
 
             EvaluatePredicate evaluatePredicate = (EvaluatePredicate) subPredicate;
             String indexName = evaluatePredicate.getIndexName();
-            Index index = indexes.matchIndex(indexName, QueryContext.IndexMatchHint.EXACT_NAME, -1);
+            Index index = indexes.matchIndex(indexName, QueryContext.IndexMatchHint.EXACT_NAME, SKIP_PARTITIONS_COUNT_CHECK);
             if (!index.canEvaluate(orPredicate.getClass())) {
                 continue;
             }
@@ -162,7 +164,7 @@ public class EvaluateVisitor extends AbstractVisitor {
 
             EvaluatePredicate evaluatePredicate = (EvaluatePredicate) subPredicate;
             String indexName = evaluatePredicate.getIndexName();
-            Index index = indexes.matchIndex(indexName, QueryContext.IndexMatchHint.EXACT_NAME, -1);
+            Index index = indexes.matchIndex(indexName, QueryContext.IndexMatchHint.EXACT_NAME, SKIP_PARTITIONS_COUNT_CHECK);
             if (!index.canEvaluate(orPredicate.getClass())) {
                 output.add(subPredicate);
             }
@@ -198,7 +200,7 @@ public class EvaluateVisitor extends AbstractVisitor {
 
         EvaluatePredicate evaluatePredicate = (EvaluatePredicate) subPredicate;
         String indexName = evaluatePredicate.getIndexName();
-        Index index = indexes.matchIndex(indexName, QueryContext.IndexMatchHint.EXACT_NAME, -1);
+        Index index = indexes.matchIndex(indexName, QueryContext.IndexMatchHint.EXACT_NAME, SKIP_PARTITIONS_COUNT_CHECK);
         if (!index.canEvaluate(notPredicate.getClass())) {
             return notPredicate;
         }
@@ -208,7 +210,8 @@ public class EvaluateVisitor extends AbstractVisitor {
 
     @Override
     public Predicate visit(EqualPredicate predicate, Indexes indexes) {
-        Index index = indexes.matchIndex(predicate.attributeName, QueryContext.IndexMatchHint.PREFER_UNORDERED, -1);
+        Index index = indexes.matchIndex(predicate.attributeName, QueryContext.IndexMatchHint.PREFER_UNORDERED,
+                SKIP_PARTITIONS_COUNT_CHECK);
         if (index == null) {
             return predicate;
         }
@@ -227,7 +230,8 @@ public class EvaluateVisitor extends AbstractVisitor {
 
     @Override
     public Predicate visit(NotEqualPredicate predicate, Indexes indexes) {
-        Index index = indexes.matchIndex(predicate.attributeName, QueryContext.IndexMatchHint.PREFER_UNORDERED, -1);
+        Index index = indexes.matchIndex(predicate.attributeName, QueryContext.IndexMatchHint.PREFER_UNORDERED,
+                SKIP_PARTITIONS_COUNT_CHECK);
         if (index == null) {
             return predicate;
         }
@@ -246,7 +250,8 @@ public class EvaluateVisitor extends AbstractVisitor {
 
     @Override
     public Predicate visit(InPredicate predicate, Indexes indexes) {
-        Index index = indexes.matchIndex(predicate.attributeName, QueryContext.IndexMatchHint.PREFER_UNORDERED, -1);
+        Index index = indexes.matchIndex(predicate.attributeName, QueryContext.IndexMatchHint.PREFER_UNORDERED,
+                SKIP_PARTITIONS_COUNT_CHECK);
         if (index == null) {
             return predicate;
         }

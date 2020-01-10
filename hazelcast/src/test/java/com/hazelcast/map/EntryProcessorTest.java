@@ -1291,13 +1291,13 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Set<QueryableEntry> filter(QueryContext queryContext, int ownedPartitionCount) {
-            Index index = queryContext.getIndex(attributeName, ownedPartitionCount);
+        public Set<QueryableEntry> filter(QueryContext queryContext) {
+            Index index = queryContext.getIndex(attributeName);
             return index.getRecords(key);
         }
 
         @Override
-        public boolean isIndexed(QueryContext queryContext, int ownedPartitionCount) {
+        public boolean isIndexed(QueryContext queryContext) {
             return true;
         }
 
@@ -1426,12 +1426,12 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Set<QueryableEntry<K, V>> filter(QueryContext queryContext, int ownedPartitionCount) {
+        public Set<QueryableEntry<K, V>> filter(QueryContext queryContext) {
             return null;
         }
 
         @Override
-        public boolean isIndexed(QueryContext queryContext, int ownedPartitionCount) {
+        public boolean isIndexed(QueryContext queryContext) {
             indexCalled.set(true);
             return true;
         }

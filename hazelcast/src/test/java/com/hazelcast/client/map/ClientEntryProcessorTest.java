@@ -162,12 +162,12 @@ public class ClientEntryProcessorTest extends AbstractClientMapTest {
         static final AtomicBoolean INDEX_CALLED = new AtomicBoolean(false);
 
         @Override
-        public Set<QueryableEntry> filter(QueryContext queryContext, int ownedPartitionCount) {
+        public Set<QueryableEntry> filter(QueryContext queryContext) {
             return null;
         }
 
         @Override
-        public boolean isIndexed(QueryContext queryContext, int ownedPartitionCount) {
+        public boolean isIndexed(QueryContext queryContext) {
             INDEX_CALLED.set(true);
             return true;
         }
