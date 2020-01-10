@@ -31,6 +31,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_DISCRIMINATOR_NAME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_PREFIX;
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static com.hazelcast.internal.metrics.ProbeUnit.COUNT;
@@ -214,8 +216,8 @@ public class MetricsPropertiesTest extends HazelcastTestSupport {
 
         MetricDescriptor descriptor = DEFAULT_DESCRIPTOR_SUPPLIER
                 .get()
-                .withPrefix("map")
-                .withDiscriminator("name", "testMap")
+                .withPrefix(MAP_PREFIX)
+                .withDiscriminator(MAP_DISCRIMINATOR_NAME, "testMap")
                 .withMetric("putCount")
                 .withUnit(COUNT);
 

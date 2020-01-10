@@ -51,6 +51,10 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_DISCRIMINATOR_NAME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_PREFIX_DURABLE_INTERNAL;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_PREFIX_INTERNAL;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_PREFIX_SCHEDULED_INTERNAL;
 import static com.hazelcast.internal.metrics.MetricTarget.MANAGEMENT_CENTER;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
 import static java.lang.Thread.currentThread;
@@ -395,8 +399,8 @@ public final class ExecutionServiceImpl implements ExecutionService {
             for (ManagedExecutorService executorService : executors.values()) {
                 MetricDescriptor executorDescriptor = descriptor
                         .copy()
-                        .withPrefix("executor.internal")
-                        .withDiscriminator("name", executorService.getName())
+                        .withPrefix(EXECUTOR_PREFIX_INTERNAL)
+                        .withDiscriminator(EXECUTOR_DISCRIMINATOR_NAME, executorService.getName())
                         .withExcludedTarget(MANAGEMENT_CENTER);
                 context.collect(executorDescriptor, executorService);
             }
@@ -404,8 +408,8 @@ public final class ExecutionServiceImpl implements ExecutionService {
             for (ManagedExecutorService executorService : durableExecutors.values()) {
                 MetricDescriptor executorDescriptor = descriptor
                         .copy()
-                        .withPrefix("executor.durable.internal")
-                        .withDiscriminator("name", executorService.getName())
+                        .withPrefix(EXECUTOR_PREFIX_DURABLE_INTERNAL)
+                        .withDiscriminator(EXECUTOR_DISCRIMINATOR_NAME, executorService.getName())
                         .withExcludedTarget(MANAGEMENT_CENTER);
                 context.collect(executorDescriptor, executorService);
             }
@@ -413,8 +417,8 @@ public final class ExecutionServiceImpl implements ExecutionService {
             for (ManagedExecutorService executorService : scheduleDurableExecutors.values()) {
                 MetricDescriptor executorDescriptor = descriptor
                         .copy()
-                        .withPrefix("executor.scheduled.internal")
-                        .withDiscriminator("name", executorService.getName())
+                        .withPrefix(EXECUTOR_PREFIX_SCHEDULED_INTERNAL)
+                        .withDiscriminator(EXECUTOR_DISCRIMINATOR_NAME, executorService.getName())
                         .withExcludedTarget(MANAGEMENT_CENTER);
                 context.collect(executorDescriptor, executorService);
             }

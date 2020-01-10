@@ -60,6 +60,8 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EVENT_DISCRIMINATOR_SERVICE;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EVENT_PREFIX;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
@@ -204,7 +206,7 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
 
     @Override
     public void provideStaticMetrics(MetricsRegistry registry) {
-        registry.registerStaticMetrics(this, "event");
+        registry.registerStaticMetrics(this, EVENT_PREFIX);
     }
 
     @Override
@@ -604,8 +606,8 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
                 MetricsRegistry metricsRegistry = nodeEngine.getMetricsRegistry();
                 MetricDescriptor descriptor = metricsRegistry
                         .newMetricDescriptor()
-                        .withPrefix("event")
-                        .withDiscriminator("service", service);
+                        .withPrefix(EVENT_PREFIX)
+                        .withDiscriminator(EVENT_DISCRIMINATOR_SERVICE, service);
                 metricsRegistry.registerStaticMetrics(descriptor, newSegment);
             } else {
                 segment = existingSegment;

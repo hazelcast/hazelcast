@@ -26,6 +26,7 @@ import java.lang.management.ManagementFactory;
 import java.util.Collections;
 import java.util.Set;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.GC_PREFIX;
 import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -71,7 +72,7 @@ public final class GarbageCollectionMetricSet {
 
         GcStats stats = new GcStats();
         metricsRegistry.scheduleAtFixedRate(stats, PUBLISH_FREQUENCY_SECONDS, SECONDS, INFO);
-        metricsRegistry.registerStaticMetrics(stats, "gc");
+        metricsRegistry.registerStaticMetrics(stats, GC_PREFIX);
     }
 
 

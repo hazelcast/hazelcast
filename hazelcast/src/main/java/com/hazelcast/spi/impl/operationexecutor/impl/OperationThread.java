@@ -33,6 +33,8 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_DISCRIMINATOR_THREAD;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_PREFIX_THREAD;
 import static com.hazelcast.internal.metrics.MetricTarget.MANAGEMENT_CENTER;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 
@@ -193,8 +195,8 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
     public void provideStaticMetrics(MetricsRegistry registry) {
         MetricDescriptor descriptor = registry
                 .newMetricDescriptor()
-                .withPrefix("operation.thread")
-                .withDiscriminator("thread", getName());
+                .withPrefix(OPERATION_PREFIX_THREAD)
+                .withDiscriminator(OPERATION_DISCRIMINATOR_THREAD, getName());
         registry.registerStaticMetrics(descriptor, this);
     }
 

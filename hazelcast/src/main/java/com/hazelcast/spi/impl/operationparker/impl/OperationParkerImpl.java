@@ -43,6 +43,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_PREFIX_PARKER;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -77,7 +78,7 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
 
     @Override
     public void provideStaticMetrics(MetricsRegistry registry) {
-        registry.registerStaticMetrics(this, "operation-parker");
+        registry.registerStaticMetrics(this, OPERATION_PREFIX_PARKER);
     }
 
     @Override

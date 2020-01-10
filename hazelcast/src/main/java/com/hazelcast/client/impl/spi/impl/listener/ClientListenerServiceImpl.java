@@ -56,6 +56,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_PREFIX_LISTENERS;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
@@ -142,7 +143,7 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
 
     @Override
     public void provideStaticMetrics(MetricsRegistry registry) {
-        registry.registerStaticMetrics(this, "listeners");
+        registry.registerStaticMetrics(this, CLIENT_PREFIX_LISTENERS);
     }
 
     @Probe(level = MANDATORY)

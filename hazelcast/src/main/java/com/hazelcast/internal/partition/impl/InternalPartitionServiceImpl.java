@@ -93,6 +93,7 @@ import java.util.logging.Level;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.NON_LOCAL_MEMBER_SELECTOR;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITIONS_PREFIX;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static java.lang.Math.ceil;
 import static java.lang.Math.max;
@@ -164,10 +165,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
         proxy = new PartitionServiceProxy(nodeEngine, this);
 
         MetricsRegistry metricsRegistry = nodeEngine.getMetricsRegistry();
-        metricsRegistry.registerStaticMetrics(this, "partitions");
-        metricsRegistry.registerStaticMetrics(partitionStateManager, "partitions");
-        metricsRegistry.registerStaticMetrics(migrationManager, "partitions");
-        metricsRegistry.registerStaticMetrics(replicaManager, "partitions");
+        metricsRegistry.registerStaticMetrics(this, PARTITIONS_PREFIX);
+        metricsRegistry.registerStaticMetrics(partitionStateManager, PARTITIONS_PREFIX);
+        metricsRegistry.registerStaticMetrics(migrationManager, PARTITIONS_PREFIX);
+        metricsRegistry.registerStaticMetrics(replicaManager, PARTITIONS_PREFIX);
     }
 
     @Override

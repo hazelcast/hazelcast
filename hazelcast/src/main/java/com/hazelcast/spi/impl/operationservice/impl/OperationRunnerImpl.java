@@ -68,6 +68,11 @@ import com.hazelcast.splitbrainprotection.impl.SplitBrainProtectionServiceImpl;
 import java.io.IOException;
 import java.util.logging.Level;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_DISCRIMINATOR_GENERICID;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_DISCRIMINATOR_PARTITIONID;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_PREFIX_ADHOC;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_PREFIX_GENERIC;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_PREFIX_PARTITION;
 import static com.hazelcast.internal.metrics.MetricTarget.MANAGEMENT_CENTER;
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
@@ -148,16 +153,18 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
     public void provideStaticMetrics(MetricsRegistry registry) {
         if (partitionId >= 0) {
             MetricDescriptor descriptor = registry.newMetricDescriptor()
-                                                  .withPrefix("operation.partition")
-                                                  .withDiscriminator("partitionId", String.valueOf(partitionId));
+                                                  .withPrefix(OPERATION_PREFIX_PARTITION)
+                                                  .withDiscriminator(OPERATION_DISCRIMINATOR_PARTITIONID,
+                                                          String.valueOf(partitionId));
             registry.registerStaticMetrics(descriptor, this);
         } else if (partitionId == -1) {
             MetricDescriptor descriptor = registry.newMetricDescriptor()
-                                                  .withPrefix("operation.generic")
-                                                  .withDiscriminator("genericId", String.valueOf(genericId));
+                                                  .withPrefix(OPERATION_PREFIX_GENERIC)
+                                                  .withDiscriminator(OPERATION_DISCRIMINATOR_GENERICID,
+                                                          String.valueOf(genericId));
             registry.registerStaticMetrics(descriptor, this);
         } else {
-            registry.registerStaticMetrics(this, "operation.adhoc");
+            registry.registerStaticMetrics(this, OPERATION_PREFIX_ADHOC);
         }
     }
 

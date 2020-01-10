@@ -60,6 +60,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_DISCRIMINATOR_BINDADDRESS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_DISCRIMINATOR_ENDPOINT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_PREFIX_CONNECTION;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_TAG_ENDPOINT;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.nio.IOUtil.close;
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
@@ -405,20 +409,20 @@ public class TcpIpEndpointManager
 
     @Override
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
-        MetricDescriptor rootDescriptor = descriptor.withPrefix("tcp.connection");
+        MetricDescriptor rootDescriptor = descriptor.withPrefix(TCP_PREFIX_CONNECTION);
         if (endpointQualifier == null) {
             context.collect(rootDescriptor.copy(), this);
         } else {
             context.collect(rootDescriptor
                     .copy()
-                    .withDiscriminator("endpoint", endpointQualifier.toMetricsPrefixString()), this);
+                    .withDiscriminator(TCP_DISCRIMINATOR_ENDPOINT, endpointQualifier.toMetricsPrefixString()), this);
         }
 
         for (TcpIpConnection connection : activeConnections) {
             if (connection.getEndPoint() != null) {
                 context.collect(rootDescriptor
                         .copy()
-                        .withDiscriminator("endpoint", connection.getEndPoint().toString()), connection);
+                        .withDiscriminator(TCP_DISCRIMINATOR_ENDPOINT, connection.getEndPoint().toString()), connection);
             }
         }
 
@@ -428,8 +432,8 @@ public class TcpIpEndpointManager
             if (connection.getEndPoint() != null) {
                 context.collect(rootDescriptor
                         .copy()
-                        .withDiscriminator("bindAddress", bindAddress.toString())
-                        .withTag("endpoint", connection.getEndPoint().toString()), connection);
+                        .withDiscriminator(TCP_DISCRIMINATOR_BINDADDRESS, bindAddress.toString())
+                        .withTag(TCP_TAG_ENDPOINT, connection.getEndPoint().toString()), connection);
             }
         }
     }

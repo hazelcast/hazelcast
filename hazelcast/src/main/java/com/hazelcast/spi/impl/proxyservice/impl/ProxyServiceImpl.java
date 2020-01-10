@@ -52,6 +52,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 import static com.hazelcast.core.DistributedObjectEvent.EventType.CREATED;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PROXY_PREFIX;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
@@ -103,7 +104,7 @@ public class ProxyServiceImpl
 
     @Override
     public void provideStaticMetrics(MetricsRegistry registry) {
-        registry.registerStaticMetrics(this, "proxy");
+        registry.registerStaticMetrics(this, PROXY_PREFIX);
     }
 
     public void init() {

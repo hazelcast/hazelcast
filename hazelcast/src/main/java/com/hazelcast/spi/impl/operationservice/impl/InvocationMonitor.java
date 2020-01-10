@@ -50,6 +50,7 @@ import java.util.logging.Level;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_PREFIX_INVOCATIONS;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.internal.nio.Packet.FLAG_OP_CONTROL;
@@ -135,7 +136,7 @@ public class InvocationMonitor implements Consumer<Packet>, StaticMetricsProvide
 
     @Override
     public void provideStaticMetrics(MetricsRegistry registry) {
-        registry.registerStaticMetrics(this, "operation.invocations");
+        registry.registerStaticMetrics(this, OPERATION_PREFIX_INVOCATIONS);
     }
 
     private static ScheduledExecutorService newScheduler(final String hzName) {

@@ -119,6 +119,11 @@ import static com.hazelcast.cp.internal.raft.QueryPolicy.LEADER_LOCAL;
 import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
 import static com.hazelcast.cp.internal.raft.impl.RaftNodeImpl.newRaftNode;
 import static com.hazelcast.internal.config.ConfigValidator.checkCPSubsystemConfig;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CPSUBSYSTEM_DISCRIMINATOR_GROUPID;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CPSUBSYSTEM_PREFIX_RAFT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CPSUBSYSTEM_PREFIX_RAFT_GROUP;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CPSUBSYSTEM_PREFIX_RAFT_METADATA;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CPSUBSYSTEM_TAG_NAME;
 import static com.hazelcast.internal.util.Preconditions.checkFalse;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkState;
@@ -186,8 +191,8 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         }
 
         MetricsRegistry metricsRegistry = this.nodeEngine.getMetricsRegistry();
-        metricsRegistry.registerStaticMetrics(this, "raft");
-        metricsRegistry.registerStaticMetrics(metadataGroupManager, "raft.metadata");
+        metricsRegistry.registerStaticMetrics(this, CPSUBSYSTEM_PREFIX_RAFT);
+        metricsRegistry.registerStaticMetrics(metadataGroupManager, CPSUBSYSTEM_PREFIX_RAFT_METADATA);
         metricsRegistry.registerDynamicMetricsProvider(this);
         this.metricsPeriod = nodeEngine.getProperties().getInteger(MetricsPlugin.PERIOD_SECONDS);
     }
@@ -805,13 +810,13 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     @Override
     public void provideDynamicMetrics(MetricDescriptor descriptor,
                                       MetricsCollectionContext context) {
-        MetricDescriptor rootDescriptor = descriptor.withPrefix("raft.group");
+        MetricDescriptor rootDescriptor = descriptor.withPrefix(CPSUBSYSTEM_PREFIX_RAFT_GROUP);
         for (Entry<CPGroupId, RaftNodeMetrics> entry : nodeMetrics.entrySet()) {
             CPGroupId groupId = entry.getKey();
             MetricDescriptor groupDescriptor = rootDescriptor
                     .copy()
-                    .withDiscriminator("groupId", String.valueOf(groupId.getId()))
-                    .withTag("name", groupId.getName());
+                    .withDiscriminator(CPSUBSYSTEM_DISCRIMINATOR_GROUPID, String.valueOf(groupId.getId()))
+                    .withTag(CPSUBSYSTEM_TAG_NAME, groupId.getName());
             context.collect(groupDescriptor, entry.getValue());
         }
     }

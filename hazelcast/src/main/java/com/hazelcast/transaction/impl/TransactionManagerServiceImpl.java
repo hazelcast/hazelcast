@@ -58,6 +58,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TRANSACTIONS_PREFIX;
 import static com.hazelcast.internal.util.FutureUtil.ExceptionHandler;
 import static com.hazelcast.internal.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.internal.util.FutureUtil.waitWithDeadline;
@@ -96,7 +97,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         this.logger = nodeEngine.getLogger(TransactionManagerService.class);
         this.finalizeExceptionHandler = logAllExceptions(logger, "Error while rolling-back tx!", Level.WARNING);
 
-        nodeEngine.getMetricsRegistry().registerStaticMetrics(this, "transactions");
+        nodeEngine.getMetricsRegistry().registerStaticMetrics(this, TRANSACTIONS_PREFIX);
     }
 
     public String getClusterName() {

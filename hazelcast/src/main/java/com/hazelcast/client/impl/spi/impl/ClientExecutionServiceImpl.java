@@ -34,6 +34,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_PREFIX_EXECUTION_SERVICE;
 import static java.lang.Thread.currentThread;
 
 public final class ClientExecutionServiceImpl implements TaskScheduler, StaticMetricsProvider {
@@ -101,6 +102,6 @@ public final class ClientExecutionServiceImpl implements TaskScheduler, StaticMe
 
     @Override
     public void provideStaticMetrics(MetricsRegistry registry) {
-        registry.registerStaticMetrics(this, "executionService");
+        registry.registerStaticMetrics(this, CLIENT_PREFIX_EXECUTION_SERVICE);
     }
 }

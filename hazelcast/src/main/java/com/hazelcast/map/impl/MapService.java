@@ -66,6 +66,11 @@ import java.util.Properties;
 import java.util.UUID;
 
 import static com.hazelcast.core.EntryEventType.INVALIDATION;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_DISCRIMINATOR_NAME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_PREFIX;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_PREFIX_INDEX;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_PREFIX_NEARCACHE;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_TAG_INDEX;
 
 /**
  * Defines map service behavior.
@@ -291,19 +296,19 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
 
             // map
             MetricDescriptor dsDescriptor = descriptor
-                .copy()
-                .withPrefix("map")
-                .withDiscriminator("name", mapName);
+                    .copy()
+                    .withPrefix(MAP_PREFIX)
+                    .withDiscriminator(MAP_DISCRIMINATOR_NAME, mapName);
             context.collect(dsDescriptor, localInstanceStats);
 
             // index
             Map<String, LocalIndexStats> indexStats = localInstanceStats.getIndexStats();
             for (Map.Entry<String, LocalIndexStats> indexEntry : indexStats.entrySet()) {
                 MetricDescriptor indexDescriptor = descriptor
-                    .copy()
-                    .withPrefix("map.index")
-                    .withDiscriminator("name", mapName)
-                    .withTag("index", indexEntry.getKey());
+                        .copy()
+                        .withPrefix(MAP_PREFIX_INDEX)
+                        .withDiscriminator(MAP_DISCRIMINATOR_NAME, mapName)
+                        .withTag(MAP_TAG_INDEX, indexEntry.getKey());
                 context.collect(indexDescriptor, indexEntry.getValue());
             }
 
@@ -311,9 +316,9 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
             NearCacheStats nearCacheStats = localInstanceStats.getNearCacheStats();
             if (nearCacheStats != null) {
                 MetricDescriptor nearCacheDescriptor = descriptor
-                    .copy()
-                    .withPrefix("map.nearcache")
-                    .withDiscriminator("name", mapName);
+                        .copy()
+                        .withPrefix(MAP_PREFIX_NEARCACHE)
+                        .withDiscriminator(MAP_DISCRIMINATOR_NAME, mapName);
                 context.collect(nearCacheDescriptor, nearCacheStats);
             }
         }

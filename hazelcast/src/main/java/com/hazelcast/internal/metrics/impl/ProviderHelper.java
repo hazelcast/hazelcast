@@ -22,6 +22,8 @@ import com.hazelcast.internal.metrics.MetricsCollectionContext;
 
 import java.util.Map;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.GENERAL_DISCRIMINATOR_NAME;
+
 public final class ProviderHelper {
     private ProviderHelper() {
     }
@@ -37,9 +39,9 @@ public final class ProviderHelper {
             LocalInstanceStats localStats = entry.getValue();
 
             MetricDescriptor dsDescriptor = descriptor
-                .copy()
-                .withPrefix(prefix)
-                .withDiscriminator("name", name);
+                    .copy()
+                    .withPrefix(prefix)
+                    .withDiscriminator(GENERAL_DISCRIMINATOR_NAME, name);
             context.collect(dsDescriptor, localStats);
         }
     }

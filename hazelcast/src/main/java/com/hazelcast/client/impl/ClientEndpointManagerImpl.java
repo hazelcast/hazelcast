@@ -37,6 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.client.impl.ClientEngineImpl.SERVICE_NAME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_PREFIX_ENDPOINT;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
@@ -61,7 +62,7 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager, Dynamic
         this.logger = nodeEngine.getLogger(ClientEndpointManager.class);
         this.eventService = nodeEngine.getEventService();
         MetricsRegistry metricsRegistry = ((NodeEngineImpl) nodeEngine).getMetricsRegistry();
-        metricsRegistry.registerStaticMetrics(this, "client.endpoint");
+        metricsRegistry.registerStaticMetrics(this, CLIENT_PREFIX_ENDPOINT);
         metricsRegistry.registerDynamicMetricsProvider(this);
     }
 
