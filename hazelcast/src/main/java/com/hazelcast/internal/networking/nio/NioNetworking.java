@@ -147,9 +147,17 @@ public final class NioNetworking implements Networking, DynamicMetricsProvider {
         this.metricsRegistry = ctx.metricsRegistry;
         this.loggingService = ctx.loggingService;
         this.inputThreadCount = ctx.inputThreadCount;
-        this.activeInputThreads.set(inputThreadCount);
+        if (IOBalancer.adaptiveIOThreadSizing) {
+            this.activeInputThreads.set(4);
+        } else {
+            this.activeInputThreads.set(inputThreadCount);
+        }
         this.outputThreadCount = ctx.outputThreadCount;
-        this.activeOutputThreads.set(outputThreadCount);
+        if (IOBalancer.adaptiveIOThreadSizing) {
+            this.activeOutputThreads.set(4);
+        } else {
+            this.activeOutputThreads.set(outputThreadCount);
+        }
         this.logger = loggingService.getLogger(NioNetworking.class);
         this.errorHandler = ctx.errorHandler;
         this.balancerIntervalSeconds = ctx.balancerIntervalSeconds;

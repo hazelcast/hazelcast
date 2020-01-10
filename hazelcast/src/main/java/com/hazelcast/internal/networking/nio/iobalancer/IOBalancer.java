@@ -93,7 +93,7 @@ public class IOBalancer {
     // multiple threads can update this field.
     @Probe(name = NETWORKING_METRIC_NIO_IO_BALANCER_MIGRATION_COMPLETED_COUNT)
     private final MwCounter migrationCompletedCount = newMwCounter();
-    private final boolean adaptiveIOThreadSizing = Boolean.parseBoolean(System.getProperty("adaptiveIOThreadSizing", "false"));
+    public static final boolean adaptiveIOThreadSizing = Boolean.parseBoolean(System.getProperty("adaptiveIOThreadSizing", "false"));
     private final float lowWaterMarkLoad = Float.parseFloat(System.getProperty("ioCpusLowLoadPercent", "40"));
     private final float highWaterMarkLoad = Float.parseFloat(System.getProperty("ioCpusHighLoadPercent", "60"));
 
@@ -163,52 +163,63 @@ public class IOBalancer {
     }
 
     void rebalance() {
-        rescale(inputThreads, activeInputThreads);
-        rescale(outputTreads, activeOutputThreads);
+        if (scheduleMigrationIfNeeded(inLoadTracker) || scheduleMigrationIfNeeded(outLoadTracker)) {
+            return;
+        }
 
-        scheduleMigrationIfNeeded(inLoadTracker);
-        scheduleMigrationIfNeeded(outLoadTracker);
+        rescale("input", inputThreads, activeInputThreads);
+        rescale("output", outputTreads, activeOutputThreads);
     }
 
-    private void rescale(NioThread[] threads, AtomicInteger activeThreads) {
+    private boolean rescale(String id, NioThread[] threads, AtomicInteger activeThreads) {
         if (!adaptiveIOThreadSizing) {
-            return;
+            return false;
         }
 
         float load = load(threads, activeThreads);
         if (load < lowWaterMarkLoad) {
+            System.out.println("IOBalancer " + id + " load:" + load + " scaling down disabled");
+
+//            if (activeThreads.get() >= 1) {
+//                activeThreads.decrementAndGet();
+//            }
+            return false;
+        } else if (load > highWaterMarkLoad) {
             if (activeThreads.get() < threads.length) {
                 activeThreads.incrementAndGet();
+                System.out.println("IOBalancer " + id + " load:" + load + " scaling up to " + activeThreads.get());
+                return true;
+            } else {
+                System.out.println("IOBalancer " + id + " load:" + load + " can't scale up; maximum number of " + id + " threads reached.");
+                return false;
             }
-        } else if (load > highWaterMarkLoad) {
-            if (activeThreads.get() >= 1) {
-                activeThreads.decrementAndGet();
-            }
+        } else {
+            return false;
         }
     }
 
     private float load(NioThread[] threads, AtomicInteger activeThreads) {
         List<Integer> cpus = new ArrayList<>(activeThreads.get());
         for (int k = 0; k < activeThreads.get(); k++) {
-            NioThread t = threads[k];
-            cpus.add(t.getCpu());
+            cpus.add(threads[k].getCpu());
         }
 
         Map<Integer, Float> load = ThreadAffinity.cpuLoad(cpus);
-        float loadSum = 0;
+        float totalLoad = 0;
         for (int k = 0; k < cpus.size(); k++) {
             Integer cpu = cpus.get(k);
             System.out.println("      cpu:" + cpu + " " + threads[k].getName() + " load:" + load.get(cpu));
-            loadSum += load.get(cpu);
+            totalLoad += load.get(cpu);
         }
-        return loadSum / load.size();
+        return totalLoad / cpus.size();
     }
 
-    private void scheduleMigrationIfNeeded(LoadTracker loadTracker) {
+    private boolean scheduleMigrationIfNeeded(LoadTracker loadTracker) {
         LoadImbalance loadImbalance = loadTracker.updateImbalance();
         if (strategy.imbalanceDetected(loadImbalance)) {
             imbalanceDetectedCount.inc();
             tryMigrate(loadImbalance);
+            return true;
         } else {
             if (logger.isFinestEnabled()) {
                 long min = loadImbalance.minimumLoad;
@@ -220,6 +231,7 @@ public class IOBalancer {
                     logger.finest("No imbalance has been detected. Max. load: " + max + " Min load: " + min + ".");
                 }
             }
+            return false;
         }
     }
 

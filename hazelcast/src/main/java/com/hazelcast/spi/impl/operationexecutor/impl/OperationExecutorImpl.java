@@ -110,7 +110,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
     // all operations for specific partitions will be executed on these threads, e.g. map.put(key, value)
     private final PartitionOperationThread[] partitionThreads;
     private final OperationRunner[] partitionOperationRunners;
-    private volatile int[] threadIdxForPartition;
+   // private volatile int[] threadIdxForPartition;
 
     private final OperationQueue genericQueue
             = new OperationQueueImpl(new LinkedBlockingQueue<Object>(), new LinkedBlockingQueue<Object>());
@@ -142,7 +142,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
 
         this.thisAddress = thisAddress;
         this.logger = loggerService.getLogger(OperationExecutorImpl.class);
-        this.threadIdxForPartition = new int[]
+      //  this.threadIdxForPartition = new int[]
         this.adHocOperationRunner = runnerFactory.createAdHocRunner();
         this.partitionOperationRunners = initPartitionOperationRunners(properties, runnerFactory);
         this.partitionThreads = initPartitionThreads(properties, hzName, nodeExtension, configClassLoader);
