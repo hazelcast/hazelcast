@@ -145,7 +145,7 @@ public class AbstractWanCustomPublisherMapTest extends HazelcastTestSupport {
     public void mapPutTransientTest() {
         initInstancesAndMap("wan-replication-test-put-transient");
         for (int i = 0; i < 10; i++) {
-            map.putTransient(i, i, 1, TimeUnit.SECONDS);
+            map.putTransient(i, i, 30, TimeUnit.SECONDS);
         }
 
         assertQueueContents(10, map);
