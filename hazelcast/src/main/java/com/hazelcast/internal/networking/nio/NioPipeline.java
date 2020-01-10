@@ -44,7 +44,7 @@ public abstract class NioPipeline implements MigratablePipeline, Runnable {
     protected final int loadType = Integer.getInteger("hazelcast.io.load", LOAD_BALANCING_BYTE);
 
     // the number of time the NioPipeline.process() method has been called.
-    @Probe
+    @Probe(name = "processCount")
     protected final SwCounter processCount = newSwCounter();
     protected final ILogger logger;
     protected final NioChannel channel;
@@ -60,12 +60,12 @@ public abstract class NioPipeline implements MigratablePipeline, Runnable {
     private final int initialOps;
     private final IOBalancer ioBalancer;
     private final AtomicReference<TaskNode> delayedTaskStack = new AtomicReference<TaskNode>();
-    @Probe
+    @Probe(name = "ownerId")
     private volatile int ownerId;
     // counts the number of migrations that have happened so far
-    @Probe
+    @Probe(name = "startedMigrations")
     private final SwCounter startedMigrations = newSwCounter();
-    @Probe
+    @Probe(name = "completedMigrations")
     private final SwCounter completedMigrations = newSwCounter();
     private volatile NioThread newOwner;
 
@@ -89,13 +89,13 @@ public abstract class NioPipeline implements MigratablePipeline, Runnable {
         return channel;
     }
 
-    @Probe(level = DEBUG)
+    @Probe(name = "opsInterested", level = DEBUG)
     private long opsInterested() {
         SelectionKey selectionKey = this.selectionKey;
         return selectionKey == null ? -1 : selectionKey.interestOps();
     }
 
-    @Probe(level = DEBUG)
+    @Probe(name = "opsReady", level = DEBUG)
     private long opsReady() {
         SelectionKey selectionKey = this.selectionKey;
         return selectionKey == null ? -1 : selectionKey.readyOps();

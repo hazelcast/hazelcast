@@ -28,40 +28,40 @@ import com.hazelcast.query.LocalIndexStats;
 @SuppressWarnings("checkstyle:methodcount")
 public class LocalIndexStatsImpl implements LocalIndexStats, JsonSerializable {
 
-    @Probe
+    @Probe(name = "creationTime")
     private volatile long creationTime;
 
-    @Probe
+    @Probe(name = "queryCount")
     private volatile long queryCount;
 
-    @Probe
+    @Probe(name = "hitCount")
     private volatile long hitCount;
 
-    @Probe
+    @Probe(name = "averageHitLatency")
     private volatile long averageHitLatency;
 
-    @Probe
+    @Probe(name = "averageHitSelectivity")
     private volatile double averageHitSelectivity;
 
-    @Probe
+    @Probe(name = "insertCount")
     private volatile long insertCount;
 
-    @Probe
+    @Probe(name = "totalInsertLatency")
     private volatile long totalInsertLatency;
 
-    @Probe
+    @Probe(name = "updateCount")
     private volatile long updateCount;
 
-    @Probe
+    @Probe(name = "totalUpdateLatency")
     private volatile long totalUpdateLatency;
 
-    @Probe
+    @Probe(name = "removeCount")
     private volatile long removeCount;
 
-    @Probe
+    @Probe(name = "totalRemoveLatency")
     private volatile long totalRemoveLatency;
 
-    @Probe
+    @Probe(name = "memoryCost")
     private volatile long memoryCost;
 
     @Override

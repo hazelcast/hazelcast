@@ -41,6 +41,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_DISCRIMINATOR_THREAD;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_PREFIX_ACCEPTOR;
+import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT_WITH_FIX;
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
@@ -68,12 +69,12 @@ public class TcpIpAcceptor implements DynamicMetricsProvider {
     private final TcpIpNetworkingService networkingService;
     private final ILogger logger;
     private final IOService ioService;
-    @Probe
+    @Probe(name = "eventCount")
     private final SwCounter eventCount = newSwCounter();
-    @Probe
+    @Probe(name = "exceptionCount")
     private final SwCounter exceptionCount = newSwCounter();
     // count number of times the selector was recreated (if selectWorkaround is enabled)
-    @Probe
+    @Probe(name = "selectorRecreateCount")
     private final SwCounter selectorRecreateCount = newSwCounter();
     private final AcceptorIOThread acceptorThread;
     // last time select returned
@@ -102,7 +103,7 @@ public class TcpIpAcceptor implements DynamicMetricsProvider {
      *
      * @return the idle time in ms.
      */
-    @Probe
+    @Probe(name = "idleTimeMs", unit = MS)
     private long idleTimeMs() {
         return max(currentTimeMillis() - lastSelectTimeMs, 0);
     }

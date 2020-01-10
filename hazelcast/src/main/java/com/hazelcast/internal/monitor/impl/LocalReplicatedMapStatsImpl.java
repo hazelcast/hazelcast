@@ -18,14 +18,16 @@ package com.hazelcast.internal.monitor.impl;
 
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.json.internal.JsonSerializable;
 import com.hazelcast.query.LocalIndexStats;
 import com.hazelcast.replicatedmap.LocalReplicatedMapStats;
-import com.hazelcast.internal.util.Clock;
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
+import static com.hazelcast.internal.metrics.ProbeUnit.BYTES;
+import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.util.ConcurrencyUtil.setMax;
 import static com.hazelcast.internal.util.JsonUtil.getLong;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
@@ -69,40 +71,40 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats, Jso
             newUpdater(LocalReplicatedMapStatsImpl.class, "ownedEntryMemoryCost");
 
     // these fields are only accessed through the updaters
-    @Probe
+    @Probe(name = "lastAccessTime", unit = MS)
     private volatile long lastAccessTime;
-    @Probe
+    @Probe(name = "lastUpdateTime", unit = MS)
     private volatile long lastUpdateTime;
-    @Probe
+    @Probe(name = "hits")
     private volatile long hits;
-    @Probe
+    @Probe(name = "numberOfOtherOperations")
     private volatile long numberOfOtherOperations;
-    @Probe
+    @Probe(name = "numberOfEvents")
     private volatile long numberOfEvents;
-    @Probe
+    @Probe(name = "getCount")
     private volatile long getCount;
-    @Probe
+    @Probe(name = "putCount")
     private volatile long putCount;
-    @Probe
+    @Probe(name = "removeCount")
     private volatile long removeCount;
-    @Probe
+    @Probe(name = "totalGetLatencies", unit = MS)
     private volatile long totalGetLatencies;
-    @Probe
+    @Probe(name = "totalPutLatencies", unit = MS)
     private volatile long totalPutLatencies;
-    @Probe
+    @Probe(name = "totalRemoveLatencies", unit = MS)
     private volatile long totalRemoveLatencies;
-    @Probe
+    @Probe(name = "maxGetLatency", unit = MS)
     private volatile long maxGetLatency;
-    @Probe
+    @Probe(name = "maxPutLatency", unit = MS)
     private volatile long maxPutLatency;
-    @Probe
+    @Probe(name = "maxRemoveLatency", unit = MS)
     private volatile long maxRemoveLatency;
 
-    @Probe
+    @Probe(name = "creationTime", unit = MS)
     private volatile long creationTime;
-    @Probe
+    @Probe(name = "ownedEntryCount")
     private volatile long ownedEntryCount;
-    @Probe
+    @Probe(name = "ownedEntryMemoryCost", unit = BYTES)
     private volatile long ownedEntryMemoryCost;
 
     public LocalReplicatedMapStatsImpl() {
@@ -204,7 +206,7 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats, Jso
     public void setDirtyEntryCount(long dirtyEntryCount) {
     }
 
-    @Probe
+    @Probe(name = "total")
     @Override
     public long total() {
         return putCount + getCount + removeCount + numberOfOtherOperations;

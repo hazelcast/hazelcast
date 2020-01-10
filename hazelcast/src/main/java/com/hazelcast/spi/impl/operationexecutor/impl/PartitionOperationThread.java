@@ -51,12 +51,12 @@ public final class PartitionOperationThread extends OperationThread {
         return partitionOperationRunners[partitionId];
     }
 
-    @Probe
+    @Probe(name = "priorityPendingCount")
     int priorityPendingCount() {
         return queue.prioritySize();
     }
 
-    @Probe
+    @Probe(name = "normalPendingCount")
     int normalPendingCount() {
         return queue.normalSize();
     }

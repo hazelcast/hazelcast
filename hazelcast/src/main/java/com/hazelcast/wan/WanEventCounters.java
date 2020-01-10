@@ -91,13 +91,13 @@ public class WanEventCounters {
      * Counters for WAN events for a single map or cache.
      */
     public static final class DistributedObjectWanEventCounters {
-        @Probe
+        @Probe(name = "syncCount")
         private final AtomicLong syncCount = new AtomicLong();
-        @Probe
+        @Probe(name = "updateCount")
         private final AtomicLong updateCount = new AtomicLong();
-        @Probe
+        @Probe(name = "removeCount")
         private final AtomicLong removeCount = new AtomicLong();
-        @Probe
+        @Probe(name = "droppedCount")
         private final AtomicLong droppedCount = new AtomicLong();
 
         private DistributedObjectWanEventCounters() {

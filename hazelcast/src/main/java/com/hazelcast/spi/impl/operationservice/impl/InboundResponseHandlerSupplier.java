@@ -16,21 +16,21 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.StaticMetricsProvider;
+import com.hazelcast.internal.nio.Packet;
+import com.hazelcast.internal.util.MutableInteger;
+import com.hazelcast.internal.util.concurrent.BackoffIdleStrategy;
+import com.hazelcast.internal.util.concurrent.BusySpinIdleStrategy;
+import com.hazelcast.internal.util.concurrent.IdleStrategy;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
-import com.hazelcast.internal.util.MutableInteger;
-import com.hazelcast.internal.util.concurrent.BackoffIdleStrategy;
-import com.hazelcast.internal.util.concurrent.BusySpinIdleStrategy;
-import com.hazelcast.internal.util.concurrent.IdleStrategy;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.function.Consumer;
@@ -39,11 +39,11 @@ import java.util.function.Supplier;
 import static com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_PREFIX;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
-import static com.hazelcast.spi.properties.ClusterProperty.RESPONSE_THREAD_COUNT;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.HashUtil.hashToIndex;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
 import static com.hazelcast.internal.util.concurrent.BackoffIdleStrategy.createBackoffIdleStrategy;
+import static com.hazelcast.spi.properties.ClusterProperty.RESPONSE_THREAD_COUNT;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
@@ -134,7 +134,7 @@ public class InboundResponseHandlerSupplier implements StaticMetricsProvider, Su
         return inboundResponseHandlers[0];
     }
 
-    @Probe(level = MANDATORY)
+    @Probe(name = "responseQueueSize", level = MANDATORY)
     public int responseQueueSize() {
         int result = 0;
         for (ResponseThread responseThread : responseThreads) {

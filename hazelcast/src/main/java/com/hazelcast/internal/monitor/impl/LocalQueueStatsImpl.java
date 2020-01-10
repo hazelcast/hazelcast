@@ -16,9 +16,9 @@
 
 package com.hazelcast.internal.monitor.impl;
 
-import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.collection.LocalQueueStats;
+import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.json.internal.JsonSerializable;
 
@@ -43,31 +43,31 @@ public class LocalQueueStatsImpl implements LocalQueueStats, JsonSerializable {
     private static final AtomicLongFieldUpdater<LocalQueueStatsImpl> NUMBER_OF_EVENTS =
             newUpdater(LocalQueueStatsImpl.class, "numberOfEvents");
 
-    @Probe
+    @Probe(name = "ownedItemCount")
     private int ownedItemCount;
-    @Probe
+    @Probe(name = "backupItemCount")
     private int backupItemCount;
-    @Probe
+    @Probe(name = "minAge")
     private long minAge;
-    @Probe
+    @Probe(name = "maxAge")
     private long maxAge;
-    @Probe
+    @Probe(name = "averageAge")
     private long averageAge;
-    @Probe
+    @Probe(name = "creationTime")
     private long creationTime;
 
     // These fields are only accessed through the updater
-    @Probe
+    @Probe(name = "numberOfOffers")
     private volatile long numberOfOffers;
-    @Probe
+    @Probe(name = "numberOfRejectedOffers")
     private volatile long numberOfRejectedOffers;
-    @Probe
+    @Probe(name = "numberOfPolls")
     private volatile long numberOfPolls;
-    @Probe
+    @Probe(name = "numberOfEmptyPolls")
     private volatile long numberOfEmptyPolls;
-    @Probe
+    @Probe(name = "numberOfOtherOperations")
     private volatile long numberOfOtherOperations;
-    @Probe
+    @Probe(name = "numberOfEvents")
     private volatile long numberOfEvents;
 
     public LocalQueueStatsImpl() {
@@ -124,7 +124,7 @@ public class LocalQueueStatsImpl implements LocalQueueStats, JsonSerializable {
         return creationTime;
     }
 
-    @Probe
+    @Probe(name = "total")
     public long total() {
         return numberOfOffers + numberOfPolls + numberOfOtherOperations;
     }
@@ -178,7 +178,7 @@ public class LocalQueueStatsImpl implements LocalQueueStats, JsonSerializable {
         NUMBER_OF_EVENTS.incrementAndGet(this);
     }
 
-    @Probe
+    @Probe(name = "eventOperationCount")
     @Override
     public long getEventOperationCount() {
         return numberOfEvents;

@@ -194,17 +194,17 @@ public class DynamicMetricsCollectionTest extends HazelcastTestSupport {
     }
 
     private static class SourceObject {
-        @Probe
+        @Probe(name = "longField")
         private long longField;
-        @Probe
+        @Probe(name = "doubleField")
         private double doubleField;
 
-        @Probe
+        @Probe(name = "longMethod")
         private long longMethod() {
             return longField + 1;
         }
 
-        @Probe
+        @Probe(name = "doubleMethod")
         private double doubleMethod() {
             return doubleField + 1.1D;
         }

@@ -123,13 +123,13 @@ public final class NioNetworking implements Networking, DynamicMetricsProvider {
     // Currently this is a coarse grained aggregation of the bytes/send received.
     // In the future you probably want to split this up in member and client and potentially
     // wan specific.
-    @Probe
+    @Probe(name = "bytesSent")
     private volatile long bytesSend;
-    @Probe
+    @Probe(name = "bytesReceived")
     private volatile long bytesReceived;
-    @Probe
+    @Probe(name = "packetsSent")
     private volatile long packetsSend;
-    @Probe
+    @Probe(name = "packetsReceived")
     private volatile long packetsReceived;
 
     public NioNetworking(Context ctx) {

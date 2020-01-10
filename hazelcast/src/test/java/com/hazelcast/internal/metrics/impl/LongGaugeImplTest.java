@@ -56,9 +56,9 @@ public class LongGaugeImplTest extends HazelcastTestSupport {
     }
 
     class SomeObject implements DynamicMetricsProvider {
-        @Probe
+        @Probe(name = "longField")
         long longField = 10;
-        @Probe
+        @Probe(name = "doubleField")
         double doubleField = 10.8;
 
         @Override

@@ -17,8 +17,8 @@
 package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.partition.MigrationStateImpl;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.partition.MigrationState;
 
 import java.util.Date;
@@ -31,34 +31,34 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class MigrationStats {
 
-    @Probe
+    @Probe(name = "lastRepartitionTime")
     private final AtomicLong lastRepartitionTime = new AtomicLong();
 
-    @Probe
+    @Probe(name = "plannedMigrations")
     private volatile int plannedMigrations;
 
-    @Probe
+    @Probe(name = "completedMigrations")
     private final AtomicInteger completedMigrations = new AtomicInteger();
 
-    @Probe
+    @Probe(name = "totalCompletedMigrations")
     private final AtomicInteger totalCompletedMigrations = new AtomicInteger();
 
-    @Probe
+    @Probe(name = "elapsedMigrationOperationTime")
     private final AtomicLong elapsedMigrationOperationTime = new AtomicLong();
 
-    @Probe
+    @Probe(name = "elapsedDestinationCommitTime")
     private final AtomicLong elapsedDestinationCommitTime = new AtomicLong();
 
-    @Probe
+    @Probe(name = "elapsedMigrationTime")
     private final AtomicLong elapsedMigrationTime = new AtomicLong();
 
-    @Probe
+    @Probe(name = "totalElapsedMigrationOperationTime")
     private final AtomicLong totalElapsedMigrationOperationTime = new AtomicLong();
 
-    @Probe
+    @Probe(name = "totalElapsedDestinationCommitTime")
     private final AtomicLong totalElapsedDestinationCommitTime = new AtomicLong();
 
-    @Probe
+    @Probe(name = "totalElapsedMigrationTime")
     private final AtomicLong totalElapsedMigrationTime = new AtomicLong();
 
     /**

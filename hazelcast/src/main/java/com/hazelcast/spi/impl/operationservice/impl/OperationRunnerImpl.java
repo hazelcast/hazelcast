@@ -35,12 +35,12 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.PartitionReplica;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.impl.SerializationServiceV1;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.spi.exception.CallerNotMemberException;
 import com.hazelcast.spi.exception.PartitionMigratingException;
@@ -77,9 +77,9 @@ import static com.hazelcast.internal.metrics.MetricTarget.MANAGEMENT_CENTER;
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
+import static com.hazelcast.spi.impl.operationservice.CallStatus.OFFLOAD_ORDINAL;
 import static com.hazelcast.spi.impl.operationservice.CallStatus.RESPONSE_ORDINAL;
 import static com.hazelcast.spi.impl.operationservice.CallStatus.VOID_ORDINAL;
-import static com.hazelcast.spi.impl.operationservice.CallStatus.OFFLOAD_ORDINAL;
 import static com.hazelcast.spi.impl.operationservice.CallStatus.WAIT_ORDINAL;
 import static com.hazelcast.spi.impl.operationservice.OperationAccessor.setCallerAddress;
 import static com.hazelcast.spi.impl.operationservice.OperationAccessor.setConnection;
@@ -106,7 +106,7 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
     private final Node node;
     private final NodeEngineImpl nodeEngine;
 
-    @Probe(level = DEBUG)
+    @Probe(name = "executedOperationsCount", level = DEBUG)
     private final Counter executedOperationsCounter;
     private final Address thisAddress;
     private final boolean staleReadOnMigrationEnabled;

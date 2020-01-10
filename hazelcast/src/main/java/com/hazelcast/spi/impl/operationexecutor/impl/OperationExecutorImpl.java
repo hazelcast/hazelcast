@@ -292,12 +292,12 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
         return size;
     }
 
-    @Probe
+    @Probe(name = "genericQueueSize")
     private int getGenericQueueSize() {
         return genericQueue.normalSize();
     }
 
-    @Probe
+    @Probe(name = "genericPriorityQueueSize")
     private int getGenericPriorityQueueSize() {
         return genericQueue.prioritySize();
     }
@@ -318,13 +318,13 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
     }
 
     @Override
-    @Probe
+    @Probe(name = "partitionThreadCount")
     public int getPartitionThreadCount() {
         return partitionThreads.length;
     }
 
     @Override
-    @Probe
+    @Probe(name = "genericThreadCount")
     public int getGenericThreadCount() {
         return genericThreads.length;
     }

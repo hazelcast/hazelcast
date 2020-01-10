@@ -79,11 +79,11 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
     final ConcurrentMap<UUID, TxBackupLog> txBackupLogs = new ConcurrentHashMap<>();
 
     // Due to mocking; the probes can't be made final.
-    @Probe(level = ProbeLevel.MANDATORY)
+    @Probe(name = "startCount", level = ProbeLevel.MANDATORY)
     Counter startCount = MwCounter.newMwCounter();
-    @Probe(level = ProbeLevel.MANDATORY)
+    @Probe(name = "rollbackCount", level = ProbeLevel.MANDATORY)
     Counter rollbackCount = MwCounter.newMwCounter();
-    @Probe(level = ProbeLevel.MANDATORY)
+    @Probe(name = "commitCount", level = ProbeLevel.MANDATORY)
     Counter commitCount = MwCounter.newMwCounter();
 
     private final ExceptionHandler finalizeExceptionHandler;

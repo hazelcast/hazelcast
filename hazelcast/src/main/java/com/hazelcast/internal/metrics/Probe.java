@@ -74,7 +74,7 @@ public @interface Probe {
      *
      * @return the name of the Probe.
      */
-    String name() default "";
+    String name();
 
     /**
      * Returns the ProbeLevel.

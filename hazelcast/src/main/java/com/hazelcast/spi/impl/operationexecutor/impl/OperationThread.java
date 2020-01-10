@@ -59,19 +59,19 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
 
     // All these counters are updated by this OperationThread (so a single writer)
     // and are read by the MetricsRegistry.
-    @Probe
+    @Probe(name = "completedTotalCount")
     private final SwCounter completedTotalCount = newSwCounter();
-    @Probe
+    @Probe(name = "completedPacketCount")
     private final SwCounter completedPacketCount = newSwCounter();
-    @Probe
+    @Probe(name = "completedOperationCount")
     private final SwCounter completedOperationCount = newSwCounter();
-    @Probe
+    @Probe(name = "completedPartitionSpecificRunnableCount")
     private final SwCounter completedPartitionSpecificRunnableCount = newSwCounter();
-    @Probe
+    @Probe(name = "completedRunnableCount")
     private final SwCounter completedRunnableCount = newSwCounter();
-    @Probe
+    @Probe(name = "errorCount")
     private final SwCounter errorCount = newSwCounter();
-    @Probe
+    @Probe(name = "completedOperationBatchCount")
     private final SwCounter completedOperationBatchCount = newSwCounter();
 
     private final boolean priority;

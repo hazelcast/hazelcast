@@ -16,21 +16,21 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.core.LocalMemberResetException;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterClock;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
-import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
@@ -99,8 +99,8 @@ public final class OperationServiceImpl implements StaticMetricsProvider, LiveOp
 
     // contains the current executing asyncOperations. This information is needed for the operation-heartbeats.
     // operations are added/removed using the {@link Offload} functionality.
-    @Probe
-    final Set<Operation> asyncOperations = newSetFromMap(new ConcurrentHashMap<Operation, Boolean>());
+    @Probe(name = "asyncOperations")
+    final Set<Operation> asyncOperations = newSetFromMap(new ConcurrentHashMap<>());
 
     final InvocationRegistry invocationRegistry;
     final OperationExecutor operationExecutor;

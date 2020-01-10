@@ -45,35 +45,35 @@ import static com.hazelcast.internal.util.JsonUtil.getLong;
  */
 public class LocalCacheStatsImpl implements LocalCacheStats, JsonSerializable {
 
-    @Probe(unit = MS)
+    @Probe(name = "creationTime", unit = MS)
     private long creationTime;
-    @Probe(unit = MS)
+    @Probe(name = "lastAccessTime", unit = MS)
     private long lastAccessTime;
-    @Probe(unit = MS)
+    @Probe(name = "lastUpdateTime", unit = MS)
     private long lastUpdateTime;
-    @Probe
+    @Probe(name = "ownedEntryCount")
     private long ownedEntryCount;
-    @Probe
+    @Probe(name = "cacheHits")
     private long cacheHits;
-    @Probe(unit = PERCENT)
+    @Probe(name = "cacheHitPercentage", unit = PERCENT)
     private float cacheHitPercentage;
-    @Probe
+    @Probe(name = "cacheMisses")
     private long cacheMisses;
-    @Probe(unit = PERCENT)
+    @Probe(name = "cacheMissPercentage", unit = PERCENT)
     private float cacheMissPercentage;
-    @Probe
+    @Probe(name = "cacheGets")
     private long cacheGets;
-    @Probe
+    @Probe(name = "cachePuts")
     private long cachePuts;
-    @Probe
+    @Probe(name = "cacheRemovals")
     private long cacheRemovals;
-    @Probe
+    @Probe(name = "cacheEvictions")
     private long cacheEvictions;
-    @Probe(unit = MS)
+    @Probe(name = "averageGetTime", unit = MS)
     private float averageGetTime;
-    @Probe(unit = MS)
+    @Probe(name = "averagePutTime", unit = MS)
     private float averagePutTime;
-    @Probe(unit = MS)
+    @Probe(name = "averageRemoveTime", unit = MS)
     private float averageRemoveTime;
 
     public LocalCacheStatsImpl() {

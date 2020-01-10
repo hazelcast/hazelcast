@@ -124,6 +124,7 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CPSUBSYST
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CPSUBSYSTEM_PREFIX_RAFT_GROUP;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CPSUBSYSTEM_PREFIX_RAFT_METADATA;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CPSUBSYSTEM_TAG_NAME;
+import static com.hazelcast.internal.metrics.ProbeUnit.COUNT;
 import static com.hazelcast.internal.util.Preconditions.checkFalse;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkState;
@@ -153,19 +154,19 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     private static final int AWAIT_DISCOVERY_STEP_MILLIS = 10;
 
     private final ReadWriteLock nodeLock = new ReentrantReadWriteLock();
-    @Probe
+    @Probe(name = "nodes", unit = COUNT)
     private final ConcurrentMap<CPGroupId, RaftNode> nodes = new ConcurrentHashMap<>();
     private final ConcurrentMap<CPGroupId, RaftNodeMetrics> nodeMetrics = new ConcurrentHashMap<>();
     private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
-    @Probe
+    @Probe(name = "destroyedGroupIds", unit = COUNT)
     private final Set<CPGroupId> destroyedGroupIds = newSetFromMap(new ConcurrentHashMap<>());
-    @Probe
+    @Probe(name = "terminatedRaftNodeGroupIds", unit = COUNT)
     private final Set<CPGroupId> terminatedRaftNodeGroupIds = newSetFromMap(new ConcurrentHashMap<>());
     private final CPSubsystemConfig config;
     private final RaftInvocationManager invocationManager;
     private final MetadataRaftGroupManager metadataGroupManager;
-    @Probe
+    @Probe(name = "missingMembers", unit = COUNT)
     private final ConcurrentMap<CPMemberInfo, Long> missingMembers = new ConcurrentHashMap<>();
     private final int metricsPeriod;
     private final boolean cpSubsystemEnabled;

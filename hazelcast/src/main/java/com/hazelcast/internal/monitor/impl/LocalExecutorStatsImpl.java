@@ -16,9 +16,9 @@
 
 package com.hazelcast.internal.monitor.impl;
 
-import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.executor.LocalExecutorStats;
+import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.json.internal.JsonSerializable;
 
@@ -43,17 +43,17 @@ public class LocalExecutorStatsImpl implements LocalExecutorStats, JsonSerializa
     private long creationTime;
 
     // These fields are only accessed through the updaters
-    @Probe
+    @Probe(name = "pending")
     private volatile long pending;
-    @Probe
+    @Probe(name = "started")
     private volatile long started;
-    @Probe
+    @Probe(name = "completed")
     private volatile long completed;
-    @Probe
+    @Probe(name = "cancelled")
     private volatile long cancelled;
-    @Probe
+    @Probe(name = "totalStartLatency")
     private volatile long totalStartLatency;
-    @Probe
+    @Probe(name = "totalExecutionTime")
     private volatile long totalExecutionTime;
 
     public LocalExecutorStatsImpl() {

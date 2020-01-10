@@ -18,22 +18,22 @@ package com.hazelcast.spi.impl.operationparker.impl;
 
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.partition.MigrationInfo;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.executor.SingleExecutorThreadFactory;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.exception.PartitionMigratingException;
+import com.hazelcast.spi.exception.TargetDisconnectedException;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationparker.OperationParker;
 import com.hazelcast.spi.impl.operationservice.BlockingOperation;
 import com.hazelcast.spi.impl.operationservice.LiveOperations;
 import com.hazelcast.spi.impl.operationservice.LiveOperationsTracker;
 import com.hazelcast.spi.impl.operationservice.Notifier;
 import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
-import com.hazelcast.spi.exception.PartitionMigratingException;
-import com.hazelcast.spi.exception.TargetDisconnectedException;
-import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationparker.OperationParker;
-import com.hazelcast.internal.util.ConstructorFunction;
-import com.hazelcast.internal.util.executor.SingleExecutorThreadFactory;
 
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -109,12 +109,12 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
         }
     }
 
-    @Probe
+    @Probe(name = "parkQueueCount")
     public int getParkQueueCount() {
         return waitSetMap.size();
     }
 
-    @Probe
+    @Probe(name = "totalParkedOperationCount")
     public int getTotalParkedOperationCount() {
         int count = 0;
         for (WaitSet waitSet : waitSetMap.values()) {

@@ -31,27 +31,27 @@ public class ConsistencyCheckResult {
     /**
      * Number of checked partitions.
      */
-    @Probe
+    @Probe(name = "lastCheckedPartitionCount")
     private final int lastCheckedPartitionCount;
     /**
      * Number of partitions found to be inconsistent.
      */
-    @Probe
+    @Probe(name = "lastDiffPartitionCount")
     private final int lastDiffPartitionCount;
     /**
      * Number of checked Merkle tree leaves.
      */
-    @Probe
+    @Probe(name = "lastCheckedLeafCount")
     private final int lastCheckedLeafCount;
     /**
      * Number of different Merkle tree leaves.
      */
-    @Probe
+    @Probe(name = "lastDiffLeafCount")
     private final int lastDiffLeafCount;
     /**
      * Number of entries to synchronize to get the clusters into sync.
      */
-    @Probe
+    @Probe(name = "lastEntriesToSync")
     private final int lastEntriesToSync;
 
     public ConsistencyCheckResult(UUID uuid) {

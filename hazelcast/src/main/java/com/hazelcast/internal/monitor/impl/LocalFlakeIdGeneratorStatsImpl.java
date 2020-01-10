@@ -16,14 +16,15 @@
 
 package com.hazelcast.internal.monitor.impl;
 
-import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.monitor.LocalFlakeIdGeneratorStats;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.json.internal.JsonSerializable;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
+import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.util.JsonUtil.getLong;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
@@ -35,11 +36,11 @@ public class LocalFlakeIdGeneratorStatsImpl implements LocalFlakeIdGeneratorStat
     private static final AtomicLongFieldUpdater<LocalFlakeIdGeneratorStatsImpl> ID_COUNT =
             newUpdater(LocalFlakeIdGeneratorStatsImpl.class, "idCount");
 
-    @Probe
+    @Probe(name = "creationTime", unit = MS)
     private volatile long creationTime;
-    @Probe
+    @Probe(name = "batchCount")
     private volatile long batchCount;
-    @Probe
+    @Probe(name = "idCount")
     private volatile long idCount;
 
     public LocalFlakeIdGeneratorStatsImpl() {

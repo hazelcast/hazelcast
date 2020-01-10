@@ -44,11 +44,11 @@ public class LocalWanPublisherStatsImpl implements LocalWanPublisherStats {
 
     private volatile boolean connected;
     private volatile WanPublisherState state;
-    @Probe
+    @Probe(name = "outboundQueueSize")
     private volatile int outboundQueueSize;
-    @Probe(unit = MS)
+    @Probe(name = "totalPublishLatency", unit = MS)
     private volatile long totalPublishLatency;
-    @Probe(unit = MS)
+    @Probe(name = "totalPublishedEventCount")
     private volatile long totalPublishedEventCount;
     private volatile Map<String, DistributedObjectWanEventCounters> sentMapEventCounter;
     private volatile Map<String, DistributedObjectWanEventCounters> sentCacheEventCounter;

@@ -72,9 +72,9 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
     /** Replica sync requests that have been sent to the target and awaiting response */
     private final Set<ReplicaFragmentSyncInfo> replicaSyncRequests;
     private final EntryTaskScheduler<ReplicaFragmentSyncInfo, Void> replicaSyncTimeoutScheduler;
-    @Probe
+    @Probe(name = "replicaSyncSemaphore")
     private final Semaphore replicaSyncSemaphore;
-    @Probe
+    @Probe(name = "replicaSyncRequestsCounter")
     private final MwCounter replicaSyncRequestsCounter = newMwCounter();
 
     private final long partitionMigrationTimeout;

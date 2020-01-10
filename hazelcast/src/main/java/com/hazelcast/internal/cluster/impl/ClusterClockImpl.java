@@ -18,8 +18,8 @@ package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.internal.cluster.ClusterClock;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.logging.ILogger;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static java.lang.Math.abs;
@@ -31,14 +31,14 @@ public class ClusterClockImpl implements ClusterClock {
 
     private volatile long clusterTimeDiff;
     private volatile long clusterStartTime = Long.MIN_VALUE;
-    @Probe(level = MANDATORY)
+    @Probe(name = "maxClusterTimeDiff", level = MANDATORY)
     private volatile long maxClusterTimeDiff;
 
     public ClusterClockImpl(ILogger logger) {
         this.logger = logger;
     }
 
-    @Probe
+    @Probe(name = "clusterTime")
     @Override
     public long getClusterTime() {
         return Clock.currentTimeMillis() + clusterTimeDiff;
@@ -67,12 +67,12 @@ public class ClusterClockImpl implements ClusterClock {
         this.clusterTimeDiff = diff;
     }
 
-    @Probe(level = MANDATORY)
+    @Probe(name = "clusterTimeDiff", level = MANDATORY)
     long getClusterTimeDiff() {
         return clusterTimeDiff;
     }
 
-    @Probe
+    @Probe(name = "clusterUpTime")
     @Override
     public long getClusterUpTime() {
         return Clock.currentTimeMillis() - clusterStartTime;
@@ -84,12 +84,12 @@ public class ClusterClockImpl implements ClusterClock {
         }
     }
 
-    @Probe
+    @Probe(name = "localClockTime")
     private long getLocalClockTime() {
         return Clock.currentTimeMillis();
     }
 
-    @Probe
+    @Probe(name = "clusterStartTime")
     public long getClusterStartTime() {
         return clusterStartTime;
     }

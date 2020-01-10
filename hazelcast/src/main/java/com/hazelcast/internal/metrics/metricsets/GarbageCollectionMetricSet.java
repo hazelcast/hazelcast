@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.metrics.metricsets;
 
-
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -29,6 +28,7 @@ import java.util.Set;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.GC_PREFIX;
 import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
+import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -78,17 +78,17 @@ public final class GarbageCollectionMetricSet {
 
     @SuppressFBWarnings(value = "URF_UNREAD_FIELD", justification = "used by instrumentation tools")
     static class GcStats implements Runnable {
-        @Probe(level = MANDATORY)
+        @Probe(name = "minorCount", level = MANDATORY)
         volatile long minorCount;
-        @Probe(level = MANDATORY)
+        @Probe(name = "minorTime", unit = MS, level = MANDATORY)
         volatile long minorTime;
-        @Probe(level = MANDATORY)
+        @Probe(name = "majorCount", level = MANDATORY)
         volatile long majorCount;
-        @Probe(level = MANDATORY)
+        @Probe(name = "majorTime", unit = MS, level = MANDATORY)
         volatile long majorTime;
-        @Probe(level = MANDATORY)
+        @Probe(name = "unknownCount", level = MANDATORY)
         volatile long unknownCount;
-        @Probe(level = MANDATORY)
+        @Probe(name = "unknownTime", unit = MS, level = MANDATORY)
         volatile long unknownTime;
 
         @Override

@@ -16,15 +16,16 @@
 
 package com.hazelcast.internal.monitor.impl;
 
-import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.json.internal.JsonSerializable;
 import com.hazelcast.topic.LocalTopicStats;
 import com.hazelcast.topic.impl.reliable.ReliableMessageRunner;
-import com.hazelcast.internal.util.Clock;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
+import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.util.JsonUtil.getLong;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
@@ -34,13 +35,13 @@ public class LocalTopicStatsImpl implements LocalTopicStats, JsonSerializable {
             newUpdater(LocalTopicStatsImpl.class, "totalPublishes");
     private static final AtomicLongFieldUpdater<LocalTopicStatsImpl> TOTAL_RECEIVED_MESSAGES =
             newUpdater(LocalTopicStatsImpl.class, "totalReceivedMessages");
-    @Probe
+    @Probe(name = "creationTime", unit = MS)
     private long creationTime;
 
     // These fields are only accessed through the updaters
-    @Probe
+    @Probe(name = "totalPublishes")
     private volatile long totalPublishes;
-    @Probe
+    @Probe(name = "totalReceivedMessages")
     private volatile long totalReceivedMessages;
 
     public LocalTopicStatsImpl() {

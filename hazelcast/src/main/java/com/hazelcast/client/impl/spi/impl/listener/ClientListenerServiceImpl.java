@@ -146,12 +146,12 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
         registry.registerStaticMetrics(this, CLIENT_PREFIX_LISTENERS);
     }
 
-    @Probe(level = MANDATORY)
+    @Probe(name = "eventQueueSize", level = MANDATORY)
     private int eventQueueSize() {
         return eventExecutor.getWorkQueueSize();
     }
 
-    @Probe(level = MANDATORY)
+    @Probe(name = "eventsProcessed", level = MANDATORY)
     private long eventsProcessed() {
         return eventExecutor.processedCount();
     }

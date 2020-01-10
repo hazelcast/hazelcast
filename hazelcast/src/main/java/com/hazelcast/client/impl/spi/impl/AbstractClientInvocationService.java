@@ -95,12 +95,12 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
         return client.getProperties().getPositiveMillisOrDefault(INVOCATION_TIMEOUT_SECONDS);
     }
 
-    @Probe(level = MANDATORY)
+    @Probe(name = "startedInvocations", level = MANDATORY)
     private long startedInvocations() {
         return callIdSequence.getLastCallId();
     }
 
-    @Probe(level = MANDATORY)
+    @Probe(name = "maxCurrentInvocations", level = MANDATORY)
     private long maxCurrentInvocations() {
         return callIdSequence.getMaxConcurrentInvocations();
     }

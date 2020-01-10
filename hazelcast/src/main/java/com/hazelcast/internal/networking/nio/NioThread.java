@@ -18,7 +18,6 @@ package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.internal.metrics.ExcludedMetricTargets;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.util.concurrent.IdleStrategy;
 import com.hazelcast.internal.util.counters.SwCounter;
@@ -36,7 +35,7 @@ import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static com.hazelcast.internal.metrics.MetricTarget.MANAGEMENT_CENTER;
-import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
+import static com.hazelcast.internal.metrics.ProbeUnit.BYTES;
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT_NOW;
 import static com.hazelcast.internal.networking.nio.SelectorOptimizer.newSelector;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
@@ -63,28 +62,28 @@ public class NioThread extends Thread implements OperationHostileThread {
     @SuppressWarnings("checkstyle:visibilitymodifier")
     // this field is set during construction and is meant for the probes so that the NioPipeline can
     // indicate which thread they are currently bound to.
-    @Probe(name = "ioThreadId", level = ProbeLevel.INFO)
+    @Probe(name = "ioThreadId")
     public int id;
 
-    @Probe(level = INFO)
+    @Probe(name = "bytesTransceived", unit = BYTES)
     volatile long bytesTransceived;
-    @Probe(level = INFO)
+    @Probe(name = "framesTransceived")
     volatile long framesTransceived;
-    @Probe(level = INFO)
+    @Probe(name = "priorityFramesTransceived")
     volatile long priorityFramesTransceived;
-    @Probe(level = INFO)
+    @Probe(name = "processCount")
     volatile long processCount;
 
     @Probe(name = "taskQueueSize")
     private final Queue<Runnable> taskQueue = new ConcurrentLinkedQueue<>();
-    @Probe
+    @Probe(name = "eventCount")
     private final SwCounter eventCount = newSwCounter();
-    @Probe
+    @Probe(name = "selectorIOExceptionCount")
     private final SwCounter selectorIOExceptionCount = newSwCounter();
-    @Probe
+    @Probe(name = "completedTaskCount")
     private final SwCounter completedTaskCount = newSwCounter();
     // count number of times the selector was rebuilt (if selectWorkaround is enabled)
-    @Probe
+    @Probe(name = "selectorRebuildCount")
     private final SwCounter selectorRebuildCount = newSwCounter();
 
     private final ILogger logger;
@@ -185,7 +184,7 @@ public class NioThread extends Thread implements OperationHostileThread {
      *
      * @return the idle time in ms.
      */
-    @Probe
+    @Probe(name = "idleTimeMs", unit = BYTES)
     private long idleTimeMs() {
         return max(currentTimeMillis() - lastSelectTimeMs, 0);
     }

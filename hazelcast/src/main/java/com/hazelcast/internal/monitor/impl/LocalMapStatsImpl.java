@@ -33,6 +33,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
+import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.util.ConcurrencyUtil.setMax;
 import static com.hazelcast.internal.util.JsonUtil.getInt;
 import static com.hazelcast.internal.util.JsonUtil.getLong;
@@ -89,23 +90,23 @@ public class LocalMapStatsImpl implements LocalMapStats, JsonSerializable {
             mutableIndexStats);
 
     // These fields are only accessed through the updaters
-    @Probe
+    @Probe(name = "lastAccessTime")
     private volatile long lastAccessTime;
-    @Probe
+    @Probe(name = "lastUpdateTime")
     private volatile long lastUpdateTime;
-    @Probe
+    @Probe(name = "hits")
     private volatile long hits;
-    @Probe
+    @Probe(name = "numberOfOtherOperations")
     private volatile long numberOfOtherOperations;
-    @Probe
+    @Probe(name = "numberOfEvents")
     private volatile long numberOfEvents;
-    @Probe
+    @Probe(name = "getCount")
     private volatile long getCount;
-    @Probe
+    @Probe(name = "putCount")
     private volatile long putCount;
-    @Probe
+    @Probe(name = "setCount")
     private volatile long setCount;
-    @Probe
+    @Probe(name = "removeCount")
     private volatile long removeCount;
     private volatile long totalGetLatenciesNanos;
     private volatile long totalPutLatenciesNanos;
@@ -115,36 +116,36 @@ public class LocalMapStatsImpl implements LocalMapStats, JsonSerializable {
     private volatile long maxPutLatency;
     private volatile long maxSetLatency;
     private volatile long maxRemoveLatency;
-    @Probe
+    @Probe(name = "creationTime")
     private volatile long creationTime;
-    @Probe
+    @Probe(name = "ownedEntryCount")
     private volatile long ownedEntryCount;
-    @Probe
+    @Probe(name = "backupEntryCount")
     private volatile long backupEntryCount;
-    @Probe
+    @Probe(name = "ownedEntryMemoryCost")
     private volatile long ownedEntryMemoryCost;
-    @Probe
+    @Probe(name = "backupEntryMemoryCost")
     private volatile long backupEntryMemoryCost;
     /**
      * Holds total heap cost of map & Near Cache & backups & Merkle trees.
      */
-    @Probe
+    @Probe(name = "heapCost")
     private volatile long heapCost;
     /**
      * Holds the total memory footprint of the Merkle trees
      */
-    @Probe
+    @Probe(name = "merkleTreesCost")
     private volatile long merkleTreesCost;
-    @Probe
+    @Probe(name = "lockedEntryCount")
     private volatile long lockedEntryCount;
-    @Probe
+    @Probe(name = "dirtyEntryCount")
     private volatile long dirtyEntryCount;
-    @Probe
+    @Probe(name = "backupCount")
     private volatile int backupCount;
     private volatile NearCacheStats nearCacheStats;
-    @Probe
+    @Probe(name = "queryCount")
     private volatile long queryCount;
-    @Probe
+    @Probe(name = "indexedQueryCount")
     private volatile long indexedQueryCount;
 
     public LocalMapStatsImpl() {
@@ -266,49 +267,49 @@ public class LocalMapStatsImpl implements LocalMapStats, JsonSerializable {
         return removeCount;
     }
 
-    @Probe
+    @Probe(name = "totalPutLatency", unit = MS)
     @Override
     public long getTotalPutLatency() {
         return convertNanosToMillis(totalPutLatenciesNanos);
     }
 
-    @Probe
+    @Probe(name = "totalSetLatency", unit = MS)
     @Override
     public long getTotalSetLatency() {
         return convertNanosToMillis(totalSetLatenciesNanos);
     }
 
-    @Probe
+    @Probe(name = "totalGetLatency", unit = MS)
     @Override
     public long getTotalGetLatency() {
         return convertNanosToMillis(totalGetLatenciesNanos);
     }
 
-    @Probe
+    @Probe(name = "totalRemoveLatency", unit = MS)
     @Override
     public long getTotalRemoveLatency() {
         return convertNanosToMillis(totalRemoveLatenciesNanos);
     }
 
-    @Probe
+    @Probe(name = "totalMaxPutLatency", unit = MS)
     @Override
     public long getMaxPutLatency() {
         return convertNanosToMillis(maxPutLatency);
     }
 
-    @Probe
+    @Probe(name = "totalMaxSetLatency", unit = MS)
     @Override
     public long getMaxSetLatency() {
         return convertNanosToMillis(maxSetLatency);
     }
 
-    @Probe
+    @Probe(name = "totalMaxGetLatency", unit = MS)
     @Override
     public long getMaxGetLatency() {
         return convertNanosToMillis(maxGetLatency);
     }
 
-    @Probe
+    @Probe(name = "totalMaxRemoveLatency", unit = MS)
     @Override
     public long getMaxRemoveLatency() {
         return convertNanosToMillis(maxRemoveLatency);

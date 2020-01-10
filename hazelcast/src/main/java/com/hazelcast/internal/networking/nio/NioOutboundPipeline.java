@@ -37,6 +37,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
+import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
 import static com.hazelcast.internal.networking.HandlerStatus.DIRTY;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -174,12 +175,12 @@ public final class NioOutboundPipeline
         return bytesPending;
     }
 
-    @Probe
+    @Probe(name = "idleTimeMs", unit = MS)
     private long idleTimeMs() {
         return max(currentTimeMillis() - lastWriteTime, 0);
     }
 
-    @Probe
+    @Probe(name = "scheduled")
     private long scheduled() {
         return scheduled.get().ordinal();
     }

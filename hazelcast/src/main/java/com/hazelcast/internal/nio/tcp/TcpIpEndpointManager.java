@@ -111,10 +111,10 @@ public class TcpIpEndpointManager
 
     private final AtomicInteger connectionIdGen = new AtomicInteger();
 
-    @Probe
+    @Probe(name = "openedCount")
     private final MwCounter openedCount = newMwCounter();
 
-    @Probe
+    @Probe(name = "closedCount")
     private final MwCounter closedCount = newMwCounter();
 
     @Probe(name = "acceptedSocketCount", level = MANDATORY)

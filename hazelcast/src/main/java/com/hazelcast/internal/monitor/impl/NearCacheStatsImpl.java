@@ -16,13 +16,15 @@
 
 package com.hazelcast.internal.monitor.impl;
 
-import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.json.internal.JsonSerializable;
 import com.hazelcast.nearcache.NearCacheStats;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
+import static com.hazelcast.internal.metrics.ProbeUnit.BYTES;
+import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.util.JsonUtil.getLong;
 import static com.hazelcast.internal.util.JsonUtil.getString;
 import static java.lang.String.format;
@@ -52,35 +54,35 @@ public class NearCacheStatsImpl implements NearCacheStats, JsonSerializable {
     private static final AtomicLongFieldUpdater<NearCacheStatsImpl> PERSISTENCE_COUNT =
             newUpdater(NearCacheStatsImpl.class, "persistenceCount");
 
-    @Probe
+    @Probe(name = "creationTime", unit = MS)
     private volatile long creationTime;
-    @Probe
+    @Probe(name = "ownedEntryCount")
     private volatile long ownedEntryCount;
-    @Probe
+    @Probe(name = "ownedEntryMemoryCost", unit = BYTES)
     private volatile long ownedEntryMemoryCost;
-    @Probe
+    @Probe(name = "hits")
     private volatile long hits;
-    @Probe
+    @Probe(name = "misses")
     private volatile long misses;
-    @Probe
+    @Probe(name = "evictions")
     private volatile long evictions;
-    @Probe
+    @Probe(name = "expirations")
     private volatile long expirations;
 
-    @Probe
+    @Probe(name = "invalidations")
     private volatile long invalidations;
-    @Probe
+    @Probe(name = "invalidationRequests")
     private volatile long invalidationRequests;
 
-    @Probe
+    @Probe(name = "persistenceCount")
     private volatile long persistenceCount;
-    @Probe
+    @Probe(name = "lastPersistenceTime", unit = MS)
     private volatile long lastPersistenceTime;
-    @Probe
+    @Probe(name = "lastPersistenceDuration", unit = MS)
     private volatile long lastPersistenceDuration;
-    @Probe
+    @Probe(name = "lastPersistenceWrittenBytes", unit = BYTES)
     private volatile long lastPersistenceWrittenBytes;
-    @Probe
+    @Probe(name = "lastPersistenceKeyCount")
     private volatile long lastPersistenceKeyCount;
     private volatile String lastPersistenceFailure = "";
 

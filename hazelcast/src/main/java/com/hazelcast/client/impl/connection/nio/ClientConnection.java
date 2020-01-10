@@ -54,7 +54,7 @@ import static com.hazelcast.internal.util.StringUtil.timeToStringFriendly;
  */
 public class ClientConnection implements Connection {
 
-    @Probe
+    @Probe(name = "connectionId")
     private final int connectionId;
     private final ILogger logger;
     private final Channel channel;
@@ -69,7 +69,7 @@ public class ClientConnection implements Connection {
     private final ConcurrentMap<Long, EventHandler> eventHandlerMap = new ConcurrentHashMap<>();
 
     private volatile Address remoteEndpoint;
-    @Probe(level = ProbeLevel.DEBUG)
+    @Probe(name = "closedTime", level = ProbeLevel.DEBUG)
     private final AtomicLong closedTime = new AtomicLong();
 
     private volatile Throwable closeCause;

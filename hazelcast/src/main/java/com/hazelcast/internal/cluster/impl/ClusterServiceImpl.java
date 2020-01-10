@@ -666,7 +666,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         return joined.get();
     }
 
-    @Probe
+    @Probe(name = "size")
     @Override
     public int getSize() {
         return membershipManager.getMemberMap().size();

@@ -26,12 +26,12 @@ import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.EndpointManager;
 import com.hazelcast.internal.nio.Packet;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.internal.util.executor.StripedExecutor;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
@@ -241,7 +241,7 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
         return eventExecutor.getWorkQueueSize();
     }
 
-    @Probe(level = MANDATORY)
+    @Probe(name = "eventsProcessed", level = MANDATORY)
     private long eventsProcessed() {
         return eventExecutor.processedCount();
     }

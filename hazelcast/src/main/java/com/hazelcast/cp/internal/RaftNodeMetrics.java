@@ -26,25 +26,25 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 @SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
 public class RaftNodeMetrics {
 
-    @Probe
+    @Probe(name = "term")
     public volatile int term;
 
-    @Probe
+    @Probe(name = "commitIndex")
     public volatile long commitIndex;
 
-    @Probe
+    @Probe(name = "lastApplied")
     public volatile long lastApplied;
 
-    @Probe
+    @Probe(name = "lastLogTerm")
     public volatile long lastLogTerm;
 
-    @Probe
+    @Probe(name = "snapshotIndex")
     public volatile long snapshotIndex;
 
-    @Probe
+    @Probe(name = "lastLogIndex")
     public volatile long lastLogIndex;
 
-    @Probe
+    @Probe(name = "availableLogCapacity")
     public volatile long availableLogCapacity;
 
     void update(int term, long commitIndex, long lastApplied, long lastLogTerm, long snapshotIndex,

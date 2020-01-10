@@ -184,45 +184,45 @@ public class MetricsTargetExclusionTest {
 
     private static class SomeObject {
 
-        @Probe
+        @Probe(name = "nonDebugLongField")
         private long nonDebugLongField;
-        @Probe(level = DEBUG)
+        @Probe(name = "debugLongField", level = DEBUG)
         private long debugLongField;
-        @Probe(level = DEBUG, excludedTargets = DIAGNOSTICS)
+        @Probe(name = "debugLongFieldNoDiag", level = DEBUG, excludedTargets = DIAGNOSTICS)
         private long debugLongFieldNoDiag;
-        @Probe
+        @Probe(name = "nonDebugDoubleField")
         private double nonDebugDoubleField;
-        @Probe(level = DEBUG)
+        @Probe(name = "debugDoubleField", level = DEBUG)
         private double debugDoubleField;
-        @Probe(level = DEBUG, excludedTargets = DIAGNOSTICS)
+        @Probe(name = "debugDoubleFieldNoDiag", level = DEBUG, excludedTargets = DIAGNOSTICS)
         private long debugDoubleFieldNoDiag;
 
-        @Probe
+        @Probe(name = "nonDebugLongMethod")
         private long nonDebugLongMethod() {
             return 0;
         }
 
-        @Probe(level = DEBUG)
+        @Probe(name = "debugLongMethod", level = DEBUG)
         private long debugLongMethod() {
             return 0;
         }
 
-        @Probe(level = DEBUG, excludedTargets = DIAGNOSTICS)
+        @Probe(name = "debugLongMethodNoDiag", level = DEBUG, excludedTargets = DIAGNOSTICS)
         private long debugLongMethodNoDiag() {
             return 0;
         }
 
-        @Probe
+        @Probe(name = "nonDebugDoubleMethod")
         private double nonDebugDoubleMethod() {
             return 0;
         }
 
-        @Probe(level = DEBUG)
+        @Probe(name = "debugDoubleMethod", level = DEBUG)
         private double debugDoubleMethod() {
             return 0;
         }
 
-        @Probe(level = DEBUG, excludedTargets = DIAGNOSTICS)
+        @Probe(name = "debugDoubleMethodNoDiag", level = DEBUG, excludedTargets = DIAGNOSTICS)
         private long debugDoubleMethodNoDiag() {
             return 0;
         }
