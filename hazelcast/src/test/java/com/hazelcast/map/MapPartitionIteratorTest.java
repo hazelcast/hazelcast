@@ -113,28 +113,28 @@ public class MapPartitionIteratorTest extends HazelcastTestSupport {
     @Test
     public void test_Next_Returns_Value_On_NonEmptyPartition() {
         HazelcastInstance instance = createHazelcastInstance();
-        MapProxyImpl<Object, Object> proxy = (MapProxyImpl<Object, Object>) instance.getMap(randomMapName());
+        MapProxyImpl<String, String> proxy = (MapProxyImpl<String, String>) instance.<String, String>getMap(randomMapName());
 
         String key = generateKeyForPartition(instance, 1);
         String value = randomString();
         proxy.put(key, value);
 
-        Iterator<Map.Entry<Object, Object>> iterator = proxy.iterator(10, 1, prefetchValues);
-        Map.Entry entry = iterator.next();
+        Iterator<Map.Entry<String, String>> iterator = proxy.iterator(10, 1, prefetchValues);
+        Map.Entry<String, String> entry = iterator.next();
         assertEquals(value, entry.getValue());
     }
 
     @Test
     public void test_Next_Returns_Value_On_NonEmptyPartition_and_HasNext_Returns_False_when_Item_Consumed() {
         HazelcastInstance instance = createHazelcastInstance();
-        MapProxyImpl<Object, Object> proxy = (MapProxyImpl<Object, Object>) instance.getMap(randomMapName());
+        MapProxyImpl<String, String> proxy = (MapProxyImpl<String, String>) instance.<String, String>getMap(randomMapName());
 
         String key = generateKeyForPartition(instance, 1);
         String value = randomString();
         proxy.put(key, value);
 
-        Iterator<Map.Entry<Object, Object>> iterator = proxy.iterator(10, 1, prefetchValues);
-        Map.Entry entry = iterator.next();
+        Iterator<Map.Entry<String, String>> iterator = proxy.iterator(10, 1, prefetchValues);
+        Map.Entry<String, String> entry = iterator.next();
         assertEquals(value, entry.getValue());
         boolean hasNext = iterator.hasNext();
         assertFalse(hasNext);
@@ -143,16 +143,16 @@ public class MapPartitionIteratorTest extends HazelcastTestSupport {
     @Test
     public void test_Next_Returns_Values_When_FetchSizeExceeds_On_NonEmptyPartition() {
         HazelcastInstance instance = createHazelcastInstance();
-        MapProxyImpl<Object, Object> proxy = (MapProxyImpl<Object, Object>) instance.getMap(randomMapName());
+        MapProxyImpl<String, String> proxy = (MapProxyImpl<String, String>) instance.<String, String>getMap(randomMapName());
 
         String value = randomString();
         for (int i = 0; i < 100; i++) {
             String key = generateKeyForPartition(instance, 1);
             proxy.put(key, value);
         }
-        Iterator<Map.Entry<Object, Object>> iterator = proxy.iterator(10, 1, prefetchValues);
+        Iterator<Map.Entry<String, String>> iterator = proxy.iterator(10, 1, prefetchValues);
         for (int i = 0; i < 100; i++) {
-            Map.Entry entry = iterator.next();
+            Map.Entry<String, String> entry = iterator.next();
             assertEquals(value, entry.getValue());
         }
     }
