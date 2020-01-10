@@ -110,6 +110,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
     // all operations for specific partitions will be executed on these threads, e.g. map.put(key, value)
     private final PartitionOperationThread[] partitionThreads;
     private final OperationRunner[] partitionOperationRunners;
+    private volatile int[] threadIdxForPartition;
 
     private final OperationQueue genericQueue
             = new OperationQueueImpl(new LinkedBlockingQueue<Object>(), new LinkedBlockingQueue<Object>());
@@ -141,6 +142,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
 
         this.thisAddress = thisAddress;
         this.logger = loggerService.getLogger(OperationExecutorImpl.class);
+        this.threadIdxForPartition = new int[]
         this.adHocOperationRunner = runnerFactory.createAdHocRunner();
         this.partitionOperationRunners = initPartitionOperationRunners(properties, runnerFactory);
         this.partitionThreads = initPartitionThreads(properties, hzName, nodeExtension, configClassLoader);
@@ -636,29 +638,26 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
         }
 
         private void updateActivePartitionThreads(int newActivePartitionThreads) throws InterruptedException {
-            CountDownLatch startLatch = new CountDownLatch(partitionThreads.length);
-            CountDownLatch completeLatch = new CountDownLatch(1);
+            CountDownLatch startSavepoint = new CountDownLatch(partitionThreads.length);
+            CountDownLatch exitSavepoint = new CountDownLatch(1);
             for (PartitionOperationThread t : partitionThreads) {
-                t.queue.add(new Runnable() {
-                    @Override
-                    public void run() {
-                        startLatch.countDown();
-                        try {
-                            completeLatch.await();
-                        } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt();
-                            throw new RuntimeException(e);
-                        }
+                t.queue.add((Runnable) () -> {
+                    startSavepoint.countDown();
+                    try {
+                        exitSavepoint.await();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        throw new RuntimeException(e);
                     }
                 }, true);
             }
-            startLatch.await();
+            startSavepoint.await();
 
             activePartitionThreads = newActivePartitionThreads;
             for (PartitionOperationThread t : partitionThreads) {
                 t.activePartitionThreads = activePartitionThreads;
             }
-            completeLatch.countDown();
+            exitSavepoint.countDown();
         }
 
         private float activePartitionCpuLoad() {
