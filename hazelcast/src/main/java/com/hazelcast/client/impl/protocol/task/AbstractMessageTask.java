@@ -234,7 +234,8 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
             } else {
                 clientMessage = encodeResponse(response);
             }
-            clientMessage.setNumberOfBackupAcks(numberOfBackups);
+            assert numberOfBackups >= 0 && numberOfBackups < Byte.MAX_VALUE;
+            clientMessage.setNumberOfBackupAcks((byte) numberOfBackups);
             sendClientMessage(clientMessage);
         } catch (Exception e) {
             handleProcessingFailure(e);

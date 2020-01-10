@@ -203,8 +203,8 @@ public final class ClientMessage implements OutboundFrame {
     /**
      * @return the number of acks will be send for a request
      */
-    public int getNumberOfBackupAcks() {
-        return Bits.readIntL(getStartFrame().content, RESPONSE_BACKUP_ACKS_FIELD_OFFSET);
+    public byte getNumberOfBackupAcks() {
+        return getStartFrame().content[RESPONSE_BACKUP_ACKS_FIELD_OFFSET];
     }
 
     /**
@@ -213,8 +213,8 @@ public final class ClientMessage implements OutboundFrame {
      * @param numberOfAcks The value to set in the setNumberOfAcks field.
      * @return The ClientMessage with the new dataOffset field value.
      */
-    public ClientMessage setNumberOfBackupAcks(final int numberOfAcks) {
-        Bits.writeIntL(getStartFrame().content, RESPONSE_BACKUP_ACKS_FIELD_OFFSET, numberOfAcks);
+    public ClientMessage setNumberOfBackupAcks(final byte numberOfAcks) {
+        getStartFrame().content[RESPONSE_BACKUP_ACKS_FIELD_OFFSET] = numberOfAcks;
         return this;
     }
 
