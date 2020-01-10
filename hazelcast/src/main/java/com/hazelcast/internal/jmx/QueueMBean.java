@@ -62,10 +62,10 @@ public class QueueMBean extends HazelcastMBean<IQueue> {
         return localQueueStatsDelegate.getLocalStats().getMaxAge();
     }
 
-    @ManagedAnnotation("localAvgAge")
+    @ManagedAnnotation("localAverageAge")
     @ManagedDescription("the average age of the items in this member.")
-    public long getLocalAvgAge() {
-        return localQueueStatsDelegate.getLocalStats().getAvgAge();
+    public long getLocalAverageAge() {
+        return localQueueStatsDelegate.getLocalStats().getAverageAge();
     }
 
     @ManagedAnnotation("localOfferOperationCount")

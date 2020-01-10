@@ -166,7 +166,7 @@ public class QueueStatisticsTest extends HazelcastTestSupport {
         long maxAge = stats.getMaxAge();
         long minAge = stats.getMinAge();
         long testAge = (maxAge + minAge) / 2;
-        long avgAge = stats.getAvgAge();
+        long avgAge = stats.getAverageAge();
         assertEquals(testAge, avgAge);
     }
 
