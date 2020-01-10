@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.nearcache;
+package com.hazelcast.internal.nearcache.impl;
 
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
@@ -23,8 +23,8 @@ import com.hazelcast.internal.adapter.TransactionalMapDataStructureAdapter;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;
 
-import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheInvalidationRequests;
-import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheSize;
+import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.assertNearCacheInvalidationRequests;
+import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.assertNearCacheSize;
 import static org.junit.Assert.assertTrue;
 
 @SuppressWarnings("WeakerAccess")

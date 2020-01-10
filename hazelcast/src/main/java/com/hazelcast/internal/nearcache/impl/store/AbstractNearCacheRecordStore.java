@@ -25,6 +25,7 @@ import com.hazelcast.internal.eviction.EvictionListener;
 import com.hazelcast.internal.eviction.impl.evaluator.EvictionPolicyEvaluator;
 import com.hazelcast.internal.eviction.impl.strategy.sampling.SamplingEvictionStrategy;
 import com.hazelcast.internal.monitor.impl.NearCacheStatsImpl;
+import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheRecord;
 import com.hazelcast.internal.nearcache.NearCacheRecordStore;
 import com.hazelcast.internal.nearcache.impl.SampleableNearCacheRecordMap;
@@ -41,11 +42,12 @@ import java.util.function.Function;
 
 import static com.hazelcast.internal.eviction.EvictionPolicyEvaluatorProvider.getEvictionPolicyEvaluator;
 import static com.hazelcast.internal.nearcache.NearCache.CACHED_AS_NULL;
+import static com.hazelcast.internal.nearcache.NearCache.UpdateSemantic.READ_UPDATE;
+import static com.hazelcast.internal.nearcache.NearCache.UpdateSemantic.WRITE_UPDATE;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.NOT_RESERVED;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.READ_PERMITTED;
 import static com.hazelcast.internal.nearcache.impl.invalidation.StaleReadDetector.ALWAYS_FRESH;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
-import static java.lang.String.format;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
 /**
@@ -134,11 +136,11 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
 
     protected abstract void updateRecordValue(R record, V value);
 
-    protected abstract R getOrCreateToReserve(K key, Data keyData, long reservationId);
+    protected abstract R readUpdate(K key, Data keyData, long reservationId);
 
-    protected abstract R reserveForCacheOnUpdate(K key, Data keyData, long reservationId);
+    protected abstract R writeUpdate(K key, Data keyData, long reservationId);
 
-    protected abstract V updateAndGetReserved(K key, V value, long reservationId, boolean deserialize);
+    protected abstract V tryPublishReserved0(K key, V value, long reservationId, boolean deserialize);
 
     protected abstract R putRecord(K key, R record);
 
@@ -273,81 +275,13 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
                 ? (V) CACHED_AS_NULL : toValue(record.getValue());
     }
 
+    // only implemented for testing purposes
     @Override
     public void put(K key, Data keyData, V value, Data valueData) {
-        checkAvailable();
-        // if there is no eviction configured we return if the Near Cache is full and it's a new key
-        // (we have to check the key, otherwise we might lose updates on existing keys)
-        if (evictionDisabled && evictionChecker.isEvictionRequired() && !containsRecordKey(key)) {
-            return;
+        long reservationId = tryReserveForUpdate(key, keyData, READ_UPDATE);
+        if (reservationId != NOT_RESERVED) {
+            tryPublishReserved(key, value, reservationId, false);
         }
-
-        R record = null;
-        R oldRecord = null;
-        try {
-            record = createRecord((V) selectInMemoryFormatFriendlyValue(inMemoryFormat, value, valueData));
-            initInvalidationMetaData(record, key, keyData);
-            oldRecord = putRecord(key, record);
-            if (oldRecord == null) {
-                nearCacheStats.incrementOwnedEntryCount();
-            }
-            onPut(key, value, record, oldRecord);
-        } catch (Throwable error) {
-            onPutError(key, value, record, oldRecord, error);
-            throw rethrow(error);
-        }
-    }
-
-    private static Object selectInMemoryFormatFriendlyValue(InMemoryFormat inMemoryFormat,
-                                                            Object value1, Object value2) {
-        switch (inMemoryFormat) {
-            case OBJECT:
-                return prioritizeObjectValue(value1, value2);
-            case BINARY:
-            case NATIVE:
-                return prioritizeDataValue(value1, value2);
-            default:
-                throw new IllegalArgumentException(format("Unrecognized in memory format "
-                        + "was found: '%s'", inMemoryFormat));
-        }
-    }
-
-    private static Object prioritizeObjectValue(Object value1, Object value2) {
-        boolean value1NotNull = value1 != null;
-        if (value1NotNull && !(value1 instanceof Data)) {
-            return value1;
-        }
-
-        boolean value2NotNull = value2 != null;
-        if (value2NotNull && !(value2 instanceof Data)) {
-            return value2;
-        }
-
-        if (value1NotNull) {
-            return value1;
-        }
-
-        if (value2NotNull) {
-            return value2;
-        }
-
-        return null;
-    }
-
-    private static Object prioritizeDataValue(Object value1, Object value2) {
-        if (value1 instanceof Data) {
-            return value1;
-        }
-
-        if (value2 instanceof Data) {
-            return value2;
-        }
-
-        if (value1 != null) {
-            return value1;
-        }
-
-        return value2;
     }
 
     protected boolean canUpdateStats(R record) {
@@ -389,23 +323,16 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     public void doEviction(boolean withoutMaxSizeCheck) {
         checkAvailable();
 
-        if (!evictionDisabled) {
-            EvictionChecker evictionChecker = withoutMaxSizeCheck ? null : this.evictionChecker;
-            evictionStrategy.evict(records, evictionPolicyEvaluator, evictionChecker, this);
+        if (evictionDisabled) {
+            return;
         }
+
+        EvictionChecker evictionChecker = withoutMaxSizeCheck ? null : this.evictionChecker;
+        evictionStrategy.evict(records, evictionPolicyEvaluator, evictionChecker, this);
     }
 
     @Override
-    public long tryReserveForUpdate(K key, Data keyData) {
-        return tryReserve0(key, keyData, false);
-    }
-
-    @Override
-    public long tryReserveForCacheOnUpdate(K key, Data keyData) {
-        return tryReserve0(key, keyData, true);
-    }
-
-    private long tryReserve0(K key, Data keyData, boolean cacheOnUpdate) {
+    public long tryReserveForUpdate(K key, Data keyData, NearCache.UpdateSemantic updateSemantic) {
         checkAvailable();
         // if there is no eviction configured we return if the Near Cache is full and it's a new key
         // (we have to check the key, otherwise we might lose updates on existing keys)
@@ -415,9 +342,8 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
 
         long reservationId = nextReservationId();
 
-        R reservedRecord = cacheOnUpdate
-                ? reserveForCacheOnUpdate(key, keyData, reservationId)
-                : getOrCreateToReserve(key, keyData, reservationId);
+        R reservedRecord = updateSemantic == WRITE_UPDATE
+                ? writeUpdate(key, keyData, reservationId) : readUpdate(key, keyData, reservationId);
 
         if (reservedRecord == null || reservedRecord.getReservationId() != reservationId) {
             return NOT_RESERVED;
@@ -429,7 +355,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     @Override
     public V tryPublishReserved(K key, V value, long reservationId, boolean deserialize) {
         checkAvailable();
-        return updateAndGetReserved(key, value, reservationId, deserialize);
+        return tryPublishReserved0(key, value, reservationId, deserialize);
     }
 
     // only used for testing purposes

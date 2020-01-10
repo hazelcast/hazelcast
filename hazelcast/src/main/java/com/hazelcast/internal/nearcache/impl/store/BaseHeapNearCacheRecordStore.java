@@ -135,18 +135,18 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
     }
 
     @Override
-    protected R getOrCreateToReserve(K key, Data keyData, long reservationId) {
+    protected R readUpdate(K key, Data keyData, long reservationId) {
         return records.applyIfAbsent(key, new ReserveForUpdateFunction(keyData, reservationId));
     }
 
     @Override
-    protected R reserveForCacheOnUpdate(K key, Data keyData, long reservationId) {
+    protected R writeUpdate(K key, Data keyData, long reservationId) {
         return records.apply(key, new ReserveForCacheOnUpdateFunction(keyData, reservationId));
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    protected V updateAndGetReserved(K key, final V value, final long reservationId, boolean deserialize) {
+    protected V tryPublishReserved0(K key, final V value, final long reservationId, boolean deserialize) {
         R existingRecord = records.applyIfPresent(key,
                 (key1, reservedRecord) -> updateReservedRecordInternal(key1, value, reservedRecord, reservationId));
 

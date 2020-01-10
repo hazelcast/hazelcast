@@ -23,13 +23,14 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationMetaDataFetcher;
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidator;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataContainer;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataGenerator;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingHandler;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask;
+import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
@@ -38,7 +39,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.internal.util.UuidUtil;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -47,9 +47,9 @@ import org.junit.runner.RunWith;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
-import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.getBaseConfig;
 import static com.hazelcast.internal.util.RandomPicker.getInt;
+import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)

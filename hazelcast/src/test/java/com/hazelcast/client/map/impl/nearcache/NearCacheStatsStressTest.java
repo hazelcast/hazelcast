@@ -20,11 +20,11 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
 import com.hazelcast.internal.nearcache.NearCache;
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.map.IMap;
+import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -39,6 +39,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.internal.nearcache.NearCache.UpdateSemantic.READ_UPDATE;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.NOT_RESERVED;
 import static com.hazelcast.internal.util.RandomPicker.getInt;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -113,7 +114,7 @@ public class NearCacheStatsStressTest extends HazelcastTestSupport {
             while (!stop.get()) {
                 Object key = getInt(KEY_SPACE);
                 Data keyData = ss.toData(key);
-                long reservationId = nearCache.tryReserveForUpdate(key, keyData);
+                long reservationId = nearCache.tryReserveForUpdate(key, keyData, READ_UPDATE);
                 if (reservationId != NOT_RESERVED) {
                     nearCache.tryPublishReserved(key, keyData, reservationId, false);
                 }

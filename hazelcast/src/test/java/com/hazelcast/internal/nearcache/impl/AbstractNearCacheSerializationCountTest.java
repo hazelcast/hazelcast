@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.nearcache;
+package com.hazelcast.internal.nearcache.impl;
 
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.SerializationConfig;
@@ -22,6 +22,7 @@ import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.adapter.DataStructureAdapter.DataStructureMethods;
 import com.hazelcast.internal.adapter.DataStructureAdapterMethod;
 import com.hazelcast.internal.adapter.ReplicatedMapDataStructureAdapter;
+import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
@@ -43,9 +44,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheSizeEventually;
-import static com.hazelcast.internal.nearcache.NearCacheTestUtils.isCacheOnUpdate;
-import static com.hazelcast.internal.nearcache.NearCacheTestUtils.isInvalidateOnChange;
+import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.assertNearCacheSizeEventually;
+import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.isCacheOnUpdate;
+import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.isInvalidateOnChange;
 import static java.lang.String.format;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonMap;

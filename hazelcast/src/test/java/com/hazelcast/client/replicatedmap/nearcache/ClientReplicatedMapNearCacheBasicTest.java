@@ -25,12 +25,12 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.adapter.DataStructureAdapterMethod;
 import com.hazelcast.internal.adapter.ReplicatedMapDataStructureAdapter;
-import com.hazelcast.internal.nearcache.AbstractNearCacheBasicTest;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheManager;
-import com.hazelcast.internal.nearcache.NearCacheTestContext;
-import com.hazelcast.internal.nearcache.NearCacheTestContextBuilder;
-import com.hazelcast.internal.nearcache.NearCacheTestUtils;
+import com.hazelcast.internal.nearcache.impl.AbstractNearCacheBasicTest;
+import com.hazelcast.internal.nearcache.impl.NearCacheTestContext;
+import com.hazelcast.internal.nearcache.impl.NearCacheTestContextBuilder;
+import com.hazelcast.internal.nearcache.impl.NearCacheTestUtils;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
@@ -48,8 +48,8 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.Collection;
 
-import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCacheConfig;
-import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
+import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.createNearCacheConfig;
+import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.getBaseConfig;
 import static java.util.Arrays.asList;
 
 @RunWith(Parameterized.class)

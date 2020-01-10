@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.nearcache;
+package com.hazelcast.internal.nearcache.impl;
 
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.internal.nearcache.NearCacheRecordStore;
 import com.hazelcast.nearcache.NearCacheStats;
 
 import static org.junit.Assert.assertEquals;

@@ -14,13 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.nearcache;
+package com.hazelcast.internal.nearcache.impl;
 
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.monitor.impl.NearCacheStatsImpl;
+import com.hazelcast.internal.nearcache.NearCache;
+import com.hazelcast.internal.nearcache.NearCacheRecord;
+import com.hazelcast.internal.nearcache.NearCacheRecordStore;
 import com.hazelcast.internal.nearcache.impl.invalidation.StaleReadDetector;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -33,9 +36,11 @@ import org.junit.Before;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.config.NearCacheConfig.DEFAULT_MEMORY_FORMAT;
 import static com.hazelcast.internal.nearcache.NearCache.DEFAULT_EXPIRATION_TASK_INITIAL_DELAY_SECONDS;
+import static com.hazelcast.internal.nearcache.NearCache.UpdateSemantic.READ_UPDATE;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.NOT_RESERVED;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -250,6 +255,7 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         protected volatile boolean doExpirationCalled;
 
         protected volatile StaleReadDetector staleReadDetector = StaleReadDetector.ALWAYS_FRESH;
+        protected final AtomicLong reservationIdGenerator = new AtomicLong();
 
         protected ManagedNearCacheRecordStore(Map<Integer, String> expectedKeyValueMappings) {
             this.expectedKeyValueMappings = expectedKeyValueMappings;
@@ -277,12 +283,10 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
 
         @Override
         public void put(Integer key, Data keyData, String value, Data valueData) {
-            if (expectedKeyValueMappings == null) {
-                throw new IllegalStateException("Near Cache is already destroyed");
+            long reservationId = tryReserveForUpdate(key, keyData, READ_UPDATE);
+            if (reservationId != NOT_RESERVED) {
+                tryPublishReserved(key, value, reservationId, false);
             }
-            expectedKeyValueMappings.put(key, value);
-            latestKeyOnPut = key;
-            latestValueOnPut = value;
         }
 
         @Override
@@ -358,18 +362,19 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         }
 
         @Override
-        public long tryReserveForUpdate(Integer key, Data keyData) {
-            return NOT_RESERVED;
-        }
-
-        @Override
-        public long tryReserveForCacheOnUpdate(Integer key, Data keyData) {
-            return NOT_RESERVED;
+        public long tryReserveForUpdate(Integer key, Data keyData, NearCache.UpdateSemantic updateSemantic) {
+            return reservationIdGenerator.incrementAndGet();
         }
 
         @Override
         public String tryPublishReserved(Integer key, String value, long reservationId, boolean deserialize) {
-            return null;
+            if (expectedKeyValueMappings == null) {
+                throw new IllegalStateException("Near Cache is already destroyed");
+            }
+            expectedKeyValueMappings.put(key, value);
+            latestKeyOnPut = key;
+            latestValueOnPut = value;
+            return value;
         }
     }
 }

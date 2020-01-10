@@ -31,7 +31,7 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.Collection;
 
-import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCacheConfig;
+import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.createNearCacheConfig;
 import static java.util.Arrays.asList;
 
 @RunWith(Parameterized.class)

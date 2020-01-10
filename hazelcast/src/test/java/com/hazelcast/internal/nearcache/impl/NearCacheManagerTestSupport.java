@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.nearcache;
+package com.hazelcast.internal.nearcache.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.nearcache.NearCache;
+import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;

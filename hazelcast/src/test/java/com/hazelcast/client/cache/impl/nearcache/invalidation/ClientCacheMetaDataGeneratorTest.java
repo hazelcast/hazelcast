@@ -46,7 +46,7 @@ import javax.cache.spi.CachingProvider;
 import static com.hazelcast.cache.CacheTestSupport.createClientCachingProvider;
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
-import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
+import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.getBaseConfig;
 import static java.lang.Integer.MAX_VALUE;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
