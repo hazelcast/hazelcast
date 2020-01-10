@@ -56,7 +56,7 @@ public abstract class AbstractMergingEntryImpl<K, V, T extends AbstractMergingEn
     }
 
     @Override
-    public K getDeserializedKey() {
+    public K getKey() {
         return serializationService.toObject(key);
     }
 

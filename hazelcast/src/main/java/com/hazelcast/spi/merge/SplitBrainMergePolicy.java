@@ -45,7 +45,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
  * </ul>
  * If you need the deserialized data you can call
  * {@link MergingValue#getValue()}
- * or {@link MergingEntry#getDeserializedKey()},
+ * or {@link MergingEntry#getKey()},
  * which will deserialize the data lazily.
  * <p>
  * A merge policy can implement {@link HazelcastInstanceAware} to get the

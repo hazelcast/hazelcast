@@ -82,7 +82,7 @@ public class MapMergingEntryImpl<K, V>
     }
 
     @Override
-    public K getDeserializedKey() {
+    public K getKey() {
         return serializationService.toObject(key);
     }
 

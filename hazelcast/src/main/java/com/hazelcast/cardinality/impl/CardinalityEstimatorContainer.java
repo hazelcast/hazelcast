@@ -83,7 +83,7 @@ public class CardinalityEstimatorContainer
         serializationService.getManagedContext().initialize(mergingEntry);
         serializationService.getManagedContext().initialize(mergePolicy);
 
-        String name = mergingEntry.getDeserializedKey();
+        String name = mergingEntry.getKey();
         if (hll.estimate() != 0) {
             CardinalityEstimatorMergeTypes existingEntry = createMergingEntry(serializationService, name, hll);
             HyperLogLog newValue = mergePolicy.merge(mergingEntry, existingEntry);

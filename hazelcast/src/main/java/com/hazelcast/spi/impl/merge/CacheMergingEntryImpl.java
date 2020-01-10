@@ -74,7 +74,7 @@ public class CacheMergingEntryImpl<K, V>
     }
 
     @Override
-    public K getDeserializedKey() {
+    public K getKey() {
         return serializationService.toObject(key);
     }
 

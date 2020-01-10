@@ -62,7 +62,7 @@ public class MultiMapMergingEntryImpl<K, V> implements MultiMapMergeTypes<K, V>,
     }
 
     @Override
-    public K getDeserializedKey() {
+    public K getKey() {
         return serializationService.toObject(key);
     }
 
