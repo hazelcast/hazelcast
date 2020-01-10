@@ -20,10 +20,10 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidator;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataGenerator;
 import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
@@ -46,9 +46,9 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.config.InMemoryFormat.BINARY;
-import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
-import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.getBaseConfig;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 

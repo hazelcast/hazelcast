@@ -14,17 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.nearcache;
+package com.hazelcast.internal.nearcache.impl;
 
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.internal.nearcache.NearCacheRecordStore;
 import com.hazelcast.internal.nearcache.impl.store.NearCacheDataRecordStore;
 import com.hazelcast.internal.nearcache.impl.store.NearCacheObjectRecordStore;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.spi.impl.executionservice.TaskScheduler;
 import com.hazelcast.spi.impl.executionservice.impl.DelegatingTaskScheduler;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;
 
@@ -38,7 +39,7 @@ public abstract class CommonNearCacheTestSupport extends HazelcastTestSupport {
     static final int DEFAULT_RECORD_COUNT = 100;
     static final String DEFAULT_NEAR_CACHE_NAME = "TestNearCache";
 
-    private List<ScheduledExecutorService> scheduledExecutorServices = new ArrayList<ScheduledExecutorService>();
+    private List<ScheduledExecutorService> scheduledExecutorServices = new ArrayList<>();
     private SerializationService ss = new DefaultSerializationServiceBuilder()
             .setVersion(InternalSerializationService.VERSION_1).build();
 
@@ -60,10 +61,10 @@ public abstract class CommonNearCacheTestSupport extends HazelcastTestSupport {
         NearCacheRecordStore<K, V> recordStore;
         switch (inMemoryFormat) {
             case BINARY:
-                recordStore = new NearCacheDataRecordStore<K, V>(DEFAULT_NEAR_CACHE_NAME, nearCacheConfig, ss, null);
+                recordStore = new NearCacheDataRecordStore<>(DEFAULT_NEAR_CACHE_NAME, nearCacheConfig, ss, null);
                 break;
             case OBJECT:
-                recordStore = new NearCacheObjectRecordStore<K, V>(DEFAULT_NEAR_CACHE_NAME, nearCacheConfig, ss, null);
+                recordStore = new NearCacheObjectRecordStore<>(DEFAULT_NEAR_CACHE_NAME, nearCacheConfig, ss, null);
                 break;
             default:
                 throw new IllegalArgumentException("Unsupported in-memory format: " + inMemoryFormat);

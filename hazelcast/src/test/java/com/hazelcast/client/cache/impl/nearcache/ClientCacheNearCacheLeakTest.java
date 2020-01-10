@@ -33,11 +33,11 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.adapter.ICacheDataStructureAdapter;
-import com.hazelcast.internal.nearcache.AbstractNearCacheLeakTest;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheManager;
-import com.hazelcast.internal.nearcache.NearCacheTestContext;
-import com.hazelcast.internal.nearcache.NearCacheTestContextBuilder;
+import com.hazelcast.internal.nearcache.impl.AbstractNearCacheLeakTest;
+import com.hazelcast.internal.nearcache.impl.NearCacheTestContext;
+import com.hazelcast.internal.nearcache.impl.NearCacheTestContextBuilder;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
@@ -57,11 +57,11 @@ import java.util.Collection;
 
 import static com.hazelcast.cache.CacheTestSupport.createClientCachingProvider;
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
-import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
 import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
-import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCacheConfig;
-import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
+import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
+import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.createNearCacheConfig;
+import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.getBaseConfig;
 import static java.util.Arrays.asList;
 
 /**

@@ -33,7 +33,7 @@ import javax.cache.integration.CacheLoaderException;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
+import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.getBaseConfig;
 
 public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
 

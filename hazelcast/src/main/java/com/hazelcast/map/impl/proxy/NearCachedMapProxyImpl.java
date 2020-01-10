@@ -47,6 +47,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.nearcache.NearCache.CACHED_AS_NULL;
 import static com.hazelcast.internal.nearcache.NearCache.NOT_CACHED;
+import static com.hazelcast.internal.nearcache.NearCache.UpdateSemantic.READ_UPDATE;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.NOT_RESERVED;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
@@ -578,7 +579,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         if (!cachingAllowedFor(keyData)) {
             return NOT_RESERVED;
         }
-        return nearCache.tryReserveForUpdate(key, keyData);
+        return nearCache.tryReserveForUpdate(key, keyData, READ_UPDATE);
     }
 
     private boolean cachingAllowedFor(Data keyData) {

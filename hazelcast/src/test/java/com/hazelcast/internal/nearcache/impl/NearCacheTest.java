@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.nearcache;
+package com.hazelcast.internal.nearcache.impl;
 
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.internal.nearcache.impl.DefaultNearCache;
+import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -33,7 +33,7 @@ public class NearCacheTest extends NearCacheTestSupport {
     @Override
     protected NearCache<Integer, String> createNearCache(String name, NearCacheConfig nearCacheConfig,
                                                          ManagedNearCacheRecordStore nearCacheRecordStore) {
-        return new DefaultNearCache<Integer, String>(name, nearCacheConfig, nearCacheRecordStore, ss,
+        return new DefaultNearCache<>(name, nearCacheConfig, nearCacheRecordStore, ss,
                 executionService.getGlobalTaskScheduler(), null, properties);
     }
 

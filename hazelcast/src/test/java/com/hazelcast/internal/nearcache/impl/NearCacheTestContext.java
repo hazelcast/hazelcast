@@ -14,17 +14,19 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.nearcache;
+package com.hazelcast.internal.nearcache.impl;
 
 import com.hazelcast.cache.impl.HazelcastServerCacheManager;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.adapter.DataStructureLoader;
-import com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask;
-import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.internal.monitor.impl.NearCacheStatsImpl;
+import com.hazelcast.internal.nearcache.NearCache;
+import com.hazelcast.internal.nearcache.NearCacheManager;
+import com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.nearcache.NearCacheStats;
 
 import javax.cache.CacheManager;
 

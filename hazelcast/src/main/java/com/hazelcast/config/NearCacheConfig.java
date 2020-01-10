@@ -23,6 +23,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Objects;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -427,10 +428,6 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
                 + '}';
     }
 
-    private static int calculateMaxSize(int maxSize) {
-        return (maxSize == 0) ? Integer.MAX_VALUE : checkNotNegative(maxSize, "maxSize cannot be negative!");
-    }
-
     @Override
     @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
     public boolean equals(Object o) {
@@ -464,13 +461,13 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
         if (inMemoryFormat != that.inMemoryFormat) {
             return false;
         }
-        if (evictionConfig != null ? !evictionConfig.equals(that.evictionConfig) : that.evictionConfig != null) {
+        if (!Objects.equals(evictionConfig, that.evictionConfig)) {
             return false;
         }
         if (localUpdatePolicy != that.localUpdatePolicy) {
             return false;
         }
-        return preloaderConfig != null ? preloaderConfig.equals(that.preloaderConfig) : that.preloaderConfig == null;
+        return Objects.equals(preloaderConfig, that.preloaderConfig);
     }
 
     @Override

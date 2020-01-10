@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.nearcache;
+package com.hazelcast.internal.nearcache.impl;
 
-import com.hazelcast.internal.nearcache.impl.DefaultNearCacheManager;
+import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

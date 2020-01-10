@@ -21,8 +21,8 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
 import com.hazelcast.internal.nearcache.impl.DefaultNearCache;
+import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -37,9 +37,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
-import static com.hazelcast.map.impl.nearcache.MapNearCacheRecordStateStressTest.assertNearCacheRecordStates;
+import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.getBaseConfig;
 import static com.hazelcast.internal.util.RandomPicker.getInt;
+import static com.hazelcast.map.impl.nearcache.MapNearCacheRecordStateStressTest.assertNearCacheRecordStates;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(NightlyTest.class)

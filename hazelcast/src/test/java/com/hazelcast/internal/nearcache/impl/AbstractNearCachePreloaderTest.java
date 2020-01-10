@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.nearcache;
+package com.hazelcast.internal.nearcache.impl;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.EvictionConfig;
@@ -39,17 +39,17 @@ import java.nio.channels.OverlappingFileLockException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadPoolExecutor;
 
-import static com.hazelcast.internal.nearcache.AbstractNearCachePreloaderTest.KeyType.INTEGER;
-import static com.hazelcast.internal.nearcache.AbstractNearCachePreloaderTest.KeyType.STRING;
-import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertEqualsFormat;
-import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheInvalidationRequests;
-import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheRecord;
-import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheSize;
-import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheSizeEventually;
-import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCacheConfig;
-import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getNearCacheKey;
-import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getRecordFromNearCache;
-import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getValueFromNearCache;
+import static com.hazelcast.internal.nearcache.impl.AbstractNearCachePreloaderTest.KeyType.INTEGER;
+import static com.hazelcast.internal.nearcache.impl.AbstractNearCachePreloaderTest.KeyType.STRING;
+import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.assertEqualsFormat;
+import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.assertNearCacheInvalidationRequests;
+import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.assertNearCacheRecord;
+import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.assertNearCacheSize;
+import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.assertNearCacheSizeEventually;
+import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.createNearCacheConfig;
+import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.getNearCacheKey;
+import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.getRecordFromNearCache;
+import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.getValueFromNearCache;
 import static com.hazelcast.internal.nio.IOUtil.copy;
 import static com.hazelcast.internal.nio.IOUtil.deleteQuietly;
 import static com.hazelcast.internal.nio.IOUtil.getFileFromResources;
