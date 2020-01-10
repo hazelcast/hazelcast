@@ -57,7 +57,7 @@ public interface LocalQueueStats extends LocalInstanceStats {
      *
      * @return average age of the items in this member
      */
-    long getAvgAge();
+    long getAverageAge();
 
     /**
      * Returns the number of offer/put/add operations.
