@@ -25,16 +25,16 @@ package com.hazelcast.spi.merge;
 public interface MergingValue<V> extends MergingView {
 
     /**
+     * Returns the deserialized merging value.
+     *
+     * @return the deserialized merging value
+     */
+    V getValue();
+
+    /**
      * Returns the merging value in the in-memory format of the backing data structure.
      *
      * @return the merging value
      */
     Object getRawValue();
-
-    /**
-     * Returns the deserialized merging value.
-     *
-     * @return the deserialized merging value
-     */
-    V getDeserializedValue();
 }

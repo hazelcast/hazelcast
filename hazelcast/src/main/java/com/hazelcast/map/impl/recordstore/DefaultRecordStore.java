@@ -50,7 +50,6 @@ import com.hazelcast.map.impl.querycache.publisher.PublisherRegistry;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.merge.MapMergingEntryImpl;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 import com.hazelcast.wan.impl.CallerProvenance;
@@ -789,9 +788,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         serializationService.getManagedContext().initialize(mergingEntry);
         serializationService.getManagedContext().initialize(mergePolicy);
 
-        assert mergingEntry instanceof MapMergingEntryImpl;
-        MapMergingEntryImpl<Object, Object> mergingEntryImpl = (MapMergingEntryImpl<Object, Object>) mergingEntry;
-        Data key = mergingEntryImpl.getRawKey();
+        Data key = (Data) mergingEntry.getRawKey();
         Record record = getRecordOrNull(key, now, false);
         Object newValue;
         Object oldValue;

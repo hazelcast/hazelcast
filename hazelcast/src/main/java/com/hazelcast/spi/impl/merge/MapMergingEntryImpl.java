@@ -67,7 +67,7 @@ public class MapMergingEntryImpl<K, V>
     }
 
     @Override
-    public V getDeserializedValue() {
+    public V getValue() {
         return serializationService.toObject(value);
     }
 

@@ -28,7 +28,7 @@ public class CustomReplicatedMapMergePolicy
 
     @Override
     public Integer merge(MergingValue<Integer> mergingValue, MergingValue<Integer> existingValue) {
-        return mergingValue.getDeserializedValue();
+        return mergingValue.getValue();
     }
 
     @Override

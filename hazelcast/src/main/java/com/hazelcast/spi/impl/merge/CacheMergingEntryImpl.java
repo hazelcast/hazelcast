@@ -59,7 +59,7 @@ public class CacheMergingEntryImpl<K, V>
     }
 
     @Override
-    public V getDeserializedValue() {
+    public V getValue() {
         return serializationService.toObject(value);
     }
 

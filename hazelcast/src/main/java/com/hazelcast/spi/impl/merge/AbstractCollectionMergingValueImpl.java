@@ -56,7 +56,7 @@ public abstract class AbstractCollectionMergingValueImpl<V, T extends AbstractCo
     }
 
     @Override
-    public Collection<V> getDeserializedValue() {
+    public Collection<V> getValue() {
         Collection<Object> deserializedValues = new ArrayList<>(value.size());
         for (Object aValue : value) {
             deserializedValues.add(serializationService.toObject(aValue));

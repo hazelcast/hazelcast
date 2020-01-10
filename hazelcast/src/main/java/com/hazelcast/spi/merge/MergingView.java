@@ -17,7 +17,8 @@
 package com.hazelcast.spi.merge;
 
 /**
- * Marker interface representing a read-only view of a data structure for the merging process after a split-brain.
+ * Marker interface representing a read-only view of a data structure
+ * for the merging process after a split-brain.
  *
  * @since 4.0
  */

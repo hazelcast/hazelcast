@@ -56,7 +56,7 @@ public class RingbufferMergingValueImpl
     }
 
     @Override
-    public RingbufferMergeData getDeserializedValue() {
+    public RingbufferMergeData getValue() {
         final RingbufferMergeData deserializedValues = new RingbufferMergeData(value.getItems().length);
         deserializedValues.setHeadSequence(value.getHeadSequence());
         deserializedValues.setTailSequence(value.getTailSequence());
