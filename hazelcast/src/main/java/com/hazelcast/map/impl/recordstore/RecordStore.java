@@ -306,6 +306,7 @@ public interface RecordStore<R extends Record> {
     /**
      * Fetch minimally {@code size} keys from the {@code pointers} position.
      * The key is fetched on-heap.
+     * The method may return less keys if iteration has completed.
      * <p>
      * NOTE: The implementation is free to return more than {@code size} items.
      * This can happen if we cannot easily resume from the last returned item
@@ -315,7 +316,7 @@ public interface RecordStore<R extends Record> {
      * the requested {@code size}.
      *
      * @param pointers the pointers defining the state of iteration
-     * @param size     the minimal count of returned items
+     * @param size     the minimal count of returned items, unless iteration has completed
      * @return fetched keys and the new iteration state
      */
     MapKeysWithCursor fetchKeys(IterationPointer[] pointers, int size);

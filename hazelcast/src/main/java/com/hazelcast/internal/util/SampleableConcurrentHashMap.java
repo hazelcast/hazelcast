@@ -21,7 +21,6 @@ import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.internal.serialization.SerializableByConvention;
 
 import java.util.AbstractMap;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Iterator;
@@ -117,10 +116,10 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
             while (nextTableIndex >= 0 && counter < size) {
                 HashEntry<K, V> nextEntry = currentTable[nextTableIndex--];
                 while (nextEntry != null) {
-                    K key = nextEntry.key();
-                    if (key != null && hasNotBeenObserved(key, pointers)) {
-                        V value = nextEntry.value();
-                        if (isValidForFetching(value, now)) {
+                    V value = nextEntry.value();
+                    if (isValidForFetching(value, now)) {
+                        K key = nextEntry.key();
+                        if (key != null && hasNotBeenObserved(key, pointers)) {
                             entryConsumer.accept(key, value);
                             counter++;
                         }
@@ -145,15 +144,22 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
      */
     private IterationPointer[] checkPointers(IterationPointer[] pointers, int currentTableSize) {
         IterationPointer lastPointer = pointers[pointers.length - 1];
-        if (lastPointer.getSize() == -1) {
-            // special case, iteration hasn't started yet
-            pointers[pointers.length - 1] = new IterationPointer(Integer.MAX_VALUE, currentTableSize);
-        } else if (lastPointer.getSize() != currentTableSize) {
-            // resize happened during iteration, restarting
-            pointers = Arrays.copyOf(pointers, pointers.length + 1);
-            pointers[pointers.length - 1] = new IterationPointer(Integer.MAX_VALUE, currentTableSize);
+        boolean iterationStarted = lastPointer.getSize() == -1;
+        boolean tableResized = lastPointer.getSize() != currentTableSize;
+        // clone pointers to avoid mutating given reference
+        // add new pointer if resize happened during iteration
+        int newLength = !iterationStarted && tableResized ? pointers.length + 1 : pointers.length;
+
+        IterationPointer[] updatedPointers = new IterationPointer[newLength];
+        for (int i = 0; i < pointers.length; i++) {
+            updatedPointers[i] = new IterationPointer(pointers[i]);
         }
-        return pointers;
+
+        // reset last pointer if we haven't started iteration or there was a resize
+        if (iterationStarted || tableResized) {
+            updatedPointers[updatedPointers.length - 1] = new IterationPointer(Integer.MAX_VALUE, currentTableSize);
+        }
+        return updatedPointers;
     }
 
     /**

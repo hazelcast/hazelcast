@@ -40,6 +40,11 @@ public class IterationPointer {
         this.size = size;
     }
 
+    public IterationPointer(IterationPointer other) {
+        this.index = other.index;
+        this.size = other.size;
+    }
+
     /**
      * Returns the iteration index representing the position of the iteration
      * in the backing structure.
