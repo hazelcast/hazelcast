@@ -17,6 +17,7 @@
 package com.hazelcast.jet.config;
 
 import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import javax.annotation.Nonnull;
 import java.io.Serializable;
@@ -28,6 +29,7 @@ import java.util.Objects;
  *
  * @since 3.0
  */
+@PrivateApi
 public class ResourceConfig implements Serializable {
 
     private final URL url;

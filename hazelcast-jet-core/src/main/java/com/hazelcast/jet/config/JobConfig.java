@@ -25,6 +25,7 @@ import com.hazelcast.jet.pipeline.ServiceFactory;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -652,6 +653,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      * Returns all the registered resource configurations.
      */
     @Nonnull
+    @PrivateApi
     public Map<String, ResourceConfig> getResourceConfigs() {
         return resourceConfigs;
     }
