@@ -17,12 +17,14 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -47,7 +49,6 @@ import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static com.hazelcast.jet.core.processor.Processors.mapUsingServiceAsyncP;
 import static com.hazelcast.jet.core.processor.Processors.noopP;
 import static com.hazelcast.jet.pipeline.ServiceFactories.nonSharedService;
-import static com.hazelcast.test.HazelcastTestSupport.sleepMillis;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -56,7 +57,12 @@ import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-public class ProcessorsTest {
+public class ProcessorsTest extends SimpleTestInClusterSupport {
+
+    @BeforeClass
+    public static void setUp() {
+        initialize(1, null);
+    }
 
     @Test
     public void map() {
@@ -72,6 +78,7 @@ public class ProcessorsTest {
                 .verifyProcessor(Processors.mapUsingServiceP(
                         nonSharedService(() -> new int[1], arr -> assertEquals(6, arr[0])),
                         (int[] context, Integer item) -> context[0] += item))
+                .jetInstance(instance())
                 .disableSnapshots()
                 .input(asList(1, 2, 3))
                 .expectOutput(asList(1, 3, 6));
@@ -88,6 +95,7 @@ public class ProcessorsTest {
                             context.addAndGet(item);
                             return item;
                         })))
+                .jetInstance(instance())
                 .disableSnapshots()
                 .disableProgressAssertion()
                 .input(asList(1, 2, 3))
@@ -114,6 +122,7 @@ public class ProcessorsTest {
                                 context[0] = item;
                             }
                         }))
+                .jetInstance(instance())
                 .disableSnapshots()
                 .input(asList(1, 2, 3))
                 .expectOutput(asList(1, 3));
@@ -123,10 +132,11 @@ public class ProcessorsTest {
     public void filteringWithMapUsingServiceAsync() {
         TestSupport
                 .verifyProcessor(mapUsingServiceAsyncP(
-                        nonSharedService(() -> new int[] {2}, arr -> assertEquals(2, arr[0])),
+                        nonSharedService(() -> new int[]{2}, arr -> assertEquals(2, arr[0])),
                         t -> "k",
                         (int[] context, Integer item) ->
                                 supplyAsync(() -> item % context[0] != 0 ? item : null)))
+                .jetInstance(instance())
                 .disableSnapshots()
                 .disableProgressAssertion()
                 .input(asList(1, 2, 3))
@@ -154,6 +164,7 @@ public class ProcessorsTest {
                                 context[0] = item;
                             }
                         }))
+                .jetInstance(instance())
                 .input(asList(1, 2, 1, 2))
                 .disableSnapshots()
                 .expectOutput(asList(1, 2, 2));
@@ -169,6 +180,7 @@ public class ProcessorsTest {
                             context.incrementAndGet();
                             return item > 1;
                         })))
+                .jetInstance(instance())
                 .input(asList(1, 2, 1, 2))
                 .disableSnapshots()
                 .disableProgressAssertion()
@@ -191,6 +203,7 @@ public class ProcessorsTest {
                 .verifyProcessor(flatMapUsingServiceP(
                         nonSharedService(() -> context, c -> c[0] = 0),
                         (int[] c, Integer item) -> traverseItems(item, c[0] += item)))
+                .jetInstance(instance())
                 .disableSnapshots()
                 .input(asList(1, 2, 3))
                 .expectOutput(asList(1, 1, 2, 3, 3, 6));

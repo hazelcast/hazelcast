@@ -20,6 +20,7 @@ import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.JetException;
+import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Watermark;
@@ -27,6 +28,7 @@ import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.pipeline.ServiceFactories;
 import com.hazelcast.jet.pipeline.ServiceFactory;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -49,7 +51,7 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
-public class AsyncTransformUsingServicePTest {
+public class AsyncTransformUsingServicePTest extends SimpleTestInClusterSupport {
 
     @Rule
     public ExpectedException exception = ExpectedException.none();
@@ -72,10 +74,16 @@ public class AsyncTransformUsingServicePTest {
         return flatMapUsingServiceAsyncP(serviceFactory, FunctionEx.identity(), mapFn);
     }
 
+    @BeforeClass
+    public static void setUp() {
+        initialize(1, null);
+    }
+
     @Test
     public void test_completedFutures() {
         TestSupport
                 .verifyProcessor(getSupplier((ctx, item) -> completedFuture(traverseItems(item + "-1", item + "-2"))))
+                .jetInstance(instance())
                 .input(asList("a", "b"))
                 .outputChecker((expected, actual) ->
                         actual.equals(asList("a-1", "a-2", "b-1", "b-2"))
@@ -93,6 +101,7 @@ public class AsyncTransformUsingServicePTest {
                             return f;
                         })
                 )
+                .jetInstance(instance())
                 .input(asList("a", "b", new Watermark(10)))
                 .outputChecker((expected, actual) ->
                         actual.equals(asList("a-1", "a-2", "b-1", "b-2", wm(10)))
@@ -107,6 +116,7 @@ public class AsyncTransformUsingServicePTest {
                 .verifyProcessor(getSupplier((ctx, item) -> {
                     throw new UnsupportedOperationException();
                 }))
+                .jetInstance(instance())
                 .input(singletonList(wm(10)))
                 .expectOutput(singletonList(wm(10)));
     }
@@ -115,6 +125,7 @@ public class AsyncTransformUsingServicePTest {
     public void when_mapFnReturnsNullFuture_then_filteredOut() {
         TestSupport
                 .verifyProcessor(getSupplier((ctx, item) -> null))
+                .jetInstance(instance())
                 .input(asList("a", "b"))
                 .expectOutput(emptyList());
     }
@@ -123,6 +134,7 @@ public class AsyncTransformUsingServicePTest {
     public void when_futureReturnsNullTraverser_then_resultFilteredOut() {
         TestSupport
                 .verifyProcessor(getSupplier((ctx, item) -> null))
+                .jetInstance(instance())
                 .input(singletonList(wm(10)))
                 .expectOutput(singletonList(wm(10)));
     }
@@ -137,6 +149,7 @@ public class AsyncTransformUsingServicePTest {
                     f.completeExceptionally(new RuntimeException("test exception"));
                     return f;
                 }))
+                .jetInstance(instance())
                 .input(singletonList("a"))
                 .expectOutput(emptyList());
 

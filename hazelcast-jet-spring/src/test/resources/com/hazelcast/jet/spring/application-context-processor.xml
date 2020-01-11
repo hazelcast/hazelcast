@@ -44,4 +44,5 @@
 
     <jet:map instance-ref="jet-instance" name="my-map" id="my-map-bean"/>
 
+    <bean name="calculator" class="com.hazelcast.jet.spring.SillyCalculator" />
 </beans>
