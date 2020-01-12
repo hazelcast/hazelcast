@@ -80,30 +80,30 @@ public class EvaluateVisitorTest {
                 (Answer<Boolean>) invocation -> EVALUABLE_PREDICATES.contains(invocation.getArgument(0)));
         when(bitmapA.getConverter()).thenReturn(TypeConverters.INTEGER_CONVERTER);
         when(bitmapA.getName()).thenReturn("a");
-        when(indexes.matchIndex("a", QueryContext.IndexMatchHint.EXACT_NAME)).thenReturn(bitmapA);
-        when(indexes.matchIndex("a", QueryContext.IndexMatchHint.PREFER_UNORDERED)).thenReturn(bitmapA);
+        when(indexes.matchIndex("a", QueryContext.IndexMatchHint.EXACT_NAME, -1)).thenReturn(bitmapA);
+        when(indexes.matchIndex("a", QueryContext.IndexMatchHint.PREFER_UNORDERED, -1)).thenReturn(bitmapA);
 
         InternalIndex bitmapB = mock(InternalIndex.class);
         when(bitmapB.canEvaluate(any())).then(
                 (Answer<Boolean>) invocation -> EVALUABLE_PREDICATES.contains(invocation.getArgument(0)));
         when(bitmapB.getConverter()).thenReturn(TypeConverters.STRING_CONVERTER);
         when(bitmapB.getName()).thenReturn("b");
-        when(indexes.matchIndex("b", QueryContext.IndexMatchHint.EXACT_NAME)).thenReturn(bitmapB);
-        when(indexes.matchIndex("b", QueryContext.IndexMatchHint.PREFER_UNORDERED)).thenReturn(bitmapB);
+        when(indexes.matchIndex("b", QueryContext.IndexMatchHint.EXACT_NAME, -1)).thenReturn(bitmapB);
+        when(indexes.matchIndex("b", QueryContext.IndexMatchHint.PREFER_UNORDERED, -1)).thenReturn(bitmapB);
 
         InternalIndex regular = mock(InternalIndex.class);
         when(regular.getConverter()).thenReturn(TypeConverters.INTEGER_CONVERTER);
         when(regular.canEvaluate(any())).thenReturn(false);
-        when(indexes.matchIndex("r", QueryContext.IndexMatchHint.EXACT_NAME)).thenReturn(regular);
-        when(indexes.matchIndex("r", QueryContext.IndexMatchHint.PREFER_UNORDERED)).thenReturn(regular);
+        when(indexes.matchIndex("r", QueryContext.IndexMatchHint.EXACT_NAME, -1)).thenReturn(regular);
+        when(indexes.matchIndex("r", QueryContext.IndexMatchHint.PREFER_UNORDERED, -1)).thenReturn(regular);
 
         InternalIndex bitmapNoConverter = mock(InternalIndex.class);
         when(bitmapNoConverter.getName()).thenReturn("nc");
         when(bitmapNoConverter.getConverter()).thenReturn(null);
         when(bitmapNoConverter.canEvaluate(any())).then(
                 (Answer<Boolean>) invocation -> EVALUABLE_PREDICATES.contains(invocation.getArgument(0)));
-        when(indexes.matchIndex("nc", QueryContext.IndexMatchHint.EXACT_NAME)).thenReturn(bitmapNoConverter);
-        when(indexes.matchIndex("nc", QueryContext.IndexMatchHint.PREFER_UNORDERED)).thenReturn(bitmapNoConverter);
+        when(indexes.matchIndex("nc", QueryContext.IndexMatchHint.EXACT_NAME, -1)).thenReturn(bitmapNoConverter);
+        when(indexes.matchIndex("nc", QueryContext.IndexMatchHint.PREFER_UNORDERED, -1)).thenReturn(bitmapNoConverter);
 
         InternalIndex bitmapNoSubPredicates = mock(InternalIndex.class);
         when(bitmapNoSubPredicates.getName()).thenReturn("ns");
@@ -112,8 +112,8 @@ public class EvaluateVisitorTest {
             Object clazz = invocation.getArgument(0);
             return !(clazz == AndPredicate.class || clazz == OrPredicate.class || clazz == NotPredicate.class);
         });
-        when(indexes.matchIndex("ns", QueryContext.IndexMatchHint.EXACT_NAME)).thenReturn(bitmapNoSubPredicates);
-        when(indexes.matchIndex("ns", QueryContext.IndexMatchHint.PREFER_UNORDERED)).thenReturn(bitmapNoSubPredicates);
+        when(indexes.matchIndex("ns", QueryContext.IndexMatchHint.EXACT_NAME, -1)).thenReturn(bitmapNoSubPredicates);
+        when(indexes.matchIndex("ns", QueryContext.IndexMatchHint.PREFER_UNORDERED, -1)).thenReturn(bitmapNoSubPredicates);
 
         visitor = new EvaluateVisitor();
     }
