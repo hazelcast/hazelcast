@@ -112,7 +112,11 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     private void initNearCache() {
         NearCacheConfig nearCacheConfig = getContext().getClientConfig().getNearCacheConfig(name);
         if (nearCacheConfig != null) {
-            nearCache = getContext().getNearCacheManager(getServiceName()).getOrCreateNearCache(name, nearCacheConfig);
+            NearCacheConfig copyNearCacheConfig = new NearCacheConfig(nearCacheConfig);
+            //We don't have serializeKeys support on replicated map nearcache
+            copyNearCacheConfig.setSerializeKeys(false);
+
+            nearCache = getContext().getNearCacheManager(getServiceName()).getOrCreateNearCache(name, copyNearCacheConfig);
             if (nearCacheConfig.isInvalidateOnChange()) {
                 registerInvalidationListener();
             }
