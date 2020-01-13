@@ -110,4 +110,9 @@ public final class MetadataUtil {
             }
         }, retries);
     }
+
+    public static String getAvailabilityZone(int connectionTimeoutSeconds, int connectionRetries) {
+        String uri = INSTANCE_METADATA_URI.concat(AVAILABILITY_ZONE_URI);
+        return retrieveMetadataFromURI(uri, connectionTimeoutSeconds, connectionRetries);
+    }
 }

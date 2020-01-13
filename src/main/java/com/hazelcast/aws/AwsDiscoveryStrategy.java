@@ -16,6 +16,7 @@
 
 package com.hazelcast.aws;
 
+import com.hazelcast.aws.utility.MetadataUtil;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.properties.PropertyDefinition;
 import com.hazelcast.logging.ILogger;
@@ -44,9 +45,6 @@ import static com.hazelcast.aws.AwsProperties.SECRET_KEY;
 import static com.hazelcast.aws.AwsProperties.SECURITY_GROUP_NAME;
 import static com.hazelcast.aws.AwsProperties.TAG_KEY;
 import static com.hazelcast.aws.AwsProperties.TAG_VALUE;
-import static com.hazelcast.aws.utility.MetadataUtil.AVAILABILITY_ZONE_URI;
-import static com.hazelcast.aws.utility.MetadataUtil.INSTANCE_METADATA_URI;
-import static com.hazelcast.aws.utility.MetadataUtil.retrieveMetadataFromURI;
 
 /**
  * AWS implementation of {@link DiscoveryStrategy}.
@@ -103,6 +101,7 @@ public class AwsDiscoveryStrategy
         //to prevent unnecessary metadata call when region is set
         if (region == null) {
             region = getCurrentRegion(connectionTimeoutSeconds, connectionRetries);
+            getLogger().info("Region not set, using the current region: " + region);
         }
         final AwsConfig config = AwsConfig.builder().setAccessKey(getOrNull(ACCESS_KEY)).setSecretKey(getOrNull(SECRET_KEY))
                                           .setRegion(region)
@@ -119,8 +118,7 @@ public class AwsDiscoveryStrategy
     }
 
     String getCurrentRegion(int connectionTimeoutSeconds, int connectionRetries) {
-        String uri = INSTANCE_METADATA_URI.concat(AVAILABILITY_ZONE_URI);
-        String availabilityZone = retrieveMetadataFromURI(uri, connectionTimeoutSeconds, connectionRetries);
+        String availabilityZone = MetadataUtil.getAvailabilityZone(connectionTimeoutSeconds, connectionRetries);
         return availabilityZone.substring(0, availabilityZone.length() - 1);
     }
 
