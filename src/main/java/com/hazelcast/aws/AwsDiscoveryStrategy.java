@@ -55,7 +55,7 @@ public class AwsDiscoveryStrategy
         extends AbstractDiscoveryStrategy {
     private static final ILogger LOGGER = Logger.getLogger(AwsDiscoveryStrategy.class);
     private static final String DEFAULT_PORT_RANGE = "5701-5708";
-    private static final Integer DEFAULT_CONNECTION_RETRIES = 10;
+    private static final Integer DEFAULT_CONNECTION_RETRIES = 3;
     private static final int DEFAULT_CONNECTION_TIMEOUT_SECONDS = 10;
     private static final String DEFAULT_HOST_HEADER = "ec2.amazonaws.com";
 
