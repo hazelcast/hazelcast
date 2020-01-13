@@ -39,6 +39,7 @@ import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
@@ -106,11 +107,11 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     private void initNearCache() {
         NearCacheConfig nearCacheConfig = getContext().getClientConfig().getNearCacheConfig(name);
         if (nearCacheConfig != null) {
-            NearCacheConfig copyNearCacheConfig = new NearCacheConfig(nearCacheConfig);
-            //We don't have serializeKeys support on replicated map nearcache
-            copyNearCacheConfig.setSerializeKeys(false);
+            if (nearCacheConfig.isSerializeKeys()) {
+                throw new InvalidConfigurationException("ReplicatedMap doesn't support serializeKeys option of NearCacheConfig");
+            }
 
-            nearCache = getContext().getNearCacheManager().getOrCreateNearCache(name, copyNearCacheConfig);
+            nearCache = getContext().getNearCacheManager().getOrCreateNearCache(name, nearCacheConfig);
             if (nearCacheConfig.isInvalidateOnChange()) {
                 registerInvalidationListener();
             }

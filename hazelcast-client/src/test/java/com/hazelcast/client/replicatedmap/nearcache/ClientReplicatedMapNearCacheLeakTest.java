@@ -67,7 +67,7 @@ public class ClientReplicatedMapNearCacheLeakTest extends AbstractNearCacheLeakT
 
     @Before
     public void setUp() {
-        nearCacheConfig = createNearCacheConfig(inMemoryFormat, true)
+        nearCacheConfig = createNearCacheConfig(inMemoryFormat, false)
                 .setInvalidateOnChange(true);
     }
 
