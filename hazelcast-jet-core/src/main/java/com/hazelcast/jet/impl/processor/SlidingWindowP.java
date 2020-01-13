@@ -18,6 +18,8 @@ package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.collection.Long2ObjectHashMap;
+import com.hazelcast.internal.util.counters.Counter;
+import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
@@ -43,7 +45,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.LongFunction;
@@ -61,8 +62,6 @@ import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
-import static com.hazelcast.jet.impl.util.Util.lazyAdd;
-import static com.hazelcast.jet.impl.util.Util.lazyIncrement;
 import static com.hazelcast.jet.impl.util.Util.logLateEvent;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
@@ -111,11 +110,11 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
     private final Function<K, A> createAccFunction;
 
     @Probe(name = "lateEventsDropped")
-    private final AtomicLong lateEventsDropped = new AtomicLong();
+    private final Counter lateEventsDropped = SwCounter.newSwCounter();
     @Probe(name = "totalFrames")
-    private final AtomicLong totalFrames = new AtomicLong();
+    private final Counter totalFrames = SwCounter.newSwCounter();
     @Probe(name = "totalKeysInFrames")
-    private final AtomicLong totalKeysInFrames = new AtomicLong();
+    private final Counter totalKeysInFrames = SwCounter.newSwCounter();
 
     // Fields for early results emission
     private final long earlyResultsPeriod;
@@ -165,11 +164,11 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
         );
         this.emptyAcc = aggrOp.createFn().get();
         this.createMapPerTsFunction = x -> {
-            lazyIncrement(totalFrames);
+            totalFrames.inc();
             return new HashMap<>();
         };
         this.createAccFunction = k -> {
-            lazyIncrement(totalKeysInFrames);
+            totalKeysInFrames.inc();
             return aggrOp.createFn().get();
         };
     }
@@ -234,7 +233,7 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
         // disturb the value that we'll deduct from `slidingWindow` later on.
         if (frameTs < nextWinToEmit) {
             logLateEvent(getLogger(), nextWinToEmit, item);
-            lazyIncrement(lateEventsDropped);
+            lateEventsDropped.inc();
             return true;
         }
         final K key = keyFns.get(ordinal).apply(item);
@@ -315,10 +314,10 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
                         throw new JetException("AggregateOperation.combineFn required for merging restored frames");
                     }
                     combineFn.accept(o, n);
-                    lazyAdd(totalKeysInFrames, -1);
+                    totalKeysInFrames.inc(-1);
                     return o;
                 });
-        lazyIncrement(totalKeysInFrames);
+        totalKeysInFrames.inc();
         topTs = max(topTs, higherFrameTs);
     }
 
@@ -341,8 +340,8 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
                         ts += winPolicy.frameSize()) {
                     Map<K, A> removed = tsToKeyToAcc.remove(ts);
                     if (removed != null) {
-                        lazyAdd(totalFrames, -1);
-                        lazyAdd(totalKeysInFrames, -removed.size());
+                        totalFrames.inc(-1);
+                        totalKeysInFrames.inc(-removed.size());
                     }
                 }
             }
@@ -436,8 +435,8 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
         long tsOfFrameToEvict = frameTs - winPolicy.windowSize() + winPolicy.frameSize();
         Map<K, A> evictedFrame = tsToKeyToAcc.remove(tsOfFrameToEvict);
         if (evictedFrame != null) {
-            lazyAdd(totalKeysInFrames, -evictedFrame.size());
-            lazyAdd(totalFrames, -1);
+            totalKeysInFrames.inc(-evictedFrame.size());
+            totalFrames.inc(-1);
             if (!winPolicy.isTumbling() && aggrOp.deductFn() != null) {
                 // deduct trailing-edge frame
                 patchSlidingWindow(aggrOp.deductFn(), evictedFrame);

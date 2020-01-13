@@ -18,9 +18,9 @@ package com.hazelcast.jet.impl.execution;
 
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.impl.operation.SnapshotPhase2Operation;
 import com.hazelcast.jet.impl.operation.SnapshotPhase1Operation;
 import com.hazelcast.jet.impl.operation.SnapshotPhase1Operation.SnapshotPhase1Result;
+import com.hazelcast.jet.impl.operation.SnapshotPhase2Operation;
 import com.hazelcast.logging.ILogger;
 
 import java.util.concurrent.CancellationException;

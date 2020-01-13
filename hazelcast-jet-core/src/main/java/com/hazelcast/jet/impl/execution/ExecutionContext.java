@@ -20,8 +20,12 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
+import com.hazelcast.internal.metrics.ProbeLevel;
+import com.hazelcast.internal.metrics.ProbeUnit;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.util.counters.Counter;
+import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.metrics.MetricTags;
@@ -47,6 +51,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.jet.Util.idToString;
+import static com.hazelcast.jet.core.metrics.MetricNames.EXECUTION_COMPLETION_TIME;
+import static com.hazelcast.jet.core.metrics.MetricNames.EXECUTION_START_TIME;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableList;
@@ -65,6 +71,8 @@ public class ExecutionContext implements DynamicMetricsProvider {
     private final Set<Address> participants;
     private final Object executionLock = new Object();
     private final ILogger logger;
+    private final Counter startTime = MwCounter.newMwCounter();
+    private final Counter completionTime = MwCounter.newMwCounter();
 
     // key: resource identifier
     // we use ConcurrentHashMap because ConcurrentMap doesn't guarantee that computeIfAbsent
@@ -160,7 +168,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
                             }
                             return res;
                         });
-
+                startTime.set(System.currentTimeMillis());
             }
             return executionFuture;
         }
@@ -311,8 +319,23 @@ public class ExecutionContext implements DynamicMetricsProvider {
         }
         descriptor = descriptor.withTag(MetricTags.JOB, idToString(jobId))
                                .withTag(MetricTags.EXECUTION, idToString(executionId));
+
+        long executionStartTime = startTime.get();
+        if (executionStartTime > 0) {
+            context.collect(descriptor, EXECUTION_START_TIME, ProbeLevel.INFO, ProbeUnit.MS, executionStartTime);
+        }
+
+        long executionCompletionTime = completionTime.get();
+        if (executionCompletionTime > 0) {
+            context.collect(descriptor, EXECUTION_COMPLETION_TIME, ProbeLevel.INFO, ProbeUnit.MS, executionCompletionTime);
+        }
+
         for (Tasklet tasklet : tasklets) {
             tasklet.provideDynamicMetrics(descriptor.copy(), context);
         }
+    }
+
+    public void setCompletionTime() {
+        completionTime.set(System.currentTimeMillis());
     }
 }

@@ -21,9 +21,14 @@ import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.counters.Counter;
+import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JobAlreadyExistsException;
 import com.hazelcast.jet.config.JetConfig;
@@ -32,6 +37,8 @@ import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.TopologyChangedException;
+import com.hazelcast.jet.core.metrics.MetricNames;
+import com.hazelcast.jet.core.metrics.MetricTags;
 import com.hazelcast.jet.impl.exception.EnteringPassiveClusterStateException;
 import com.hazelcast.jet.impl.metrics.RawJobMetrics;
 import com.hazelcast.jet.impl.operation.NotifyMemberShutdownOperation;
@@ -126,6 +133,13 @@ public class JobCoordinationService {
 
     private final AtomicInteger scaleUpScheduledCount = new AtomicInteger();
 
+    @Probe(name = MetricNames.JOBS_SUBMITTED)
+    private final Counter jobSubmitted = MwCounter.newMwCounter();
+    @Probe(name = MetricNames.JOBS_COMPLETED_SUCCESSFULLY)
+    private final Counter jobCompletedSuccessfully = MwCounter.newMwCounter();
+    @Probe(name = MetricNames.JOBS_COMPLETED_WITH_FAILURE)
+    private final Counter jobCompletedWithFailure = MwCounter.newMwCounter();
+
     private long maxJobScanPeriodInMillis;
 
     JobCoordinationService(NodeEngineImpl nodeEngine, JetService jetService, JetConfig config,
@@ -138,6 +152,12 @@ public class JobCoordinationService {
 
         ExecutionService executionService = nodeEngine.getExecutionService();
         executionService.register(COORDINATOR_EXECUTOR_NAME, COORDINATOR_THREADS_POOL_SIZE, Integer.MAX_VALUE, CACHED);
+
+        // register metrics
+        MetricsRegistry registry = nodeEngine.getMetricsRegistry();
+        MetricDescriptor descriptor = registry.newMetricDescriptor()
+                .withTag(MetricTags.MODULE, "jet");
+        registry.registerStaticMetrics(descriptor, this);
     }
 
     public JobRepository jobRepository() {
@@ -203,6 +223,7 @@ public class JobCoordinationService {
                 }
 
                 // If there is no master context and job result at the same time, it means this is the first submission
+                jobSubmitted.inc();
                 jobRepository.putNewJobRecord(jobRecord);
 
                 logger.info("Starting job " + idToString(masterContext.jobId()) + " based on submit request");
@@ -632,7 +653,7 @@ public class JobCoordinationService {
      * Completes the job which is coordinated with the given master context object.
      */
     @CheckReturnValue
-    CompletableFuture<Void> completeJob(MasterContext masterContext, long completionTime, Throwable error) {
+    CompletableFuture<Void> completeJob(MasterContext masterContext, Throwable error) {
         return submitToCoordinatorThread(() -> {
             // the order of operations is important.
             long jobId = masterContext.jobId();
@@ -641,9 +662,10 @@ public class JobCoordinationService {
                             ? masterContext.jobContext().jobMetrics()
                             : null;
             UUID coordinator = nodeEngine.getNode().getThisUuid();
-            jobRepository.completeJob(jobId, jobMetrics, coordinator.toString(), completionTime, error);
+            jobRepository.completeJob(jobId, jobMetrics, coordinator.toString(), error);
             if (masterContexts.remove(masterContext.jobId(), masterContext)) {
                 logger.fine(masterContext.jobIdString() + " is completed");
+                (error == null ? jobCompletedSuccessfully : jobCompletedWithFailure).inc();
             } else {
                 MasterContext existing = masterContexts.get(jobId);
                 if (existing != null) {
@@ -968,4 +990,5 @@ public class JobCoordinationService {
     void assertOnCoordinatorThread() {
         assert IS_JOB_COORDINATOR_THREAD.get() : "not on coordinator thread";
     }
+
 }

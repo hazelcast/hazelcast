@@ -76,6 +76,7 @@ public class CompleteExecutionOperation extends Operation implements IdentifiedD
         }
 
         JobExecutionService jobExecutionService = service.getJobExecutionService();
+        jobExecutionService.beforeCompleteExecution(executionId);
         if (collectMetrics) {
             JobMetricsCollector metricsRenderer = new JobMetricsCollector(executionId, nodeEngine.getLocalMember(),
                     logger);

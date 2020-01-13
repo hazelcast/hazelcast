@@ -16,11 +16,12 @@
 
 package com.hazelcast.jet.impl.execution;
 
+import com.hazelcast.internal.util.counters.Counter;
+import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.Watermark;
 
 import java.util.Arrays;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 
@@ -151,12 +152,12 @@ public abstract class WatermarkCoalescer {
      */
     private static final class SingleInputImpl extends WatermarkCoalescer {
 
-        private AtomicLong queueWm = new AtomicLong(Long.MIN_VALUE);
+        private Counter queueWm = SwCounter.newSwCounter(Long.MIN_VALUE);
 
         @Override
         public long queueDone(int queueIndex) {
             assert queueWm.get() < Long.MAX_VALUE : "Duplicate DONE call";
-            queueWm.lazySet(Long.MAX_VALUE);
+            queueWm.set(Long.MAX_VALUE);
             return NO_NEW_WM;
         }
 
@@ -172,7 +173,7 @@ public abstract class WatermarkCoalescer {
                         "last one=" + queueWm + ", new one=" + wmValue);
             }
             if (wmValue != IDLE_MESSAGE.timestamp()) {
-                queueWm.lazySet(wmValue);
+                queueWm.set(wmValue);
             }
             return wmValue;
         }
@@ -200,8 +201,8 @@ public abstract class WatermarkCoalescer {
 
         private final long[] queueWms;
         private final boolean[] isIdle;
-        private AtomicLong lastEmittedWm = new AtomicLong(Long.MIN_VALUE);
-        private AtomicLong topObservedWm = new AtomicLong(Long.MIN_VALUE);
+        private Counter lastEmittedWm = SwCounter.newSwCounter(Long.MIN_VALUE);
+        private Counter topObservedWm = SwCounter.newSwCounter(Long.MIN_VALUE);
         private boolean allInputsAreIdle;
         private boolean idleMessagePending;
 
@@ -241,7 +242,7 @@ public abstract class WatermarkCoalescer {
                 allInputsAreIdle = false;
                 queueWms[queueIndex] = wmValue;
                 if (wmValue > topObservedWm.get()) {
-                    topObservedWm.lazySet(wmValue);
+                    topObservedWm.set(wmValue);
                 }
                 return checkObservedWms();
             }
@@ -279,7 +280,7 @@ public abstract class WatermarkCoalescer {
                 final long topObservedWmLocal = topObservedWm.get();
                 if (topObservedWmLocal > lastEmittedWm.get()) {
                     idleMessagePending = notDoneInputCount != 0;
-                    lastEmittedWm.lazySet(topObservedWmLocal);
+                    lastEmittedWm.set(topObservedWmLocal);
                     return topObservedWmLocal;
                 }
                 return notDoneInputCount != 0
@@ -289,7 +290,7 @@ public abstract class WatermarkCoalescer {
 
             // if the new lowest observed wm is larger than already emitted, emit it
             if (min > lastEmittedWm.get()) {
-                lastEmittedWm.lazySet(min);
+                lastEmittedWm.set(min);
                 return min;
             }
 

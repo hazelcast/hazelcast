@@ -18,6 +18,8 @@ package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.util.counters.Counter;
+import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
@@ -30,7 +32,6 @@ import com.hazelcast.jet.pipeline.ServiceFactory;
 import javax.annotation.Nonnull;
 import java.util.ArrayDeque;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.impl.processor.ProcessorSupplierWithService.supplierWithService;
@@ -60,7 +61,7 @@ public final class AsyncTransformUsingServiceOrderedP<C, S, T, R> extends Abstra
     private ResettableSingletonTraverser<Watermark> watermarkTraverser = new ResettableSingletonTraverser<>();
 
     @Probe(name = "numInFlightOps")
-    private final AtomicInteger asyncOpsCounterMetric = new AtomicInteger();
+    private final Counter asyncOpsCounterMetric = SwCounter.newSwCounter();
 
     /**
      * Constructs a processor with the given mapping function.
@@ -108,7 +109,7 @@ public final class AsyncTransformUsingServiceOrderedP<C, S, T, R> extends Abstra
     @Override
     public boolean tryProcess() {
         tryFlushQueue();
-        asyncOpsCounterMetric.lazySet(queue.size());
+        asyncOpsCounterMetric.set(queue.size());
         return true;
     }
 

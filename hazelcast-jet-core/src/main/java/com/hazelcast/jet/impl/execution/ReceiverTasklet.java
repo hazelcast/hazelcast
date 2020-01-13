@@ -23,6 +23,8 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeUnit;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
+import com.hazelcast.internal.util.counters.Counter;
+import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.jet.config.InstanceConfig;
 import com.hazelcast.jet.core.metrics.MetricNames;
 import com.hazelcast.jet.core.metrics.MetricTags;
@@ -36,12 +38,10 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Queue;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
-import static com.hazelcast.jet.impl.util.Util.lazyAdd;
 import static java.lang.Math.ceil;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -96,10 +96,10 @@ public class ReceiverTasklet implements Tasklet {
     private boolean receptionDone;
 
     @Probe(name = MetricNames.DISTRIBUTED_ITEMS_IN)
-    private final AtomicLong itemsInCounter = new AtomicLong();
+    private final Counter itemsInCounter = SwCounter.newSwCounter();
 
     @Probe(name = MetricNames.DISTRIBUTED_BYTES_IN, unit = ProbeUnit.BYTES)
-    private final AtomicLong bytesInCounter = new AtomicLong();
+    private final Counter bytesInCounter = SwCounter.newSwCounter();
 
     //                    FLOW-CONTROL STATE
     //            All arrays are indexed by sender ID.
@@ -287,8 +287,8 @@ public class ReceiverTasklet implements Tasklet {
                 received.close();
                 tracker.madeProgress();
             }
-            lazyAdd(bytesInCounter, totalBytes);
-            lazyAdd(itemsInCounter, totalItems);
+            bytesInCounter.inc(totalBytes);
+            itemsInCounter.inc(totalItems);
         } catch (IOException e) {
             throw rethrow(e);
         }

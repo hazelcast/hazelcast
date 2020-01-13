@@ -20,6 +20,8 @@ import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.concurrent.ManyToOneConcurrentArrayQueue;
+import com.hazelcast.internal.util.counters.Counter;
+import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
@@ -43,7 +45,6 @@ import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.Traversers.traverseIterable;
@@ -93,7 +94,7 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
     private ArrayDeque<T> restoredObjects = new ArrayDeque<>();
 
     @Probe(name = "numInFlightOps")
-    private final AtomicInteger asyncOpsCounterMetric = new AtomicInteger();
+    private final Counter asyncOpsCounterMetric = SwCounter.newSwCounter();
 
     /**
      * Constructs a processor with the given mapping function.
@@ -123,7 +124,7 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
         if (getOutbox().hasUnfinishedItem() && !emitFromTraverser(currentTraverser)) {
             return false;
         }
-        asyncOpsCounterMetric.lazySet(asyncOpsCounter);
+        asyncOpsCounterMetric.set(asyncOpsCounter);
         @SuppressWarnings("unchecked")
         T castItem = (T) item;
         if (!processItem(castItem)) {
@@ -176,7 +177,7 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
     @Override
     public boolean tryProcess() {
         tryFlushQueue();
-        asyncOpsCounterMetric.lazySet(asyncOpsCounter);
+        asyncOpsCounterMetric.set(asyncOpsCounter);
         return true;
     }
 

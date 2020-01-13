@@ -17,6 +17,8 @@
 package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.util.counters.Counter;
+import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.AbstractProcessor;
@@ -33,14 +35,12 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.ToLongFunction;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
-import static com.hazelcast.jet.impl.util.Util.lazyIncrement;
 import static com.hazelcast.jet.impl.util.Util.logLateEvent;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
@@ -50,7 +50,7 @@ public class TransformStatefulP<T, K, S, R> extends AbstractProcessor {
     private static final float HASH_MAP_LOAD_FACTOR = 0.75f;
 
     @Probe(name = "lateEventsDropped")
-    private final AtomicLong lateEventsDropped = new AtomicLong();
+    private final Counter lateEventsDropped = SwCounter.newSwCounter();
 
     private final long ttl;
     private final Function<? super T, ? extends K> keyFn;
@@ -97,7 +97,7 @@ public class TransformStatefulP<T, K, S, R> extends AbstractProcessor {
         long timestamp = timestampFn.applyAsLong(event);
         if (timestamp < currentWm && ttl != Long.MAX_VALUE) {
             logLateEvent(getLogger(), currentWm, event);
-            lazyIncrement(lateEventsDropped);
+            lateEventsDropped.inc();
             return Traversers.empty();
         }
         K key = keyFn.apply(event);

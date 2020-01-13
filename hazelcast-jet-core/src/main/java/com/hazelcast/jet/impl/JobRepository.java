@@ -364,7 +364,6 @@ public class JobRepository {
             long jobId,
             @Nullable List<RawJobMetrics> terminalMetrics,
             @Nonnull String coordinator,
-            long completionTime,
             @Nullable Throwable error
     ) {
         JobRecord jobRecord = getJobRecord(jobId);
@@ -374,7 +373,7 @@ public class JobRepository {
 
         JobConfig config = jobRecord.getConfig();
         long creationTime = jobRecord.getCreationTime();
-        JobResult jobResult = new JobResult(jobId, config, coordinator, creationTime, completionTime,
+        JobResult jobResult = new JobResult(jobId, config, coordinator, creationTime, System.currentTimeMillis(),
                 toErrorMsg(error));
 
         if (terminalMetrics != null) {

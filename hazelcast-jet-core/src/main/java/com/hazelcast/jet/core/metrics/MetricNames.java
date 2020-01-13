@@ -27,9 +27,6 @@ import com.hazelcast.jet.core.Vertex;
  * attributes which describe a specific instance of the metric and are not
  * directly part of the identity of the metric.
  * <p>
- * Metric names are also being duplicated by the metric tag
- * {@link MetricTags#METRIC}.
- * <p>
  * The constants described here represent the various names metrics can
  * take in Jet.
  */
@@ -95,25 +92,58 @@ public final class MetricNames {
     /**
      * Tracks the highest watermark observed on all the input queues
      * of a particular incoming {@link Edge} of a certain {@link Vertex}.
-     * The {@link Edge} and the {@link Vertex}, together with the concrete
-     * {@link Processor} running them can be identified based on the
-     * {@link MetricTags#ORDINAL}, {@link MetricTags#VERTEX} &
-     * {@link MetricTags#PROCESSOR} tags of the metric.
+     * The {@link Vertex} and the {@link Processor} can be identified
+     * based on the {@link MetricTags#VERTEX} & {@link MetricTags#PROCESSOR}
+     * tags of the metric.
      */
     public static final String COALESCED_WM = "coalescedWm";
 
     /**
-     * Tracks the last watermark emitted by a particular {@link Processor},
-     * which can be identified based on the {@link MetricTags#PROCESSOR} tag.
+     * Tracks the last watermark emitted by a particular {@link Processor}
+     * of a particular {@link Vertex}. The {@link Vertex} and the
+     * {@link Processor} can be identified based on the {@link MetricTags#VERTEX}
+     * & {@link MetricTags#PROCESSOR} tags of the metric.
      */
     public static final String LAST_FORWARDED_WM = "lastForwardedWm";
 
     /**
      * Tracks the difference between the last emitted watermark and the
-     * system time of a particular {@link Processor}. The {@link Processor}
-     * can be identified based on the {@link MetricTags#PROCESSOR} tag.
+     * system time of a particular {@link Processor} of a particular
+     * {@link Vertex}. The {@link Vertex} and the {@link Processor} can be
+     * identified based on the {@link MetricTags#VERTEX} &
+     * {@link MetricTags#PROCESSOR} tags of the metric.
      */
     public static final String LAST_FORWARDED_WM_LATENCY = "lastForwardedWmLatency";
+
+    /**
+     * Tracks the total number of bytes written in the last snapshot
+     * by a particular {@link Vertex}. The name of the vertex can be found
+     * in the {@link MetricTags#VERTEX} tag of the metric.
+     */
+    public static final String SNAPSHOT_BYTES = "snapshotBytes";
+
+    /**
+     * Tracks the total number of keys written in the last snapshot
+     * by a particular {@link Vertex}. The name of the vertex can be found
+     * in the {@link MetricTags#VERTEX} tag of the metric.
+     */
+    public static final String SNAPSHOT_KEYS = "snapshotKeys";
+
+    /**
+     * Tracks the start time of a given execution of a specific job.
+     * The execution and the job can be identified based on the
+     * {@link MetricTags#EXECUTION} & {@link MetricTags#JOB} tags of
+     * the metric.
+     */
+    public static final String EXECUTION_START_TIME = "executionStartTime";
+
+    /**
+     * Tracks the completion time of a given execution of a specific job.
+     * The execution and the job can be identified based on the
+     * {@link MetricTags#EXECUTION} & {@link MetricTags#JOB} tags of
+     * the metric.
+     */
+    public static final String EXECUTION_COMPLETION_TIME = "executionCompletionTime";
 
     /**
      * Counts data items coming in over the network for DISTRIBUTED input
@@ -150,6 +180,44 @@ public final class MetricNames {
      * {@link MetricTags#VERTEX} & {@link MetricTags#PROCESSOR} tags of the metric.
      */
     public static final String DISTRIBUTED_BYTES_OUT = "distributedBytesOut";
+
+    /**
+     * Number of jobs submitted to the Jet cluster.
+     * <p>
+     * This metric is zero on non-master members. When a master fails and a new
+     * master takes over, the count is reset.
+     */
+    public static final String JOBS_SUBMITTED = "jobs.submitted";
+
+    /**
+     * Number of jobs successfully completed by the Jet cluster.
+     * <p>
+     * This metric is zero on non-master members. When a master fails and a new
+     * master takes over, the count is reset.
+     */
+    public static final String JOBS_COMPLETED_SUCCESSFULLY = "jobs.completedSuccessfully";
+
+    /**
+     * Number of jobs that have failed on the Jet cluster.
+     * <p>
+     * This metric is zero on non-master members. When a master fails and a new
+     * master takes over, the count is reset.
+     */
+    public static final String JOBS_COMPLETED_WITH_FAILURE = "jobs.completedWithFailure";
+
+    /**
+     * Number of job executions started on the Jet cluster. Each job can
+     * execute multiple times, for example when it's restarted or suspended
+     * and then resumed.
+     */
+    public static final String JOB_EXECUTIONS_STARTED = "jobs.executionStarted";
+
+    /**
+     * Number of job executions finished on the Jet cluster. Each job can
+     * execute multiple times, for example when it's restarted or suspended
+     * and then resumed.
+     */
+    public static final String JOB_EXECUTIONS_COMPLETED = "jobs.executionCompleted";
 
     private MetricNames() {
     }

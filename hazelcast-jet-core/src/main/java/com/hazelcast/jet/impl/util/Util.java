@@ -49,7 +49,6 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicLongArray;
 import java.util.function.Supplier;
 import java.util.function.ToIntFunction;
@@ -326,21 +325,8 @@ public final class Util {
         return gcd(b, a % b);
     }
 
-    public static void lazyIncrement(AtomicLong counter) {
-        lazyAdd(counter, 1);
-    }
-
     public static void lazyIncrement(AtomicLongArray counters, int index) {
         lazyAdd(counters, index, 1);
-    }
-
-    /**
-     * Adds {@code addend} to the counter, using {@code lazySet}. Useful for
-     * incrementing {@linkplain com.hazelcast.internal.metrics.Probe probes}
-     * if only one thread is updating the value.
-     */
-    public static void lazyAdd(AtomicLong counter, long addend) {
-        counter.lazySet(counter.get() + addend);
     }
 
     /**

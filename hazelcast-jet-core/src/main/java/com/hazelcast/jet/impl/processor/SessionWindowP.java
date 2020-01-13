@@ -18,6 +18,8 @@ package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.QuickMath;
+import com.hazelcast.internal.util.counters.Counter;
+import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
@@ -45,7 +47,6 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.StringJoiner;
 import java.util.TreeMap;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.ToLongFunction;
@@ -58,8 +59,6 @@ import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
-import static com.hazelcast.jet.impl.util.Util.lazyAdd;
-import static com.hazelcast.jet.impl.util.Util.lazyIncrement;
 import static com.hazelcast.jet.impl.util.Util.logLateEvent;
 import static com.hazelcast.jet.impl.util.Util.toLocalDateTime;
 import static java.lang.Math.min;
@@ -101,11 +100,11 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
     private ProcessingGuarantee processingGuarantee;
 
     @Probe(name = "lateEventsDropped")
-    private final AtomicLong lateEventsDropped = new AtomicLong();
+    private final Counter lateEventsDropped = SwCounter.newSwCounter();
     @Probe(name = "totalKeys")
-    private final AtomicLong totalKeys = new AtomicLong();
+    private final Counter totalKeys = SwCounter.newSwCounter();
     @Probe(name = "totalWindows")
-    private final AtomicLong totalWindows = new AtomicLong();
+    private final Counter totalWindows = SwCounter.newSwCounter();
 
     // Fields for early results emission
     private final long earlyResultsPeriod;
@@ -118,7 +117,7 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
 
     // extracted lambdas to reduce GC litter
     private final Function<K, Windows<A>> newWindowsFunction = k -> {
-        lazyIncrement(totalKeys);
+        totalKeys.inc();
         return new Windows<>();
     };
 
@@ -173,7 +172,7 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
         final long timestamp = timestampFns.get(ordinal).applyAsLong(item);
         if (timestamp < currentWatermark) {
             logLateEvent(getLogger(), currentWatermark, item);
-            lazyIncrement(lateEventsDropped);
+            lateEventsDropped.inc();
             return true;
         }
         K key = keyFns.get(ordinal).apply(item);
@@ -208,7 +207,7 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
                 .flatMap(List::stream);
         Traverser<Object> result = traverseStream(closedWindows)
                 .onFirstNull(() -> {
-                    lazyAdd(totalWindows, -windowsToClose.values().stream().mapToInt(Set::size).sum());
+                    totalWindows.inc(-windowsToClose.values().stream().mapToInt(Set::size).sum());
                     windowsToClose.clear();
                 });
         if (wm != COMPLETING_WM) {
@@ -219,14 +218,14 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
 
     private void addToDeadlines(K key, long deadline) {
         if (deadlineToKeys.computeIfAbsent(deadline, x -> new HashSet<>()).add(key)) {
-            lazyIncrement(totalWindows);
+            totalWindows.inc();
         }
     }
 
     private void removeFromDeadlines(K key, long deadline) {
         Set<K> ks = deadlineToKeys.get(deadline);
         ks.remove(key);
-        lazyAdd(totalWindows, -1);
+        totalWindows.inc(-1);
         if (ks.isEmpty()) {
             deadlineToKeys.remove(deadline);
         }

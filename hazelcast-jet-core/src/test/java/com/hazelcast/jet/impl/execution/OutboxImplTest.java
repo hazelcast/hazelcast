@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.execution;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.impl.util.ProgressTracker;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -33,7 +34,9 @@ import static com.hazelcast.jet.impl.util.ProgressState.NO_PROGRESS;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastSerialClassRunner.class)
 public class OutboxImplTest {
@@ -42,7 +45,7 @@ public class OutboxImplTest {
     public ExpectedException exception = ExpectedException.none();
 
     private OutboxImpl outbox = new OutboxImpl(new OutboundCollector[] {e -> DONE, e -> DONE, e -> DONE},
-            true, new ProgressTracker(), mock(SerializationService.class), 3, new AtomicLongArray(4));
+            true, new ProgressTracker(), mockSerializationService(), 3, new AtomicLongArray(4));
 
     @Before
     public void before() {
@@ -85,7 +88,7 @@ public class OutboxImplTest {
     public void when_queueFullAndOfferReturnedFalse_then_subsequentCallFails() {
         // See https://github.com/hazelcast/hazelcast-jet/issues/622
         outbox = new OutboxImpl(new OutboundCollector[] {e -> DONE, e -> NO_PROGRESS},
-                true, new ProgressTracker(), mock(SerializationService.class), 128, new AtomicLongArray(3));
+                true, new ProgressTracker(), mockSerializationService(), 128, new AtomicLongArray(3));
 
         // we succeed offering to one queue, but not to the other, thus false
         assertFalse(outbox.offer(4));
@@ -173,7 +176,7 @@ public class OutboxImplTest {
         boolean[] allowOffer = {false};
         assertFalse(outbox.hasUnfinishedItem());
         outbox = new OutboxImpl(new OutboundCollector[] {e -> allowOffer[0] ? DONE : NO_PROGRESS},
-                true, new ProgressTracker(), mock(SerializationService.class), 128, new AtomicLongArray(3));
+                true, new ProgressTracker(), mockSerializationService(), 128, new AtomicLongArray(3));
 
         assertFalse(outbox.offer(4));
         assertTrue(outbox.hasUnfinishedItem());
@@ -213,5 +216,11 @@ public class OutboxImplTest {
         exception.expectMessage("ifferent");
         // we offer the same item as the last false-returning call, but to different offer function
         offerF2.test(4);
+    }
+
+    private static SerializationService mockSerializationService() {
+        SerializationService mock = mock(SerializationService.class);
+        when(mock.toData(any())).thenReturn(mock(Data.class));
+        return mock;
     }
 }

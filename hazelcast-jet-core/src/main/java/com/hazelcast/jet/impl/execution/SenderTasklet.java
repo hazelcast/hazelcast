@@ -25,6 +25,8 @@ import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.Packet;
+import com.hazelcast.internal.util.counters.Counter;
+import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.jet.RestartableException;
 import com.hazelcast.jet.core.metrics.MetricNames;
 import com.hazelcast.jet.core.metrics.MetricTags;
@@ -37,7 +39,6 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Queue;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 
 import static com.hazelcast.jet.impl.Networking.createStreamPacketHeader;
@@ -47,7 +48,6 @@ import static com.hazelcast.jet.impl.execution.ReceiverTasklet.estimatedMemoryFo
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.ImdgUtil.createObjectDataOutput;
 import static com.hazelcast.jet.impl.util.ImdgUtil.getMemberConnection;
-import static com.hazelcast.jet.impl.util.Util.lazyAdd;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 
 public class SenderTasklet implements Tasklet {
@@ -66,10 +66,10 @@ public class SenderTasklet implements Tasklet {
     private final String sourceVertexName;
 
     @Probe(name = MetricNames.DISTRIBUTED_ITEMS_OUT)
-    private final AtomicLong itemsOutCounter = new AtomicLong();
+    private final Counter itemsOutCounter = SwCounter.newSwCounter();
 
     @Probe(name = MetricNames.DISTRIBUTED_BYTES_OUT, unit = ProbeUnit.BYTES)
-    private final AtomicLong bytesOutCounter = new AtomicLong();
+    private final Counter bytesOutCounter = SwCounter.newSwCounter();
 
     private boolean instreamExhausted;
     // read and written by Jet thread
@@ -151,8 +151,8 @@ public class SenderTasklet implements Tasklet {
                 outputBuffer.writeInt(itemWithPId.getPartitionId());
             }
             outputBuffer.writeInt(bufPosPastHeader, writtenCount);
-            lazyAdd(bytesOutCounter, outputBuffer.position());
-            lazyAdd(itemsOutCounter, writtenCount);
+            bytesOutCounter.inc(outputBuffer.position());
+            itemsOutCounter.inc(writtenCount);
             return writtenCount > 0;
         } catch (IOException e) {
             throw rethrow(e);

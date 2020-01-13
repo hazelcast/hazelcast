@@ -39,6 +39,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import javax.annotation.Nonnull;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Function;
@@ -113,7 +114,7 @@ public class JobMetrics_MiscTest extends TestInClusterSupport {
     }
 
     @Test
-    public void when_jobFailedBeforeStarted_then_emptyMetrics() {
+    public void when_jobFailedBeforeStarted_then_minimalMetrics() {
         DAG dag = new DAG();
         RuntimeException expected = new RuntimeException("foo");
         // Job will fail in ProcessorSupplier.init method, which is called before InitExecutionOp is
@@ -128,7 +129,7 @@ public class JobMetrics_MiscTest extends TestInClusterSupport {
             assertContains(e.toString(), expected.toString());
         }
 
-        assertEmptyJobMetrics(job, true);
+        assertEquals(Collections.singleton(MetricNames.EXECUTION_COMPLETION_TIME), job.getMetrics().metrics());
     }
 
     @Test
@@ -258,7 +259,7 @@ public class JobMetrics_MiscTest extends TestInClusterSupport {
     }
 
     @Test
-    public void test_jobFailed() {
+    public void when_jobFailed_then_MetricsReturned() {
         DAG dag = new DAG();
         RuntimeException e = new RuntimeException("mock error");
         Vertex source = dag.newVertex("source", TestProcessors.ListSource.supplier(singletonList(1)));
@@ -318,7 +319,8 @@ public class JobMetrics_MiscTest extends TestInClusterSupport {
     }
 
     private void assertEmptyJobMetrics(Job job, boolean saved) {
-        assertTrue(job.getMetrics().metrics().isEmpty());
+        assertTrue("Should have been empty, but contained: " + job.getMetrics().metrics(),
+                job.getMetrics().metrics().isEmpty());
         assertEquals(saved, jet().getMap(JobRepository.JOB_METRICS_MAP_NAME).containsKey(job.getId()));
     }
 

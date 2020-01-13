@@ -16,18 +16,19 @@
 
 package com.hazelcast.jet.impl.execution;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.counters.Counter;
+import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.jet.impl.util.ProgressTracker;
 import com.hazelcast.jet.impl.util.Util;
-import com.hazelcast.internal.serialization.Data;
 
 import javax.annotation.Nonnull;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Map.Entry;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicLongArray;
 import java.util.stream.IntStream;
 
@@ -55,7 +56,7 @@ public class OutboxImpl implements OutboxInternal {
     private int[] unfinishedItemOrdinals;
     private Object unfinishedSnapshotKey;
     private Object unfinishedSnapshotValue;
-    private final AtomicLong lastForwardedWm = new AtomicLong(Long.MIN_VALUE);
+    private final Counter lastForwardedWm = SwCounter.newSwCounter(Long.MIN_VALUE);
 
     private boolean blocked;
 
@@ -123,7 +124,7 @@ public class OutboxImpl implements OutboxInternal {
                 "call to reset(). You probably didn't return from Processor method after Outbox.offer() " +
                 "or AbstractProcessor.tryEmit() returned false";
         if (item instanceof Watermark) {
-            lastForwardedWm.lazySet(((Watermark) item).timestamp());
+            lastForwardedWm.set(((Watermark) item).timestamp());
         }
         numRemainingInBatch--;
         boolean done = true;

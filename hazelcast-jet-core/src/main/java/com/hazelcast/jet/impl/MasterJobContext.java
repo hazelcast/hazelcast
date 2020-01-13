@@ -27,6 +27,10 @@ import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.core.metrics.JobMetrics;
+import com.hazelcast.jet.core.metrics.Measurement;
+import com.hazelcast.jet.core.metrics.MetricNames;
+import com.hazelcast.jet.core.metrics.MetricTags;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate;
 import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
@@ -100,7 +104,6 @@ import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 import static java.util.Collections.emptyList;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.stream.Collectors.partitioningBy;
 
 /**
@@ -119,7 +122,7 @@ public class MasterJobContext {
     private final ILogger logger;
     private final int defaultParallelism;
 
-    private volatile long executionStartTime = System.nanoTime();
+    private volatile long executionStartTime = System.currentTimeMillis();
     private volatile ExecutionFailureCallback executionFailureCallback;
     private volatile Set<Vertex> vertices;
     @Nonnull
@@ -181,7 +184,7 @@ public class MasterJobContext {
      */
     void tryStartJob(Supplier<Long> executionIdSupplier) {
         mc.coordinationService().submitToCoordinatorThread(() -> {
-            executionStartTime = System.nanoTime();
+            executionStartTime = System.currentTimeMillis();
             try {
                 JobExecutionRecord jobExecRec = mc.jobExecutionRecord();
                 jobExecRec.markExecuted();
@@ -348,7 +351,7 @@ public class MasterJobContext {
 
         if (localStatus == SUSPENDED) {
             try {
-                mc.coordinationService().completeJob(mc, System.currentTimeMillis(), new CancellationException()).get();
+                mc.coordinationService().completeJob(mc, new CancellationException()).get();
             } catch (Exception e) {
                 throw rethrow(e);
             }
@@ -662,7 +665,7 @@ public class MasterJobContext {
                         return;
                     }
                     mc.coordinationService()
-                      .completeJob(mc, System.currentTimeMillis(), failure)
+                      .completeJob(mc, failure)
                       .whenComplete(withTryCatch(logger, (r, f) -> {
                           if (f != null) {
                               logger.warning("Completion of " + mc.jobIdString() + " failed", f);
@@ -681,18 +684,57 @@ public class MasterJobContext {
     }
 
     private boolean isSuccess(@Nullable Throwable failure) {
-        long elapsed = NANOSECONDS.toMillis(System.nanoTime() - executionStartTime);
         if (failure == null) {
-            logger.info(String.format("Execution of %s completed in %,d ms", mc.jobIdString(), elapsed));
+            logger.info(formatExecutionSummary("completed successfully"));
             return true;
         }
         if (failure instanceof CancellationException || failure instanceof JobTerminateRequestedException) {
-            logger.info(String.format("Execution of %s completed in %,d ms, reason=%s",
-                    mc.jobIdString(), elapsed, failure));
+            logger.info(formatExecutionSummary("got terminated, reason=" + failure));
             return false;
         }
-        logger.severe(String.format("Execution of %s failed after %,d ms", mc.jobIdString(), elapsed), failure);
+        logger.severe(formatExecutionSummary("failed"), failure);
         return false;
+    }
+
+    private String formatExecutionSummary(String conclusion) {
+        long executionEndTime = System.currentTimeMillis();
+        StringBuilder sb = new StringBuilder();
+        sb.append("Execution of ").append(mc.jobIdString()).append(' ').append(conclusion);
+        sb.append("\n\t").append("Start time: ").append(Util.toLocalDateTime(executionStartTime));
+        sb.append("\n\t").append("Duration: ").append(String.format("%,d ms", executionEndTime - executionStartTime));
+        if (jobMetrics.stream().noneMatch(rjm -> rjm.getBlob() != null)) {
+            sb.append("\n\tFor further details enable JobConfig.storeMetricsAfterJobCompletion");
+        } else {
+            JobMetrics jobMetrics = JobMetricsUtil.toJobMetrics(this.jobMetrics);
+
+            Map<String, Long> receivedCounts = mergeByVertex(jobMetrics.get(MetricNames.RECEIVED_COUNT));
+            Map<String, Long> emittedCounts = mergeByVertex(jobMetrics.get(MetricNames.EMITTED_COUNT));
+            Map<String, Long> distributedBytesIn = mergeByVertex(jobMetrics.get(MetricNames.DISTRIBUTED_BYTES_IN));
+            Map<String, Long> distributedBytesOut = mergeByVertex(jobMetrics.get(MetricNames.DISTRIBUTED_BYTES_OUT));
+
+            sb.append("\n\tVertices:");
+            for (Vertex vertex : vertices) {
+                sb.append("\n\t\t").append(vertex.getName());
+                sb.append(getValueForVertex("\n\t\t\t" + MetricNames.RECEIVED_COUNT, vertex, receivedCounts));
+                sb.append(getValueForVertex("\n\t\t\t" + MetricNames.EMITTED_COUNT, vertex, emittedCounts));
+                sb.append(getValueForVertex("\n\t\t\t" + MetricNames.DISTRIBUTED_BYTES_IN, vertex, distributedBytesIn));
+                sb.append(getValueForVertex("\n\t\t\t" + MetricNames.DISTRIBUTED_BYTES_OUT, vertex, distributedBytesOut));
+            }
+        }
+        return sb.toString();
+    }
+
+    private static Map<String, Long> mergeByVertex(List<Measurement> measurements) {
+        return measurements.stream().collect(Collectors.toMap(
+                m -> m.tag(MetricTags.VERTEX),
+                Measurement::value,
+                Long::sum
+        ));
+    }
+
+    private static String getValueForVertex(String label, Vertex vertex, Map<String, Long> values) {
+        Long value = values.get(vertex.getName());
+        return value == null ? "" : label + ": " + value;
     }
 
     private void logIgnoredCompletion(@Nullable Throwable failure, JobStatus status) {

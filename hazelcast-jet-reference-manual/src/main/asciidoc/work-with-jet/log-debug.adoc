@@ -139,7 +139,15 @@ max/committed/used/free native memory)
 |===
 |Names|Main tags
 
-| **blockingWorkerCount**: The number of non-cooperative workers employed.
+| **blockingWorkerCount**: Number of non-cooperative workers employed.
+
+**jobs.submitted**: Number of computational jobs submitted. +
+**jobs.completedSuccessfully**: Number of computational jobs successfully completed. +
+**jobs.completedWithFailure**: Number of computational jobs that have failed. +
+**jobs.executionStarted**: Number of computational job executions started.
+Each job can execute multiple times, for example when it's restarted or suspended and then resumed. +
+**jobs.executionTerminated**: Number of computational job executions finished.
+Each job can execute multiple times, for example when it's restarted or suspended and then resumed.
 | **none** +
 Each Jet cluster member will have one instance of this metric.
 
@@ -147,8 +155,7 @@ Each Jet cluster member will have one instance of this metric.
 thread N made. It should increase by at least 250 iterations/s. Lower
 value means some of the cooperative processors blocks for too long.
 Somewhat lower value is normal if there are many tasklets assigned to
-the processor. Lower value affects the latency.
-
+the processor. Lower value affects the latency. +
  **taskletCount**: The number of assigned tasklets to cooperative thread N.
 | **cooperativeWorker=<N>** +
 N is the number of the cooperative thread.
@@ -169,7 +176,12 @@ Additionally, if the vertex sourcing them is a data source or data sink, then th
 
 [cols="3,2"]
 |===
-|Names|Main tags
+|Names|Extra tags
+
+|**snapshotBytes**: Total number of bytes written out in the last snapshot. +
+**snapshotKeys**: Total number of keys written out in the last snapshot.
+|**none** +
+There will be a single instance of these metrics for each vertex.
 
 |**distributedBytesIn**: Total number of bytes received from remote
 members. +
