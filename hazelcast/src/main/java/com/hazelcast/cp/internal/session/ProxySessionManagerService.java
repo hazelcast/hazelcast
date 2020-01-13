@@ -70,8 +70,7 @@ public class ProxySessionManagerService extends AbstractProxySessionManager impl
     @Override
     protected SessionResponse requestNewSession(RaftGroupId groupId) {
         String instanceName = nodeEngine.getConfig().getInstanceName();
-        long creationTime = System.currentTimeMillis();
-        RaftOp op = new CreateSessionOp(nodeEngine.getThisAddress(), instanceName, SERVER, creationTime);
+        RaftOp op = new CreateSessionOp(nodeEngine.getThisAddress(), instanceName, SERVER);
         ICompletableFuture<SessionResponse> future = getInvocationManager().invoke(groupId, op);
         try {
             return future.get();

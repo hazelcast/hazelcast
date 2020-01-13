@@ -237,9 +237,9 @@ public class RaftSessionService implements ManagedService, SnapshotAwareService<
     }
 
     public SessionResponse createNewSession(CPGroupId groupId, Address endpoint, String endpointName,
-                                            CPSessionOwnerType endpointType, long creationTime) {
+                                            CPSessionOwnerType endpointType) {
         RaftSessionRegistry registry = getOrInitRegistry(groupId);
-
+        long creationTime = Clock.currentTimeMillis();
         long sessionTTLMillis = getSessionTTLMillis();
         long sessionId = registry.createNewSession(sessionTTLMillis, endpoint, endpointName, endpointType, creationTime);
         logger.info("Created new session: " + sessionId + " in " + groupId + " for " + endpointType + " -> " + endpoint);
