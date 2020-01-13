@@ -24,10 +24,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("5047b22c005f691dbb8680f2916f6df2")
+@Generated("81ada5402a317de1c4d63c185f96d54f")
 public final class TimedExpiryPolicyFactoryConfigCodec {
     private static final int EXPIRY_POLICY_TYPE_FIELD_OFFSET = 0;
-    private static final int INITIAL_FRAME_SIZE = EXPIRY_POLICY_TYPE_FIELD_OFFSET + ENUM_SIZE_IN_BYTES;
+    private static final int INITIAL_FRAME_SIZE = EXPIRY_POLICY_TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private TimedExpiryPolicyFactoryConfigCodec() {
     }
@@ -36,7 +36,7 @@ public final class TimedExpiryPolicyFactoryConfigCodec {
         clientMessage.add(BEGIN_FRAME.copy());
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
-        encodeEnum(initialFrame.content, EXPIRY_POLICY_TYPE_FIELD_OFFSET, timedExpiryPolicyFactoryConfig.getExpiryPolicyType());
+        encodeInt(initialFrame.content, EXPIRY_POLICY_TYPE_FIELD_OFFSET, timedExpiryPolicyFactoryConfig.getExpiryPolicyType());
         clientMessage.add(initialFrame);
 
         DurationConfigCodec.encode(clientMessage, timedExpiryPolicyFactoryConfig.getDurationConfig());
@@ -49,7 +49,7 @@ public final class TimedExpiryPolicyFactoryConfigCodec {
         iterator.next();
 
         ClientMessage.Frame initialFrame = iterator.next();
-        int expiryPolicyType = decodeEnum(initialFrame.content, EXPIRY_POLICY_TYPE_FIELD_OFFSET);
+        int expiryPolicyType = decodeInt(initialFrame.content, EXPIRY_POLICY_TYPE_FIELD_OFFSET);
 
         com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig durationConfig = DurationConfigCodec.decode(iterator);
 

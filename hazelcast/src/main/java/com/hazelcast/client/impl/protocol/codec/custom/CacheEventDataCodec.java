@@ -24,10 +24,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("c16ee5635047568db60c4ec00e62de8c")
+@Generated("9406ff10290f056c7dfe44404bf17486")
 public final class CacheEventDataCodec {
     private static final int CACHE_EVENT_TYPE_FIELD_OFFSET = 0;
-    private static final int OLD_VALUE_AVAILABLE_FIELD_OFFSET = CACHE_EVENT_TYPE_FIELD_OFFSET + ENUM_SIZE_IN_BYTES;
+    private static final int OLD_VALUE_AVAILABLE_FIELD_OFFSET = CACHE_EVENT_TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int INITIAL_FRAME_SIZE = OLD_VALUE_AVAILABLE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
 
     private CacheEventDataCodec() {
@@ -37,7 +37,7 @@ public final class CacheEventDataCodec {
         clientMessage.add(BEGIN_FRAME.copy());
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
-        encodeEnum(initialFrame.content, CACHE_EVENT_TYPE_FIELD_OFFSET, cacheEventData.getCacheEventType());
+        encodeInt(initialFrame.content, CACHE_EVENT_TYPE_FIELD_OFFSET, cacheEventData.getCacheEventType());
         encodeBoolean(initialFrame.content, OLD_VALUE_AVAILABLE_FIELD_OFFSET, cacheEventData.isOldValueAvailable());
         clientMessage.add(initialFrame);
 
@@ -54,7 +54,7 @@ public final class CacheEventDataCodec {
         iterator.next();
 
         ClientMessage.Frame initialFrame = iterator.next();
-        int cacheEventType = decodeEnum(initialFrame.content, CACHE_EVENT_TYPE_FIELD_OFFSET);
+        int cacheEventType = decodeInt(initialFrame.content, CACHE_EVENT_TYPE_FIELD_OFFSET);
         boolean oldValueAvailable = decodeBoolean(initialFrame.content, OLD_VALUE_AVAILABLE_FIELD_OFFSET);
 
         java.lang.String name = StringCodec.decode(iterator);
