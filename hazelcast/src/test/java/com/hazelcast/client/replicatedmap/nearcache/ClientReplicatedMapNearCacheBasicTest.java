@@ -22,6 +22,8 @@ import com.hazelcast.client.impl.proxy.ClientReplicatedMapProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.InvalidConfigurationException;
+import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.adapter.DataStructureAdapterMethod;
 import com.hazelcast.internal.adapter.ReplicatedMapDataStructureAdapter;
@@ -39,6 +41,7 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -72,7 +75,7 @@ public class ClientReplicatedMapNearCacheBasicTest extends AbstractNearCacheBasi
 
     @Before
     public void setUp() {
-        nearCacheConfig = createNearCacheConfig(inMemoryFormat, true);
+        nearCacheConfig = createNearCacheConfig(inMemoryFormat, false);
     }
 
     @After
@@ -114,6 +117,19 @@ public class ClientReplicatedMapNearCacheBasicTest extends AbstractNearCacheBasi
                 .setInMemoryFormat(nearCacheConfig.getInMemoryFormat());
 
         return config;
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void testSerializeKeys_notSupported() {
+        hazelcastFactory.newHazelcastInstance();
+        ClientConfig clientConfig = new ClientConfig();
+        NearCacheConfig nearCacheConfig = new NearCacheConfig();
+        nearCacheConfig.setSerializeKeys(true).setInMemoryFormat(inMemoryFormat);
+        nearCacheConfig.setName("test");
+        clientConfig.addNearCacheConfig(nearCacheConfig);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+
+        client.getReplicatedMap("test");
     }
 
     protected ClientConfig getClientConfig() {
