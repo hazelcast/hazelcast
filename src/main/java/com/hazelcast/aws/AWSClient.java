@@ -17,14 +17,11 @@
 package com.hazelcast.aws;
 
 import com.hazelcast.aws.impl.DescribeInstances;
+import com.hazelcast.aws.utility.MetadataUtil;
 import com.hazelcast.config.InvalidConfigurationException;
 
 import java.util.Collection;
 import java.util.Map;
-
-import static com.hazelcast.aws.utility.MetadataUtil.AVAILABILITY_ZONE_URI;
-import static com.hazelcast.aws.utility.MetadataUtil.INSTANCE_METADATA_URI;
-import static com.hazelcast.aws.utility.MetadataUtil.retrieveMetadataFromURI;
 
 public class AWSClient {
 
@@ -58,8 +55,7 @@ public class AWSClient {
     }
 
     public String getAvailabilityZone() {
-        String uri = INSTANCE_METADATA_URI.concat(AVAILABILITY_ZONE_URI);
-        return retrieveMetadataFromURI(uri, awsConfig.getConnectionTimeoutSeconds(), awsConfig.getConnectionRetries());
+        return MetadataUtil.getAvailabilityZone(awsConfig.getConnectionTimeoutSeconds(), awsConfig.getConnectionRetries());
     }
 
     public String getEndpoint() {

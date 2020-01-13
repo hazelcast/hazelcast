@@ -26,6 +26,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -34,7 +35,9 @@ import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -42,8 +45,26 @@ public class AwsDiscoveryStrategyTest
         extends HazelcastTestSupport {
 
     private final AWSClient mockClient = mock(AWSClient.class);
-    private final AwsDiscoveryStrategy awsDiscoveryStrategy = new AwsDiscoveryStrategy(Collections.<String, Comparable>emptyMap(),
+    private final AwsDiscoveryStrategy awsDiscoveryStrategy = new AwsDiscoveryStrategy(getProperties(),
             mockClient);
+
+    private Map<String, Comparable> getProperties() {
+        Map<String, Comparable> properties = new HashMap<>();
+        properties.put("region", "us-east-1");
+        return properties;
+    }
+
+    @Test
+    public void useCurrentRegion() {
+        // given
+        AwsDiscoveryStrategy awsDiscoveryStrategy = spy(new AwsDiscoveryStrategy(Collections.emptyMap(), null, mockClient));
+        doReturn("us-hz-1").when(awsDiscoveryStrategy).getCurrentRegion(10, 10);
+        // when
+        AwsConfig awsConfig = awsDiscoveryStrategy.getAwsConfig();
+
+        // then
+        assertEquals("us-hz-1", awsConfig.getRegion());
+    }
 
     @Test
     public void discoverLocalMetadata() {
@@ -101,8 +122,9 @@ public class AwsDiscoveryStrategyTest
         String publicAddress = "156.24.63.1";
         int port = 5701;
         given(mockClient.getAddresses()).willReturn(Collections.singletonMap(privateAddress, publicAddress));
-        AwsDiscoveryStrategy awsDiscoveryStrategy = new AwsDiscoveryStrategy(
-                Collections.<String, Comparable>singletonMap("hz-port", port), mockClient);
+        Map<String, Comparable> properties = getProperties();
+        properties.put("hz-port", port);
+        AwsDiscoveryStrategy awsDiscoveryStrategy = new AwsDiscoveryStrategy(properties, mockClient);
 
         // when
         Iterable<DiscoveryNode> result = awsDiscoveryStrategy.discoverNodes();
