@@ -42,7 +42,6 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Set;
 
-import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 import static com.hazelcast.map.impl.operation.EntryOperator.operator;
 
@@ -171,23 +170,22 @@ public class PartitionWideEntryOperation extends MapOperation
             }
         }, false);
 
-        if (!isEmpty(outComes)) {
-            // This iteration is needed to work around an issue related with binary elastic hash map (BEHM).
-            // Removal via map#remove() while iterating on BEHM distorts it and we can see some entries remain
-            // in the map even we know that iteration is finished. Because in this case, iteration can miss some entries.
-            do {
-                Data dataKey = (Data) outComes.poll();
-                Object oldValue = outComes.poll();
-                Object newValue = outComes.poll();
-                EntryEventType eventType = (EntryEventType) outComes.poll();
+        // This iteration is needed to work around an issue
+        // related with binary elastic hash map (BEHM). Removal
+        // via map#remove() while iterating on BEHM distorts
+        // it and we can see some entries remain in the map
+        // even we know that iteration is finished. Because
+        // in this case, iteration can miss some entries.
+        while (!outComes.isEmpty()) {
+            Data dataKey = (Data) outComes.poll();
+            Object oldValue = outComes.poll();
+            Object newValue = outComes.poll();
+            EntryEventType eventType = (EntryEventType) outComes.poll();
 
-                operator.init(dataKey, oldValue, newValue, null, eventType, null)
-                        .doPostOperateOps();
-
-            } while (!outComes.isEmpty());
+            operator.init(dataKey, oldValue, newValue, null, eventType, null)
+                    .doPostOperateOps();
         }
     }
-
 
     @Override
     public Object getResponse() {
