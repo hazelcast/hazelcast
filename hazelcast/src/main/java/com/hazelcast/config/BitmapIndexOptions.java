@@ -154,6 +154,14 @@ public class BitmapIndexOptions implements IdentifiedDataSerializable {
     }
 
     /**
+     * @return {@code true} if this options instance is configured with default
+     * values, {@code false} otherwise.
+     */
+    boolean areDefault() {
+        return DEFAULT_UNIQUE_KEY.equals(uniqueKey) && DEFAULT_UNIQUE_KEY_TRANSFORMATION == uniqueKeyTransformation;
+    }
+
+    /**
      * Returns the unique key attribute configured in this index config.
      * Defaults to {@code __key}. The unique key attribute is used as a source
      * of values which uniquely identify each entry being inserted into an index.

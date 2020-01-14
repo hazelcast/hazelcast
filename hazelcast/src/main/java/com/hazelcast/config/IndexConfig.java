@@ -219,10 +219,7 @@ public class IndexConfig implements IdentifiedDataSerializable {
         out.writeUTF(name);
         out.writeInt(type.getId());
         writeNullableList(attributes, out);
-
-        if (type == IndexType.BITMAP) {
-            out.writeObject(bitmapIndexOptions);
-        }
+        out.writeObject(bitmapIndexOptions);
     }
 
     @Override
@@ -230,10 +227,7 @@ public class IndexConfig implements IdentifiedDataSerializable {
         name = in.readUTF();
         type = IndexType.getById(in.readInt());
         attributes = readNullableList(in);
-
-        if (type == IndexType.BITMAP) {
-            bitmapIndexOptions = in.readObject();
-        }
+        bitmapIndexOptions = in.readObject();
     }
 
     @Override
@@ -256,7 +250,7 @@ public class IndexConfig implements IdentifiedDataSerializable {
             return false;
         }
 
-        if (type == IndexType.BITMAP && !bitmapIndexOptions.equals(that.bitmapIndexOptions)) {
+        if (!bitmapIndexOptions.equals(that.bitmapIndexOptions)) {
             return false;
         }
 
@@ -269,10 +263,7 @@ public class IndexConfig implements IdentifiedDataSerializable {
 
         result = 31 * result + (type != null ? type.hashCode() : 0);
         result = 31 * result + getAttributes().hashCode();
-
-        if (type == IndexType.BITMAP) {
-            result = 31 * result + bitmapIndexOptions.hashCode();
-        }
+        result = 31 * result + bitmapIndexOptions.hashCode();
 
         return result;
     }
@@ -280,7 +271,7 @@ public class IndexConfig implements IdentifiedDataSerializable {
     @Override
     public String toString() {
         String string = "IndexConfig{name=" + name + ", type=" + type + ", attributes=" + getAttributes();
-        if (type == IndexType.BITMAP) {
+        if (!bitmapIndexOptions.areDefault()) {
             string += ", bitmapIndexOptions=" + bitmapIndexOptions;
         }
         return string + '}';
