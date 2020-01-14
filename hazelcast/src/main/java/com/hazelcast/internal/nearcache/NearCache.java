@@ -59,9 +59,7 @@ public interface NearCache<K, V> extends InitializingObject {
             DEFAULT_EXPIRATION_TASK_PERIOD_SECONDS);
 
     /**
-     * Indicates how a near cache is updated. Adding
-     * new entry to near cache or updating an existing
-     * one are all the subject of this setting.
+     * Indicates how a near cache is updated.
      */
     enum UpdateSemantic {
         /**
