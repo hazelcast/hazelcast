@@ -58,8 +58,22 @@ public interface NearCache<K, V> extends InitializingObject {
             = new HazelcastProperty(PROP_EXPIRATION_TASK_PERIOD_SECONDS,
             DEFAULT_EXPIRATION_TASK_PERIOD_SECONDS);
 
+    /**
+     * Indicates how a near cache is updated.
+     */
     enum UpdateSemantic {
-        WRITE_UPDATE, READ_UPDATE;
+        /**
+         * A read-only operation is updating near cache,
+         * like {@link com.hazelcast.map.IMap#get}
+         * or {@link com.hazelcast.map.IMap#getAll}
+         */
+        READ_UPDATE,
+        /**
+         * A write operation is updating near cache, like
+         * {@link com.hazelcast.cache.ICache#put} or
+         * {@link com.hazelcast.cache.ICache#putIfAbsent}
+         */
+        WRITE_UPDATE
     }
 
     /**
