@@ -42,22 +42,22 @@ public class CreateSessionOp extends RaftOp implements IndeterminateOperationSta
 
     private CPSessionOwnerType endpointType;
 
+    // Not used, but keeping for patch compatibility
     private long creationTime;
 
     public CreateSessionOp() {
     }
 
-    public CreateSessionOp(Address endpoint, String endpointName, CPSessionOwnerType endpointType, long creationTime) {
+    public CreateSessionOp(Address endpoint, String endpointName, CPSessionOwnerType endpointType) {
         this.endpoint = endpoint;
         this.endpointName = endpointName;
         this.endpointType = endpointType;
-        this.creationTime = creationTime;
     }
 
     @Override
     public Object run(CPGroupId groupId, long commitIndex) {
         RaftSessionService service = getService();
-        return service.createNewSession(groupId, endpoint, endpointName, endpointType, creationTime);
+        return service.createNewSession(groupId, endpoint, endpointName, endpointType);
     }
 
     @Override
@@ -107,7 +107,6 @@ public class CreateSessionOp extends RaftOp implements IndeterminateOperationSta
     protected void toString(StringBuilder sb) {
         sb.append(", endpoint=").append(endpoint)
           .append(", endpointName=").append(endpointName)
-          .append(", endpointType=").append(endpointType)
-          .append(", creationTime=").append(creationTime);
+          .append(", endpointType=").append(endpointType);
     }
 }

@@ -44,7 +44,7 @@ public class CreateSessionMessageTask extends AbstractMessageTask<CPSessionCreat
     @Override
     protected void processMessage() {
         RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
-        RaftOp op = new CreateSessionOp(connection.getEndPoint(), parameters.endpointName, CLIENT, System.currentTimeMillis());
+        RaftOp op = new CreateSessionOp(connection.getEndPoint(), parameters.endpointName, CLIENT);
         service.getInvocationManager()
                 .<SessionResponse>invoke(parameters.groupId, op)
                 .andThen(this);

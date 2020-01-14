@@ -52,7 +52,6 @@ import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getSnapshotEntry;
 import static com.hazelcast.cp.session.CPSession.CPSessionOwnerType.SERVER;
 import static com.hazelcast.test.PacketFiltersUtil.dropOperationsBetween;
 import static com.hazelcast.test.PacketFiltersUtil.resetPacketFiltersFrom;
-import static java.lang.System.currentTimeMillis;
 import static java.util.Arrays.asList;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasItem;
@@ -376,6 +375,6 @@ public class RaftSessionServiceTest extends HazelcastRaftTestSupport {
     }
 
     private CreateSessionOp newCreateSessionOp() throws UnknownHostException {
-        return new CreateSessionOp(new Address("localhost", 1111), "server1", SERVER, currentTimeMillis());
+        return new CreateSessionOp(new Address("localhost", 1111), "server1", SERVER);
     }
 }
