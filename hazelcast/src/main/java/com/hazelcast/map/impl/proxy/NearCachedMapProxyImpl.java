@@ -131,7 +131,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
             return InternalCompletableFuture.newCompletedFuture(value);
         }
 
-        final Data keyData = toDataWithStrategy(key);
+        final Data keyData = toDataWithStrategy(ncKey);
         final long reservationId = tryReserveForUpdate(ncKey, keyData);
         InternalCompletableFuture<Data> future;
         try {
