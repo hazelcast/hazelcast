@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.Queue;
 
+import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 import static com.hazelcast.map.impl.operation.EntryOperator.operator;
 
@@ -74,7 +75,7 @@ public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryBack
             }
         }, true);
 
-        if (outComes != null) {
+        if (!isEmpty(outComes)) {
             // This iteration is needed to work around an issue related with binary elastic hash map (BEHM).
             // Removal via map#remove() while iterating on BEHM distorts it and we can see some entries remain
             // in the map even we know that iteration is finished. Because in this case, iteration can miss some entries.
