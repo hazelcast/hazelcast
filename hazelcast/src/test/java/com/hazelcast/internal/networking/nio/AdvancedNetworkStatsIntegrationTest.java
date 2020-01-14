@@ -52,7 +52,6 @@ public class AdvancedNetworkStatsIntegrationTest extends AbstractAdvancedNetwork
     public void testStats_advancedNetworkEnabledAndConnectionActive_readFromEMs() {
         Config config = createCompleteMultiSocketConfig();
         configureTcpIpConfig(config);
-        enableMetrics(config);
         instance1 = newHazelcastInstance(config);
         instance2 = startSecondInstance();
 
@@ -71,7 +70,6 @@ public class AdvancedNetworkStatsIntegrationTest extends AbstractAdvancedNetwork
     public void testStats_advancedNetworkEnabledAndConnectionActive_readFromMetrics() {
         Config config = createCompleteMultiSocketConfig();
         configureTcpIpConfig(config);
-        enableMetrics(config);
         instance1 = newHazelcastInstance(config);
         instance2 = startSecondInstance();
 
@@ -90,7 +88,6 @@ public class AdvancedNetworkStatsIntegrationTest extends AbstractAdvancedNetwork
     public void testStats_advancedNetworkEnabledAndConnectionClosed_readFromEMs() {
         Config config = createCompleteMultiSocketConfig();
         configureTcpIpConfig(config);
-        enableMetrics(config);
         instance1 = newHazelcastInstance(config);
         instance2 = startSecondInstance();
         assertClusterSizeEventually(2, instance1, instance2);
@@ -110,7 +107,6 @@ public class AdvancedNetworkStatsIntegrationTest extends AbstractAdvancedNetwork
     public void testStats_advancedNetworkEnabledAndConnectionClosed_readFromMetrics() {
         Config config = createCompleteMultiSocketConfig();
         configureTcpIpConfig(config);
-        enableMetrics(config);
         instance1 = newHazelcastInstance(config);
         instance2 = startSecondInstance();
         assertClusterSizeEventually(2, instance1, instance2);
@@ -209,12 +205,6 @@ public class AdvancedNetworkStatsIntegrationTest extends AbstractAdvancedNetwork
         return registry.newLongGauge("tcp.bytesSend." + protocolType.name()).read();
     }
 
-    private void enableMetrics(Config config) {
-        config.setProperty("hazelcast.diagnostics.enabled", "true");
-        config.setProperty("hazelcast.diagnostics.metric.level", "Info");
-        config.setProperty("hazelcast.diagnostics.metrics.period.seconds", "5");
-    }
-
     private void assertAllNetworkStatsNotRegisteredAsMetrics(HazelcastInstance instance) {
         MetricsRegistry registry = getNode(instance).nodeEngine.getMetricsRegistry();
         for (ProtocolType protocolType : ProtocolType.values()) {
@@ -225,7 +215,6 @@ public class AdvancedNetworkStatsIntegrationTest extends AbstractAdvancedNetwork
 
     private HazelcastInstance startSecondInstance() {
         Config config = prepareJoinConfigForSecondMember(MEMBER_PORT);
-        enableMetrics(config);
         HazelcastInstance newHzInstance = newHazelcastInstance(config);
         int clusterSize = newHzInstance.getCluster().getMembers().size();
         assertEquals(2, clusterSize);
