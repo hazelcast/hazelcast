@@ -22,7 +22,6 @@ import com.hazelcast.collection.IQueue;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.IAtomicReference;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.IMap;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.replicatedmap.ReplicatedMap;
@@ -46,55 +45,66 @@ public class SplitBrainMergeTypes {
     /**
      * Provided merge types of {@link IMap}.
      *
+     * @param <K> key type
+     * @param <V> value type
      * @since 3.10
      */
-    public interface MapMergeTypes extends MergingEntry<Data, Data>, MergingCreationTime<Data>, MergingHits<Data>,
-            MergingLastAccessTime<Data>, MergingLastUpdateTime<Data>, MergingTTL<Data>, MergingMaxIdle<Data>, MergingCosts<Data>,
-            MergingVersion<Data>, MergingExpirationTime<Data>, MergingLastStoredTime<Data> {
+    public interface MapMergeTypes<K, V>
+            extends MergingEntry<K, V>, MergingCreationTime, MergingHits, MergingLastAccessTime, MergingLastUpdateTime,
+                    MergingTTL, MergingMaxIdle, MergingCosts, MergingVersion, MergingExpirationTime, MergingLastStoredTime {
     }
 
     /**
      * Provided merge types of {@link com.hazelcast.cache.ICache}.
      *
+     * @param <K> key type
+     * @param <V> value type
      * @since 3.10
      */
-    public interface CacheMergeTypes extends MergingEntry<Data, Data>, MergingCreationTime<Data>, MergingHits<Data>,
-            MergingLastAccessTime<Data>, MergingExpirationTime<Data> {
+    public interface CacheMergeTypes<K, V>
+            extends MergingEntry<K, V>, MergingCreationTime, MergingHits, MergingLastAccessTime, MergingExpirationTime {
     }
 
     /**
      * Provided merge types of {@link ReplicatedMap}.
      *
+     * @param <K> key type
+     * @param <V> value type
      * @since 3.10
      */
-    public interface ReplicatedMapMergeTypes extends MergingEntry<Object, Object>, MergingCreationTime<Object>,
-            MergingHits<Object>, MergingLastAccessTime<Object>, MergingLastUpdateTime<Object>, MergingTTL<Object> {
+    public interface ReplicatedMapMergeTypes<K, V>
+            extends MergingEntry<K, V>, MergingCreationTime, MergingHits, MergingLastAccessTime, MergingLastUpdateTime,
+                    MergingTTL {
     }
 
     /**
      * Provided merge types of {@link MultiMap}.
      *
+     * @param <K> key type
+     * @param <V> value type
      * @since 3.10
      */
-    public interface MultiMapMergeTypes extends MergingEntry<Data, Collection<Object>>, MergingCreationTime<Collection<Object>>,
-            MergingHits<Collection<Object>>, MergingLastAccessTime<Collection<Object>>,
-            MergingLastUpdateTime<Collection<Object>> {
+    public interface MultiMapMergeTypes<K, V>
+            extends MergingEntry<K, Collection<V>>, MergingCreationTime, MergingHits, MergingLastAccessTime,
+                    MergingLastUpdateTime {
     }
 
     /**
      * Provided merge types of collections ({@link ISet} and {@link IList}).
      *
+     * @param <V> value type
      * @since 3.10
      */
-    public interface CollectionMergeTypes extends MergingValue<Collection<Object>> {
+    public interface CollectionMergeTypes<V> extends MergingValue<Collection<V>> {
     }
 
     /**
      * Provided merge types of {@link IQueue}.
      *
+     * @param <V> value type
      * @since 3.10
      */
-    public interface QueueMergeTypes extends MergingValue<Collection<Object>> {
+    public interface QueueMergeTypes<V> extends MergingValue<Collection<V>> {
     }
 
     /**

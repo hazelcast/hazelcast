@@ -19,10 +19,9 @@ package com.hazelcast.spi.merge;
 /**
  * Represents a read-only view of an expiration time for the merging process after a split-brain.
  *
- * @param <V> the type of the value
  * @since 3.10
  */
-public interface MergingExpirationTime<V> extends MergingValue<V> {
+public interface MergingExpirationTime extends MergingView {
 
     /**
      * Returns the expiration time of the merge data.

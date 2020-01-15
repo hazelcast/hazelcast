@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.config.WanAcknowledgeType;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.WanSupportingService;
 import com.hazelcast.map.impl.operation.MapOperation;
@@ -80,10 +79,10 @@ class WanMapSupportingService implements WanSupportingService {
         MapOperationProvider operationProvider = mapServiceContext.getMapOperationProvider(mapName);
 
         SerializationService serializationService = nodeEngine.getSerializationService();
-        MapMergeTypes mergingEntry = createMergingEntry(serializationService, replicationUpdate.getEntryView());
+        MapMergeTypes<Object, Object> mergingEntry = createMergingEntry(serializationService, replicationUpdate.getEntryView());
         //noinspection unchecked
         MapOperation operation = operationProvider.createMergeOperation(mapName, mergingEntry,
-                (SplitBrainMergePolicy<Data, MapMergeTypes>) mergePolicy, true);
+                (SplitBrainMergePolicy<Object, MapMergeTypes<Object, Object>, Object>) mergePolicy, true);
 
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(replicationUpdate.getEntryView().getKey());

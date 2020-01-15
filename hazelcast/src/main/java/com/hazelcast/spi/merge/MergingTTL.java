@@ -19,10 +19,9 @@ package com.hazelcast.spi.merge;
 /**
  * Represents a read-only view of a TTL for the merging process after a split-brain.
  *
- * @param <V> the type of the value
  * @since 3.10
  */
-public interface MergingTTL<V> extends MergingValue<V> {
+public interface MergingTTL extends MergingView {
 
     /**
      * Returns the TTL of the merge data.

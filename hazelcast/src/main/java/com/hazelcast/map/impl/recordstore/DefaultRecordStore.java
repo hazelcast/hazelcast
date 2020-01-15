@@ -773,13 +773,14 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public boolean merge(MapMergeTypes mergingEntry, SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy) {
+    public boolean merge(MapMergeTypes<Object, Object> mergingEntry,
+                         SplitBrainMergePolicy<Object, MapMergeTypes<Object, Object>, Object> mergePolicy) {
         return merge(mergingEntry, mergePolicy, CallerProvenance.NOT_WAN);
     }
 
     @Override
-    public boolean merge(MapMergeTypes mergingEntry,
-                         SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy,
+    public boolean merge(MapMergeTypes<Object, Object> mergingEntry,
+                         SplitBrainMergePolicy<Object, MapMergeTypes<Object, Object>, Object> mergePolicy,
                          CallerProvenance provenance) {
         checkIfLoaded();
         long now = getNow();
@@ -787,7 +788,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         serializationService.getManagedContext().initialize(mergingEntry);
         serializationService.getManagedContext().initialize(mergePolicy);
 
-        Data key = mergingEntry.getKey();
+        Data key = (Data) mergingEntry.getRawKey();
         Record record = getRecordOrNull(key, now, false);
         Object newValue;
         Object oldValue;
@@ -806,7 +807,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             mutationObserver.onPutRecord(key, record, null, false);
         } else {
             oldValue = record.getValue();
-            MapMergeTypes existingEntry = createMergingEntry(serializationService, key, record);
+            MapMergeTypes<Object, Object> existingEntry = createMergingEntry(serializationService, key, record);
             newValue = mergePolicy.merge(mergingEntry, existingEntry);
             // existing entry will be removed
             if (newValue == null) {

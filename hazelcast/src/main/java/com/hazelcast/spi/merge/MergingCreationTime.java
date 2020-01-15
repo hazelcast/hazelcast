@@ -19,10 +19,9 @@ package com.hazelcast.spi.merge;
 /**
  * Represents a read-only view a creation time for the merging process after a split-brain.
  *
- * @param <V> the type of the value
  * @since 3.10
  */
-public interface MergingCreationTime<V> extends MergingValue<V> {
+public interface MergingCreationTime extends MergingView {
 
     /**
      * Returns the creation time of the merge data.

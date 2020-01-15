@@ -26,17 +26,16 @@ package com.hazelcast.spi.merge;
 public interface MergingEntry<K, V> extends MergingValue<V> {
 
     /**
-     * Returns the merging key in the in-memory format of the backing data structure.
+     * Returns the deserialized merging key.
      *
-     * @return the merging key
+     * @return the deserialized merging key
      */
     K getKey();
 
     /**
-     * Returns the deserialized merging key.
+     * Returns the merging key in the in-memory format of the backing data structure.
      *
-     * @param <DK> the type of the deserialized key
-     * @return the deserialized merging key
+     * @return the merging key
      */
-    <DK> DK getDeserializedKey();
+    Object getRawKey();
 }

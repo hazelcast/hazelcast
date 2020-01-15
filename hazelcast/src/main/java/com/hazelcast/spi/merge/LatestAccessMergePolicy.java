@@ -29,24 +29,24 @@ import com.hazelcast.spi.impl.merge.SplitBrainDataSerializerHook;
  * @param <T> the type of the merging value
  * @since 3.10
  */
-public class LatestAccessMergePolicy<V, T extends MergingLastAccessTime<V>>
-        extends AbstractSplitBrainMergePolicy<V, T> {
+public class LatestAccessMergePolicy<V, T extends MergingValue<V> & MergingLastAccessTime>
+        extends AbstractSplitBrainMergePolicy<V, T, Object> {
 
     public LatestAccessMergePolicy() {
     }
 
     @Override
-    public V merge(T mergingValue, T existingValue) {
+    public Object merge(T mergingValue, T existingValue) {
         if (mergingValue == null) {
-            return existingValue.getValue();
+            return existingValue.getRawValue();
         }
         if (existingValue == null) {
-            return mergingValue.getValue();
+            return mergingValue.getRawValue();
         }
         if (mergingValue.getLastAccessTime() >= existingValue.getLastAccessTime()) {
-            return mergingValue.getValue();
+            return mergingValue.getRawValue();
         }
-        return existingValue.getValue();
+        return existingValue.getRawValue();
     }
 
     @Override

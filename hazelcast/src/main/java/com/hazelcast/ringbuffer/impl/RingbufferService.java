@@ -361,7 +361,7 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
                 Collection<RingbufferContainer> containerList = entry.getValue();
                 for (RingbufferContainer container : containerList) {
                     // TODO: add batching (which is a bit complex, since collections don't have a multi-name operation yet
-                    SplitBrainMergePolicy<RingbufferMergeData, RingbufferMergeTypes> mergePolicy
+                    SplitBrainMergePolicy<RingbufferMergeData, RingbufferMergeTypes, RingbufferMergeData> mergePolicy
                             = getMergePolicy(container.getConfig().getMergePolicyConfig());
 
                     sendBatch(partitionId, mergePolicy, container);
@@ -370,7 +370,7 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
         }
 
         private void sendBatch(int partitionId,
-                               SplitBrainMergePolicy<RingbufferMergeData, RingbufferMergeTypes> mergePolicy,
+                               SplitBrainMergePolicy<RingbufferMergeData, RingbufferMergeTypes, RingbufferMergeData> mergePolicy,
                                RingbufferContainer mergingContainer) {
             final MergeOperation operation = new MergeOperation(mergingContainer.getNamespace(), mergePolicy,
                     mergingContainer.getRingbuffer());

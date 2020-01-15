@@ -27,6 +27,7 @@ import com.hazelcast.scheduledexecutor.StaleTaskException;
 import com.hazelcast.scheduledexecutor.impl.operations.SyncStateOperation;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
+import com.hazelcast.spi.impl.merge.ScheduledExecutorMergingEntryImpl;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
@@ -276,13 +277,13 @@ public class ScheduledExecutorContainer {
      */
     public ScheduledTaskDescriptor merge(
             ScheduledExecutorMergeTypes mergingEntry,
-            SplitBrainMergePolicy<ScheduledTaskDescriptor, ScheduledExecutorMergeTypes> mergePolicy) {
+            SplitBrainMergePolicy<ScheduledTaskDescriptor, ScheduledExecutorMergeTypes, ScheduledTaskDescriptor> mergePolicy) {
         SerializationService serializationService = nodeEngine.getSerializationService();
         serializationService.getManagedContext().initialize(mergingEntry);
         serializationService.getManagedContext().initialize(mergePolicy);
 
         // try to find an existing task with the same definition
-        ScheduledTaskDescriptor mergingTask = mergingEntry.getValue();
+        ScheduledTaskDescriptor mergingTask = ((ScheduledExecutorMergingEntryImpl) mergingEntry).getRawValue();
         ScheduledTaskDescriptor existingTask = null;
         for (ScheduledTaskDescriptor task : tasks.values()) {
             if (mergingTask.equals(task)) {

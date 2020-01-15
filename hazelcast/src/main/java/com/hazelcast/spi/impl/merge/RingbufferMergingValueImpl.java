@@ -51,12 +51,12 @@ public class RingbufferMergingValueImpl
     }
 
     @Override
-    public RingbufferMergeData getValue() {
+    public RingbufferMergeData getRawValue() {
         return value;
     }
 
     @Override
-    public <DV> DV getDeserializedValue() {
+    public RingbufferMergeData getValue() {
         final RingbufferMergeData deserializedValues = new RingbufferMergeData(value.getItems().length);
         deserializedValues.setHeadSequence(value.getHeadSequence());
         deserializedValues.setTailSequence(value.getTailSequence());
@@ -65,7 +65,7 @@ public class RingbufferMergingValueImpl
             deserializedValues.set(seq, serializationService.toObject(value.read(seq)));
         }
 
-        return (DV) deserializedValues;
+        return deserializedValues;
     }
 
     public RingbufferMergingValueImpl setValues(RingbufferMergeData values) {

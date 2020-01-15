@@ -24,14 +24,11 @@ import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import java.io.IOException;
 
 public class CustomReplicatedMapMergePolicy
-        implements SplitBrainMergePolicy<Integer, MergingValue<Integer>> {
+        implements SplitBrainMergePolicy<Integer, MergingValue<Integer>, Integer> {
 
     @Override
     public Integer merge(MergingValue<Integer> mergingValue, MergingValue<Integer> existingValue) {
-        if (mergingValue.getValue() instanceof Integer) {
-            return mergingValue.getValue();
-        }
-        return null;
+        return mergingValue.getValue();
     }
 
     @Override

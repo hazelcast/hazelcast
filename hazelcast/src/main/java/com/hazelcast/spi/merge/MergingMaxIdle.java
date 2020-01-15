@@ -19,10 +19,9 @@ package com.hazelcast.spi.merge;
 /**
  * Represents a read-only view of a MaxIdle for the merging process after a split-brain.
  *
- * @param <V> the type of the value
  * @since 3.10
  */
-public interface MergingMaxIdle<V> extends MergingValue<V> {
+public interface MergingMaxIdle extends MergingView {
 
     /**
      * Returns the MaxIdle of the merge data.

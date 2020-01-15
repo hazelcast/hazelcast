@@ -29,6 +29,6 @@ import com.hazelcast.spi.merge.MergingExpirationTime;
  * It also uses inheritance to ensure that we check the complete class hierarchy.
  */
 @SuppressWarnings("unused")
-public class ComplexCustomMergePolicy<N extends Number, C extends Comparable<N>>
+public class ComplexCustomMergePolicy<N extends Number, C extends Comparable<N>, U>
         extends ComplexCustomBaseMergePolicy {
 }
