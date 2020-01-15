@@ -34,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.config.NearCacheConfig.DEFAULT_MEMORY_FORMAT;
+import static com.hazelcast.internal.util.Preconditions.checkInstanceOf;
 import static com.hazelcast.internal.util.Preconditions.checkNotInstanceOf;
 
 public class DefaultNearCache<K, V> implements NearCache<K, V> {
@@ -214,7 +215,9 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
     }
 
     private void checkKeyFormat(K key) {
-        if (!serializeKeys) {
+        if (serializeKeys) {
+            checkInstanceOf(Data.class, key, "key must be of type Data!");
+        } else {
             checkNotInstanceOf(Data.class, key, "key cannot be of type Data!");
         }
     }

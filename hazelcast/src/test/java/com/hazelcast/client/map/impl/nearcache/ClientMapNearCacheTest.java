@@ -31,6 +31,7 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapStoreAdapter;
 import com.hazelcast.map.impl.nearcache.NearCacheTestSupport;
@@ -1095,7 +1096,8 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
                 .setImplementation(new SimpleMapStore());
 
         // populate Near Cache
-        final IMap<Integer, Integer> clientMap = getNearCachedMapFromClient(config, newNearCacheConfig(), 2);
+        NearCacheConfig nearCacheConfig = newNearCacheConfig();
+        final IMap<Integer, Integer> clientMap = getNearCachedMapFromClient(config, nearCacheConfig, 2);
         populateMap(clientMap, 1000);
         populateNearCache(clientMap, 1000);
 
@@ -1104,12 +1106,18 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         IMap<Object, Object> anotherClientMap = anotherClient.getMap(clientMap.getName());
         anotherClientMap.loadAll(true);
 
+        InternalSerializationService serializationService =
+                getSerializationService(hazelcastFactory.getAllHazelcastInstances().iterator().next());
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
                 NearCache<Object, Object> nearCache = ((NearCachedClientMapProxy<Integer, Integer>) clientMap).getNearCache();
                 for (int i = 0; i < 1000; i++) {
-                    assertNull("Near Cache should be empty", nearCache.get(i));
+                    Object key = i;
+                    if (nearCacheConfig.isSerializeKeys()) {
+                        key = serializationService.toData(i);
+                    }
+                    assertNull("Near Cache should be empty", nearCache.get(key));
                 }
             }
         });
@@ -1124,21 +1132,26 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
                 .setImplementation(new SimpleMapStore());
 
         // populate Near Cache
-        final IMap<Integer, Integer> clientMap = getNearCachedMapFromClient(config, newNearCacheConfig(), 2);
+        NearCacheConfig nearCacheConfig = newNearCacheConfig();
+        final IMap<Integer, Integer> clientMap = getNearCachedMapFromClient(config, nearCacheConfig, 2);
         populateMap(clientMap, 1000);
         populateNearCache(clientMap, 1000);
 
-        // create a new client to send events
         HazelcastInstance member = hazelcastFactory.getAllHazelcastInstances().iterator().next();
         IMap<Object, Object> memberMap = member.getMap(clientMap.getName());
         memberMap.loadAll(true);
 
+        InternalSerializationService serializationService = getSerializationService(member);
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
                 NearCache<Object, Object> nearCache = ((NearCachedClientMapProxy<Integer, Integer>) clientMap).getNearCache();
                 for (int i = 0; i < 1000; i++) {
-                    assertNull("Near Cache should be empty", nearCache.get(i));
+                    Object key = i;
+                    if (nearCacheConfig.isSerializeKeys()) {
+                        key = serializationService.toData(i);
+                    }
+                    assertNull("Near Cache should be empty", nearCache.get(key));
                 }
             }
         });
@@ -1339,7 +1352,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
 
         @Override
         public void handleIMapBatchInvalidationEvent(Collection<Data> keys, Collection<UUID> sourceUuids,
-                                                        Collection<UUID> partitionUuids, Collection<Long> sequences) {
+                                                     Collection<UUID> partitionUuids, Collection<Long> sequences) {
 
         }
 
