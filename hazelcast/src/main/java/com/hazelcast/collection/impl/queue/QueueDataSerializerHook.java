@@ -44,6 +44,7 @@ import com.hazelcast.collection.impl.txnqueue.TxQueueItem;
 import com.hazelcast.collection.impl.txnqueue.operations.QueueTransactionRollbackOperation;
 import com.hazelcast.collection.impl.txnqueue.operations.TxnCommitBackupOperation;
 import com.hazelcast.collection.impl.txnqueue.operations.TxnCommitOperation;
+import com.hazelcast.collection.impl.txnqueue.operations.TxnContainsAllOperation;
 import com.hazelcast.collection.impl.txnqueue.operations.TxnOfferBackupOperation;
 import com.hazelcast.collection.impl.txnqueue.operations.TxnOfferOperation;
 import com.hazelcast.collection.impl.txnqueue.operations.TxnPeekOperation;
@@ -127,6 +128,8 @@ public final class QueueDataSerializerHook implements DataSerializerHook {
     public static final int MERGE = 44;
     public static final int MERGE_BACKUP = 45;
 
+    public static final int TXN_CONTAINS_ALL = 48;
+
     public int getFactoryId() {
         return F_ID;
     }
@@ -134,7 +137,7 @@ public final class QueueDataSerializerHook implements DataSerializerHook {
     public DataSerializableFactory createFactory() {
 
         //noinspection unchecked
-        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[MERGE_BACKUP + 1];
+        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[TXN_CONTAINS_ALL + 1];
         constructors[OFFER] = arg -> new OfferOperation();
         constructors[OFFER_BACKUP] = arg -> new OfferBackupOperation();
         constructors[POLL] = arg -> new PollOperation();
@@ -180,6 +183,7 @@ public final class QueueDataSerializerHook implements DataSerializerHook {
         constructors[TXN_COMMIT_BACKUP] = arg -> new TxnCommitBackupOperation();
         constructors[MERGE] = arg -> new QueueMergeOperation();
         constructors[MERGE_BACKUP] = arg -> new QueueMergeBackupOperation();
+        constructors[TXN_CONTAINS_ALL] = arg -> new TxnContainsAllOperation();
 
         return new ArrayDataSerializableFactory(constructors);
     }
