@@ -66,7 +66,9 @@ import static com.hazelcast.internal.util.SetUtil.createHashSet;
  * When the connected cluster member dies, client will automatically switch to another live member.
  */
 public final class HazelcastClient {
-
+    
+    // Hazelcast Tester was here.
+    
     private static final AtomicInteger CLIENT_ID_GEN = new AtomicInteger();
     private static final ConcurrentMap<String, InstanceFuture<HazelcastClientProxy>> CLIENTS = new ConcurrentHashMap<>(5);
 
