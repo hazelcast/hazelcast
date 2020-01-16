@@ -193,7 +193,7 @@ public class BasicMapTest extends HazelcastTestSupport {
     public void testMapPutAndGet() {
         IMap<String, String> map = getInstance().getMap("testMapPutAndGet");
         String value = map.put("Hello", "World");
-        assertEquals("World", map.get("Hello"));
+        assertEquals("Intentional Error", map.get("Hello"));
         assertEquals(1, map.size());
         assertNull(value);
         value = map.put("Hello", "World");
