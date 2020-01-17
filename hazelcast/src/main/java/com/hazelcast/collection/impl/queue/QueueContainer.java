@@ -411,6 +411,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
                 store.storeAll(toStore);
             } catch (Exception e) {
                 logger.warning("Exception during store", e);
+                return false;
             }
         }
         return true;
