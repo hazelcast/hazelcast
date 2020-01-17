@@ -26,10 +26,13 @@ import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionalQueue;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static java.util.Collections.emptyList;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static java.util.Arrays.asList;
 
@@ -37,34 +40,75 @@ import static java.util.Arrays.asList;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class TransactionQueueBulkOperationsTest extends HazelcastTestSupport {
 
+    private HazelcastInstance instance;
+    private String queueName;
+
+    @Before
+    public void setUp() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        instance = factory.newHazelcastInstance();
+        queueName = generateKeyOwnedBy(instance);
+    }
+
     @Test
     public void testContainsAll() {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        HazelcastInstance instance = factory.newHazelcastInstance();
-        String queueName = generateKeyOwnedBy(instance);
+        addItems(1, 2, 3);
 
-        TransactionContext context;
-
-        TransactionalQueue<Integer> queue;
-        context = instance.newTransactionContext();
-        context.beginTransaction();
-
-        queue = context.getQueue(queueName);
-        queue.offer(1);
-        queue.offer(2);
-        queue.offer(3);
-
-        context.commitTransaction();
-
-        context = instance.newTransactionContext();
+        TransactionContext context = instance.newTransactionContext();
         context.beginTransaction();
         try {
-            queue = context.getQueue(queueName);
+            TransactionalQueue<Integer> queue = context.getQueue(queueName);
             assertTrue(queue.containsAll(asList(1, 2)));
             context.commitTransaction();
         } catch (TransactionException e) {
             context.rollbackTransaction();
             throw e;
         }
+    }
+
+    @Test
+    public void anyQueueContainsEmptyCollection() {
+        addItems(1, 2, 3);
+
+        TransactionContext context = instance.newTransactionContext();
+        context.beginTransaction();
+        try {
+            TransactionalQueue<Integer> queue = context.getQueue(queueName);
+            assertTrue(queue.containsAll(emptyList()));
+            context.commitTransaction();
+        } catch (TransactionException e) {
+            context.rollbackTransaction();
+            throw e;
+        }
+    }
+
+    @Test
+    public void returnFalse_whenQueueContainsNotAllItems() {
+        addItems(1, 3);
+
+        TransactionContext context = instance.newTransactionContext();
+        context.beginTransaction();
+        try {
+            TransactionalQueue<Integer> queue = context.getQueue(queueName);
+            assertFalse(queue.containsAll(asList(1, 2)));
+            context.commitTransaction();
+        } catch (TransactionException e) {
+            context.rollbackTransaction();
+            throw e;
+        }
+    }
+
+    private void addItems(int... items) {
+        TransactionContext context;
+        TransactionalQueue<Integer> queue;
+        context = instance.newTransactionContext();
+        context.beginTransaction();
+
+        queue = context.getQueue(queueName);
+        for (int item : items) {
+            queue.offer(item);
+        }
+
+        context.commitTransaction();
     }
 }

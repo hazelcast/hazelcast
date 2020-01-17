@@ -367,7 +367,16 @@ public class QueueContainer implements IdentifiedDataSerializable {
 
     public boolean txnCommitContainsAll(List<Data> data) {
         for (Data datum : data) {
-            if (getItemQueue().stream().noneMatch(item -> datum.equals(item.getData()))) {
+            if (itemQueueContains(datum)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean itemQueueContains(Data datum) {
+        for (QueueItem item : getItemQueue()) {
+            if (datum.equals(item.getData())) {
                 return false;
             }
         }
