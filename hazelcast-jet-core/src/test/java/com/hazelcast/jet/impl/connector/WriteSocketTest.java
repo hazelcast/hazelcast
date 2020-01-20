@@ -18,10 +18,6 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.core.JetTestSupport;
-import com.hazelcast.jet.core.Outbox;
-import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.core.test.TestInbox;
-import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
@@ -37,13 +33,13 @@ import java.net.Socket;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeSocketP;
-import static com.hazelcast.jet.core.test.TestSupport.supplierFrom;
+import static com.hazelcast.jet.core.test.TestSupport.verifyProcessor;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastSerialClassRunner.class)
 public class WriteSocketTest extends JetTestSupport {
@@ -54,9 +50,8 @@ public class WriteSocketTest extends JetTestSupport {
     public void unitTest() throws Exception {
         AtomicInteger counter = new AtomicInteger();
         ServerSocket serverSocket = new ServerSocket(0);
-        spawn(() -> uncheckRun(() -> {
+        Runnable acceptConnection = () -> spawn(() -> uncheckRun(() -> {
             Socket socket = serverSocket.accept();
-            serverSocket.close();
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
                 while (reader.readLine() != null) {
                     counter.incrementAndGet();
@@ -64,18 +59,19 @@ public class WriteSocketTest extends JetTestSupport {
             }
         }));
 
-        TestInbox inbox = new TestInbox();
-        range(0, ITEM_COUNT).forEach(inbox::add);
+        verifyProcessor(writeSocketP("localhost", serverSocket.getLocalPort(), Object::toString, UTF_8))
+                .input(range(0, ITEM_COUNT).boxed().collect(toList()))
+                .executeBeforeEachRun(acceptConnection)
+                .disableSnapshots()
+                .expectOutput(emptyList());
 
-        Processor p = supplierFrom(writeSocketP("localhost", serverSocket.getLocalPort(), Object::toString, UTF_8))
-                .get();
-        p.init(mock(Outbox.class), new TestProcessorContext());
-        p.process(0, inbox);
-        p.complete();
-        assertTrueEventually(() -> assertTrue(counter.get() >= ITEM_COUNT));
+        int expectedReceivedItems = ITEM_COUNT * 2; // TestSupport executed each test twice
+        assertEqualsEventually(expectedReceivedItems, counter);
         // wait a little to check, if the counter doesn't get too far
         Thread.sleep(500);
-        assertEquals(ITEM_COUNT, counter.get());
+        assertEquals(expectedReceivedItems, counter.get());
+
+        serverSocket.close();
     }
 
     @Test

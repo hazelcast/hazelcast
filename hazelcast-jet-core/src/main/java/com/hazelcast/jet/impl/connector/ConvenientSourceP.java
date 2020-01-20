@@ -16,8 +16,11 @@
 
 package com.hazelcast.jet.impl.connector;
 
+import com.hazelcast.core.ManagedContext;
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationServiceAware;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.BroadcastKey;
@@ -42,7 +45,9 @@ import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
  * @see SourceProcessors#convenientSourceP
  * @see SourceProcessors#convenientTimestampedSourceP
  */
-public class ConvenientSourceP<C, T, S> extends AbstractProcessor {
+public class ConvenientSourceP<C, T, S> extends AbstractProcessor implements SerializationServiceAware {
+
+    private ManagedContext managedContext;
 
     /**
      * This processor's view of the buffer accessible to the user. Abstracts
@@ -103,7 +108,8 @@ public class ConvenientSourceP<C, T, S> extends AbstractProcessor {
 
     @Override
     protected void init(@Nonnull Context context) {
-        ctx = createFn.apply(context);
+        C localCtx = createFn.apply(context);
+        ctx = (C) managedContext.initialize(localCtx);
         snapshotKey = broadcastKey(context.globalProcessorIndex());
         // createFn is allowed to return null, we'll call `destroyFn` even for null `ctx`
         initialized = true;
@@ -174,5 +180,10 @@ public class ConvenientSourceP<C, T, S> extends AbstractProcessor {
         if (initialized) {
             destroyFn.accept(ctx);
         }
+    }
+
+    @Override
+    public void setSerializationService(SerializationService serializationService) {
+        this.managedContext = serializationService.getManagedContext();
     }
 }

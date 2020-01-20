@@ -16,10 +16,13 @@
 
 package com.hazelcast.jet.impl.connector;
 
+import com.hazelcast.core.ManagedContext;
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationServiceAware;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Outbox;
@@ -32,7 +35,7 @@ import java.util.function.Consumer;
 
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 
-public final class WriteBufferedP<B, T> implements Processor {
+public final class WriteBufferedP<B, T> implements Processor, SerializationServiceAware {
 
     private final FunctionEx<? super Context, B> createFn;
     private final ConsumerEx<? super B> flushFn;
@@ -40,6 +43,7 @@ public final class WriteBufferedP<B, T> implements Processor {
 
     private B buffer;
     private final Consumer<Object> inboxConsumer;
+    private ManagedContext managedContext;
 
     WriteBufferedP(
             @Nonnull FunctionEx<? super Context, B> createFn,
@@ -56,10 +60,11 @@ public final class WriteBufferedP<B, T> implements Processor {
 
     @Override
     public void init(@Nonnull Outbox outbox, @Nonnull Context context) {
-        buffer = createFn.apply(context);
-        if (buffer == null) {
+        B localBuff = createFn.apply(context);
+        if (localBuff == null) {
             throw new JetException("Null buffer created");
         }
+        buffer = (B) managedContext.initialize(localBuff);
     }
 
     @Override
@@ -102,5 +107,10 @@ public final class WriteBufferedP<B, T> implements Processor {
         checkSerializable(destroyFn, "destroyFn");
 
         return () -> new WriteBufferedP<>(createFn, onReceiveFn, flushFn, destroyFn);
+    }
+
+    @Override
+    public void setSerializationService(SerializationService serializationService) {
+        this.managedContext = serializationService.getManagedContext();
     }
 }

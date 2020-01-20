@@ -22,15 +22,11 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.JetTestSupport;
-import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.core.TestProcessors;
 import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.processor.SinkProcessors;
-import com.hazelcast.jet.core.test.TestInbox;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,11 +35,11 @@ import org.junit.runner.RunWith;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import static com.hazelcast.jet.core.test.TestSupport.verifyProcessor;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verifyZeroInteractions;
 
 @RunWith(HazelcastSerialClassRunner.class)
 public class WriteBufferedPTest extends JetTestSupport {
@@ -57,37 +53,34 @@ public class WriteBufferedPTest extends JetTestSupport {
     }
 
     @Test
-    public void writeBuffered_smokeTest() throws Exception {
-        SupplierEx<Processor> supplier = getLoggingBufferedWriter();
-        Processor p = supplier.get();
-        Outbox outbox = mock(Outbox.class);
-        p.init(outbox, mock(Context.class));
-        TestInbox inbox = new TestInbox();
-        inbox.add(1);
-        inbox.add(2);
-        p.process(0, inbox);
-        inbox.add(3);
-        inbox.add(4);
-        p.process(0, inbox);
-        p.tryProcessWatermark(new Watermark(0)); // watermark should not be written
-        p.process(0, inbox); // empty flush
-        p.complete();
-        p.close();
+    public void writeBuffered_smokeTest() {
+        verifyProcessor(getLoggingBufferedWriter())
+                .input(asList(1, 2, 3, 4))
+                .disableSnapshots()
+                .expectOutput(emptyList());
 
         assertEquals(asList(
+                //1st run has inbox limit set to 1 -> it's calling flush after each item
                 "new",
                 "add:1",
+                "flush",
                 "add:2",
                 "flush",
                 "add:3",
+                "flush",
                 "add:4",
                 "flush",
+                "dispose",
+
+                //2nd run is with inbox limit set to default
+                "new",
+                "add:1",
+                "add:2",
+                "add:3",
+                "add:4",
                 "flush",
                 "dispose"
         ), events);
-
-        assertEquals(0, inbox.size());
-        verifyZeroInteractions(outbox);
     }
 
     @Test

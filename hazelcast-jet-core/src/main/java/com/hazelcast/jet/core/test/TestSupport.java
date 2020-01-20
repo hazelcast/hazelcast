@@ -20,6 +20,9 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationServiceAware;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.internal.util.concurrent.IdleStrategy;
 import com.hazelcast.jet.JetInstance;
@@ -31,6 +34,7 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.impl.LoggingServiceImpl;
+import com.hazelcast.spi.impl.SerializationServiceSupport;
 
 import javax.annotation.Nonnull;
 import java.net.UnknownHostException;
@@ -208,6 +212,7 @@ public final class TestSupport {
     private boolean logInputOutput = true;
     private boolean callComplete = true;
     private int outputOrdinalCount;
+    private Runnable beforeEachRun = () -> { };
 
     private JetInstance jetInstance;
     private long cooperativeTimeout = COOPERATIVE_TIME_LIMIT_MS_FAIL;
@@ -485,7 +490,20 @@ public final class TestSupport {
         return this;
     }
 
+    /**
+     * Execute test before each test run
+     *
+     * @param runnable runnable to be executed before each test run
+     * @return {@code this} instance for fluent API
+     */
+    public TestSupport executeBeforeEachRun(Runnable runnable) {
+        this.beforeEachRun = runnable;
+        return this;
+    }
+
     private void runTest(TestMode testMode) throws Exception {
+        beforeEachRun.run();
+
         assert testMode.isSnapshotsEnabled() || testMode.snapshotRestoreInterval() == 0
             : "Illegal combination: don't do snapshots, but do restore";
 
@@ -777,6 +795,18 @@ public final class TestSupport {
                 .setLogger(getLogger(processor.getClass().getName()));
         if (jetInstance != null) {
             context.setJetInstance(jetInstance);
+        }
+        if (processor instanceof SerializationServiceAware) {
+            SerializationService serializationService;
+            if (jetInstance != null) {
+                SerializationServiceSupport impl = (SerializationServiceSupport) jetInstance.getHazelcastInstance();
+                serializationService = impl.getSerializationService();
+            } else {
+                serializationService = new DefaultSerializationServiceBuilder()
+                        .setManagedContext(e -> e)
+                        .build();
+            }
+            ((SerializationServiceAware) processor).setSerializationService(serializationService);
         }
         try {
             processor.init(outbox, context);
