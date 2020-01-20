@@ -51,6 +51,8 @@ import com.hazelcast.collection.impl.txnqueue.operations.TxnPollBackupOperation;
 import com.hazelcast.collection.impl.txnqueue.operations.TxnPollOperation;
 import com.hazelcast.collection.impl.txnqueue.operations.TxnPrepareBackupOperation;
 import com.hazelcast.collection.impl.txnqueue.operations.TxnPrepareOperation;
+import com.hazelcast.collection.impl.txnqueue.operations.TxnRemoveAllBackupOperation;
+import com.hazelcast.collection.impl.txnqueue.operations.TxnRemoveAllOperation;
 import com.hazelcast.collection.impl.txnqueue.operations.TxnReserveOfferBackupOperation;
 import com.hazelcast.collection.impl.txnqueue.operations.TxnReserveOfferOperation;
 import com.hazelcast.collection.impl.txnqueue.operations.TxnReservePollBackupOperation;
@@ -127,6 +129,9 @@ public final class QueueDataSerializerHook implements DataSerializerHook {
     public static final int MERGE = 44;
     public static final int MERGE_BACKUP = 45;
 
+    public static final int TXN_REMOVE_ALL = 49;
+    public static final int TXN_REMOVE_ALL_BACKUP = 50;
+
     public int getFactoryId() {
         return F_ID;
     }
@@ -134,7 +139,8 @@ public final class QueueDataSerializerHook implements DataSerializerHook {
     public DataSerializableFactory createFactory() {
 
         //noinspection unchecked
-        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[MERGE_BACKUP + 1];
+        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors
+            = new ConstructorFunction[TXN_REMOVE_ALL_BACKUP + 1];
         constructors[OFFER] = arg -> new OfferOperation();
         constructors[OFFER_BACKUP] = arg -> new OfferBackupOperation();
         constructors[POLL] = arg -> new PollOperation();
@@ -180,6 +186,8 @@ public final class QueueDataSerializerHook implements DataSerializerHook {
         constructors[TXN_COMMIT_BACKUP] = arg -> new TxnCommitBackupOperation();
         constructors[MERGE] = arg -> new QueueMergeOperation();
         constructors[MERGE_BACKUP] = arg -> new QueueMergeBackupOperation();
+        constructors[TXN_REMOVE_ALL] = arg -> new TxnRemoveAllOperation();
+        constructors[TXN_REMOVE_ALL_BACKUP] = arg -> new TxnRemoveAllBackupOperation();
 
         return new ArrayDataSerializableFactory(constructors);
     }

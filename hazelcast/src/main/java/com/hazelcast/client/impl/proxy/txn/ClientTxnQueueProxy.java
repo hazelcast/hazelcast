@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.TransactionalQueueOfferCodec;
 import com.hazelcast.client.impl.protocol.codec.TransactionalQueuePeekCodec;
 import com.hazelcast.client.impl.protocol.codec.TransactionalQueuePollCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalQueueRemoveAllCodec;
 import com.hazelcast.client.impl.protocol.codec.TransactionalQueueSizeCodec;
 import com.hazelcast.client.impl.protocol.codec.TransactionalQueueTakeCodec;
 import com.hazelcast.client.impl.spi.ClientTransactionContext;
@@ -28,10 +29,14 @@ import com.hazelcast.transaction.TransactionalQueue;
 import com.hazelcast.internal.serialization.Data;
 
 import javax.annotation.Nonnull;
+import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.util.ThreadUtil.getThreadId;
 import static java.lang.Thread.currentThread;
+import static java.util.Arrays.asList;
 
 /**
  * Proxy implementation of {@link TransactionalQueue}.
@@ -121,5 +126,29 @@ public class ClientTxnQueueProxy<E> extends ClientTxnProxy implements Transactio
 
     @Override
     void onDestroy() {
+    }
+
+    @Override
+    public boolean removeAll(E... items) {
+        return removeAll(0, TimeUnit.MILLISECONDS, items);
+    }
+
+    @Override
+    public boolean removeAll(long timeout, @Nonnull TimeUnit unit, E... items) {
+        return removeAll(asList(items), timeout, unit);
+    }
+
+    @Override
+    public boolean removeAll(Collection<? extends E> items) {
+        return removeAll(items, 0, TimeUnit.MILLISECONDS);
+    }
+
+    @Override
+    public boolean removeAll(Collection<? extends E> items, long timeout, @Nonnull TimeUnit unit) {
+        List<Data> data = items.stream().map(this::toData).collect(Collectors.toList());
+        ClientMessage request = TransactionalQueueRemoveAllCodec.encodeRequest(
+            name, getTransactionId(), getThreadId(), data, unit.toMillis(timeout));
+        ClientMessage response = invoke(request);
+        return TransactionalQueueRemoveAllCodec.decodeResponse(response).response;
     }
 }

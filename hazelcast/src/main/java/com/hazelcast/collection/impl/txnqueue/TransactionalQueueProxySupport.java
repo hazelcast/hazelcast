@@ -23,6 +23,7 @@ import com.hazelcast.collection.impl.txnqueue.operations.BaseTxnQueueOperation;
 import com.hazelcast.collection.impl.txnqueue.operations.TxnOfferOperation;
 import com.hazelcast.collection.impl.txnqueue.operations.TxnPeekOperation;
 import com.hazelcast.collection.impl.txnqueue.operations.TxnPollOperation;
+import com.hazelcast.collection.impl.txnqueue.operations.TxnRemoveAllOperation;
 import com.hazelcast.collection.impl.txnqueue.operations.TxnReserveOfferOperation;
 import com.hazelcast.collection.impl.txnqueue.operations.TxnReservePollOperation;
 import com.hazelcast.config.QueueConfig;
@@ -40,6 +41,7 @@ import com.hazelcast.internal.util.ExceptionUtil;
 
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Future;
 
@@ -198,5 +200,15 @@ public abstract class TransactionalQueueProxySupport<E>
     private <T> InternalCompletableFuture<T> invoke(Operation operation) {
         OperationService operationService = getNodeEngine().getOperationService();
         return operationService.invokeOnPartition(QueueService.SERVICE_NAME, operation, partitionId);
+    }
+
+    boolean removeAllInternal(List<Data> data, long timeout) {
+        try {
+            TxnRemoveAllOperation operation = new TxnRemoveAllOperation(name, data);
+            operation.setCallerUuid(tx.getOwnerUuid());
+            return (Boolean) invoke(operation).get();
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
+        }
     }
 }
