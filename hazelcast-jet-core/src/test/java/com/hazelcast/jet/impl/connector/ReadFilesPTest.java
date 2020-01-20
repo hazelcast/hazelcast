@@ -17,15 +17,14 @@
 package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.collection.IList;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.Util;
-import com.hazelcast.jet.core.DAG;
-import com.hazelcast.jet.core.JetTestSupport;
-import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.jet.pipeline.Pipeline;
+import com.hazelcast.jet.pipeline.Sinks;
+import com.hazelcast.jet.pipeline.Sources;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -34,37 +33,35 @@ import java.util.Map.Entry;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.core.Edge.between;
-import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
-import static com.hazelcast.jet.core.processor.SourceProcessors.readFilesP;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastParallelClassRunner.class)
-public class ReadFilesPTest extends JetTestSupport {
+public class ReadFilesPTest extends SimpleTestInClusterSupport {
 
-    private JetInstance instance;
     private File directory;
     private IList<Entry<String, String>> list;
 
+    @BeforeClass
+    public static void beforeClass() {
+        initialize(1, null);
+    }
+
     @Before
     public void setup() throws Exception {
-        instance = createJetMember();
         directory = createTempDirectory();
-        list = instance.getList("writer");
+        list = instance().getList("writer");
     }
 
     @Test
     public void test_smallFiles() throws Exception {
-        DAG dag = buildDag(null);
+        Pipeline p = buildDag(null);
 
         File file1 = new File(directory, randomName());
         appendToFile(file1, "hello", "world");
         File file2 = new File(directory, randomName());
         appendToFile(file2, "hello2", "world2");
 
-        instance.newJob(dag).join();
+        instance().newJob(p).join();
 
         assertEquals(4, list.size());
 
@@ -73,27 +70,27 @@ public class ReadFilesPTest extends JetTestSupport {
 
     @Test
     public void test_largeFile() throws Exception {
-        DAG dag = buildDag(null);
+        Pipeline p = buildDag(null);
 
         File file1 = new File(directory, randomName());
         final int listLength = 10000;
         appendToFile(file1, IntStream.range(0, listLength).mapToObj(String::valueOf).toArray(String[]::new));
 
-        instance.newJob(dag).join();
+        instance().newJob(p).join();
 
         assertEquals(listLength, list.size());
     }
 
     @Test
     public void when_glob_the_useGlob() throws Exception {
-        DAG dag = buildDag("file2.*");
+        Pipeline p = buildDag("file2.*");
 
         File file1 = new File(directory, "file1.txt");
         appendToFile(file1, "hello", "world");
         File file2 = new File(directory, "file2.txt");
         appendToFile(file2, "hello2", "world2");
 
-        instance.newJob(dag).join();
+        instance().newJob(p).join();
 
         assertEquals(Arrays.asList(entry("file2.txt", "hello2"), entry("file2.txt", "world2")), new ArrayList<>(list));
 
@@ -102,29 +99,26 @@ public class ReadFilesPTest extends JetTestSupport {
 
     @Test
     public void when_directory_then_ignore() {
-        DAG dag = buildDag(null);
+        Pipeline p = buildDag(null);
 
         File file1 = new File(directory, randomName());
         assertTrue(file1.mkdir());
 
-        instance.newJob(dag).join();
+        instance().newJob(p).join();
 
         assertEquals(0, list.size());
 
         finishDirectory(file1);
     }
 
-    private DAG buildDag(String glob) {
-        if (glob == null) {
-            glob = "*";
-        }
+    private Pipeline buildDag(String glob) {
+        Pipeline p = Pipeline.create();
+        p.readFrom(Sources.filesBuilder(directory.getPath())
+                          .glob(glob == null ? "*" : glob)
+                          .build(Util::entry))
+         .writeTo(Sinks.list(list));
 
-        DAG dag = new DAG();
-        Vertex reader = dag.newVertex("reader", readFilesP(directory.getPath(), UTF_8, glob, false, Util::entry))
-                .localParallelism(1);
-        Vertex writer = dag.newVertex("writer", writeListP(list.getName())).localParallelism(1);
-        dag.edge(between(reader, writer));
-        return dag;
+        return p;
     }
 
     private void finishDirectory(File ... files) {

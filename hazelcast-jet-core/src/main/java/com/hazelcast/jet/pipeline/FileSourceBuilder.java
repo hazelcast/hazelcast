@@ -17,11 +17,15 @@
 package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.function.BiFunctionEx;
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 
 import javax.annotation.Nonnull;
 import java.io.File;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.stream.Stream;
 
 import static com.hazelcast.jet.pipeline.Sources.batchFromProcessor;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -54,6 +58,7 @@ public final class FileSourceBuilder {
      * java.nio.file.FileSystem#getPathMatcher(String) getPathMatcher()}.
      * Default value is {@code "*"} which means all files.
      */
+    @Nonnull
     public FileSourceBuilder glob(@Nonnull String glob) {
         this.glob = glob;
         return this;
@@ -69,6 +74,7 @@ public final class FileSourceBuilder {
      * each member will read all files in the directory, assuming the are
      * local.
      */
+    @Nonnull
     public FileSourceBuilder sharedFileSystem(boolean sharedFileSystem) {
         this.sharedFileSystem = sharedFileSystem;
         return this;
@@ -78,9 +84,10 @@ public final class FileSourceBuilder {
      * Sets the character set used to encode the files. Default value is {@link
      * java.nio.charset.StandardCharsets#UTF_8}.
      * <p>
-     * Setting this component does not have any effect if builder is used by
-     * Avro module.
+     * Setting this component has no effect if the user provides a custom
+     * {@code readFileFn} to the {@link #build(FunctionEx) build()} method.
      */
+    @Nonnull
     public FileSourceBuilder charset(@Nonnull Charset charset) {
         this.charset = charset;
         return this;
@@ -90,6 +97,7 @@ public final class FileSourceBuilder {
      * Convenience for {@link FileSourceBuilder#build(BiFunctionEx)}.
      * Source emits lines to downstream without any transformation.
      */
+    @Nonnull
     public BatchSource<String> build() {
         return build((filename, line) -> line);
     }
@@ -111,14 +119,46 @@ public final class FileSourceBuilder {
      *                    line. Gets the filename and line as parameters
      * @param <T> the type of the items the source emits
      */
-    public <T> BatchSource<T> build(BiFunctionEx<String, String, ? extends T> mapOutputFn) {
+    @Nonnull
+    public <T> BatchSource<T> build(@Nonnull BiFunctionEx<String, String, ? extends T> mapOutputFn) {
+        String charsetName = charset.name();
         return batchFromProcessor("filesSource(" + new File(directory, glob) + ')',
-                SourceProcessors.readFilesP(directory, charset, glob, sharedFileSystem, mapOutputFn));
+                SourceProcessors.readFilesP(directory, glob, sharedFileSystem,
+                        path -> {
+                            String fileName = path.getFileName().toString();
+                            return Files.lines(path, Charset.forName(charsetName))
+                                        .map(l -> mapOutputFn.apply(fileName, l));
+                        }));
+    }
+
+    /**
+     * Builds a custom file {@link BatchSource} with supplied components. Will
+     * use the supplied {@code readFileFn} to read the files. The configured
+     * {@linkplain #charset(Charset) is ignored}.
+     * <p>
+     * The source does not save any state to snapshot. If the job is restarted,
+     * it will re-emit all entries.
+     * <p>
+     * Any {@code IOException} will cause the job to fail. The files must not
+     * change while being read; if they do, the behavior is unspecified.
+     * <p>
+     * The default local parallelism for this processor is 2 (or 1 if just 1
+     * CPU is available).
+     *
+     * @param readFileFn the function to read objects from a file. Gets file
+     *      {@code Path} as parameter and returns a {@code Stream} of items.
+     * @param <T> the type of items returned from file reading
+     */
+    @Nonnull
+    public <T> BatchSource<T> build(@Nonnull FunctionEx<? super Path, ? extends Stream<T>> readFileFn) {
+        return batchFromProcessor("filesSource(" + new File(directory, glob) + ')',
+                SourceProcessors.readFilesP(directory, glob, sharedFileSystem, readFileFn));
     }
 
     /**
      * Convenience for {@link FileSourceBuilder#buildWatcher(BiFunctionEx)}.
      */
+    @Nonnull
     public StreamSource<String> buildWatcher() {
         return buildWatcher((filename, line) -> line);
     }
@@ -168,13 +208,14 @@ public final class FileSourceBuilder {
      * append the lines. However, it might not work as expected because some
      * editors write to a temp file and then rename it or append extra newline
      * character at the end which gets overwritten if more text is added in the
-     * editor. The best way to append is to use {@code echo text >> yourfile}.
+     * editor. The best way to append is to use {@code echo text >> yourFile}.
      *
      * @param mapOutputFn the function which creates output object from each
      *                    line. Gets the filename and line as parameters
      * @param <T> the type of the items the source emits
      */
-    public <T> StreamSource<T> buildWatcher(BiFunctionEx<String, String, ? extends T> mapOutputFn) {
+    @Nonnull
+    public <T> StreamSource<T> buildWatcher(@Nonnull BiFunctionEx<String, String, ? extends T> mapOutputFn) {
         return Sources.streamFromProcessor("fileWatcherSource(" + directory + '/' + glob + ')',
                 SourceProcessors.streamFilesP(directory, charset, glob, sharedFileSystem, mapOutputFn));
     }
