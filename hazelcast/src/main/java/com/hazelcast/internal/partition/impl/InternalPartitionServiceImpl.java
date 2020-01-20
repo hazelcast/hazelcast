@@ -93,6 +93,8 @@ import java.util.logging.Level;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.NON_LOCAL_MEMBER_SELECTOR;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITIONS_METRIC_PARTITION_SERVICE_MAX_BACKUP_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITIONS_METRIC_PARTITION_SERVICE_MIGRATION_QUEUE_SIZE;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITIONS_PREFIX;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static java.lang.Math.ceil;
@@ -325,7 +327,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
         return partitionStateManager.getMemberGroupsSize();
     }
 
-    @Probe(name = "maxBackupCount")
+    @Probe(name = PARTITIONS_METRIC_PARTITION_SERVICE_MAX_BACKUP_COUNT)
     @Override
     public int getMaxAllowedBackupCount() {
         return max(min(getMemberGroupsSize() - 1, InternalPartition.MAX_BACKUP_COUNT), 0);
@@ -1032,7 +1034,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
         reset();
     }
 
-    @Probe(name = "migrationQueueSize")
+    @Probe(name = PARTITIONS_METRIC_PARTITION_SERVICE_MIGRATION_QUEUE_SIZE)
     @Override
     public long getMigrationQueueSize() {
         return migrationManager.getMigrationQueueSize();

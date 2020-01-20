@@ -34,6 +34,13 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_DISCRIMINATOR_THREAD;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_THREAD_COMPLETED_OPERATION_BATCH_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_THREAD_COMPLETED_OPERATION_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_THREAD_COMPLETED_PACKET_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_THREAD_COMPLETED_PARTITION_SPECIFIC_RUNNABLE_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_THREAD_COMPLETED_RUNNABLE_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_THREAD_COMPLETED_TOTAL_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_THREAD_ERROR_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_PREFIX_THREAD;
 import static com.hazelcast.internal.metrics.MetricTarget.MANAGEMENT_CENTER;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
@@ -59,19 +66,19 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
 
     // All these counters are updated by this OperationThread (so a single writer)
     // and are read by the MetricsRegistry.
-    @Probe(name = "completedTotalCount")
+    @Probe(name = OPERATION_METRIC_THREAD_COMPLETED_TOTAL_COUNT)
     private final SwCounter completedTotalCount = newSwCounter();
-    @Probe(name = "completedPacketCount")
+    @Probe(name = OPERATION_METRIC_THREAD_COMPLETED_PACKET_COUNT)
     private final SwCounter completedPacketCount = newSwCounter();
-    @Probe(name = "completedOperationCount")
+    @Probe(name = OPERATION_METRIC_THREAD_COMPLETED_OPERATION_COUNT)
     private final SwCounter completedOperationCount = newSwCounter();
-    @Probe(name = "completedPartitionSpecificRunnableCount")
+    @Probe(name = OPERATION_METRIC_THREAD_COMPLETED_PARTITION_SPECIFIC_RUNNABLE_COUNT)
     private final SwCounter completedPartitionSpecificRunnableCount = newSwCounter();
-    @Probe(name = "completedRunnableCount")
+    @Probe(name = OPERATION_METRIC_THREAD_COMPLETED_RUNNABLE_COUNT)
     private final SwCounter completedRunnableCount = newSwCounter();
-    @Probe(name = "errorCount")
+    @Probe(name = OPERATION_METRIC_THREAD_ERROR_COUNT)
     private final SwCounter errorCount = newSwCounter();
-    @Probe(name = "completedOperationBatchCount")
+    @Probe(name = OPERATION_METRIC_THREAD_COMPLETED_OPERATION_BATCH_COUNT)
     private final SwCounter completedOperationBatchCount = newSwCounter();
 
     private final boolean priority;

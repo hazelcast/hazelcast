@@ -62,6 +62,14 @@ import java.util.function.Consumer;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_DISCRIMINATOR_BINDADDRESS;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_DISCRIMINATOR_ENDPOINT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ENDPOINT_MANAGER_ACCEPTED_SOCKET_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ENDPOINT_MANAGER_ACTIVE_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ENDPOINT_MANAGER_CLOSED_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ENDPOINT_MANAGER_CONNECTION_LISTENER_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ENDPOINT_MANAGER_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ENDPOINT_MANAGER_IN_PROGRESS_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ENDPOINT_MANAGER_MONITOR_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ENDPOINT_MANAGER_OPENED_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_PREFIX_CONNECTION;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_TAG_ENDPOINT;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
@@ -81,13 +89,13 @@ public class TcpIpEndpointManager
     private static final int RETRY_NUMBER = 5;
     private static final long DELAY_FACTOR = 100L;
 
-    @Probe(name = "inProgressCount")
+    @Probe(name = TCP_METRIC_ENDPOINT_MANAGER_IN_PROGRESS_COUNT)
     final Set<Address> connectionsInProgress = newSetFromMap(new ConcurrentHashMap<>());
 
-    @Probe(name = "count", level = MANDATORY)
+    @Probe(name = TCP_METRIC_ENDPOINT_MANAGER_COUNT, level = MANDATORY)
     final ConcurrentHashMap<Address, TcpIpConnection> connectionsMap = new ConcurrentHashMap<>(100);
 
-    @Probe(name = "activeCount", level = MANDATORY)
+    @Probe(name = TCP_METRIC_ENDPOINT_MANAGER_ACTIVE_COUNT, level = MANDATORY)
     final Set<TcpIpConnection> activeConnections = newSetFromMap(new ConcurrentHashMap<>());
 
     private final ILogger logger;
@@ -100,24 +108,24 @@ public class TcpIpEndpointManager
     private final BindHandler bindHandler;
     private final NetworkStatsImpl networkStats;
 
-    @Probe(name = "connectionListenerCount")
+    @Probe(name = TCP_METRIC_ENDPOINT_MANAGER_CONNECTION_LISTENER_COUNT)
     private final Set<ConnectionListener> connectionListeners = new CopyOnWriteArraySet<>();
 
     private final ConstructorFunction<Address, TcpIpConnectionErrorHandler> monitorConstructor =
             endpoint -> new TcpIpConnectionErrorHandler(TcpIpEndpointManager.this, endpoint);
 
-    @Probe(name = "monitorCount")
+    @Probe(name = TCP_METRIC_ENDPOINT_MANAGER_MONITOR_COUNT)
     private final ConcurrentHashMap<Address, TcpIpConnectionErrorHandler> monitors = new ConcurrentHashMap<>(100);
 
     private final AtomicInteger connectionIdGen = new AtomicInteger();
 
-    @Probe(name = "openedCount")
+    @Probe(name = TCP_METRIC_ENDPOINT_MANAGER_OPENED_COUNT)
     private final MwCounter openedCount = newMwCounter();
 
-    @Probe(name = "closedCount")
+    @Probe(name = TCP_METRIC_ENDPOINT_MANAGER_CLOSED_COUNT)
     private final MwCounter closedCount = newMwCounter();
 
-    @Probe(name = "acceptedSocketCount", level = MANDATORY)
+    @Probe(name = TCP_METRIC_ENDPOINT_MANAGER_ACCEPTED_SOCKET_COUNT, level = MANDATORY)
     private final Set<Channel> acceptedChannels = newSetFromMap(new ConcurrentHashMap<>());
 
     private final EndpointConnectionLifecycleListener connectionLifecycleListener = new EndpointConnectionLifecycleListener();

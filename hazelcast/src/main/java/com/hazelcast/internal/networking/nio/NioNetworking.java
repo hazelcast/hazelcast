@@ -48,6 +48,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_NETWORKING_BYTES_RECEIVED;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_NETWORKING_BYTES_SEND;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_NETWORKING_PACKETS_RECEIVED;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_NETWORKING_PACKETS_SEND;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_DISCRIMINATOR_PIPELINEID;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_DISCRIMINATOR_THREAD;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_PREFIX;
@@ -123,13 +127,13 @@ public final class NioNetworking implements Networking, DynamicMetricsProvider {
     // Currently this is a coarse grained aggregation of the bytes/send received.
     // In the future you probably want to split this up in member and client and potentially
     // wan specific.
-    @Probe(name = "bytesSent")
+    @Probe(name = NETWORKING_METRIC_NIO_NETWORKING_BYTES_SEND)
     private volatile long bytesSend;
-    @Probe(name = "bytesReceived")
+    @Probe(name = NETWORKING_METRIC_NIO_NETWORKING_BYTES_RECEIVED)
     private volatile long bytesReceived;
-    @Probe(name = "packetsSent")
+    @Probe(name = NETWORKING_METRIC_NIO_NETWORKING_PACKETS_SEND)
     private volatile long packetsSend;
-    @Probe(name = "packetsReceived")
+    @Probe(name = NETWORKING_METRIC_NIO_NETWORKING_PACKETS_RECEIVED)
     private volatile long packetsReceived;
 
     public NioNetworking(Context ctx) {

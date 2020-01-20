@@ -70,6 +70,7 @@ import java.util.logging.Level;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_DISCRIMINATOR_GENERICID;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_DISCRIMINATOR_PARTITIONID;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_OPERATION_RUNNER_EXECUTED_OPERATIONS_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_PREFIX_ADHOC;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_PREFIX_GENERIC;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_PREFIX_PARTITION;
@@ -106,7 +107,7 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
     private final Node node;
     private final NodeEngineImpl nodeEngine;
 
-    @Probe(name = "executedOperationsCount", level = DEBUG)
+    @Probe(name = OPERATION_METRIC_OPERATION_RUNNER_EXECUTED_OPERATIONS_COUNT, level = DEBUG)
     private final Counter executedOperationsCounter;
     private final Address thisAddress;
     private final boolean staleReadOnMigrationEnabled;

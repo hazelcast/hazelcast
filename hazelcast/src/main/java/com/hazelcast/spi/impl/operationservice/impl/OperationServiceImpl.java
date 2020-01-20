@@ -56,6 +56,11 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_OPERATION_SERVICE_ASYNC_OPERATIONS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_OPERATION_SERVICE_CALL_TIMEOUT_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_OPERATION_SERVICE_FAILED_BACKUPS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_OPERATION_SERVICE_RETRY_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_OPERATION_SERVICE_TIMEOUT_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_PREFIX;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.CollectionUtil.asIntegerList;
@@ -99,22 +104,22 @@ public final class OperationServiceImpl implements StaticMetricsProvider, LiveOp
 
     // contains the current executing asyncOperations. This information is needed for the operation-heartbeats.
     // operations are added/removed using the {@link Offload} functionality.
-    @Probe(name = "asyncOperations")
+    @Probe(name = OPERATION_METRIC_OPERATION_SERVICE_ASYNC_OPERATIONS)
     final Set<Operation> asyncOperations = newSetFromMap(new ConcurrentHashMap<>());
 
     final InvocationRegistry invocationRegistry;
     final OperationExecutor operationExecutor;
 
-    @Probe(name = "operationTimeoutCount", level = MANDATORY)
+    @Probe(name = OPERATION_METRIC_OPERATION_SERVICE_TIMEOUT_COUNT, level = MANDATORY)
     final MwCounter operationTimeoutCount = newMwCounter();
 
-    @Probe(name = "callTimeoutCount", level = MANDATORY)
+    @Probe(name = OPERATION_METRIC_OPERATION_SERVICE_CALL_TIMEOUT_COUNT, level = MANDATORY)
     final MwCounter callTimeoutCount = newMwCounter();
 
-    @Probe(name = "retryCount", level = MANDATORY)
+    @Probe(name = OPERATION_METRIC_OPERATION_SERVICE_RETRY_COUNT, level = MANDATORY)
     final MwCounter retryCount = newMwCounter();
 
-    @Probe(name = "failedBackups", level = MANDATORY)
+    @Probe(name = OPERATION_METRIC_OPERATION_SERVICE_FAILED_BACKUPS, level = MANDATORY)
     final Counter failedBackupsCount = newMwCounter();
 
     final NodeEngineImpl nodeEngine;

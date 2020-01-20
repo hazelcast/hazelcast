@@ -32,6 +32,8 @@ import com.hazelcast.spi.properties.ClusterProperty;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_IO_BALANCER_IMBALANCE_DETECTED_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_IO_BALANCER_MIGRATION_COMPLETED_COUNT;
 import static com.hazelcast.internal.metrics.ProbeUnit.COUNT;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
@@ -77,11 +79,11 @@ public class IOBalancer {
     private IOBalancerThread ioBalancerThread;
 
     // only IOBalancerThread will write to this field.
-    @Probe(name = "imbalanceDetectedCount", unit = COUNT)
+    @Probe(name = NETWORKING_METRIC_NIO_IO_BALANCER_IMBALANCE_DETECTED_COUNT, unit = COUNT)
     private final SwCounter imbalanceDetectedCount = newSwCounter();
 
     // multiple threads can update this field.
-    @Probe(name = "migrationCompletedCount", unit = COUNT)
+    @Probe(name = NETWORKING_METRIC_NIO_IO_BALANCER_MIGRATION_COMPLETED_COUNT, unit = COUNT)
     private final MwCounter migrationCompletedCount = newMwCounter();
 
     public IOBalancer(NioThread[] inputThreads,

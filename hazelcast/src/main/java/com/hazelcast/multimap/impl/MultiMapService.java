@@ -85,6 +85,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.internal.config.ConfigValidator.checkMultiMapConfig;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MULTIMAP_PREFIX;
 import static com.hazelcast.internal.metrics.impl.ProviderHelper.provide;
 import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
@@ -549,7 +550,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
 
     @Override
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
-        provide(descriptor, context, "multiMap", getStats());
+        provide(descriptor, context, MULTIMAP_PREFIX, getStats());
     }
 
     private class Merger extends

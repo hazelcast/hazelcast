@@ -20,6 +20,12 @@ import com.hazelcast.internal.metrics.Probe;
 
 import java.util.UUID;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.WAN_METRIC_CONSISTENCY_CHECK_LAST_CHECKED_LEAF_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.WAN_METRIC_CONSISTENCY_CHECK_LAST_CHECKED_PARTITION_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.WAN_METRIC_CONSISTENCY_CHECK_LAST_DIFF_LEAF_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.WAN_METRIC_CONSISTENCY_CHECK_LAST_DIFF_PARTITION_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.WAN_METRIC_CONSISTENCY_CHECK_LAST_ENTRIES_TO_SYNC;
+
 /**
  * Result of the last WAN consistency check result.
  */
@@ -31,27 +37,27 @@ public class ConsistencyCheckResult {
     /**
      * Number of checked partitions.
      */
-    @Probe(name = "lastCheckedPartitionCount")
+    @Probe(name = WAN_METRIC_CONSISTENCY_CHECK_LAST_CHECKED_PARTITION_COUNT)
     private final int lastCheckedPartitionCount;
     /**
      * Number of partitions found to be inconsistent.
      */
-    @Probe(name = "lastDiffPartitionCount")
+    @Probe(name = WAN_METRIC_CONSISTENCY_CHECK_LAST_DIFF_PARTITION_COUNT)
     private final int lastDiffPartitionCount;
     /**
      * Number of checked Merkle tree leaves.
      */
-    @Probe(name = "lastCheckedLeafCount")
+    @Probe(name = WAN_METRIC_CONSISTENCY_CHECK_LAST_CHECKED_LEAF_COUNT)
     private final int lastCheckedLeafCount;
     /**
      * Number of different Merkle tree leaves.
      */
-    @Probe(name = "lastDiffLeafCount")
+    @Probe(name = WAN_METRIC_CONSISTENCY_CHECK_LAST_DIFF_LEAF_COUNT)
     private final int lastDiffLeafCount;
     /**
      * Number of entries to synchronize to get the clusters into sync.
      */
-    @Probe(name = "lastEntriesToSync")
+    @Probe(name = WAN_METRIC_CONSISTENCY_CHECK_LAST_ENTRIES_TO_SYNC)
     private final int lastEntriesToSync;
 
     public ConsistencyCheckResult(UUID uuid) {

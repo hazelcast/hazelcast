@@ -120,6 +120,10 @@ import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
 import static com.hazelcast.cp.internal.raft.impl.RaftNodeImpl.newRaftNode;
 import static com.hazelcast.internal.config.ConfigValidator.checkCPSubsystemConfig;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CPSUBSYSTEM_DISCRIMINATOR_GROUPID;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CPSUBSYSTEM_METRIC_RAFT_SERVICE_DESTROYED_GROUP_IDS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CPSUBSYSTEM_METRIC_RAFT_SERVICE_MISSING_MEMBERS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CPSUBSYSTEM_METRIC_RAFT_SERVICE_NODES;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CPSUBSYSTEM_METRIC_RAFT_SERVICE_TERMINATED_RAFT_NODE_GROUP_IDS;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CPSUBSYSTEM_PREFIX_RAFT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CPSUBSYSTEM_PREFIX_RAFT_GROUP;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CPSUBSYSTEM_PREFIX_RAFT_METADATA;
@@ -154,19 +158,19 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     private static final int AWAIT_DISCOVERY_STEP_MILLIS = 10;
 
     private final ReadWriteLock nodeLock = new ReentrantReadWriteLock();
-    @Probe(name = "nodes", unit = COUNT)
+    @Probe(name = CPSUBSYSTEM_METRIC_RAFT_SERVICE_NODES, unit = COUNT)
     private final ConcurrentMap<CPGroupId, RaftNode> nodes = new ConcurrentHashMap<>();
     private final ConcurrentMap<CPGroupId, RaftNodeMetrics> nodeMetrics = new ConcurrentHashMap<>();
     private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
-    @Probe(name = "destroyedGroupIds", unit = COUNT)
+    @Probe(name = CPSUBSYSTEM_METRIC_RAFT_SERVICE_DESTROYED_GROUP_IDS, unit = COUNT)
     private final Set<CPGroupId> destroyedGroupIds = newSetFromMap(new ConcurrentHashMap<>());
-    @Probe(name = "terminatedRaftNodeGroupIds", unit = COUNT)
+    @Probe(name = CPSUBSYSTEM_METRIC_RAFT_SERVICE_TERMINATED_RAFT_NODE_GROUP_IDS, unit = COUNT)
     private final Set<CPGroupId> terminatedRaftNodeGroupIds = newSetFromMap(new ConcurrentHashMap<>());
     private final CPSubsystemConfig config;
     private final RaftInvocationManager invocationManager;
     private final MetadataRaftGroupManager metadataGroupManager;
-    @Probe(name = "missingMembers", unit = COUNT)
+    @Probe(name = CPSUBSYSTEM_METRIC_RAFT_SERVICE_MISSING_MEMBERS, unit = COUNT)
     private final ConcurrentMap<CPMemberInfo, Long> missingMembers = new ConcurrentHashMap<>();
     private final int metricsPeriod;
     private final boolean cpSubsystemEnabled;

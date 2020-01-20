@@ -26,39 +26,50 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MIGRATION_METRIC_COMPLETED_MIGRATIONS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MIGRATION_METRIC_ELAPSED_DESTINATION_COMMIT_TIME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MIGRATION_METRIC_ELAPSED_MIGRATION_OPERATION_TIME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MIGRATION_METRIC_ELAPSED_MIGRATION_TIME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MIGRATION_METRIC_LAST_REPARTITION_TIME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MIGRATION_METRIC_PLANNED_MIGRATIONS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MIGRATION_METRIC_TOTAL_COMPLETED_MIGRATIONS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MIGRATION_METRIC_TOTAL_ELAPSED_DESTINATION_COMMIT_TIME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MIGRATION_METRIC_TOTAL_ELAPSED_MIGRATION_OPERATION_TIME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MIGRATION_METRIC_TOTAL_ELAPSED_MIGRATION_TIME;
+
 /**
  * Collection of stats for partition migration tasks.
  */
 public class MigrationStats {
 
-    @Probe(name = "lastRepartitionTime")
+    @Probe(name = MIGRATION_METRIC_LAST_REPARTITION_TIME)
     private final AtomicLong lastRepartitionTime = new AtomicLong();
 
-    @Probe(name = "plannedMigrations")
+    @Probe(name = MIGRATION_METRIC_PLANNED_MIGRATIONS)
     private volatile int plannedMigrations;
 
-    @Probe(name = "completedMigrations")
+    @Probe(name = MIGRATION_METRIC_COMPLETED_MIGRATIONS)
     private final AtomicInteger completedMigrations = new AtomicInteger();
 
-    @Probe(name = "totalCompletedMigrations")
+    @Probe(name = MIGRATION_METRIC_TOTAL_COMPLETED_MIGRATIONS)
     private final AtomicInteger totalCompletedMigrations = new AtomicInteger();
 
-    @Probe(name = "elapsedMigrationOperationTime")
+    @Probe(name = MIGRATION_METRIC_ELAPSED_MIGRATION_OPERATION_TIME)
     private final AtomicLong elapsedMigrationOperationTime = new AtomicLong();
 
-    @Probe(name = "elapsedDestinationCommitTime")
+    @Probe(name = MIGRATION_METRIC_ELAPSED_DESTINATION_COMMIT_TIME)
     private final AtomicLong elapsedDestinationCommitTime = new AtomicLong();
 
-    @Probe(name = "elapsedMigrationTime")
+    @Probe(name = MIGRATION_METRIC_ELAPSED_MIGRATION_TIME)
     private final AtomicLong elapsedMigrationTime = new AtomicLong();
 
-    @Probe(name = "totalElapsedMigrationOperationTime")
+    @Probe(name = MIGRATION_METRIC_TOTAL_ELAPSED_MIGRATION_OPERATION_TIME)
     private final AtomicLong totalElapsedMigrationOperationTime = new AtomicLong();
 
-    @Probe(name = "totalElapsedDestinationCommitTime")
+    @Probe(name = MIGRATION_METRIC_TOTAL_ELAPSED_DESTINATION_COMMIT_TIME)
     private final AtomicLong totalElapsedDestinationCommitTime = new AtomicLong();
 
-    @Probe(name = "totalElapsedMigrationTime")
+    @Probe(name = MIGRATION_METRIC_TOTAL_ELAPSED_MIGRATION_TIME)
     private final AtomicLong totalElapsedMigrationTime = new AtomicLong();
 
     /**

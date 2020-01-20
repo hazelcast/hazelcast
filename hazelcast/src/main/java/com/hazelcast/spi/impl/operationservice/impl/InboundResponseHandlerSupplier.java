@@ -37,6 +37,12 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_INBOUND_RESPONSE_HANDLER_RESPONSES_BACKUP_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_INBOUND_RESPONSE_HANDLER_RESPONSES_ERROR_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_INBOUND_RESPONSE_HANDLER_RESPONSES_MISSING_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_INBOUND_RESPONSE_HANDLER_RESPONSES_NORMAL_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_INBOUND_RESPONSE_HANDLER_RESPONSES_TIMEOUT_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_INBOUND_RESPONSE_HANDLER_RESPONSE_QUEUE_SIZE;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_PREFIX;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
@@ -134,7 +140,7 @@ public class InboundResponseHandlerSupplier implements StaticMetricsProvider, Su
         return inboundResponseHandlers[0];
     }
 
-    @Probe(name = "responseQueueSize", level = MANDATORY)
+    @Probe(name = OPERATION_METRIC_INBOUND_RESPONSE_HANDLER_RESPONSE_QUEUE_SIZE, level = MANDATORY)
     public int responseQueueSize() {
         int result = 0;
         for (ResponseThread responseThread : responseThreads) {
@@ -143,7 +149,7 @@ public class InboundResponseHandlerSupplier implements StaticMetricsProvider, Su
         return result;
     }
 
-    @Probe(name = "responses.normalCount", level = MANDATORY)
+    @Probe(name = OPERATION_METRIC_INBOUND_RESPONSE_HANDLER_RESPONSES_NORMAL_COUNT, level = MANDATORY)
     long responsesNormal() {
         long result = 0;
         for (InboundResponseHandler handler : inboundResponseHandlers) {
@@ -152,7 +158,7 @@ public class InboundResponseHandlerSupplier implements StaticMetricsProvider, Su
         return result;
     }
 
-    @Probe(name = "responses.timeoutCount", level = MANDATORY)
+    @Probe(name = OPERATION_METRIC_INBOUND_RESPONSE_HANDLER_RESPONSES_TIMEOUT_COUNT, level = MANDATORY)
     long responsesTimeout() {
         long result = 0;
         for (InboundResponseHandler handler : inboundResponseHandlers) {
@@ -161,7 +167,7 @@ public class InboundResponseHandlerSupplier implements StaticMetricsProvider, Su
         return result;
     }
 
-    @Probe(name = "responses.backupCount", level = MANDATORY)
+    @Probe(name = OPERATION_METRIC_INBOUND_RESPONSE_HANDLER_RESPONSES_BACKUP_COUNT, level = MANDATORY)
     long responsesBackup() {
         long result = 0;
         for (InboundResponseHandler handler : inboundResponseHandlers) {
@@ -170,7 +176,7 @@ public class InboundResponseHandlerSupplier implements StaticMetricsProvider, Su
         return result;
     }
 
-    @Probe(name = "responses.errorCount", level = MANDATORY)
+    @Probe(name = OPERATION_METRIC_INBOUND_RESPONSE_HANDLER_RESPONSES_ERROR_COUNT, level = MANDATORY)
     long responsesError() {
         long result = 0;
         for (InboundResponseHandler handler : inboundResponseHandlers) {
@@ -179,7 +185,7 @@ public class InboundResponseHandlerSupplier implements StaticMetricsProvider, Su
         return result;
     }
 
-    @Probe(name = "responses.missingCount", level = MANDATORY)
+    @Probe(name = OPERATION_METRIC_INBOUND_RESPONSE_HANDLER_RESPONSES_MISSING_COUNT, level = MANDATORY)
     long responsesMissing() {
         long result = 0;
         for (InboundResponseHandler handler : inboundResponseHandlers) {

@@ -25,6 +25,12 @@ import java.lang.management.ManagementFactory;
 import java.util.Collections;
 import java.util.Set;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.GC_METRIC_MAJOR_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.GC_METRIC_MAJOR_TIME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.GC_METRIC_MINOR_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.GC_METRIC_MINOR_TIME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.GC_METRIC_UNKNOWN_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.GC_METRIC_UNKNOWN_TIME;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.GC_PREFIX;
 import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
@@ -78,17 +84,17 @@ public final class GarbageCollectionMetricSet {
 
     @SuppressFBWarnings(value = "URF_UNREAD_FIELD", justification = "used by instrumentation tools")
     static class GcStats implements Runnable {
-        @Probe(name = "minorCount", level = MANDATORY)
+        @Probe(name = GC_METRIC_MINOR_COUNT, level = MANDATORY)
         volatile long minorCount;
-        @Probe(name = "minorTime", unit = MS, level = MANDATORY)
+        @Probe(name = GC_METRIC_MINOR_TIME, unit = MS, level = MANDATORY)
         volatile long minorTime;
-        @Probe(name = "majorCount", level = MANDATORY)
+        @Probe(name = GC_METRIC_MAJOR_COUNT, level = MANDATORY)
         volatile long majorCount;
-        @Probe(name = "majorTime", unit = MS, level = MANDATORY)
+        @Probe(name = GC_METRIC_MAJOR_TIME, unit = MS, level = MANDATORY)
         volatile long majorTime;
-        @Probe(name = "unknownCount", level = MANDATORY)
+        @Probe(name = GC_METRIC_UNKNOWN_COUNT, level = MANDATORY)
         volatile long unknownCount;
-        @Probe(name = "unknownTime", unit = MS, level = MANDATORY)
+        @Probe(name = GC_METRIC_UNKNOWN_TIME, unit = MS, level = MANDATORY)
         volatile long unknownTime;
 
         @Override

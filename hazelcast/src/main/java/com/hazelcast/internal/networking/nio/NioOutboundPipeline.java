@@ -36,6 +36,15 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_BYTES_WRITTEN;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_IDLE_TIME_MS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_NORMAL_FRAMES_WRITTEN;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_PRIORITY_FRAMES_WRITTEN;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_PRIORITY_WRITE_QUEUE_PENDING_BYTES;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_PRIORITY_WRITE_QUEUE_SIZE;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_SCHEDULED;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_WRITE_QUEUE_PENDING_BYTES;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_WRITE_QUEUE_SIZE;
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
@@ -94,21 +103,21 @@ public final class NioOutboundPipeline
     }
 
     @SuppressWarnings("checkstyle:visibilitymodifier")
-    @Probe(name = "writeQueueSize")
+    @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_WRITE_QUEUE_SIZE)
     public final Queue<OutboundFrame> writeQueue = new ConcurrentLinkedQueue<>();
     @SuppressWarnings("checkstyle:visibilitymodifier")
-    @Probe(name = "priorityWriteQueueSize")
+    @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_PRIORITY_WRITE_QUEUE_SIZE)
     public final Queue<OutboundFrame> priorityWriteQueue = new ConcurrentLinkedQueue<>();
 
     private OutboundHandler[] handlers = new OutboundHandler[0];
     private ByteBuffer sendBuffer;
 
     private final AtomicReference<State> scheduled = new AtomicReference<>(State.SCHEDULED);
-    @Probe(name = "bytesWritten")
+    @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_BYTES_WRITTEN)
     private final SwCounter bytesWritten = newSwCounter();
-    @Probe(name = "normalFramesWritten")
+    @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_NORMAL_FRAMES_WRITTEN)
     private final SwCounter normalFramesWritten = newSwCounter();
-    @Probe(name = "priorityFramesWritten")
+    @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_PRIORITY_FRAMES_WRITTEN)
     private final SwCounter priorityFramesWritten = newSwCounter();
 
     private volatile long lastWriteTime;
@@ -157,12 +166,12 @@ public final class NioOutboundPipeline
         return lastWriteTime;
     }
 
-    @Probe(name = "writeQueuePendingBytes", level = DEBUG)
+    @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_WRITE_QUEUE_PENDING_BYTES, level = DEBUG)
     public long bytesPending() {
         return bytesPending(writeQueue);
     }
 
-    @Probe(name = "priorityWriteQueuePendingBytes", level = DEBUG)
+    @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_PRIORITY_WRITE_QUEUE_PENDING_BYTES, level = DEBUG)
     public long priorityBytesPending() {
         return bytesPending(priorityWriteQueue);
     }
@@ -175,12 +184,12 @@ public final class NioOutboundPipeline
         return bytesPending;
     }
 
-    @Probe(name = "idleTimeMs", unit = MS)
+    @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_IDLE_TIME_MS, unit = MS)
     private long idleTimeMs() {
         return max(currentTimeMillis() - lastWriteTime, 0);
     }
 
-    @Probe(name = "scheduled")
+    @Probe(name = NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_SCHEDULED)
     private long scheduled() {
         return scheduled.get().ordinal();
     }

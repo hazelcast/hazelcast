@@ -30,6 +30,12 @@ import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_PIPELINE_COMPLETED_MIGRATIONS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_PIPELINE_OPS_INTERESTED;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_PIPELINE_OPS_READY;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_PIPELINE_OWNER_ID;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_PIPELINE_PROCESS_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_PIPELINE_STARTED_MIGRATIONS;
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static java.lang.Thread.currentThread;
@@ -44,7 +50,7 @@ public abstract class NioPipeline implements MigratablePipeline, Runnable {
     protected final int loadType = Integer.getInteger("hazelcast.io.load", LOAD_BALANCING_BYTE);
 
     // the number of time the NioPipeline.process() method has been called.
-    @Probe(name = "processCount")
+    @Probe(name = NETWORKING_METRIC_NIO_PIPELINE_PROCESS_COUNT)
     protected final SwCounter processCount = newSwCounter();
     protected final ILogger logger;
     protected final NioChannel channel;
@@ -59,13 +65,13 @@ public abstract class NioPipeline implements MigratablePipeline, Runnable {
     private final ChannelErrorHandler errorHandler;
     private final int initialOps;
     private final IOBalancer ioBalancer;
-    private final AtomicReference<TaskNode> delayedTaskStack = new AtomicReference<TaskNode>();
-    @Probe(name = "ownerId")
+    private final AtomicReference<TaskNode> delayedTaskStack = new AtomicReference<>();
+    @Probe(name = NETWORKING_METRIC_NIO_PIPELINE_OWNER_ID)
     private volatile int ownerId;
     // counts the number of migrations that have happened so far
-    @Probe(name = "startedMigrations")
+    @Probe(name = NETWORKING_METRIC_NIO_PIPELINE_STARTED_MIGRATIONS)
     private final SwCounter startedMigrations = newSwCounter();
-    @Probe(name = "completedMigrations")
+    @Probe(name = NETWORKING_METRIC_NIO_PIPELINE_COMPLETED_MIGRATIONS)
     private final SwCounter completedMigrations = newSwCounter();
     private volatile NioThread newOwner;
 
@@ -89,13 +95,13 @@ public abstract class NioPipeline implements MigratablePipeline, Runnable {
         return channel;
     }
 
-    @Probe(name = "opsInterested", level = DEBUG)
+    @Probe(name = NETWORKING_METRIC_NIO_PIPELINE_OPS_INTERESTED, level = DEBUG)
     private long opsInterested() {
         SelectionKey selectionKey = this.selectionKey;
         return selectionKey == null ? -1 : selectionKey.interestOps();
     }
 
-    @Probe(name = "opsReady", level = DEBUG)
+    @Probe(name = NETWORKING_METRIC_NIO_PIPELINE_OPS_READY, level = DEBUG)
     private long opsReady() {
         SelectionKey selectionKey = this.selectionKey;
         return selectionKey == null ? -1 : selectionKey.readyOps();

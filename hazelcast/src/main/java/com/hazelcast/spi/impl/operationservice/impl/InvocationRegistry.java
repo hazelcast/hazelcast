@@ -32,6 +32,9 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_INVOCATION_REGISTRY_INVOCATIONS_LAST_CALL_ID;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_INVOCATION_REGISTRY_INVOCATIONS_PENDING;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_INVOCATION_REGISTRY_INVOCATIONS_USED_PERCENTAGE;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_PREFIX;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.spi.impl.operationservice.OperationAccessor.deactivate;
@@ -65,7 +68,7 @@ public class InvocationRegistry implements Iterable<Invocation>, StaticMetricsPr
     private static final float LOAD_FACTOR = 0.75f;
     private static final double HUNDRED_PERCENT = 100d;
 
-    @Probe(name = "invocations.pending", level = MANDATORY)
+    @Probe(name = OPERATION_METRIC_INVOCATION_REGISTRY_INVOCATIONS_PENDING, level = MANDATORY)
     private final ConcurrentMap<Long, Invocation> invocations;
     private final ILogger logger;
     private final CallIdSequence callIdSequence;
@@ -88,7 +91,7 @@ public class InvocationRegistry implements Iterable<Invocation>, StaticMetricsPr
         registry.registerStaticMetrics(this, OPERATION_PREFIX);
     }
 
-    @Probe(name = "invocations.usedPercentage")
+    @Probe(name = OPERATION_METRIC_INVOCATION_REGISTRY_INVOCATIONS_USED_PERCENTAGE)
     private double invocationsUsedPercentage() {
         int maxConcurrentInvocations = callIdSequence.getMaxConcurrentInvocations();
         if (maxConcurrentInvocations == Integer.MAX_VALUE) {
@@ -98,7 +101,7 @@ public class InvocationRegistry implements Iterable<Invocation>, StaticMetricsPr
         return (HUNDRED_PERCENT * invocations.size()) / maxConcurrentInvocations;
     }
 
-    @Probe(name = "invocations.lastCallId")
+    @Probe(name = OPERATION_METRIC_INVOCATION_REGISTRY_INVOCATIONS_LAST_CALL_ID)
     long getLastCallId() {
         return callIdSequence.getLastCallId();
     }

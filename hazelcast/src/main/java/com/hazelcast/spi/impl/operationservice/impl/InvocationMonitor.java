@@ -50,6 +50,15 @@ import java.util.logging.Level;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_INVOCATION_MONITOR_BACKUP_TIMEOUTS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_INVOCATION_MONITOR_BACKUP_TIMEOUT_MILLIS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_INVOCATION_MONITOR_DELAYED_EXECUTION_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_INVOCATION_MONITOR_HEARTBEAT_BROADCAST_PERIOD_MILLIS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_INVOCATION_MONITOR_HEARTBEAT_PACKETS_RECEIVED;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_INVOCATION_MONITOR_HEARTBEAT_PACKETS_SENT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_INVOCATION_MONITOR_INVOCATION_SCAN_PERIOD_MILLIS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_INVOCATION_MONITOR_INVOCATION_TIMEOUT_MILLIS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_INVOCATION_MONITOR_NORMAL_TIMEOUTS;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_PREFIX_INVOCATIONS;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.metrics.ProbeUnit.MS;
@@ -84,25 +93,25 @@ public class InvocationMonitor implements Consumer<Packet>, StaticMetricsProvide
     private final ILogger logger;
     private final ScheduledExecutorService scheduler;
     private final Address thisAddress;
-    private final ConcurrentMap<Address, AtomicLong> heartbeatPerMember = new ConcurrentHashMap<Address, AtomicLong>();
+    private final ConcurrentMap<Address, AtomicLong> heartbeatPerMember = new ConcurrentHashMap<>();
 
-    @Probe(name = "backupTimeouts", level = MANDATORY)
+    @Probe(name = OPERATION_METRIC_INVOCATION_MONITOR_BACKUP_TIMEOUTS, level = MANDATORY)
     private final SwCounter backupTimeoutsCount = newSwCounter();
-    @Probe(name = "normalTimeouts", level = MANDATORY)
+    @Probe(name = OPERATION_METRIC_INVOCATION_MONITOR_NORMAL_TIMEOUTS, level = MANDATORY)
     private final SwCounter normalTimeoutsCount = newSwCounter();
-    @Probe(name = "heartbeatPacketsReceived")
+    @Probe(name = OPERATION_METRIC_INVOCATION_MONITOR_HEARTBEAT_PACKETS_RECEIVED)
     private final SwCounter heartbeatPacketsReceived = newSwCounter();
-    @Probe(name = "heartbeatPacketsSent")
+    @Probe(name = OPERATION_METRIC_INVOCATION_MONITOR_HEARTBEAT_PACKETS_SENT)
     private final SwCounter heartbeatPacketsSent = newSwCounter();
-    @Probe(name = "delayedExecutionCount")
+    @Probe(name = OPERATION_METRIC_INVOCATION_MONITOR_DELAYED_EXECUTION_COUNT)
     private final SwCounter delayedExecutionCount = newSwCounter();
-    @Probe(name = "backupTimeoutMillis", unit = MS)
+    @Probe(name = OPERATION_METRIC_INVOCATION_MONITOR_BACKUP_TIMEOUT_MILLIS, unit = MS)
     private final long backupTimeoutMillis;
-    @Probe(name = "invocationTimeoutMillis", unit = MS)
+    @Probe(name = OPERATION_METRIC_INVOCATION_MONITOR_INVOCATION_TIMEOUT_MILLIS, unit = MS)
     private final long invocationTimeoutMillis;
-    @Probe(name = "heartbeatBroadcastPeriodMillis", unit = MS)
+    @Probe(name = OPERATION_METRIC_INVOCATION_MONITOR_HEARTBEAT_BROADCAST_PERIOD_MILLIS, unit = MS)
     private final long heartbeatBroadcastPeriodMillis;
-    @Probe(name = "invocationScanPeriodMillis", unit = MS)
+    @Probe(name = OPERATION_METRIC_INVOCATION_MONITOR_INVOCATION_SCAN_PERIOD_MILLIS, unit = MS)
     private final long invocationScanPeriodMillis = SECONDS.toMillis(1);
 
     //todo: we need to get rid of the nodeEngine dependency

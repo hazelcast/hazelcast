@@ -56,6 +56,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_METRIC_LISTENER_SERVICE_EVENTS_PROCESSED;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_METRIC_LISTENER_SERVICE_EVENT_QUEUE_SIZE;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_PREFIX_LISTENERS;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -146,12 +148,12 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
         registry.registerStaticMetrics(this, CLIENT_PREFIX_LISTENERS);
     }
 
-    @Probe(name = "eventQueueSize", level = MANDATORY)
+    @Probe(name = CLIENT_METRIC_LISTENER_SERVICE_EVENT_QUEUE_SIZE, level = MANDATORY)
     private int eventQueueSize() {
         return eventExecutor.getWorkQueueSize();
     }
 
-    @Probe(name = "eventsProcessed", level = MANDATORY)
+    @Probe(name = CLIENT_METRIC_LISTENER_SERVICE_EVENTS_PROCESSED, level = MANDATORY)
     private long eventsProcessed() {
         return eventExecutor.processedCount();
     }

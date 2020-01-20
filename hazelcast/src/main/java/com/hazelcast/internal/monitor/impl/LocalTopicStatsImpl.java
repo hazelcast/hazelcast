@@ -25,6 +25,9 @@ import com.hazelcast.topic.impl.reliable.ReliableMessageRunner;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TOPIC_METRIC_CREATION_TIME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TOPIC_METRIC_TOTAL_PUBLISHES;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TOPIC_METRIC_TOTAL_RECEIVED_MESSAGES;
 import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.util.JsonUtil.getLong;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
@@ -35,13 +38,13 @@ public class LocalTopicStatsImpl implements LocalTopicStats, JsonSerializable {
             newUpdater(LocalTopicStatsImpl.class, "totalPublishes");
     private static final AtomicLongFieldUpdater<LocalTopicStatsImpl> TOTAL_RECEIVED_MESSAGES =
             newUpdater(LocalTopicStatsImpl.class, "totalReceivedMessages");
-    @Probe(name = "creationTime", unit = MS)
+    @Probe(name = TOPIC_METRIC_CREATION_TIME, unit = MS)
     private long creationTime;
 
     // These fields are only accessed through the updaters
-    @Probe(name = "totalPublishes")
+    @Probe(name = TOPIC_METRIC_TOTAL_PUBLISHES)
     private volatile long totalPublishes;
-    @Probe(name = "totalReceivedMessages")
+    @Probe(name = TOPIC_METRIC_TOTAL_RECEIVED_MESSAGES)
     private volatile long totalReceivedMessages;
 
     public LocalTopicStatsImpl() {

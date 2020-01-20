@@ -22,6 +22,21 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.monitor.LocalCacheStats;
 import com.hazelcast.json.internal.JsonSerializable;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CACHE_METRIC_AVERAGE_GET_TIME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CACHE_METRIC_AVERAGE_PUT_TIME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CACHE_METRIC_AVERAGE_REMOVAL_TIME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CACHE_METRIC_CACHE_EVICTIONS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CACHE_METRIC_CACHE_GETS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CACHE_METRIC_CACHE_HITS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CACHE_METRIC_CACHE_HIT_PERCENTAGE;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CACHE_METRIC_CACHE_MISSES;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CACHE_METRIC_CACHE_MISS_PERCENTAGE;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CACHE_METRIC_CACHE_PUTS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CACHE_METRIC_CACHE_REMOVALS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CACHE_METRIC_CREATION_TIME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CACHE_METRIC_LAST_ACCESS_TIME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CACHE_METRIC_LAST_UPDATE_TIME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CACHE_METRIC_OWNED_ENTRY_COUNT;
 import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.metrics.ProbeUnit.PERCENT;
 import static com.hazelcast.internal.util.JsonUtil.getFloat;
@@ -45,35 +60,35 @@ import static com.hazelcast.internal.util.JsonUtil.getLong;
  */
 public class LocalCacheStatsImpl implements LocalCacheStats, JsonSerializable {
 
-    @Probe(name = "creationTime", unit = MS)
+    @Probe(name = CACHE_METRIC_CREATION_TIME, unit = MS)
     private long creationTime;
-    @Probe(name = "lastAccessTime", unit = MS)
+    @Probe(name = CACHE_METRIC_LAST_ACCESS_TIME, unit = MS)
     private long lastAccessTime;
-    @Probe(name = "lastUpdateTime", unit = MS)
+    @Probe(name = CACHE_METRIC_LAST_UPDATE_TIME, unit = MS)
     private long lastUpdateTime;
-    @Probe(name = "ownedEntryCount")
+    @Probe(name = CACHE_METRIC_OWNED_ENTRY_COUNT)
     private long ownedEntryCount;
-    @Probe(name = "cacheHits")
+    @Probe(name = CACHE_METRIC_CACHE_HITS)
     private long cacheHits;
-    @Probe(name = "cacheHitPercentage", unit = PERCENT)
+    @Probe(name = CACHE_METRIC_CACHE_HIT_PERCENTAGE, unit = PERCENT)
     private float cacheHitPercentage;
-    @Probe(name = "cacheMisses")
+    @Probe(name = CACHE_METRIC_CACHE_MISSES)
     private long cacheMisses;
-    @Probe(name = "cacheMissPercentage", unit = PERCENT)
+    @Probe(name = CACHE_METRIC_CACHE_MISS_PERCENTAGE, unit = PERCENT)
     private float cacheMissPercentage;
-    @Probe(name = "cacheGets")
+    @Probe(name = CACHE_METRIC_CACHE_GETS)
     private long cacheGets;
-    @Probe(name = "cachePuts")
+    @Probe(name = CACHE_METRIC_CACHE_PUTS)
     private long cachePuts;
-    @Probe(name = "cacheRemovals")
+    @Probe(name = CACHE_METRIC_CACHE_REMOVALS)
     private long cacheRemovals;
-    @Probe(name = "cacheEvictions")
+    @Probe(name = CACHE_METRIC_CACHE_EVICTIONS)
     private long cacheEvictions;
-    @Probe(name = "averageGetTime", unit = MS)
+    @Probe(name = CACHE_METRIC_AVERAGE_GET_TIME, unit = MS)
     private float averageGetTime;
-    @Probe(name = "averagePutTime", unit = MS)
+    @Probe(name = CACHE_METRIC_AVERAGE_PUT_TIME, unit = MS)
     private float averagePutTime;
-    @Probe(name = "averageRemoveTime", unit = MS)
+    @Probe(name = CACHE_METRIC_AVERAGE_REMOVAL_TIME, unit = MS)
     private float averageRemoveTime;
 
     public LocalCacheStatsImpl() {

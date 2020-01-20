@@ -24,6 +24,9 @@ import com.hazelcast.json.internal.JsonSerializable;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.FLAKE_ID_METRIC_BATCH_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.FLAKE_ID_METRIC_CREATION_TIME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.FLAKE_ID_METRIC_ID_COUNT;
 import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.util.JsonUtil.getLong;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
@@ -36,11 +39,11 @@ public class LocalFlakeIdGeneratorStatsImpl implements LocalFlakeIdGeneratorStat
     private static final AtomicLongFieldUpdater<LocalFlakeIdGeneratorStatsImpl> ID_COUNT =
             newUpdater(LocalFlakeIdGeneratorStatsImpl.class, "idCount");
 
-    @Probe(name = "creationTime", unit = MS)
+    @Probe(name = FLAKE_ID_METRIC_CREATION_TIME, unit = MS)
     private volatile long creationTime;
-    @Probe(name = "batchCount")
+    @Probe(name = FLAKE_ID_METRIC_BATCH_COUNT)
     private volatile long batchCount;
-    @Probe(name = "idCount")
+    @Probe(name = FLAKE_ID_METRIC_ID_COUNT)
     private volatile long idCount;
 
     public LocalFlakeIdGeneratorStatsImpl() {

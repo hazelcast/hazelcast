@@ -43,6 +43,9 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITIONS_METRIC_PARTITION_REPLICA_STATE_MANAGER_LOCAL_PARTITION_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITIONS_METRIC_PARTITION_REPLICA_STATE_MANAGER_MEMBER_GROUP_SIZE;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITIONS_METRIC_PARTITION_REPLICA_STATE_MANAGER_VERSION;
 
 /**
  * Maintains the partition table state.
@@ -56,7 +59,7 @@ public class PartitionStateManager {
     private final int partitionCount;
     private final InternalPartitionImpl[] partitions;
 
-    @Probe(name = "stateVersion")
+    @Probe(name = PARTITIONS_METRIC_PARTITION_REPLICA_STATE_MANAGER_VERSION)
     private final AtomicInteger stateVersion = new AtomicInteger();
 
     private final PartitionStateGenerator partitionStateGenerator;
@@ -66,7 +69,7 @@ public class PartitionStateManager {
     // set to true when the partitions are assigned for the first time. remains true until partition service has been reset.
     private volatile boolean initialized;
 
-    @Probe(name = "memberGroupsSize")
+    @Probe(name = PARTITIONS_METRIC_PARTITION_REPLICA_STATE_MANAGER_MEMBER_GROUP_SIZE)
     // can be read and written concurrently...
     private volatile int memberGroupsSize;
 
@@ -89,7 +92,7 @@ public class PartitionStateManager {
         partitionStateGenerator = new PartitionStateGeneratorImpl();
     }
 
-    @Probe(name = "localPartitionCount")
+    @Probe(name = PARTITIONS_METRIC_PARTITION_REPLICA_STATE_MANAGER_LOCAL_PARTITION_COUNT)
     private int localPartitionCount() {
         int count = 0;
         for (InternalPartition partition : partitions) {

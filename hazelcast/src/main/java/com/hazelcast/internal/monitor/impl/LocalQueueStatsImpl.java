@@ -24,6 +24,20 @@ import com.hazelcast.json.internal.JsonSerializable;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.QUEUE_METRIC_AVERAGE_AGE;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.QUEUE_METRIC_BACKUP_ITEM_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.QUEUE_METRIC_CREATION_TIME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.QUEUE_METRIC_EVENT_OPERATION_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.QUEUE_METRIC_MAX_AGE;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.QUEUE_METRIC_MIN_AGE;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.QUEUE_METRIC_NUMBER_OF_EMPTY_POLLS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.QUEUE_METRIC_NUMBER_OF_EVENTS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.QUEUE_METRIC_NUMBER_OF_OFFERS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.QUEUE_METRIC_NUMBER_OF_OTHER_OPERATIONS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.QUEUE_METRIC_NUMBER_OF_POLLS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.QUEUE_METRIC_NUMBER_OF_REJECTED_OFFERS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.QUEUE_METRIC_OWNED_ITEM_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.QUEUE_METRIC_TOTAL;
 import static com.hazelcast.internal.util.JsonUtil.getInt;
 import static com.hazelcast.internal.util.JsonUtil.getLong;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
@@ -43,31 +57,31 @@ public class LocalQueueStatsImpl implements LocalQueueStats, JsonSerializable {
     private static final AtomicLongFieldUpdater<LocalQueueStatsImpl> NUMBER_OF_EVENTS =
             newUpdater(LocalQueueStatsImpl.class, "numberOfEvents");
 
-    @Probe(name = "ownedItemCount")
+    @Probe(name = QUEUE_METRIC_OWNED_ITEM_COUNT)
     private int ownedItemCount;
-    @Probe(name = "backupItemCount")
+    @Probe(name = QUEUE_METRIC_BACKUP_ITEM_COUNT)
     private int backupItemCount;
-    @Probe(name = "minAge")
+    @Probe(name = QUEUE_METRIC_MIN_AGE)
     private long minAge;
-    @Probe(name = "maxAge")
+    @Probe(name = QUEUE_METRIC_MAX_AGE)
     private long maxAge;
-    @Probe(name = "averageAge")
+    @Probe(name = QUEUE_METRIC_AVERAGE_AGE)
     private long averageAge;
-    @Probe(name = "creationTime")
+    @Probe(name = QUEUE_METRIC_CREATION_TIME)
     private long creationTime;
 
     // These fields are only accessed through the updater
-    @Probe(name = "numberOfOffers")
+    @Probe(name = QUEUE_METRIC_NUMBER_OF_OFFERS)
     private volatile long numberOfOffers;
-    @Probe(name = "numberOfRejectedOffers")
+    @Probe(name = QUEUE_METRIC_NUMBER_OF_REJECTED_OFFERS)
     private volatile long numberOfRejectedOffers;
-    @Probe(name = "numberOfPolls")
+    @Probe(name = QUEUE_METRIC_NUMBER_OF_POLLS)
     private volatile long numberOfPolls;
-    @Probe(name = "numberOfEmptyPolls")
+    @Probe(name = QUEUE_METRIC_NUMBER_OF_EMPTY_POLLS)
     private volatile long numberOfEmptyPolls;
-    @Probe(name = "numberOfOtherOperations")
+    @Probe(name = QUEUE_METRIC_NUMBER_OF_OTHER_OPERATIONS)
     private volatile long numberOfOtherOperations;
-    @Probe(name = "numberOfEvents")
+    @Probe(name = QUEUE_METRIC_NUMBER_OF_EVENTS)
     private volatile long numberOfEvents;
 
     public LocalQueueStatsImpl() {
@@ -124,7 +138,7 @@ public class LocalQueueStatsImpl implements LocalQueueStats, JsonSerializable {
         return creationTime;
     }
 
-    @Probe(name = "total")
+    @Probe(name = QUEUE_METRIC_TOTAL)
     public long total() {
         return numberOfOffers + numberOfPolls + numberOfOtherOperations;
     }
@@ -178,7 +192,7 @@ public class LocalQueueStatsImpl implements LocalQueueStats, JsonSerializable {
         NUMBER_OF_EVENTS.incrementAndGet(this);
     }
 
-    @Probe(name = "eventOperationCount")
+    @Probe(name = QUEUE_METRIC_EVENT_OPERATION_COUNT)
     @Override
     public long getEventOperationCount() {
         return numberOfEvents;

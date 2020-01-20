@@ -21,6 +21,12 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.logging.ILogger;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLUSTER_METRIC_CLUSTER_CLOCK_CLUSTER_START_TIME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLUSTER_METRIC_CLUSTER_CLOCK_CLUSTER_TIME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLUSTER_METRIC_CLUSTER_CLOCK_CLUSTER_TIME_DIFF;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLUSTER_METRIC_CLUSTER_CLOCK_CLUSTER_UP_TIME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLUSTER_METRIC_CLUSTER_CLOCK_LOCAL_CLOCK_TIME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLUSTER_METRIC_CLUSTER_CLOCK_MAX_CLUSTER_TIME_DIFF;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static java.lang.Math.abs;
 
@@ -31,14 +37,14 @@ public class ClusterClockImpl implements ClusterClock {
 
     private volatile long clusterTimeDiff;
     private volatile long clusterStartTime = Long.MIN_VALUE;
-    @Probe(name = "maxClusterTimeDiff", level = MANDATORY)
+    @Probe(name = CLUSTER_METRIC_CLUSTER_CLOCK_MAX_CLUSTER_TIME_DIFF, level = MANDATORY)
     private volatile long maxClusterTimeDiff;
 
     public ClusterClockImpl(ILogger logger) {
         this.logger = logger;
     }
 
-    @Probe(name = "clusterTime")
+    @Probe(name = CLUSTER_METRIC_CLUSTER_CLOCK_CLUSTER_TIME)
     @Override
     public long getClusterTime() {
         return Clock.currentTimeMillis() + clusterTimeDiff;
@@ -67,12 +73,12 @@ public class ClusterClockImpl implements ClusterClock {
         this.clusterTimeDiff = diff;
     }
 
-    @Probe(name = "clusterTimeDiff", level = MANDATORY)
+    @Probe(name = CLUSTER_METRIC_CLUSTER_CLOCK_CLUSTER_TIME_DIFF, level = MANDATORY)
     long getClusterTimeDiff() {
         return clusterTimeDiff;
     }
 
-    @Probe(name = "clusterUpTime")
+    @Probe(name = CLUSTER_METRIC_CLUSTER_CLOCK_CLUSTER_UP_TIME)
     @Override
     public long getClusterUpTime() {
         return Clock.currentTimeMillis() - clusterStartTime;
@@ -84,12 +90,12 @@ public class ClusterClockImpl implements ClusterClock {
         }
     }
 
-    @Probe(name = "localClockTime")
+    @Probe(name = CLUSTER_METRIC_CLUSTER_CLOCK_LOCAL_CLOCK_TIME)
     private long getLocalClockTime() {
         return Clock.currentTimeMillis();
     }
 
-    @Probe(name = "clusterStartTime")
+    @Probe(name = CLUSTER_METRIC_CLUSTER_CLOCK_CLUSTER_START_TIME)
     public long getClusterStartTime() {
         return clusterStartTime;
     }

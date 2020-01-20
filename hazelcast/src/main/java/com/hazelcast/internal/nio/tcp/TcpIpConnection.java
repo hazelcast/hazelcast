@@ -37,6 +37,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_CONNECTION_CONNECTION_TYPE;
 import static com.hazelcast.internal.nio.ConnectionType.MEMBER;
 import static com.hazelcast.internal.nio.ConnectionType.NONE;
 
@@ -103,7 +104,7 @@ public class TcpIpConnection implements Connection {
         return connectionType;
     }
 
-    @Probe(name = "connectionType")
+    @Probe(name = TCP_METRIC_CONNECTION_CONNECTION_TYPE)
     private int getType() {
         return ConnectionType.getTypeId(connectionType);
     }

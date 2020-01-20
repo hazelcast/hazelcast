@@ -20,24 +20,29 @@ import com.hazelcast.internal.metrics.Probe;
 
 import java.util.concurrent.ExecutorService;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_METRIC_MANAGED_EXECUTOR_SERVICE_COMPLETED_TASKS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_METRIC_MANAGED_EXECUTOR_SERVICE_MAXIMUM_POOL_SIZE;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_METRIC_MANAGED_EXECUTOR_SERVICE_POOL_SIZE;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_METRIC_MANAGED_EXECUTOR_SERVICE_QUEUE_SIZE;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_METRIC_MANAGED_EXECUTOR_SERVICE_REMAINING_QUEUE_CAPACITY;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 
 public interface ManagedExecutorService extends ExecutorService {
 
     String getName();
 
-    @Probe(name = "completedTasks")
+    @Probe(name = EXECUTOR_METRIC_MANAGED_EXECUTOR_SERVICE_COMPLETED_TASKS)
     long getCompletedTaskCount();
 
-    @Probe(name = "maximumPoolSize")
+    @Probe(name = EXECUTOR_METRIC_MANAGED_EXECUTOR_SERVICE_MAXIMUM_POOL_SIZE)
     int getMaximumPoolSize();
 
-    @Probe(name = "poolSize")
+    @Probe(name = EXECUTOR_METRIC_MANAGED_EXECUTOR_SERVICE_POOL_SIZE)
     int getPoolSize();
 
-    @Probe(name = "queueSize", level = MANDATORY)
+    @Probe(name = EXECUTOR_METRIC_MANAGED_EXECUTOR_SERVICE_QUEUE_SIZE, level = MANDATORY)
     int getQueueSize();
 
-    @Probe(name = "remainingQueueCapacity")
+    @Probe(name = EXECUTOR_METRIC_MANAGED_EXECUTOR_SERVICE_REMAINING_QUEUE_CAPACITY)
     int getRemainingQueueCapacity();
 }

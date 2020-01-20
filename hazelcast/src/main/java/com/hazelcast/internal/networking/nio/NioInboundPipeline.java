@@ -32,10 +32,14 @@ import java.nio.ByteBuffer;
 import java.nio.channels.Selector;
 import java.util.Arrays;
 
-import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_INBOUND_PIPELINE_BYTES_READ;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_INBOUND_PIPELINE_IDLE_TIME_MS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_INBOUND_PIPELINE_NORMAL_FRAMES_READ;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_INBOUND_PIPELINE_PRIORITY_FRAMES_READ;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.collection.ArrayUtils.append;
 import static com.hazelcast.internal.util.collection.ArrayUtils.replaceFirst;
+import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static java.lang.System.currentTimeMillis;
 import static java.lang.Thread.currentThread;
 import static java.nio.channels.SelectionKey.OP_READ;
@@ -51,11 +55,11 @@ public final class NioInboundPipeline extends NioPipeline implements InboundPipe
     private InboundHandler[] handlers = new InboundHandler[0];
     private ByteBuffer receiveBuffer;
 
-    @Probe(name = "bytesRead")
+    @Probe(name = NETWORKING_METRIC_NIO_INBOUND_PIPELINE_BYTES_READ)
     private final SwCounter bytesRead = newSwCounter();
-    @Probe(name = "normalFramesRead")
+    @Probe(name = NETWORKING_METRIC_NIO_INBOUND_PIPELINE_NORMAL_FRAMES_READ)
     private final SwCounter normalFramesRead = newSwCounter();
-    @Probe(name = "priorityFramesRead")
+    @Probe(name = NETWORKING_METRIC_NIO_INBOUND_PIPELINE_PRIORITY_FRAMES_READ)
     private final SwCounter priorityFramesRead = newSwCounter();
     private volatile long lastReadTime;
 
@@ -94,7 +98,7 @@ public final class NioInboundPipeline extends NioPipeline implements InboundPipe
         }
     }
 
-    @Probe(name = "idleTimeMs")
+    @Probe(name = NETWORKING_METRIC_NIO_INBOUND_PIPELINE_IDLE_TIME_MS)
     private long idleTimeMs() {
         return Math.max(currentTimeMillis() - lastReadTime, 0);
     }

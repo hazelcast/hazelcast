@@ -77,6 +77,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import static com.hazelcast.cluster.impl.MemberImpl.NA_MEMBER_LIST_JOIN_VERSION;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.NON_LOCAL_MEMBER_SELECTOR;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLUSTER_METRIC_CLUSTER_SERVICE_SIZE;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLUSTER_PREFIX;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLUSTER_PREFIX_CLOCK;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLUSTER_PREFIX_HEARTBEAT;
@@ -666,7 +667,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         return joined.get();
     }
 
-    @Probe(name = "size")
+    @Probe(name = CLUSTER_METRIC_CLUSTER_SERVICE_SIZE)
     @Override
     public int getSize() {
         return membershipManager.getMemberMap().size();

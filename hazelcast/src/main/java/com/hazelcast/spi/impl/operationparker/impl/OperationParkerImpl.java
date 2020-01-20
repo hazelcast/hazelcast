@@ -43,6 +43,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_PARKER_PARK_QUEUE_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_PARKER_TOTAL_PARKED_OPERATION_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_PREFIX_PARKER;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
@@ -109,12 +111,12 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
         }
     }
 
-    @Probe(name = "parkQueueCount")
+    @Probe(name = OPERATION_METRIC_PARKER_PARK_QUEUE_COUNT)
     public int getParkQueueCount() {
         return waitSetMap.size();
     }
 
-    @Probe(name = "totalParkedOperationCount")
+    @Probe(name = OPERATION_METRIC_PARKER_TOTAL_PARKED_OPERATION_COUNT)
     public int getTotalParkedOperationCount() {
         int count = 0;
         for (WaitSet waitSet : waitSetMap.values()) {

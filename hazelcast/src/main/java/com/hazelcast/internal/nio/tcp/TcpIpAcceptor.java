@@ -40,6 +40,10 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_DISCRIMINATOR_THREAD;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ACCEPTOR_EVENT_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ACCEPTOR_EXCEPTION_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ACCEPTOR_IDLE_TIME_MS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ACCEPTOR_SELECTOR_RECREATE_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_PREFIX_ACCEPTOR;
 import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT_WITH_FIX;
@@ -69,12 +73,12 @@ public class TcpIpAcceptor implements DynamicMetricsProvider {
     private final TcpIpNetworkingService networkingService;
     private final ILogger logger;
     private final IOService ioService;
-    @Probe(name = "eventCount")
+    @Probe(name = TCP_METRIC_ACCEPTOR_EVENT_COUNT)
     private final SwCounter eventCount = newSwCounter();
-    @Probe(name = "exceptionCount")
+    @Probe(name = TCP_METRIC_ACCEPTOR_EXCEPTION_COUNT)
     private final SwCounter exceptionCount = newSwCounter();
     // count number of times the selector was recreated (if selectWorkaround is enabled)
-    @Probe(name = "selectorRecreateCount")
+    @Probe(name = TCP_METRIC_ACCEPTOR_SELECTOR_RECREATE_COUNT)
     private final SwCounter selectorRecreateCount = newSwCounter();
     private final AcceptorIOThread acceptorThread;
     // last time select returned
@@ -103,7 +107,7 @@ public class TcpIpAcceptor implements DynamicMetricsProvider {
      *
      * @return the idle time in ms.
      */
-    @Probe(name = "idleTimeMs", unit = MS)
+    @Probe(name = TCP_METRIC_ACCEPTOR_IDLE_TIME_MS, unit = MS)
     private long idleTimeMs() {
         return max(currentTimeMillis() - lastSelectTimeMs, 0);
     }

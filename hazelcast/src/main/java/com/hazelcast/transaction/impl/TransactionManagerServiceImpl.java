@@ -58,6 +58,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TRANSACTIONS_METRIC_COMMIT_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TRANSACTIONS_METRIC_ROLLBACK_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TRANSACTIONS_METRIC_START_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TRANSACTIONS_PREFIX;
 import static com.hazelcast.internal.util.FutureUtil.ExceptionHandler;
 import static com.hazelcast.internal.util.FutureUtil.logAllExceptions;
@@ -79,11 +82,11 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
     final ConcurrentMap<UUID, TxBackupLog> txBackupLogs = new ConcurrentHashMap<>();
 
     // Due to mocking; the probes can't be made final.
-    @Probe(name = "startCount", level = ProbeLevel.MANDATORY)
+    @Probe(name = TRANSACTIONS_METRIC_START_COUNT, level = ProbeLevel.MANDATORY)
     Counter startCount = MwCounter.newMwCounter();
-    @Probe(name = "rollbackCount", level = ProbeLevel.MANDATORY)
+    @Probe(name = TRANSACTIONS_METRIC_ROLLBACK_COUNT, level = ProbeLevel.MANDATORY)
     Counter rollbackCount = MwCounter.newMwCounter();
-    @Probe(name = "commitCount", level = ProbeLevel.MANDATORY)
+    @Probe(name = TRANSACTIONS_METRIC_COMMIT_COUNT, level = ProbeLevel.MANDATORY)
     Counter commitCount = MwCounter.newMwCounter();
 
     private final ExceptionHandler finalizeExceptionHandler;

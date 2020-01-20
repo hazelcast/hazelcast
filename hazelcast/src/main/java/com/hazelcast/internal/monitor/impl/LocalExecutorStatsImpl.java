@@ -24,6 +24,12 @@ import com.hazelcast.json.internal.JsonSerializable;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_METRIC_CANCELLED;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_METRIC_COMPLETED;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_METRIC_PENDING;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_METRIC_STARTED;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_METRIC_TOTAL_EXECUTION_TIME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_METRIC_TOTAL_START_LATENCY;
 import static com.hazelcast.internal.util.JsonUtil.getLong;
 
 public class LocalExecutorStatsImpl implements LocalExecutorStats, JsonSerializable {
@@ -43,17 +49,17 @@ public class LocalExecutorStatsImpl implements LocalExecutorStats, JsonSerializa
     private long creationTime;
 
     // These fields are only accessed through the updaters
-    @Probe(name = "pending")
+    @Probe(name = EXECUTOR_METRIC_PENDING)
     private volatile long pending;
-    @Probe(name = "started")
+    @Probe(name = EXECUTOR_METRIC_STARTED)
     private volatile long started;
-    @Probe(name = "completed")
+    @Probe(name = EXECUTOR_METRIC_COMPLETED)
     private volatile long completed;
-    @Probe(name = "cancelled")
+    @Probe(name = EXECUTOR_METRIC_CANCELLED)
     private volatile long cancelled;
-    @Probe(name = "totalStartLatency")
+    @Probe(name = EXECUTOR_METRIC_TOTAL_START_LATENCY)
     private volatile long totalStartLatency;
-    @Probe(name = "totalExecutionTime")
+    @Probe(name = EXECUTOR_METRIC_TOTAL_EXECUTION_TIME)
     private volatile long totalExecutionTime;
 
     public LocalExecutorStatsImpl() {

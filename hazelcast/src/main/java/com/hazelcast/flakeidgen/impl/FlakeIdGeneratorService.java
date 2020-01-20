@@ -37,6 +37,7 @@ import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.FLAKE_ID_GENERATOR_PREFIX;
 import static com.hazelcast.internal.metrics.impl.ProviderHelper.provide;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 
@@ -112,6 +113,6 @@ public class FlakeIdGeneratorService implements ManagedService, RemoteService,
 
     @Override
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
-        provide(descriptor, context, "flakeIdGenerator", getStats());
+        provide(descriptor, context, FLAKE_ID_GENERATOR_PREFIX, getStats());
     }
 }

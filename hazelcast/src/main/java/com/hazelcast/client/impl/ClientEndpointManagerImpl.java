@@ -37,6 +37,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.client.impl.ClientEngineImpl.SERVICE_NAME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_METRIC_ENDPOINT_MANAGER_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_METRIC_ENDPOINT_MANAGER_TOTAL_REGISTRATIONS;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_PREFIX_ENDPOINT;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -51,11 +53,11 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager, Dynamic
     private final ILogger logger;
     private final EventService eventService;
 
-    @Probe(name = "count", level = MANDATORY)
+    @Probe(name = CLIENT_METRIC_ENDPOINT_MANAGER_COUNT, level = MANDATORY)
     private final ConcurrentMap<Connection, ClientEndpoint> endpoints =
             new ConcurrentHashMap<>();
 
-    @Probe(name = "totalRegistrations", level = MANDATORY)
+    @Probe(name = CLIENT_METRIC_ENDPOINT_MANAGER_TOTAL_REGISTRATIONS, level = MANDATORY)
     private final MwCounter totalRegistrations = newMwCounter();
 
     public ClientEndpointManagerImpl(NodeEngine nodeEngine) {

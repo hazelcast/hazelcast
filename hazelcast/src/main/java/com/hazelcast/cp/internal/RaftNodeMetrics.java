@@ -19,6 +19,14 @@ package com.hazelcast.cp.internal;
 import com.hazelcast.internal.metrics.Probe;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CPSUBSYSTEM_METRIC_RAFT_NODE_AVAILABLE_LOG_CAPACITY;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CPSUBSYSTEM_METRIC_RAFT_NODE_COMMIT_INDEX;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CPSUBSYSTEM_METRIC_RAFT_NODE_LAST_APPLIED;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CPSUBSYSTEM_METRIC_RAFT_NODE_LAST_LOG_INDEX;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CPSUBSYSTEM_METRIC_RAFT_NODE_LAST_LOG_TERM;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CPSUBSYSTEM_METRIC_RAFT_NODE_SNAPSHOT_INDEX;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CPSUBSYSTEM_METRIC_RAFT_NODE_TERM;
+
 /**
  * Container object for single RaftNode metrics.
  */
@@ -26,25 +34,25 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 @SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
 public class RaftNodeMetrics {
 
-    @Probe(name = "term")
+    @Probe(name = CPSUBSYSTEM_METRIC_RAFT_NODE_TERM)
     public volatile int term;
 
-    @Probe(name = "commitIndex")
+    @Probe(name = CPSUBSYSTEM_METRIC_RAFT_NODE_COMMIT_INDEX)
     public volatile long commitIndex;
 
-    @Probe(name = "lastApplied")
+    @Probe(name = CPSUBSYSTEM_METRIC_RAFT_NODE_LAST_APPLIED)
     public volatile long lastApplied;
 
-    @Probe(name = "lastLogTerm")
+    @Probe(name = CPSUBSYSTEM_METRIC_RAFT_NODE_LAST_LOG_TERM)
     public volatile long lastLogTerm;
 
-    @Probe(name = "snapshotIndex")
+    @Probe(name = CPSUBSYSTEM_METRIC_RAFT_NODE_SNAPSHOT_INDEX)
     public volatile long snapshotIndex;
 
-    @Probe(name = "lastLogIndex")
+    @Probe(name = CPSUBSYSTEM_METRIC_RAFT_NODE_LAST_LOG_INDEX)
     public volatile long lastLogIndex;
 
-    @Probe(name = "availableLogCapacity")
+    @Probe(name = CPSUBSYSTEM_METRIC_RAFT_NODE_AVAILABLE_LOG_CAPACITY)
     public volatile long availableLogCapacity;
 
     void update(int term, long commitIndex, long lastApplied, long lastLogTerm, long snapshotIndex,

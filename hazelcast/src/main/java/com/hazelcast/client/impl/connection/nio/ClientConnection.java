@@ -45,6 +45,9 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_METRIC_CONNECTION_CLOSED_TIME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_METRIC_CONNECTION_CONNECTIONID;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_METRIC_CONNECTION_EVENT_HANDLER_COUNT;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.StringUtil.timeToStringFriendly;
 
@@ -54,7 +57,7 @@ import static com.hazelcast.internal.util.StringUtil.timeToStringFriendly;
  */
 public class ClientConnection implements Connection {
 
-    @Probe(name = "connectionId")
+    @Probe(name = CLIENT_METRIC_CONNECTION_CONNECTIONID)
     private final int connectionId;
     private final ILogger logger;
     private final Channel channel;
@@ -65,11 +68,11 @@ public class ClientConnection implements Connection {
     private final Consumer<ClientMessage> responseHandler;
     private final ConcurrentMap attributeMap;
 
-    @Probe(name = "eventHandlerCount", level = MANDATORY)
+    @Probe(name = CLIENT_METRIC_CONNECTION_EVENT_HANDLER_COUNT, level = MANDATORY)
     private final ConcurrentMap<Long, EventHandler> eventHandlerMap = new ConcurrentHashMap<>();
 
     private volatile Address remoteEndpoint;
-    @Probe(name = "closedTime", level = ProbeLevel.DEBUG)
+    @Probe(name = CLIENT_METRIC_CONNECTION_CLOSED_TIME, level = ProbeLevel.DEBUG)
     private final AtomicLong closedTime = new AtomicLong();
 
     private volatile Throwable closeCause;

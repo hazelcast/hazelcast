@@ -34,6 +34,17 @@ import java.util.Queue;
 import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_THREAD_BYTES_TRANSCEIVED;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_THREAD_COMPLETED_TASK_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_THREAD_EVENT_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_THREAD_FRAMES_TRANSCEIVED;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_THREAD_IDLE_TIME_MS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_THREAD_IO_THREAD_ID;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_THREAD_PRIORITY_FRAMES_TRANSCEIVED;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_THREAD_PROCESS_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_THREAD_SELECTOR_IO_EXCEPTION_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_THREAD_SELECTOR_REBUILD_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_THREAD_TASK_QUEUE_SIZE;
 import static com.hazelcast.internal.metrics.MetricTarget.MANAGEMENT_CENTER;
 import static com.hazelcast.internal.metrics.ProbeUnit.BYTES;
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT_NOW;
@@ -62,28 +73,28 @@ public class NioThread extends Thread implements OperationHostileThread {
     @SuppressWarnings("checkstyle:visibilitymodifier")
     // this field is set during construction and is meant for the probes so that the NioPipeline can
     // indicate which thread they are currently bound to.
-    @Probe(name = "ioThreadId")
+    @Probe(name = NETWORKING_METRIC_NIO_THREAD_IO_THREAD_ID)
     public int id;
 
-    @Probe(name = "bytesTransceived", unit = BYTES)
+    @Probe(name = NETWORKING_METRIC_NIO_THREAD_BYTES_TRANSCEIVED, unit = BYTES)
     volatile long bytesTransceived;
-    @Probe(name = "framesTransceived")
+    @Probe(name = NETWORKING_METRIC_NIO_THREAD_FRAMES_TRANSCEIVED)
     volatile long framesTransceived;
-    @Probe(name = "priorityFramesTransceived")
+    @Probe(name = NETWORKING_METRIC_NIO_THREAD_PRIORITY_FRAMES_TRANSCEIVED)
     volatile long priorityFramesTransceived;
-    @Probe(name = "processCount")
+    @Probe(name = NETWORKING_METRIC_NIO_THREAD_PROCESS_COUNT)
     volatile long processCount;
 
-    @Probe(name = "taskQueueSize")
+    @Probe(name = NETWORKING_METRIC_NIO_THREAD_TASK_QUEUE_SIZE)
     private final Queue<Runnable> taskQueue = new ConcurrentLinkedQueue<>();
-    @Probe(name = "eventCount")
+    @Probe(name = NETWORKING_METRIC_NIO_THREAD_EVENT_COUNT)
     private final SwCounter eventCount = newSwCounter();
-    @Probe(name = "selectorIOExceptionCount")
+    @Probe(name = NETWORKING_METRIC_NIO_THREAD_SELECTOR_IO_EXCEPTION_COUNT)
     private final SwCounter selectorIOExceptionCount = newSwCounter();
-    @Probe(name = "completedTaskCount")
+    @Probe(name = NETWORKING_METRIC_NIO_THREAD_COMPLETED_TASK_COUNT)
     private final SwCounter completedTaskCount = newSwCounter();
     // count number of times the selector was rebuilt (if selectWorkaround is enabled)
-    @Probe(name = "selectorRebuildCount")
+    @Probe(name = NETWORKING_METRIC_NIO_THREAD_SELECTOR_REBUILD_COUNT)
     private final SwCounter selectorRebuildCount = newSwCounter();
 
     private final ILogger logger;
@@ -184,7 +195,7 @@ public class NioThread extends Thread implements OperationHostileThread {
      *
      * @return the idle time in ms.
      */
-    @Probe(name = "idleTimeMs", unit = BYTES)
+    @Probe(name = NETWORKING_METRIC_NIO_THREAD_IDLE_TIME_MS, unit = BYTES)
     private long idleTimeMs() {
         return max(currentTimeMillis() - lastSelectTimeMs, 0);
     }

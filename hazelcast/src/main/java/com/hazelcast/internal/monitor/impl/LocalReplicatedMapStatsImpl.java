@@ -26,6 +26,24 @@ import com.hazelcast.replicatedmap.LocalReplicatedMapStats;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.REPLICATED_MAP_CREATION_TIME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.REPLICATED_MAP_MAX_GET_LATENCY;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.REPLICATED_MAP_MAX_PUT_LATENCY;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.REPLICATED_MAP_MAX_REMOVE_LATENCY;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.REPLICATED_MAP_METRIC_GET_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.REPLICATED_MAP_METRIC_HITS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.REPLICATED_MAP_METRIC_LAST_ACCESS_TIME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.REPLICATED_MAP_METRIC_LAST_UPDATE_TIME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.REPLICATED_MAP_METRIC_NUMBER_OF_EVENTS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.REPLICATED_MAP_METRIC_NUMBER_OF_OTHER_OPERATIONS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.REPLICATED_MAP_METRIC_PUT_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.REPLICATED_MAP_METRIC_REMOVE_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.REPLICATED_MAP_METRIC_TOTAL_GET_LATENCIES;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.REPLICATED_MAP_METRIC_TOTAL_PUT_LATENCIES;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.REPLICATED_MAP_METRIC_TOTAL_REMOVE_LATENCIES;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.REPLICATED_MAP_OWNED_ENTRY_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.REPLICATED_MAP_OWNED_ENTRY_MEMORY_COST;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.REPLICATED_MAP_TOTAL;
 import static com.hazelcast.internal.metrics.ProbeUnit.BYTES;
 import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.util.ConcurrencyUtil.setMax;
@@ -71,40 +89,40 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats, Jso
             newUpdater(LocalReplicatedMapStatsImpl.class, "ownedEntryMemoryCost");
 
     // these fields are only accessed through the updaters
-    @Probe(name = "lastAccessTime", unit = MS)
+    @Probe(name = REPLICATED_MAP_METRIC_LAST_ACCESS_TIME, unit = MS)
     private volatile long lastAccessTime;
-    @Probe(name = "lastUpdateTime", unit = MS)
+    @Probe(name = REPLICATED_MAP_METRIC_LAST_UPDATE_TIME, unit = MS)
     private volatile long lastUpdateTime;
-    @Probe(name = "hits")
+    @Probe(name = REPLICATED_MAP_METRIC_HITS)
     private volatile long hits;
-    @Probe(name = "numberOfOtherOperations")
+    @Probe(name = REPLICATED_MAP_METRIC_NUMBER_OF_OTHER_OPERATIONS)
     private volatile long numberOfOtherOperations;
-    @Probe(name = "numberOfEvents")
+    @Probe(name = REPLICATED_MAP_METRIC_NUMBER_OF_EVENTS)
     private volatile long numberOfEvents;
-    @Probe(name = "getCount")
+    @Probe(name = REPLICATED_MAP_METRIC_GET_COUNT)
     private volatile long getCount;
-    @Probe(name = "putCount")
+    @Probe(name = REPLICATED_MAP_METRIC_PUT_COUNT)
     private volatile long putCount;
-    @Probe(name = "removeCount")
+    @Probe(name = REPLICATED_MAP_METRIC_REMOVE_COUNT)
     private volatile long removeCount;
-    @Probe(name = "totalGetLatencies", unit = MS)
+    @Probe(name = REPLICATED_MAP_METRIC_TOTAL_GET_LATENCIES, unit = MS)
     private volatile long totalGetLatencies;
-    @Probe(name = "totalPutLatencies", unit = MS)
+    @Probe(name = REPLICATED_MAP_METRIC_TOTAL_PUT_LATENCIES, unit = MS)
     private volatile long totalPutLatencies;
-    @Probe(name = "totalRemoveLatencies", unit = MS)
+    @Probe(name = REPLICATED_MAP_METRIC_TOTAL_REMOVE_LATENCIES, unit = MS)
     private volatile long totalRemoveLatencies;
-    @Probe(name = "maxGetLatency", unit = MS)
+    @Probe(name = REPLICATED_MAP_MAX_GET_LATENCY, unit = MS)
     private volatile long maxGetLatency;
-    @Probe(name = "maxPutLatency", unit = MS)
+    @Probe(name = REPLICATED_MAP_MAX_PUT_LATENCY, unit = MS)
     private volatile long maxPutLatency;
-    @Probe(name = "maxRemoveLatency", unit = MS)
+    @Probe(name = REPLICATED_MAP_MAX_REMOVE_LATENCY, unit = MS)
     private volatile long maxRemoveLatency;
 
-    @Probe(name = "creationTime", unit = MS)
+    @Probe(name = REPLICATED_MAP_CREATION_TIME, unit = MS)
     private volatile long creationTime;
-    @Probe(name = "ownedEntryCount")
+    @Probe(name = REPLICATED_MAP_OWNED_ENTRY_COUNT)
     private volatile long ownedEntryCount;
-    @Probe(name = "ownedEntryMemoryCost", unit = BYTES)
+    @Probe(name = REPLICATED_MAP_OWNED_ENTRY_MEMORY_COST, unit = BYTES)
     private volatile long ownedEntryMemoryCost;
 
     public LocalReplicatedMapStatsImpl() {
@@ -206,7 +224,7 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats, Jso
     public void setDirtyEntryCount(long dirtyEntryCount) {
     }
 
-    @Probe(name = "total")
+    @Probe(name = REPLICATED_MAP_TOTAL)
     @Override
     public long total() {
         return putCount + getCount + removeCount + numberOfOtherOperations;

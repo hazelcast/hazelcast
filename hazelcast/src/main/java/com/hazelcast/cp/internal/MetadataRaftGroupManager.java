@@ -70,6 +70,9 @@ import static com.hazelcast.cp.CPGroup.METADATA_CP_GROUP_NAME;
 import static com.hazelcast.cp.internal.MembershipChangeSchedule.CPGroupMembershipChange;
 import static com.hazelcast.cp.internal.RaftService.CP_SUBSYSTEM_EXECUTOR;
 import static com.hazelcast.cp.internal.RaftService.CP_SUBSYSTEM_MANAGEMENT_EXECUTOR;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CPSUBSYSTEM_METRIC_METADATA_RAFT_GROUP_MANAGER_ACTIVE_MEMBERS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CPSUBSYSTEM_METRIC_METADATA_RAFT_GROUP_MANAGER_ACTIVE_MEMBERS_COMMIT_INDEX;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CPSUBSYSTEM_METRIC_METADATA_RAFT_GROUP_MANAGER_GROUPS;
 import static com.hazelcast.internal.metrics.ProbeUnit.COUNT;
 import static com.hazelcast.internal.util.Preconditions.checkFalse;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -116,12 +119,12 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
 
     // all fields below are state of the Metadata CP group and put into Metadata snapshot and reset while restarting...
     // these fields are accessed outside of Raft while restarting or local querying, etc.
-    @Probe(name = "groups", unit = COUNT)
+    @Probe(name = CPSUBSYSTEM_METRIC_METADATA_RAFT_GROUP_MANAGER_GROUPS, unit = COUNT)
     private final ConcurrentMap<CPGroupId, CPGroupInfo> groups = new ConcurrentHashMap<>();
     // activeMembers must be an ordered non-null collection
-    @Probe(name = "activeMembers", unit = COUNT)
+    @Probe(name = CPSUBSYSTEM_METRIC_METADATA_RAFT_GROUP_MANAGER_ACTIVE_MEMBERS, unit = COUNT)
     private volatile Collection<CPMemberInfo> activeMembers = Collections.emptySet();
-    @Probe(name = "activeMembersCommitIndex")
+    @Probe(name = CPSUBSYSTEM_METRIC_METADATA_RAFT_GROUP_MANAGER_ACTIVE_MEMBERS_COMMIT_INDEX)
     private volatile long activeMembersCommitIndex;
     private volatile List<CPMemberInfo> initialCPMembers;
     private volatile MembershipChangeSchedule membershipChangeSchedule;
