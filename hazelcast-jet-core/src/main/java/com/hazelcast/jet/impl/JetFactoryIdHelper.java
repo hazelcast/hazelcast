@@ -40,6 +40,9 @@ public final class JetFactoryIdHelper {
     public static final String JET_JOB_METRICS_DS_FACTORY = "hazelcast.serialization.ds.jet.job_metrics";
     public static final int JET_JOB_METRICS_DS_FACTORY_ID = -10005;
 
+    public static final String JET_OBSERVER_DS_FACTORY = "hazelcast.serialization.ds.jet.observer";
+    public static final int JET_OBSERVER_DS_FACTORY_ID = -10006;
+
     private JetFactoryIdHelper() {
     }
 }

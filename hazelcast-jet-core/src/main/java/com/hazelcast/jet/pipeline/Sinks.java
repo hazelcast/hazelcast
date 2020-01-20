@@ -24,11 +24,14 @@ import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.BinaryOperatorEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
+import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.Observable;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.impl.pipeline.SinkImpl;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
+import com.hazelcast.topic.ITopic;
 
 import javax.annotation.Nonnull;
 import javax.jms.ConnectionFactory;
@@ -40,6 +43,7 @@ import java.sql.SQLException;
 import java.sql.SQLNonTransientException;
 import java.util.Map.Entry;
 
+import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
 import static com.hazelcast.function.Functions.entryKey;
 import static com.hazelcast.function.Functions.entryValue;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
@@ -56,6 +60,8 @@ import static com.hazelcast.jet.core.processor.SinkProcessors.writeRemoteCacheP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeRemoteListP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeRemoteMapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeSocketP;
+import static com.hazelcast.jet.impl.util.ImdgUtil.asClientConfig;
+import static com.hazelcast.jet.impl.util.ImdgUtil.asXmlString;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
@@ -633,8 +639,8 @@ public final class Sinks {
     }
 
     /**
-     * Returns a sink that adds the items it receives to a Hazelcast {@code
-     * IList} with the specified name.
+     * Returns a sink that adds the items it receives to the specified
+     * Hazelcast {@code IList}.
      * <p>
      * <strong>NOTE:</strong> Jet only remembers the name of the list you
      * supply and acquires a list with that name on the local cluster. If you
@@ -666,6 +672,69 @@ public final class Sinks {
     @Nonnull
     public static <T> Sink<T> remoteList(@Nonnull String listName, @Nonnull ClientConfig clientConfig) {
         return fromProcessor("remoteListSink(" + listName + ')', writeRemoteListP(listName, clientConfig));
+    }
+
+    /**
+     * Returns a sink which publishes the items it receives to a distributed
+     * reliable topic with the specified name.
+     * <p>
+     * No state is saved to snapshot for this sink. After the job is restarted,
+     * the items will likely be duplicated, providing an <i>at-least-once</i>
+     * guarantee.
+     * <p>
+     * Local parallelism for this sink is 1.
+     *
+     * @since 4.0
+     */
+    @Nonnull
+    public static <T> Sink<T> reliableTopic(@Nonnull String reliableTopicName) {
+        return SinkBuilder.<ITopic<T>>sinkBuilder("reliableTopicSink(" + reliableTopicName + "))",
+                ctx -> ctx.jetInstance().getReliableTopic(reliableTopicName))
+                .<T>receiveFn(ITopic::publish)
+                .build();
+    }
+
+    /**
+     * Returns a sink which publishes the items it receives to the provided
+     * distributed reliable topic. More precisely, it takes the <em>name</em>
+     * of the given {@code ITopic} and then independently retrieves the {@code
+     * ITopic} with the same name from the cluster where the job is running. To
+     * prevent surprising behavior, make sure you have obtained the {@code
+     * ITopic} from the same cluster to which you will submit the pipeline.
+     * <p>
+     * No state is saved to snapshot for this sink. After the job is restarted,
+     * the items will likely be duplicated, providing an <i>at-least-once</i>
+     * guarantee.
+     * <p>
+     * Local parallelism for this sink is 1.
+     *
+     * @since 4.0
+     */
+    @Nonnull
+    public static <T> Sink<T> reliableTopic(@Nonnull ITopic<Object> reliableTopic) {
+        return reliableTopic(reliableTopic.getName());
+    }
+
+    /**
+     * Returns a sink which publishes the items it receives to a distributed
+     * reliable topic with the provided name in a remote cluster identified by
+     * the supplied {@code ClientConfig}.
+     * <p>
+     * No state is saved to snapshot for this sink. After the job is restarted,
+     * the items will likely be duplicated, providing an <i>at-least-once</i>
+     * guarantee.
+     * <p>
+     * Local parallelism for this sink is 1.
+     *
+     * @since 4.0
+     */
+    @Nonnull
+    public static <T> Sink<T> remoteReliableTopic(@Nonnull String reliableTopicName, @Nonnull ClientConfig clientConfig) {
+        String clientXml = asXmlString(clientConfig); //conversion needed for serializibility
+        return SinkBuilder.<ITopic<T>>sinkBuilder("reliableTopicSink(" + reliableTopicName + "))",
+                ctx -> newHazelcastClient(asClientConfig(clientXml)).getReliableTopic(reliableTopicName))
+                .<T>receiveFn(ITopic::publish)
+                .build();
     }
 
     /**
@@ -991,4 +1060,53 @@ public final class Sinks {
     ) {
         return Sinks.jdbc(updateQuery, () -> DriverManager.getConnection(connectionUrl), bindFn);
     }
+
+    /**
+     * Returns a sink that publishes to the {@link Observable} with the
+     * provided name. The records that are sent to the observable can be
+     * read through first getting a handle to it through
+     * {@link JetInstance#getObservable(String)} and then subscribing to
+     * the events using the methods on {@link Observable}.
+     * <p>
+     * The {@code Observable} should be destroyed after using it. For the full
+     * description see {@link Observable the javadoc for Observable}.
+     * Example:<pre>{@code
+     *   Observable<Integer> observable = jet.newObservable();
+     *   CompletableFuture<List<Integer>> list = observable.toFuture(o -> o.collect(toList()));
+     *
+     *   pipeline.readFrom(TestSources.items(1, 2, 3, 4))
+     *           .writeTo(Sinks.observable(observable));
+     *
+     *   Job job = jet.newJob(pipeline);
+     *
+     *   System.out.println(list.get());
+     *   observable.destroy();
+     * }</pre>
+     * This sink is cooperative and uses a local parallelism of 1.
+     *
+     * @since 4.0
+     */
+    @Nonnull
+    public static <T> Sink<T> observable(String name) {
+        return Sinks.fromProcessor(String.format("observableSink(%s)", name),
+                SinkProcessors.writeObservableP(name));
+    }
+
+    /**
+     * Returns a sink that publishes to the provided {@link Observable}. More
+     * precisely, it takes the <em>name</em> of the given {@code Observable}
+     * and then independently retrieves an {@code Observable} with the same
+     * name from the cluster where the job is running. To prevent surprising
+     * behavior, make sure you have obtained the {@code Observable} from the
+     * same cluster to which you will submit the pipeline.
+     * <p>
+     * For more details refer to {@link #observable(String) observable(name)}.
+     *
+     * @since 4.0
+     */
+    @Nonnull
+    public static <T> Sink<T> observable(Observable<? super T> observable) {
+        return observable(observable.name());
+    }
+
 }

@@ -23,18 +23,26 @@ import com.hazelcast.jet.JetCacheManager;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobAlreadyExistsException;
+import com.hazelcast.jet.Observable;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.core.JobStatus;
+import com.hazelcast.jet.impl.observer.ObservableImpl;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.IMap;
 import com.hazelcast.replicatedmap.ReplicatedMap;
+import com.hazelcast.ringbuffer.impl.RingbufferService;
+import com.hazelcast.topic.ITopic;
 
 import javax.annotation.Nonnull;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
@@ -45,6 +53,7 @@ public abstract class AbstractJetInstance implements JetInstance {
     private final HazelcastInstance hazelcastInstance;
     private final JetCacheManagerImpl cacheManager;
     private final Supplier<JobRepository> jobRepository;
+    private final Map<String, Observable> observables = new ConcurrentHashMap<>();
 
     public AbstractJetInstance(HazelcastInstance hazelcastInstance) {
         this.hazelcastInstance = hazelcastInstance;
@@ -134,13 +143,41 @@ public abstract class AbstractJetInstance implements JetInstance {
     }
 
     @Nonnull @Override
+    public <T> ITopic<T> getReliableTopic(@Nonnull String name) {
+        return hazelcastInstance.getReliableTopic(name);
+    }
+
+    @Nonnull @Override
     public JetCacheManager getCacheManager() {
         return cacheManager;
     }
 
+    @Nonnull @Override
+    public <T> Observable<T> getObservable(@Nonnull String name) {
+        //noinspection unchecked
+        return observables.computeIfAbsent(name, observableName ->
+                new ObservableImpl<T>(observableName, hazelcastInstance, this::onDestroy, getLogger()));
+    }
+
+    @Nonnull
+    @Override
+    public Collection<Observable<?>> getObservables() {
+        return hazelcastInstance.getDistributedObjects().stream()
+                  .filter(o -> o.getServiceName().equals(RingbufferService.SERVICE_NAME))
+                  .filter(o -> o.getName().startsWith(ObservableImpl.JET_OBSERVABLE_NAME_PREFIX))
+                  .map(o -> o.getName().substring(ObservableImpl.JET_OBSERVABLE_NAME_PREFIX.length()))
+                  .map(this::getObservable)
+                  .collect(Collectors.toList());
+    }
+
     @Override
     public void shutdown() {
+        observables.values().forEach(Observable::destroy);
         hazelcastInstance.shutdown();
+    }
+
+    private void onDestroy(Observable<?> observable) {
+        observables.remove(observable.name());
     }
 
     public abstract boolean existsDistributedObject(@Nonnull String serviceName, @Nonnull String objectName);

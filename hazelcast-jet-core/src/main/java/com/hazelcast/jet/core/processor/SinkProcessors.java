@@ -329,4 +329,14 @@ public final class SinkProcessors {
     ) {
         return WriteJdbcP.metaSupplier(updateQuery, newConnectionFn, bindFn);
     }
+
+    /**
+     * Returns a supplier of processors for {@link Sinks#observable}.
+     *
+     * @since 4.0
+     */
+    @Nonnull
+    public static ProcessorMetaSupplier writeObservableP(@Nonnull String name) {
+        return HazelcastWriters.writeObservableSupplier(name);
+    }
 }

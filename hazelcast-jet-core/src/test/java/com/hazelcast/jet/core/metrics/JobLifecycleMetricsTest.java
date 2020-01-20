@@ -205,15 +205,21 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
 
     private void assertJobStats(int submitted, int executionsStarted, int executionsTerminated,
                                 int completedSuccessfully, int completedWithFailure) throws Exception {
-        assertMBeans(
-                PREFIX + ":type=Metrics,instance=" + jetInstance.getName(),
-                Arrays.asList(
-                        entry(MetricNames.JOBS_SUBMITTED, submitted),
-                        entry(MetricNames.JOB_EXECUTIONS_STARTED, executionsStarted),
-                        entry(MetricNames.JOB_EXECUTIONS_COMPLETED, executionsTerminated),
-                        entry(MetricNames.JOBS_COMPLETED_SUCCESSFULLY, completedSuccessfully),
-                        entry(MetricNames.JOBS_COMPLETED_WITH_FAILURE, completedWithFailure))
-        );
+        try {
+            assertMBeans(
+                    PREFIX + ":type=Metrics,instance=" + jetInstance.getName(),
+                    Arrays.asList(
+                            entry(MetricNames.JOBS_SUBMITTED, submitted),
+                            entry(MetricNames.JOB_EXECUTIONS_STARTED, executionsStarted),
+                            entry(MetricNames.JOB_EXECUTIONS_COMPLETED, executionsTerminated),
+                            entry(MetricNames.JOBS_COMPLETED_SUCCESSFULLY, completedSuccessfully),
+                            entry(MetricNames.JOBS_COMPLETED_WITH_FAILURE, completedWithFailure))
+            );
+        } catch (AssertionError ae) {
+            throw ae;
+        } catch (Exception e) {
+            throw new AssertionError(e.getMessage(), e);
+        }
     }
 
     private void assertMBeans(String name, List<Map.Entry<String, Number>> attributes) throws Exception {

@@ -50,7 +50,7 @@ samples using the Core API.
   - use an `IMap` as the data source
   - stateless transforms to clean up the input (flatMap + filter)
   - perform basic aggregation (counting)
-  - print a table of the most frequent words on the console
+  - print a table of the most frequent words on the console using an `Observable`
 
 ### [Inverted Index with TF-IDF Scoring](tf-idf/src/main/java/com/hazelcast/jet/examples/tfidf/TfIdf.java)
   - serialize a small dataset to use as side input

@@ -88,7 +88,7 @@ public interface Job {
      * Returns a snapshot of the current values of all job-specific metrics.
      * <p>
      * While the job is running the metric values are updated periodically
-     * (see {@link MetricsConfig#setCollectionIntervalSeconds metrics
+     * (see {@link MetricsConfig#setCollectionFrequencySeconds metrics
      * collection interval}), assuming
      * that both {@link MetricsConfig#setEnabled global metrics collection}
      * and {@link JobConfig#isMetricsEnabled() per job metrics collection}

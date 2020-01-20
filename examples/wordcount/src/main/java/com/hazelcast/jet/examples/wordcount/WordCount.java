@@ -18,10 +18,10 @@ package com.hazelcast.jet.examples.wordcount;
 
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.Observable;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
-import com.hazelcast.map.IMap;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -37,6 +37,7 @@ import static com.hazelcast.function.Functions.wholeItem;
 import static com.hazelcast.jet.Traversers.traverseArray;
 import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
 import static java.util.Comparator.comparingLong;
+import static java.util.stream.Collectors.toMap;
 
 /**
  * Demonstrates a simple Word Count job in the Pipeline API. Inserts the
@@ -60,11 +61,11 @@ public class WordCount {
          .filter(word -> !word.isEmpty())
          .groupingKey(wholeItem())
          .aggregate(counting())
-         .writeTo(Sinks.map(COUNTS));
+         .writeTo(Sinks.observable(COUNTS));
         return p;
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         new WordCount().go();
     }
 
@@ -77,14 +78,12 @@ public class WordCount {
             System.out.print("\nCounting words... ");
             long start = System.nanoTime();
             Pipeline p = buildPipeline();
+            Observable<Entry<String, Long>> observable = jet.getObservable(COUNTS);
+            observable.toFuture(s -> s.collect(toMap(Entry::getKey, Entry::getValue)))
+                    .thenApply(WordCount::checkResults)
+                    .thenAccept(WordCount::printResults);
             jet.newJob(p).join();
             System.out.print("done in " + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start) + " milliseconds.");
-            printResults();
-            IMap<String, Long> counts = jet.getMap(COUNTS);
-            if (counts.get("the") != 27_843) {
-                throw new AssertionError("Wrong count of 'the'");
-            }
-            System.out.println("Count of 'the' is valid");
         } finally {
             Jet.shutdownAll();
         }
@@ -109,10 +108,17 @@ public class WordCount {
         }
     }
 
-    private void printResults() {
+    private static Map<String, Long> checkResults(Map<String, Long> counts) {
+        if (counts.get("the") != 27_843) {
+            throw new AssertionError("Wrong count of 'the'");
+        }
+        System.out.println("Count of 'the' is valid");
+        return counts;
+    }
+
+    private static void printResults(Map<String, Long> counts) {
         final int limit = 100;
         System.out.format(" Top %d entries are:%n", limit);
-        final Map<String, Long> counts = jet.getMap(COUNTS);
         System.out.println("/-------+---------\\");
         System.out.println("| Count | Word    |");
         System.out.println("|-------+---------|");

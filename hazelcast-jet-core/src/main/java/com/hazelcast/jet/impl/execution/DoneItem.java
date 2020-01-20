@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.impl.execution;
 
-final class DoneItem implements BroadcastItem {
+public final class DoneItem implements BroadcastItem {
 
-    static final DoneItem DONE_ITEM = new DoneItem();
+    public static final DoneItem DONE_ITEM = new DoneItem();
 
     private DoneItem() { }
 

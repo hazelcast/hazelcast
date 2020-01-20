@@ -135,7 +135,7 @@ public final class Jet {
      * public class CustomJetJob {
      *   public static void main(String[] args) {
      *     JetInstance jet = Jet.bootstrappedInstance();
-     *     jet.newJob(buildPipeline()).execute().get();
+     *     jet.newJob(buildPipeline()).join();
      *   }
      *
      *   public static Pipeline createPipeline() {

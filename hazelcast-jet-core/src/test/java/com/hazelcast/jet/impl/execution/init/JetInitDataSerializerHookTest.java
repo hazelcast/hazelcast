@@ -16,13 +16,13 @@
 
 package com.hazelcast.jet.impl.execution.init;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.JobExecutionRecord;
 import com.hazelcast.jet.impl.JobRecord;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import org.junit.Test;
@@ -35,6 +35,7 @@ import org.junit.runners.Parameterized.Parameters;
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -69,8 +70,8 @@ public class JetInitDataSerializerHookTest {
         return asList(
                 new Object[]{
                         "JobRecord",
-                        new JobRecord(1, 2, new HeapData(new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9}), "dagJson",
-                                new JobConfig()),
+                        new JobRecord(1, new HeapData(new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9}),
+                                "dagJson", new JobConfig(), Collections.emptySet()),
                         singleton("config")},
 
                 new Object[]{

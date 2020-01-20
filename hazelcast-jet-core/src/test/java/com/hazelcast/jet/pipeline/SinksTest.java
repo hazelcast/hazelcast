@@ -49,6 +49,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -811,6 +812,57 @@ public class SinksTest extends PipelineTestSupport {
         p.readFrom(Sources.list(srcName)).writeTo(sink);
         execute();
         assertEquals(itemCount, remoteHz.getList(sinkName).size());
+    }
+
+    @Test
+    public void reliableTopic_byName() {
+        // Given
+        populateList(srcList);
+
+        List<Object> receivedList = new ArrayList<>();
+        jet().getReliableTopic(sinkName).addMessageListener(message -> receivedList.add(message.getMessageObject()));
+
+        // When
+        Sink<Object> sink = Sinks.reliableTopic(sinkName);
+        p.readFrom(Sources.list(srcName)).writeTo(sink);
+        execute();
+
+        // Then
+        assertTrueEventually(() -> assertEquals(itemCount, receivedList.size()));
+    }
+
+    @Test
+    public void reliableTopic_byRef() {
+        // Given
+        populateList(srcList);
+
+        List<Object> receivedList = new ArrayList<>();
+        jet().getReliableTopic(sinkName).addMessageListener(message -> receivedList.add(message.getMessageObject()));
+
+        // When
+        Sink<Object> sink = Sinks.reliableTopic(jet().getReliableTopic(sinkName));
+        p.readFrom(Sources.list(srcName)).writeTo(sink);
+        execute();
+
+        // Then
+        assertTrueEventually(() -> assertEquals(itemCount, receivedList.size()));
+    }
+
+    @Test
+    public void remoteReliableTopic() {
+        // Given
+        populateList(srcList);
+
+        List<Object> receivedList = new ArrayList<>();
+        remoteHz.getReliableTopic(sinkName).addMessageListener(message -> receivedList.add(message.getMessageObject()));
+
+        // When
+        Sink<Object> sink = Sinks.remoteReliableTopic(sinkName, clientConfig);
+        p.readFrom(Sources.list(srcName)).writeTo(sink);
+        execute();
+
+        // Then
+        assertTrueEventually(() -> assertEquals(itemCount, receivedList.size()));
     }
 
     @Test

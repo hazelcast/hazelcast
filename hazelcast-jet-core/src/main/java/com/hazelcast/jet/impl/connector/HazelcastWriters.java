@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.cache.ICache;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.collection.IList;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
@@ -30,7 +31,9 @@ import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.RestartableException;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.processor.SinkProcessors;
+import com.hazelcast.jet.impl.observer.ObservableImpl;
 import com.hazelcast.map.EntryProcessor;
 
 import javax.annotation.Nonnull;
@@ -43,10 +46,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.function.Function;
 
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
 import static com.hazelcast.jet.impl.util.ImdgUtil.asXmlString;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
+import static java.util.Collections.singletonMap;
 
 /**
  * This is private API. Check out the {@link SinkProcessors} class for
@@ -150,6 +155,26 @@ public final class HazelcastWriters {
                 },
                 ConsumerEx.noop()
         ));
+    }
+
+    public static ProcessorMetaSupplier writeObservableSupplier(@Nonnull String name) {
+        return new ProcessorMetaSupplier() {
+            @Nonnull
+            @Override
+            public Map<String, String> getTags() {
+                return singletonMap(ObservableImpl.OWNED_OBSERVABLE, name);
+            }
+
+            @Override
+            public int preferredLocalParallelism() {
+                return 1;
+            }
+
+            @Nonnull @Override
+            public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
+                return address -> new WriteObservableP.Supplier(name);
+            }
+        };
     }
 
     static RuntimeException handleInstanceNotActive(HazelcastInstanceNotActiveException e, boolean isLocal) {

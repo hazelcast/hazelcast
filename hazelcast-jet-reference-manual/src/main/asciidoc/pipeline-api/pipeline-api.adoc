@@ -908,6 +908,49 @@ include::{javasource}/BuildComputation.java[tag=apply3]
 ----
 
 
+[[return-results-to-caller]]
+= Return results to caller
+
+For certain jobs, especially batch ones, which produce a reasonably small
+amount of output it is convenient to be able to examine the results directly
+in the client submitting the job, instead of needing to look them up
+in files, maps and such.
+
+This functionality is possible by using
+{jet-javadoc}/pipeline/Sinks.html#observable-java.lang.String-[observable type Sinks]
+in your pipelines.
+
+The client side code for observing such results would look like this:
+
+[source]
+----
+include::{javasource}/BuildComputation.java[tag=retres]
+----
+
+To be able to observe the results from an
+{jet-javadoc}/pipeline/Sinks.html#observable-java.lang.String-[observable Sink] the
+client needs to obtain an {jet-javadoc}/Observable.html[Observable] with the same name
+as used in the `Sink`. {jet-javadoc}/Observable.html[Observables] can be obtained from any
+Jet member or client.
+
+{jet-javadoc}/Observable.html[Observables] can be observed by registering
+{jet-javadoc}/Observer.html[Observers] on them, which are basically callbacks for
+handling results, errors and completion events. In order to make sure that no results are
+lost it is recommended that the `Observables` and `Observers` are set up before `Job`
+submission.
+
+There are a few ways of using this functionality, which are possible, but not recommended.
+It is possible to use multiple observable `Sinks` with the same name in a `Job`, but these
+will produce parallel, independent streams of events which will end up in the same `Observable`
+and can get intermingled in unexpected ways, thus creating confusion. It is also possible to
+use observable `Sinks` with the same name in multiple `Jobs` and that can create the same problem.
+
+`Observables` are backed by ringbuffers stored in the cluster which should be cleaned up
+by the client, once they are no longer necessary. They have a
+{jet-javadoc}/Observable.html#destroy--[destroy method] which does just that. If the
+`Observable` isn't destroyed, its memory will be leaked in the cluster forever.
+
+
 [[developing-and-testing]]
 = Developing and testing your pipeline
 

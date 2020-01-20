@@ -87,6 +87,7 @@ other means such as JMX. The metrics names may change between MINOR
 versions but not between PATCH versions.
 
 [appendix]
+[[system-properties]]
 = System Properties
 
 The table below lists the system properties supported by Jet. Jet also

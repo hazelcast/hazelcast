@@ -39,7 +39,6 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
 
 public class JobResult implements IdentifiedDataSerializable {
 
-    private String coordinatorUUID;
     private long jobId;
     private JobConfig jobConfig;
     private long creationTime;
@@ -51,13 +50,11 @@ public class JobResult implements IdentifiedDataSerializable {
 
     JobResult(long jobId,
               @Nonnull JobConfig jobConfig,
-              @Nonnull String coordinatorUUID,
               long creationTime, long completionTime,
               @Nullable String failureText
     ) {
         this.jobId = jobId;
         this.jobConfig = jobConfig;
-        this.coordinatorUUID = coordinatorUUID;
         this.creationTime = creationTime;
         this.completionTime = completionTime;
         this.failureText = failureText;
@@ -70,11 +67,6 @@ public class JobResult implements IdentifiedDataSerializable {
     @Nonnull
     public JobConfig getJobConfig() {
         return jobConfig;
-    }
-
-    @Nonnull
-    public String getCoordinatorUUID() {
-        return coordinatorUUID;
     }
 
     public long getCreationTime() {
@@ -133,8 +125,7 @@ public class JobResult implements IdentifiedDataSerializable {
     @Override
     public String toString() {
         return "JobResult{" +
-                "coordinatorUUID='" + coordinatorUUID + '\'' +
-                ", jobId=" + idToString(jobId) +
+                "jobId=" + idToString(jobId) +
                 ", name=" + jobConfig.getName() +
                 ", creationTime=" + toLocalDateTime(creationTime) +
                 ", completionTime=" + toLocalDateTime(completionTime) +
@@ -156,7 +147,6 @@ public class JobResult implements IdentifiedDataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(jobId);
         out.writeObject(jobConfig);
-        out.writeUTF(coordinatorUUID);
         out.writeLong(creationTime);
         out.writeLong(completionTime);
         out.writeObject(failureText);
@@ -166,7 +156,6 @@ public class JobResult implements IdentifiedDataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         jobId = in.readLong();
         jobConfig = in.readObject();
-        coordinatorUUID = in.readUTF();
         creationTime = in.readLong();
         completionTime = in.readLong();
         failureText = in.readObject();

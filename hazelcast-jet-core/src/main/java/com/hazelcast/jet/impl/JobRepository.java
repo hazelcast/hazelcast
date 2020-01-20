@@ -361,11 +361,12 @@ public class JobRepository {
      * @throws IllegalStateException if the JobResult is already present
      */
     void completeJob(
-            long jobId,
+            @Nonnull MasterContext masterContext,
             @Nullable List<RawJobMetrics> terminalMetrics,
-            @Nonnull String coordinator,
             @Nullable Throwable error
     ) {
+        long jobId = masterContext.jobId();
+
         JobRecord jobRecord = getJobRecord(jobId);
         if (jobRecord == null) {
             throw new JobNotFoundException(jobId);
@@ -373,7 +374,7 @@ public class JobRepository {
 
         JobConfig config = jobRecord.getConfig();
         long creationTime = jobRecord.getCreationTime();
-        JobResult jobResult = new JobResult(jobId, config, coordinator, creationTime, System.currentTimeMillis(),
+        JobResult jobResult = new JobResult(jobId, config, creationTime, System.currentTimeMillis(),
                 toErrorMsg(error));
 
         if (terminalMetrics != null) {

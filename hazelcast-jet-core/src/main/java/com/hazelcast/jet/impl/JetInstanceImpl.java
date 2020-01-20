@@ -134,4 +134,5 @@ public class JetInstanceImpl extends AbstractJetInstance {
     public ILogger getLogger() {
         return nodeEngine.getLogger(getClass());
     }
+
 }
