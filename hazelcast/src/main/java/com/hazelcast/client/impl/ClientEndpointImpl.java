@@ -215,11 +215,6 @@ public final class ClientEndpointImpl implements ClientEndpoint {
         destroyed = true;
         nodeEngine.onClientDisconnected(getUuid());
 
-        LoginContext lc = loginContext;
-        if (lc != null) {
-            lc.logout();
-        }
-
         for (UUID registrationId : removeListenerActions.keySet()) {
             removeAndCallRemoveAction(registrationId);
         }
@@ -227,7 +222,15 @@ public final class ClientEndpointImpl implements ClientEndpoint {
         for (UUID txnId : transactionContextMap.keySet()) {
             removedAndRollbackTransactionContext(txnId);
         }
-        authenticated = false;
+
+        try {
+            LoginContext lc = loginContext;
+            if (lc != null) {
+                lc.logout();
+            }
+        } finally {
+            authenticated = false;
+        }
     }
 
     private void removeAndCallRemoveAction(UUID uuid) {
