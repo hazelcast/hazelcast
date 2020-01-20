@@ -24,12 +24,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("745500d3ab1aa5470eb1b5e8d55dbd66")
+@Generated("7ed0e5e2f6777419d6c54373cdfec0e1")
 public final class MemberVersionCodec {
     private static final int MAJOR_FIELD_OFFSET = 0;
-    private static final int MINOR_FIELD_OFFSET = MAJOR_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int PATCH_FIELD_OFFSET = MINOR_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int INITIAL_FRAME_SIZE = PATCH_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int MINOR_FIELD_OFFSET = MAJOR_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
+    private static final int PATCH_FIELD_OFFSET = MINOR_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
+    private static final int INITIAL_FRAME_SIZE = PATCH_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private MemberVersionCodec() {
     }
@@ -38,9 +38,9 @@ public final class MemberVersionCodec {
         clientMessage.add(BEGIN_FRAME.copy());
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
-        encodeInt(initialFrame.content, MAJOR_FIELD_OFFSET, memberVersion.getMajor());
-        encodeInt(initialFrame.content, MINOR_FIELD_OFFSET, memberVersion.getMinor());
-        encodeInt(initialFrame.content, PATCH_FIELD_OFFSET, memberVersion.getPatch());
+        encodeByte(initialFrame.content, MAJOR_FIELD_OFFSET, memberVersion.getMajor());
+        encodeByte(initialFrame.content, MINOR_FIELD_OFFSET, memberVersion.getMinor());
+        encodeByte(initialFrame.content, PATCH_FIELD_OFFSET, memberVersion.getPatch());
         clientMessage.add(initialFrame);
 
         clientMessage.add(END_FRAME.copy());
@@ -51,9 +51,9 @@ public final class MemberVersionCodec {
         iterator.next();
 
         ClientMessage.Frame initialFrame = iterator.next();
-        int major = decodeInt(initialFrame.content, MAJOR_FIELD_OFFSET);
-        int minor = decodeInt(initialFrame.content, MINOR_FIELD_OFFSET);
-        int patch = decodeInt(initialFrame.content, PATCH_FIELD_OFFSET);
+        byte major = decodeByte(initialFrame.content, MAJOR_FIELD_OFFSET);
+        byte minor = decodeByte(initialFrame.content, MINOR_FIELD_OFFSET);
+        byte patch = decodeByte(initialFrame.content, PATCH_FIELD_OFFSET);
 
         fastForwardToEndFrame(iterator);
 
