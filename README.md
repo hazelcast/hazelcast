@@ -13,7 +13,7 @@ This repository contains a plugin which provides the automatic Hazelcast member 
 
 ## Embedded mode
 
-To use Hazelcast embedded in your application, you need to add the plugin dependency into your Maven/Gradle file. Then, when you provide `hazelcast.xml` as presented below or an equivalent Java-based configuration, your Hazelcast instances discover themselves automatically.
+To use Hazelcast embedded in your application, you need to add the plugin dependency into your Maven/Gradle file. Then, when you provide `hazelcast.xml`/`hazelcast.yaml` as presented below or an equivalent Java-based configuration, your Hazelcast instances discover themselves automatically.
 
 #### Maven
 
@@ -67,6 +67,28 @@ Make sure you have the `hazelcast-aws.jar` dependency in your classpath. Then, y
 </hazelcast>
 ```
 
+#### YAML Configuration
+
+```yaml
+hazelcast:
+  network:
+      join:
+        multicast:
+          enabled: false
+        aws:
+          enabled: false
+          access-key: my-access-key
+          secret-key: my-secret-key
+          iam-role: dummy
+          region: us-west-1
+          host-header: ec2.amazonaws.com
+          security-group-name: hazelcast-sg
+          tag-key: type
+          tag-value: hz-nodes
+          hz-port: 5701-5708
+          connection-retries: 3
+```
+
 #### Java-based Configuration
 
 ```java
@@ -106,6 +128,15 @@ When using `ZONE_AWARE` configuration, backups are created in the other Availabi
 
 ```xml
 <partition-group enabled="true" group-type="ZONE_AWARE" />
+```
+
+#### YAML Configuration
+
+```yaml
+hazelcast:
+  partition-group:
+    enabled: true
+    group-type: ZONE-AWARE
 ```
 
 #### Java-based Configuration
@@ -149,6 +180,23 @@ Following are example declarative and programmatic configuration snippets.
 </hazelcast-client>
 ```
 
+#### YAML Configuration
+
+```yaml
+hazelcast-client:
+  network:
+    aws:
+      enabled: true
+      access-key: TEST_ACCESS_KEY
+      secret-key: TEST_SECRET_KEY
+      region: us-east-1
+      security-group-name: hazelcast-sg
+      tag-key: type
+      tag-value: hz-nodes
+      connection-retries: 3
+      use-public-ip: true
+```
+
 #### Java-based Configuration
 
 ```java
@@ -171,11 +219,21 @@ In order to enable discovery within AWS ECS Cluster, within `taskdef.json` or co
 "networkMode": "host"
 ```
 
-Also, cluster member should have below interface binding in `hazelcast.xml` configuration file.
-```
+Also, cluster member should have below interface binding in `hazelcast.xml`/`hazelcast.yaml` configuration file.
+
+```xml
 <interfaces enabled="true">
     <interface>10.0.*.*</interface>
 </interfaces>
+```
+
+```yaml
+hazelcast:
+  network:
+    interfaces:
+      enabled: true
+      interfaces:
+        - 10.0.*.*
 ```
 Please note that `10.0.*.*` value depends on your CIDR block definition.
 If more than one `subnet` or `custom VPC` is used for cluster, it should be checked that `container instances` within cluster have network connectivity or have `tracepath` to each other. 
