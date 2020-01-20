@@ -42,7 +42,7 @@ import static org.junit.Assert.fail;
 
 
 @RunWith(CustomSpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = {"application-context-processor.xml"})
+@ContextConfiguration(locations = {"application-context-service.xml"})
 public class SpringServiceFactoriesTest {
 
     @Resource(name = "jet-instance")
