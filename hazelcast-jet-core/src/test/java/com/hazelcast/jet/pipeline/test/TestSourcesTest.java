@@ -74,10 +74,24 @@ public class TestSourcesTest extends PipelineTestSupport {
          .withNativeTimestamps(0)
          .window(WindowDefinition.tumbling(1000))
          .aggregate(AggregateOperations.counting())
-         .apply(assertCollectedEventually(10, windowResults -> {
-             // find any window that has 10 items, some may be incomplete due to hiccups
-             boolean matched = windowResults.stream().anyMatch(r -> r.result() == itemsPerSecond);
-             assertTrue("Did not find any window with 10 items: " + windowResults, matched);
+         .apply(assertCollectedEventually(60, windowResults -> {
+             //look at last 5 windows at most, always ignore first
+             int windowsToConsider = Math.min(5, Math.max(windowResults.size() - 1, 0));
+
+             //count the total no. of items emitted in those windows
+             int totalItems = windowResults.stream()
+                     .skip(windowResults.size() - windowsToConsider)
+                     .mapToInt(r -> r.result().intValue())
+                     .sum();
+
+             //compute their average
+             double avgItems = (double) totalItems / windowsToConsider;
+
+             //compute how far the actual average is from the desired one
+             double deviationFromTarget = Math.abs(avgItems - itemsPerSecond);
+
+             assertTrue(String.format("Average items per second (%.2f) too far from target (%d)",
+                     avgItems, itemsPerSecond), deviationFromTarget <= 0.1d);
          }));
 
         expectedException.expectMessage(AssertionCompletedException.class.getName());
