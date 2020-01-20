@@ -70,6 +70,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
     private final Map<Long, Data> dataMap = new HashMap<Long, Data>();
     private QueueWaitNotifyKey pollWaitNotifyKey;
     private QueueWaitNotifyKey offerWaitNotifyKey;
+    private QueueWaitNotifyKey retainAllWaitNotifyKey;
     private LinkedList<QueueItem> itemQueue;
     private Map<Long, QueueItem> backupMap;
     private QueueConfig config;
@@ -99,6 +100,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
         this.name = name;
         this.pollWaitNotifyKey = new QueueWaitNotifyKey(name, "poll");
         this.offerWaitNotifyKey = new QueueWaitNotifyKey(name, "offer");
+        this.retainAllWaitNotifyKey = new QueueWaitNotifyKey(name, "retainAll");
         setConfig(config, nodeEngine, service);
     }
 
@@ -972,6 +974,10 @@ public class QueueContainer implements IdentifiedDataSerializable {
         return offerWaitNotifyKey;
     }
 
+    public QueueWaitNotifyKey getRetainAllWaitNotifyKey() {
+        return retainAllWaitNotifyKey;
+    }
+
     public QueueConfig getConfig() {
         return config;
     }
@@ -1060,6 +1066,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
         name = in.readUTF();
         pollWaitNotifyKey = new QueueWaitNotifyKey(name, "poll");
         offerWaitNotifyKey = new QueueWaitNotifyKey(name, "offer");
+        retainAllWaitNotifyKey = new QueueWaitNotifyKey(name, "retainAll");
         int size = in.readInt();
         for (int j = 0; j < size; j++) {
             QueueItem item = in.readObject();
@@ -1098,5 +1105,17 @@ public class QueueContainer implements IdentifiedDataSerializable {
 
     void setId(long itemId) {
         idGenerator = Math.max(itemId + 1, idGenerator);
+    }
+
+    public boolean txnCommitRetainAll(List<Data> data) {
+        List<QueueItem> toRetain = new ArrayList<>();
+        for (QueueItem item : getItemQueue()) {
+            for (Data datum : data) {
+                if (item.getData().equals(datum)) {
+                    toRetain.add(item);
+                }
+            }
+        }
+        return getItemQueue().retainAll(toRetain);
     }
 }
