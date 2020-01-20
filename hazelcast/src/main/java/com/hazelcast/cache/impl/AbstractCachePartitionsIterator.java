@@ -128,16 +128,13 @@ public abstract class AbstractCachePartitionsIterator<K, V> implements Iterator<
 
     @Override
     public Cache.Entry<K, V> next() {
-        while (hasNext()) {
+        if (hasNext()) {
             currentIndex = index;
             index++;
-            final Data keyData = getKey(currentIndex);
-            final K key = toObject(keyData);
-            final V value = getValue(currentIndex, key);
-            // Value might be removed or evicted
-            if (value != null) {
-                return new CacheEntry<K, V>(key, value);
-            }
+            Data keyData = getKey(currentIndex);
+            K key = toObject(keyData);
+            V value = getValue(currentIndex, key);
+            return new CacheEntry<>(key, value);
         }
         throw new NoSuchElementException();
     }
@@ -220,7 +217,7 @@ public abstract class AbstractCachePartitionsIterator<K, V> implements Iterator<
      * @param response the iteration response
      * @param pointers the pointers defining the state of iteration
      */
-    protected void setLastTableIndex(List response, IterationPointer[] pointers) {
+    protected void setIterationPointers(List response, IterationPointer[] pointers) {
         if (response != null && response.size() > 0) {
             this.pointers = pointers;
         }
