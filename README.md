@@ -13,7 +13,7 @@ This repository contains a plugin which provides the automatic Hazelcast member 
 
 ## Embedded mode
 
-To use Hazelcast embedded in your application, you need to add the plugin dependency into your Maven/Gradle file. Then, when you provide `hazelcast.yaml` as presented below or an equivalent Java-based configuration, your Hazelcast instances discover themselves automatically.
+To use Hazelcast embedded in your application, you need to add the plugin dependency into your Maven/Gradle file. Then, when you provide `hazelcast.xml`/`hazelcast.yaml` as presented below or an equivalent Java-based configuration, your Hazelcast instances discover themselves automatically.
 
 #### Maven
 
@@ -44,6 +44,28 @@ The plugin supports **Members Discovery SPI** and **Zone Aware** features.
 ### Hazelcast Members Discovery SPI
 
 Make sure you have the `hazelcast-aws.jar` dependency in your classpath. Then, you can configure Hazelcast in one of the following manners.
+
+#### XML Configuration
+
+```xml
+<hazelcast>
+  <network>
+    <join>
+      <multicast enabled="false"/>
+      <aws enabled="true">
+        <access-key>my-access-key</access-key>
+        <secret-key>my-secret-key</secret-key>
+        <region>us-west-1</region>
+        <security-group-name>hazelcast</security-group-name>
+        <tag-key>aws-test-cluster</tag-key>
+        <tag-value>cluster1</tag-value>
+        <hz-port>5701-5708</hz-port>
+        <connection-retries>3</connection-retries>
+      </aws>
+    </join>
+  </network>
+</hazelcast>
+```
 
 #### YAML Configuration
 
@@ -102,6 +124,12 @@ Note that:
 
 When using `ZONE_AWARE` configuration, backups are created in the other Availability Zone.
 
+#### XML Configuration
+
+```xml
+<partition-group enabled="true" group-type="ZONE_AWARE" />
+```
+
 #### YAML Configuration
 
 ```yaml
@@ -131,6 +159,26 @@ If Hazelcast Client is run outside AWS, then you always need to specify the foll
 - `use-public-ip` - must be set to `true`
 
 Following are example declarative and programmatic configuration snippets.
+
+#### XML Configuration
+
+```xml
+<hazelcast-client>
+  <network>
+    <aws enabled="true">
+      <access-key>my-access-key</access-key>
+      <secret-key>my-secret-key</secret-key>
+      <region>us-west-1</region>
+      <security-group-name>hazelcast</security-group-name>
+      <tag-key>aws-test-cluster</tag-key>
+      <tag-value>cluster1</tag-value>
+      <hz-port>5701-5708</hz-port>
+      <connection-retries>3</connection-retries>
+      <use-public-ip>true</use-public-ip>
+    </aws>
+  </network>
+</hazelcast-client>
+```
 
 #### YAML Configuration
 
@@ -171,7 +219,14 @@ In order to enable discovery within AWS ECS Cluster, within `taskdef.json` or co
 "networkMode": "host"
 ```
 
-Also, cluster member should have below interface binding in `hazelcast.yaml` configuration file.
+Also, cluster member should have below interface binding in `hazelcast.xml`/`hazelcast.yaml` configuration file.
+
+```xml
+<interfaces enabled="true">
+    <interface>10.0.*.*</interface>
+</interfaces>
+```
+
 ```yaml
 hazelcast:
   network:
