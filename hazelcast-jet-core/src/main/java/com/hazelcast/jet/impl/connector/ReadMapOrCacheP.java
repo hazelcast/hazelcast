@@ -389,8 +389,7 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
 
         @Nonnull @Override
         public InternalCompletableFuture<CacheEntriesWithCursor> readBatch(int partitionId, IterationPointer[] pointers) {
-            // clone the pointers as they can be mutated for local ops
-            Operation op = new CacheFetchEntriesOperation(cacheProxy.getPrefixedName(), pointers.clone(), MAX_FETCH_SIZE);
+            Operation op = new CacheFetchEntriesOperation(cacheProxy.getPrefixedName(), pointers, MAX_FETCH_SIZE);
             //no access to CacheOperationProvider, have to be explicit
             OperationService operationService = cacheProxy.getOperationService();
             return operationService.invokeOnPartition(cacheProxy.getServiceName(), op, partitionId);
@@ -459,8 +458,7 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         @Nonnull @Override
         public InternalCompletableFuture<MapEntriesWithCursor> readBatch(int partitionId, IterationPointer[] pointers) {
             MapOperationProvider operationProvider = mapProxyImpl.getOperationProvider();
-            // clone the pointers as they can be mutated for local ops
-            Operation op = operationProvider.createFetchEntriesOperation(objectName, pointers.clone(), MAX_FETCH_SIZE);
+            Operation op = operationProvider.createFetchEntriesOperation(objectName, pointers, MAX_FETCH_SIZE);
             return mapProxyImpl.getOperationService().invokeOnPartition(mapProxyImpl.getServiceName(), op, partitionId);
         }
 
@@ -499,10 +497,9 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         @Nonnull @Override
         public InternalCompletableFuture<ResultSegment> readBatch(int partitionId, IterationPointer[] pointers) {
             MapOperationProvider operationProvider = mapProxyImpl.getOperationProvider();
-            // clone the pointers as they can be mutated for local ops
             MapOperation op = operationProvider.createFetchWithQueryOperation(
                     objectName,
-                    pointers.clone(),
+                    pointers,
                     MAX_FETCH_SIZE,
                     Query.of()
                          .mapName(objectName)
