@@ -4562,7 +4562,7 @@ public class ClientCompatibilityTest_2_0 {
     @Test
     public void test_TransactionalQueueRemoveAllCodec_encodeRequest() {
         int fileClientMessageIndex = 533;
-        ClientMessage encoded = TransactionalQueueRemoveAllCodec.encodeRequest(aString, aUUID, aLong, aListOfData, aLong);
+        ClientMessage encoded = TransactionalQueueRemoveAllCodec.encodeRequest(aString, aUUID, aLong, aListOfData);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

@@ -41,7 +41,7 @@ public class TransactionalQueueRemoveAllMessageTask
     protected Object innerCall() throws Exception {
         final TransactionContext context = endpoint.getTransactionContext(parameters.txnId);
         final TransactionalQueue queue = context.getQueue(parameters.name);
-        return queue.removeAll(parameters.items, parameters.timeout, TimeUnit.MILLISECONDS);
+        return queue.removeAll(parameters.items);
     }
 
     @Override
@@ -81,6 +81,6 @@ public class TransactionalQueueRemoveAllMessageTask
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.timeout, TimeUnit.MILLISECONDS};
+        return null;
     }
 }

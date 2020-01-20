@@ -130,24 +130,13 @@ public class ClientTxnQueueProxy<E> extends ClientTxnProxy implements Transactio
 
     @Override
     public boolean removeAll(E... items) {
-        return removeAll(0, TimeUnit.MILLISECONDS, items);
-    }
-
-    @Override
-    public boolean removeAll(long timeout, @Nonnull TimeUnit unit, E... items) {
-        return removeAll(asList(items), timeout, unit);
+        return removeAll(asList(items));
     }
 
     @Override
     public boolean removeAll(Collection<? extends E> items) {
-        return removeAll(items, 0, TimeUnit.MILLISECONDS);
-    }
-
-    @Override
-    public boolean removeAll(Collection<? extends E> items, long timeout, @Nonnull TimeUnit unit) {
         List<Data> data = items.stream().map(this::toData).collect(Collectors.toList());
-        ClientMessage request = TransactionalQueueRemoveAllCodec.encodeRequest(
-            name, getTransactionId(), getThreadId(), data, unit.toMillis(timeout));
+        ClientMessage request = TransactionalQueueRemoveAllCodec.encodeRequest(name, getTransactionId(), getThreadId(), data);
         ClientMessage response = invoke(request);
         return TransactionalQueueRemoveAllCodec.decodeResponse(response).response;
     }

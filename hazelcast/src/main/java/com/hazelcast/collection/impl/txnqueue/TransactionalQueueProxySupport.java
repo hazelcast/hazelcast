@@ -202,7 +202,7 @@ public abstract class TransactionalQueueProxySupport<E>
         return operationService.invokeOnPartition(QueueService.SERVICE_NAME, operation, partitionId);
     }
 
-    boolean removeAllInternal(List<Data> data, long timeout) {
+    boolean removeAllInternal(List<Data> data) {
         try {
             TxnRemoveAllOperation operation = new TxnRemoveAllOperation(name, data);
             operation.setCallerUuid(tx.getOwnerUuid());

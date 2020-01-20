@@ -81,9 +81,5 @@ public interface TransactionalQueue<E> extends TransactionalObject, BaseQueue<E>
 
     boolean removeAll(E... items);
 
-    boolean removeAll(long timeout, @Nonnull TimeUnit unit, E... items);
-
     boolean removeAll(Collection<? extends E> items);
-
-    boolean removeAll(Collection<? extends E> items, long timeout, @Nonnull TimeUnit unit);
 }

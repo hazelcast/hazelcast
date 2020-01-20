@@ -108,25 +108,15 @@ public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport<E
 
     @Override
     public boolean removeAll(E... items) {
-        return removeAll(0, TimeUnit.MILLISECONDS, items);
-    }
-
-    @Override
-    public boolean removeAll(long timeout, @Nonnull TimeUnit unit, E... items) {
-        return removeAll(asList(items), timeout, unit);
+        return removeAll(asList(items));
     }
 
     @Override
     public boolean removeAll(Collection<? extends E> items) {
-        return removeAll(items, 0, TimeUnit.MILLISECONDS);
-    }
-
-    @Override
-    public boolean removeAll(Collection<? extends E> items, long timeout, @Nonnull TimeUnit unit) {
         checkTransactionState();
         NodeEngine nodeEngine = getNodeEngine();
         List<Data> data = items.stream().map(nodeEngine::toData).collect(Collectors.toList());
-        return removeAllInternal(data, unit.toMillis(timeout));
+        return removeAllInternal(data);
     }
 
     @Override
