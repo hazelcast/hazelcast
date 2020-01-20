@@ -43,14 +43,18 @@ import javax.jms.Session;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
+import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.stream.IntStream.range;
 import static javax.jms.Session.DUPS_OK_ACKNOWLEDGE;
 
@@ -62,6 +66,7 @@ public class StreamJmsP<T> extends AbstractProcessor {
 
     public static final int PREFERRED_LOCAL_PARALLELISM = 1;
     private static final BroadcastKey<String> SEEN_IDS_KEY = broadcastKey("seen");
+    private static final long RESTORED_IDS_TTL = MINUTES.toNanos(1);
 
     private final Connection connection;
     private final FunctionEx<? super Session, ? extends MessageConsumer> consumerFn;
@@ -70,11 +75,14 @@ public class StreamJmsP<T> extends AbstractProcessor {
     private final EventTimeMapper<? super T> eventTimeMapper;
     private final ProcessingGuarantee guarantee;
     private final Set<Object> seenIds;
+    private Set<Object> restoredIds;
+    private long restoredIdsExpiration = Long.MAX_VALUE;
 
     private Session session;
     private MessageConsumer consumer;
     private Traverser<Object> pendingTraverser = Traversers.empty();
     private boolean snapshotInProgress;
+    private Traverser<Entry<BroadcastKey<String>, Set<Object>>> snapshotTraverser;
 
     StreamJmsP(Connection connection,
                FunctionEx<? super Session, ? extends MessageConsumer> consumerFn,
@@ -92,6 +100,7 @@ public class StreamJmsP<T> extends AbstractProcessor {
         eventTimeMapper = new EventTimeMapper<>(eventTimePolicy);
         eventTimeMapper.addPartitions(1);
         seenIds = guarantee == EXACTLY_ONCE ? new HashSet<>() : Collections.emptySet();
+        restoredIds = guarantee == EXACTLY_ONCE ? new HashSet<>() : Collections.emptySet();
     }
 
     @Override
@@ -128,13 +137,28 @@ public class StreamJmsP<T> extends AbstractProcessor {
                     break;
                 }
                 if (guarantee == EXACTLY_ONCE) {
+                    // We don't know whether the messages with the restored IDs were acknowledged in the previous
+                    // execution or not. They are acknowledged in phase-2 of the snapshot which might not be executed.
+                    // If we receive a message with a restored ID, we ignore it. But if we don't receive some ID,
+                    // we can never safely throw it out.
+                    // In order to avoid storing the restored IDs forever, we set a timeout after which we clear the
+                    // collection. We start the timeout after receiving the first message, at which time we know the
+                    // broker is working. We assume it will redeliver the messages promptly; if it doesn't, we assume
+                    // they were acknowledged in the previous execution or delivered to another processor in this
+                    // execution.
+                    if (restoredIdsExpiration == Long.MAX_VALUE) {
+                        restoredIdsExpiration = System.nanoTime() + RESTORED_IDS_TTL;
+                    } else if (!restoredIds.isEmpty() && restoredIdsExpiration <= System.nanoTime()) {
+                        restoredIds = Collections.emptySet();
+                    }
                     Object msgId = messageIdFn.apply(t);
                     if (msgId == null) {
                         throw new JetException("Received a message without an ID. All messages must have an ID, " +
                                 "you can specify an extracting function using "
                                 + JmsSourceBuilder.class.getSimpleName() + ".messageIdFn()");
                     }
-                    if (!seenIds.add(msgId)) {
+                    seenIds.add(msgId);
+                    if (restoredIds.remove(msgId)) {
                         continue;
                     }
                 }
@@ -149,7 +173,17 @@ public class StreamJmsP<T> extends AbstractProcessor {
     @Override
     public boolean snapshotCommitPrepare() {
         snapshotInProgress = guarantee != NONE;
-        return guarantee != EXACTLY_ONCE || getOutbox().offerToSnapshot(SEEN_IDS_KEY, seenIds);
+        if (guarantee != EXACTLY_ONCE) {
+            return true;
+        }
+        if (snapshotTraverser == null) {
+            snapshotTraverser = Traversers.traverseItems(seenIds, restoredIds)
+                    .filter(ids -> !ids.isEmpty())
+                    .map(ids -> entry(SEEN_IDS_KEY, ids))
+                    .onFirstNull(() -> snapshotTraverser = null);
+            logFine(getLogger(), "Saved %d message(s) IDs to snapshot", seenIds.size());
+        }
+        return emitFromTraverserToSnapshot(snapshotTraverser);
     }
 
     @Override
@@ -160,6 +194,7 @@ public class StreamJmsP<T> extends AbstractProcessor {
         if (success) {
             try {
                 session.commit();
+                getLogger().fine("Session committed");
             } catch (JMSException e) {
                 throw sneakyThrow(e);
             }
@@ -178,11 +213,15 @@ public class StreamJmsP<T> extends AbstractProcessor {
         if (!SEEN_IDS_KEY.equals(key)) {
             throw new RuntimeException("Unexpected key received from snapshot: " + key);
         }
-        @SuppressWarnings("unchecked")
-        Set<Object> castValue = (Set<Object>) value;
-        // we could add the restored
+        // Ignore if not in ex-once mode. The user could cancelAndExportSnapshot() and restart with
+        // a lower guarantee.
+        // We could restore multiple collections: each processor saves one and it's restored to all
+        // because we can't control which processor receives which messages.
         if (guarantee == EXACTLY_ONCE) {
-            seenIds.addAll(castValue);
+            @SuppressWarnings("unchecked")
+            Set<Object> castValue = (Set<Object>) value;
+            restoredIds.addAll(castValue);
+            logFine(getLogger(), "Restored %d seen IDs from snapshot", castValue.size());
         }
     }
 
