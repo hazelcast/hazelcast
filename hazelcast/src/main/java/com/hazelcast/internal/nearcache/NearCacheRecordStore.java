@@ -25,8 +25,8 @@ import com.hazelcast.spi.impl.InitializingObject;
 import javax.annotation.Nullable;
 
 /**
- * {@link NearCacheRecordStore} is the contract point to store keys and values as
- * {@link NearCacheRecord} internally and to serve them.
+ * {@link NearCacheRecordStore} is the contract point to store keys
+ * and values as {@link NearCacheRecord} internally and to serve them.
  *
  * @param <K> the type of the key
  * @param <V> the type of the value
@@ -109,6 +109,8 @@ public interface NearCacheRecordStore<K, V> extends InitializingObject {
      * @param withoutMaxSizeCheck set {@code true} to evict regardless of a max
      *                            size check, otherwise set {@code false} to evict
      *                            after a max size check.
+     * @return {@code true} to indicate eviction
+     * is done otherwise returns {@code false}
      */
     boolean doEviction(boolean withoutMaxSizeCheck);
 
