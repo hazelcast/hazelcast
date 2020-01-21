@@ -156,8 +156,15 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
     }
 
     public void handleEventMessage(ClientMessage clientMessage) {
+        Runnable eventProcessor;
+        if (clientMessage.getPartitionId() == -1) {
+            // Execute on a random worker
+            eventProcessor = () -> handleEventMessageOnCallingThread(clientMessage);
+        } else {
+            eventProcessor = new ClientEventProcessor(clientMessage);
+        }
         try {
-            eventExecutor.execute(new ClientEventProcessor(clientMessage));
+            eventExecutor.execute(eventProcessor);
         } catch (RejectedExecutionException e) {
             logger.warning("Event clientMessage could not be handled", e);
         }
