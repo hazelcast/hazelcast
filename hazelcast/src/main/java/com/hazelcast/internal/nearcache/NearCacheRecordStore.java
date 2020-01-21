@@ -110,7 +110,7 @@ public interface NearCacheRecordStore<K, V> extends InitializingObject {
      *                            size check, otherwise set {@code false} to evict
      *                            after a max size check.
      */
-    void doEviction(boolean withoutMaxSizeCheck);
+    boolean doEviction(boolean withoutMaxSizeCheck);
 
     /**
      * Loads the keys into the Near Cache.
