@@ -18,7 +18,10 @@ package com.hazelcast.collection.impl.txnqueue.operations;
 
 import com.hazelcast.collection.impl.queue.QueueContainer;
 import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
+import com.hazelcast.collection.impl.queue.QueueItem;
 import com.hazelcast.collection.impl.queue.operations.QueueBackupAwareOperation;
+import com.hazelcast.core.ItemEventType;
+import com.hazelcast.internal.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.ObjectDataInput;
@@ -34,6 +37,7 @@ import java.util.List;
 
 public class TxnRetainAllOperation extends QueueBackupAwareOperation implements Notifier, MutatingOperation {
     private List<Data> data;
+    private List<QueueItem> removed;
 
     public TxnRetainAllOperation() {
     }
@@ -46,7 +50,21 @@ public class TxnRetainAllOperation extends QueueBackupAwareOperation implements 
     @Override
     public void run() throws Exception {
         QueueContainer queueContainer = getContainer();
-        response = queueContainer.txnCommitRetainAll(data);
+        removed = queueContainer.txnCommitRetainAll(data);
+        response = !removed.isEmpty();
+    }
+
+    @Override
+    public void afterRun() throws Exception {
+        LocalQueueStatsImpl queueStats = getQueueService().getLocalQueueStatsImpl(name);
+        if (removed.isEmpty()) {
+            queueStats.incrementEmptyPolls();
+        } else {
+            for (QueueItem item : removed) {
+                queueStats.incrementPolls();
+                publishEvent(ItemEventType.REMOVED, item.getData());
+            }
+        }
     }
 
     @Override

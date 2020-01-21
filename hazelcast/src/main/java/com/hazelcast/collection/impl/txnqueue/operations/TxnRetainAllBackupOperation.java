@@ -43,7 +43,7 @@ public class TxnRetainAllBackupOperation extends QueueOperation implements Backu
     @Override
     public void run() throws Exception {
         QueueContainer queueContainer = getContainer();
-        response = queueContainer.txnCommitRetainAll(data);
+        response = !queueContainer.txnCommitRetainAll(data).isEmpty();
     }
 
     @Override

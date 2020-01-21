@@ -1107,7 +1107,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
         idGenerator = Math.max(itemId + 1, idGenerator);
     }
 
-    public boolean txnCommitRetainAll(List<Data> data) {
+    public List<QueueItem> txnCommitRetainAll(List<Data> data) {
         List<QueueItem> toRetain = new ArrayList<>();
         for (QueueItem item : getItemQueue()) {
             for (Data datum : data) {
@@ -1116,6 +1116,9 @@ public class QueueContainer implements IdentifiedDataSerializable {
                 }
             }
         }
-        return getItemQueue().retainAll(toRetain);
+        List<QueueItem> removed = new ArrayList<>(getItemQueue());
+        getItemQueue().retainAll(toRetain);
+        removed.removeAll(toRetain);
+        return removed;
     }
 }
