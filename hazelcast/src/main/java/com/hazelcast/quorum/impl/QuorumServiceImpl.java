@@ -116,6 +116,9 @@ public class QuorumServiceImpl implements EventPublishingService<QuorumEvent, Qu
         Map<String, QuorumImpl> quorums = new HashMap<String, QuorumImpl>();
         for (QuorumConfig quorumConfig : nodeEngine.getConfig().getQuorumConfigs().values()) {
             validateQuorumConfig(quorumConfig);
+            if (!quorumConfig.isEnabled()) {
+                continue;
+            }
             QuorumImpl quorum = new QuorumImpl(quorumConfig, nodeEngine);
             quorums.put(quorumConfig.getName(), quorum);
         }
@@ -230,6 +233,9 @@ public class QuorumServiceImpl implements EventPublishingService<QuorumEvent, Qu
         }
 
         QuorumImpl definedQuorum = quorums.get(quorumName);
+        if (definedQuorum == null) {
+            return;
+        }
         QuorumType definedQuorumType = definedQuorum.getConfig().getType();
         switch (requiredQuorumPermissionType) {
             case WRITE:

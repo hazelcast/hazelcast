@@ -59,6 +59,26 @@ import static org.mockito.Mockito.mock;
 public class QuorumTest extends HazelcastTestSupport {
 
     @Test
+    public void testQuorumNotChecked_whenQuorumIsNotEnabled() {
+        String disabledQuorumName = "disabled-quorum";
+        QuorumConfig disabledQuorumConfig = new QuorumConfig()
+                .setName(disabledQuorumName)
+                .setSize(3);
+
+        MapConfig mapConfig = new MapConfig(randomMapName())
+                .setQuorumName(disabledQuorumName);
+
+        Config config = new Config()
+                .addQuorumConfig(disabledQuorumConfig)
+                .addMapConfig(mapConfig);
+        HazelcastInstance instance = createHazelcastInstance(config);
+
+        QuorumService quorumService = instance.getQuorumService();
+        quorumService.ensureQuorumPresent(disabledQuorumName, disabledQuorumConfig.getType());
+        instance.getMap(mapConfig.getName()).put("key", "value");
+    }
+
+    @Test
     public void testQuorumIsSetCorrectlyOnNodeInitialization() {
         String quorumName1 = randomString();
         String quorumName2 = randomString();
