@@ -272,8 +272,10 @@ public class ListenerLeakTest extends ClientTestSupport {
             newHazelcastClient().shutdown();
         }
 
-        for (Node node : nodes) {
-            assertEquals(0, node.getClientEngine().getClusterListenerService().getClusterListeningEndpoints().size());
-        }
+        assertTrueEventually(() -> {
+            for (Node node : nodes) {
+                assertEquals(0, node.getClientEngine().getClusterListenerService().getClusterListeningEndpoints().size());
+            }
+        });
     }
 }
