@@ -22,6 +22,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.Comparables;
 import com.hazelcast.query.impl.Index;
+import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 
@@ -35,7 +36,8 @@ import static com.hazelcast.query.impl.predicates.PredicateUtils.isNull;
  * Equal Predicate
  */
 @BinaryInterface
-public class EqualPredicate extends AbstractIndexAwarePredicate implements NegatablePredicate, RangePredicate {
+public class EqualPredicate extends AbstractIndexAwarePredicate
+        implements NegatablePredicate, RangePredicate, VisitablePredicate {
 
     private static final long serialVersionUID = 1L;
 
@@ -51,6 +53,11 @@ public class EqualPredicate extends AbstractIndexAwarePredicate implements Negat
     public EqualPredicate(String attribute, Comparable value) {
         super(attribute);
         this.value = value;
+    }
+
+    @Override
+    public Predicate accept(Visitor visitor, Indexes indexes) {
+        return visitor.visit(this, indexes);
     }
 
     @Override

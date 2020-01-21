@@ -187,6 +187,7 @@
     <suppress checks="MethodLength|CyclomaticComplexity|NPathComplexity|ReturnCount"
               files="com[\\/]hazelcast[\\/]query[\\/]impl[\\/]getters[\\/]ReflectionHelper"/>
     <suppress checks="NPathComplexity" files="com[\\/]hazelcast[\\/]query[\\/]impl[\\/]predicates[\\/]BetweenVisitor"/>
+    <suppress checks="FileLength" files="com[\\/]hazelcast[\\/]query[\\/]impl[\\/]bitmap[\\/]SparseIntArray"/>
 
     <!-- Instance -->
     <suppress checks="Javadoc(Method|Type|Variable)" files="com[\\/]hazelcast[\\/]instance[\\/]"/>
@@ -308,6 +309,7 @@
     <suppress
             checks="MagicNumber|FileLength|DeclarationOrder|RedundantModifier|InnerAssignment|NPathComplexity|CyclomaticComplexity"
             files="com[\\/]hazelcast[\\/]internal[\\/]util[\\/]ConcurrentReferenceHashMap"/>
+    <suppress checks="" files="com[\\/]hazelcast[\\/]internal[\\/]util[\\/]collection[\\/]Object2LongHashMap"/>
 
     <!-- Exclude Clover instrumented sources -->
     <suppress checks="" files="[\\/]src-instrumented[\\/]"/>

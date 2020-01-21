@@ -44,8 +44,17 @@ public class IndexImpl extends AbstractIndex {
     }
 
     @Override
-    protected IndexStore createIndexStore(boolean ordered, PerIndexStats stats) {
-        return ordered ? new OrderedIndexStore(copyBehavior) : new UnorderedIndexStore(copyBehavior);
+    protected IndexStore createIndexStore(IndexConfig config, PerIndexStats stats) {
+        switch (config.getType()) {
+            case SORTED:
+                return new OrderedIndexStore(copyBehavior);
+            case HASH:
+                return new UnorderedIndexStore(copyBehavior);
+            case BITMAP:
+                return new BitmapIndexStore(config, ss, extractors);
+            default:
+                throw new IllegalArgumentException("unexpected index type: " + config.getType());
+        }
     }
 
     @Override

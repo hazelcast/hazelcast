@@ -17,9 +17,11 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.query.Predicate;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -41,7 +43,7 @@ import static java.util.Collections.emptySet;
  */
 public class AttributeIndexRegistry {
 
-    private final ConcurrentMap<String, Record> registry = new ConcurrentHashMap<String, Record>();
+    private final ConcurrentMap<String, Record> registry = new ConcurrentHashMap<>();
 
     /**
      * Registers the given index in this registry.
@@ -124,6 +126,12 @@ public class AttributeIndexRegistry {
 
         public boolean unorderedWorseThan(InternalIndex candidate) {
             assert !candidate.isOrdered();
+
+            if (candidate.getConfig().getType() == IndexType.BITMAP) {
+                // if user adds a bitmap index, that is for a reason
+                return true;
+            }
+
             // we have no index and the unordered candidate is not composite
             return unordered == null && candidate.getComponents().length == 1;
         }
@@ -179,7 +187,7 @@ public class AttributeIndexRegistry {
             this.delegate = delegate;
             this.width = delegate.getComponents().length;
 
-            components = new String[] { delegate.getComponents()[0] };
+            components = new String[]{delegate.getComponents()[0]};
         }
 
         @Override
@@ -219,6 +227,16 @@ public class AttributeIndexRegistry {
         }
 
         @Override
+        public boolean canEvaluate(Class<? extends Predicate> predicateClass) {
+            return delegate.canEvaluate(predicateClass);
+        }
+
+        @Override
+        public Set<QueryableEntry> evaluate(Predicate predicate) {
+            return delegate.evaluate(predicate);
+        }
+
+        @Override
         public Set<QueryableEntry> getRecords(Comparable value) {
             Comparable from = new CompositeValue(width, value, NEGATIVE_INFINITY);
             Comparable to = new CompositeValue(width, value, POSITIVE_INFINITY);
@@ -241,7 +259,7 @@ public class AttributeIndexRegistry {
                 return getRecords(values[0]);
             }
 
-            Set<Comparable> convertedValues = new HashSet<Comparable>();
+            Set<Comparable> convertedValues = new HashSet<>();
             for (Comparable value : values) {
                 Comparable converted = converter.convert(value);
                 convertedValues.add(canonicalizeQueryArgumentScalar(converted));
@@ -251,7 +269,7 @@ public class AttributeIndexRegistry {
                 return getRecords(convertedValues.iterator().next());
             }
 
-            Set<QueryableEntry> result = new HashSet<QueryableEntry>();
+            Set<QueryableEntry> result = new HashSet<>();
             for (Comparable value : convertedValues) {
                 result.addAll(getRecords(value));
             }

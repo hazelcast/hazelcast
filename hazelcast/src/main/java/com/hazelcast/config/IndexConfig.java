@@ -55,6 +55,8 @@ public class IndexConfig implements IdentifiedDataSerializable {
     /** Indexed attributes. */
     private List<String> attributes;
 
+    private BitmapIndexOptions bitmapIndexOptions = new BitmapIndexOptions();
+
     public IndexConfig() {
         // No-op.
     }
@@ -87,6 +89,7 @@ public class IndexConfig implements IdentifiedDataSerializable {
     public IndexConfig(IndexConfig other) {
         this.name = other.name;
         this.type = other.type;
+        this.bitmapIndexOptions = new BitmapIndexOptions(other.bitmapIndexOptions);
 
         for (String attribute : other.getAttributes()) {
             addAttributeInternal(attribute);
@@ -192,6 +195,15 @@ public class IndexConfig implements IdentifiedDataSerializable {
         return this;
     }
 
+    /**
+     * Provides access to index options specific to bitmap indexes.
+     *
+     * @return the bitmap index options associated with this index config.
+     */
+    public BitmapIndexOptions getBitmapIndexOptions() {
+        return bitmapIndexOptions;
+    }
+
     @Override
     public int getFactoryId() {
         return ConfigDataSerializerHook.F_ID;
@@ -207,6 +219,7 @@ public class IndexConfig implements IdentifiedDataSerializable {
         out.writeUTF(name);
         out.writeInt(type.getId());
         writeNullableList(attributes, out);
+        out.writeObject(bitmapIndexOptions);
     }
 
     @Override
@@ -214,6 +227,7 @@ public class IndexConfig implements IdentifiedDataSerializable {
         name = in.readUTF();
         type = IndexType.getById(in.readInt());
         attributes = readNullableList(in);
+        bitmapIndexOptions = in.readObject();
     }
 
     @Override
@@ -236,6 +250,10 @@ public class IndexConfig implements IdentifiedDataSerializable {
             return false;
         }
 
+        if (!bitmapIndexOptions.equals(that.bitmapIndexOptions)) {
+            return false;
+        }
+
         return getAttributes().equals(that.getAttributes());
     }
 
@@ -245,12 +263,17 @@ public class IndexConfig implements IdentifiedDataSerializable {
 
         result = 31 * result + (type != null ? type.hashCode() : 0);
         result = 31 * result + getAttributes().hashCode();
+        result = 31 * result + bitmapIndexOptions.hashCode();
 
         return result;
     }
 
     @Override
     public String toString() {
-        return "IndexConfig{name=" + name + ", type=" + type + ", attributes=" + getAttributes() + '}';
+        String string = "IndexConfig{name=" + name + ", type=" + type + ", attributes=" + getAttributes();
+        if (!bitmapIndexOptions.areDefault()) {
+            string += ", bitmapIndexOptions=" + bitmapIndexOptions;
+        }
+        return string + '}';
     }
 }
