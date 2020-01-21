@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Determines if the Cache contains an entry for the specified key. More formally, returns true if and only if this
  * cache contains a mapping for a key k such that key.equals(k). (There can be at most one such mapping.)
  */
-@Generated("c857908a49295f38b2496a60d47e17c0")
+@Generated("2aeadc2383385b6d1e57ff200ce13f62")
 public final class CacheContainsKeyCodec {
     //hex: 0x130500
     public static final int REQUEST_MESSAGE_TYPE = 1246464;
@@ -70,6 +70,7 @@ public final class CacheContainsKeyCodec {
         clientMessage.setOperationName("Cache.ContainsKey");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         DataCodec.encode(clientMessage, key);

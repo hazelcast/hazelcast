@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Cancels the task running on the member with the given address.
  */
-@Generated("bafca77c835580c60ec4575a9f25d23c")
+@Generated("5dec085b7d94c3111dcb7fa95c11f02b")
 public final class ExecutorServiceCancelOnMemberCodec {
     //hex: 0x080400
     public static final int REQUEST_MESSAGE_TYPE = 525312;
@@ -77,6 +77,7 @@ public final class ExecutorServiceCancelOnMemberCodec {
         clientMessage.setOperationName("ExecutorService.CancelOnMember");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeUUID(initialFrame.content, REQUEST_UUID_FIELD_OFFSET, uuid);
         encodeUUID(initialFrame.content, REQUEST_MEMBER_UUID_FIELD_OFFSET, memberUUID);
         encodeBoolean(initialFrame.content, REQUEST_INTERRUPT_FIELD_OFFSET, interrupt);

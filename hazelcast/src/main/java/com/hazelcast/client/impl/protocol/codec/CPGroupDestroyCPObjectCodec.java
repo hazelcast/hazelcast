@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Destroys the distributed object with the given name on the requested
  * CP group
  */
-@Generated("4ce4d0362f5d948b4bb85979cfa11b7d")
+@Generated("89cd5060d2c60d4663d79fa60e52deda")
 public final class CPGroupDestroyCPObjectCodec {
     //hex: 0x1E0200
     public static final int REQUEST_MESSAGE_TYPE = 1966592;
@@ -74,6 +74,7 @@ public final class CPGroupDestroyCPObjectCodec {
         clientMessage.setOperationName("CPGroup.DestroyCPObject");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         RaftGroupIdCodec.encode(clientMessage, groupId);
         StringCodec.encode(clientMessage, serviceName);

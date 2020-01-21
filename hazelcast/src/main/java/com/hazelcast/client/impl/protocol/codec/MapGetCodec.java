@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * This method returns a clone of the original value, so modifying the returned value does not change the actual
  * value in the map. You should put the modified value back to make changes visible to all nodes.
  */
-@Generated("21b590bfc2e3479d99eb22c40b551b10")
+@Generated("0df5d7b3afca9a9804be2b01703a7e60")
 public final class MapGetCodec {
     //hex: 0x010200
     public static final int REQUEST_MESSAGE_TYPE = 66048;
@@ -75,6 +75,7 @@ public final class MapGetCodec {
         clientMessage.setOperationName("Map.Get");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeLong(initialFrame.content, REQUEST_THREAD_ID_FIELD_OFFSET, threadId);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);

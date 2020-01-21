@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns a lazy collection view of the values contained in this map.
  */
-@Generated("a20b5141ed6aba49d6d5f56e5e36025a")
+@Generated("aafd39501cd7ad2e7d47c992b755d882")
 public final class ReplicatedMapValuesCodec {
     //hex: 0x0D1000
     public static final int REQUEST_MESSAGE_TYPE = 856064;
@@ -63,6 +63,7 @@ public final class ReplicatedMapValuesCodec {
         clientMessage.setOperationName("ReplicatedMap.Values");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         return clientMessage;

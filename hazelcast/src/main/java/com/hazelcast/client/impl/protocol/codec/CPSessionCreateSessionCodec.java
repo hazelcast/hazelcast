@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Creates a session for the caller on the given CP group.
  */
-@Generated("247cf749a3ec1c8b6079d998de697a98")
+@Generated("17bd6e68119468fae06c47696b32e26f")
 public final class CPSessionCreateSessionCodec {
     //hex: 0x1F0100
     public static final int REQUEST_MESSAGE_TYPE = 2031872;
@@ -71,6 +71,7 @@ public final class CPSessionCreateSessionCodec {
         clientMessage.setOperationName("CPSession.CreateSession");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         RaftGroupIdCodec.encode(clientMessage, groupId);
         StringCodec.encode(clientMessage, endpointName);

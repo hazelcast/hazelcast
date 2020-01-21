@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds an listener for this collection. Listener will be notified or all collection add/remove events.
  */
-@Generated("e4afaa84d1d896fc1243a6fd5bcba889")
+@Generated("3007ffeb9edbc2e7c599483b97935aa6")
 public final class QueueAddListenerCodec {
     //hex: 0x031100
     public static final int REQUEST_MESSAGE_TYPE = 200960;
@@ -82,6 +82,7 @@ public final class QueueAddListenerCodec {
         clientMessage.setOperationName("Queue.AddListener");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeBoolean(initialFrame.content, REQUEST_INCLUDE_VALUE_FIELD_OFFSET, includeValue);
         encodeBoolean(initialFrame.content, REQUEST_LOCAL_ONLY_FIELD_OFFSET, localOnly);
         clientMessage.add(initialFrame);
@@ -131,6 +132,7 @@ public final class QueueAddListenerCodec {
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_ITEM_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, EVENT_ITEM_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeUUID(initialFrame.content, EVENT_ITEM_UUID_FIELD_OFFSET, uuid);
         encodeInt(initialFrame.content, EVENT_ITEM_EVENT_TYPE_FIELD_OFFSET, eventType);
         clientMessage.add(initialFrame);

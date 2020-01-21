@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a map configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("087bf0f7a21468170852c5bf570e0069")
+@Generated("962b837d2ba363306b8df413775cd50e")
 public final class DynamicConfigAddMapConfigCodec {
     //hex: 0x1B0C00
     public static final int REQUEST_MESSAGE_TYPE = 1772544;
@@ -212,6 +212,7 @@ public final class DynamicConfigAddMapConfigCodec {
         clientMessage.setOperationName("DynamicConfig.AddMapConfig");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeInt(initialFrame.content, REQUEST_BACKUP_COUNT_FIELD_OFFSET, backupCount);
         encodeInt(initialFrame.content, REQUEST_ASYNC_BACKUP_COUNT_FIELD_OFFSET, asyncBackupCount);
         encodeInt(initialFrame.content, REQUEST_TIME_TO_LIVE_SECONDS_FIELD_OFFSET, timeToLiveSeconds);

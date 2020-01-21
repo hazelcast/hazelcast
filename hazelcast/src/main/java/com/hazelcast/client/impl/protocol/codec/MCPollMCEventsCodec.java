@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Polls events available on member. Once read, events are removed from
  * member's internal queue.
  */
-@Generated("bb20a6527ceeb909ab9401ab3257e5b5")
+@Generated("fd9008fc4d686b8cd0a5b23bb2a3d616")
 public final class MCPollMCEventsCodec {
     //hex: 0x201800
     public static final int REQUEST_MESSAGE_TYPE = 2103296;
@@ -59,6 +59,7 @@ public final class MCPollMCEventsCodec {
         clientMessage.setOperationName("MC.PollMCEvents");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         return clientMessage;
     }

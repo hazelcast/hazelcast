@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Removes all of the elements from this list (optional operation). The list will be empty after this call returns.
  */
-@Generated("2118ee12073b56e6ae732f2b1fff10c2")
+@Generated("23a2b7ff158ce1abeaf0d5a2d7a819c0")
 public final class ListClearCodec {
     //hex: 0x050900
     public static final int REQUEST_MESSAGE_TYPE = 329984;
@@ -63,6 +63,7 @@ public final class ListClearCodec {
         clientMessage.setOperationName("List.Clear");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         return clientMessage;

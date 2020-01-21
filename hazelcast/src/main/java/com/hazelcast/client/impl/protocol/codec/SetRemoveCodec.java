@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns true if this set contained the element (or equivalently, if this set changed as a result of the call).
  * (This set will not contain the element once the call returns.)
  */
-@Generated("318849d7b2b4804edcdb2cfb0a1f4ba3")
+@Generated("4188a7b58549c11ecd38702f07288522")
 public final class SetRemoveCodec {
     //hex: 0x060500
     public static final int REQUEST_MESSAGE_TYPE = 394496;
@@ -71,6 +71,7 @@ public final class SetRemoveCodec {
         clientMessage.setOperationName("Set.Remove");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         DataCodec.encode(clientMessage, value);

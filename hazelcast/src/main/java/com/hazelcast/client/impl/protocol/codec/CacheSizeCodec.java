@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Total entry count
  */
-@Generated("ff0abdf74a3c4e3cdc7ba31201b129df")
+@Generated("5977c8036225977c8e6ee41ece21942c")
 public final class CacheSizeCodec {
     //hex: 0x131800
     public static final int REQUEST_MESSAGE_TYPE = 1251328;
@@ -64,6 +64,7 @@ public final class CacheSizeCodec {
         clientMessage.setOperationName("Cache.Size");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         return clientMessage;

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Remove item from transactional set.
  */
-@Generated("9820c7228909cf6d3d1f0df6d2679c4e")
+@Generated("306467eb73724c3e392f940174579405")
 public final class TransactionalSetRemoveCodec {
     //hex: 0x100200
     public static final int REQUEST_MESSAGE_TYPE = 1049088;
@@ -81,6 +81,7 @@ public final class TransactionalSetRemoveCodec {
         clientMessage.setOperationName("TransactionalSet.Remove");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeUUID(initialFrame.content, REQUEST_TXN_ID_FIELD_OFFSET, txnId);
         encodeLong(initialFrame.content, REQUEST_THREAD_ID_FIELD_OFFSET, threadId);
         clientMessage.add(initialFrame);

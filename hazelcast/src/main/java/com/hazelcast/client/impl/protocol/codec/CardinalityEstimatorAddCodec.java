@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Add a new hash in the estimation set. This is the method you want to
  * use to feed hash values into the estimator.
  */
-@Generated("26d648f5f5c263405f857f69354264dd")
+@Generated("781be84e36d1b948235c6bb3c2ab3c55")
 public final class CardinalityEstimatorAddCodec {
     //hex: 0x190100
     public static final int REQUEST_MESSAGE_TYPE = 1638656;
@@ -72,6 +72,7 @@ public final class CardinalityEstimatorAddCodec {
         clientMessage.setOperationName("CardinalityEstimator.Add");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeLong(initialFrame.content, REQUEST_HASH_FIELD_OFFSET, hash);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Checks if local MC config (client filter list) has the same ETag as provided.
  */
-@Generated("e72afe85f94a00892e36a4fa66542ec5")
+@Generated("c9b5a99f1909eb871fcde7334ab11cfa")
 public final class MCMatchMCConfigCodec {
     //hex: 0x200C00
     public static final int REQUEST_MESSAGE_TYPE = 2100224;
@@ -64,6 +64,7 @@ public final class MCMatchMCConfigCodec {
         clientMessage.setOperationName("MC.MatchMCConfig");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, eTag);
         return clientMessage;

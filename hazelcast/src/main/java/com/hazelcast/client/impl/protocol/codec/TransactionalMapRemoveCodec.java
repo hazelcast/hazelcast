@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * specified key once the call returns. The object to be removed will be accessible only in the current transaction
  * context until the transaction is committed.
  */
-@Generated("aec215497d83f7f4a17d4ef223bcba94")
+@Generated("35792315e768213c6b611a00fc07b822")
 public final class TransactionalMapRemoveCodec {
     //hex: 0x0E0B00
     public static final int REQUEST_MESSAGE_TYPE = 920320;
@@ -82,6 +82,7 @@ public final class TransactionalMapRemoveCodec {
         clientMessage.setOperationName("TransactionalMap.Remove");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeUUID(initialFrame.content, REQUEST_TXN_ID_FIELD_OFFSET, txnId);
         encodeLong(initialFrame.content, REQUEST_THREAD_ID_FIELD_OFFSET, threadId);
         clientMessage.add(initialFrame);

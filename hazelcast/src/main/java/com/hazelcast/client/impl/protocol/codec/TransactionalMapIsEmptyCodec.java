@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if this map contains no entries.
  */
-@Generated("95adcab06eefc5a67c32072a2b566999")
+@Generated("cf5a46aa6f8d647af90441e96a1f1f64")
 public final class TransactionalMapIsEmptyCodec {
     //hex: 0x0E0500
     public static final int REQUEST_MESSAGE_TYPE = 918784;
@@ -76,6 +76,7 @@ public final class TransactionalMapIsEmptyCodec {
         clientMessage.setOperationName("TransactionalMap.IsEmpty");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeUUID(initialFrame.content, REQUEST_TXN_ID_FIELD_OFFSET, txnId);
         encodeLong(initialFrame.content, REQUEST_THREAD_ID_FIELD_OFFSET, threadId);
         clientMessage.add(initialFrame);

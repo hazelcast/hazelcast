@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Increases or decreases the number of permits by the given value.
  */
-@Generated("2bacb926e86b56d7c8775bf3fa49e0e5")
+@Generated("5fabffa82493dd68939cfeb4a331b4b1")
 public final class SemaphoreChangeCodec {
     //hex: 0x0C0500
     public static final int REQUEST_MESSAGE_TYPE = 787712;
@@ -93,6 +93,7 @@ public final class SemaphoreChangeCodec {
         clientMessage.setOperationName("Semaphore.Change");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeLong(initialFrame.content, REQUEST_SESSION_ID_FIELD_OFFSET, sessionId);
         encodeLong(initialFrame.content, REQUEST_THREAD_ID_FIELD_OFFSET, threadId);
         encodeUUID(initialFrame.content, REQUEST_INVOCATION_UID_FIELD_OFFSET, invocationUid);

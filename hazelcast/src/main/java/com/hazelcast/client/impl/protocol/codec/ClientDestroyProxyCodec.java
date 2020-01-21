@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Destroys the proxy given by its name cluster-wide. Also, clears and releases all resources of this proxy.
  */
-@Generated("906bfd2dfd41fffa61565dce297a1c1f")
+@Generated("ff7360e866faa9b8866f10e663c5ab98")
 public final class ClientDestroyProxyCodec {
     //hex: 0x000500
     public static final int REQUEST_MESSAGE_TYPE = 1280;
@@ -83,6 +83,7 @@ public final class ClientDestroyProxyCodec {
         clientMessage.setOperationName("Client.DestroyProxy");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         StringCodec.encode(clientMessage, serviceName);

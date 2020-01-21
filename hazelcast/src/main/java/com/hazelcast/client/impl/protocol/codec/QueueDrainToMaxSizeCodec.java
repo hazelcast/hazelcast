@@ -40,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * ILLEGAL_ARGUMENT. Further, the behavior of this operation is undefined if the specified collection is
  * modified while the operation is in progress.
  */
-@Generated("fdbda96bcf96a665aa3daecc43d5bf72")
+@Generated("d25543d7f900698bccd49e0243c6ab43")
 public final class QueueDrainToMaxSizeCodec {
     //hex: 0x030A00
     public static final int REQUEST_MESSAGE_TYPE = 199168;
@@ -73,6 +73,7 @@ public final class QueueDrainToMaxSizeCodec {
         clientMessage.setOperationName("Queue.DrainToMaxSize");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeInt(initialFrame.content, REQUEST_MAX_SIZE_FIELD_OFFSET, maxSize);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);

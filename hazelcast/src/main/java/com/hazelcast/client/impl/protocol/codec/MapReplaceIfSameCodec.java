@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Replaces the the entry for a key only if existing values equal to the testValue
  */
-@Generated("c55b5c7cf93c65f0e40c383e74b16300")
+@Generated("e0c1d707dfa6166aeaf5fa7776286c02")
 public final class MapReplaceIfSameCodec {
     //hex: 0x010500
     public static final int REQUEST_MESSAGE_TYPE = 66816;
@@ -85,6 +85,7 @@ public final class MapReplaceIfSameCodec {
         clientMessage.setOperationName("Map.ReplaceIfSame");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeLong(initialFrame.content, REQUEST_THREAD_ID_FIELD_OFFSET, threadId);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);

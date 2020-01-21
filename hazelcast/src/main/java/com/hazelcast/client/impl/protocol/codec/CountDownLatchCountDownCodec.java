@@ -40,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * re-enabled for thread scheduling purposes, and Countdown owner is set to
  * null. If the current count equals zero, then nothing happens.
  */
-@Generated("bb380c093e78d0d0a413403d189f2a7f")
+@Generated("9cccb81e97441e5f2b5374a841307ff0")
 public final class CountDownLatchCountDownCodec {
     //hex: 0x0B0300
     public static final int REQUEST_MESSAGE_TYPE = 721664;
@@ -84,6 +84,7 @@ public final class CountDownLatchCountDownCodec {
         clientMessage.setOperationName("CountDownLatch.CountDown");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeUUID(initialFrame.content, REQUEST_INVOCATION_UID_FIELD_OFFSET, invocationUid);
         encodeInt(initialFrame.content, REQUEST_EXPECTED_ROUND_FIELD_OFFSET, expectedRound);
         clientMessage.add(initialFrame);

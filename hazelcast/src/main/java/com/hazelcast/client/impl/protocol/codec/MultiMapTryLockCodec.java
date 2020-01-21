@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * and lies dormant until one of two things happens:the lock is acquired by the current thread, or the specified
  * waiting time elapses.
  */
-@Generated("028f66f5420dcf7fd0ad9e25b72eec7c")
+@Generated("087f56c8aac7e5838b9b9714ecc70e5b")
 public final class MultiMapTryLockCodec {
     //hex: 0x021100
     public static final int REQUEST_MESSAGE_TYPE = 135424;
@@ -96,6 +96,7 @@ public final class MultiMapTryLockCodec {
         clientMessage.setOperationName("MultiMap.TryLock");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeLong(initialFrame.content, REQUEST_THREAD_ID_FIELD_OFFSET, threadId);
         encodeLong(initialFrame.content, REQUEST_LEASE_FIELD_OFFSET, lease);
         encodeLong(initialFrame.content, REQUEST_TIMEOUT_FIELD_OFFSET, timeout);

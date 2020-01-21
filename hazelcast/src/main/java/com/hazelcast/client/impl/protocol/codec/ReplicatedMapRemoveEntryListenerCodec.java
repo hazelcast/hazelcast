@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Removes the specified entry listener. If there is no such listener added before, this call does no change in the
  * cluster and returns false.
  */
-@Generated("8b26872f030dd8c8b468dcf39121fed6")
+@Generated("96b8c40c99e142cfe32e20572c46735d")
 public final class ReplicatedMapRemoveEntryListenerCodec {
     //hex: 0x0D0E00
     public static final int REQUEST_MESSAGE_TYPE = 855552;
@@ -71,6 +71,7 @@ public final class ReplicatedMapRemoveEntryListenerCodec {
         clientMessage.setOperationName("ReplicatedMap.RemoveEntryListener");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeUUID(initialFrame.content, REQUEST_REGISTRATION_ID_FIELD_OFFSET, registrationId);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);

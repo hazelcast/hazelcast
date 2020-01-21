@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Atomically sets the given value and returns the old value.
  */
-@Generated("9da9c035f0ecc2f9fc89d1bf576ee056")
+@Generated("06554919a1b5e8ea49daf8aad02a0419")
 public final class AtomicLongGetAndSetCodec {
     //hex: 0x090700
     public static final int REQUEST_MESSAGE_TYPE = 591616;
@@ -75,6 +75,7 @@ public final class AtomicLongGetAndSetCodec {
         clientMessage.setOperationName("AtomicLong.GetAndSet");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeLong(initialFrame.content, REQUEST_NEW_VALUE_FIELD_OFFSET, newValue);
         clientMessage.add(initialFrame);
         RaftGroupIdCodec.encode(clientMessage, groupId);

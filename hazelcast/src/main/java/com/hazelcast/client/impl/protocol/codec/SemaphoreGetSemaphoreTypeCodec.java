@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if the semaphore is JDK compatible
  */
-@Generated("c5395859679ad24f9400ddce19a1df91")
+@Generated("f0b1a0363dd09599d853a6610ab58b3b")
 public final class SemaphoreGetSemaphoreTypeCodec {
     //hex: 0x0C0700
     public static final int REQUEST_MESSAGE_TYPE = 788224;
@@ -64,6 +64,7 @@ public final class SemaphoreGetSemaphoreTypeCodec {
         clientMessage.setOperationName("Semaphore.GetSemaphoreType");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, proxyName);
         return clientMessage;

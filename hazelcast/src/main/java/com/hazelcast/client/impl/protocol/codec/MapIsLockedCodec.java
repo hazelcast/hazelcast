@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Checks the lock for the specified key.If the lock is acquired then returns true, else returns false.
  */
-@Generated("b4617c787c173de62f35484d9d5d8554")
+@Generated("306071f9db7b2ab1e92edc63a77973c7")
 public final class MapIsLockedCodec {
     //hex: 0x011200
     public static final int REQUEST_MESSAGE_TYPE = 70144;
@@ -69,6 +69,7 @@ public final class MapIsLockedCodec {
         clientMessage.setOperationName("Map.IsLocked");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         DataCodec.encode(clientMessage, key);

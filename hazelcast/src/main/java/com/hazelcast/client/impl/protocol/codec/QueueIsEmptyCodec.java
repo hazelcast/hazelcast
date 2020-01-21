@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if this collection contains no elements.
  */
-@Generated("8468ac3b5fcf74e5349a21cb505197d9")
+@Generated("924d87b6a853aac5d5d9499a25111dd0")
 public final class QueueIsEmptyCodec {
     //hex: 0x031400
     public static final int REQUEST_MESSAGE_TYPE = 201728;
@@ -64,6 +64,7 @@ public final class QueueIsEmptyCodec {
         clientMessage.setOperationName("Queue.IsEmpty");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         return clientMessage;

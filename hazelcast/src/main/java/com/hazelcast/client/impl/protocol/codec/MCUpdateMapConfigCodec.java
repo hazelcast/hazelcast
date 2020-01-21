@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Updates the config of a map on the member it's called on.
  */
-@Generated("6b0a1bbab50c66e22e8064227d5b7171")
+@Generated("89b21beb7a16c273e70bdd938dbdde2b")
 public final class MCUpdateMapConfigCodec {
     //hex: 0x200400
     public static final int REQUEST_MESSAGE_TYPE = 2098176;
@@ -113,6 +113,7 @@ public final class MCUpdateMapConfigCodec {
         clientMessage.setOperationName("MC.UpdateMapConfig");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeInt(initialFrame.content, REQUEST_TIME_TO_LIVE_SECONDS_FIELD_OFFSET, timeToLiveSeconds);
         encodeInt(initialFrame.content, REQUEST_MAX_IDLE_SECONDS_FIELD_OFFSET, maxIdleSeconds);
         encodeInt(initialFrame.content, REQUEST_EVICTION_POLICY_FIELD_OFFSET, evictionPolicy);

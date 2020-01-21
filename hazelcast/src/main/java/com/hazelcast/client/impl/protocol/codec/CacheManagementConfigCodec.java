@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Enables or disables the statistics or the management support for the
  * cache with the given name on a member with the given address.
  */
-@Generated("f5ade046cbdf90a218cce28ea2a51d26")
+@Generated("f13e14917ea02c478ed3fdbfc985bfc9")
 public final class CacheManagementConfigCodec {
     //hex: 0x131100
     public static final int REQUEST_MESSAGE_TYPE = 1249536;
@@ -82,6 +82,7 @@ public final class CacheManagementConfigCodec {
         clientMessage.setOperationName("Cache.ManagementConfig");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeBoolean(initialFrame.content, REQUEST_IS_STAT_FIELD_OFFSET, isStat);
         encodeBoolean(initialFrame.content, REQUEST_ENABLED_FIELD_OFFSET, enabled);
         encodeUUID(initialFrame.content, REQUEST_UUID_FIELD_OFFSET, uuid);

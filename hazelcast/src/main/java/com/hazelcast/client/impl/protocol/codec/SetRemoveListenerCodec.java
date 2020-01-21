@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Removes the specified item listener. If there is no such listener added before, this call does no change in the
  * cluster and returns false.
  */
-@Generated("d69ab58a30fd5ad83b87078e32a1d68e")
+@Generated("d39b7065098e4fb8b3c95f4f9bff8444")
 public final class SetRemoveListenerCodec {
     //hex: 0x060C00
     public static final int REQUEST_MESSAGE_TYPE = 396288;
@@ -71,6 +71,7 @@ public final class SetRemoveListenerCodec {
         clientMessage.setOperationName("Set.RemoveListener");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeUUID(initialFrame.content, REQUEST_REGISTRATION_ID_FIELD_OFFSET, registrationId);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);

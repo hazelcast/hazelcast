@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a replicated map configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("707a9a6013f0e0abdebf938db747d63c")
+@Generated("eae6c6cb845152dcbba5e6d4556417ab")
 public final class DynamicConfigAddReplicatedMapConfigCodec {
     //hex: 0x1B0600
     public static final int REQUEST_MESSAGE_TYPE = 1771008;
@@ -109,6 +109,7 @@ public final class DynamicConfigAddReplicatedMapConfigCodec {
         clientMessage.setOperationName("DynamicConfig.AddReplicatedMapConfig");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeBoolean(initialFrame.content, REQUEST_ASYNC_FILLUP_FIELD_OFFSET, asyncFillup);
         encodeBoolean(initialFrame.content, REQUEST_STATISTICS_ENABLED_FIELD_OFFSET, statisticsEnabled);
         encodeInt(initialFrame.content, REQUEST_MERGE_BATCH_SIZE_FIELD_OFFSET, mergeBatchSize);

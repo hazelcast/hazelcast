@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Dispose the task from the scheduler
  */
-@Generated("dfed7b5c5828b833635b347777d2d958")
+@Generated("c2c49774b6fa29810169de9bf542d4ce")
 public final class ScheduledExecutorDisposeFromMemberCodec {
     //hex: 0x1A1200
     public static final int REQUEST_MESSAGE_TYPE = 1708544;
@@ -74,6 +74,7 @@ public final class ScheduledExecutorDisposeFromMemberCodec {
         clientMessage.setOperationName("ScheduledExecutor.DisposeFromMember");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeUUID(initialFrame.content, REQUEST_MEMBER_UUID_FIELD_OFFSET, memberUuid);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, schedulerName);

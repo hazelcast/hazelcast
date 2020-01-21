@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * v in the specified map. The behavior of this operation is undefined if the specified map is modified while the
  * operation is in progress.
  */
-@Generated("40c0abcacd1c37427d8714f3309d90e4")
+@Generated("f61ff98bf916599f3fc0782dbcf93de6")
 public final class ReplicatedMapPutAllCodec {
     //hex: 0x0D0800
     public static final int REQUEST_MESSAGE_TYPE = 854016;
@@ -71,6 +71,7 @@ public final class ReplicatedMapPutAllCodec {
         clientMessage.setOperationName("ReplicatedMap.PutAll");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         EntryListCodec.encode(clientMessage, entries, DataCodec::encode, DataCodec::encode);

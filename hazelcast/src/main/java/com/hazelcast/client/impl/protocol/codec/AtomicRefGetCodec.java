@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets the current value.
  */
-@Generated("1fa273900544f7fc85dda08749d57264")
+@Generated("1d9870379eeb8c4ebd9616dc007594e8")
 public final class AtomicRefGetCodec {
     //hex: 0x0A0400
     public static final int REQUEST_MESSAGE_TYPE = 656384;
@@ -68,6 +68,7 @@ public final class AtomicRefGetCodec {
         clientMessage.setOperationName("AtomicRef.Get");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         RaftGroupIdCodec.encode(clientMessage, groupId);
         StringCodec.encode(clientMessage, name);

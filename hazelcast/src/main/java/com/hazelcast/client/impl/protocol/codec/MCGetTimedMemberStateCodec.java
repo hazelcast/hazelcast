@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets the latest TimedMemberState of the member it's called on.
  */
-@Generated("4f974dc755899b334ee5a71d215f2d20")
+@Generated("335c3f21f399ea04e62a45ecfec8416a")
 public final class MCGetTimedMemberStateCodec {
     //hex: 0x200B00
     public static final int REQUEST_MESSAGE_TYPE = 2099968;
@@ -58,6 +58,7 @@ public final class MCGetTimedMemberStateCodec {
         clientMessage.setOperationName("MC.GetTimedMemberState");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         return clientMessage;
     }

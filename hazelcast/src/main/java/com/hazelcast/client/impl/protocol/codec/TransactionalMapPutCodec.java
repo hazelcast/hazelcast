@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * the key, the old value is replaced by the specified value. The object to be put will be accessible only in the
  * current transaction context till transaction is committed.
  */
-@Generated("c0bc05bcbe5ceef1ab7d481502aa0196")
+@Generated("bfe85a394e69599a40e113b82c348830")
 public final class TransactionalMapPutCodec {
     //hex: 0x0E0600
     public static final int REQUEST_MESSAGE_TYPE = 919040;
@@ -93,6 +93,7 @@ public final class TransactionalMapPutCodec {
         clientMessage.setOperationName("TransactionalMap.Put");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeUUID(initialFrame.content, REQUEST_TXN_ID_FIELD_OFFSET, txnId);
         encodeLong(initialFrame.content, REQUEST_THREAD_ID_FIELD_OFFSET, threadId);
         encodeLong(initialFrame.content, REQUEST_TTL_FIELD_OFFSET, ttl);

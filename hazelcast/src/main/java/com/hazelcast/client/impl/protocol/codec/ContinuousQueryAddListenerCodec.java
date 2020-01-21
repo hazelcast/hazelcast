@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds a listener to be notified for the events fired on the underlying map on all nodes.
  */
-@Generated("ecc7d2fc98fb5947fb48d76573f0f974")
+@Generated("1746ca9afe2a7659497473f92fb58124")
 public final class ContinuousQueryAddListenerCodec {
     //hex: 0x160400
     public static final int REQUEST_MESSAGE_TYPE = 1442816;
@@ -78,6 +78,7 @@ public final class ContinuousQueryAddListenerCodec {
         clientMessage.setOperationName("ContinuousQuery.AddListener");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeBoolean(initialFrame.content, REQUEST_LOCAL_ONLY_FIELD_OFFSET, localOnly);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, listenerName);
@@ -125,6 +126,7 @@ public final class ContinuousQueryAddListenerCodec {
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_QUERY_CACHE_SINGLE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, EVENT_QUERY_CACHE_SINGLE_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
 
         QueryCacheEventDataCodec.encode(clientMessage, data);
@@ -135,6 +137,7 @@ public final class ContinuousQueryAddListenerCodec {
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_QUERY_CACHE_BATCH_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, EVENT_QUERY_CACHE_BATCH_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeInt(initialFrame.content, EVENT_QUERY_CACHE_BATCH_PARTITION_ID_FIELD_OFFSET, partitionId);
         clientMessage.add(initialFrame);
 

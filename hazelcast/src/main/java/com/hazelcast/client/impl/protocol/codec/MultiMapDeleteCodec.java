@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Removes all the entries with the given key.
  */
-@Generated("afacaa4b53928831c885d6ecf98ea354")
+@Generated("05a82b681611f424a765dfb8474db6a6")
 public final class MultiMapDeleteCodec {
     //hex: 0x021600
     public static final int REQUEST_MESSAGE_TYPE = 136704;
@@ -74,6 +74,7 @@ public final class MultiMapDeleteCodec {
         clientMessage.setOperationName("MultiMap.Delete");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeLong(initialFrame.content, REQUEST_THREAD_ID_FIELD_OFFSET, threadId);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);

@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds an entry listener for this multimap. The listener will be notified for all multimap add/remove/update/evict events.
  */
-@Generated("4abe5eb3291b2246753dd0febe9acd33")
+@Generated("604162a6d546594c87d091886dd0ae0d")
 public final class MultiMapAddEntryListenerCodec {
     //hex: 0x020E00
     public static final int REQUEST_MESSAGE_TYPE = 134656;
@@ -83,6 +83,7 @@ public final class MultiMapAddEntryListenerCodec {
         clientMessage.setOperationName("MultiMap.AddEntryListener");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeBoolean(initialFrame.content, REQUEST_INCLUDE_VALUE_FIELD_OFFSET, includeValue);
         encodeBoolean(initialFrame.content, REQUEST_LOCAL_ONLY_FIELD_OFFSET, localOnly);
         clientMessage.add(initialFrame);
@@ -132,6 +133,7 @@ public final class MultiMapAddEntryListenerCodec {
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_ENTRY_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, EVENT_ENTRY_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeInt(initialFrame.content, EVENT_ENTRY_EVENT_TYPE_FIELD_OFFSET, eventType);
         encodeUUID(initialFrame.content, EVENT_ENTRY_UUID_FIELD_OFFSET, uuid);
         encodeInt(initialFrame.content, EVENT_ENTRY_NUMBER_OF_AFFECTED_ENTRIES_FIELD_OFFSET, numberOfAffectedEntries);

@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If the count is not zero, then this method does nothing
  * and returns false
  */
-@Generated("af795db3c3c13fd009c79f679969a536")
+@Generated("c9236e41953069b22e5edfef7aadfca3")
 public final class CountDownLatchTrySetCountCodec {
     //hex: 0x0B0100
     public static final int REQUEST_MESSAGE_TYPE = 721152;
@@ -78,6 +78,7 @@ public final class CountDownLatchTrySetCountCodec {
         clientMessage.setOperationName("CountDownLatch.TrySetCount");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeInt(initialFrame.content, REQUEST_COUNT_FIELD_OFFSET, count);
         clientMessage.add(initialFrame);
         RaftGroupIdCodec.encode(clientMessage, groupId);

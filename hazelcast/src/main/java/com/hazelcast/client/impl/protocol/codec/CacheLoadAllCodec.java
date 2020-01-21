@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Loads all the keys into the CacheRecordStore in batch.
  */
-@Generated("08f16b3ca09c6a2cf2c4e9216bd2a2b0")
+@Generated("e81c25247a394cf761c3de9d35d58734")
 public final class CacheLoadAllCodec {
     //hex: 0x131000
     public static final int REQUEST_MESSAGE_TYPE = 1249280;
@@ -75,6 +75,7 @@ public final class CacheLoadAllCodec {
         clientMessage.setOperationName("Cache.LoadAll");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeBoolean(initialFrame.content, REQUEST_REPLACE_EXISTING_VALUES_FIELD_OFFSET, replaceExistingValues);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);

@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds a partition lost listener to the cluster.
  */
-@Generated("111937123eb253a911c14b8e0c15a3e7")
+@Generated("c388676eba05333440c7406e0e360a0a")
 public final class ClientAddPartitionLostListenerCodec {
     //hex: 0x000600
     public static final int REQUEST_MESSAGE_TYPE = 1536;
@@ -73,6 +73,7 @@ public final class ClientAddPartitionLostListenerCodec {
         clientMessage.setOperationName("Client.AddPartitionLostListener");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeBoolean(initialFrame.content, REQUEST_LOCAL_ONLY_FIELD_OFFSET, localOnly);
         clientMessage.add(initialFrame);
         return clientMessage;
@@ -118,6 +119,7 @@ public final class ClientAddPartitionLostListenerCodec {
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_PARTITION_LOST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, EVENT_PARTITION_LOST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeInt(initialFrame.content, EVENT_PARTITION_LOST_PARTITION_ID_FIELD_OFFSET, partitionId);
         encodeInt(initialFrame.content, EVENT_PARTITION_LOST_LOST_BACKUP_COUNT_FIELD_OFFSET, lostBackupCount);
         encodeUUID(initialFrame.content, EVENT_PARTITION_LOST_SOURCE_FIELD_OFFSET, source);

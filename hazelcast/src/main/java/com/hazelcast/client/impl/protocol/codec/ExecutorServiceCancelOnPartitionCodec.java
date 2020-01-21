@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Cancels the task running on the member that owns the partition with the given id.
  */
-@Generated("d704ec67c5f5d05b6cedcd0ac603bf00")
+@Generated("9b655da886fa5599da818d15a8f0145e")
 public final class ExecutorServiceCancelOnPartitionCodec {
     //hex: 0x080300
     public static final int REQUEST_MESSAGE_TYPE = 525056;
@@ -71,6 +71,7 @@ public final class ExecutorServiceCancelOnPartitionCodec {
         clientMessage.setOperationName("ExecutorService.CancelOnPartition");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeUUID(initialFrame.content, REQUEST_UUID_FIELD_OFFSET, uuid);
         encodeBoolean(initialFrame.content, REQUEST_INTERRUPT_FIELD_OFFSET, interrupt);
         clientMessage.add(initialFrame);

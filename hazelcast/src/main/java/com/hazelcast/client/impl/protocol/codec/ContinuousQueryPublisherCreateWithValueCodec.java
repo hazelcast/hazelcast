@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Creates a publisher that includes value for the cache events it sends.
  */
-@Generated("591430714e25c5e2d9fe0d7431c0229c")
+@Generated("6fdea62719aff17ee29bd73579545378")
 public final class ContinuousQueryPublisherCreateWithValueCodec {
     //hex: 0x160100
     public static final int REQUEST_MESSAGE_TYPE = 1442048;
@@ -104,6 +104,7 @@ public final class ContinuousQueryPublisherCreateWithValueCodec {
         clientMessage.setOperationName("ContinuousQuery.PublisherCreateWithValue");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeInt(initialFrame.content, REQUEST_BATCH_SIZE_FIELD_OFFSET, batchSize);
         encodeInt(initialFrame.content, REQUEST_BUFFER_SIZE_FIELD_OFFSET, bufferSize);
         encodeLong(initialFrame.content, REQUEST_DELAY_SECONDS_FIELD_OFFSET, delaySeconds);

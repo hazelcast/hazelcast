@@ -42,7 +42,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * IMPORTANT: Listeners registered from HazelcastClient may miss some of the map partition lost events due
  * to design limitations.
  */
-@Generated("4c8f94ee2f9ddf2cafece2a79b92ee77")
+@Generated("0f61d3ed5093dd6628560965b464f2e7")
 public final class MapAddPartitionLostListenerCodec {
     //hex: 0x011B00
     public static final int REQUEST_MESSAGE_TYPE = 72448;
@@ -81,6 +81,7 @@ public final class MapAddPartitionLostListenerCodec {
         clientMessage.setOperationName("Map.AddPartitionLostListener");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeBoolean(initialFrame.content, REQUEST_LOCAL_ONLY_FIELD_OFFSET, localOnly);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
@@ -128,6 +129,7 @@ public final class MapAddPartitionLostListenerCodec {
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_MAP_PARTITION_LOST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, EVENT_MAP_PARTITION_LOST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeInt(initialFrame.content, EVENT_MAP_PARTITION_LOST_PARTITION_ID_FIELD_OFFSET, partitionId);
         encodeUUID(initialFrame.content, EVENT_MAP_PARTITION_LOST_UUID_FIELD_OFFSET, uuid);
         clientMessage.add(initialFrame);

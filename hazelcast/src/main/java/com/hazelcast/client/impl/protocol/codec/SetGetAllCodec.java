@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Return the all elements of this collection
  */
-@Generated("9b10ed5c604956b95df6736fd8f40463")
+@Generated("4ad7a1ee32b59d45054ab4440ca4c957")
 public final class SetGetAllCodec {
     //hex: 0x060A00
     public static final int REQUEST_MESSAGE_TYPE = 395776;
@@ -63,6 +63,7 @@ public final class SetGetAllCodec {
         clientMessage.setOperationName("Set.GetAll");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         return clientMessage;

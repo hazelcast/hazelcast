@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Removes all of the elements from this set (optional operation). The set will be empty after this call returns.
  */
-@Generated("1cadbf02723b6f20b309b6fd5f8074ac")
+@Generated("4afa4b5ac39e474b6a48d9ac07d420cd")
 public final class SetClearCodec {
     //hex: 0x060900
     public static final int REQUEST_MESSAGE_TYPE = 395520;
@@ -63,6 +63,7 @@ public final class SetClearCodec {
         clientMessage.setOperationName("Set.Clear");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         return clientMessage;

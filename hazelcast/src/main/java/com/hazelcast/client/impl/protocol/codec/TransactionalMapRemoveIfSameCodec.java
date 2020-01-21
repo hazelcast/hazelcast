@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Removes the entry for a key only if currently mapped to a given value. The object to be removed will be removed
  * from only the current transaction context until the transaction is committed.
  */
-@Generated("a9d6a4d5c4096a52383d56cb6beb56ef")
+@Generated("10e4d68d28f385aec7cf32f79115edb8")
 public final class TransactionalMapRemoveIfSameCodec {
     //hex: 0x0E0D00
     public static final int REQUEST_MESSAGE_TYPE = 920832;
@@ -87,6 +87,7 @@ public final class TransactionalMapRemoveIfSameCodec {
         clientMessage.setOperationName("TransactionalMap.RemoveIfSame");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeUUID(initialFrame.content, REQUEST_TXN_ID_FIELD_OFFSET, txnId);
         encodeLong(initialFrame.content, REQUEST_THREAD_ID_FIELD_OFFSET, threadId);
         clientMessage.add(initialFrame);

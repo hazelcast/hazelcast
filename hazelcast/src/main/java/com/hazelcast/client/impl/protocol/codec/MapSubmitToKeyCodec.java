@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * representing that task.EntryProcessor is not cancellable, so calling Future.cancel() method won't cancel the
  * operation of EntryProcessor.
  */
-@Generated("65f70aa65c9fb25bc359f889c0405e8d")
+@Generated("8e88f4a5203c1a4024bd2a5b82aca89e")
 public final class MapSubmitToKeyCodec {
     //hex: 0x012F00
     public static final int REQUEST_MESSAGE_TYPE = 77568;
@@ -81,6 +81,7 @@ public final class MapSubmitToKeyCodec {
         clientMessage.setOperationName("Map.SubmitToKey");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeLong(initialFrame.content, REQUEST_THREAD_ID_FIELD_OFFSET, threadId);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);

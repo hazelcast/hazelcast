@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Promotes the lite member it's called on to a data member.
  */
-@Generated("b252e62609e30997baea5da269b6cc85")
+@Generated("8d666ce6a1cd3b15cd821c1280bcdc56")
 public final class MCPromoteLiteMemberCodec {
     //hex: 0x200900
     public static final int REQUEST_MESSAGE_TYPE = 2099456;
@@ -58,6 +58,7 @@ public final class MCPromoteLiteMemberCodec {
         clientMessage.setOperationName("MC.PromoteLiteMember");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         return clientMessage;
     }

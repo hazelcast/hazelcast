@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if this executor has been shut down.
  */
-@Generated("623afd520a68990d0db1ad1fdcd6294d")
+@Generated("aaa9a2b1d12c80e4274cf80fa731beb0")
 public final class DurableExecutorIsShutdownCodec {
     //hex: 0x180200
     public static final int REQUEST_MESSAGE_TYPE = 1573376;
@@ -64,6 +64,7 @@ public final class DurableExecutorIsShutdownCodec {
         clientMessage.setOperationName("DurableExecutor.IsShutdown");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         return clientMessage;

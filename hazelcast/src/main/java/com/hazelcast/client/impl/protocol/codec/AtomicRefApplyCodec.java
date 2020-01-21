@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Applies a function on the value
  */
-@Generated("9f92e9f887a19d6797b0ad7880930591")
+@Generated("5001b110860ae419ce9fa0a223155480")
 public final class AtomicRefApplyCodec {
     //hex: 0x0A0100
     public static final int REQUEST_MESSAGE_TYPE = 655616;
@@ -87,6 +87,7 @@ public final class AtomicRefApplyCodec {
         clientMessage.setOperationName("AtomicRef.Apply");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeInt(initialFrame.content, REQUEST_RETURN_VALUE_TYPE_FIELD_OFFSET, returnValueType);
         encodeBoolean(initialFrame.content, REQUEST_ALTER_FIELD_OFFSET, alter);
         clientMessage.add(initialFrame);

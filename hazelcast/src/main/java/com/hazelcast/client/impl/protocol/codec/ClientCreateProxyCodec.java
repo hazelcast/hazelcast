@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Creates a cluster-wide proxy with the given name and service.
  */
-@Generated("cc821927676ec32a1e8455093c3b67a9")
+@Generated("cdf359635efe8763e87e744b2036a6ac")
 public final class ClientCreateProxyCodec {
     //hex: 0x000400
     public static final int REQUEST_MESSAGE_TYPE = 1024;
@@ -83,6 +83,7 @@ public final class ClientCreateProxyCodec {
         clientMessage.setOperationName("Client.CreateProxy");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         StringCodec.encode(clientMessage, serviceName);

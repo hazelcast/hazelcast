@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Each item is a Map.Entry<String, byte[]> in the list.
  * key of entry is full class name, and byte[] is the class definition.
  */
-@Generated("d64fe00a8f47c54b2edeb12852568fe3")
+@Generated("f8c8ce291fb75fb37a8f859816f7a1e8")
 public final class ClientDeployClassesCodec {
     //hex: 0x000D00
     public static final int REQUEST_MESSAGE_TYPE = 3328;
@@ -65,6 +65,7 @@ public final class ClientDeployClassesCodec {
         clientMessage.setOperationName("Client.DeployClasses");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         EntryListCodec.encode(clientMessage, classDefinitions, StringCodec::encode, ByteArrayCodec::encode);
         return clientMessage;

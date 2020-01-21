@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns the value for the specified key, or null if this map does not contain this key.
  */
-@Generated("d6c154176ea7463a0cde492b50f2843b")
+@Generated("8db23ce14d5cbecb4dfee5cbb05392b2")
 public final class TransactionalMapGetCodec {
     //hex: 0x0E0200
     public static final int REQUEST_MESSAGE_TYPE = 918016;
@@ -80,6 +80,7 @@ public final class TransactionalMapGetCodec {
         clientMessage.setOperationName("TransactionalMap.Get");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeUUID(initialFrame.content, REQUEST_TXN_ID_FIELD_OFFSET, txnId);
         encodeLong(initialFrame.content, REQUEST_THREAD_ID_FIELD_OFFSET, threadId);
         clientMessage.add(initialFrame);

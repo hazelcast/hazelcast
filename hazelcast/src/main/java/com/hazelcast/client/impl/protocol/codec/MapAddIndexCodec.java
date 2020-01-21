@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds an index to this map with specified configuration.
  */
-@Generated("286f1a63d54860ae751537c01c3a74a5")
+@Generated("3f3473765b5af0c3d2912a3b7e674700")
 public final class MapAddIndexCodec {
     //hex: 0x012900
     public static final int REQUEST_MESSAGE_TYPE = 76032;
@@ -68,6 +68,7 @@ public final class MapAddIndexCodec {
         clientMessage.setOperationName("Map.AddIndex");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         IndexConfigCodec.encode(clientMessage, indexConfig);

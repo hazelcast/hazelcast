@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns the element at the specified position in this list
  */
-@Generated("41f051a2cee6b44b0552c76572c9db22")
+@Generated("d94e13450dbbc26317272b225ae837ba")
 public final class ListGetCodec {
     //hex: 0x050F00
     public static final int REQUEST_MESSAGE_TYPE = 331520;
@@ -69,6 +69,7 @@ public final class ListGetCodec {
         clientMessage.setOperationName("List.Get");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeInt(initialFrame.content, REQUEST_INDEX_FIELD_OFFSET, index);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns the capacity of this Ringbuffer.
  */
-@Generated("f0ff872064e06c50b80430c55375b42c")
+@Generated("155d9eea446e7c2c1b7341f584490e0c")
 public final class RingbufferCapacityCodec {
     //hex: 0x170400
     public static final int REQUEST_MESSAGE_TYPE = 1508352;
@@ -64,6 +64,7 @@ public final class RingbufferCapacityCodec {
         clientMessage.setOperationName("Ringbuffer.Capacity");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         return clientMessage;

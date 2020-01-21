@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * (This implies that the behavior of this call is undefined if the specified collection is this collection,
  * and this collection is nonempty.)
  */
-@Generated("4f350000cf8744374ffb350215bfd3f5")
+@Generated("ac630c33962ab45cb396039d8f526bd2")
 public final class QueueAddAllCodec {
     //hex: 0x031000
     public static final int REQUEST_MESSAGE_TYPE = 200704;
@@ -72,6 +72,7 @@ public final class QueueAddAllCodec {
         clientMessage.setOperationName("Queue.AddAll");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         ListMultiFrameCodec.encode(clientMessage, dataList, DataCodec::encode);

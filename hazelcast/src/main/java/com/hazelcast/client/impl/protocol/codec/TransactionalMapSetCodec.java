@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * if the old value is not needed.
  * The object to be set will be accessible only in the current transaction context until the transaction is committed.
  */
-@Generated("59bfc4bcbdc342fbfbd23b4060c0b2af")
+@Generated("c3d44943a04906f49907649049b64a5a")
 public final class TransactionalMapSetCodec {
     //hex: 0x0E0700
     public static final int REQUEST_MESSAGE_TYPE = 919296;
@@ -88,6 +88,7 @@ public final class TransactionalMapSetCodec {
         clientMessage.setOperationName("TransactionalMap.Set");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeUUID(initialFrame.content, REQUEST_TXN_ID_FIELD_OFFSET, txnId);
         encodeLong(initialFrame.content, REQUEST_THREAD_ID_FIELD_OFFSET, threadId);
         clientMessage.add(initialFrame);

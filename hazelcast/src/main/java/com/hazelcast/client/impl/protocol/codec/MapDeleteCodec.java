@@ -41,7 +41,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * This method breaks the contract of EntryListener. When an entry is removed by delete(), it fires an EntryEvent
  * with a null oldValue. Also, a listener with predicates will have null values, so only keys can be queried via predicates
  */
-@Generated("dccfa1de989a69c20c6605be9f6cdd26")
+@Generated("524d598e5c3209bdd7a7a959b428cab0")
 public final class MapDeleteCodec {
     //hex: 0x010900
     public static final int REQUEST_MESSAGE_TYPE = 67840;
@@ -79,6 +79,7 @@ public final class MapDeleteCodec {
         clientMessage.setOperationName("Map.Delete");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeLong(initialFrame.content, REQUEST_THREAD_ID_FIELD_OFFSET, threadId);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);

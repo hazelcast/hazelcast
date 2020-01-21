@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns the size of the list
  */
-@Generated("a985d95caa9481adc279bd715ae2fbae")
+@Generated("bb0b42d82674fc6bd85826ae7a54f8eb")
 public final class TransactionalListSizeCodec {
     //hex: 0x110300
     public static final int REQUEST_MESSAGE_TYPE = 1114880;
@@ -76,6 +76,7 @@ public final class TransactionalListSizeCodec {
         clientMessage.setOperationName("TransactionalList.Size");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeUUID(initialFrame.content, REQUEST_TXN_ID_FIELD_OFFSET, txnId);
         encodeLong(initialFrame.content, REQUEST_THREAD_ID_FIELD_OFFSET, threadId);
         clientMessage.add(initialFrame);

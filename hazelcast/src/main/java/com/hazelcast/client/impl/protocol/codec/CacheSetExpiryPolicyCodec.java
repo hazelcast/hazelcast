@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * {@code expiryPolicy} takes precedence for these particular {@code keys} against any cache wide expiry policy.
  * If some keys in {@code keys} do not exist or are already expired, this call has no effect for those.
  */
-@Generated("3e6cff43bbfb6d8056c25f8235b929c8")
+@Generated("ee7ef9d3402bf9e627abfa55af477450")
 public final class CacheSetExpiryPolicyCodec {
     //hex: 0x132100
     public static final int REQUEST_MESSAGE_TYPE = 1253632;
@@ -76,6 +76,7 @@ public final class CacheSetExpiryPolicyCodec {
         clientMessage.setOperationName("Cache.SetExpiryPolicy");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         ListMultiFrameCodec.encode(clientMessage, keys, DataCodec::encode);

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns the number of key-value pairs in the multimap.
  */
-@Generated("3c38703e3853e935594133ce8186706b")
+@Generated("f0977deea4f10e67e1b3d3286c1d6b2c")
 public final class TransactionalMultiMapSizeCodec {
     //hex: 0x0F0600
     public static final int REQUEST_MESSAGE_TYPE = 984576;
@@ -76,6 +76,7 @@ public final class TransactionalMultiMapSizeCodec {
         clientMessage.setOperationName("TransactionalMultiMap.Size");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeUUID(initialFrame.content, REQUEST_TXN_ID_FIELD_OFFSET, txnId);
         encodeLong(initialFrame.content, REQUEST_THREAD_ID_FIELD_OFFSET, threadId);
         clientMessage.add(initialFrame);

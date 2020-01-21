@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * This method is always executed by a distributed query, so it may throw a QueryResultSizeExceededException
  * if query result size limit is configured.
  */
-@Generated("209a5be407230f43ee25dca0f3d8a8b3")
+@Generated("264ef57b71fe5749462c4d44be14e685")
 public final class MapEntrySetCodec {
     //hex: 0x012500
     public static final int REQUEST_MESSAGE_TYPE = 75008;
@@ -66,6 +66,7 @@ public final class MapEntrySetCodec {
         clientMessage.setOperationName("Map.EntrySet");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         return clientMessage;

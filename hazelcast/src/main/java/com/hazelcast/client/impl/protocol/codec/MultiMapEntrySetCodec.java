@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the set of key-value pairs in the multimap.The collection is NOT backed by the map, so changes to the map
  * are NOT reflected in the collection, and vice-versa
  */
-@Generated("85247dc4646ae3e0478a9de79b2f8554")
+@Generated("656b51f37c2a57ff0012d5cf5f468f03")
 public final class MultiMapEntrySetCodec {
     //hex: 0x020600
     public static final int REQUEST_MESSAGE_TYPE = 132608;
@@ -64,6 +64,7 @@ public final class MultiMapEntrySetCodec {
         clientMessage.setOperationName("MultiMap.EntrySet");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         return clientMessage;

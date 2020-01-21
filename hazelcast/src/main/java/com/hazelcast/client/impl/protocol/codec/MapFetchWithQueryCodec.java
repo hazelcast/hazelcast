@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Fetches the specified number of entries from the specified partition starting from specified table index
  * that match the predicate and applies the projection logic on them.
  */
-@Generated("1b1f815903dbcaa5b1633720e7f95fb8")
+@Generated("e4c931bbd07496b33dcc5040f91eed8e")
 public final class MapFetchWithQueryCodec {
     //hex: 0x014000
     public static final int REQUEST_MESSAGE_TYPE = 81920;
@@ -85,6 +85,7 @@ public final class MapFetchWithQueryCodec {
         clientMessage.setOperationName("Map.FetchWithQuery");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeInt(initialFrame.content, REQUEST_BATCH_FIELD_OFFSET, batch);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);

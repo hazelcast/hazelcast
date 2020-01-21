@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Makes an authentication request to the cluster.
  */
-@Generated("9f2f35a025684eaa3cb08feba68f099c")
+@Generated("137799a124f35d8a428988a4823b6a49")
 public final class ClientAuthenticationCodec {
     //hex: 0x000100
     public static final int REQUEST_MESSAGE_TYPE = 256;
@@ -113,6 +113,7 @@ public final class ClientAuthenticationCodec {
         clientMessage.setOperationName("Client.Authentication");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeUUID(initialFrame.content, REQUEST_UUID_FIELD_OFFSET, uuid);
         encodeByte(initialFrame.content, REQUEST_SERIALIZATION_VERSION_FIELD_OFFSET, serializationVersion);
         clientMessage.add(initialFrame);

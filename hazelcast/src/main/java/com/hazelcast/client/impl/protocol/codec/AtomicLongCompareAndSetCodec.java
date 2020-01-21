@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Atomically sets the value to the given updated value only if the current
  * value the expected value.
  */
-@Generated("ed84e62fc9cee71891186114d455df35")
+@Generated("ee23f6c67643afa513124a6e1db3fe13")
 public final class AtomicLongCompareAndSetCodec {
     //hex: 0x090400
     public static final int REQUEST_MESSAGE_TYPE = 590848;
@@ -82,6 +82,7 @@ public final class AtomicLongCompareAndSetCodec {
         clientMessage.setOperationName("AtomicLong.CompareAndSet");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeLong(initialFrame.content, REQUEST_EXPECTED_FIELD_OFFSET, expected);
         encodeLong(initialFrame.content, REQUEST_UPDATED_FIELD_OFFSET, updated);
         clientMessage.add(initialFrame);

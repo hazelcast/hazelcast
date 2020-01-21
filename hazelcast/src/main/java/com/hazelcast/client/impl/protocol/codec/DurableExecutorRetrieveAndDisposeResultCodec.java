@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Retrieves and disposes the result of the execution with the given sequence
  */
-@Generated("3f942db925809f05ba6621194a80c693")
+@Generated("8c7259e1da49f2c028187342b4664e83")
 public final class DurableExecutorRetrieveAndDisposeResultCodec {
     //hex: 0x180600
     public static final int REQUEST_MESSAGE_TYPE = 1574400;
@@ -69,6 +69,7 @@ public final class DurableExecutorRetrieveAndDisposeResultCodec {
         clientMessage.setOperationName("DurableExecutor.RetrieveAndDisposeResult");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeInt(initialFrame.content, REQUEST_SEQUENCE_FIELD_OFFSET, sequence);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);

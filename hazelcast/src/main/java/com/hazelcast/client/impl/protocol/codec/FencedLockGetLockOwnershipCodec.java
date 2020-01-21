@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns current lock ownership status of the given FencedLock instance.
  */
-@Generated("b495f7095136c08a04990e509c365efb")
+@Generated("4ffc83c53157848fe66a46bd13b5760e")
 public final class FencedLockGetLockOwnershipCodec {
     //hex: 0x070400
     public static final int REQUEST_MESSAGE_TYPE = 459776;
@@ -72,6 +72,7 @@ public final class FencedLockGetLockOwnershipCodec {
         clientMessage.setOperationName("FencedLock.GetLockOwnership");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         RaftGroupIdCodec.encode(clientMessage, groupId);
         StringCodec.encode(clientMessage, name);

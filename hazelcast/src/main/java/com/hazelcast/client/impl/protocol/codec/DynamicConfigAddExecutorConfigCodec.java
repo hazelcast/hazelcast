@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If an executor configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("58897b0e366090349752386b151d6bc7")
+@Generated("2e7560899775dadde30ff2ccb807223e")
 public final class DynamicConfigAddExecutorConfigCodec {
     //hex: 0x1B0800
     public static final int REQUEST_MESSAGE_TYPE = 1771520;
@@ -90,6 +90,7 @@ public final class DynamicConfigAddExecutorConfigCodec {
         clientMessage.setOperationName("DynamicConfig.AddExecutorConfig");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeInt(initialFrame.content, REQUEST_POOL_SIZE_FIELD_OFFSET, poolSize);
         encodeInt(initialFrame.content, REQUEST_QUEUE_CAPACITY_FIELD_OFFSET, queueCapacity);
         encodeBoolean(initialFrame.content, REQUEST_STATISTICS_ENABLED_FIELD_OFFSET, statisticsEnabled);

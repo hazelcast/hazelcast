@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a durable executor configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("ec536d03873e43c3f615c8a1d8d46596")
+@Generated("ae90be153e54eea6f908a801180b25cb")
 public final class DynamicConfigAddDurableExecutorConfigCodec {
     //hex: 0x1B0900
     public static final int REQUEST_MESSAGE_TYPE = 1771776;
@@ -90,6 +90,7 @@ public final class DynamicConfigAddDurableExecutorConfigCodec {
         clientMessage.setOperationName("DynamicConfig.AddDurableExecutorConfig");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeInt(initialFrame.content, REQUEST_POOL_SIZE_FIELD_OFFSET, poolSize);
         encodeInt(initialFrame.content, REQUEST_DURABILITY_FIELD_OFFSET, durability);
         encodeInt(initialFrame.content, REQUEST_CAPACITY_FIELD_OFFSET, capacity);

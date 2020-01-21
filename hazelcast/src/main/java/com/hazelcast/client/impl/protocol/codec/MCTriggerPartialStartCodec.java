@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Triggers partial start
  */
-@Generated("c403c29fd09132d3b52b14c161703a38")
+@Generated("6f9399ec3d579a547732487893f5124e")
 public final class MCTriggerPartialStartCodec {
     //hex: 0x201D00
     public static final int REQUEST_MESSAGE_TYPE = 2104576;
@@ -59,6 +59,7 @@ public final class MCTriggerPartialStartCodec {
         clientMessage.setOperationName("MC.TriggerPartialStart");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         return clientMessage;
     }

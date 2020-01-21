@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Inserts the specified element into this queue, waiting up to the specified wait time if necessary for space to
  * become available.
  */
-@Generated("7e8dd0697a362e6ff3d2291c14c66cba")
+@Generated("c2e04b105bc650b59172e366e4d0e1bb")
 public final class TransactionalQueueOfferCodec {
     //hex: 0x120100
     public static final int REQUEST_MESSAGE_TYPE = 1179904;
@@ -88,6 +88,7 @@ public final class TransactionalQueueOfferCodec {
         clientMessage.setOperationName("TransactionalQueue.Offer");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeUUID(initialFrame.content, REQUEST_TXN_ID_FIELD_OFFSET, txnId);
         encodeLong(initialFrame.content, REQUEST_THREAD_ID_FIELD_OFFSET, threadId);
         encodeLong(initialFrame.content, REQUEST_TIMEOUT_FIELD_OFFSET, timeout);

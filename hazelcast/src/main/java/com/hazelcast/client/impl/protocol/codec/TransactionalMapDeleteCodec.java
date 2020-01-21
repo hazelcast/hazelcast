@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * key once the call returns. This method is preferred to #remove(Object) if the old value is not needed. The object
  * to be deleted will be removed from only the current transaction context until the transaction is committed.
  */
-@Generated("d6ae0c67a79b811cac002811ec5cc046")
+@Generated("b619701fac5514a0876ff8ed1a4e294e")
 public final class TransactionalMapDeleteCodec {
     //hex: 0x0E0C00
     public static final int REQUEST_MESSAGE_TYPE = 920576;
@@ -82,6 +82,7 @@ public final class TransactionalMapDeleteCodec {
         clientMessage.setOperationName("TransactionalMap.Delete");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeUUID(initialFrame.content, REQUEST_TXN_ID_FIELD_OFFSET, txnId);
         encodeLong(initialFrame.content, REQUEST_THREAD_ID_FIELD_OFFSET, threadId);
         clientMessage.add(initialFrame);

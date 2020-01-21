@@ -40,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * {@code LockOwnershipLostException}. Returns true if the lock is still
  * held by the caller after a successful unlock() call, false otherwise.
  */
-@Generated("9ca55609018219dc1cfb43cc70699c5d")
+@Generated("eeb537521f361534243a9603fbc4b9cd")
 public final class FencedLockUnlockCodec {
     //hex: 0x070300
     public static final int REQUEST_MESSAGE_TYPE = 459520;
@@ -91,6 +91,7 @@ public final class FencedLockUnlockCodec {
         clientMessage.setOperationName("FencedLock.Unlock");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeLong(initialFrame.content, REQUEST_SESSION_ID_FIELD_OFFSET, sessionId);
         encodeLong(initialFrame.content, REQUEST_THREAD_ID_FIELD_OFFSET, threadId);
         encodeUUID(initialFrame.content, REQUEST_INVOCATION_UID_FIELD_OFFSET, invocationUid);

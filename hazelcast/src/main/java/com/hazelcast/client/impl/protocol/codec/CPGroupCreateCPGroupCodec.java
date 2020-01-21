@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Creates a new CP group with the given name
  */
-@Generated("6d705a3858bdbfe908141dff78f8ef15")
+@Generated("ccdf9d8030461a49c6cd78f5e77e6da2")
 public final class CPGroupCreateCPGroupCodec {
     //hex: 0x1E0100
     public static final int REQUEST_MESSAGE_TYPE = 1966336;
@@ -63,6 +63,7 @@ public final class CPGroupCreateCPGroupCodec {
         clientMessage.setOperationName("CPGroup.CreateCPGroup");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, proxyName);
         return clientMessage;

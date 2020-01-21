@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * then the lock is released.  If the current thread is not the holder of this lock,
  * then ILLEGAL_MONITOR_STATE is thrown.
  */
-@Generated("59f208d07a9c5b826942f7ad9703f4b8")
+@Generated("a2abc9e95da123d8e310a4212c5e9368")
 public final class MapUnlockCodec {
     //hex: 0x011300
     public static final int REQUEST_MESSAGE_TYPE = 70400;
@@ -83,6 +83,7 @@ public final class MapUnlockCodec {
         clientMessage.setOperationName("Map.Unlock");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeLong(initialFrame.content, REQUEST_THREAD_ID_FIELD_OFFSET, threadId);
         encodeLong(initialFrame.content, REQUEST_REFERENCE_ID_FIELD_OFFSET, referenceId);
         clientMessage.add(initialFrame);

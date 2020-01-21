@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a queue configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("5c3f58855c115a564ae8da3c53f86881")
+@Generated("afc975af0c838fa77ac4a8de4a9495c5")
 public final class DynamicConfigAddQueueConfigCodec {
     //hex: 0x1B0B00
     public static final int REQUEST_MESSAGE_TYPE = 1772288;
@@ -123,6 +123,7 @@ public final class DynamicConfigAddQueueConfigCodec {
         clientMessage.setOperationName("DynamicConfig.AddQueueConfig");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeInt(initialFrame.content, REQUEST_BACKUP_COUNT_FIELD_OFFSET, backupCount);
         encodeInt(initialFrame.content, REQUEST_ASYNC_BACKUP_COUNT_FIELD_OFFSET, asyncBackupCount);
         encodeInt(initialFrame.content, REQUEST_MAX_SIZE_FIELD_OFFSET, maxSize);

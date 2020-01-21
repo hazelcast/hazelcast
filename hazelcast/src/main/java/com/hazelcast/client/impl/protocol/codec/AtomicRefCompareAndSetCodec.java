@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Alters the currently stored value by applying a function on it.
  */
-@Generated("9b4ca8cf048d6fe0211e67ccc7a98ec1")
+@Generated("d9354bded6173e4f27019c830e6df756")
 public final class AtomicRefCompareAndSetCodec {
     //hex: 0x0A0200
     public static final int REQUEST_MESSAGE_TYPE = 655872;
@@ -79,6 +79,7 @@ public final class AtomicRefCompareAndSetCodec {
         clientMessage.setOperationName("AtomicRef.CompareAndSet");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         RaftGroupIdCodec.encode(clientMessage, groupId);
         StringCodec.encode(clientMessage, name);

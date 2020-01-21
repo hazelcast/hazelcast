@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Changes the state of a cluster.
  */
-@Generated("8eda839d732d7d1a61f4ce0f8e27461b")
+@Generated("95c129d5f6561a8155677798092fe3b3")
 public final class MCChangeClusterStateCodec {
     //hex: 0x200200
     public static final int REQUEST_MESSAGE_TYPE = 2097664;
@@ -69,6 +69,7 @@ public final class MCChangeClusterStateCodec {
         clientMessage.setOperationName("MC.ChangeClusterState");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeInt(initialFrame.content, REQUEST_NEW_STATE_FIELD_OFFSET, newState);
         clientMessage.add(initialFrame);
         return clientMessage;

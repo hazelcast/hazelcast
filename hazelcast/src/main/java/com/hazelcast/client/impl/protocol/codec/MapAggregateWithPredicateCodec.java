@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Applies the aggregation logic on map entries filtered with the Predicate and returns the result
  */
-@Generated("e31c7d04e8382d052f982ee25e847659")
+@Generated("c64e23545ec0bf1bd74850e495f0a577")
 public final class MapAggregateWithPredicateCodec {
     //hex: 0x013A00
     public static final int REQUEST_MESSAGE_TYPE = 80384;
@@ -73,6 +73,7 @@ public final class MapAggregateWithPredicateCodec {
         clientMessage.setOperationName("Map.AggregateWithPredicate");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         DataCodec.encode(clientMessage, aggregator);

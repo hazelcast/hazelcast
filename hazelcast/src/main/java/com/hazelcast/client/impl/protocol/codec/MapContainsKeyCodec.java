@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if this map contains a mapping for the specified key.
  */
-@Generated("567c585e8c3f14ddf9179c3659222b06")
+@Generated("ebb90b2d0a800638ba820e94119197ea")
 public final class MapContainsKeyCodec {
     //hex: 0x010600
     public static final int REQUEST_MESSAGE_TYPE = 67072;
@@ -75,6 +75,7 @@ public final class MapContainsKeyCodec {
         clientMessage.setOperationName("Map.ContainsKey");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeLong(initialFrame.content, REQUEST_THREAD_ID_FIELD_OFFSET, threadId);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);

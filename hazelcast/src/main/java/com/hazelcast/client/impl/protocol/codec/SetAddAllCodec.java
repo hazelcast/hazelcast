@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * set so that its value is the union of the two sets. The behavior of this operation is undefined if the specified
  * collection is modified while the operation is in progress.
  */
-@Generated("643d4aa836c73576cec0098b5880cd17")
+@Generated("3773b70ed998f4532b6bc26ab6131e5d")
 public final class SetAddAllCodec {
     //hex: 0x060600
     public static final int REQUEST_MESSAGE_TYPE = 394752;
@@ -72,6 +72,7 @@ public final class SetAddAllCodec {
         clientMessage.setOperationName("Set.AddAll");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         ListMultiFrameCodec.encode(clientMessage, valueList, DataCodec::encode);

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns whether the multimap contains the given key-value pair.
  */
-@Generated("7a5b0d3686fbd3a6a845198597d133e0")
+@Generated("7b4b9710a3672fde22f6a0647965c48d")
 public final class MultiMapContainsEntryCodec {
     //hex: 0x020900
     public static final int REQUEST_MESSAGE_TYPE = 133376;
@@ -80,6 +80,7 @@ public final class MultiMapContainsEntryCodec {
         clientMessage.setOperationName("MultiMap.ContainsEntry");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeLong(initialFrame.content, REQUEST_THREAD_ID_FIELD_OFFSET, threadId);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);

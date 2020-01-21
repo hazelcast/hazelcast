@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Cancels further execution and scheduling of the task
  */
-@Generated("227603257c4acae1748ee8ef50735da9")
+@Generated("a6f51e34ef56af81e9b13bf457984e37")
 public final class ScheduledExecutorCancelFromPartitionCodec {
     //hex: 0x1A0900
     public static final int REQUEST_MESSAGE_TYPE = 1706240;
@@ -75,6 +75,7 @@ public final class ScheduledExecutorCancelFromPartitionCodec {
         clientMessage.setOperationName("ScheduledExecutor.CancelFromPartition");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeBoolean(initialFrame.content, REQUEST_MAY_INTERRUPT_IF_RUNNING_FIELD_OFFSET, mayInterruptIfRunning);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, schedulerName);

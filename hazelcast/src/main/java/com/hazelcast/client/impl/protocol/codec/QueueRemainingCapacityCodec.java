@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * always tell if an attempt to insert an element will succeed by inspecting remainingCapacity because it may be
  * the case that another thread is about to insert or remove an element.
  */
-@Generated("a96bbfb8e689e3cca58264f8acff5f02")
+@Generated("36d0f4e64ce82f962c0bc9e2cc7c583f")
 public final class QueueRemainingCapacityCodec {
     //hex: 0x031300
     public static final int REQUEST_MESSAGE_TYPE = 201472;
@@ -67,6 +67,7 @@ public final class QueueRemainingCapacityCodec {
         clientMessage.setOperationName("Queue.RemainingCapacity");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         return clientMessage;

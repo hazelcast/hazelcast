@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a scheduled executor configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("c7944bcccce27e525606b67418654984")
+@Generated("1ba0a27831d5d968f3da4dffc7f70045")
 public final class DynamicConfigAddScheduledExecutorConfigCodec {
     //hex: 0x1B0A00
     public static final int REQUEST_MESSAGE_TYPE = 1772032;
@@ -102,6 +102,7 @@ public final class DynamicConfigAddScheduledExecutorConfigCodec {
         clientMessage.setOperationName("DynamicConfig.AddScheduledExecutorConfig");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeInt(initialFrame.content, REQUEST_POOL_SIZE_FIELD_OFFSET, poolSize);
         encodeInt(initialFrame.content, REQUEST_DURABILITY_FIELD_OFFSET, durability);
         encodeInt(initialFrame.content, REQUEST_CAPACITY_FIELD_OFFSET, capacity);

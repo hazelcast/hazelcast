@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Removes the mapping for a key from this map if existing value equal to the this value
  */
-@Generated("16e7de11a5e6614d21838bc17527c3df")
+@Generated("4840b95ab3c73138e9b53188a75c0004")
 public final class MapRemoveIfSameCodec {
     //hex: 0x010800
     public static final int REQUEST_MESSAGE_TYPE = 67584;
@@ -80,6 +80,7 @@ public final class MapRemoveIfSameCodec {
         clientMessage.setOperationName("Map.RemoveIfSame");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeLong(initialFrame.content, REQUEST_THREAD_ID_FIELD_OFFSET, threadId);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);

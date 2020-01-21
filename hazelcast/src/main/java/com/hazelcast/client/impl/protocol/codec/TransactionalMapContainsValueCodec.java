@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if this map contains an entry for the specified value.
  */
-@Generated("740d3fc9699de5ebd3e128be351285ff")
+@Generated("18d5cbc3e3566f8f6bdb8b37050522b1")
 public final class TransactionalMapContainsValueCodec {
     //hex: 0x0E1200
     public static final int REQUEST_MESSAGE_TYPE = 922112;
@@ -81,6 +81,7 @@ public final class TransactionalMapContainsValueCodec {
         clientMessage.setOperationName("TransactionalMap.ContainsValue");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeUUID(initialFrame.content, REQUEST_TXN_ID_FIELD_OFFSET, txnId);
         encodeLong(initialFrame.content, REQUEST_THREAD_ID_FIELD_OFFSET, threadId);
         clientMessage.add(initialFrame);
