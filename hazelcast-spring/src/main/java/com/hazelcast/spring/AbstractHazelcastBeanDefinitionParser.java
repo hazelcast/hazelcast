@@ -69,7 +69,7 @@ import static org.springframework.util.Assert.isTrue;
 
 /**
  * Base class of all Hazelcast BeanDefinitionParser implementations.
- * <p/>
+ * <p>
  * <ul>
  * <li>{@link HazelcastClientBeanDefinitionParser}</li>
  * <li>{@link HazelcastConfigBeanDefinitionParser}</li>

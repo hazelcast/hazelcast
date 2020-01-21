@@ -107,7 +107,7 @@ public final class ClientProperty {
             = new HazelcastProperty("hazelcast.client.invocation.backoff.timeout.millis", -1, MILLISECONDS);
 
     /**
-     * <p>Enables the Discovery SPI/p>
+     * <p>Enables the Discovery SPI</p>
      * <p>Discovery SPI is <b>disabled</b> by default</p>
      */
     public static final HazelcastProperty DISCOVERY_SPI_ENABLED
@@ -240,9 +240,9 @@ public final class ClientProperty {
     /**
      * Enables/disables metrics collection altogether. This is a master
      * switch for all metrics related functionality.
-     * <p/>
+     * <p>
      * NOTE: This property overrides {@link ClientMetricsConfig#isEnabled()}.
-     * <p/>
+     * <p>
      * Using {@link ClientMetricsConfig#setEnabled(boolean)} and the declarative
      * counterparts are preferred over using this property. The main purpose
      * of making metrics collection configurable from properties too is
@@ -255,9 +255,9 @@ public final class ClientProperty {
 
     /**
      * Enables/disables exposing metrics on JMX.
-     * <p/>
+     * <p>
      * NOTE: This property overrides {@link MetricsJmxConfig#isEnabled()}.
-     * <p/>
+     * <p>
      * Using {@link MetricsJmxConfig#setEnabled(boolean)} and the declarative
      * counterparts are preferred over using this property. The main purpose
      * of making metrics collection configurable from properties too is
@@ -277,9 +277,9 @@ public final class ClientProperty {
 
     /**
      * Sets the metrics collection frequency in seconds.
-     * <p/>
+     * <p>
      * NOTE: This property overrides {@link ClientMetricsConfig#getCollectionFrequencySeconds()}.
-     * <p/>
+     * <p>
      * Using {@link ClientMetricsConfig#setCollectionFrequencySeconds(int)} and the declarative
      * counterparts are preferred over using this property. The main purpose
      * of making metrics collection configurable from properties too is

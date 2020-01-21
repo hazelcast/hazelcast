@@ -29,7 +29,6 @@ import com.hazelcast.spi.impl.executionservice.ExecutionService;
  * <ul>
  *     <li>{@link IMap#executeOnKey(Object, EntryProcessor)}</li>
  *     <li>{@link IMap#submitToKey(Object, EntryProcessor)} </li>
- *     <li>{@link IMap#submitToKey(Object, EntryProcessor, ExecutionCallback)} </li>
  * </ul>
  */
 @FunctionalInterface

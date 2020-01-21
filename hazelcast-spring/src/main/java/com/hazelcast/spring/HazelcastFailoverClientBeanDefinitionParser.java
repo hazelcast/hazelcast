@@ -31,6 +31,7 @@ import static org.springframework.beans.factory.support.BeanDefinitionBuilder.ro
 
 /**
  * BeanDefinitionParser for Hazelcast Client Configuration.
+ * <pre>{@code
  *     <hz:client-failover id="blueGreenClient" try-count="5">
  *         <hz:client>
  *             <hz:cluster-name>${cluster.name}</hz:cluster-name>
@@ -49,6 +50,7 @@ import static org.springframework.beans.factory.support.BeanDefinitionBuilder.ro
  *         </hz:client>
  *
  *     </hz:client-failover>
+ * }</pre>
  */
 public class HazelcastFailoverClientBeanDefinitionParser extends  AbstractHazelcastBeanDefinitionParser {
 
