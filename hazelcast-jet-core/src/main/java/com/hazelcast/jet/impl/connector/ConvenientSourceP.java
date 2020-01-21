@@ -108,10 +108,9 @@ public class ConvenientSourceP<C, T, S> extends AbstractProcessor implements Ser
 
     @Override
     protected void init(@Nonnull Context context) {
-        C localCtx = createFn.apply(context);
-        ctx = (C) managedContext.initialize(localCtx);
-        snapshotKey = broadcastKey(context.globalProcessorIndex());
         // createFn is allowed to return null, we'll call `destroyFn` even for null `ctx`
+        ctx = (C) managedContext.initialize(createFn.apply(context));
+        snapshotKey = broadcastKey(context.globalProcessorIndex());
         initialized = true;
     }
 

@@ -415,5 +415,4 @@ public final class Util {
     public static ProcessingGuarantee min(ProcessingGuarantee g1, ProcessingGuarantee g2) {
         return g1.ordinal() < g2.ordinal() ? g1 : g2;
     }
-
 }

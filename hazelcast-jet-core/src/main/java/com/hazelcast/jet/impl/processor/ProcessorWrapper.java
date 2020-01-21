@@ -35,7 +35,7 @@ import static com.hazelcast.jet.impl.execution.init.ExecutionPlan.createLoggerNa
  */
 public abstract class ProcessorWrapper implements Processor {
 
-    private final Processor wrapped;
+    private Processor wrapped;
 
     protected ProcessorWrapper(Processor wrapped) {
         this.wrapped = wrapped;
@@ -43,6 +43,13 @@ public abstract class ProcessorWrapper implements Processor {
 
     public Processor getWrapped() {
         return wrapped;
+    }
+
+    /**
+     * Can be used only before any other method is called.
+     */
+    public void setWrapped(Processor wrapped) {
+        this.wrapped = wrapped;
     }
 
     @Override

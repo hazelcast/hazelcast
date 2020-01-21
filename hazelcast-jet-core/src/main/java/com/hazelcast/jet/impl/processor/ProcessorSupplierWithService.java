@@ -55,15 +55,7 @@ public final class ProcessorSupplierWithService<C, S> implements ProcessorSuppli
         HazelcastInstanceImpl hazelcastInstance = (HazelcastInstanceImpl) context.jetInstance().getHazelcastInstance();
         ManagedContext managedContext = hazelcastInstance.getSerializationService().getManagedContext();
         serviceContext = serviceFactory.createContextFn().apply(context);
-        if (serviceContext != null) {
-            Object initializedObject = managedContext.initialize(serviceContext);
-            Class<?> serviceContextClass = serviceContext.getClass();
-            if (!serviceContextClass.isInstance(initializedObject)) {
-                throw new IllegalArgumentException(String.format("The initialized service context object should " +
-                        "be an instance of %s", serviceContextClass));
-            }
-            serviceContext = (C) initializedObject;
-        }
+        serviceContext = (C) managedContext.initialize(serviceContext);
     }
 
     @Nonnull @Override
