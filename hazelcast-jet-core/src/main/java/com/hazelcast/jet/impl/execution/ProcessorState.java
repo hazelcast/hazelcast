@@ -97,6 +97,11 @@ enum ProcessorState {
     EMIT_DONE_ITEM,
 
     /**
+     * Waiting until the close method completes in a separate thread.
+     */
+    CLOSE,
+
+    /**
      * The processor is done.
      */
     END

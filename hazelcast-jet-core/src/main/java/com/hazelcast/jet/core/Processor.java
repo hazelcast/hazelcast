@@ -138,6 +138,9 @@ public interface Processor {
      * called exactly once and strictly before any calls to other methods
      * (except for the {@link #isCooperative()} method.
      * <p>
+     * Even if this processor is cooperative, this method is allowed to do
+     * blocking operations.
+     * <p>
      * The default implementation does nothing.
      *
      * @param context useful environment information
@@ -429,8 +432,13 @@ public interface Processor {
      * true}, that is before the job is finished. The job might still be
      * running other processors.
      * <p>
+     * Even if this processor is cooperative, this method is allowed to do
+     * blocking operations.
+     * <p>
      * If this method throws an exception, it is logged but it won't be
      * reported as a job failure or cause the job to fail.
+     * <p>
+     * The default implementation does nothing.
      */
     default void close() throws Exception {
     }

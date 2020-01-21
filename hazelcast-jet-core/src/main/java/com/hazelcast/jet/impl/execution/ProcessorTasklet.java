@@ -52,6 +52,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.TreeMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLongArray;
 import java.util.function.Predicate;
 
@@ -63,6 +65,7 @@ import static com.hazelcast.jet.core.metrics.MetricNames.RECEIVED_BATCHES;
 import static com.hazelcast.jet.core.metrics.MetricNames.RECEIVED_COUNT;
 import static com.hazelcast.jet.core.metrics.MetricNames.TOP_OBSERVED_WM;
 import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
+import static com.hazelcast.jet.impl.execution.ProcessorState.CLOSE;
 import static com.hazelcast.jet.impl.execution.ProcessorState.COMPLETE;
 import static com.hazelcast.jet.impl.execution.ProcessorState.COMPLETE_EDGE;
 import static com.hazelcast.jet.impl.execution.ProcessorState.EMIT_BARRIER;
@@ -106,6 +109,7 @@ public class ProcessorTasklet implements Tasklet {
     private final ILogger logger;
     private final SerializationService serializationService;
     private final List<? extends InboundEdgeStream> instreams;
+    private final ExecutorService executionService;
 
     private Processor processor;
     private int numActiveOrdinals; // counter for remaining active ordinals
@@ -119,7 +123,6 @@ public class ProcessorTasklet implements Tasklet {
 
     private SnapshotBarrier currentBarrier;
     private Watermark pendingWatermark;
-    private boolean processorClosed;
 
     // Tells whether we are operating in exactly-once or at-least-once mode.
     // In other words, whether a barrier from all inputs must be present before
@@ -139,9 +142,12 @@ public class ProcessorTasklet implements Tasklet {
 
     private final Predicate<Object> addToInboxFunction = inbox.queue()::add;
     private final MetricsContext metricsContext = new MetricsContext();
+    private Future<?> closeFuture;
 
     @SuppressWarnings("checkstyle:ExecutableStatementCount")
-    public ProcessorTasklet(@Nonnull Context context,
+    public ProcessorTasklet(
+            @Nonnull Context context,
+            @Nonnull ExecutorService executionService,
             @Nonnull SerializationService serializationService,
             @Nonnull Processor processor,
             @Nonnull List<? extends InboundEdgeStream> instreams,
@@ -151,6 +157,7 @@ public class ProcessorTasklet implements Tasklet {
     ) {
         Preconditions.checkNotNull(processor, "processor");
         this.context = context;
+        this.executionService = executionService;
         this.serializationService = serializationService;
         this.processor = processor;
         this.numActiveOrdinals = instreams.size();
@@ -225,21 +232,15 @@ public class ProcessorTasklet implements Tasklet {
 
     @Override @Nonnull
     public ProgressState call() {
-        assert !processorClosed : "processor closed";
+        assert state != END : "already in terminal state";
         progTracker.reset();
         progTracker.notDone();
         outbox.reset();
         stateMachineStep();
-        ProgressState progressState = progTracker.toProgressState();
-        if (progressState.isDone()) {
-            closeProcessor();
-            processorClosed = true;
-        }
-        return progressState;
+        return progTracker.toProgressState();
     }
 
     private void closeProcessor() {
-        assert !processorClosed : "processor already closed";
         try {
             processor.close();
         } catch (Throwable e) {
@@ -356,9 +357,27 @@ public class ProcessorTasklet implements Tasklet {
             case EMIT_DONE_ITEM:
                 if (outbox.offerToEdgesAndSnapshot(DONE_ITEM)) {
                     ssContext.processorTaskletDone();
-                    state = END;
-                    progTracker.done();
+                    progTracker.madeProgress();
+                    state = CLOSE;
+                    stateMachineStep();
                 }
+                return;
+
+            case CLOSE:
+                if (isCooperative()) {
+                    if (closeFuture == null) {
+                        closeFuture = executionService.submit(this::closeProcessor);
+                        progTracker.madeProgress();
+                    }
+                    if (!closeFuture.isDone()) {
+                        return;
+                    }
+                    progTracker.madeProgress();
+                } else {
+                    closeProcessor();
+                }
+                state = END;
+                progTracker.done();
                 return;
 
             default:
@@ -577,9 +596,14 @@ public class ProcessorTasklet implements Tasklet {
 
     @Override
     public void close() {
-        if (!processorClosed) {
+        if (state == CLOSE) {
+            try {
+                closeFuture.get();
+            } catch (Exception e) {
+                throw sneakyThrow(e);
+            }
+        } else if (state != END) {
             closeProcessor();
-            processorClosed = true;
         }
     }
 

@@ -71,6 +71,7 @@ import java.util.stream.IntStream;
 import static com.hazelcast.internal.util.concurrent.ConcurrentConveyor.concurrentConveyor;
 import static com.hazelcast.jet.config.EdgeConfig.DEFAULT_QUEUE_SIZE;
 import static com.hazelcast.jet.impl.execution.OutboundCollector.compositeCollector;
+import static com.hazelcast.jet.impl.execution.TaskletExecutionService.TASKLET_INIT_CLOSE_EXECUTOR_NAME;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.ImdgUtil.readList;
 import static com.hazelcast.jet.impl.util.ImdgUtil.writeList;
@@ -200,9 +201,10 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
 
                 OutboundCollector snapshotCollector = new ConveyorCollector(ssConveyor, localProcessorIdx, null);
 
-                ProcessorTasklet processorTasklet = new ProcessorTasklet(context, nodeEngine.getSerializationService(),
-                        processor, inboundStreams, outboundStreams, snapshotContext, snapshotCollector
-                );
+                ProcessorTasklet processorTasklet = new ProcessorTasklet(context,
+                        nodeEngine.getExecutionService().getExecutor(TASKLET_INIT_CLOSE_EXECUTOR_NAME),
+                        nodeEngine.getSerializationService(), processor, inboundStreams, outboundStreams, snapshotContext,
+                        snapshotCollector);
                 tasklets.add(processorTasklet);
                 this.processors.add(processor);
                 localProcessorIdx++;

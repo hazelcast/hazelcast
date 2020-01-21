@@ -19,20 +19,31 @@ package com.hazelcast.jet.core;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.impl.util.ThrottleWrappedP;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.impl.util.WrappingProcessorMetaSupplier;
 
 import javax.annotation.Nonnull;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static java.util.Arrays.asList;
+import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.junit.Assert.assertEquals;
 
 public final class TestUtil {
+
+    public static final ExecutorService DIRECT_EXECUTOR = new DirectExecutorService();
 
     private TestUtil() {
     }
@@ -85,5 +96,83 @@ public final class TestUtil {
      */
     public static <T> Set<T> set(T ... foo) {
         return new HashSet<>(asList(foo));
+    }
+
+    private static class DirectExecutorService implements ExecutorService {
+        private volatile boolean shutdown;
+
+        @Override
+        public void shutdown() {
+            shutdown = true;
+        }
+
+        @Nonnull @Override
+        public List<Runnable> shutdownNow() {
+            shutdown = true;
+            return Collections.emptyList();
+        }
+
+        @Override
+        public boolean isShutdown() {
+            return shutdown;
+        }
+
+        @Override
+        public boolean isTerminated() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean awaitTermination(long timeout, @Nonnull TimeUnit unit) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Nonnull @Override
+        public <T> Future<T> submit(@Nonnull Callable<T> task) {
+            try {
+                return completedFuture(task.call());
+            } catch (Exception e) {
+                return Util.exceptionallyCompletedFuture(e);
+            }
+        }
+
+        @Nonnull @Override
+        public <T> Future<T> submit(@Nonnull Runnable task, T result) {
+            return submit(() -> {
+                task.run();
+                return result;
+            });
+        }
+
+        @Nonnull @Override
+        public Future<?> submit(@Nonnull Runnable task) {
+            return submit(task, null);
+        }
+
+        @Nonnull @Override
+        public <T> List<Future<T>> invokeAll(@Nonnull Collection<? extends Callable<T>> tasks) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Nonnull @Override
+        public <T> List<Future<T>> invokeAll(@Nonnull Collection<? extends Callable<T>> tasks, long timeout,
+                                             @Nonnull TimeUnit unit) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Nonnull @Override
+        public <T> T invokeAny(@Nonnull Collection<? extends Callable<T>> tasks) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public <T> T invokeAny(@Nonnull Collection<? extends Callable<T>> tasks, long timeout, @Nonnull TimeUnit unit) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void execute(@Nonnull Runnable command) {
+            submit(command);
+        }
     }
 }

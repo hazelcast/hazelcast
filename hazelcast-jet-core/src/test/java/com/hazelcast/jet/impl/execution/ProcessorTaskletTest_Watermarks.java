@@ -24,7 +24,7 @@ import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -35,6 +35,7 @@ import java.util.List;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.core.JetTestSupport.wm;
+import static com.hazelcast.jet.core.TestUtil.DIRECT_EXECUTOR;
 import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
 import static com.hazelcast.jet.impl.util.ProgressState.MADE_PROGRESS;
@@ -46,7 +47,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 public class ProcessorTaskletTest_Watermarks {
 
     private static final int CALL_COUNT_LIMIT = 10;
@@ -267,8 +268,9 @@ public class ProcessorTaskletTest_Watermarks {
         }
         SnapshotContext snapshotContext = new SnapshotContext(mock(ILogger.class), "test job", -1, EXACTLY_ONCE);
         snapshotContext.initTaskletCount(1, 1, 0);
-        final ProcessorTasklet t = new ProcessorTasklet(context, new DefaultSerializationServiceBuilder().build(),
-                processor, instreams, outstreams, snapshotContext, snapshotCollector);
+        final ProcessorTasklet t = new ProcessorTasklet(context, DIRECT_EXECUTOR,
+                new DefaultSerializationServiceBuilder().build(), processor, instreams, outstreams, snapshotContext,
+                snapshotCollector);
         t.init();
         return t;
     }

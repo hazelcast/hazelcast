@@ -23,7 +23,7 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.jet.impl.util.ProgressState;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -33,12 +33,17 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ForkJoinPool;
 import java.util.stream.IntStream;
 
+import static com.hazelcast.jet.core.TestUtil.DIRECT_EXECUTOR;
 import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet.impl.util.ProgressState.DONE;
 import static com.hazelcast.jet.impl.util.ProgressState.MADE_PROGRESS;
 import static com.hazelcast.jet.impl.util.ProgressState.NO_PROGRESS;
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -48,7 +53,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 public class ProcessorTaskletTest {
 
     private static final int MOCK_INPUT_SIZE = 10;
@@ -246,13 +251,27 @@ public class ProcessorTaskletTest {
         assertEquals(expected, actual);
     }
 
+    @Test
+    public void when_closeBlocked_then_waitUntilDone() {
+        processor.doneLatch = new CountDownLatch(1);
+        ProcessorTasklet tasklet = createTasklet(ForkJoinPool.commonPool());
+        callUntil(tasklet, NO_PROGRESS);
+        processor.doneLatch.countDown();
+        assertTrueEventually(() -> assertEquals(DONE, tasklet.call()), 2);
+    }
+
     private ProcessorTasklet createTasklet() {
+        return createTasklet(DIRECT_EXECUTOR);
+    }
+
+    private ProcessorTasklet createTasklet(ExecutorService executor) {
         for (int i = 0; i < instreams.size(); i++) {
             instreams.get(i).setOrdinal(i);
         }
 
-        final ProcessorTasklet t = new ProcessorTasklet(context, new DefaultSerializationServiceBuilder().build(),
-                processor, instreams, outstreams, mock(SnapshotContext.class), new MockOutboundCollector(10));
+        final ProcessorTasklet t = new ProcessorTasklet(context, executor,
+                new DefaultSerializationServiceBuilder().build(), processor, instreams, outstreams,
+                mock(SnapshotContext.class), new MockOutboundCollector(10));
         t.init();
         return t;
     }
@@ -265,6 +284,7 @@ public class ProcessorTaskletTest {
         Set<Integer> completeEdgeReturnedTrue = new HashSet<>();
         private int itemsToEmitInThisCompleteEdge;
         private Outbox outbox;
+        private CountDownLatch doneLatch = new CountDownLatch(0);
 
         @Override
         public void init(@Nonnull Outbox outbox, @Nonnull Context context) {
@@ -315,6 +335,11 @@ public class ProcessorTaskletTest {
         @Override
         public boolean tryProcess() {
             return nullaryProcessCallCountdown-- <= 0;
+        }
+
+        @Override
+        public void close() throws InterruptedException {
+            doneLatch.await();
         }
     }
 

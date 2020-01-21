@@ -74,7 +74,7 @@ import static java.util.stream.Collectors.toList;
 
 public class TaskletExecutionService {
 
-    static final String TASKLET_INIT_EXECUTOR_NAME = "jet:tasklet_init";
+    public static final String TASKLET_INIT_CLOSE_EXECUTOR_NAME = "jet:tasklet_initClose";
 
     private final ExecutorService blockingTaskletExecutor = newCachedThreadPool(new BlockingTaskThreadFactory());
     private final ExecutionService hzExecutionService;
@@ -92,7 +92,7 @@ public class TaskletExecutionService {
 
     public TaskletExecutionService(NodeEngineImpl nodeEngine, int threadCount, HazelcastProperties properties) {
         hzExecutionService = nodeEngine.getExecutionService();
-        hzExecutionService.register(TASKLET_INIT_EXECUTOR_NAME,
+        hzExecutionService.register(TASKLET_INIT_CLOSE_EXECUTOR_NAME,
                 Runtime.getRuntime().availableProcessors(), Integer.MAX_VALUE, CACHED);
         this.hzInstanceName = nodeEngine.getHazelcastInstance().getName();
         this.cooperativeWorkers = new CooperativeWorker[threadCount];
@@ -156,7 +156,7 @@ public class TaskletExecutionService {
     public void shutdown() {
         isShutdown = true;
         blockingTaskletExecutor.shutdownNow();
-        hzExecutionService.shutdownExecutor(TASKLET_INIT_EXECUTOR_NAME);
+        hzExecutionService.shutdownExecutor(TASKLET_INIT_CLOSE_EXECUTOR_NAME);
     }
 
     private void submitBlockingTasklets(ExecutionTracker executionTracker, ClassLoader jobClassLoader,
@@ -183,7 +183,7 @@ public class TaskletExecutionService {
         Arrays.setAll(trackersByThread, i -> new ArrayList());
         List<? extends Future<?>> futures = tasklets
                 .stream()
-                .map(tasklet -> hzExecutionService.submit(TASKLET_INIT_EXECUTOR_NAME, () ->
+                .map(tasklet -> hzExecutionService.submit(TASKLET_INIT_CLOSE_EXECUTOR_NAME, () ->
                         Util.doWithClassLoader(jobClassLoader, tasklet::init)))
                 .collect(toList());
         awaitAll(futures);

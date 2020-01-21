@@ -28,7 +28,7 @@ import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.jet.impl.operation.SnapshotPhase1Operation.SnapshotPhase1Result;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -47,6 +47,7 @@ import java.util.stream.IntStream;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.core.JetTestSupport.wm;
+import static com.hazelcast.jet.core.TestUtil.DIRECT_EXECUTOR;
 import static com.hazelcast.jet.impl.MasterJobContext.SNAPSHOT_RESTORE_EDGE_PRIORITY;
 import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet.impl.util.ProgressState.DONE;
@@ -61,7 +62,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 public class ProcessorTaskletTest_Snapshots {
 
     private static final int MOCK_INPUT_SIZE = 10;
@@ -395,8 +396,8 @@ public class ProcessorTaskletTest_Snapshots {
         }
         snapshotContext = new SnapshotContext(mock(ILogger.class), "test job", -1, guarantee);
         snapshotContext.initTaskletCount(1, 1, 0);
-        final ProcessorTasklet t = new ProcessorTasklet(context, serializationService, processor, instreams, outstreams,
-                snapshotContext, snapshotCollector);
+        final ProcessorTasklet t = new ProcessorTasklet(context, DIRECT_EXECUTOR, serializationService,
+                processor, instreams, outstreams, snapshotContext, snapshotCollector);
         t.init();
         return t;
     }

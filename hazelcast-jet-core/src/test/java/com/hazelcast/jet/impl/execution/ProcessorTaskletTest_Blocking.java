@@ -23,7 +23,7 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.jet.impl.util.ProgressState;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -35,6 +35,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.stream.IntStream;
 
+import static com.hazelcast.jet.core.TestUtil.DIRECT_EXECUTOR;
 import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet.impl.util.ProgressState.DONE;
 import static com.hazelcast.jet.impl.util.ProgressState.MADE_PROGRESS;
@@ -47,7 +48,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 public class ProcessorTaskletTest_Blocking {
 
     private static final int MOCK_INPUT_SIZE = 10;
@@ -291,8 +292,9 @@ public class ProcessorTaskletTest_Blocking {
         for (int i = 0; i < instreams.size(); i++) {
             instreams.get(i).setOrdinal(i);
         }
-        final ProcessorTasklet t = new ProcessorTasklet(context, new DefaultSerializationServiceBuilder().build(),
-                processor, instreams, outstreams, mock(SnapshotContext.class), new MockOutboundCollector(10));
+        final ProcessorTasklet t = new ProcessorTasklet(context, DIRECT_EXECUTOR,
+                new DefaultSerializationServiceBuilder().build(), processor, instreams, outstreams,
+                mock(SnapshotContext.class), new MockOutboundCollector(10));
         t.init();
         return t;
     }
