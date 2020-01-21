@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.util;
 
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.test.JetAssert;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
 import static com.hazelcast.jet.impl.util.IOUtil.packDirectoryIntoZip;
 import static com.hazelcast.jet.impl.util.IOUtil.unzip;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 public class IOUtilTest extends JetTestSupport {
 
     @Rule
@@ -51,8 +51,13 @@ public class IOUtilTest extends JetTestSupport {
     @Test
     public void test_zipAndUnzipNestedFoldersWithAnEmptySubFolder_then_contentsShouldBeSame() throws Exception {
         Path originalPath = Paths.get(this.getClass().getResource("/nested").toURI());
-        Files.createDirectory(originalPath.resolve(randomName())).toFile().deleteOnExit();
-        test(originalPath);
+        Path randomFile = originalPath.resolve(randomName());
+        Files.createDirectory(randomFile);
+        try {
+            test(originalPath);
+        } finally {
+            com.hazelcast.internal.nio.IOUtil.delete(randomFile);
+        }
     }
 
     public void test(Path originalPath) throws IOException {
