@@ -54,6 +54,25 @@ import static org.junit.Assert.fail;
 public class SplitBrainProtectionTest extends HazelcastTestSupport {
 
     @Test
+    public void testSplitBrainProtectionNotChecked_whenIsNotEnabled() {
+        String disabledSBPName = "disabled-quorum";
+        SplitBrainProtectionConfig disabledSBPConfig = new SplitBrainProtectionConfig()
+                .setName(disabledSBPName)
+                .setMinimumClusterSize(3);
+
+        MapConfig mapConfig = new MapConfig(randomMapName())
+                .setSplitBrainProtectionName(disabledSBPName);
+
+        Config config = new Config()
+                .addSplitBrainProtectionConfig(disabledSBPConfig)
+                .addMapConfig(mapConfig);
+        HazelcastInstance instance = createHazelcastInstance(config);
+
+        instance.getSplitBrainProtectionService().ensureNoSplitBrain(disabledSBPName, disabledSBPConfig.getProtectOn());
+        instance.getMap(mapConfig.getName()).put("key", "value");
+    }
+
+    @Test
     public void testSplitBrainProtectionIsSetCorrectlyOnNodeInitialization() {
         String splitBrainProtectionName1 = randomString();
         String splitBrainProtectionName2 = randomString();

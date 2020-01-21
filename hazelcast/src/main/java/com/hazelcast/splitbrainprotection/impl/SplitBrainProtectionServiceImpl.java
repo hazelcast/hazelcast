@@ -111,10 +111,13 @@ public class SplitBrainProtectionServiceImpl implements EventPublishingService<S
     }
 
     private Map<String, SplitBrainProtectionImpl> initializeSplitBrainProtections() {
-        Map<String, SplitBrainProtectionImpl> splitBrainProtections = new HashMap<String, SplitBrainProtectionImpl>();
+        Map<String, SplitBrainProtectionImpl> splitBrainProtections = new HashMap<>();
         for (SplitBrainProtectionConfig splitBrainProtectionConfig
                 : nodeEngine.getConfig().getSplitBrainProtectionConfigs().values()) {
             validateSplitBrainProtectionConfig(splitBrainProtectionConfig);
+            if (!splitBrainProtectionConfig.isEnabled()) {
+                continue;
+            }
             SplitBrainProtectionImpl splitBrainProtection = new SplitBrainProtectionImpl(splitBrainProtectionConfig, nodeEngine);
             splitBrainProtections.put(splitBrainProtectionConfig.getName(), splitBrainProtection);
         }
