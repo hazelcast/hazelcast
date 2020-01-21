@@ -94,7 +94,7 @@ public class TxnAddAllOperation extends BaseTxnQueueOperation implements Notifie
 
     @Override
     public WaitNotifyKey getNotifiedKey() {
-        return getContainer().getPollWaitNotifyKey();
+        return getContainer().getAddAllWaitNotifyKey();
     }
 
     @Override

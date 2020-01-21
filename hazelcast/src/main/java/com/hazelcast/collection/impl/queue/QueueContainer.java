@@ -71,6 +71,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
     private final Map<Long, Data> dataMap = new HashMap<Long, Data>();
     private QueueWaitNotifyKey pollWaitNotifyKey;
     private QueueWaitNotifyKey offerWaitNotifyKey;
+    private QueueWaitNotifyKey addAllWaitNotifyKey;
     private LinkedList<QueueItem> itemQueue;
     private Map<Long, QueueItem> backupMap;
     private QueueConfig config;
@@ -100,6 +101,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
         this.name = name;
         this.pollWaitNotifyKey = new QueueWaitNotifyKey(name, "poll");
         this.offerWaitNotifyKey = new QueueWaitNotifyKey(name, "offer");
+        this.addAllWaitNotifyKey = new QueueWaitNotifyKey(name, "addAll");
         setConfig(config, nodeEngine, service);
     }
 
@@ -1022,6 +1024,10 @@ public class QueueContainer implements IdentifiedDataSerializable {
 
     public QueueWaitNotifyKey getOfferWaitNotifyKey() {
         return offerWaitNotifyKey;
+    }
+
+    public QueueWaitNotifyKey getAddAllWaitNotifyKey() {
+        return addAllWaitNotifyKey;
     }
 
     public QueueConfig getConfig() {
