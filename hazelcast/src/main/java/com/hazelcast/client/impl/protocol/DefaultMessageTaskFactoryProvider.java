@@ -395,6 +395,7 @@ import com.hazelcast.client.impl.protocol.codec.TransactionalMultiMapValueCountC
 import com.hazelcast.client.impl.protocol.codec.TransactionalQueueOfferCodec;
 import com.hazelcast.client.impl.protocol.codec.TransactionalQueuePeekCodec;
 import com.hazelcast.client.impl.protocol.codec.TransactionalQueuePollCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalQueueRetainAllCodec;
 import com.hazelcast.client.impl.protocol.codec.TransactionalQueueSizeCodec;
 import com.hazelcast.client.impl.protocol.codec.TransactionalQueueTakeCodec;
 import com.hazelcast.client.impl.protocol.codec.TransactionalSetAddCodec;
@@ -763,6 +764,7 @@ import com.hazelcast.client.impl.protocol.task.transactionalmultimap.Transaction
 import com.hazelcast.client.impl.protocol.task.transactionalqueue.TransactionalQueueOfferMessageTask;
 import com.hazelcast.client.impl.protocol.task.transactionalqueue.TransactionalQueuePeekMessageTask;
 import com.hazelcast.client.impl.protocol.task.transactionalqueue.TransactionalQueuePollMessageTask;
+import com.hazelcast.client.impl.protocol.task.transactionalqueue.TransactionalQueueRetainAllMessageTask;
 import com.hazelcast.client.impl.protocol.task.transactionalqueue.TransactionalQueueSizeMessageTask;
 import com.hazelcast.client.impl.protocol.task.transactionalqueue.TransactionalQueueTakeMessageTask;
 import com.hazelcast.client.impl.protocol.task.transactionalset.TransactionalSetAddMessageTask;
@@ -1133,6 +1135,8 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new TransactionalQueuePollMessageTask(cm, node, con));
         factories.put(TransactionalQueueTakeCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new TransactionalQueueTakeMessageTask(cm, node, con));
+        factories.put(TransactionalQueueRetainAllCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new TransactionalQueueRetainAllMessageTask(cm, node, con));
     }
 
     private void initializeMultiMapTaskFactories() {
