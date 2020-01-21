@@ -298,6 +298,12 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
             assertEquals(expectedMembers, actualMembers);
         });
 
-        map.get(1);
+        assertTrueEventually(() -> {
+            try {
+                map.get(1);
+            } catch (HazelcastClientOfflineException e) {
+                fail();
+            }
+        });
     }
 }

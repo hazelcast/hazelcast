@@ -24,7 +24,6 @@ import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.client.impl.spi.ClientPartitionService;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.InitialMembershipEvent;
 import com.hazelcast.cluster.InitialMembershipListener;
@@ -86,9 +85,9 @@ public class ClientClusterServiceImpl implements ClientClusterService {
 
     private static final class MemberListSnapshot {
         private final int version;
-        private final LinkedHashMap<Address, Member> members;
+        private final LinkedHashMap<UUID, Member> members;
 
-        private MemberListSnapshot(int version, LinkedHashMap<Address, Member> members) {
+        private MemberListSnapshot(int version, LinkedHashMap<UUID, Member> members) {
             this.version = version;
             this.members = members;
         }
@@ -123,20 +122,9 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     @Override
-    public Member getMember(Address address) {
-        return memberListSnapshot.get().members.get(address);
-    }
-
-    @Override
     public Member getMember(@Nonnull UUID uuid) {
         checkNotNull(uuid, "UUID must not be null");
-        final Collection<Member> memberList = getMemberList();
-        for (Member member : memberList) {
-            if (uuid.equals(member.getUuid())) {
-                return member;
-            }
-        }
-        return null;
+        return memberListSnapshot.get().members.get(uuid);
     }
 
     @Override
@@ -266,15 +254,14 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     private MemberListSnapshot createSnapshot(int memberListVersion, Collection<MemberInfo> memberInfos) {
-        LinkedHashMap<Address, Member> newMembers = new LinkedHashMap<>();
+        LinkedHashMap<UUID, Member> newMembers = new LinkedHashMap<>();
         for (MemberInfo memberInfo : memberInfos) {
-            Address address = memberInfo.getAddress();
-            MemberImpl member = new MemberImpl.Builder(address).version(memberInfo.getVersion())
+            MemberImpl member = new MemberImpl.Builder(memberInfo.getAddress()).version(memberInfo.getVersion())
                     .uuid(memberInfo.getUuid())
                     .attributes(memberInfo.getAttributes())
                     .liteMember(memberInfo.isLiteMember())
                     .memberListJoinVersion(memberInfo.getMemberListJoinVersion()).build();
-            newMembers.put(address, member);
+            newMembers.put(memberInfo.getUuid(), member);
         }
         return new MemberListSnapshot(memberListVersion, newMembers);
     }
@@ -297,14 +284,11 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         // removal events should be added before added events
         for (Member member : deadMembers) {
             events.add(new MembershipEvent(client.getCluster(), member, MembershipEvent.MEMBER_REMOVED, currentMembers));
-            Address address = member.getAddress();
-            if (getMember(address) == null) {
-                Connection connection = connectionManager.getConnection(address);
-                if (connection != null) {
-                    connection.close(null,
-                            new TargetDisconnectedException("The client has closed the connection to this member,"
-                                    + " after receiving a member left event from the cluster. " + connection));
-                }
+            Connection connection = connectionManager.getConnection(member.getUuid());
+            if (connection != null) {
+                connection.close(null,
+                        new TargetDisconnectedException("The client has closed the connection to this member,"
+                                + " after receiving a member left event from the cluster. " + connection));
             }
         }
         for (Member member : newMembers) {

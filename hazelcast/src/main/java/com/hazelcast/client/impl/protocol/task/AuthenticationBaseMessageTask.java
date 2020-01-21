@@ -194,9 +194,10 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
         logger.info("Received auth from " + connection + ", successfully authenticated" + ", clientUuid: " + clientUuid
                 + ", client version: " + clientVersion);
         final Address thisAddress = clientEngine.getThisAddress();
+        UUID uuid = clientEngine.getClusterService().getLocalMember().getUuid();
         byte status = AUTHENTICATED.getId();
         boolean clientFailoverSupported = nodeEngine.getNode().getNodeExtension().isClientFailoverSupported();
-        return encodeAuth(status, thisAddress, clientUuid, serializationService.getVersion(),
+        return encodeAuth(status, thisAddress, uuid, serializationService.getVersion(),
                 clientEngine.getPartitionService().getPartitionCount(), clusterId, clientFailoverSupported);
     }
 

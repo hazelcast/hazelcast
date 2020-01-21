@@ -39,6 +39,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -143,8 +144,8 @@ public class ClientConnectionTest extends ClientTestSupport {
 
         connectionManager.addConnectionListener(listener);
 
-        final Address serverAddress = server.getCluster().getLocalMember().getAddress();
-        final Connection connectionToServer = connectionManager.getConnection(serverAddress);
+        UUID serverUuid = server.getCluster().getLocalMember().getUuid();
+        final Connection connectionToServer = connectionManager.getConnection(serverUuid);
 
         ReconnectListener reconnectListener = new ReconnectListener();
         clientImpl.getLifecycleService().addLifecycleListener(reconnectListener);
