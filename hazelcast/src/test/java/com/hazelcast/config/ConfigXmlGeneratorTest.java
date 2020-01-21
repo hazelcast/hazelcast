@@ -1423,7 +1423,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
     public void testMapNearCacheConfig() {
         NearCacheConfig expectedConfig = new NearCacheConfig()
                 .setName("nearCache")
-                .setInMemoryFormat(InMemoryFormat.NATIVE)
+                .setInMemoryFormat(InMemoryFormat.OBJECT)
                 .setMaxIdleSeconds(42)
                 .setCacheLocalEntries(true)
                 .setInvalidateOnChange(true)
