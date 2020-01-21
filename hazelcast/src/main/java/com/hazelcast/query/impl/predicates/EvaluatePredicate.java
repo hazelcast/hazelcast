@@ -74,12 +74,15 @@ public final class EvaluatePredicate implements Predicate, IndexAwarePredicate {
     @Override
     public Set<QueryableEntry> filter(QueryContext queryContext) {
         Index index = queryContext.matchIndex(indexName, QueryContext.IndexMatchHint.EXACT_NAME);
+        if (index == null) {
+            return null;
+        }
         return index.evaluate(predicate);
     }
 
     @Override
     public boolean isIndexed(QueryContext queryContext) {
-        return true;
+        return queryContext.matchIndex(indexName, QueryContext.IndexMatchHint.EXACT_NAME) != null;
     }
 
     @Override

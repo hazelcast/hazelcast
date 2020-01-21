@@ -60,6 +60,7 @@ import static com.hazelcast.map.impl.querycache.subscriber.AbstractQueryCacheEnd
 import static com.hazelcast.map.impl.querycache.subscriber.EventPublisherHelper.publishEntryEvent;
 import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest.newQueryCacheRequest;
 import static com.hazelcast.nio.IOUtil.closeResource;
+import static com.hazelcast.query.impl.Indexes.SKIP_PARTITIONS_COUNT_CHECK;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 import static com.hazelcast.util.Preconditions.checkNoNullInside;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -334,7 +335,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
 
         Set<K> resultingSet = new HashSet<K>();
 
-        Set<QueryableEntry> query = indexes.query(predicate);
+        Set<QueryableEntry> query = indexes.query(predicate, SKIP_PARTITIONS_COUNT_CHECK);
         if (query != null) {
             for (QueryableEntry entry : query) {
                 K key = toObject(entry.getKeyData());
@@ -353,7 +354,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
 
         Set<Map.Entry<K, V>> resultingSet = new HashSet<Map.Entry<K, V>>();
 
-        Set<QueryableEntry> query = indexes.query(predicate);
+        Set<QueryableEntry> query = indexes.query(predicate, SKIP_PARTITIONS_COUNT_CHECK);
         if (query != null) {
             for (QueryableEntry entry : query) {
                 Map.Entry<K, V> copyEntry = new CachedQueryEntry<K, V>(serializationService, entry.getKeyData(),
@@ -376,7 +377,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
 
         List<Data> resultingList = new ArrayList<Data>();
 
-        Set<QueryableEntry> query = indexes.query(predicate);
+        Set<QueryableEntry> query = indexes.query(predicate, SKIP_PARTITIONS_COUNT_CHECK);
         if (query != null) {
             for (QueryableEntry entry : query) {
                 resultingList.add(entry.getValueData());

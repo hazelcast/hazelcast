@@ -122,7 +122,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
     @Override
     public Config getConfig() {
-        Config config = super.getConfig();
+        Config config = smallInstanceConfig();
         MapConfig mapConfig = new MapConfig(MAP_NAME);
         mapConfig.setInMemoryFormat(inMemoryFormat);
         config.addMapConfig(mapConfig);
