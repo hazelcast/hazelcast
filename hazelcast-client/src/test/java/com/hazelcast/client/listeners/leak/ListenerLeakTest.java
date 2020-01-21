@@ -18,6 +18,7 @@ package com.hazelcast.client.listeners.leak;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.ClientEndpoint;
+import com.hazelcast.client.impl.ClientPartitionListenerService;
 import com.hazelcast.client.impl.clientside.ClientTestUtil;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.spi.impl.listener.AbstractClientListenerService;
@@ -257,14 +258,21 @@ public class ListenerLeakTest extends HazelcastTestSupport {
 
     @Test
     public void testListenerLeakOnMember_whenClientDestroyed() {
-        Collection<Node> nodes = createNodes();
+        final Collection<Node> nodes = createNodes();
 
         for (int i = 0; i < 100; i++) {
             newHazelcastClient().shutdown();
         }
 
-        for (Node node : nodes) {
-            assertEquals(0, node.getClientEngine().getPartitionListenerService().getPartitionListeningEndpoints().size());
-        }
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                for (Node node : nodes) {
+                    ClientPartitionListenerService listenerService = node.getClientEngine().getPartitionListenerService();
+                    assertEquals(0, listenerService.getPartitionListeningEndpoints().size());
+                }
+            }
+        });
     }
 }
