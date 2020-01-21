@@ -33,6 +33,7 @@ import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.executionservice.impl.ExecutionServiceImpl;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.JmxLeakHelper;
@@ -112,6 +113,7 @@ public class MetricsServiceTest extends HazelcastTestSupport {
         when(nodeEngineMock.getLogger(any(Class.class))).thenReturn(loggerMock);
         when(nodeEngineMock.getMetricsRegistry()).thenReturn(metricsRegistry);
         when(nodeEngineMock.getHazelcastInstance()).thenReturn(hzMock);
+        when(nodeEngineMock.getProperties()).thenReturn(new HazelcastProperties(System.getProperties()));
         when(hzMock.getName()).thenReturn("mockInstance");
 
         executionService = new ExecutionServiceImpl(nodeEngineMock);

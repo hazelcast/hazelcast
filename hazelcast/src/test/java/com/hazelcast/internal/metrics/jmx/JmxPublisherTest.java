@@ -205,7 +205,6 @@ public class JmxPublisherTest {
 
     private void when_badCharacters_then_escaped(String badText) throws Exception {
         // we must be able to work with any crazy user input
-        System.out.println("badText: " + badText);
         jmxPublisher.publishLong(newDescriptor()
                 .withPrefix(badText)
                 .withMetric("metric"), 1L);
