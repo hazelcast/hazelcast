@@ -34,27 +34,27 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.jet.core.processor.Processors.noopP;
+import static com.hazelcast.jet.impl.util.Util.uncheckRun;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({SlowTest.class, IgnoredForCoverage.class})
 public final class JobSubmissionSlownessRegressionTest extends JetTestSupport {
 
-    private static final int DURATION_SECS = 60;
-    private static final int THREADS_COUNT = Runtime.getRuntime().availableProcessors();
+    private static final int DURATION_SECS = 10;
+    private static final int THREADS_COUNT = 5;
 
-    private static final int HEAT_UP_CYCLE_COUNT = 1;
-    private static final int MEASUREMENT_A_CYCLE_COUNT = 1;
-    private static final int WAIT_BEFORE_MEASUREMENT_B_COUNT = 2;
-    private static final int MEASUREMENT_B_CYCLE_COUNT = 1;
+    private static final int HEAT_UP_CYCLE_COUNT = 3;
+    private static final int MEASUREMENT_A_CYCLE_COUNT = 3;
+    private static final int WAIT_BEFORE_MEASUREMENT_B_COUNT = 3;
+    private static final int MEASUREMENT_B_CYCLE_COUNT = 3;
 
     private static final int HEAT_UP_CYCLE_SECTION = HEAT_UP_CYCLE_COUNT;
     private static final int MEASUREMENT_A_CYCLE_SECTION = HEAT_UP_CYCLE_SECTION + MEASUREMENT_A_CYCLE_COUNT;
@@ -72,7 +72,9 @@ public final class JobSubmissionSlownessRegressionTest extends JetTestSupport {
     }
 
     @Test
-    public void regressionTestForPR1488() throws ExecutionException, InterruptedException {
+    public void regressionTestForPR1488() {
+        logger.info(String.format("Starting test with %d threads", THREADS_COUNT));
+
         ExecutorService executorService = Executors.newFixedThreadPool(THREADS_COUNT);
 
         double measurementARateSum = 0;
@@ -80,36 +82,30 @@ public final class JobSubmissionSlownessRegressionTest extends JetTestSupport {
 
         DAG dag = twoVertex();
         JetInstance client = createJetClient();
-        while (measurementCount <= MEASUREMENT_B_CYCLE_SECTION) {
-            AtomicInteger completedRoundtrips = new AtomicInteger();
+        while (measurementCount < MEASUREMENT_B_CYCLE_SECTION) {
+            AtomicInteger completedRoundTrips = new AtomicInteger();
             long start = System.nanoTime();
-            List<Future> futures = new ArrayList<Future>();
+            List<Future<?>> futures = new ArrayList<>();
             for (int i = 0; i < THREADS_COUNT; i++) {
                 Future<?> f = executorService.submit(() -> {
-                    bench(DURATION_SECS, () -> {
+                    bench(() -> {
                         client.newJob(dag, new JobConfig()).join();
-                    }, completedRoundtrips);
+                    }, completedRoundTrips);
                 });
                 futures.add(f);
             }
-            for (Future future : futures) {
-                future.get();
-            }
+            futures.forEach(f -> uncheckRun(f::get));
+
             long elapsed = System.nanoTime() - start;
-            double rate = (double) completedRoundtrips.get() / (double) elapsed * TimeUnit.SECONDS.toNanos(1);
+            double rate = (double) completedRoundTrips.get() / (double) elapsed * SECONDS.toNanos(1);
             System.out.println("Rate was " + rate + " req/s");
             measurementCount++;
-            if (measurementCount <= HEAT_UP_CYCLE_SECTION) {
-            } else {
-                if (measurementCount <= MEASUREMENT_A_CYCLE_SECTION) {
+
+            if (measurementCount > HEAT_UP_CYCLE_SECTION) { //3
+                if (measurementCount <= MEASUREMENT_A_CYCLE_SECTION) { //6
                     measurementARateSum += rate;
-                } else {
-                    if (measurementCount <= WAIT_BEFORE_MEASUREMENT_B_SECTION) {
-                    } else {
-                        if (measurementCount <= MEASUREMENT_B_CYCLE_SECTION) {
-                            measurementBRateSum += rate;
-                        }
-                    }
+                } else if (measurementCount > WAIT_BEFORE_MEASUREMENT_B_SECTION) { //9
+                    measurementBRateSum += rate;
                 }
             }
         }
@@ -129,9 +125,9 @@ public final class JobSubmissionSlownessRegressionTest extends JetTestSupport {
         return dag;
     }
 
-    private static void bench(long durationSecs, Runnable r, AtomicInteger completedRoundTrips) {
+    private static void bench(Runnable r, AtomicInteger completedRoundTrips) {
         long start = System.nanoTime();
-        long end = start + TimeUnit.SECONDS.toNanos(durationSecs);
+        long end = start + SECONDS.toNanos(DURATION_SECS);
         while (System.nanoTime() < end) {
             r.run();
             completedRoundTrips.incrementAndGet();
