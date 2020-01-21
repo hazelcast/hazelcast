@@ -44,8 +44,7 @@ public class TxnRemoveAllBackupOperation extends QueueOperation implements Backu
     @Override
     public void run() throws Exception {
         QueueContainer queueContainer = getContainer();
-        queueContainer.txnCommitRemoveAllBackup(data);
-        response = true;
+        response = !queueContainer.txnCommitRemoveAllBackup(data).isEmpty();
     }
 
     @Override
