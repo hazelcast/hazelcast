@@ -70,7 +70,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 public @interface Probe {
 
     /**
-     * The name of the Probe. By default the name of the field or method is used.
+     * The name of the Probe.
      *
      * @return the name of the Probe.
      */

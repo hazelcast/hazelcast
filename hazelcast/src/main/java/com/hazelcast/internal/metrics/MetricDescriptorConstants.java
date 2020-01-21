@@ -18,7 +18,7 @@ package com.hazelcast.internal.metrics;
 
 /**
  * Class holding constants for metric names, prefixes, discriminators etc.
- * <p/>
+ * <p></p>
  *
  * IMPORTANT NOTE:
  * The constants in this file are meant to be stable and can be changed
