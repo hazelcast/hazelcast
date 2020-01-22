@@ -402,6 +402,16 @@ public class MapConfigTest {
     }
 
     @Test
+    public void givenSetOptimizeQueryIsFalse_whenSetCacheDeserializedValuesToNEVER_thenNoException() {
+        // given
+        MapConfig mapConfig = new MapConfig();
+        mapConfig.setOptimizeQueries(false);
+
+        // when
+        mapConfig.setCacheDeserializedValues(CacheDeserializedValues.NEVER);
+    }
+
+    @Test
     @Ignore(value = "this MapStoreConfig does not override equals/hashcode -> this cannot pass right now")
     public void givenSetCacheDeserializedValuesIsINDEX_ONLY_whenComparedWithOtherConfigWhereCacheIsINDEX_ONLY_thenReturnTrue() {
         // given

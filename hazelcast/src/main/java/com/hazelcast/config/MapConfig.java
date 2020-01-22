@@ -851,17 +851,19 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
         if (optimizeQueryExplicitlyInvoked) {
             // deprecated {@link #setOptimizeQueries(boolean)} was explicitly invoked
             // we need to be strict with validation to detect conflicts
-            boolean optimizeQuerySet = (cacheDeserializedValues == CacheDeserializedValues.ALWAYS);
-            if (optimizeQuerySet && validatedCacheDeserializedValues == CacheDeserializedValues.NEVER) {
+            boolean optimizeQueryFlag = (cacheDeserializedValues == CacheDeserializedValues.ALWAYS);
+            if (!optimizeQueryFlag && validatedCacheDeserializedValues == CacheDeserializedValues.NEVER) {
+                // settings are compatible
+                return;
+            }
+            if (optimizeQueryFlag && validatedCacheDeserializedValues == CacheDeserializedValues.NEVER) {
                 throw new ConfigurationException("Deprecated option 'optimize-queries' is set to `true`, "
                         + "but 'cacheDeserializedValues' is set to NEVER. These are conflicting options. "
                         + "Please remove the `optimize-queries'");
             }
-
             if (cacheDeserializedValues != validatedCacheDeserializedValues) {
-                boolean optimizeQueriesFlagState = cacheDeserializedValues == CacheDeserializedValues.ALWAYS;
                 throw new ConfigurationException("Deprecated option 'optimize-queries' is set to "
-                        + optimizeQueriesFlagState + " but 'cacheDeserializedValues' is set to "
+                        + optimizeQueryFlag + " but 'cacheDeserializedValues' is set to "
                         + validatedCacheDeserializedValues + ". These are conflicting options. "
                         + "Please remove the `optimize-queries'");
             }
