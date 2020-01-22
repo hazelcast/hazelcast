@@ -44,7 +44,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If smart routing is disabled, the actual member processing the client
  * message may act as a proxy.
  */
-@Generated("6ebe0f06ca3d76ca22a15d3ac07a0aad")
+@Generated("97e43f3db06bf0bff35345cc1c994bc7")
 public final class PNCounterAddCodec {
     //hex: 0x1D0200
     public static final int REQUEST_MESSAGE_TYPE = 1901056;
@@ -98,6 +98,7 @@ public final class PNCounterAddCodec {
         clientMessage.setOperationName("PNCounter.Add");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeLong(initialFrame.content, REQUEST_DELTA_FIELD_OFFSET, delta);
         encodeBoolean(initialFrame.content, REQUEST_GET_BEFORE_UPDATE_FIELD_OFFSET, getBeforeUpdate);
         encodeUUID(initialFrame.content, REQUEST_TARGET_REPLICA_UUID_FIELD_OFFSET, targetReplicaUUID);

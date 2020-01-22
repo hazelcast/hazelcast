@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Takes a thread dump of the member it's called on.
  */
-@Generated("6f150f42a15d5c892f1d7d5823f0d8bf")
+@Generated("ca7ae20159260673f9df18e0d3a10823")
 public final class MCGetThreadDumpCodec {
     //hex: 0x200700
     public static final int REQUEST_MESSAGE_TYPE = 2098944;
@@ -64,6 +64,7 @@ public final class MCGetThreadDumpCodec {
         clientMessage.setOperationName("MC.GetThreadDump");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeBoolean(initialFrame.content, REQUEST_DUMP_DEAD_LOCKS_FIELD_OFFSET, dumpDeadLocks);
         clientMessage.add(initialFrame);
         return clientMessage;

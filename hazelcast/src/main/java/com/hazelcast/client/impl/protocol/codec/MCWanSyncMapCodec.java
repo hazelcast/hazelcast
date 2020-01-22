@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Initiate WAN sync for a specific map or all maps
  */
-@Generated("ca7a997a5fcc052a6881b4f3d0098d92")
+@Generated("8298af5af597ceda211d93a69239ddb8")
 public final class MCWanSyncMapCodec {
     //hex: 0x201600
     public static final int REQUEST_MESSAGE_TYPE = 2102784;
@@ -82,6 +82,7 @@ public final class MCWanSyncMapCodec {
         clientMessage.setOperationName("MC.WanSyncMap");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeInt(initialFrame.content, REQUEST_WAN_SYNC_TYPE_FIELD_OFFSET, wanSyncType);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, wanReplicationName);

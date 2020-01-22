@@ -192,7 +192,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * 
  * The metrics blob constructed this way is then gets ZLIB compressed.
  */
-@Generated("9b6d63490f199c0503c27051922325e5")
+@Generated("995f5c19ce84b3d80bcdadd86ff0ee9c")
 public final class ClientStatisticsCodec {
     //hex: 0x000C00
     public static final int REQUEST_MESSAGE_TYPE = 3072;
@@ -230,6 +230,7 @@ public final class ClientStatisticsCodec {
         clientMessage.setOperationName("Client.Statistics");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeLong(initialFrame.content, REQUEST_TIMESTAMP_FIELD_OFFSET, timestamp);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, clientAttributes);

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Commits the global transaction specified by xid.
  */
-@Generated("7dd5efc079474ccd6419f01b6602d5dc")
+@Generated("418063a4af71ef5b89b0f12ee5d6081c")
 public final class XATransactionCommitCodec {
     //hex: 0x140400
     public static final int REQUEST_MESSAGE_TYPE = 1311744;
@@ -70,6 +70,7 @@ public final class XATransactionCommitCodec {
         clientMessage.setOperationName("XATransaction.Commit");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeUUID(initialFrame.content, REQUEST_TRANSACTION_ID_FIELD_OFFSET, transactionId);
         encodeBoolean(initialFrame.content, REQUEST_ONE_PHASE_FIELD_OFFSET, onePhase);
         clientMessage.add(initialFrame);

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Changes the cluster version.
  */
-@Generated("2d4304f70a8ec3e3273a6a5a1d0a0bb3")
+@Generated("7ea3867c0fae8b55b99feda494a55da1")
 public final class MCChangeClusterVersionCodec {
     //hex: 0x201000
     public static final int REQUEST_MESSAGE_TYPE = 2101248;
@@ -70,6 +70,7 @@ public final class MCChangeClusterVersionCodec {
         clientMessage.setOperationName("MC.ChangeClusterVersion");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeByte(initialFrame.content, REQUEST_MAJOR_VERSION_FIELD_OFFSET, majorVersion);
         encodeByte(initialFrame.content, REQUEST_MINOR_VERSION_FIELD_OFFSET, minorVersion);
         clientMessage.add(initialFrame);
