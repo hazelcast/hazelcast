@@ -125,7 +125,7 @@ public class UserCodeDeploymentConfig {
      * Default: {@code null}
      *
      * @return this instance of UserCodeDeploymentConfig for easy method-chaining
-     * @see Member#setAttribute(String, String)
+     * @see Member#getAttribute(String)
      */
     public UserCodeDeploymentConfig setProviderFilter(String providerFilter) {
         this.providerFilter = providerFilter;

@@ -38,7 +38,7 @@ public class MetricsJmxConfig {
     /**
      * Returns whether metrics will be exposed through JMX MBeans. It's
      * enabled by default.
-     * <p/>
+     * <p>
      * This configuration acts as a fine-tuning option beyond
      * enabling/disabling the Metrics collection entirely via the
      * {@link MetricsConfig#isEnabled()} master switch.
@@ -54,11 +54,11 @@ public class MetricsJmxConfig {
      * Enables metrics exposure through JMX. It's enabled by default. Metric
      * values are collected in the {@link MetricsConfig#getCollectionFrequencySeconds()}
      * metric collection interval} and written to a set of MBeans.
-     * <p/>
+     * <p>
      * This configuration acts as a fine-tuning option beyond
      * enabling/disabling the Metrics collection entirely via the {@link #enabled}
      * master switch.
-     * <p/>
+     * <p>
      * May be overridden by {@link ClusterProperty#METRICS_JMX_ENABLED}
      * system property.
      */

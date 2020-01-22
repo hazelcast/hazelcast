@@ -29,7 +29,6 @@ import com.hazelcast.map.IMap;
  * <ul>
  * <li>{@link EntryProcessor} passed to {@link IMap#executeOnKey(Object, EntryProcessor)}</li>
  * <li>{@link EntryProcessor} passed to {@link IMap#submitToKey(Object, EntryProcessor)} </li>
- * <li>{@link EntryProcessor} passed to {@link IMap#submitToKey(Object, EntryProcessor, ExecutionCallback)} </li>
  * </ul>
  *
  * @see Offloadable

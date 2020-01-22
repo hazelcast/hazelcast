@@ -47,7 +47,7 @@ public class MetricsManagementCenterConfig {
      * Returns whether metrics will be exposed to Hazelcast Management
      * Center. If enabled, Hazelcast Management Center will be able to read
      * out the collected metrics from this member. It's enabled by default.
-     * <p/>
+     * <p>
      * This configuration acts as a fine-tuning option beyond
      * enabling/disabling the Metrics collection entirely via the
      * {@link MetricsConfig#isEnabled()} master switch.
@@ -63,11 +63,11 @@ public class MetricsManagementCenterConfig {
      * Enables exposing metrics to Hazelcast Management Center. If enabled,
      * Hazelcast Management Center will be able to read out the recorded
      * metrics from this member. It's enabled by default.
-     * <p/>
+     * <p>
      * This configuration acts as a fine-tuning option beyond
      * enabling/disabling the Metrics collection entirely via the {@link #enabled}
      * master switch.
-     * <p/>
+     * <p>
      * May be overridden by {@link ClusterProperty#METRICS_MC_ENABLED}
      * system property.
      *
@@ -95,7 +95,7 @@ public class MetricsManagementCenterConfig {
      * is used). More retention means more heap memory, but allows for longer
      * client hiccups without losing a value (for example to restart the
      * Management Center).
-     * <p/>
+     * <p>
      * May be overridden by {@link ClusterProperty#METRICS_MC_RETENTION}
      * system property.
      */

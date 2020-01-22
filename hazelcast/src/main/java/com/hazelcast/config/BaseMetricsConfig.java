@@ -52,7 +52,7 @@ public abstract class BaseMetricsConfig<T extends BaseMetricsConfig> {
      * Sets whether metrics collection should be enabled for the node. If
      * enabled, Hazelcast Management Center will be able to connect to this
      * member. It's enabled by default.
-     * <p/>
+     * <p>
      * May be overridden by {@link ClusterProperty#METRICS_ENABLED}
      * system property.
      */
@@ -84,7 +84,7 @@ public abstract class BaseMetricsConfig<T extends BaseMetricsConfig> {
      * Sets the metrics collection frequency in seconds. The same interval is
      * used for collection for Management Center and for JMX publisher. By default,
      * metrics are collected every 5 seconds.
-     * <p/>
+     * <p>
      * May be overridden by {@link ClusterProperty#METRICS_COLLECTION_FREQUENCY}
      * system property.
      */
