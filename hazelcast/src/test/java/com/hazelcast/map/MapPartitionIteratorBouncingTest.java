@@ -49,7 +49,7 @@ public class MapPartitionIteratorBouncingTest extends HazelcastTestSupport {
     private static final int CONCURRENCY = 2;
     public static final int FETCH_SIZE = 100;
     public static final int MUTATION_ENTRY_FACTOR = 10;
-    public AtomicInteger successfulIterations = new AtomicInteger();
+    public AtomicInteger successfullIterations = new AtomicInteger();
 
     @Rule
     public BounceMemberRule bounceMemberRule =
@@ -102,7 +102,7 @@ public class MapPartitionIteratorBouncingTest extends HazelcastTestSupport {
                 assertTrue("Missing stable entry", all.contains(i));
             }
 
-            logger.info("Successfully finished iteration " + successfulIterations.incrementAndGet());
+            logger.info("Successfully finished iteration " + successfullIterations.incrementAndGet());
         }
 
         private HashSet<Integer> getAll() {
