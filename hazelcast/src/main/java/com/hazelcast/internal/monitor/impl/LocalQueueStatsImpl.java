@@ -62,11 +62,11 @@ public class LocalQueueStatsImpl implements LocalQueueStats, JsonSerializable {
     private int ownedItemCount;
     @Probe(name = QUEUE_METRIC_BACKUP_ITEM_COUNT)
     private int backupItemCount;
-    @Probe(name = QUEUE_METRIC_MIN_AGE)
+    @Probe(name = QUEUE_METRIC_MIN_AGE, unit = MS)
     private long minAge;
-    @Probe(name = QUEUE_METRIC_MAX_AGE)
+    @Probe(name = QUEUE_METRIC_MAX_AGE, unit = MS)
     private long maxAge;
-    @Probe(name = QUEUE_METRIC_AVERAGE_AGE)
+    @Probe(name = QUEUE_METRIC_AVERAGE_AGE, unit = MS)
     private long averageAge;
     @Probe(name = QUEUE_METRIC_CREATION_TIME, unit = MS)
     private long creationTime;
