@@ -48,6 +48,7 @@ import static java.lang.Math.min;
 public class TransformStatefulP<T, K, S, R> extends AbstractProcessor {
     private static final int HASH_MAP_INITIAL_CAPACITY = 16;
     private static final float HASH_MAP_LOAD_FACTOR = 0.75f;
+    private static final Watermark FLUSHING_WATERMARK = new Watermark(Long.MAX_VALUE);
 
     @Probe(name = "lateEventsDropped")
     private final Counter lateEventsDropped = SwCounter.newSwCounter();
@@ -69,6 +70,7 @@ public class TransformStatefulP<T, K, S, R> extends AbstractProcessor {
 
     private long currentWm = Long.MIN_VALUE;
     private Traverser<? extends Entry<?, ?>> snapshotTraverser;
+    private boolean inComplete;
 
     public TransformStatefulP(
             long ttl,
@@ -118,12 +120,23 @@ public class TransformStatefulP<T, K, S, R> extends AbstractProcessor {
         return evictingTraverserFlattened;
     }
 
+    @Override
+    public boolean complete() {
+        inComplete = true;
+        // flush everything with a terminal watermark
+        return tryProcessWatermark(FLUSHING_WATERMARK);
+    }
+
     private class EvictingTraverser implements Traverser<Traverser<?>> {
         private Iterator<Entry<K, TimestampedItem<S>>> keyToStateIterator;
         private final ResettableSingletonTraverser<Watermark> wmTraverser = new ResettableSingletonTraverser<>();
 
         void reset(Watermark wm) {
             keyToStateIterator = keyToState.entrySet().iterator();
+            if (wm == FLUSHING_WATERMARK) {
+                // don't forward the flushing watermark
+                return;
+            }
             wmTraverser.accept(wm);
         }
 
@@ -154,6 +167,11 @@ public class TransformStatefulP<T, K, S, R> extends AbstractProcessor {
 
     @Override
     public boolean saveToSnapshot() {
+        if (inComplete) {
+            // If we are in completing phase, we can have a half-emitted item. Instead of finishing it and
+            // writing a snapshot, we finish the final items and save no state.
+            return complete();
+        }
         if (snapshotTraverser == null) {
             snapshotTraverser = Traversers.<Entry<?, ?>>traverseIterable(keyToState.entrySet())
                     .append(entry(broadcastKey(SnapshotKeys.WATERMARK), currentWm))
@@ -165,7 +183,7 @@ public class TransformStatefulP<T, K, S, R> extends AbstractProcessor {
     @Override
     protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
         if (key instanceof BroadcastKey) {
-            assert ((BroadcastKey) key).key() == SnapshotKeys.WATERMARK : "Unexpected " + key;
+            assert ((BroadcastKey<?>) key).key() == SnapshotKeys.WATERMARK : "Unexpected " + key;
             long wm = (long) value;
             currentWm = (currentWm == Long.MIN_VALUE) ? wm : min(currentWm, wm);
         } else {

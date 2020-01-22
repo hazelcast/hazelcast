@@ -244,7 +244,9 @@ public class TransformStatefulPTest {
                            jetEvent(3, entry("a", 3L)),
                            jetEvent(4, entry("b", evictSignal)),
                            wm(4),
-                           jetEvent(4, entry("b", 4L))
+                           jetEvent(4, entry("b", 4L)),
+                           jetEvent(Long.MAX_VALUE, entry("a", 99L)),
+                           jetEvent(Long.MAX_VALUE, entry("b", 99L))
                    ));
     }
 

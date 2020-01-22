@@ -660,7 +660,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         execute();
         Function<Entry<Integer, String>, String> formatFn = e -> String.format("%d %s", e.getKey(), e.getValue());
         assertEquals(
-                streamToString(Stream.of(entry(0, evictedSignal)), formatFn),
+                streamToString(Stream.of(entry(0, evictedSignal), entry(1, evictedSignal)), formatFn),
                 streamToString(sinkStreamOfEntry(), formatFn)
         );
     }
