@@ -394,11 +394,10 @@
         ===== HAZELCAST LISTENER CONFIGURATIONS =====
 
         Configuration used to register the listeners that you created by implementing Hazelcast's
-        MembershipListener, InstanceListener and MigrationListener interfaces.
+        MembershipListener and MigrationListener interfaces.
     -->
     <listeners>
         <listener>com.hazelcast.examples.MembershipListener</listener>
-        <listener>com.hazelcast.examples.InstanceListener</listener>
         <listener>com.hazelcast.examples.MigrationListener</listener>
     </listeners>
 
