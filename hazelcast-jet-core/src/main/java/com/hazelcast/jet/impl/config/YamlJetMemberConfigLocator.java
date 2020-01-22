@@ -27,7 +27,6 @@ import static com.hazelcast.internal.config.DeclarativeConfigUtil.YAML_ACCEPTED_
  */
 public final class YamlJetMemberConfigLocator extends AbstractConfigLocator {
 
-    private static final String HAZELCAST_MEMBER_YAML = "hazelcast.yaml";
     private static final String HAZELCAST_MEMBER_DEFAULT_YAML = "hazelcast-jet-member-default.yaml";
     private static final String HAZELCAST_ENTERPRISE_MEMBER_DEFAULT_YAML = "hazelcast-jet-enterprise-member-default.yaml";
 
@@ -47,12 +46,12 @@ public final class YamlJetMemberConfigLocator extends AbstractConfigLocator {
 
     @Override
     protected boolean locateInWorkDir() {
-        return loadFromWorkingDirectory(HAZELCAST_MEMBER_YAML);
+        return loadFromWorkingDirectory("hazelcast", YAML_ACCEPTED_SUFFIXES);
     }
 
     @Override
     protected boolean locateOnClasspath() {
-        return loadConfigurationFromClasspath(HAZELCAST_MEMBER_YAML);
+        return loadConfigurationFromClasspath("hazelcast", YAML_ACCEPTED_SUFFIXES);
     }
 
     @Override
