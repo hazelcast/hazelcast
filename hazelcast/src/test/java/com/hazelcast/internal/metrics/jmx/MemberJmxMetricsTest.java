@@ -46,6 +46,7 @@ public class MemberJmxMetricsTest {
 
     @Before
     public void setUp() throws Exception {
+        System.clearProperty(ClusterProperty.ENABLE_JMX.getName());
         helper = new JmxPublisherTestHelper(DOMAIN_PREFIX);
         helper.assertNoMBeans();
     }
