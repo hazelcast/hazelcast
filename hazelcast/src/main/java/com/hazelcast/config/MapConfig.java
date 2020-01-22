@@ -819,16 +819,21 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
     }
 
     private void validateSetOptimizeQueriesOption(boolean optimizeQueries) {
-        if (setCacheDeserializedValuesExplicitlyInvoked) {
-            if (optimizeQueries && cacheDeserializedValues == CacheDeserializedValues.NEVER) {
-                throw new ConfigurationException("Deprecated option 'optimize-queries' is set to true, "
-                        + "but 'cacheDeserializedValues' is set to NEVER. "
-                        + "These are conflicting options. Please remove the `optimize-queries'");
-            } else if (!optimizeQueries && cacheDeserializedValues == CacheDeserializedValues.ALWAYS) {
-                throw new ConfigurationException("Deprecated option 'optimize-queries' is set to false, "
-                        + "but 'cacheDeserializedValues' is set to ALWAYS. "
-                        + "These are conflicting options. Please remove the `optimize-queries'");
-            }
+        if (!setCacheDeserializedValuesExplicitlyInvoked) {
+            return;
+        }
+        if (cacheDeserializedValues == CacheDeserializedValues.INDEX_ONLY) {
+            throw new ConfigurationException("Deprecated option 'optimize-queries' is being set"
+                    + ", but 'cacheDeserializedValues' was set to INDEX_ONLY. "
+                    + "These are conflicting options. Please remove the `optimize-queries'");
+        } else if (cacheDeserializedValues == CacheDeserializedValues.NEVER && optimizeQueries) {
+            throw new ConfigurationException("Deprecated option 'optimize-queries' is being set to true, "
+                    + "but 'cacheDeserializedValues' is set to NEVER. "
+                    + "These are conflicting options. Please remove the `optimize-queries'");
+        } else if (cacheDeserializedValues == CacheDeserializedValues.ALWAYS && !optimizeQueries) {
+            throw new ConfigurationException("Deprecated option 'optimize-queries' is being set to false, "
+                    + "but 'cacheDeserializedValues' is set to ALWAYS. "
+                    + "These are conflicting options. Please remove the `optimize-queries'");
         }
     }
 
@@ -848,25 +853,22 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
     }
 
     private void validateCacheDeserializedValuesOption(CacheDeserializedValues validatedCacheDeserializedValues) {
-        if (optimizeQueryExplicitlyInvoked) {
-            // deprecated {@link #setOptimizeQueries(boolean)} was explicitly invoked
-            // we need to be strict with validation to detect conflicts
-            boolean optimizeQueryFlag = (cacheDeserializedValues == CacheDeserializedValues.ALWAYS);
-            if (!optimizeQueryFlag && validatedCacheDeserializedValues == CacheDeserializedValues.NEVER) {
-                // settings are compatible
-                return;
-            }
-            if (optimizeQueryFlag && validatedCacheDeserializedValues == CacheDeserializedValues.NEVER) {
-                throw new ConfigurationException("Deprecated option 'optimize-queries' is set to `true`, "
-                        + "but 'cacheDeserializedValues' is set to NEVER. These are conflicting options. "
-                        + "Please remove the `optimize-queries'");
-            }
-            if (cacheDeserializedValues != validatedCacheDeserializedValues) {
-                throw new ConfigurationException("Deprecated option 'optimize-queries' is set to "
-                        + optimizeQueryFlag + " but 'cacheDeserializedValues' is set to "
-                        + validatedCacheDeserializedValues + ". These are conflicting options. "
-                        + "Please remove the `optimize-queries'");
-            }
+        if (!optimizeQueryExplicitlyInvoked) {
+            return;
+        }
+
+        // deprecated {@link #setOptimizeQueries(boolean)} was explicitly invoked
+        // we need to be strict with validation to detect conflicts
+        boolean optimizeQueryFlag = (cacheDeserializedValues == CacheDeserializedValues.ALWAYS);
+
+        if (optimizeQueryFlag && validatedCacheDeserializedValues != CacheDeserializedValues.ALWAYS) {
+            throw new ConfigurationException("Deprecated option 'optimize-queries' is set to `true`, "
+                    + "but 'cacheDeserializedValues' is being set to NEVER or INDEX_ONLY."
+                    + " These are conflicting options. Please remove the `optimize-queries'");
+        } else if (!optimizeQueryFlag && validatedCacheDeserializedValues != CacheDeserializedValues.NEVER) {
+            throw new ConfigurationException("Deprecated option 'optimize-queries' is set to `false`, "
+                    + "but 'cacheDeserializedValues' is begin set to ALWAYS or INDEX_ONLY. These are conflicting options."
+                    + " Please remove the `optimize-queries'");
         }
     }
 
