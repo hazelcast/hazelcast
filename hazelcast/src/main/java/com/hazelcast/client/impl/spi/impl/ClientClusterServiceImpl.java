@@ -77,11 +77,12 @@ public class ClientClusterServiceImpl implements ClientClusterService {
 
     private final AtomicReference<MemberListSnapshot> memberListSnapshot = new AtomicReference<>(EMPTY_SNAPSHOT);
     private final ConcurrentMap<UUID, MembershipListener> listeners = new ConcurrentHashMap<>();
-    private final Object clusterViewLock = new Object();
     private final Set<String> labels;
     private final ILogger logger;
     private final ClientConnectionManager connectionManager;
-    private volatile CountDownLatch initialListFetchedLatch = new CountDownLatch(1);
+    private final Object clusterViewLock = new Object();
+    //read and written under clusterViewLock
+    private CountDownLatch initialListFetchedLatch = new CountDownLatch(1);
 
     private static final class MemberListSnapshot {
         private final int version;

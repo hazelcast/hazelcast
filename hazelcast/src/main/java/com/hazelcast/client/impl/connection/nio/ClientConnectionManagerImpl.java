@@ -46,7 +46,6 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.config.InvalidConfigurationException;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.networking.Channel;
@@ -798,7 +797,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         }
         switch (authenticationStatus) {
             case AUTHENTICATED:
-                checkMemberUuid(response);
                 handleSuccessfulAuth(connection, response);
                 break;
             case CREDENTIALS_FAILED:
@@ -815,22 +813,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                         new AuthenticationException("Authentication status code not supported. status: " + authenticationStatus);
                 connection.close("Failed to authenticate connection", exception);
                 throw exception;
-        }
-    }
-
-    private void checkMemberUuid(ClientAuthenticationCodec.ResponseParameters response) {
-        Collection<Member> memberList = client.getClientClusterService().getMemberList();
-        for (Member member : memberList) {
-            assert response.address != null;
-            assert response.uuid != null;
-            if (response.address.equals(member.getAddress())) {
-                if (!response.uuid.equals(member.getUuid())) {
-                    throw new HazelcastException("Members uuid is not the one in member list"
-                            + ", Address " + response.address
-                            + ", Connected members uuid : " + response.uuid
-                            + ", Uuid in the current member list : " + member.getUuid());
-                }
-            }
         }
     }
 
