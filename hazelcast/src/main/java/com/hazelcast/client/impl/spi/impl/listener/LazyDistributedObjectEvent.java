@@ -47,7 +47,7 @@ public final class LazyDistributedObjectEvent extends DistributedObjectEvent {
     public DistributedObject getDistributedObject() {
         distributedObject = super.getDistributedObject();
         if (distributedObject == null) {
-            distributedObject = proxyManager.getOrCreateProxy(getServiceName(), (String) getObjectName());
+            distributedObject = proxyManager.getOrCreateLocalProxy(getServiceName(), (String) getObjectName());
         }
         return distributedObject;
     }
