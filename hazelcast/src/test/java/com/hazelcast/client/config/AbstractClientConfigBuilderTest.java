@@ -304,7 +304,7 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
         assertEquals("com.hazelcast.client.util.RandomLB", fullClientConfig.getLoadBalancer().getClass().getName());
 
         final List<ListenerConfig> listenerConfigs = fullClientConfig.getListenerConfigs();
-        assertEquals(3, listenerConfigs.size());
+        assertEquals(2, listenerConfigs.size());
         assertContains(listenerConfigs, new ListenerConfig("com.hazelcast.examples.MembershipListener"));
         assertContains(listenerConfigs, new ListenerConfig("com.hazelcast.examples.MigrationListener"));
     }
