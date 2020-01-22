@@ -341,11 +341,12 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         }
 
         @Override
-        public void doEviction(boolean withoutMaxSizeCheck) {
+        public boolean doEviction(boolean withoutMaxSizeCheck) {
             if (expectedKeyValueMappings == null) {
                 throw new IllegalStateException("Near Cache is already destroyed");
             }
             doEvictionIfRequiredCalled = true;
+            return true;
         }
 
         @Override

@@ -321,15 +321,16 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     }
 
     @Override
-    public void doEviction(boolean withoutMaxSizeCheck) {
+    public boolean doEviction(boolean withoutMaxSizeCheck) {
         checkAvailable();
 
         if (evictionDisabled) {
-            return;
+            return false;
         }
 
         EvictionChecker evictionChecker = withoutMaxSizeCheck ? null : this.evictionChecker;
         evictionStrategy.evict(records, evictionPolicyEvaluator, evictionChecker, this);
+        return true;
     }
 
     @Override
