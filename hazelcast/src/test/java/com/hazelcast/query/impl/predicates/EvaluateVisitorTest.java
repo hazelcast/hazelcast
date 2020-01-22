@@ -19,7 +19,7 @@ package com.hazelcast.query.impl.predicates;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
-import com.hazelcast.query.impl.QueryContext;
+import com.hazelcast.query.impl.QueryContext.IndexMatchHint;
 import com.hazelcast.query.impl.TypeConverters;
 import com.hazelcast.query.impl.predicates.VisitorTestSupport.CustomPredicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -49,6 +49,7 @@ import static java.util.Arrays.asList;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -77,44 +78,56 @@ public class EvaluateVisitorTest {
         indexes = mock(Indexes.class);
 
         InternalIndex bitmapA = mock(InternalIndex.class);
-        when(bitmapA.canEvaluate(any())).then(
-                (Answer<Boolean>) invocation -> EVALUABLE_PREDICATES.contains(invocation.getArgument(0)));
         when(bitmapA.getConverter()).thenReturn(TypeConverters.INTEGER_CONVERTER);
         when(bitmapA.getName()).thenReturn("a");
-        when(indexes.matchIndex("a", QueryContext.IndexMatchHint.EXACT_NAME, SKIP_PARTITIONS_COUNT_CHECK)).thenReturn(bitmapA);
-        when(indexes.matchIndex("a", QueryContext.IndexMatchHint.PREFER_UNORDERED, SKIP_PARTITIONS_COUNT_CHECK)).thenReturn(bitmapA);
+        when(indexes.matchIndex(eq("a"), any(), eq(IndexMatchHint.EXACT_NAME), eq(SKIP_PARTITIONS_COUNT_CHECK)))
+                .then((Answer<InternalIndex>) invocation ->
+                        EVALUABLE_PREDICATES.contains(invocation.getArgument(1)) ? bitmapA : null);
+        when(indexes.matchIndex(eq("a"), any(), eq(IndexMatchHint.PREFER_UNORDERED), eq(SKIP_PARTITIONS_COUNT_CHECK)))
+                .then((Answer<InternalIndex>) invocation ->
+                        EVALUABLE_PREDICATES.contains(invocation.getArgument(1)) ? bitmapA : null);
 
         InternalIndex bitmapB = mock(InternalIndex.class);
-        when(bitmapB.canEvaluate(any())).then(
-                (Answer<Boolean>) invocation -> EVALUABLE_PREDICATES.contains(invocation.getArgument(0)));
         when(bitmapB.getConverter()).thenReturn(TypeConverters.STRING_CONVERTER);
         when(bitmapB.getName()).thenReturn("b");
-        when(indexes.matchIndex("b", QueryContext.IndexMatchHint.EXACT_NAME, SKIP_PARTITIONS_COUNT_CHECK)).thenReturn(bitmapB);
-        when(indexes.matchIndex("b", QueryContext.IndexMatchHint.PREFER_UNORDERED, SKIP_PARTITIONS_COUNT_CHECK)).thenReturn(bitmapB);
-
-        InternalIndex regular = mock(InternalIndex.class);
-        when(regular.getConverter()).thenReturn(TypeConverters.INTEGER_CONVERTER);
-        when(regular.canEvaluate(any())).thenReturn(false);
-        when(indexes.matchIndex("r", QueryContext.IndexMatchHint.EXACT_NAME, SKIP_PARTITIONS_COUNT_CHECK)).thenReturn(regular);
-        when(indexes.matchIndex("r", QueryContext.IndexMatchHint.PREFER_UNORDERED, SKIP_PARTITIONS_COUNT_CHECK)).thenReturn(regular);
+        when(indexes.matchIndex(eq("b"), any(), eq(IndexMatchHint.EXACT_NAME), eq(SKIP_PARTITIONS_COUNT_CHECK)))
+                .then((Answer<InternalIndex>) invocation ->
+                        EVALUABLE_PREDICATES.contains(invocation.getArgument(1)) ? bitmapB : null);
+        when(indexes.matchIndex(eq("b"), any(), eq(IndexMatchHint.PREFER_UNORDERED), eq(SKIP_PARTITIONS_COUNT_CHECK)))
+                .then((Answer<InternalIndex>) invocation ->
+                        EVALUABLE_PREDICATES.contains(invocation.getArgument(1)) ? bitmapB : null);
 
         InternalIndex bitmapNoConverter = mock(InternalIndex.class);
         when(bitmapNoConverter.getName()).thenReturn("nc");
         when(bitmapNoConverter.getConverter()).thenReturn(null);
-        when(bitmapNoConverter.canEvaluate(any())).then(
-                (Answer<Boolean>) invocation -> EVALUABLE_PREDICATES.contains(invocation.getArgument(0)));
-        when(indexes.matchIndex("nc", QueryContext.IndexMatchHint.EXACT_NAME, SKIP_PARTITIONS_COUNT_CHECK)).thenReturn(bitmapNoConverter);
-        when(indexes.matchIndex("nc", QueryContext.IndexMatchHint.PREFER_UNORDERED, SKIP_PARTITIONS_COUNT_CHECK)).thenReturn(bitmapNoConverter);
+        when(indexes.matchIndex(eq("nc"), any(), eq(IndexMatchHint.EXACT_NAME), eq(SKIP_PARTITIONS_COUNT_CHECK)))
+                .then((Answer<InternalIndex>) invocation ->
+                        EVALUABLE_PREDICATES.contains(invocation.getArgument(1)) ? bitmapNoConverter : null);
+        when(indexes.matchIndex(eq("nc"), any(), eq(IndexMatchHint.PREFER_UNORDERED), eq(SKIP_PARTITIONS_COUNT_CHECK)))
+                .then((Answer<InternalIndex>) invocation ->
+                        EVALUABLE_PREDICATES.contains(invocation.getArgument(1)) ? bitmapNoConverter : null);
 
         InternalIndex bitmapNoSubPredicates = mock(InternalIndex.class);
         when(bitmapNoSubPredicates.getName()).thenReturn("ns");
         when(bitmapNoSubPredicates.getConverter()).thenReturn(TypeConverters.INTEGER_CONVERTER);
-        when(bitmapNoSubPredicates.canEvaluate(any())).then((Answer<Boolean>) invocation -> {
-            Object clazz = invocation.getArgument(0);
-            return !(clazz == AndPredicate.class || clazz == OrPredicate.class || clazz == NotPredicate.class);
-        });
-        when(indexes.matchIndex("ns", QueryContext.IndexMatchHint.EXACT_NAME, SKIP_PARTITIONS_COUNT_CHECK)).thenReturn(bitmapNoSubPredicates);
-        when(indexes.matchIndex("ns", QueryContext.IndexMatchHint.PREFER_UNORDERED, SKIP_PARTITIONS_COUNT_CHECK)).thenReturn(bitmapNoSubPredicates);
+        when(indexes.matchIndex(eq("ns"), any(), eq(IndexMatchHint.EXACT_NAME), eq(SKIP_PARTITIONS_COUNT_CHECK)))
+                .then((Answer<InternalIndex>) invocation -> {
+                    Object clazz = invocation.getArgument(1);
+                    if (clazz == AndPredicate.class || clazz == OrPredicate.class || clazz == NotPredicate.class) {
+                        return null;
+                    } else {
+                        return bitmapNoSubPredicates;
+                    }
+                });
+        when(indexes.matchIndex(eq("ns"), any(), eq(IndexMatchHint.PREFER_UNORDERED), eq(SKIP_PARTITIONS_COUNT_CHECK)))
+                .then((Answer<InternalIndex>) invocation -> {
+                    Object clazz = invocation.getArgument(1);
+                    if (clazz == AndPredicate.class || clazz == OrPredicate.class || clazz == NotPredicate.class) {
+                        return null;
+                    } else {
+                        return bitmapNoSubPredicates;
+                    }
+                });
 
         visitor = new EvaluateVisitor();
     }
