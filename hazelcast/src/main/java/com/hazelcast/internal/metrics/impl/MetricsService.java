@@ -31,7 +31,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.LiveOperations;
 import com.hazelcast.spi.impl.operationservice.LiveOperationsTracker;
-import com.hazelcast.spi.properties.ClusterProperty;
 
 import java.util.Map;
 import java.util.Properties;
@@ -92,14 +91,13 @@ public class MetricsService implements ManagedService, LiveOperationsTracker {
 
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
-        boolean jmxEnabled = nodeEngine.getProperties().getBoolean(ClusterProperty.ENABLE_JMX);
         if (config.isEnabled()) {
 
             if (config.getManagementCenterConfig().isEnabled()) {
                 publishers.add(createMcPublisher());
             }
 
-            if (jmxEnabled && config.getJmxConfig().isEnabled()) {
+            if (config.getJmxConfig().isEnabled()) {
                 publishers.add(createJmxPublisher());
             }
 
