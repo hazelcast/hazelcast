@@ -102,6 +102,8 @@ public interface IndexStore {
      */
     void destroy();
 
+    boolean isEvaluateOnly();
+
     /**
      * @return {@code true} if this index store can evaluate a predicate of the
      * given predicate class, {@code false} otherwise.

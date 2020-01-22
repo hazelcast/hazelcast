@@ -64,6 +64,7 @@ public class Indexes {
 
     private final Map<String, InternalIndex> indexesByName = new ConcurrentHashMap<>(3);
     private final AttributeIndexRegistry attributeIndexRegistry = new AttributeIndexRegistry();
+    private final AttributeIndexRegistry evaluateOnlyAttributeIndexRegistry = new AttributeIndexRegistry();
     private final ConverterCache converterCache = new ConverterCache(this);
     private final Map<String, IndexConfig> definitions = new ConcurrentHashMap<>();
 
@@ -137,7 +138,11 @@ public class Indexes {
         );
 
         indexesByName.put(name, index);
-        attributeIndexRegistry.register(index);
+        if (index.isEvaluateOnly()) {
+            evaluateOnlyAttributeIndexRegistry.register(index);
+        } else {
+            attributeIndexRegistry.register(index);
+        }
         converterCache.invalidate(index);
 
         indexes = indexesByName.values().toArray(EMPTY_INDEXES);
@@ -211,6 +216,7 @@ public class Indexes {
         compositeIndexes = EMPTY_INDEXES;
         indexesByName.clear();
         attributeIndexRegistry.clear();
+        evaluateOnlyAttributeIndexRegistry.clear();
         converterCache.clear();
 
         for (InternalIndex index : indexesSnapshot) {
@@ -358,6 +364,33 @@ public class Indexes {
         }
 
         if (index == null || !index.allPartitionsIndexed(ownedPartitionCount)) {
+            return null;
+        }
+
+        return index;
+    }
+
+    public InternalIndex matchIndex(String pattern, Class<? extends Predicate> predicateClass,
+                                    QueryContext.IndexMatchHint matchHint, int ownedPartitionCount) {
+        InternalIndex index;
+        if (matchHint == QueryContext.IndexMatchHint.EXACT_NAME) {
+            index = indexesByName.get(pattern);
+        } else {
+            index = evaluateOnlyAttributeIndexRegistry.match(pattern, matchHint);
+            if (index == null) {
+                index = attributeIndexRegistry.match(pattern, matchHint);
+            }
+        }
+
+        if (index == null) {
+            return null;
+        }
+
+        if (!index.canEvaluate(predicateClass)) {
+            return null;
+        }
+
+        if (!index.allPartitionsIndexed(ownedPartitionCount)) {
             return null;
         }
 

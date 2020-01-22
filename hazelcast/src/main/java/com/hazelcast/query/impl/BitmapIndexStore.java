@@ -289,6 +289,11 @@ public final class BitmapIndexStore extends BaseIndexStore {
     }
 
     @Override
+    public boolean isEvaluateOnly() {
+        return true;
+    }
+
+    @Override
     public boolean canEvaluate(Class<? extends Predicate> predicateClass) {
         return EVALUABLE_PREDICATES.contains(predicateClass);
     }

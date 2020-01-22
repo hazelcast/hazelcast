@@ -87,6 +87,8 @@ public interface Index {
      */
     void removeEntry(Data key, Object value, OperationSource operationSource);
 
+    boolean isEvaluateOnly();
+
     /**
      * @return {@code true} if this index can evaluate a predicate of the given
      * predicate class, {@code false} otherwise.
