@@ -67,7 +67,7 @@ public class UnsupportedBitmapIndexPredicatesTest extends HazelcastTestSupport {
 
         static volatile boolean filterInvoked;
 
-        public UnsupportedPredicate(String attribute, Comparable value) {
+        UnsupportedPredicate(String attribute, Comparable value) {
             super(attribute, value);
         }
 

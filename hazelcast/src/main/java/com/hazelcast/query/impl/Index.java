@@ -87,6 +87,10 @@ public interface Index {
      */
     void removeEntry(Data key, Object value, OperationSource operationSource);
 
+    /**
+     * @return {@code true} if this index supports querying only with {@link
+     * #evaluate} method, {@code false} otherwise.
+     */
     boolean isEvaluateOnly();
 
     /**

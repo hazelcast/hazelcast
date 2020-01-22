@@ -353,7 +353,7 @@ public class Indexes {
      *                            Negative value indicates that the value is not defined.
      * @return the matched index or {@code null} if nothing matched.
      * @see QueryContext.IndexMatchHint
-     * @see Indexes#matchIndex
+     * @see QueryContext#matchIndex
      */
     public InternalIndex matchIndex(String pattern, QueryContext.IndexMatchHint matchHint, int ownedPartitionCount) {
         InternalIndex index;
@@ -370,6 +370,21 @@ public class Indexes {
         return index;
     }
 
+    /**
+     * Matches an index for the given pattern and match hint that can evaluate
+     * the given predicate class.
+     *
+     * @param pattern             the pattern to match an index for. May be either an
+     *                            attribute name or an exact index name.
+     * @param predicateClass      the predicate class the matched index must be
+     *                            able to evaluate.
+     * @param matchHint           the match hint.
+     * @param ownedPartitionCount a count of owned partitions a query runs on.
+     *                            Negative value indicates that the value is not defined.
+     * @return the matched index or {@code null} if nothing matched.
+     * @see QueryContext.IndexMatchHint
+     * @see Index#evaluate
+     */
     public InternalIndex matchIndex(String pattern, Class<? extends Predicate> predicateClass,
                                     QueryContext.IndexMatchHint matchHint, int ownedPartitionCount) {
         InternalIndex index;

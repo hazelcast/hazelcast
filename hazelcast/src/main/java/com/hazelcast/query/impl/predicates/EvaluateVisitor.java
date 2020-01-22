@@ -20,7 +20,6 @@ import com.hazelcast.core.TypeConverter;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
-import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryContext.IndexMatchHint;
 
 import java.util.ArrayList;
