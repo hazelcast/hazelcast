@@ -38,7 +38,6 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectsCodec;
 import com.hazelcast.client.impl.proxy.ClientClusterProxy;
 import com.hazelcast.client.impl.proxy.PartitionServiceProxy;
-import com.hazelcast.client.map.impl.querycache.ClientQueryCacheContext;
 import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.ClientInvocationService;
@@ -58,6 +57,7 @@ import com.hazelcast.client.impl.spi.impl.SmartClientInvocationService;
 import com.hazelcast.client.impl.spi.impl.listener.ClientClusterViewListenerService;
 import com.hazelcast.client.impl.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.client.impl.statistics.ClientStatisticsService;
+import com.hazelcast.client.map.impl.querycache.ClientQueryCacheContext;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.collection.IList;
@@ -149,6 +149,7 @@ import static com.hazelcast.client.properties.ClientProperty.CONCURRENT_WINDOW_M
 import static com.hazelcast.client.properties.ClientProperty.IO_WRITE_THROUGH_ENABLED;
 import static com.hazelcast.client.properties.ClientProperty.MAX_CONCURRENT_INVOCATIONS;
 import static com.hazelcast.client.properties.ClientProperty.RESPONSE_THREAD_DYNAMIC;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_PREFIX_MEMORY;
 import static com.hazelcast.internal.metrics.impl.MetricsConfigHelper.clientMetricsLevel;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
@@ -299,7 +300,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         ThreadMetricSet.register(metricsRegistry);
         ClassLoadingMetricSet.register(metricsRegistry);
         FileMetricSet.register(metricsRegistry);
-        metricsRegistry.registerStaticMetrics(clientExtension.getMemoryStats(), "memory");
+        metricsRegistry.registerStaticMetrics(clientExtension.getMemoryStats(), CLIENT_PREFIX_MEMORY);
         metricsRegistry.provideMetrics(clientExtension);
         metricsRegistry.provideMetrics(executionService);
     }

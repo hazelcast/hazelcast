@@ -33,6 +33,15 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_DISCRIMINATOR_THREAD;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_THREAD_COMPLETED_OPERATION_BATCH_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_THREAD_COMPLETED_OPERATION_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_THREAD_COMPLETED_PACKET_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_THREAD_COMPLETED_PARTITION_SPECIFIC_RUNNABLE_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_THREAD_COMPLETED_RUNNABLE_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_THREAD_COMPLETED_TOTAL_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_THREAD_ERROR_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_PREFIX_THREAD;
 import static com.hazelcast.internal.metrics.MetricTarget.MANAGEMENT_CENTER;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 
@@ -57,19 +66,19 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
 
     // All these counters are updated by this OperationThread (so a single writer)
     // and are read by the MetricsRegistry.
-    @Probe
+    @Probe(name = OPERATION_METRIC_THREAD_COMPLETED_TOTAL_COUNT)
     private final SwCounter completedTotalCount = newSwCounter();
-    @Probe
+    @Probe(name = OPERATION_METRIC_THREAD_COMPLETED_PACKET_COUNT)
     private final SwCounter completedPacketCount = newSwCounter();
-    @Probe
+    @Probe(name = OPERATION_METRIC_THREAD_COMPLETED_OPERATION_COUNT)
     private final SwCounter completedOperationCount = newSwCounter();
-    @Probe
+    @Probe(name = OPERATION_METRIC_THREAD_COMPLETED_PARTITION_SPECIFIC_RUNNABLE_COUNT)
     private final SwCounter completedPartitionSpecificRunnableCount = newSwCounter();
-    @Probe
+    @Probe(name = OPERATION_METRIC_THREAD_COMPLETED_RUNNABLE_COUNT)
     private final SwCounter completedRunnableCount = newSwCounter();
-    @Probe
+    @Probe(name = OPERATION_METRIC_THREAD_ERROR_COUNT)
     private final SwCounter errorCount = newSwCounter();
-    @Probe
+    @Probe(name = OPERATION_METRIC_THREAD_COMPLETED_OPERATION_BATCH_COUNT)
     private final SwCounter completedOperationBatchCount = newSwCounter();
 
     private final boolean priority;
@@ -193,8 +202,8 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
     public void provideStaticMetrics(MetricsRegistry registry) {
         MetricDescriptor descriptor = registry
                 .newMetricDescriptor()
-                .withPrefix("operation.thread")
-                .withDiscriminator("thread", getName());
+                .withPrefix(OPERATION_PREFIX_THREAD)
+                .withDiscriminator(OPERATION_DISCRIMINATOR_THREAD, getName());
         registry.registerStaticMetrics(descriptor, this);
     }
 

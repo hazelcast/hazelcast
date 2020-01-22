@@ -87,6 +87,9 @@ import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MIGRATION_METRIC_MIGRATION_MANAGER_MIGRATION_ACTIVE;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITIONS_PREFIX;
+import static com.hazelcast.internal.metrics.ProbeUnit.BOOLEAN;
 import static com.hazelcast.internal.partition.IPartitionService.SERVICE_NAME;
 
 /**
@@ -144,10 +147,10 @@ public class MigrationManager {
         delayedResumeMigrationTrigger = new CoalescingDelayedTrigger(
                 executionService, migrationPauseDelayMs, 2 * migrationPauseDelayMs, this::resumeMigration);
         this.memberHeartbeatTimeoutMillis = properties.getMillis(ClusterProperty.MAX_NO_HEARTBEAT_SECONDS);
-        nodeEngine.getMetricsRegistry().registerStaticMetrics(stats, "partitions");
+        nodeEngine.getMetricsRegistry().registerStaticMetrics(stats, PARTITIONS_PREFIX);
     }
 
-    @Probe(name = "migrationActive")
+    @Probe(name = MIGRATION_METRIC_MIGRATION_MANAGER_MIGRATION_ACTIVE, unit = BOOLEAN)
     private int migrationActiveProbe() {
         return migrationTasksAllowed.get() ? 1 : 0;
     }

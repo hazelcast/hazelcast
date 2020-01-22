@@ -18,10 +18,10 @@ package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.cluster.memberselector.MemberSelectors;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MemberSelector;
+import com.hazelcast.cluster.memberselector.MemberSelectors;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.cluster.ClusterService;
@@ -32,16 +32,20 @@ import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionReplicaInterceptor;
 import com.hazelcast.internal.partition.PartitionStateGenerator;
 import com.hazelcast.internal.partition.PartitionTableView;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.partitiongroup.MemberGroup;
 import com.hazelcast.internal.partition.membergroup.MemberGroupFactory;
 import com.hazelcast.internal.partition.membergroup.MemberGroupFactoryFactory;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.partitiongroup.MemberGroup;
 
 import java.util.Collection;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITIONS_METRIC_PARTITION_REPLICA_STATE_MANAGER_LOCAL_PARTITION_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITIONS_METRIC_PARTITION_REPLICA_STATE_MANAGER_MEMBER_GROUP_SIZE;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITIONS_METRIC_PARTITION_REPLICA_STATE_MANAGER_VERSION;
 
 /**
  * Maintains the partition table state.
@@ -55,7 +59,7 @@ public class PartitionStateManager {
     private final int partitionCount;
     private final InternalPartitionImpl[] partitions;
 
-    @Probe
+    @Probe(name = PARTITIONS_METRIC_PARTITION_REPLICA_STATE_MANAGER_VERSION)
     private final AtomicInteger stateVersion = new AtomicInteger();
 
     private final PartitionStateGenerator partitionStateGenerator;
@@ -65,7 +69,7 @@ public class PartitionStateManager {
     // set to true when the partitions are assigned for the first time. remains true until partition service has been reset.
     private volatile boolean initialized;
 
-    @Probe
+    @Probe(name = PARTITIONS_METRIC_PARTITION_REPLICA_STATE_MANAGER_MEMBER_GROUP_SIZE)
     // can be read and written concurrently...
     private volatile int memberGroupsSize;
 
@@ -88,7 +92,7 @@ public class PartitionStateManager {
         partitionStateGenerator = new PartitionStateGeneratorImpl();
     }
 
-    @Probe
+    @Probe(name = PARTITIONS_METRIC_PARTITION_REPLICA_STATE_MANAGER_LOCAL_PARTITION_COUNT)
     private int localPartitionCount() {
         int count = 0;
         for (InternalPartition partition : partitions) {
@@ -243,7 +247,7 @@ public class PartitionStateManager {
      * Checks all replicas for all partitions. If the cluster service does not contain the member for any
      * address in the partition table, it will remove the address from the partition.
      *
-     * @see ClusterService#getMember(Address, String)
+     * @see ClusterService#getMember(Address, UUID)
      */
     void removeUnknownMembers() {
         ClusterServiceImpl clusterService = node.getClusterService();

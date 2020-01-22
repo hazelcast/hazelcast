@@ -26,12 +26,12 @@ import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.EndpointManager;
 import com.hazelcast.internal.nio.Packet;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.internal.util.executor.StripedExecutor;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
@@ -60,6 +60,15 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EVENT_DISCRIMINATOR_SERVICE;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EVENT_METRIC_EVENT_SERVICE_EVENTS_PROCESSED;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EVENT_METRIC_EVENT_SERVICE_EVENT_QUEUE_SIZE;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EVENT_METRIC_EVENT_SERVICE_QUEUE_CAPACITY;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EVENT_METRIC_EVENT_SERVICE_REJECTED_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EVENT_METRIC_EVENT_SERVICE_SYNC_DELIVERY_FAILURE_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EVENT_METRIC_EVENT_SERVICE_THREAD_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EVENT_METRIC_EVENT_SERVICE_TOTAL_FAILURE_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EVENT_PREFIX;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
@@ -153,16 +162,16 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
     private final long eventQueueTimeoutMs;
 
     /** The thread count for the executor processing the events. */
-    @Probe(name = "threadCount")
+    @Probe(name = EVENT_METRIC_EVENT_SERVICE_THREAD_COUNT)
     private final int eventThreadCount;
     /** The capacity of the executor processing the events. This capacity is shared for all events. */
-    @Probe(name = "queueCapacity")
+    @Probe(name = EVENT_METRIC_EVENT_SERVICE_QUEUE_CAPACITY)
     private final int eventQueueCapacity;
-    @Probe(name = "totalFailureCount")
+    @Probe(name = EVENT_METRIC_EVENT_SERVICE_TOTAL_FAILURE_COUNT)
     private final MwCounter totalFailures = newMwCounter();
-    @Probe(name = "rejectedCount")
+    @Probe(name = EVENT_METRIC_EVENT_SERVICE_REJECTED_COUNT)
     private final MwCounter rejectedCount = newMwCounter();
-    @Probe(name = "syncDeliveryFailureCount")
+    @Probe(name = EVENT_METRIC_EVENT_SERVICE_SYNC_DELIVERY_FAILURE_COUNT)
     private final MwCounter syncDeliveryFailureCount = newMwCounter();
 
     private final int sendEventSyncTimeoutMillis;
@@ -204,7 +213,7 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
 
     @Override
     public void provideStaticMetrics(MetricsRegistry registry) {
-        registry.registerStaticMetrics(this, "event");
+        registry.registerStaticMetrics(this, EVENT_PREFIX);
     }
 
     @Override
@@ -233,13 +242,13 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
         return eventQueueCapacity;
     }
 
-    @Probe(name = "eventQueueSize", level = MANDATORY)
+    @Probe(name = EVENT_METRIC_EVENT_SERVICE_EVENT_QUEUE_SIZE, level = MANDATORY)
     @Override
     public int getEventQueueSize() {
         return eventExecutor.getWorkQueueSize();
     }
 
-    @Probe(level = MANDATORY)
+    @Probe(name = EVENT_METRIC_EVENT_SERVICE_EVENTS_PROCESSED, level = MANDATORY)
     private long eventsProcessed() {
         return eventExecutor.processedCount();
     }
@@ -604,8 +613,8 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
                 MetricsRegistry metricsRegistry = nodeEngine.getMetricsRegistry();
                 MetricDescriptor descriptor = metricsRegistry
                         .newMetricDescriptor()
-                        .withPrefix("event")
-                        .withDiscriminator("service", service);
+                        .withPrefix(EVENT_PREFIX)
+                        .withDiscriminator(EVENT_DISCRIMINATOR_SERVICE, service);
                 metricsRegistry.registerStaticMetrics(descriptor, newSegment);
             } else {
                 segment = existingSegment;

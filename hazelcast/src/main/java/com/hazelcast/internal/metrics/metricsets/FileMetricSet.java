@@ -16,11 +16,17 @@
 
 package com.hazelcast.internal.metrics.metricsets;
 
-import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricsRegistry;
 
 import java.io.File;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.FILE_DISCRIMINATOR_DIR;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.FILE_DISCRIMINATOR_VALUE_DIR;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.FILE_METRIC_FREESPACE;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.FILE_METRIC_TOTALSPACE;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.FILE_METRIC_USABLESPACE;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.FILE_PREFIX;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.metrics.ProbeUnit.BYTES;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -44,10 +50,10 @@ public final class FileMetricSet {
         File file = new File(System.getProperty("user.home"));
         MetricDescriptor descriptor = metricsRegistry
                 .newMetricDescriptor()
-                .withPrefix("file.partition")
-                .withDiscriminator("dir", "user.home");
-        metricsRegistry.registerStaticProbe(file, descriptor, "freeSpace", MANDATORY, BYTES, File::getFreeSpace);
-        metricsRegistry.registerStaticProbe(file, descriptor, "totalSpace", MANDATORY, BYTES, File::getTotalSpace);
-        metricsRegistry.registerStaticProbe(file, descriptor, "usableSpace", MANDATORY, BYTES, File::getUsableSpace);
+                .withPrefix(FILE_PREFIX)
+                .withDiscriminator(FILE_DISCRIMINATOR_DIR, FILE_DISCRIMINATOR_VALUE_DIR);
+        metricsRegistry.registerStaticProbe(file, descriptor, FILE_METRIC_FREESPACE, MANDATORY, BYTES, File::getFreeSpace);
+        metricsRegistry.registerStaticProbe(file, descriptor, FILE_METRIC_TOTALSPACE, MANDATORY, BYTES, File::getTotalSpace);
+        metricsRegistry.registerStaticProbe(file, descriptor, FILE_METRIC_USABLESPACE, MANDATORY, BYTES, File::getUsableSpace);
     }
 }

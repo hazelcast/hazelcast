@@ -91,16 +91,16 @@ public class MetricsPluginTest extends AbstractDiagnosticsPluginTest {
     }
 
     private static class ExclusionProbeSource {
-        @Probe
+        @Probe(name = "notExcludedLong")
         private long notExcludedLong = 1;
 
-        @Probe(excludedTargets = DIAGNOSTICS)
+        @Probe(name = "excludedLong", excludedTargets = DIAGNOSTICS)
         private long excludedLong = 2;
 
-        @Probe
+        @Probe(name = "notExcludedDouble")
         private double notExcludedDouble = 1.5D;
 
-        @Probe(excludedTargets = DIAGNOSTICS)
+        @Probe(name = "excludedDouble", excludedTargets = DIAGNOSTICS)
         private double excludedDouble = 2.5D;
     }
 

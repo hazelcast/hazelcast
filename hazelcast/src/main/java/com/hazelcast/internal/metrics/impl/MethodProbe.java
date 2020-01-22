@@ -38,7 +38,6 @@ import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_PRIMITIVE_LONG
 import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_SEMAPHORE;
 import static com.hazelcast.internal.metrics.impl.ProbeUtils.getType;
 import static com.hazelcast.internal.metrics.impl.ProbeUtils.isDouble;
-import static com.hazelcast.internal.util.StringUtil.getterIntoProperty;
 import static java.lang.String.format;
 
 /**
@@ -52,16 +51,16 @@ abstract class MethodProbe implements ProbeFunction {
     final CachedProbe probe;
     final int type;
     final SourceMetadata sourceMetadata;
-    final String methodOrProbeName;
+    final String probeName;
 
     MethodProbe(Method method, Probe probe, int type, SourceMetadata sourceMetadata) {
         this.method = method;
         this.probe = new CachedProbe(probe);
         this.type = type;
         this.sourceMetadata = sourceMetadata;
-        this.methodOrProbeName = probe.name().length() != 0
-                ? probe.name()
-                : getterIntoProperty(method.getName());
+        this.probeName = probe.name();
+        assert probeName != null;
+        assert probeName.length() > 0;
         method.setAccessible(true);
 
     }
@@ -70,16 +69,16 @@ abstract class MethodProbe implements ProbeFunction {
         MetricDescriptor descriptor = metricsRegistry
                 .newMetricDescriptor()
                 .withPrefix(namePrefix)
-                .withMetric(getProbeOrMethodName());
+                .withMetric(getProbeName());
         metricsRegistry.registerInternal(source, descriptor, probe.level(), this);
     }
 
     void register(MetricsRegistryImpl metricsRegistry, MetricDescriptor descriptor, Object source) {
-        metricsRegistry.registerStaticProbe(source, descriptor, getProbeOrMethodName(), probe.level(), probe.unit(), this);
+        metricsRegistry.registerStaticProbe(source, descriptor, getProbeName(), probe.level(), probe.unit(), this);
     }
 
-    String getProbeOrMethodName() {
-        return methodOrProbeName;
+    String getProbeName() {
+        return probeName;
     }
 
     static <S> MethodProbe createMethodProbe(Method method, Probe probe, SourceMetadata sourceMetadata) {

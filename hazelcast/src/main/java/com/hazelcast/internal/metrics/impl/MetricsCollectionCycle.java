@@ -112,7 +112,7 @@ class MetricsCollectionCycle {
                 MetricDescriptor descriptorCopy = descriptor
                         .copy()
                         .withUnit(methodProbe.probe.unit())
-                        .withMetric(methodProbe.getProbeOrMethodName())
+                        .withMetric(methodProbe.getProbeName())
                         .withExcludedTargets(extractExcludedTargets(methodProbe));
 
                 lookupMetricValueCatcher(descriptorCopy).catchMetricValue(collectionId, source, methodProbe);
@@ -125,7 +125,7 @@ class MetricsCollectionCycle {
                 MetricDescriptor descriptorCopy = descriptor
                         .copy()
                         .withUnit(fieldProbe.probe.unit())
-                        .withMetric(fieldProbe.getProbeOrFieldName())
+                        .withMetric(fieldProbe.getProbeName())
                         .withExcludedTargets(extractExcludedTargets(fieldProbe));
 
                 lookupMetricValueCatcher(descriptorCopy).catchMetricValue(collectionId, source, fieldProbe);

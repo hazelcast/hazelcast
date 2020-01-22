@@ -16,27 +16,27 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.StaticMetricsProvider;
+import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.services.CanCancelOperations;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.cluster.Address;
-import com.hazelcast.internal.nio.Packet;
-import com.hazelcast.spi.impl.operationservice.CallsPerMember;
-import com.hazelcast.internal.services.CanCancelOperations;
-import com.hazelcast.spi.impl.operationservice.LiveOperationsTracker;
-import com.hazelcast.spi.impl.operationservice.OperationControl;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
+import com.hazelcast.spi.impl.operationservice.CallsPerMember;
+import com.hazelcast.spi.impl.operationservice.LiveOperationsTracker;
+import com.hazelcast.spi.impl.operationservice.OperationControl;
 import com.hazelcast.spi.impl.servicemanager.ServiceManager;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.internal.util.Clock;
 
 import java.util.Map.Entry;
 import java.util.Set;
@@ -50,13 +50,24 @@ import java.util.logging.Level;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_INVOCATION_MONITOR_BACKUP_TIMEOUTS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_INVOCATION_MONITOR_BACKUP_TIMEOUT_MILLIS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_INVOCATION_MONITOR_DELAYED_EXECUTION_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_INVOCATION_MONITOR_HEARTBEAT_BROADCAST_PERIOD_MILLIS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_INVOCATION_MONITOR_HEARTBEAT_PACKETS_RECEIVED;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_INVOCATION_MONITOR_HEARTBEAT_PACKETS_SENT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_INVOCATION_MONITOR_INVOCATION_SCAN_PERIOD_MILLIS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_INVOCATION_MONITOR_INVOCATION_TIMEOUT_MILLIS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_INVOCATION_MONITOR_NORMAL_TIMEOUTS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_PREFIX_INVOCATIONS;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
-import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
+import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.nio.Packet.FLAG_OP_CONTROL;
 import static com.hazelcast.internal.nio.Packet.FLAG_URGENT;
+import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
+import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.spi.properties.ClusterProperty.OPERATION_BACKUP_TIMEOUT_MILLIS;
 import static com.hazelcast.spi.properties.ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS;
-import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.logging.Level.FINE;
@@ -82,25 +93,25 @@ public class InvocationMonitor implements Consumer<Packet>, StaticMetricsProvide
     private final ILogger logger;
     private final ScheduledExecutorService scheduler;
     private final Address thisAddress;
-    private final ConcurrentMap<Address, AtomicLong> heartbeatPerMember = new ConcurrentHashMap<Address, AtomicLong>();
+    private final ConcurrentMap<Address, AtomicLong> heartbeatPerMember = new ConcurrentHashMap<>();
 
-    @Probe(name = "backupTimeouts", level = MANDATORY)
+    @Probe(name = OPERATION_METRIC_INVOCATION_MONITOR_BACKUP_TIMEOUTS, level = MANDATORY)
     private final SwCounter backupTimeoutsCount = newSwCounter();
-    @Probe(name = "normalTimeouts", level = MANDATORY)
+    @Probe(name = OPERATION_METRIC_INVOCATION_MONITOR_NORMAL_TIMEOUTS, level = MANDATORY)
     private final SwCounter normalTimeoutsCount = newSwCounter();
-    @Probe
+    @Probe(name = OPERATION_METRIC_INVOCATION_MONITOR_HEARTBEAT_PACKETS_RECEIVED)
     private final SwCounter heartbeatPacketsReceived = newSwCounter();
-    @Probe
-    private final SwCounter heartbeatPacketsSend = newSwCounter();
-    @Probe
+    @Probe(name = OPERATION_METRIC_INVOCATION_MONITOR_HEARTBEAT_PACKETS_SENT)
+    private final SwCounter heartbeatPacketsSent = newSwCounter();
+    @Probe(name = OPERATION_METRIC_INVOCATION_MONITOR_DELAYED_EXECUTION_COUNT)
     private final SwCounter delayedExecutionCount = newSwCounter();
-    @Probe
+    @Probe(name = OPERATION_METRIC_INVOCATION_MONITOR_BACKUP_TIMEOUT_MILLIS, unit = MS)
     private final long backupTimeoutMillis;
-    @Probe
+    @Probe(name = OPERATION_METRIC_INVOCATION_MONITOR_INVOCATION_TIMEOUT_MILLIS, unit = MS)
     private final long invocationTimeoutMillis;
-    @Probe
+    @Probe(name = OPERATION_METRIC_INVOCATION_MONITOR_HEARTBEAT_BROADCAST_PERIOD_MILLIS, unit = MS)
     private final long heartbeatBroadcastPeriodMillis;
-    @Probe
+    @Probe(name = OPERATION_METRIC_INVOCATION_MONITOR_INVOCATION_SCAN_PERIOD_MILLIS, unit = MS)
     private final long invocationScanPeriodMillis = SECONDS.toMillis(1);
 
     //todo: we need to get rid of the nodeEngine dependency
@@ -135,7 +146,7 @@ public class InvocationMonitor implements Consumer<Packet>, StaticMetricsProvide
 
     @Override
     public void provideStaticMetrics(MetricsRegistry registry) {
-        registry.registerStaticMetrics(this, "operation.invocations");
+        registry.registerStaticMetrics(this, OPERATION_PREFIX_INVOCATIONS);
     }
 
     private static ScheduledExecutorService newScheduler(final String hzName) {
@@ -519,7 +530,7 @@ public class InvocationMonitor implements Consumer<Packet>, StaticMetricsProvide
         }
 
         private void sendOpControlPacket(Address address, OperationControl opControl) {
-            heartbeatPacketsSend.inc();
+            heartbeatPacketsSent.inc();
 
             if (address.equals(thisAddress)) {
                 scheduler.execute(new ProcessOperationControlTask(opControl));

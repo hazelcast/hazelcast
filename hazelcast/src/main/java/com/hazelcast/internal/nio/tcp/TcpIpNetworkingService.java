@@ -22,9 +22,9 @@ import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.LongProbeFunction;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.networking.ChannelInitializerProvider;
 import com.hazelcast.internal.networking.Networking;
@@ -55,6 +55,7 @@ import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.instance.EndpointQualifier.MEMCACHE;
 import static com.hazelcast.instance.EndpointQualifier.REST;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_PREFIX;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
 import static com.hazelcast.spi.properties.ClusterProperty.NETWORK_STATS_REFRESH_INTERVAL_SECONDS;
 import static java.util.Collections.singleton;
@@ -375,7 +376,7 @@ public final class TcpIpNetworkingService implements NetworkingService<TcpIpConn
 
         @Override
         public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
-            descriptor.withPrefix("tcp");
+            descriptor.withPrefix(TCP_PREFIX);
             context.collect(descriptor, this);
 
             TcpIpAcceptor acceptor = this.acceptorRef.get();

@@ -43,6 +43,10 @@ import static com.hazelcast.client.properties.ClientProperty.INVOCATION_RETRY_PA
 import static com.hazelcast.client.properties.ClientProperty.INVOCATION_TIMEOUT_SECONDS;
 import static com.hazelcast.client.properties.ClientProperty.MAX_CONCURRENT_INVOCATIONS;
 import static com.hazelcast.client.properties.ClientProperty.OPERATION_BACKUP_TIMEOUT_MILLIS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_METRIC_INVOCATIONS_MAX_CURRENT_INVOCATIONS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_METRIC_INVOCATIONS_PENDING_CALLS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_METRIC_INVOCATIONS_STARTED_INVOCATIONS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_PREFIX_INVOCATIONS;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -57,8 +61,8 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
     protected ClientPartitionServiceImpl partitionService;
     final ILogger invocationLogger;
 
-    @Probe(name = "pendingCalls", level = MANDATORY)
-    private ConcurrentMap<Long, ClientInvocation> invocations = new ConcurrentHashMap<Long, ClientInvocation>();
+    @Probe(name = CLIENT_METRIC_INVOCATIONS_PENDING_CALLS, level = MANDATORY)
+    private ConcurrentMap<Long, ClientInvocation> invocations = new ConcurrentHashMap<>();
 
     private ClientResponseHandlerSupplier responseHandlerSupplier;
 
@@ -83,7 +87,7 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
 
         this.operationBackupTimeoutMillis = properties.getInteger(OPERATION_BACKUP_TIMEOUT_MILLIS);
         this.shouldFailOnIndeterminateOperationState = properties.getBoolean(FAIL_ON_INDETERMINATE_OPERATION_STATE);
-        client.getMetricsRegistry().registerStaticMetrics(this, "invocations");
+        client.getMetricsRegistry().registerStaticMetrics(this, CLIENT_PREFIX_INVOCATIONS);
     }
 
     private long initInvocationRetryPauseMillis() {
@@ -94,12 +98,12 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
         return client.getProperties().getPositiveMillisOrDefault(INVOCATION_TIMEOUT_SECONDS);
     }
 
-    @Probe(level = MANDATORY)
+    @Probe(name = CLIENT_METRIC_INVOCATIONS_STARTED_INVOCATIONS, level = MANDATORY)
     private long startedInvocations() {
         return callIdSequence.getLastCallId();
     }
 
-    @Probe(level = MANDATORY)
+    @Probe(name = CLIENT_METRIC_INVOCATIONS_MAX_CURRENT_INVOCATIONS, level = MANDATORY)
     private long maxCurrentInvocations() {
         return callIdSequence.getMaxConcurrentInvocations();
     }

@@ -39,6 +39,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.RELIABLE_TOPIC_PREFIX;
 import static com.hazelcast.internal.metrics.impl.ProviderHelper.provide;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
 
@@ -110,6 +111,6 @@ public class ReliableTopicService implements ManagedService, RemoteService, Stat
 
     @Override
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
-        provide(descriptor, context, "reliableTopic", getStats());
+        provide(descriptor, context, RELIABLE_TOPIC_PREFIX, getStats());
     }
 }

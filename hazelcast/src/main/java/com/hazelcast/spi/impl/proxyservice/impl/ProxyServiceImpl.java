@@ -52,6 +52,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 import static com.hazelcast.core.DistributedObjectEvent.EventType.CREATED;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PROXY_METRIC_CREATED_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PROXY_METRIC_DESTROYED_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PROXY_METRIC_PROXY_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PROXY_PREFIX;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
@@ -73,18 +77,16 @@ public class ProxyServiceImpl
 
     final NodeEngineImpl nodeEngine;
     final ILogger logger;
-    final ConcurrentMap<UUID, DistributedObjectListener> listeners =
-            new ConcurrentHashMap<UUID, DistributedObjectListener>();
+    final ConcurrentMap<UUID, DistributedObjectListener> listeners = new ConcurrentHashMap<>();
 
     private final ConstructorFunction<String, ProxyRegistry> registryConstructor =
             serviceName -> new ProxyRegistry(ProxyServiceImpl.this, serviceName);
 
-    private final ConcurrentMap<String, ProxyRegistry> registries =
-            new ConcurrentHashMap<String, ProxyRegistry>();
+    private final ConcurrentMap<String, ProxyRegistry> registries = new ConcurrentHashMap<>();
 
-    @Probe(name = "createdCount", level = MANDATORY)
+    @Probe(name = PROXY_METRIC_CREATED_COUNT, level = MANDATORY)
     private final MwCounter createdCounter = newMwCounter();
-    @Probe(name = "destroyedCount", level = MANDATORY)
+    @Probe(name = PROXY_METRIC_DESTROYED_COUNT, level = MANDATORY)
     private final MwCounter destroyedCounter = newMwCounter();
 
     private final ExceptionHandler destroyProxyExceptionHandler = new ExceptionHandler() {
@@ -103,14 +105,14 @@ public class ProxyServiceImpl
 
     @Override
     public void provideStaticMetrics(MetricsRegistry registry) {
-        registry.registerStaticMetrics(this, "proxy");
+        registry.registerStaticMetrics(this, PROXY_PREFIX);
     }
 
     public void init() {
         nodeEngine.getEventService().registerListener(SERVICE_NAME, SERVICE_NAME, new Object());
     }
 
-    @Probe(name = "proxyCount")
+    @Probe(name = PROXY_METRIC_PROXY_COUNT)
     @Override
     public int getProxyCount() {
         int count = 0;

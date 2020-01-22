@@ -22,6 +22,9 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_PARTITION_OPERATION_THREAD_NORMAL_PENDING_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_PARTITION_OPERATION_THREAD_PRIORITY_PENDING_COUNT;
+
 /**
  * An {@link OperationThread} that executes Operations for a particular partition,
  * e.g. a map.get operation.
@@ -51,12 +54,12 @@ public final class PartitionOperationThread extends OperationThread {
         return partitionOperationRunners[partitionId];
     }
 
-    @Probe
+    @Probe(name = OPERATION_METRIC_PARTITION_OPERATION_THREAD_PRIORITY_PENDING_COUNT)
     int priorityPendingCount() {
         return queue.prioritySize();
     }
 
-    @Probe
+    @Probe(name = OPERATION_METRIC_PARTITION_OPERATION_THREAD_NORMAL_PENDING_COUNT)
     int normalPendingCount() {
         return queue.normalSize();
     }

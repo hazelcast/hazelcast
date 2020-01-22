@@ -16,14 +16,19 @@
 
 package com.hazelcast.internal.monitor.impl;
 
-import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.monitor.LocalPNCounterStats;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.json.internal.JsonSerializable;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PNCOUNTER_METRIC_CREATION_TIME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PNCOUNTER_METRIC_TOTAL_DECREMENT_OPERATION_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PNCOUNTER_METRIC_TOTAL_INCREMENT_OPERATION_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PNCOUNTER_METRIC_VALUE;
+import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.util.JsonUtil.getLong;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
@@ -35,13 +40,13 @@ public class LocalPNCounterStatsImpl implements LocalPNCounterStats, JsonSeriali
             newUpdater(LocalPNCounterStatsImpl.class, "totalIncrementOperationCount");
     private static final AtomicLongFieldUpdater<LocalPNCounterStatsImpl> TOTAL_DECREMENT_OPERATION_COUNT =
             newUpdater(LocalPNCounterStatsImpl.class, "totalDecrementOperationCount");
-    @Probe
+    @Probe(name = PNCOUNTER_METRIC_CREATION_TIME, unit = MS)
     private long creationTime;
-    @Probe
+    @Probe(name = PNCOUNTER_METRIC_VALUE)
     private volatile long value;
-    @Probe
+    @Probe(name = PNCOUNTER_METRIC_TOTAL_INCREMENT_OPERATION_COUNT)
     private volatile long totalIncrementOperationCount;
-    @Probe
+    @Probe(name = PNCOUNTER_METRIC_TOTAL_DECREMENT_OPERATION_COUNT)
     private volatile long totalDecrementOperationCount;
 
     public LocalPNCounterStatsImpl() {

@@ -22,6 +22,10 @@ import com.hazelcast.internal.util.ConstructorFunction;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.WAN_METRIC_DROPPED_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.WAN_METRIC_REMOVE_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.WAN_METRIC_SYNC_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.WAN_METRIC_UPDATE_COUNT;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 /**
@@ -91,13 +95,13 @@ public class WanEventCounters {
      * Counters for WAN events for a single map or cache.
      */
     public static final class DistributedObjectWanEventCounters {
-        @Probe
+        @Probe(name = WAN_METRIC_SYNC_COUNT)
         private final AtomicLong syncCount = new AtomicLong();
-        @Probe
+        @Probe(name = WAN_METRIC_UPDATE_COUNT)
         private final AtomicLong updateCount = new AtomicLong();
-        @Probe
+        @Probe(name = WAN_METRIC_REMOVE_COUNT)
         private final AtomicLong removeCount = new AtomicLong();
-        @Probe
+        @Probe(name = WAN_METRIC_DROPPED_COUNT)
         private final AtomicLong droppedCount = new AtomicLong();
 
         private DistributedObjectWanEventCounters() {

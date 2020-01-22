@@ -23,6 +23,9 @@ import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.monitor.impl.NearCacheStatsImpl;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NEARCACHE_DISCRIMINATOR_NAME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NEARCACHE_PREFIX;
+
 class NearCacheMetricsProvider implements DynamicMetricsProvider {
 
     private final ProxyManager proxyManager;
@@ -33,7 +36,7 @@ class NearCacheMetricsProvider implements DynamicMetricsProvider {
 
     @Override
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
-        descriptor.withPrefix("nearcache");
+        descriptor.withPrefix(NEARCACHE_PREFIX);
 
         ClientContext clientContext = proxyManager.getContext();
         if (clientContext == null) {
@@ -45,7 +48,8 @@ class NearCacheMetricsProvider implements DynamicMetricsProvider {
                 .forEach(nearCache -> {
                     String nearCacheName = nearCache.getName();
                     NearCacheStatsImpl nearCacheStats = (NearCacheStatsImpl) nearCache.getNearCacheStats();
-                    context.collect(descriptor.copy().withDiscriminator("name", nearCacheName), nearCacheStats);
+                    context.collect(descriptor.copy().withDiscriminator(NEARCACHE_DISCRIMINATOR_NAME, nearCacheName),
+                            nearCacheStats);
                 });
     }
 }

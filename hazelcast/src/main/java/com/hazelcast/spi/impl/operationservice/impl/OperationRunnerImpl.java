@@ -35,12 +35,12 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.PartitionReplica;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.impl.SerializationServiceV1;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.spi.exception.CallerNotMemberException;
 import com.hazelcast.spi.exception.PartitionMigratingException;
@@ -68,13 +68,19 @@ import com.hazelcast.splitbrainprotection.impl.SplitBrainProtectionServiceImpl;
 import java.io.IOException;
 import java.util.logging.Level;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_DISCRIMINATOR_GENERICID;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_DISCRIMINATOR_PARTITIONID;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_OPERATION_RUNNER_EXECUTED_OPERATIONS_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_PREFIX_ADHOC;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_PREFIX_GENERIC;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_PREFIX_PARTITION;
 import static com.hazelcast.internal.metrics.MetricTarget.MANAGEMENT_CENTER;
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
+import static com.hazelcast.spi.impl.operationservice.CallStatus.OFFLOAD_ORDINAL;
 import static com.hazelcast.spi.impl.operationservice.CallStatus.RESPONSE_ORDINAL;
 import static com.hazelcast.spi.impl.operationservice.CallStatus.VOID_ORDINAL;
-import static com.hazelcast.spi.impl.operationservice.CallStatus.OFFLOAD_ORDINAL;
 import static com.hazelcast.spi.impl.operationservice.CallStatus.WAIT_ORDINAL;
 import static com.hazelcast.spi.impl.operationservice.OperationAccessor.setCallerAddress;
 import static com.hazelcast.spi.impl.operationservice.OperationAccessor.setConnection;
@@ -101,7 +107,7 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
     private final Node node;
     private final NodeEngineImpl nodeEngine;
 
-    @Probe(level = DEBUG)
+    @Probe(name = OPERATION_METRIC_OPERATION_RUNNER_EXECUTED_OPERATIONS_COUNT, level = DEBUG)
     private final Counter executedOperationsCounter;
     private final Address thisAddress;
     private final boolean staleReadOnMigrationEnabled;
@@ -148,16 +154,18 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
     public void provideStaticMetrics(MetricsRegistry registry) {
         if (partitionId >= 0) {
             MetricDescriptor descriptor = registry.newMetricDescriptor()
-                                                  .withPrefix("operation.partition")
-                                                  .withDiscriminator("partitionId", String.valueOf(partitionId));
+                                                  .withPrefix(OPERATION_PREFIX_PARTITION)
+                                                  .withDiscriminator(OPERATION_DISCRIMINATOR_PARTITIONID,
+                                                          String.valueOf(partitionId));
             registry.registerStaticMetrics(descriptor, this);
         } else if (partitionId == -1) {
             MetricDescriptor descriptor = registry.newMetricDescriptor()
-                                                  .withPrefix("operation.generic")
-                                                  .withDiscriminator("genericId", String.valueOf(genericId));
+                                                  .withPrefix(OPERATION_PREFIX_GENERIC)
+                                                  .withDiscriminator(OPERATION_DISCRIMINATOR_GENERICID,
+                                                          String.valueOf(genericId));
             registry.registerStaticMetrics(descriptor, this);
         } else {
-            registry.registerStaticMetrics(this, "operation.adhoc");
+            registry.registerStaticMetrics(this, OPERATION_PREFIX_ADHOC);
         }
     }
 

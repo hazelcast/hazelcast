@@ -21,6 +21,10 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.THREAD_FULL_METRIC_DAEMON_THREAD_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.THREAD_FULL_METRIC_PEAK_THREAD_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.THREAD_FULL_METRIC_THREAD_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.THREAD_FULL_METRIC_TOTAL_STARTED_THREAD_COUNT;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
@@ -41,10 +45,12 @@ public final class ThreadMetricSet {
         checkNotNull(metricsRegistry, "metricsRegistry");
 
         ThreadMXBean mxBean = ManagementFactory.getThreadMXBean();
-        metricsRegistry.registerStaticProbe(mxBean, "thread.threadCount", MANDATORY, ThreadMXBean::getThreadCount);
-        metricsRegistry.registerStaticProbe(mxBean, "thread.peakThreadCount", MANDATORY, ThreadMXBean::getPeakThreadCount);
-        metricsRegistry.registerStaticProbe(mxBean, "thread.daemonThreadCount", MANDATORY, ThreadMXBean::getDaemonThreadCount);
-        metricsRegistry.registerStaticProbe(mxBean, "thread.totalStartedThreadCount", MANDATORY,
+        metricsRegistry.registerStaticProbe(mxBean, THREAD_FULL_METRIC_THREAD_COUNT, MANDATORY, ThreadMXBean::getThreadCount);
+        metricsRegistry
+                .registerStaticProbe(mxBean, THREAD_FULL_METRIC_PEAK_THREAD_COUNT, MANDATORY, ThreadMXBean::getPeakThreadCount);
+        metricsRegistry.registerStaticProbe(mxBean, THREAD_FULL_METRIC_DAEMON_THREAD_COUNT, MANDATORY,
+                ThreadMXBean::getDaemonThreadCount);
+        metricsRegistry.registerStaticProbe(mxBean, THREAD_FULL_METRIC_TOTAL_STARTED_THREAD_COUNT, MANDATORY,
                 ThreadMXBean::getTotalStartedThreadCount);
     }
 }

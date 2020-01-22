@@ -28,6 +28,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_PREFIX_CONNECTION;
 import static com.hazelcast.internal.metrics.ProbeUnit.COUNT;
 import static com.hazelcast.internal.metrics.impl.DefaultMetricDescriptorSupplier.DEFAULT_DESCRIPTOR_SUPPLIER;
 import static com.hazelcast.test.OverridePropertyRule.set;
@@ -50,10 +51,10 @@ public class TcpIpEndpointManagerMetricsTest extends HazelcastTestSupport {
         getNodeEngineImpl(instance).getMetricsRegistry().collect(collector);
 
         // defined by TcpIpEndpointManager
-        verifyCollectedOnce(collector, metricDescriptor("tcp.connection", "count"));
+        verifyCollectedOnce(collector, metricDescriptor(TCP_PREFIX_CONNECTION, "count"));
         // defined by TcpIpUnifiedEndpointManager
-        verifyCollectedOnce(collector, metricDescriptor("tcp.connection", "clientCount"));
-        verifyCollectedOnce(collector, metricDescriptor("tcp.connection", "textCount"));
+        verifyCollectedOnce(collector, metricDescriptor(TCP_PREFIX_CONNECTION, "clientCount"));
+        verifyCollectedOnce(collector, metricDescriptor(TCP_PREFIX_CONNECTION, "textCount"));
     }
 
     private void verifyCollectedOnce(CapturingCollector collector, MetricDescriptor expectedDescriptor) {

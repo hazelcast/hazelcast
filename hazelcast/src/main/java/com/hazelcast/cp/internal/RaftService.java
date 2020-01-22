@@ -119,6 +119,15 @@ import static com.hazelcast.cp.internal.raft.QueryPolicy.LEADER_LOCAL;
 import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
 import static com.hazelcast.cp.internal.raft.impl.RaftNodeImpl.newRaftNode;
 import static com.hazelcast.internal.config.ConfigValidator.checkCPSubsystemConfig;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CP_DISCRIMINATOR_GROUPID;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CP_METRIC_RAFT_SERVICE_DESTROYED_GROUP_IDS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CP_METRIC_RAFT_SERVICE_MISSING_MEMBERS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CP_METRIC_RAFT_SERVICE_NODES;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CP_METRIC_RAFT_SERVICE_TERMINATED_RAFT_NODE_GROUP_IDS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CP_PREFIX_RAFT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CP_PREFIX_RAFT_GROUP;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CP_PREFIX_RAFT_METADATA;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CP_TAG_NAME;
 import static com.hazelcast.internal.util.Preconditions.checkFalse;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkState;
@@ -148,19 +157,19 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     private static final int AWAIT_DISCOVERY_STEP_MILLIS = 10;
 
     private final ReadWriteLock nodeLock = new ReentrantReadWriteLock();
-    @Probe
+    @Probe(name = CP_METRIC_RAFT_SERVICE_NODES)
     private final ConcurrentMap<CPGroupId, RaftNode> nodes = new ConcurrentHashMap<>();
     private final ConcurrentMap<CPGroupId, RaftNodeMetrics> nodeMetrics = new ConcurrentHashMap<>();
     private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
-    @Probe
+    @Probe(name = CP_METRIC_RAFT_SERVICE_DESTROYED_GROUP_IDS)
     private final Set<CPGroupId> destroyedGroupIds = newSetFromMap(new ConcurrentHashMap<>());
-    @Probe
+    @Probe(name = CP_METRIC_RAFT_SERVICE_TERMINATED_RAFT_NODE_GROUP_IDS)
     private final Set<CPGroupId> terminatedRaftNodeGroupIds = newSetFromMap(new ConcurrentHashMap<>());
     private final CPSubsystemConfig config;
     private final RaftInvocationManager invocationManager;
     private final MetadataRaftGroupManager metadataGroupManager;
-    @Probe
+    @Probe(name = CP_METRIC_RAFT_SERVICE_MISSING_MEMBERS)
     private final ConcurrentMap<CPMemberInfo, Long> missingMembers = new ConcurrentHashMap<>();
     private final int metricsPeriod;
     private final boolean cpSubsystemEnabled;
@@ -186,8 +195,8 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         }
 
         MetricsRegistry metricsRegistry = this.nodeEngine.getMetricsRegistry();
-        metricsRegistry.registerStaticMetrics(this, "raft");
-        metricsRegistry.registerStaticMetrics(metadataGroupManager, "raft.metadata");
+        metricsRegistry.registerStaticMetrics(this, CP_PREFIX_RAFT);
+        metricsRegistry.registerStaticMetrics(metadataGroupManager, CP_PREFIX_RAFT_METADATA);
         metricsRegistry.registerDynamicMetricsProvider(this);
         this.metricsPeriod = nodeEngine.getProperties().getInteger(MetricsPlugin.PERIOD_SECONDS);
     }
@@ -805,13 +814,13 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     @Override
     public void provideDynamicMetrics(MetricDescriptor descriptor,
                                       MetricsCollectionContext context) {
-        MetricDescriptor rootDescriptor = descriptor.withPrefix("raft.group");
+        MetricDescriptor rootDescriptor = descriptor.withPrefix(CP_PREFIX_RAFT_GROUP);
         for (Entry<CPGroupId, RaftNodeMetrics> entry : nodeMetrics.entrySet()) {
             CPGroupId groupId = entry.getKey();
             MetricDescriptor groupDescriptor = rootDescriptor
                     .copy()
-                    .withDiscriminator("groupId", String.valueOf(groupId.getId()))
-                    .withTag("name", groupId.getName());
+                    .withDiscriminator(CP_DISCRIMINATOR_GROUPID, String.valueOf(groupId.getId()))
+                    .withTag(CP_TAG_NAME, groupId.getName());
             context.collect(groupDescriptor, entry.getValue());
         }
     }

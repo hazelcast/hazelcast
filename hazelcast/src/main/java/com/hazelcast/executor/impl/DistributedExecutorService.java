@@ -53,6 +53,7 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_PREFIX;
 import static com.hazelcast.internal.metrics.impl.ProviderHelper.provide;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
 
@@ -256,7 +257,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
 
     @Override
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
-        provide(descriptor, context, "executor", getStats());
+        provide(descriptor, context, EXECUTOR_PREFIX, getStats());
     }
 
     private final class Processor extends FutureTask implements Runnable {

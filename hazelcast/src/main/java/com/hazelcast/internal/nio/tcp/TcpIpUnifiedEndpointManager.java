@@ -29,6 +29,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_UNIFIED_ENDPOINT_MANAGER_CLIENT_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_UNIFIED_ENDPOINT_MANAGER_TEXT_COUNT;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.nio.ConnectionType.MEMCACHE_CLIENT;
 import static com.hazelcast.internal.nio.ConnectionType.REST_CLIENT;
@@ -98,12 +100,12 @@ class TcpIpUnifiedEndpointManager
         return connections;
     }
 
-    @Probe(name = "clientCount", level = MANDATORY)
+    @Probe(name = TCP_METRIC_UNIFIED_ENDPOINT_MANAGER_CLIENT_COUNT, level = MANDATORY)
     public int getCurrentClientConnectionsCount() {
         return getCurrentClientConnections().size();
     }
 
-    @Probe(name = "textCount", level = MANDATORY)
+    @Probe(name = TCP_METRIC_UNIFIED_ENDPOINT_MANAGER_TEXT_COUNT, level = MANDATORY)
     public int getCurrentTextConnections() {
         return getTextConnections().size();
     }

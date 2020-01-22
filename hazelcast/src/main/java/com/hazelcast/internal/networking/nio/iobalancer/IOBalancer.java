@@ -22,16 +22,18 @@ import com.hazelcast.internal.networking.nio.NioInboundPipeline;
 import com.hazelcast.internal.networking.nio.NioOutboundPipeline;
 import com.hazelcast.internal.networking.nio.NioThread;
 import com.hazelcast.internal.nio.ConnectionListener;
+import com.hazelcast.internal.nio.EndpointManager;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.internal.nio.EndpointManager;
 import com.hazelcast.spi.properties.ClusterProperty;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_IO_BALANCER_IMBALANCE_DETECTED_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_IO_BALANCER_MIGRATION_COMPLETED_COUNT;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.spi.properties.ClusterProperty.IO_BALANCER_INTERVAL_SECONDS;
@@ -71,16 +73,16 @@ public class IOBalancer {
     private final LoadTracker inLoadTracker;
     private final LoadTracker outLoadTracker;
     private final String hzName;
-    private final BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<Runnable>();
+    private final BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<>();
     private volatile boolean enabled;
     private IOBalancerThread ioBalancerThread;
 
     // only IOBalancerThread will write to this field.
-    @Probe
+    @Probe(name = NETWORKING_METRIC_NIO_IO_BALANCER_IMBALANCE_DETECTED_COUNT)
     private final SwCounter imbalanceDetectedCount = newSwCounter();
 
     // multiple threads can update this field.
-    @Probe
+    @Probe(name = NETWORKING_METRIC_NIO_IO_BALANCER_MIGRATION_COMPLETED_COUNT)
     private final MwCounter migrationCompletedCount = newMwCounter();
 
     public IOBalancer(NioThread[] inputThreads,

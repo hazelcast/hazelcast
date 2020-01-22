@@ -24,22 +24,22 @@ import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionReplicaVersionManager;
 import com.hazelcast.internal.partition.operation.PartitionReplicaSyncRequest;
-import com.hazelcast.internal.util.counters.MwCounter;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.impl.executionservice.ExecutionService;
-import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.internal.services.ServiceNamespaceAware;
-import com.hazelcast.spi.impl.executionservice.TaskScheduler;
-import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.PartitionTaskFactory;
-import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.internal.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.internal.util.scheduler.EntryTaskSchedulerFactory;
 import com.hazelcast.internal.util.scheduler.ScheduleType;
 import com.hazelcast.internal.util.scheduler.ScheduledEntry;
 import com.hazelcast.internal.util.scheduler.ScheduledEntryProcessor;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
+import com.hazelcast.spi.impl.executionservice.TaskScheduler;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.PartitionTaskFactory;
+import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.util.ArrayList;
 import java.util.BitSet;
@@ -52,6 +52,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITIONS_METRIC_PARTITION_REPLICA_MANAGER_REPLICA_SYNC_SEMAPHORE;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITIONS_METRIC_PARTITION_REPLICA_MANAGER_SYNC_REQUEST_COUNTER;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static java.util.Collections.newSetFromMap;
 
@@ -72,9 +74,9 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
     /** Replica sync requests that have been sent to the target and awaiting response */
     private final Set<ReplicaFragmentSyncInfo> replicaSyncRequests;
     private final EntryTaskScheduler<ReplicaFragmentSyncInfo, Void> replicaSyncTimeoutScheduler;
-    @Probe
+    @Probe(name = PARTITIONS_METRIC_PARTITION_REPLICA_MANAGER_REPLICA_SYNC_SEMAPHORE)
     private final Semaphore replicaSyncSemaphore;
-    @Probe
+    @Probe(name = PARTITIONS_METRIC_PARTITION_REPLICA_MANAGER_SYNC_REQUEST_COUNTER)
     private final MwCounter replicaSyncRequestsCounter = newMwCounter();
 
     private final long partitionMigrationTimeout;

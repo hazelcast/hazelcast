@@ -81,6 +81,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.internal.config.ConfigValidator.checkQueueConfig;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.QUEUE_PREFIX;
 import static com.hazelcast.internal.metrics.impl.ProviderHelper.provide;
 import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
@@ -414,7 +415,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
 
     @Override
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
-        provide(descriptor, context, "queue", getStats());
+        provide(descriptor, context, QUEUE_PREFIX, getStats());
     }
 
     private class Merger extends AbstractContainerMerger<QueueContainer, Collection<Object>, QueueMergeTypes<Object>> {

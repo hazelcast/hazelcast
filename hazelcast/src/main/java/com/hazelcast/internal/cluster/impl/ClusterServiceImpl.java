@@ -77,6 +77,10 @@ import java.util.concurrent.locks.ReentrantLock;
 import static com.hazelcast.cluster.impl.MemberImpl.NA_MEMBER_LIST_JOIN_VERSION;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.NON_LOCAL_MEMBER_SELECTOR;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLUSTER_METRIC_CLUSTER_SERVICE_SIZE;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLUSTER_PREFIX;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLUSTER_PREFIX_CLOCK;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLUSTER_PREFIX_HEARTBEAT;
 import static com.hazelcast.internal.util.Preconditions.checkFalse;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
@@ -140,9 +144,9 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     private void registerMetrics() {
         MetricsRegistry metricsRegistry = node.nodeEngine.getMetricsRegistry();
-        metricsRegistry.registerStaticMetrics(clusterClock, "cluster.clock");
-        metricsRegistry.registerStaticMetrics(clusterHeartbeatManager, "cluster.heartbeat");
-        metricsRegistry.registerStaticMetrics(this, "cluster");
+        metricsRegistry.registerStaticMetrics(clusterClock, CLUSTER_PREFIX_CLOCK);
+        metricsRegistry.registerStaticMetrics(clusterHeartbeatManager, CLUSTER_PREFIX_HEARTBEAT);
+        metricsRegistry.registerStaticMetrics(this, CLUSTER_PREFIX);
     }
 
     @Override
@@ -663,7 +667,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         return joined.get();
     }
 
-    @Probe
+    @Probe(name = CLUSTER_METRIC_CLUSTER_SERVICE_SIZE)
     @Override
     public int getSize() {
         return membershipManager.getMemberMap().size();
