@@ -28,9 +28,12 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestThread;
 import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.test.jitter.JitterRule;
 import org.junit.After;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 
 import java.util.LinkedList;
@@ -51,6 +54,9 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(NightlyTest.class)
 public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
+
+    @Rule
+    public TestName testName = new TestName();
 
     private static final int MAX_BATCH = 100;
 
@@ -107,6 +113,7 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
         HazelcastInstance[] instances = createHazelcastInstanceFactory(2).newInstances(config);
 
         ringbuffer = instances[0].getRingbuffer(ringbufferConfig.getName());
+        int ttlSeconds = ringbufferConfig.getTimeToLiveSeconds();
 
         ConsumeThread consumer1 = new ConsumeThread(1);
         consumer1.start();
@@ -119,17 +126,28 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
         ProduceThread producer = new ProduceThread();
         producer.start();
 
+        long startTimeMillis = currentTimeMillis();
+
         sleepAndStop(stop, 60);
         logger.info("Waiting for completion");
 
         producer.assertSucceedsEventually();
-        consumer1.assertSucceedsEventually();
-        consumer2.assertSucceedsEventually();
+        if (JitterRule.hasHiccupsOver(startTimeMillis, currentTimeMillis(), SECONDS.toNanos(ttlSeconds))) {
+            consumer1.assertTerminates();
+            consumer2.assertTerminates();
+            logger.warning("Skipping assertion of consumed sequences. Ringbuffer was configured with TTL "
+                    + ttlSeconds + " but larger hiccups were measured during test execution. "
+                    + "Hiccups measured follow.");
+            JitterRule.printJitters(startTimeMillis, testName.getMethodName());
+        } else {
+            consumer1.assertSucceedsEventually();
+            consumer2.assertSucceedsEventually();
 
-        logger.info(producer.getName() + " produced:" + producer.produced);
+            logger.info(producer.getName() + " produced:" + producer.produced);
 
-        assertEquals(producer.produced, consumer1.seq);
-        assertEquals(producer.produced, consumer2.seq);
+            assertEquals(producer.produced, consumer1.seq);
+            assertEquals(producer.produced, consumer2.seq);
+        }
     }
 
     class ProduceThread extends TestThread {

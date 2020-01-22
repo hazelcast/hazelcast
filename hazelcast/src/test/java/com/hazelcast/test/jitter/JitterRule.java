@@ -103,24 +103,41 @@ public class JitterRule implements TestRule {
                 try {
                     base.evaluate();
                 } catch (Throwable t) {
-                    printJitters(startTime);
+                    printJitters(startTime, description.getDisplayName());
                     throw t;
                 }
             }
-
-            private void printJitters(long startTime) {
-                long endTime = System.currentTimeMillis();
-                Iterable<Slot> slotsBetween = JitterMonitor.getSlotsBetween(startTime, endTime);
-                StringBuilder sb = new StringBuilder("Hiccups measured while running test '")
-                        .append(description.getDisplayName())
-                        .append(":'")
-                        .append(LINE_SEPARATOR);
-                DateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
-                for (Slot slot : slotsBetween) {
-                    sb.append(slot.toHumanFriendly(dateFormat)).append(LINE_SEPARATOR);
-                }
-                System.out.println(sb);
-            }
         };
+    }
+
+    /**
+     * @return {@code true} when jitter monitor is enabled and individual hiccup of at least
+     *         {@code hiccupThresholdNanos} was recorded in the specified period.
+     */
+    public static boolean hasHiccupsOver(long startTimeMillis, long stopTimeMillis,
+                                         long hiccupThresholdNanos) {
+        if (!isEnabled()) {
+            return false;
+        }
+        for (Slot slot : JitterMonitor.getSlotsBetween(startTimeMillis, stopTimeMillis)) {
+            if (slot.getMaxPauseNanos() > hiccupThresholdNanos) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static void printJitters(long startTime, String description) {
+        long endTime = System.currentTimeMillis();
+        Iterable<Slot> slotsBetween = JitterMonitor.getSlotsBetween(startTime, endTime);
+        StringBuilder sb = new StringBuilder("Hiccups measured while running test '")
+                .append(description)
+                .append("':")
+                .append(LINE_SEPARATOR);
+        DateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
+        for (Slot slot : slotsBetween) {
+            sb.append(slot.toHumanFriendly(dateFormat)).append(LINE_SEPARATOR);
+        }
+        System.out.println(sb);
     }
 }
