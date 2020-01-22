@@ -70,25 +70,22 @@ public class CachePartitionsIterator<K, V>
         final OperationService operationService = cacheProxy.getNodeEngine().getOperationService();
         if (prefetchValues) {
             Operation operation = cacheProxy.operationProvider.createFetchEntriesOperation(pointers, fetchSize);
-            InternalCompletableFuture<CacheEntriesWithCursor> f = operationService
-                    .invokeOnPartition(CacheService.SERVICE_NAME, operation, partitionIndex);
-            CacheEntriesWithCursor iteratorResult = f.joinInternal();
-            if (iteratorResult != null) {
-                setLastTableIndex(iteratorResult.getEntries(), iteratorResult.getPointers());
-                return iteratorResult.getEntries();
-            }
+            CacheEntriesWithCursor iteratorResult = invoke(operationService, operation);
+            setIterationPointers(iteratorResult.getEntries(), iteratorResult.getPointers());
+            return iteratorResult.getEntries();
         } else {
             Operation operation = cacheProxy.operationProvider.createFetchKeysOperation(pointers, fetchSize);
-            InternalCompletableFuture<CacheKeysWithCursor> f = operationService
-                    .invokeOnPartition(CacheService.SERVICE_NAME, operation, partitionIndex);
-            CacheKeysWithCursor iteratorResult = f.joinInternal();
-            if (iteratorResult != null) {
-                setLastTableIndex(iteratorResult.getKeys(), iteratorResult.getPointers());
-                return iteratorResult.getKeys();
-            }
+            CacheKeysWithCursor iteratorResult = invoke(operationService, operation);
+            setIterationPointers(iteratorResult.getKeys(), iteratorResult.getPointers());
+            return iteratorResult.getKeys();
         }
-        return null;
 
+    }
+
+    private <T> T invoke(OperationService operationService, Operation operation) {
+        InternalCompletableFuture<T> f = operationService
+                .invokeOnPartition(CacheService.SERVICE_NAME, operation, partitionIndex);
+        return f.joinInternal();
     }
 
     @Override

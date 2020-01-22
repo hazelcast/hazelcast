@@ -85,7 +85,7 @@ public class ClientCachePartitionsIterator<K, V> extends AbstractCachePartitions
                 CacheIterateEntriesCodec.ResponseParameters responseParameters = CacheIterateEntriesCodec.decodeResponse(
                         future.get());
                 IterationPointer[] pointers = decodePointers(responseParameters.iterationPointers);
-                setLastTableIndex(responseParameters.entries, pointers);
+                setIterationPointers(responseParameters.entries, pointers);
                 return responseParameters.entries;
             } catch (Exception e) {
                 throw rethrow(e);
@@ -97,7 +97,7 @@ public class ClientCachePartitionsIterator<K, V> extends AbstractCachePartitions
                 ClientInvocationFuture future = clientInvocation.invoke();
                 CacheIterateCodec.ResponseParameters responseParameters = CacheIterateCodec.decodeResponse(future.get());
                 IterationPointer[] pointers = decodePointers(responseParameters.iterationPointers);
-                setLastTableIndex(responseParameters.keys, pointers);
+                setIterationPointers(responseParameters.keys, pointers);
                 return responseParameters.keys;
             } catch (Exception e) {
                 throw rethrow(e);

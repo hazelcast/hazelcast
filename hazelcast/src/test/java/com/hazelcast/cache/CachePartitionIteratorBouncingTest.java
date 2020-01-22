@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map;
+package com.hazelcast.cache;
 
-import com.hazelcast.client.impl.proxy.ClientMapProxy;
+import com.hazelcast.cache.impl.CacheProxy;
+import com.hazelcast.client.cache.impl.ClientCacheProxy;
+import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
@@ -30,21 +33,24 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import javax.cache.Cache;
+import javax.cache.Cache.Entry;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
+import static com.hazelcast.config.EvictionConfig.DEFAULT_MAX_SIZE_POLICY;
+import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_SIZE;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
-public class MapPartitionIteratorBouncingTest extends HazelcastTestSupport {
+public class CachePartitionIteratorBouncingTest extends HazelcastTestSupport {
 
     private final Logger logger = Logger.getLogger(getClass().getName());
-    private static final String TEST_MAP_NAME = "testMap";
+    private static final String TEST_CACHE_NAME = "testCache";
     private static final int STABLE_ENTRY_COUNT = 10000;
     private static final int CONCURRENCY = 2;
     public static final int FETCH_SIZE = 100;
@@ -59,14 +65,27 @@ public class MapPartitionIteratorBouncingTest extends HazelcastTestSupport {
                             .driverType(isClientDriver() ? DriverType.CLIENT : DriverType.MEMBER)
                             .build();
 
+    @Override
     protected Config getConfig() {
-        return smallInstanceConfig();
+        Config config = smallInstanceConfig();
+        MaxSizePolicy maxSizePolicy = getInMemoryFormat() == InMemoryFormat.NATIVE
+                ? USED_NATIVE_MEMORY_SIZE
+                : DEFAULT_MAX_SIZE_POLICY;
+        config.getCacheConfig(TEST_CACHE_NAME)
+              .setInMemoryFormat(getInMemoryFormat())
+              .getEvictionConfig()
+              .setMaxSizePolicy(maxSizePolicy)
+              .setSize(Integer.MAX_VALUE);
+
+        return config;
     }
 
     @Test
     public void test() {
-        IMap<Integer, Integer> map = bounceMemberRule.getSteadyMember().getMap(TEST_MAP_NAME);
-        populateMap(map);
+        ICache<Integer, Integer> cache = bounceMemberRule.getSteadyMember()
+                                                         .getCacheManager()
+                                                         .getCache(TEST_CACHE_NAME);
+        populateCache(cache);
 
         Runnable[] testTasks = new Runnable[CONCURRENCY];
         for (int i = 0; i < CONCURRENCY; ) {
@@ -77,16 +96,16 @@ public class MapPartitionIteratorBouncingTest extends HazelcastTestSupport {
         bounceMemberRule.testRepeatedly(testTasks, MINUTES.toSeconds(3));
     }
 
-    private void populateMap(IMap<Integer, Integer> map) {
+    private void populateCache(ICache<Integer, Integer> cache) {
         for (int i = 0; i < STABLE_ENTRY_COUNT; i++) {
-            map.put(i, i);
+            cache.put(i, i);
         }
     }
 
     public class IterationRunnable implements Runnable {
 
         private final HazelcastInstance hazelcastInstance;
-        private IMap<Integer, Integer> map;
+        private ICache<Integer, Integer> cache;
 
         public IterationRunnable(HazelcastInstance hazelcastInstance) {
             this.hazelcastInstance = hazelcastInstance;
@@ -94,12 +113,12 @@ public class MapPartitionIteratorBouncingTest extends HazelcastTestSupport {
 
         @Override
         public void run() {
-            if (map == null) {
-                map = hazelcastInstance.getMap(TEST_MAP_NAME);
+            if (cache == null) {
+                cache = hazelcastInstance.getCacheManager().getCache(TEST_CACHE_NAME);
             }
             HashSet<Integer> all = getAll();
             for (int i = 0; i < STABLE_ENTRY_COUNT; i++) {
-                assertTrue("Missing stable entry", all.contains(i));
+                assertTrue("Missing stable entry " + i + " - " + cache.get(i), all.contains(i));
             }
 
             logger.info("Successfully finished iteration " + successfullIterations.incrementAndGet());
@@ -109,7 +128,7 @@ public class MapPartitionIteratorBouncingTest extends HazelcastTestSupport {
             HashSet<Integer> keys = new HashSet<>();
             int partitionCount = hazelcastInstance.getPartitionService().getPartitions().size();
             for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-                Iterator<Entry<Integer, Integer>> iterator = createIterator(map, FETCH_SIZE, partitionId, false);
+                Iterator<Cache.Entry<Integer, Integer>> iterator = createIterator(cache, FETCH_SIZE, partitionId, false);
                 while (iterator.hasNext()) {
                     Entry<Integer, Integer> e = iterator.next();
                     assertTrue("Got the same key twice", keys.add(e.getKey()));
@@ -120,22 +139,26 @@ public class MapPartitionIteratorBouncingTest extends HazelcastTestSupport {
 
     }
 
-    private Iterator<Entry<Integer, Integer>> createIterator(
-            IMap<Integer, Integer> map, int fetchSize, int partitionId, boolean prefetchValues) {
+    private Iterator<Cache.Entry<Integer, Integer>> createIterator(
+            ICache<Integer, Integer> cache, int fetchSize, int partitionId, boolean prefetchValues) {
         return isClientDriver()
-                ? ((ClientMapProxy<Integer, Integer>) map).iterator(fetchSize, partitionId, prefetchValues)
-                : ((MapProxyImpl<Integer, Integer>) map).iterator(fetchSize, partitionId, prefetchValues);
+                ? ((ClientCacheProxy<Integer, Integer>) cache).iterator(fetchSize, partitionId, prefetchValues)
+                : ((CacheProxy<Integer, Integer>) cache).iterator(fetchSize, partitionId, prefetchValues);
     }
 
     protected boolean isClientDriver() {
         return false;
     }
 
-    public class MutationRunnable implements Runnable {
+    protected InMemoryFormat getInMemoryFormat() {
+        return CacheSimpleConfig.DEFAULT_IN_MEMORY_FORMAT;
+    }
+
+    public static class MutationRunnable implements Runnable {
         private final HazelcastInstance hazelcastInstance;
         private final int startIndex;
         private final int endIndex;
-        private IMap<Integer, Integer> map;
+        private ICache<Integer, Integer> cache;
 
         public MutationRunnable(HazelcastInstance hazelcastInstance, int runnableIndex) {
             this.hazelcastInstance = hazelcastInstance;
@@ -145,16 +168,16 @@ public class MapPartitionIteratorBouncingTest extends HazelcastTestSupport {
 
         @Override
         public void run() {
-            if (map == null) {
-                map = hazelcastInstance.getMap(TEST_MAP_NAME);
+            if (cache == null) {
+                cache = hazelcastInstance.getCacheManager().getCache(TEST_CACHE_NAME);
             }
 
             for (int i = startIndex; i < endIndex; i++) {
-                map.put(i, i);
+                cache.put(i, i);
             }
 
             for (int i = startIndex; i < endIndex; i++) {
-                map.remove(i, i);
+                cache.remove(i, i);
             }
         }
     }
