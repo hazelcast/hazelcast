@@ -23,7 +23,10 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.query.impl.predicates.SqlPredicate;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestName;
+import org.junit.runners.Parameterized;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -38,10 +41,21 @@ public abstract class AbstractIndexConcurrencyTest extends HazelcastTestSupport 
 
     private static final int QUERY_THREADS_NUM = 5;
 
+    @Rule
+    public TestName testName = new TestName();
+
+    @Parameterized.Parameter
+    public String indexAttribute;
+
+    @Parameterized.Parameter(1)
+    public IndexType indexType;
+
     @Before
     public void setUp() {
         // by default disable awaiting on latch
         Person.accessCountDown = null;
+        Person.indexerLatch = new CountDownLatch(1);
+        Person.queryLatch = new CountDownLatch(1);
     }
 
     @Test
@@ -49,7 +63,7 @@ public abstract class AbstractIndexConcurrencyTest extends HazelcastTestSupport 
         Config config = getConfig();
 
         HazelcastInstance node = createHazelcastInstance(config);
-        IMap<Integer, Person> map = node.getMap(randomMapName());
+        final IMap<Integer, Person> map = node.getMap(randomMapName());
 
         // put some data
         for (int i = 0; i < 10000; ++i) {
@@ -63,11 +77,12 @@ public abstract class AbstractIndexConcurrencyTest extends HazelcastTestSupport 
 
         threads[0] = new Thread(() -> {
             try {
-                map.addIndex(IndexType.SORTED, "age");
+                map.addIndex(indexType, indexAttribute);
             } catch (Throwable t) {
                 exception.compareAndSet(null, t);
             }
         });
+
         threads[0].start();
 
         for (int i = 1; i < threads.length; i++) {
@@ -94,21 +109,32 @@ public abstract class AbstractIndexConcurrencyTest extends HazelcastTestSupport 
     static class Person implements Serializable {
 
         static AtomicLong accessCountDown;
-        static final CountDownLatch indexerLatch = new CountDownLatch(1);
-        static final CountDownLatch queryLatch = new CountDownLatch(1);
+        static CountDownLatch indexerLatch;
+        static CountDownLatch queryLatch;
 
         public final Integer age;
+        public final String name;
 
         Person(Integer value) {
             this.age = value;
+            this.name = value.toString();
         }
 
         public Integer getAge() {
+            updateCounter();
+            return age;
+        }
+
+        public String getName() {
+            updateCounter();
+            return name;
+        }
+
+        private void updateCounter() {
             if (accessCountDown != null && accessCountDown.decrementAndGet() <= 0) {
                 queryLatch.countDown();
                 assertOpenEventually(indexerLatch);
             }
-            return age;
         }
     }
 }

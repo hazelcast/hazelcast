@@ -348,12 +348,12 @@ public class CompositeIndexQueriesTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Set<QueryableEntry> filter(QueryContext queryContext, int ownedPartitionCount) {
+        public Set<QueryableEntry> filter(QueryContext queryContext) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public boolean isIndexed(QueryContext queryContext, int ownedPartitionCount) {
+        public boolean isIndexed(QueryContext queryContext) {
             return false;
         }
 

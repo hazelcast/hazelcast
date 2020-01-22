@@ -45,6 +45,12 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 @SuppressWarnings("checkstyle:finalclass")
 public class Indexes {
 
+    /**
+     * The partitions count check detects a race condition when a
+     * query is executed on the index which is under (re)construction.
+     * The negative value means the check should be skipped.
+     */
+    public static final int SKIP_PARTITIONS_COUNT_CHECK = -1;
     private static final InternalIndex[] EMPTY_INDEXES = {};
 
     private final boolean global;
@@ -317,12 +323,12 @@ public class Indexes {
         }
 
         IndexAwarePredicate indexAwarePredicate = (IndexAwarePredicate) predicate;
-        QueryContext queryContext = queryContextProvider.obtainContextFor(this);
-        if (!indexAwarePredicate.isIndexed(queryContext, ownedPartitionCount)) {
+        QueryContext queryContext = queryContextProvider.obtainContextFor(this, ownedPartitionCount);
+        if (!indexAwarePredicate.isIndexed(queryContext)) {
             return null;
         }
 
-        Set<QueryableEntry> result = indexAwarePredicate.filter(queryContext, ownedPartitionCount);
+        Set<QueryableEntry> result = indexAwarePredicate.filter(queryContext);
         if (result != null) {
             stats.incrementIndexedQueryCount();
             queryContext.applyPerQueryStats();

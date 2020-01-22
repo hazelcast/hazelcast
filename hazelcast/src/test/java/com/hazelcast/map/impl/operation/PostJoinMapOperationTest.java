@@ -141,8 +141,8 @@ public class PostJoinMapOperationTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Set<QueryableEntry> filter(QueryContext queryContext, int ownedPartitionCount) {
-            Index ix = queryContext.getIndex("age", ownedPartitionCount);
+        public Set<QueryableEntry> filter(QueryContext queryContext) {
+            Index ix = queryContext.getIndex("age");
             if (ix != null) {
                 return ix.getRecords(Comparison.GREATER, 50);
             } else {
@@ -151,8 +151,8 @@ public class PostJoinMapOperationTest extends HazelcastTestSupport {
         }
 
         @Override
-        public boolean isIndexed(QueryContext queryContext, int ownedPartitionCount) {
-            Index ix = queryContext.getIndex("age", ownedPartitionCount);
+        public boolean isIndexed(QueryContext queryContext) {
+            Index ix = queryContext.getIndex("age");
             if (ix != null) {
                 isIndexedInvocationCounter.incrementAndGet();
                 return true;

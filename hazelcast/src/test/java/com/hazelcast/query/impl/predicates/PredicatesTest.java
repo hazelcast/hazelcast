@@ -105,12 +105,12 @@ public class PredicatesTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Set<QueryableEntry<K, V>> filter(final QueryContext queryContext, int ownedPartitionCount) {
+        public Set<QueryableEntry<K, V>> filter(final QueryContext queryContext) {
             return null;
         }
 
         @Override
-        public boolean isIndexed(final QueryContext queryContext, int ownedPartitionCount) {
+        public boolean isIndexed(final QueryContext queryContext) {
             return false;
         }
     }

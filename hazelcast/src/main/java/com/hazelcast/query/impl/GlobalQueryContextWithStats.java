@@ -37,8 +37,8 @@ public class GlobalQueryContextWithStats extends QueryContext {
     private final HashSet<QueryTrackingIndex> trackedIndexes = new HashSet<>(8);
 
     @Override
-    void attachTo(Indexes indexes) {
-        super.attachTo(indexes);
+    void attachTo(Indexes indexes, int ownedPartitionCount) {
+        super.attachTo(indexes, ownedPartitionCount);
         for (QueryTrackingIndex trackedIndex : trackedIndexes) {
             trackedIndex.resetPerQueryStats();
         }
@@ -53,7 +53,7 @@ public class GlobalQueryContextWithStats extends QueryContext {
     }
 
     @Override
-    public Index matchIndex(String pattern, IndexMatchHint matchHint, int ownedPartitionCount) {
+    public Index matchIndex(String pattern, IndexMatchHint matchHint) {
         InternalIndex delegate = indexes.matchIndex(pattern, matchHint, ownedPartitionCount);
         if (delegate == null) {
             return null;
