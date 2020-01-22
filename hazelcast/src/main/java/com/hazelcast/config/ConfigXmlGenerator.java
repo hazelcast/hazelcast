@@ -876,7 +876,6 @@ public class ConfigXmlGenerator {
             gen.open("map", "name", m.getName())
                     .node("in-memory-format", m.getInMemoryFormat())
                     .node("statistics-enabled", m.isStatisticsEnabled())
-                    .node("optimize-queries", m.isOptimizeQueries())
                     .node("cache-deserialized-values", cacheDeserializedVal)
                     .node("backup-count", m.getBackupCount())
                     .node("async-backup-count", m.getAsyncBackupCount())
