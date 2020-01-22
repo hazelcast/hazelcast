@@ -555,7 +555,7 @@ public final class MetricDescriptorConstants {
     public static final String WAN_METRIC_REMOVE_COUNT = "removeCount";
     public static final String WAN_METRIC_DROPPED_COUNT = "droppedCount";
     public static final String WAN_METRIC_CONSISTENCY_CHECK_LAST_CHECKED_PARTITION_COUNT = "lastCheckedPartitionCount";
-    public static final String WAN_METRIC_CONSISTENCY_CHECK_LAST_DIFF_PARTITION_COUNT = "lastCheckedPartitionCount";
+    public static final String WAN_METRIC_CONSISTENCY_CHECK_LAST_DIFF_PARTITION_COUNT = "lastDiffPartitionCount";
     public static final String WAN_METRIC_CONSISTENCY_CHECK_LAST_CHECKED_LEAF_COUNT = "lastCheckedLeafCount";
     public static final String WAN_METRIC_CONSISTENCY_CHECK_LAST_DIFF_LEAF_COUNT = "lastDiffLeafCount";
     public static final String WAN_METRIC_CONSISTENCY_CHECK_LAST_ENTRIES_TO_SYNC = "lastEntriesToSync";
