@@ -116,6 +116,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
 
     private static final long REMOVE_MISSING_MEMBER_TASK_PERIOD_SECONDS = 1;
     private static final int AWAIT_DISCOVERY_STEP_MILLIS = 10;
+    private static final int METADATA_LOG_CAPACITY = 1000000;
 
     private final ConcurrentMap<CPGroupId, RaftNode> nodes = new ConcurrentHashMap<CPGroupId, RaftNode>();
     private final NodeEngineImpl nodeEngine;
@@ -665,6 +666,15 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
 
         RaftIntegration integration = new NodeEngineRaftIntegration(nodeEngine, groupId, localCPMember);
         RaftAlgorithmConfig raftAlgorithmConfig = config.getRaftAlgorithmConfig();
+
+        if (METADATA_CP_GROUP_NAME.equals(groupId.name())) {
+            // METADATA snapshot serialization is broken.
+            // That's why we are setting a high capacity to METADATA log to avoid snapshotting.
+            // See CPGroupMembershipChange.writeData(..)
+            raftAlgorithmConfig = new RaftAlgorithmConfig(raftAlgorithmConfig);
+            raftAlgorithmConfig.setCommitIndexAdvanceCountToSnapshot(METADATA_LOG_CAPACITY);
+        }
+
         RaftNodeImpl node = new RaftNodeImpl(groupId, localCPMember, (Collection) members, raftAlgorithmConfig, integration);
 
         if (nodes.putIfAbsent(groupId, node) == null) {

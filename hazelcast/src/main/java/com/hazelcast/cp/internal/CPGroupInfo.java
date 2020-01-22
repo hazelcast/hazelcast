@@ -24,6 +24,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -59,6 +60,16 @@ public final class CPGroupInfo implements CPGroup, IdentifiedDataSerializable {
         this.initialMembers = Collections.unmodifiableSet(new LinkedHashSet<CPMemberInfo>(members));
         this.members = Collections.unmodifiableSet(new LinkedHashSet<CPMemberInfo>(members));
         this.membersArray = members.toArray(new CPMemberInfo[0]);
+    }
+
+    // Copy constructor
+    CPGroupInfo(CPGroupInfo other) {
+        this.id = other.id;
+        this.status = other.status;
+        this.membersCommitIndex = other.membersCommitIndex;
+        this.initialMembers = Collections.unmodifiableSet(new LinkedHashSet<CPMemberInfo>(other.initialMembers));
+        this.members = Collections.unmodifiableSet(new LinkedHashSet<CPMemberInfo>(other.members));
+        this.membersArray = Arrays.copyOf(other.membersArray, other.membersArray.length);
     }
 
     @Override

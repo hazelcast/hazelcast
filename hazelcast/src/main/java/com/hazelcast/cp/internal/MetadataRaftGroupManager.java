@@ -763,8 +763,8 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
 
         logger.severe("Could not apply add-member: " + (addedMember != null ? addedMember : "-")
                 + " and remove-member: " + (removedMember != null ? removedMember : "-") + " in "  + group
-                + " with new members commit index: " + newMembersCommitIndex + " expected members commit index: "
-                + expectedMembersCommitIndex + " known members commit index: " + group.getMembersCommitIndex());
+                + " with new members commit index: " + newMembersCommitIndex + ", expected members commit index: "
+                + expectedMembersCommitIndex + ", known members commit index: " + group.getMembersCommitIndex());
 
         return false;
     }

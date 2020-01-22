@@ -38,6 +38,7 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.ExceptionUtil;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -472,6 +473,7 @@ public class MetadataRaftGroupTest extends HazelcastRaftTestSupport {
     }
 
     @Test
+    @Ignore("METADATA snapshot serialization is disabled.")
     public void when_metadataClusterNodeFallsFarBehind_then_itInstallsSnapshot() {
         int nodeCount = 3;
         int commitCountToSnapshot = 5;

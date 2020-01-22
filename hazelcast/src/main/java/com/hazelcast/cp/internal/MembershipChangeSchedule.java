@@ -154,6 +154,12 @@ public class MembershipChangeSchedule implements IdentifiedDataSerializable {
 
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
+            // `groupId` was not written by mistake,
+            // but to keep patch compatibility we cannot serialize it in 3.12.x.
+            // That's why to avoid snapshots in METADATA group,
+            // we hardcoded METADATA log capacity to a huge size.
+            // out.writeObject(groupId);
+
             out.writeLong(membersCommitIndex);
             out.writeInt(members.size());
             for (CPMemberInfo member : members) {
@@ -165,6 +171,10 @@ public class MembershipChangeSchedule implements IdentifiedDataSerializable {
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
+            // `groupId` was not written by mistake,
+            // but to keep patch compatibility we cannot serialize it in 3.12.x.
+            // groupId = in.readObject();
+
             membersCommitIndex = in.readLong();
             int len = in.readInt();
             members = new HashSet<CPMemberInfo>(len);
