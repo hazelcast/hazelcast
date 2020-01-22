@@ -30,6 +30,7 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_METRIC_STARTED;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_METRIC_TOTAL_EXECUTION_TIME;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_METRIC_TOTAL_START_LATENCY;
+import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.util.JsonUtil.getLong;
 
 public class LocalExecutorStatsImpl implements LocalExecutorStats, JsonSerializable {
@@ -57,9 +58,9 @@ public class LocalExecutorStatsImpl implements LocalExecutorStats, JsonSerializa
     private volatile long completed;
     @Probe(name = EXECUTOR_METRIC_CANCELLED)
     private volatile long cancelled;
-    @Probe(name = EXECUTOR_METRIC_TOTAL_START_LATENCY)
+    @Probe(name = EXECUTOR_METRIC_TOTAL_START_LATENCY, unit = MS)
     private volatile long totalStartLatency;
-    @Probe(name = EXECUTOR_METRIC_TOTAL_EXECUTION_TIME)
+    @Probe(name = EXECUTOR_METRIC_TOTAL_EXECUTION_TIME, unit = MS)
     private volatile long totalExecutionTime;
 
     public LocalExecutorStatsImpl() {

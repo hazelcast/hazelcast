@@ -36,13 +36,15 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MIGRATION
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MIGRATION_METRIC_TOTAL_ELAPSED_DESTINATION_COMMIT_TIME;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MIGRATION_METRIC_TOTAL_ELAPSED_MIGRATION_OPERATION_TIME;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MIGRATION_METRIC_TOTAL_ELAPSED_MIGRATION_TIME;
+import static com.hazelcast.internal.metrics.ProbeUnit.MS;
+import static com.hazelcast.internal.metrics.ProbeUnit.NS;
 
 /**
  * Collection of stats for partition migration tasks.
  */
 public class MigrationStats {
 
-    @Probe(name = MIGRATION_METRIC_LAST_REPARTITION_TIME)
+    @Probe(name = MIGRATION_METRIC_LAST_REPARTITION_TIME, unit = MS)
     private final AtomicLong lastRepartitionTime = new AtomicLong();
 
     @Probe(name = MIGRATION_METRIC_PLANNED_MIGRATIONS)
@@ -54,22 +56,22 @@ public class MigrationStats {
     @Probe(name = MIGRATION_METRIC_TOTAL_COMPLETED_MIGRATIONS)
     private final AtomicInteger totalCompletedMigrations = new AtomicInteger();
 
-    @Probe(name = MIGRATION_METRIC_ELAPSED_MIGRATION_OPERATION_TIME)
+    @Probe(name = MIGRATION_METRIC_ELAPSED_MIGRATION_OPERATION_TIME, unit = NS)
     private final AtomicLong elapsedMigrationOperationTime = new AtomicLong();
 
-    @Probe(name = MIGRATION_METRIC_ELAPSED_DESTINATION_COMMIT_TIME)
+    @Probe(name = MIGRATION_METRIC_ELAPSED_DESTINATION_COMMIT_TIME, unit = NS)
     private final AtomicLong elapsedDestinationCommitTime = new AtomicLong();
 
-    @Probe(name = MIGRATION_METRIC_ELAPSED_MIGRATION_TIME)
+    @Probe(name = MIGRATION_METRIC_ELAPSED_MIGRATION_TIME, unit = NS)
     private final AtomicLong elapsedMigrationTime = new AtomicLong();
 
-    @Probe(name = MIGRATION_METRIC_TOTAL_ELAPSED_MIGRATION_OPERATION_TIME)
+    @Probe(name = MIGRATION_METRIC_TOTAL_ELAPSED_MIGRATION_OPERATION_TIME, unit = NS)
     private final AtomicLong totalElapsedMigrationOperationTime = new AtomicLong();
 
-    @Probe(name = MIGRATION_METRIC_TOTAL_ELAPSED_DESTINATION_COMMIT_TIME)
+    @Probe(name = MIGRATION_METRIC_TOTAL_ELAPSED_DESTINATION_COMMIT_TIME, unit = NS)
     private final AtomicLong totalElapsedDestinationCommitTime = new AtomicLong();
 
-    @Probe(name = MIGRATION_METRIC_TOTAL_ELAPSED_MIGRATION_TIME)
+    @Probe(name = MIGRATION_METRIC_TOTAL_ELAPSED_MIGRATION_TIME, unit = NS)
     private final AtomicLong totalElapsedMigrationTime = new AtomicLong();
 
     /**

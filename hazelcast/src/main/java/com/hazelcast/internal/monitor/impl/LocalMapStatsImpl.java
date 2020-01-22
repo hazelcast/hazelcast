@@ -62,6 +62,7 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRI
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_TOTAL_PUT_LATENCY;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_TOTAL_REMOVE_LATENCY;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_TOTAL_SET_LATENCY;
+import static com.hazelcast.internal.metrics.ProbeUnit.BYTES;
 import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.util.ConcurrencyUtil.setMax;
 import static com.hazelcast.internal.util.JsonUtil.getInt;
@@ -118,9 +119,9 @@ public class LocalMapStatsImpl implements LocalMapStats, JsonSerializable {
     private final Map<String, LocalIndexStats> indexStats = Collections.unmodifiableMap(mutableIndexStats);
 
     // These fields are only accessed through the updaters
-    @Probe(name = MAP_METRIC_LAST_ACCESS_TIME)
+    @Probe(name = MAP_METRIC_LAST_ACCESS_TIME, unit = MS)
     private volatile long lastAccessTime;
-    @Probe(name = MAP_METRIC_LAST_UPDATE_TIME)
+    @Probe(name = MAP_METRIC_LAST_UPDATE_TIME, unit = MS)
     private volatile long lastUpdateTime;
     @Probe(name = MAP_METRIC_HITS)
     private volatile long hits;
@@ -144,15 +145,15 @@ public class LocalMapStatsImpl implements LocalMapStats, JsonSerializable {
     private volatile long maxPutLatency;
     private volatile long maxSetLatency;
     private volatile long maxRemoveLatency;
-    @Probe(name = MAP_METRIC_CREATION_TIME)
+    @Probe(name = MAP_METRIC_CREATION_TIME, unit = MS)
     private volatile long creationTime;
     @Probe(name = MAP_METRIC_OWNED_ENTRY_COUNT)
     private volatile long ownedEntryCount;
     @Probe(name = MAP_METRIC_BACKUP_ENTRY_COUNT)
     private volatile long backupEntryCount;
-    @Probe(name = MAP_METRIC_OWNED_ENTRY_MEMORY_COST)
+    @Probe(name = MAP_METRIC_OWNED_ENTRY_MEMORY_COST, unit = BYTES)
     private volatile long ownedEntryMemoryCost;
-    @Probe(name = MAP_METRIC_BACKUP_ENTRY_MEMORY_COST)
+    @Probe(name = MAP_METRIC_BACKUP_ENTRY_MEMORY_COST, unit = BYTES)
     private volatile long backupEntryMemoryCost;
     /**
      * Holds total heap cost of map & Near Cache & backups & Merkle trees.

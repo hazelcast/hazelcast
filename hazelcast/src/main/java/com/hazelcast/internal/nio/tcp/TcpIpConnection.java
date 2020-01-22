@@ -38,6 +38,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_CONNECTION_CONNECTION_TYPE;
+import static com.hazelcast.internal.metrics.ProbeUnit.ENUM;
 import static com.hazelcast.internal.nio.ConnectionType.MEMBER;
 import static com.hazelcast.internal.nio.ConnectionType.NONE;
 
@@ -104,7 +105,7 @@ public class TcpIpConnection implements Connection {
         return connectionType;
     }
 
-    @Probe(name = TCP_METRIC_CONNECTION_CONNECTION_TYPE)
+    @Probe(name = TCP_METRIC_CONNECTION_CONNECTION_TYPE, unit = ENUM)
     private int getType() {
         return ConnectionType.getTypeId(connectionType);
     }

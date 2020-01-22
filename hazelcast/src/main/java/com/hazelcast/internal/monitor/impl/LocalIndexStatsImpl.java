@@ -33,6 +33,10 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRI
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_INDEX_TOTAL_REMOVE_LATENCY;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_INDEX_TOTAL_UPDATE_LATENCY;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_INDEX_UPDATE_COUNT;
+import static com.hazelcast.internal.metrics.ProbeUnit.BYTES;
+import static com.hazelcast.internal.metrics.ProbeUnit.MS;
+import static com.hazelcast.internal.metrics.ProbeUnit.NS;
+import static com.hazelcast.internal.metrics.ProbeUnit.PERCENT;
 
 /**
  * Implementation of local index stats that backs the stats exposed through the
@@ -41,7 +45,7 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRI
 @SuppressWarnings("checkstyle:methodcount")
 public class LocalIndexStatsImpl implements LocalIndexStats, JsonSerializable {
 
-    @Probe(name = MAP_METRIC_INDEX_CREATION_TIME)
+    @Probe(name = MAP_METRIC_INDEX_CREATION_TIME, unit = MS)
     private volatile long creationTime;
 
     @Probe(name = MAP_METRIC_INDEX_QUERY_COUNT)
@@ -50,31 +54,31 @@ public class LocalIndexStatsImpl implements LocalIndexStats, JsonSerializable {
     @Probe(name = MAP_METRIC_INDEX_HIT_COUNT)
     private volatile long hitCount;
 
-    @Probe(name = MAP_METRIC_INDEX_AVERAGE_HIT_LATENCY)
+    @Probe(name = MAP_METRIC_INDEX_AVERAGE_HIT_LATENCY, unit = NS)
     private volatile long averageHitLatency;
 
-    @Probe(name = MAP_METRIC_INDEX_AVERAGE_HIT_SELECTIVITY)
+    @Probe(name = MAP_METRIC_INDEX_AVERAGE_HIT_SELECTIVITY, unit = PERCENT)
     private volatile double averageHitSelectivity;
 
     @Probe(name = MAP_METRIC_INDEX_INSERT_COUNT)
     private volatile long insertCount;
 
-    @Probe(name = MAP_METRIC_INDEX_TOTAL_INSERT_LATENCY)
+    @Probe(name = MAP_METRIC_INDEX_TOTAL_INSERT_LATENCY, unit = NS)
     private volatile long totalInsertLatency;
 
     @Probe(name = MAP_METRIC_INDEX_UPDATE_COUNT)
     private volatile long updateCount;
 
-    @Probe(name = MAP_METRIC_INDEX_TOTAL_UPDATE_LATENCY)
+    @Probe(name = MAP_METRIC_INDEX_TOTAL_UPDATE_LATENCY, unit = NS)
     private volatile long totalUpdateLatency;
 
     @Probe(name = MAP_METRIC_INDEX_REMOVE_COUNT)
     private volatile long removeCount;
 
-    @Probe(name = MAP_METRIC_INDEX_TOTAL_REMOVE_LATENCY)
+    @Probe(name = MAP_METRIC_INDEX_TOTAL_REMOVE_LATENCY, unit = NS)
     private volatile long totalRemoveLatency;
 
-    @Probe(name = MAP_METRIC_INDEX_MEMORY_COST)
+    @Probe(name = MAP_METRIC_INDEX_MEMORY_COST, unit = BYTES)
     private volatile long memoryCost;
 
     @Override

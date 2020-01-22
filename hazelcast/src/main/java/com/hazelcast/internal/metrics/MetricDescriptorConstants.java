@@ -71,7 +71,7 @@ public final class MetricDescriptorConstants {
     public static final String CLIENT_METRIC_INVOCATIONS_MAX_CURRENT_INVOCATIONS = "maxCurrentInvocations";
     public static final String CLIENT_METRIC_LISTENER_SERVICE_EVENT_QUEUE_SIZE = "eventQueueSize";
     public static final String CLIENT_METRIC_LISTENER_SERVICE_EVENTS_PROCESSED = "eventsProcessed";
-    // ===[CLIENT]======================================================
+    // ===[/CLIENT]=====================================================
 
     // ===[CLUSTER]=====================================================
     public static final String CLUSTER_PREFIX = "cluster";
@@ -90,26 +90,25 @@ public final class MetricDescriptorConstants {
     // ===[/CLUSTER]====================================================
 
     // ===[CP SUBSYSTEM]================================================
-    public static final String CPSUBSYSTEM_PREFIX_RAFT = "raft";
-    public static final String CPSUBSYSTEM_PREFIX_RAFT_GROUP = "raft.group";
-    public static final String CPSUBSYSTEM_PREFIX_RAFT_METADATA = "raft.metadata";
-    public static final String CPSUBSYSTEM_DISCRIMINATOR_GROUPID = "groupId";
-    public static final String CPSUBSYSTEM_TAG_NAME = "name";
-    public static final String CPSUBSYSTEM_METRIC_METADATA_RAFT_GROUP_MANAGER_GROUPS = "groups";
-    public static final String CPSUBSYSTEM_METRIC_METADATA_RAFT_GROUP_MANAGER_ACTIVE_MEMBERS = "activeMembers";
-    public static final String CPSUBSYSTEM_METRIC_METADATA_RAFT_GROUP_MANAGER_ACTIVE_MEMBERS_COMMIT_INDEX =
-            "activeMembersCommitIndex";
-    public static final String CPSUBSYSTEM_METRIC_RAFT_NODE_TERM = "term";
-    public static final String CPSUBSYSTEM_METRIC_RAFT_NODE_COMMIT_INDEX = "commitIndex";
-    public static final String CPSUBSYSTEM_METRIC_RAFT_NODE_LAST_APPLIED = "lastApplied";
-    public static final String CPSUBSYSTEM_METRIC_RAFT_NODE_LAST_LOG_TERM = "lastLogTerm";
-    public static final String CPSUBSYSTEM_METRIC_RAFT_NODE_SNAPSHOT_INDEX = "snapshotIndex";
-    public static final String CPSUBSYSTEM_METRIC_RAFT_NODE_LAST_LOG_INDEX = "lastLogIndex";
-    public static final String CPSUBSYSTEM_METRIC_RAFT_NODE_AVAILABLE_LOG_CAPACITY = "availableLogCapacity";
-    public static final String CPSUBSYSTEM_METRIC_RAFT_SERVICE_NODES = "nodes";
-    public static final String CPSUBSYSTEM_METRIC_RAFT_SERVICE_DESTROYED_GROUP_IDS = "destroyedGroupIds";
-    public static final String CPSUBSYSTEM_METRIC_RAFT_SERVICE_TERMINATED_RAFT_NODE_GROUP_IDS = "terminatedRaftNodeGroupIds";
-    public static final String CPSUBSYSTEM_METRIC_RAFT_SERVICE_MISSING_MEMBERS = "missingMembers";
+    public static final String CP_PREFIX_RAFT = "raft";
+    public static final String CP_PREFIX_RAFT_GROUP = "raft.group";
+    public static final String CP_PREFIX_RAFT_METADATA = "raft.metadata";
+    public static final String CP_DISCRIMINATOR_GROUPID = "groupId";
+    public static final String CP_TAG_NAME = "name";
+    public static final String CP_METRIC_METADATA_RAFT_GROUP_MANAGER_GROUPS = "groups";
+    public static final String CP_METRIC_METADATA_RAFT_GROUP_MANAGER_ACTIVE_MEMBERS = "activeMembers";
+    public static final String CP_METRIC_METADATA_RAFT_GROUP_MANAGER_ACTIVE_MEMBERS_COMMIT_INDEX = "activeMembersCommitIndex";
+    public static final String CP_METRIC_RAFT_NODE_TERM = "term";
+    public static final String CP_METRIC_RAFT_NODE_COMMIT_INDEX = "commitIndex";
+    public static final String CP_METRIC_RAFT_NODE_LAST_APPLIED = "lastApplied";
+    public static final String CP_METRIC_RAFT_NODE_LAST_LOG_TERM = "lastLogTerm";
+    public static final String CP_METRIC_RAFT_NODE_SNAPSHOT_INDEX = "snapshotIndex";
+    public static final String CP_METRIC_RAFT_NODE_LAST_LOG_INDEX = "lastLogIndex";
+    public static final String CP_METRIC_RAFT_NODE_AVAILABLE_LOG_CAPACITY = "availableLogCapacity";
+    public static final String CP_METRIC_RAFT_SERVICE_NODES = "nodes";
+    public static final String CP_METRIC_RAFT_SERVICE_DESTROYED_GROUP_IDS = "destroyedGroupIds";
+    public static final String CP_METRIC_RAFT_SERVICE_TERMINATED_RAFT_NODE_GROUP_IDS = "terminatedRaftNodeGroupIds";
+    public static final String CP_METRIC_RAFT_SERVICE_MISSING_MEMBERS = "missingMembers";
     // ===[/CP SUBSYSTEM]===============================================
 
     // ===[EVENT]=======================================================
@@ -124,7 +123,7 @@ public final class MetricDescriptorConstants {
     public static final String EVENT_METRIC_EVENT_SERVICE_EVENTS_PROCESSED = "eventsProcessed";
     public static final String EVENT_METRIC_EVENT_SERVICE_SEGMENT_LISTENER_COUNT = "listenerCount";
     public static final String EVENT_METRIC_EVENT_SERVICE_SEGMENT_PUBLICATION_COUNT = "publicationCount";
-    // ===[EVENT]=======================================================
+    // ===[/EVENT]======================================================
 
     // ===[EXECUTOR]====================================================
     public static final String EXECUTOR_PREFIX = "executor";
@@ -312,7 +311,7 @@ public final class MetricDescriptorConstants {
     public static final String NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_WRITE_QUEUE_PENDING_BYTES = "writeQueuePendingBytes";
     public static final String NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_PRIORITY_WRITE_QUEUE_PENDING_BYTES =
             "priorityWriteQueuePendingBytes";
-    public static final String NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_IDLE_TIME_MS = "idleTimeMs";
+    public static final String NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_IDLE_TIME_MILLIS = "idleTimeMillis";
     public static final String NETWORKING_METRIC_NIO_OUTBOUND_PIPELINE_SCHEDULED = "scheduled";
     public static final String NETWORKING_METRIC_NIO_PIPELINE_PROCESS_COUNT = "processCount";
     public static final String NETWORKING_METRIC_NIO_PIPELINE_OWNER_ID = "ownerId";
@@ -330,7 +329,7 @@ public final class MetricDescriptorConstants {
     public static final String NETWORKING_METRIC_NIO_THREAD_SELECTOR_IO_EXCEPTION_COUNT = "selectorIOExceptionCount";
     public static final String NETWORKING_METRIC_NIO_THREAD_COMPLETED_TASK_COUNT = "completedTaskCount";
     public static final String NETWORKING_METRIC_NIO_THREAD_SELECTOR_REBUILD_COUNT = "selectorRebuildCount";
-    public static final String NETWORKING_METRIC_NIO_THREAD_IDLE_TIME_MS = "idleTimeMs";
+    public static final String NETWORKING_METRIC_NIO_THREAD_IDLE_TIME_MILLIS = "idleTimeMillis";
     public static final String NETWORKING_METRIC_NIO_IO_BALANCER_IMBALANCE_DETECTED_COUNT = "imbalanceDetectedCount";
     public static final String NETWORKING_METRIC_NIO_IO_BALANCER_MIGRATION_COMPLETED_COUNT = "migrationCompletedCount";
     // ===[/NETWORKING]=================================================
@@ -505,7 +504,7 @@ public final class MetricDescriptorConstants {
     public static final String TCP_METRIC_ACCEPTOR_EVENT_COUNT = "eventCount";
     public static final String TCP_METRIC_ACCEPTOR_EXCEPTION_COUNT = "exceptionCount";
     public static final String TCP_METRIC_ACCEPTOR_SELECTOR_RECREATE_COUNT = "selectorRecreateCount";
-    public static final String TCP_METRIC_ACCEPTOR_IDLE_TIME_MS = "idleTimeMs";
+    public static final String TCP_METRIC_ACCEPTOR_IDLE_TIME_MILLIS = "idleTimeMillis";
     public static final String TCP_METRIC_CONNECTION_CONNECTION_TYPE = "connectionType";
     public static final String TCP_METRIC_ENDPOINT_MANAGER_IN_PROGRESS_COUNT = "inProgressCount";
     public static final String TCP_METRIC_ENDPOINT_MANAGER_COUNT = "count";
@@ -538,7 +537,7 @@ public final class MetricDescriptorConstants {
     public static final String THREAD_FULL_METRIC_PEAK_THREAD_COUNT = "thread.peakThreadCount";
     public static final String THREAD_FULL_METRIC_DAEMON_THREAD_COUNT = "thread.daemonThreadCount";
     public static final String THREAD_FULL_METRIC_TOTAL_STARTED_THREAD_COUNT = "thread.totalStartedThreadCount";
-    // ===[/TCP]========================================================
+    // ===[/THREAD]=====================================================
 
     // ===[WAN]=========================================================
     public static final String WAN_PREFIX = "wan";

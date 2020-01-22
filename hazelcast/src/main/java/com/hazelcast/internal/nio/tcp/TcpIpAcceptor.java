@@ -42,7 +42,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_DISCRIMINATOR_THREAD;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ACCEPTOR_EVENT_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ACCEPTOR_EXCEPTION_COUNT;
-import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ACCEPTOR_IDLE_TIME_MS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ACCEPTOR_IDLE_TIME_MILLIS;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ACCEPTOR_SELECTOR_RECREATE_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_PREFIX_ACCEPTOR;
 import static com.hazelcast.internal.metrics.ProbeUnit.MS;
@@ -107,8 +107,8 @@ public class TcpIpAcceptor implements DynamicMetricsProvider {
      *
      * @return the idle time in ms.
      */
-    @Probe(name = TCP_METRIC_ACCEPTOR_IDLE_TIME_MS, unit = MS)
-    private long idleTimeMs() {
+    @Probe(name = TCP_METRIC_ACCEPTOR_IDLE_TIME_MILLIS, unit = MS)
+    private long idleTimeMillis() {
         return max(currentTimeMillis() - lastSelectTimeMs, 0);
     }
 

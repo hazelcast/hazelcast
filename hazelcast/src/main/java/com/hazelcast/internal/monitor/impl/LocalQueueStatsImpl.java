@@ -38,6 +38,7 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.QUEUE_MET
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.QUEUE_METRIC_NUMBER_OF_REJECTED_OFFERS;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.QUEUE_METRIC_OWNED_ITEM_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.QUEUE_METRIC_TOTAL;
+import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.util.JsonUtil.getInt;
 import static com.hazelcast.internal.util.JsonUtil.getLong;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
@@ -67,7 +68,7 @@ public class LocalQueueStatsImpl implements LocalQueueStats, JsonSerializable {
     private long maxAge;
     @Probe(name = QUEUE_METRIC_AVERAGE_AGE)
     private long averageAge;
-    @Probe(name = QUEUE_METRIC_CREATION_TIME)
+    @Probe(name = QUEUE_METRIC_CREATION_TIME, unit = MS)
     private long creationTime;
 
     // These fields are only accessed through the updater

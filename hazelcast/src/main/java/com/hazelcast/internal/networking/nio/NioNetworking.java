@@ -60,6 +60,7 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_PREFI
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_PREFIX_CONNECTION_OUT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_PREFIX_INPUTTHREAD;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_PREFIX_OUTPUTTHREAD;
+import static com.hazelcast.internal.metrics.ProbeUnit.BYTES;
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT;
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT_NOW_STRING;
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT_WITH_FIX;
@@ -127,9 +128,9 @@ public final class NioNetworking implements Networking, DynamicMetricsProvider {
     // Currently this is a coarse grained aggregation of the bytes/send received.
     // In the future you probably want to split this up in member and client and potentially
     // wan specific.
-    @Probe(name = NETWORKING_METRIC_NIO_NETWORKING_BYTES_SEND)
+    @Probe(name = NETWORKING_METRIC_NIO_NETWORKING_BYTES_SEND, unit = BYTES)
     private volatile long bytesSend;
-    @Probe(name = NETWORKING_METRIC_NIO_NETWORKING_BYTES_RECEIVED)
+    @Probe(name = NETWORKING_METRIC_NIO_NETWORKING_BYTES_RECEIVED, unit = BYTES)
     private volatile long bytesReceived;
     @Probe(name = NETWORKING_METRIC_NIO_NETWORKING_PACKETS_SEND)
     private volatile long packetsSend;

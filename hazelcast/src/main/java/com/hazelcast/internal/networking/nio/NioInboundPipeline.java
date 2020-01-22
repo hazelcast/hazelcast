@@ -36,6 +36,8 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKIN
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_INBOUND_PIPELINE_IDLE_TIME_MS;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_INBOUND_PIPELINE_NORMAL_FRAMES_READ;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_INBOUND_PIPELINE_PRIORITY_FRAMES_READ;
+import static com.hazelcast.internal.metrics.ProbeUnit.BYTES;
+import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.collection.ArrayUtils.append;
 import static com.hazelcast.internal.util.collection.ArrayUtils.replaceFirst;
@@ -55,7 +57,7 @@ public final class NioInboundPipeline extends NioPipeline implements InboundPipe
     private InboundHandler[] handlers = new InboundHandler[0];
     private ByteBuffer receiveBuffer;
 
-    @Probe(name = NETWORKING_METRIC_NIO_INBOUND_PIPELINE_BYTES_READ)
+    @Probe(name = NETWORKING_METRIC_NIO_INBOUND_PIPELINE_BYTES_READ, unit = BYTES)
     private final SwCounter bytesRead = newSwCounter();
     @Probe(name = NETWORKING_METRIC_NIO_INBOUND_PIPELINE_NORMAL_FRAMES_READ)
     private final SwCounter normalFramesRead = newSwCounter();
@@ -98,8 +100,8 @@ public final class NioInboundPipeline extends NioPipeline implements InboundPipe
         }
     }
 
-    @Probe(name = NETWORKING_METRIC_NIO_INBOUND_PIPELINE_IDLE_TIME_MS)
-    private long idleTimeMs() {
+    @Probe(name = NETWORKING_METRIC_NIO_INBOUND_PIPELINE_IDLE_TIME_MS, unit = MS)
+    private long idleTimeMillis() {
         return Math.max(currentTimeMillis() - lastReadTime, 0);
     }
 

@@ -37,6 +37,7 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_INVOCATION_REGISTRY_INVOCATIONS_USED_PERCENTAGE;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_PREFIX;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
+import static com.hazelcast.internal.metrics.ProbeUnit.PERCENT;
 import static com.hazelcast.spi.impl.operationservice.OperationAccessor.deactivate;
 import static com.hazelcast.spi.impl.operationservice.OperationAccessor.setCallId;
 
@@ -91,7 +92,7 @@ public class InvocationRegistry implements Iterable<Invocation>, StaticMetricsPr
         registry.registerStaticMetrics(this, OPERATION_PREFIX);
     }
 
-    @Probe(name = OPERATION_METRIC_INVOCATION_REGISTRY_INVOCATIONS_USED_PERCENTAGE)
+    @Probe(name = OPERATION_METRIC_INVOCATION_REGISTRY_INVOCATIONS_USED_PERCENTAGE, unit = PERCENT)
     private double invocationsUsedPercentage() {
         int maxConcurrentInvocations = callIdSequence.getMaxConcurrentInvocations();
         if (maxConcurrentInvocations == Integer.MAX_VALUE) {

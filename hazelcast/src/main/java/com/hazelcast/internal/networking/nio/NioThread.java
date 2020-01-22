@@ -38,7 +38,7 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKIN
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_THREAD_COMPLETED_TASK_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_THREAD_EVENT_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_THREAD_FRAMES_TRANSCEIVED;
-import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_THREAD_IDLE_TIME_MS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_THREAD_IDLE_TIME_MILLIS;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_THREAD_IO_THREAD_ID;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_THREAD_PRIORITY_FRAMES_TRANSCEIVED;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_THREAD_PROCESS_COUNT;
@@ -47,6 +47,7 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKIN
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_THREAD_TASK_QUEUE_SIZE;
 import static com.hazelcast.internal.metrics.MetricTarget.MANAGEMENT_CENTER;
 import static com.hazelcast.internal.metrics.ProbeUnit.BYTES;
+import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT_NOW;
 import static com.hazelcast.internal.networking.nio.SelectorOptimizer.newSelector;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
@@ -195,8 +196,8 @@ public class NioThread extends Thread implements OperationHostileThread {
      *
      * @return the idle time in ms.
      */
-    @Probe(name = NETWORKING_METRIC_NIO_THREAD_IDLE_TIME_MS, unit = BYTES)
-    private long idleTimeMs() {
+    @Probe(name = NETWORKING_METRIC_NIO_THREAD_IDLE_TIME_MILLIS, unit = MS)
+    private long idleTimeMillis() {
         return max(currentTimeMillis() - lastSelectTimeMs, 0);
     }
 
