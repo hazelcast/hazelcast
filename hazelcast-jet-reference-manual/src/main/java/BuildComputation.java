@@ -612,21 +612,52 @@ class BuildComputation {
         return null;
     }
 
-    static void returnResultsToCaller() {
-        //tag::retres[]
+    static void retres1() {
+        //tag::retres1[]
+        JetInstance jet = Jet.newJetInstance();
+        Observable<Long> observable = jet.newObservable();
+        observable.addObserver(System.out::println);
+
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(TestSources.items(0L, 1L, 2L, 3L, 4L))
-                .writeTo(Sinks.observable("results"));
-
-        JetInstance jet = Jet.newJetInstance();
-
-        Observable<Long> observable = jet.getObservable("results");
-        observable.addObserver(System.out::println);
+                .writeTo(Sinks.observable(observable));
 
         jet.newJob(pipeline).join();
 
         observable.destroy();
-        //end::retres[]
+        //end::retres1[]
+    }
+
+    static void retres2() {
+        //tag::retres2[]
+        JetInstance jet = Jet.newJetInstance();
+        Observable<Long> observable = jet.getObservable("results");
+        observable.addObserver(System.out::println);
+
+        Pipeline pipeline = Pipeline.create();
+        pipeline.readFrom(TestSources.items(0L, 1L, 2L, 3L, 4L))
+                .writeTo(Sinks.observable("results"));
+
+        jet.newJob(pipeline).join();
+
+        observable.destroy();
+        //end::retres2[]
+    }
+
+    static void retres3() {
+        //tag::retres3[]
+        JetInstance jet = Jet.newJetInstance();
+        Observable<Long> observable = jet.getObservable("results");
+
+        Pipeline pipeline = Pipeline.create();
+        pipeline.readFrom(TestSources.items(0L, 1L, 2L, 3L, 4L))
+                .writeTo(Sinks.observable("results"));
+
+        observable.toFuture(Stream::count).thenAccept(System.out::println);
+        jet.newJob(pipeline).join();
+
+        observable.destroy();
+        //end::retres3[]
     }
 }
 

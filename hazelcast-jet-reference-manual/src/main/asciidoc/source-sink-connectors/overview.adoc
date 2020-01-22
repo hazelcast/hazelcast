@@ -33,7 +33,7 @@ once. An example is the TCP socket connector. Such sources are bad at
 fault tolerance: if anything goes wrong during the computation, it
 cannot be retried.
 
-=== Does it Support Checkpointing?
+== Does it Support Checkpointing?
 
 You cannot retry to process an infinite data stream from the very
 beginning. You must save the complete state at regular intervals, then
@@ -86,12 +86,12 @@ stored on it.
 = Overview of Sources and Sinks
 
 The table below gives you a high-level overview of the source and
-sink connectors we deliver with Jet. There are links to Javadoc and 
-code samples. The sections following this one present each connector 
+sink connectors we deliver with Jet. There are links to Javadoc and
+code samples. The sections following this one present each connector
 in more detail.
 
 The https://jet.hazelcast.org/connectors/[Jet Connector Hub]
-contains the complete connector list including the connectors that 
+contains the complete connector list including the connectors that
 aren't packaged with Jet.
 
 .Sources and Sinks
@@ -334,4 +334,13 @@ Topic Sink image:check-mark.png[X,16,16]
 |image:cross-mark.png[X,16,16]
 |image:cross-mark.png[X,16,16]
 |image:check-mark.png[X,16,16]
+
+|<<return-results-to-caller>>
+|{jet-javadoc}/pipeline/Sinks.html#observable-com.hazelcast.jet.Observable-[Sink]
+|{jet-examples}/wordcount/src/main/java/com/hazelcast/jet/examples/wordcount/WordCount.java[Sink]
+|image:check-mark.png[X,16,16]
+|N/A
+|image:cross-mark.png[X,16,16]
+|image:cross-mark.png[X,16,16]
+|image:cross-mark.png[X,16,16]
 |===
