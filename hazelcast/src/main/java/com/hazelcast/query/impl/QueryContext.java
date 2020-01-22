@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,14 +22,16 @@ package com.hazelcast.query.impl;
 public class QueryContext {
 
     protected Indexes indexes;
+    protected int ownedPartitionCount = -1;
 
     /**
      * Creates a new query context with the given available indexes.
      *
      * @param indexes the indexes available for the query context.
      */
-    public QueryContext(Indexes indexes) {
+    public QueryContext(Indexes indexes, int ownedPartitionCount) {
         this.indexes = indexes;
+        this.ownedPartitionCount = ownedPartitionCount;
     }
 
     /**
@@ -39,12 +41,31 @@ public class QueryContext {
     }
 
     /**
+     * @return a count of owned partitions a query runs on.
+     */
+    public int getOwnedPartitionCount() {
+        return ownedPartitionCount;
+    }
+
+    /**
+     * Sets owned partitions count a query runs on.
+     * @param ownedPartitionCount a count of owned partitions.
+     */
+    public void setOwnedPartitionCount(int ownedPartitionCount) {
+        this.ownedPartitionCount = ownedPartitionCount;
+    }
+
+    /**
      * Attaches this index context to the given indexes.
      *
      * @param indexes the indexes to attach to.
+     * @param ownedPartitionCount a count of owned partitions a query runs on.
+     *                            Negative value indicates that the value is not defined.
+     *
      */
-    void attachTo(Indexes indexes) {
+    void attachTo(Indexes indexes, int ownedPartitionCount) {
         this.indexes = indexes;
+        this.ownedPartitionCount = ownedPartitionCount;
     }
 
     /**
@@ -76,7 +97,7 @@ public class QueryContext {
      * @see QueryContext.IndexMatchHint
      */
     public Index matchIndex(String pattern, IndexMatchHint matchHint) {
-        return indexes.matchIndex(pattern, matchHint);
+        return indexes.matchIndex(pattern, matchHint, ownedPartitionCount);
     }
 
     /**

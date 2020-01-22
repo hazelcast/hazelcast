@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package com.hazelcast.client.protocol.compatibility;
 
 import com.hazelcast.cache.impl.CacheEventData;
-import com.hazelcast.client.impl.MemberImpl;
 import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.protocol.codec.builtin.CustomTypeFactory;
 import com.hazelcast.client.impl.protocol.codec.holder.AnchorDataListHolder;
@@ -33,7 +32,6 @@ import com.hazelcast.client.impl.protocol.task.dynamicconfig.QueryCacheConfigHol
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.QueueStoreConfigHolder;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.RingbufferStoreConfigHolder;
 import com.hazelcast.cluster.Address;
-import com.hazelcast.cluster.Member;
 import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
@@ -49,11 +47,11 @@ import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.management.dto.ClientBwListEntryDTO;
 import com.hazelcast.internal.management.dto.MCEventDTO;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.querycache.event.DefaultQueryCacheEventData;
 import com.hazelcast.map.impl.querycache.event.QueryCacheEventData;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl;
 import com.hazelcast.transaction.impl.xa.SerializableXID;
@@ -234,7 +232,7 @@ public class ReferenceObjects {
         if (!a.getName().equals(b.getName())) {
             return false;
         }
-        if (!a.getMergePolicy().equals(b.getMergePolicy())) {
+        if (!a.getMergePolicyClassName().equals(b.getMergePolicyClassName())) {
             return false;
         }
         return a.getFilters() != null ? a.getFilters().equals(b.getFilters()) : b.getFilters() == null;
@@ -627,6 +625,8 @@ public class ReferenceObjects {
             = Collections.singletonList(new AbstractMap.SimpleEntry<>(anInt, aUUID));
     public static List<Map.Entry<Integer, Long>> aListOfIntegerToLong
             = Collections.singletonList(new AbstractMap.SimpleEntry<>(anInt, aLong));
+    public static List<Map.Entry<Integer, Integer>> aListOfIntegerToInteger
+            = Collections.singletonList(new AbstractMap.SimpleEntry<>(anInt, anInt));
     public static List<Map.Entry<UUID, Long>> aListOfUuidToLong
             = Collections.singletonList(new AbstractMap.SimpleEntry<>(aUUID, aLong));
     public static List<Integer> aListOfIntegers = Collections.singletonList(anInt);
@@ -642,8 +642,8 @@ public class ReferenceObjects {
         }
     }
 
-    public static List<Map.Entry<UUID, Address>> aListOfUUIDToAddress
-            = Collections.singletonList(new AbstractMap.SimpleEntry<>(aUUID, anAddress));
+    public static List<Map.Entry<UUID, List<Integer>>> aListOfUUIDToListOfIntegers
+            = Collections.singletonList(new AbstractMap.SimpleEntry<>(aUUID, aListOfIntegers));
     public static Map<String, String> aMapOfStringToString = Collections.singletonMap(aString, aString);
     public static List<String> aListOfStrings = Collections.singletonList(aString);
     public static StackTraceElement aStackTraceElement = new StackTraceElement(aString, aString, aString, anInt);
@@ -651,7 +651,6 @@ public class ReferenceObjects {
     public static CacheEventData aCacheEventData
             = CustomTypeFactory.createCacheEventData(aString, anEnum, aData, aData, aData, aBoolean);
     public static DistributedObjectInfo aDistributedObjectInfo = new DistributedObjectInfo(aString, aString);
-    public static Member aMember = new MemberImpl(anAddress, aUUID, aMapOfStringToString, aBoolean);
     public static DefaultQueryCacheEventData aQueryCacheEventData;
     public static MCEventDTO aMCEvent = new MCEventDTO(aLong, anInt, aString);
     public static List<MCEventDTO> aListOfMCEvents = Collections.singletonList(aMCEvent);
@@ -666,7 +665,7 @@ public class ReferenceObjects {
     }
 
     public static RaftGroupId aRaftGroupId = new RaftGroupId(aString, aLong, aLong);
-    public static ScheduledTaskHandler aScheduledTaskHandler = new ScheduledTaskHandlerImpl(anAddress, anInt, aString, aString);
+    public static ScheduledTaskHandler aScheduledTaskHandler = new ScheduledTaskHandlerImpl(aUUID, anInt, aString, aString);
     public static SimpleEntryView<Data, Data> aSimpleEntryView = new SimpleEntryView<>(aData, aData);
 
     static {
@@ -751,33 +750,26 @@ public class ReferenceObjects {
             = Collections.singletonList(new AbstractMap.SimpleEntry<>(aLong, aByteArray));
     public static List<Map.Entry<String, List<Map.Entry<Integer, Long>>>> aListOfStringToListOfIntegerToLong
             = Collections.singletonList(new AbstractMap.SimpleEntry<>(aString, aListOfIntegerToLong));
-    public static List<Map.Entry<Address, List<Integer>>> aListOfAddressToListOfIntegers
-            = Collections.singletonList(new AbstractMap.SimpleEntry<>(anAddress, aListOfIntegers));
     public static List<Map.Entry<Data, Data>> aListOfDataToData
             = Collections.singletonList(new AbstractMap.SimpleEntry<>(aData, aData));
 
-    public static List<Address> aListOfAddresses = Collections.singletonList(anAddress);
-    public static List<byte[]> aListOfByteArrays = Collections.singletonList(aByteArray);
     public static List<CacheEventData> aListOfCacheEventData = Collections.singletonList(aCacheEventData);
     public static List<CacheSimpleEntryListenerConfig> aListOfCacheSimpleEntryListenerConfigs
             = Collections.singletonList(aCacheSimpleEntryListenerConfig);
     public static List<Data> aListOfData = Collections.singletonList(aData);
     public static List<DistributedObjectInfo> aListOfDistributedObjectInfo = Collections.singletonList(aDistributedObjectInfo);
     public static List<AttributeConfig> aListOfAttributeConfigs = Collections.singletonList(anAttributeConfig);
-    public static List<Member> aListOfMembers = Collections.singletonList(aMember);
     public static List<QueryCacheConfigHolder> aListOfQueryCacheConfigHolders = Collections.singletonList(aQueryCacheConfigHolder);
     public static List<QueryCacheEventData> aListOfQueryCacheEventData = Collections.singletonList(aQueryCacheEventData);
     public static List<ScheduledTaskHandler> aListOfScheduledTaskHandler = Collections.singletonList(aScheduledTaskHandler);
     public static List<Xid> aListOfXids = Collections.singletonList(anXid);
-    public static List<Map.Entry<Member, List<ScheduledTaskHandler>>> aListOfMemberToListOfScheduledTaskHandlers
-            = Collections.singletonList(new AbstractMap.SimpleEntry<>(aMember, aListOfScheduledTaskHandler));
     public static List<ClientBwListEntryDTO> aListOfClientBwListEntries = Collections.singletonList(aClientBwListEntry);
     public static MergePolicyConfig aMergePolicyConfig = new MergePolicyConfig(aString, anInt);
     public static CacheConfigHolder aCacheConfigHolder = new CacheConfigHolder(aString, aString, aString, anInt, anInt,
             aString, anEvictionConfigHolder, aWanReplicationRef, aString, aString, aData, aData, aData, aBoolean,
             aBoolean, aBoolean, aBoolean, aBoolean, aHotRestartConfig, anEventJournalConfig, aString, aListOfData,
             aMergePolicyConfig, aBoolean, aListOfListenerConfigHolders);
-    private static MemberVersion aMemberVersion = new MemberVersion(anInt, anInt, anInt);
+    private static MemberVersion aMemberVersion = new MemberVersion(aByte, aByte, aByte);
     public static Collection<MemberInfo> aListOfMemberInfos = Collections.singletonList(new MemberInfo(anAddress, aUUID, aMapOfStringToString, aBoolean, aMemberVersion));
     public static AnchorDataListHolder anAnchorDataListHolder = new AnchorDataListHolder(aListOfIntegers, aListOfDataToData);
     public static PagingPredicateHolder aPagingPredicateHolder = new PagingPredicateHolder(anAnchorDataListHolder, aData, aData,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,15 +23,15 @@ import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.RingbufferMergeTypes;
 
 class RingbufferMergeIntegerValuesMergePolicy
-        implements SplitBrainMergePolicy<RingbufferMergeData, RingbufferMergeTypes> {
+        implements SplitBrainMergePolicy<RingbufferMergeData, RingbufferMergeTypes, RingbufferMergeData> {
 
     @Override
     public RingbufferMergeData merge(RingbufferMergeTypes mergingValue, RingbufferMergeTypes existingValue) {
-        final RingbufferMergeData mergingRingbuffer = mergingValue.getDeserializedValue();
+        final RingbufferMergeData mergingRingbuffer = mergingValue.getValue();
         final RingbufferMergeData result = new RingbufferMergeData(mergingRingbuffer.getCapacity());
         RingbufferMergeData existingRingbuffer;
         if (existingValue != null) {
-            existingRingbuffer = existingValue.getDeserializedValue();
+            existingRingbuffer = existingValue.getValue();
         } else {
             existingRingbuffer = new RingbufferMergeData(mergingRingbuffer.getCapacity());
         }

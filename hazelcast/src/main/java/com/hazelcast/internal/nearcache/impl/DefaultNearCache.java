@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.config.NearCacheConfig.DEFAULT_MEMORY_FORMAT;
+import static com.hazelcast.internal.util.Preconditions.checkInstanceOf;
 import static com.hazelcast.internal.util.Preconditions.checkNotInstanceOf;
 
 public class DefaultNearCache<K, V> implements NearCache<K, V> {
@@ -124,6 +125,7 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
         return nearCacheRecordStore.get(key);
     }
 
+    // only implemented for testing purposes
     @Override
     public void put(K key, Data keyData, V value, Data valueData) {
         checkKeyFormat(key);
@@ -197,17 +199,10 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
     }
 
     @Override
-    public long tryReserveForUpdate(K key, Data keyData) {
+    public long tryReserveForUpdate(K key, Data keyData, UpdateSemantic updateSemantic) {
         nearCacheRecordStore.doEviction(false);
 
-        return nearCacheRecordStore.tryReserveForUpdate(key, keyData);
-    }
-
-    @Override
-    public long tryReserveForCacheOnUpdate(K key, Data keyData) {
-        nearCacheRecordStore.doEviction(false);
-
-        return nearCacheRecordStore.tryReserveForCacheOnUpdate(key, keyData);
+        return nearCacheRecordStore.tryReserveForUpdate(key, keyData, updateSemantic);
     }
 
     @Override
@@ -220,7 +215,9 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
     }
 
     private void checkKeyFormat(K key) {
-        if (!serializeKeys) {
+        if (serializeKeys) {
+            checkInstanceOf(Data.class, key, "key must be of type Data!");
+        } else {
             checkNotInstanceOf(Data.class, key, "key cannot be of type Data!");
         }
     }

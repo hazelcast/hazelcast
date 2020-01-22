@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,14 +40,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Exceptions related to a proxy creation failure is not send to the client.
  * A proxy creation failure does not cancel this operation, all proxies will be attempted to be created.
  */
-@Generated("63cce226c00c8e505deb9e11ac68818b")
+@Generated("9b7d123e92e5e1d016863650d4ab4654")
 public final class ClientCreateProxiesCodec {
-    //hex: 0x000F00
-    public static final int REQUEST_MESSAGE_TYPE = 3840;
-    //hex: 0x000F01
-    public static final int RESPONSE_MESSAGE_TYPE = 3841;
+    //hex: 0x000E00
+    public static final int REQUEST_MESSAGE_TYPE = 3584;
+    //hex: 0x000E01
+    public static final int RESPONSE_MESSAGE_TYPE = 3585;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private ClientCreateProxiesCodec() {
     }

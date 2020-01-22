@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,9 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.query.Predicate;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -30,10 +32,9 @@ import static com.hazelcast.query.impl.AbstractIndex.NULL;
 /**
  * Store indexes out of turn.
  */
-public class UnorderedIndexStore extends BaseIndexStore {
+public class UnorderedIndexStore extends BaseSingleValueIndexStore {
 
-    private final ConcurrentMap<Comparable, Map<Data, QueryableEntry>> recordMap =
-            new ConcurrentHashMap<Comparable, Map<Data, QueryableEntry>>(1000);
+    private final ConcurrentMap<Comparable, Map<Data, QueryableEntry>> recordMap = new ConcurrentHashMap<>(1000);
     private final IndexFunctor<Comparable, QueryableEntry> addFunctor;
     private final IndexFunctor<Comparable, Data> removeFunctor;
 
@@ -48,7 +49,7 @@ public class UnorderedIndexStore extends BaseIndexStore {
         } else {
             addFunctor = new AddFunctor();
             removeFunctor = new RemoveFunctor();
-            recordsWithNullValue = new ConcurrentHashMap<Data, QueryableEntry>();
+            recordsWithNullValue = new ConcurrentHashMap<>();
         }
     }
 
@@ -118,6 +119,16 @@ public class UnorderedIndexStore extends BaseIndexStore {
         } finally {
             releaseWriteLock();
         }
+    }
+
+    @Override
+    public boolean canEvaluate(Class<? extends Predicate> predicateClass) {
+        return false;
+    }
+
+    @Override
+    public Set<QueryableEntry> evaluate(Predicate predicate, TypeConverter converter) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -245,7 +256,7 @@ public class UnorderedIndexStore extends BaseIndexStore {
             } else {
                 Map<Data, QueryableEntry> records = recordMap.get(value);
                 if (records == null) {
-                    records = new ConcurrentHashMap<Data, QueryableEntry>(1, LOAD_FACTOR, 1);
+                    records = new ConcurrentHashMap<>(1, LOAD_FACTOR, 1);
                     recordMap.put(value, records);
                 }
                 return records.put(entry.getKeyData(), entry);
@@ -266,16 +277,16 @@ public class UnorderedIndexStore extends BaseIndexStore {
         public Object invoke(Comparable value, QueryableEntry entry) {
             Object oldValue;
             if (value == NULL) {
-                HashMap<Data, QueryableEntry> copy = new HashMap<Data, QueryableEntry>(recordsWithNullValue);
+                HashMap<Data, QueryableEntry> copy = new HashMap<>(recordsWithNullValue);
                 oldValue = copy.put(entry.getKeyData(), entry);
                 recordsWithNullValue = copy;
             } else {
                 Map<Data, QueryableEntry> records = recordMap.get(value);
                 if (records == null) {
-                    records = new HashMap<Data, QueryableEntry>();
+                    records = new HashMap<>();
                 }
 
-                records = new HashMap<Data, QueryableEntry>(records);
+                records = new HashMap<>(records);
                 oldValue = records.put(entry.getKeyData(), entry);
 
                 recordMap.put(value, records);
@@ -328,13 +339,13 @@ public class UnorderedIndexStore extends BaseIndexStore {
         public Object invoke(Comparable value, Data indexKey) {
             Object oldValue;
             if (value == NULL) {
-                HashMap<Data, QueryableEntry> copy = new HashMap<Data, QueryableEntry>(recordsWithNullValue);
+                HashMap<Data, QueryableEntry> copy = new HashMap<>(recordsWithNullValue);
                 oldValue = copy.remove(indexKey);
                 recordsWithNullValue = copy;
             } else {
                 Map<Data, QueryableEntry> records = recordMap.get(value);
                 if (records != null) {
-                    records = new HashMap<Data, QueryableEntry>(records);
+                    records = new HashMap<>(records);
                     oldValue = records.remove(indexKey);
 
                     if (records.isEmpty()) {

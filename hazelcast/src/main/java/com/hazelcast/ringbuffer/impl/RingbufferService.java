@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -361,7 +361,7 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
                 Collection<RingbufferContainer> containerList = entry.getValue();
                 for (RingbufferContainer container : containerList) {
                     // TODO: add batching (which is a bit complex, since collections don't have a multi-name operation yet
-                    SplitBrainMergePolicy<RingbufferMergeData, RingbufferMergeTypes> mergePolicy
+                    SplitBrainMergePolicy<RingbufferMergeData, RingbufferMergeTypes, RingbufferMergeData> mergePolicy
                             = getMergePolicy(container.getConfig().getMergePolicyConfig());
 
                     sendBatch(partitionId, mergePolicy, container);
@@ -370,7 +370,7 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
         }
 
         private void sendBatch(int partitionId,
-                               SplitBrainMergePolicy<RingbufferMergeData, RingbufferMergeTypes> mergePolicy,
+                               SplitBrainMergePolicy<RingbufferMergeData, RingbufferMergeTypes, RingbufferMergeData> mergePolicy,
                                RingbufferContainer mergingContainer) {
             final MergeOperation operation = new MergeOperation(mergingContainer.getNamespace(), mergePolicy,
                     mergingContainer.getRingbuffer());

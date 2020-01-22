@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,22 +42,19 @@ public class CreateSessionOp extends RaftOp implements IndeterminateOperationSta
 
     private CPSessionOwnerType endpointType;
 
-    private long creationTime;
-
     public CreateSessionOp() {
     }
 
-    public CreateSessionOp(Address endpoint, String endpointName, CPSessionOwnerType endpointType, long creationTime) {
+    public CreateSessionOp(Address endpoint, String endpointName, CPSessionOwnerType endpointType) {
         this.endpoint = endpoint;
         this.endpointName = endpointName;
         this.endpointType = endpointType;
-        this.creationTime = creationTime;
     }
 
     @Override
     public Object run(CPGroupId groupId, long commitIndex) {
         RaftSessionService service = getService();
-        return service.createNewSession(groupId, endpoint, endpointName, endpointType, creationTime);
+        return service.createNewSession(groupId, endpoint, endpointName, endpointType);
     }
 
     @Override
@@ -89,7 +86,6 @@ public class CreateSessionOp extends RaftOp implements IndeterminateOperationSta
             out.writeUTF(endpointName);
         }
         out.writeUTF(endpointType.name());
-        out.writeLong(creationTime);
     }
 
     @Override
@@ -100,14 +96,12 @@ public class CreateSessionOp extends RaftOp implements IndeterminateOperationSta
             endpointName = in.readUTF();
         }
         endpointType = CPSessionOwnerType.valueOf(in.readUTF());
-        creationTime = in.readLong();
     }
 
     @Override
     protected void toString(StringBuilder sb) {
         sb.append(", endpoint=").append(endpoint)
           .append(", endpointName=").append(endpointName)
-          .append(", endpointType=").append(endpointType)
-          .append(", creationTime=").append(creationTime);
+          .append(", endpointType=").append(endpointType);
     }
 }

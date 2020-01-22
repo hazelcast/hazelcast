@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,9 @@ package com.hazelcast.client.impl.spi.impl;
 
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.nio.ClientConnection;
-import com.hazelcast.cluster.Address;
 
 import java.io.IOException;
+import java.util.UUID;
 
 public class NonSmartClientInvocationService extends AbstractClientInvocationService {
 
@@ -45,7 +45,7 @@ public class NonSmartClientInvocationService extends AbstractClientInvocationSer
     }
 
     @Override
-    public void invokeOnTarget(ClientInvocation invocation, Address target) throws IOException {
+    public void invokeOnTarget(ClientInvocation invocation, UUID uuid) throws IOException {
         send(invocation, getConnection());
     }
 

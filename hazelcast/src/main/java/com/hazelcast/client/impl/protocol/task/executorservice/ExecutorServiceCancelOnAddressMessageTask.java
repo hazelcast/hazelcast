@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,19 +17,19 @@
 package com.hazelcast.client.impl.protocol.task.executorservice;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.ExecutorServiceCancelOnAddressCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractAddressMessageTask;
+import com.hazelcast.client.impl.protocol.codec.ExecutorServiceCancelOnMemberCodec;
+import com.hazelcast.client.impl.protocol.task.AbstractTargetMessageTask;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.executor.impl.operations.CancellationOperation;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
+import java.util.UUID;
 
 public class ExecutorServiceCancelOnAddressMessageTask
-        extends AbstractAddressMessageTask<ExecutorServiceCancelOnAddressCodec.RequestParameters> {
+        extends AbstractTargetMessageTask<ExecutorServiceCancelOnMemberCodec.RequestParameters> {
 
     public ExecutorServiceCancelOnAddressMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -41,20 +41,18 @@ public class ExecutorServiceCancelOnAddressMessageTask
     }
 
     @Override
-    protected Address getAddress() {
-        return parameters.address;
+    protected UUID getTargetUuid() {
+        return parameters.memberUUID;
     }
 
     @Override
-    protected ExecutorServiceCancelOnAddressCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        parameters = ExecutorServiceCancelOnAddressCodec.decodeRequest(clientMessage);
-        parameters.address = clientEngine.memberAddressOf(parameters.address);
-        return parameters;
+    protected ExecutorServiceCancelOnMemberCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ExecutorServiceCancelOnMemberCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ExecutorServiceCancelOnAddressCodec.encodeResponse((Boolean) response);
+        return ExecutorServiceCancelOnMemberCodec.encodeResponse((Boolean) response);
     }
 
     @Override

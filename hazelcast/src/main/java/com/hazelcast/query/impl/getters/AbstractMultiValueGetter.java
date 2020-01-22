@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -169,14 +169,88 @@ public abstract class AbstractMultiValueGetter extends Getter {
         }
     }
 
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:methodlength"})
     private void reducePrimitiveArrayInto(MultiResult<Object> collector, Object primitiveArray) {
-        int length = Array.getLength(primitiveArray);
-        if (length == 0) {
-            collector.addNullOrEmptyTarget();
-        } else {
-            for (int i = 0; i < length; i++) {
-                collector.add(Array.get(primitiveArray, i));
+        // XXX: Standard Array.get has really bad performance, see
+        // https://bugs.openjdk.java.net/browse/JDK-8051447. For large arrays
+        // it may consume significant amount of time, so we are doing the
+        // reduction manually for each primitive type.
+
+        if (primitiveArray instanceof long[]) {
+            long[] array = (long[]) primitiveArray;
+            if (array.length == 0) {
+                collector.addNullOrEmptyTarget();
+            } else {
+                for (long value : array) {
+                    collector.add(value);
+                }
             }
+        } else if (primitiveArray instanceof int[]) {
+            int[] array = (int[]) primitiveArray;
+            if (array.length == 0) {
+                collector.addNullOrEmptyTarget();
+            } else {
+                for (int value : array) {
+                    collector.add(value);
+                }
+            }
+        } else if (primitiveArray instanceof short[]) {
+            short[] array = (short[]) primitiveArray;
+            if (array.length == 0) {
+                collector.addNullOrEmptyTarget();
+            } else {
+                for (short value : array) {
+                    collector.add(value);
+                }
+            }
+        } else if (primitiveArray instanceof byte[]) {
+            byte[] array = (byte[]) primitiveArray;
+            if (array.length == 0) {
+                collector.addNullOrEmptyTarget();
+            } else {
+                for (byte value : array) {
+                    collector.add(value);
+                }
+            }
+        } else if (primitiveArray instanceof char[]) {
+            char[] array = (char[]) primitiveArray;
+            if (array.length == 0) {
+                collector.addNullOrEmptyTarget();
+            } else {
+                for (char value : array) {
+                    collector.add(value);
+                }
+            }
+        } else if (primitiveArray instanceof boolean[]) {
+            boolean[] array = (boolean[]) primitiveArray;
+            if (array.length == 0) {
+                collector.addNullOrEmptyTarget();
+            } else {
+                for (boolean value : array) {
+                    collector.add(value);
+                }
+            }
+        } else if (primitiveArray instanceof double[]) {
+            double[] array = (double[]) primitiveArray;
+            if (array.length == 0) {
+                collector.addNullOrEmptyTarget();
+            } else {
+                for (double value : array) {
+                    collector.add(value);
+                }
+            }
+
+        } else if (primitiveArray instanceof float[]) {
+            float[] array = (float[]) primitiveArray;
+            if (array.length == 0) {
+                collector.addNullOrEmptyTarget();
+            } else {
+                for (float value : array) {
+                    collector.add(value);
+                }
+            }
+        } else {
+            throw new IllegalArgumentException("unexpected primitive array: " + primitiveArray);
         }
     }
 

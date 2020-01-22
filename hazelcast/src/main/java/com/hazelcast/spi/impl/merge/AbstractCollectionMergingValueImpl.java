@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import com.hazelcast.internal.serialization.SerializationServiceAware;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Objects;
 
 /**
  * Implementation of {@link MergingValue} for data structures with collections.
@@ -35,10 +36,10 @@ import java.util.Collection;
  * @since 3.10
  */
 @SuppressWarnings("WeakerAccess")
-public abstract class AbstractCollectionMergingValueImpl<V extends Collection, T extends AbstractCollectionMergingValueImpl<V, T>>
-        implements MergingValue<V>, SerializationServiceAware, IdentifiedDataSerializable {
+public abstract class AbstractCollectionMergingValueImpl<V, T extends AbstractCollectionMergingValueImpl<V, T>>
+        implements MergingValue<Collection<V>>, SerializationServiceAware, IdentifiedDataSerializable {
 
-    private V value;
+    private Collection<Object> value;
 
     private transient SerializationService serializationService;
 
@@ -50,21 +51,21 @@ public abstract class AbstractCollectionMergingValueImpl<V extends Collection, T
     }
 
     @Override
-    public V getValue() {
+    public Collection<Object> getRawValue() {
         return value;
     }
 
     @Override
-    public <DV> DV getDeserializedValue() {
-        Collection<Object> deserializedValues = new ArrayList<Object>(value.size());
+    public Collection<V> getValue() {
+        Collection<Object> deserializedValues = new ArrayList<>(value.size());
         for (Object aValue : value) {
             deserializedValues.add(serializationService.toObject(aValue));
         }
         //noinspection unchecked
-        return (DV) deserializedValues;
+        return (Collection<V>) deserializedValues;
     }
 
-    public T setValue(V value) {
+    public T setValue(Collection<Object> value) {
         this.value = value;
         //noinspection unchecked
         return (T) this;
@@ -86,12 +87,11 @@ public abstract class AbstractCollectionMergingValueImpl<V extends Collection, T
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         int size = in.readInt();
-        ArrayList<Object> list = new ArrayList<Object>(size);
+        ArrayList<Object> list = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             list.add(IOUtil.readObject(in));
         }
-        //noinspection unchecked
-        value = (V) list;
+        value = list;
     }
 
     @Override
@@ -109,7 +109,7 @@ public abstract class AbstractCollectionMergingValueImpl<V extends Collection, T
         }
 
         AbstractCollectionMergingValueImpl<?, ?> that = (AbstractCollectionMergingValueImpl<?, ?>) o;
-        return value != null ? value.equals(that.value) : that.value == null;
+        return Objects.equals(value, that.value);
     }
 
     @Override

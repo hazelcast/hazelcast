@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -111,10 +111,13 @@ public class SplitBrainProtectionServiceImpl implements EventPublishingService<S
     }
 
     private Map<String, SplitBrainProtectionImpl> initializeSplitBrainProtections() {
-        Map<String, SplitBrainProtectionImpl> splitBrainProtections = new HashMap<String, SplitBrainProtectionImpl>();
+        Map<String, SplitBrainProtectionImpl> splitBrainProtections = new HashMap<>();
         for (SplitBrainProtectionConfig splitBrainProtectionConfig
                 : nodeEngine.getConfig().getSplitBrainProtectionConfigs().values()) {
             validateSplitBrainProtectionConfig(splitBrainProtectionConfig);
+            if (!splitBrainProtectionConfig.isEnabled()) {
+                continue;
+            }
             SplitBrainProtectionImpl splitBrainProtection = new SplitBrainProtectionImpl(splitBrainProtectionConfig, nodeEngine);
             splitBrainProtections.put(splitBrainProtectionConfig.getName(), splitBrainProtection);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,14 +37,14 @@ public class LocalQueueStatsImplTest {
         LocalQueueStatsImpl localQueueStats = new LocalQueueStatsImpl();
         localQueueStats.setMinAge(13);
         localQueueStats.setMaxAge(28);
-        localQueueStats.setAveAge(18);
+        localQueueStats.setAverageAge(18);
         localQueueStats.setOwnedItemCount(1234);
         localQueueStats.setBackupItemCount(15124);
 
         assertTrue(localQueueStats.getCreationTime() > 0);
         assertEquals(13, localQueueStats.getMinAge());
         assertEquals(28, localQueueStats.getMaxAge());
-        assertEquals(18, localQueueStats.getAvgAge());
+        assertEquals(18, localQueueStats.getAverageAge());
         assertEquals(1234, localQueueStats.getOwnedItemCount());
         assertEquals(15124, localQueueStats.getBackupItemCount());
         assertNotNull(localQueueStats.toString());

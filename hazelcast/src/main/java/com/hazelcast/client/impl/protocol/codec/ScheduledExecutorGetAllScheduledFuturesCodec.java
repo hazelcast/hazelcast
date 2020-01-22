@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,14 +36,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns all scheduled tasks in for a given scheduler in the given member.
  */
-@Generated("db62508ea0581093eeb4f1a9fd87e083")
+@Generated("5b9782ffa8315dd4f5ef869966895193")
 public final class ScheduledExecutorGetAllScheduledFuturesCodec {
     //hex: 0x1A0400
     public static final int REQUEST_MESSAGE_TYPE = 1704960;
     //hex: 0x1A0401
     public static final int RESPONSE_MESSAGE_TYPE = 1704961;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private ScheduledExecutorGetAllScheduledFuturesCodec() {
     }
@@ -83,16 +83,16 @@ public final class ScheduledExecutorGetAllScheduledFuturesCodec {
         /**
          * A list of scheduled task handlers used to construct the future proxies.
          */
-        public java.util.List<java.util.Map.Entry<com.hazelcast.cluster.Member, java.util.List<com.hazelcast.scheduledexecutor.ScheduledTaskHandler>>> handlers;
+        public java.util.Collection<com.hazelcast.scheduledexecutor.ScheduledTaskHandler> handlers;
     }
 
-    public static ClientMessage encodeResponse(java.util.Collection<java.util.Map.Entry<com.hazelcast.cluster.Member, java.util.List<com.hazelcast.scheduledexecutor.ScheduledTaskHandler>>> handlers) {
+    public static ClientMessage encodeResponse(java.util.Collection<com.hazelcast.scheduledexecutor.ScheduledTaskHandler> handlers) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        EntryListCodec.encode(clientMessage, handlers, MemberCodec::encode, ListScheduledTaskHandlerCodec::encode);
+        ListMultiFrameCodec.encode(clientMessage, handlers, ScheduledTaskHandlerCodec::encode);
         return clientMessage;
     }
 
@@ -101,7 +101,7 @@ public final class ScheduledExecutorGetAllScheduledFuturesCodec {
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.handlers = EntryListCodec.decode(iterator, MemberCodec::decode, ListScheduledTaskHandlerCodec::decode);
+        response.handlers = ListMultiFrameCodec.decode(iterator, ScheduledTaskHandlerCodec::decode);
         return response;
     }
 

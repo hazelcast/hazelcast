@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ package com.hazelcast.spi.merge;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.internal.services.NodeAware;
+import com.hazelcast.nio.serialization.DataSerializable;
 
 /**
  * Policy for merging data structure values
@@ -44,8 +44,8 @@ import com.hazelcast.internal.services.NodeAware;
  * could throw a {@link java.lang.ClassNotFoundException}.</li>
  * </ul>
  * If you need the deserialized data you can call
- * {@link MergingValue#getDeserializedValue()}
- * or {@link MergingEntry#getDeserializedKey()},
+ * {@link MergingValue#getValue()}
+ * or {@link MergingEntry#getKey()},
  * which will deserialize the data lazily.
  * <p>
  * A merge policy can implement {@link HazelcastInstanceAware} to get the
@@ -56,13 +56,14 @@ import com.hazelcast.internal.services.NodeAware;
  * A merge policy can also implement {@link NodeAware}
  * to get an instance of {@link Node} injected.
  *
- * @param <V> the type of the returned merged value
+ * @param <V> the (deserialized) type of the merging value
  * @param <T> the type of the required merging value, e.g. a simple
  *            {@code MergingValue<V>} or a composition like {@code
- *            MergingEntry<String, V> & MergingHits<V> & MergingLastAccessTime<V>}
+ *            MergingEntry<String, V> & MergingHits & MergingLastAccessTime}
+ * @param <R> the type of the merged value as returned by {@link #merge(MergingValue, MergingValue)}
  * @since 3.10
  */
-public interface SplitBrainMergePolicy<V, T extends MergingValue<V>>
+public interface SplitBrainMergePolicy<V, T extends MergingValue<V>, R>
         extends DataSerializable {
 
     /**
@@ -78,5 +79,5 @@ public interface SplitBrainMergePolicy<V, T extends MergingValue<V>>
      *                      data or {@code null} if no matching data exists
      * @return the selected value for merging
      */
-    V merge(T mergingValue, T existingValue);
+    R merge(T mergingValue, T existingValue);
 }

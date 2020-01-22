@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.querycache.subscriber;
 
-import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.QueryCacheConfig;
@@ -66,6 +65,8 @@ import static com.hazelcast.map.impl.querycache.subscriber.EventPublisherHelper.
 import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest.newQueryCacheRequest;
 import static java.lang.Boolean.TRUE;
 import static java.util.concurrent.TimeUnit.MINUTES;
+import static com.hazelcast.query.impl.Indexes.SKIP_PARTITIONS_COUNT_CHECK;
+
 
 /**
  * Default implementation of {@link com.hazelcast.map.QueryCache QueryCache} interface which holds actual data.
@@ -202,9 +203,8 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
             List<Future> futures = new ArrayList<>(memberList.size());
 
             for (Member member : memberList) {
-                Address address = member.getAddress();
                 Object removePublisher = subscriberContextSupport.createDestroyQueryCacheOperation(mapName, cacheId);
-                Future future = invokerWrapper.invokeOnTarget(removePublisher, address);
+                Future future = invokerWrapper.invokeOnTarget(removePublisher, member);
                 futures.add(future);
             }
             waitWithDeadline(futures, OPERATION_WAIT_TIMEOUT_MINUTES, MINUTES);
@@ -335,7 +335,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
 
         Set<K> resultingSet = new HashSet<>();
 
-        Set<QueryableEntry> query = indexes.query(predicate);
+        Set<QueryableEntry> query = indexes.query(predicate, SKIP_PARTITIONS_COUNT_CHECK);
         if (query != null) {
             for (QueryableEntry entry : query) {
                 K key = toObject(entry.getKeyData());
@@ -354,7 +354,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
 
         Set<Map.Entry<K, V>> resultingSet = new HashSet<>();
 
-        Set<QueryableEntry> query = indexes.query(predicate);
+        Set<QueryableEntry> query = indexes.query(predicate, SKIP_PARTITIONS_COUNT_CHECK);
         if (query != null) {
             for (QueryableEntry entry : query) {
                 Map.Entry<K, V> copyEntry = new CachedQueryEntry<>(serializationService, entry.getKeyData(),
@@ -377,7 +377,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
 
         List<Data> resultingList = new ArrayList<>();
 
-        Set<QueryableEntry> query = indexes.query(predicate);
+        Set<QueryableEntry> query = indexes.query(predicate, SKIP_PARTITIONS_COUNT_CHECK);
         if (query != null) {
             for (QueryableEntry entry : query) {
                 resultingList.add(entry.getValueData());

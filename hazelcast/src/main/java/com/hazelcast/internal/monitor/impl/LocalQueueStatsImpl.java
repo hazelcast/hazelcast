@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,7 +52,7 @@ public class LocalQueueStatsImpl implements LocalQueueStats, JsonSerializable {
     @Probe
     private long maxAge;
     @Probe
-    private long aveAge;
+    private long averageAge;
     @Probe
     private long creationTime;
 
@@ -93,12 +93,12 @@ public class LocalQueueStatsImpl implements LocalQueueStats, JsonSerializable {
     }
 
     @Override
-    public long getAvgAge() {
-        return aveAge;
+    public long getAverageAge() {
+        return averageAge;
     }
 
-    public void setAveAge(long aveAge) {
-        this.aveAge = aveAge;
+    public void setAverageAge(long averageAge) {
+        this.averageAge = averageAge;
     }
 
     @Override
@@ -191,7 +191,7 @@ public class LocalQueueStatsImpl implements LocalQueueStats, JsonSerializable {
         root.add("backupItemCount", backupItemCount);
         root.add("minAge", minAge);
         root.add("maxAge", maxAge);
-        root.add("aveAge", aveAge);
+        root.add("averageAge", averageAge);
         root.add("creationTime", creationTime);
         root.add("numberOfOffers", numberOfOffers);
         root.add("numberOfPolls", numberOfPolls);
@@ -208,7 +208,7 @@ public class LocalQueueStatsImpl implements LocalQueueStats, JsonSerializable {
         backupItemCount = getInt(json, "backupItemCount", -1);
         minAge = getLong(json, "minAge", -1L);
         maxAge = getLong(json, "maxAge", -1L);
-        aveAge = getLong(json, "aveAge", -1L);
+        averageAge = getLong(json, "averageAge", -1L);
         creationTime = getLong(json, "creationTime", -1L);
         NUMBER_OF_OFFERS.set(this, getLong(json, "numberOfOffers", -1L));
         NUMBER_OF_POLLS.set(this, getLong(json, "numberOfPolls", -1L));
@@ -225,7 +225,7 @@ public class LocalQueueStatsImpl implements LocalQueueStats, JsonSerializable {
                 + ", backupItemCount=" + backupItemCount
                 + ", minAge=" + minAge
                 + ", maxAge=" + maxAge
-                + ", aveAge=" + aveAge
+                + ", averageAge=" + averageAge
                 + ", creationTime=" + creationTime
                 + ", numberOfOffers=" + numberOfOffers
                 + ", numberOfRejectedOffers=" + numberOfRejectedOffers

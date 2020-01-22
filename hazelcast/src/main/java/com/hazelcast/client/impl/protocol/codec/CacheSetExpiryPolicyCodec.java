@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,14 +38,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * {@code expiryPolicy} takes precedence for these particular {@code keys} against any cache wide expiry policy.
  * If some keys in {@code keys} do not exist or are already expired, this call has no effect for those.
  */
-@Generated("5b09f219949f35281f611b8fe10a5d8a")
+@Generated("3e6cff43bbfb6d8056c25f8235b929c8")
 public final class CacheSetExpiryPolicyCodec {
-    //hex: 0x132200
-    public static final int REQUEST_MESSAGE_TYPE = 1253888;
-    //hex: 0x132201
-    public static final int RESPONSE_MESSAGE_TYPE = 1253889;
+    //hex: 0x132100
+    public static final int REQUEST_MESSAGE_TYPE = 1253632;
+    //hex: 0x132101
+    public static final int RESPONSE_MESSAGE_TYPE = 1253633;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
 
     private CacheSetExpiryPolicyCodec() {

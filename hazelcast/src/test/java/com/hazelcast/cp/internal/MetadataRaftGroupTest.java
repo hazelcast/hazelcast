@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,6 @@ import com.hazelcast.cp.internal.raftop.metadata.GetRaftGroupOp;
 import com.hazelcast.cp.internal.raftop.metadata.TriggerDestroyRaftGroupOp;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeState;
-import com.hazelcast.internal.nio.EndpointManager;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.RandomPicker;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
@@ -57,15 +56,15 @@ import java.util.concurrent.Future;
 import static com.hazelcast.cp.CPGroup.DEFAULT_GROUP_NAME;
 import static com.hazelcast.cp.internal.MetadataRaftGroupManager.MetadataRaftGroupInitStatus.IN_PROGRESS;
 import static com.hazelcast.cp.internal.MetadataRaftGroupManager.MetadataRaftGroupInitStatus.SUCCESSFUL;
+import static com.hazelcast.cp.internal.RaftServiceDataSerializerHook.APPEND_REQUEST_OP;
 import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getLeaderMember;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getSnapshotEntry;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.FINALIZE_JOIN;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.F_ID;
+import static com.hazelcast.test.PacketFiltersUtil.dropOperationsBetween;
 import static com.hazelcast.test.PacketFiltersUtil.dropOperationsToAddresses;
 import static com.hazelcast.test.PacketFiltersUtil.resetPacketFiltersFrom;
-import static com.hazelcast.test.SplitBrainTestSupport.blockCommunicationBetween;
-import static com.hazelcast.test.SplitBrainTestSupport.unblockCommunicationBetween;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
@@ -431,18 +430,7 @@ public class MetadataRaftGroupTest extends HazelcastRaftTestSupport {
         HazelcastInstance leader = getInstance(leaderEndpoint);
         HazelcastInstance follower = getRandomFollowerInstance(instances, getMetadataGroupId(instances[0]));
 
-        // Ensure other nodes have an active connection to the follower
-        // Otherwise blockCommunicationBetween(..) can cause a split-brain.
-        assertTrueEventually(() -> {
-            for (HazelcastInstance instance : instances) {
-                if (follower == instance) {
-                    continue;
-                }
-                EndpointManager endpointManager = getEndpointManager(instance);
-                assertNotNull(endpointManager.getOrConnect(getAddress(follower)));
-            }
-        });
-        blockCommunicationBetween(leader, follower);
+        dropOperationsBetween(leader, follower, RaftServiceDataSerializerHook.F_ID, singletonList(APPEND_REQUEST_OP));
 
         List<CPGroupId> groupIds = new ArrayList<>();
         for (int i = 0; i < commitCountToSnapshot; i++) {
@@ -451,8 +439,6 @@ public class MetadataRaftGroupTest extends HazelcastRaftTestSupport {
         }
 
         assertTrueEventually(() -> assertTrue(getSnapshotEntry(getRaftNode(leader, getMetadataGroupId(leader))).index() > 0));
-
-        unblockCommunicationBetween(leader, follower);
 
         assertTrueEventually(() -> {
             for (CPGroupId groupId : groupIds) {

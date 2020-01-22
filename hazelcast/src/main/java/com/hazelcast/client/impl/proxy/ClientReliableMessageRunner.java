@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,10 @@ package com.hazelcast.client.impl.proxy;
 
 import com.hazelcast.client.HazelcastClientOfflineException;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.ringbuffer.Ringbuffer;
-import com.hazelcast.ringbuffer.StaleSequenceException;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.topic.ReliableMessageListener;
 import com.hazelcast.topic.impl.reliable.MessageRunner;
 import com.hazelcast.topic.impl.reliable.ReliableTopicMessage;
@@ -57,7 +57,7 @@ public class ClientReliableMessageRunner<E> extends MessageRunner<E> {
     protected Member getMember(ReliableTopicMessage m) {
         Member member = null;
         if (m.getPublisherAddress() != null) {
-            member = new com.hazelcast.client.impl.MemberImpl(m.getPublisherAddress(), MemberVersion.UNKNOWN);
+            member = new MemberImpl(m.getPublisherAddress(), MemberVersion.UNKNOWN, false);
         }
         return member;
     }
@@ -77,10 +77,5 @@ public class ClientReliableMessageRunner<E> extends MessageRunner<E> {
     @Override
     protected Throwable adjustThrowable(Throwable t) {
         return peel(t);
-    }
-
-    @Override
-    protected long getHeadSequence(StaleSequenceException staleSequenceException) {
-        return ringbuffer.headSequence();
     }
 }

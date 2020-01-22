@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,6 +59,8 @@ import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE;
 import static com.hazelcast.internal.nearcache.NearCache.CACHED_AS_NULL;
 import static com.hazelcast.internal.nearcache.NearCache.NOT_CACHED;
+import static com.hazelcast.internal.nearcache.NearCache.UpdateSemantic.READ_UPDATE;
+import static com.hazelcast.internal.nearcache.NearCache.UpdateSemantic.WRITE_UPDATE;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.NOT_RESERVED;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
@@ -78,10 +80,9 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
     private boolean useObjectValue;
     private boolean cacheOnUpdate;
     private boolean invalidateOnChange;
-
+    private UUID invalidationListenerId;
     private NearCacheManager nearCacheManager;
     private NearCache<Object, Object> nearCache;
-    private UUID nearCacheMembershipRegistrationId;
 
     public NearCachedClientCacheProxy(CacheConfig<K, V> cacheConfig, ClientContext context) {
         super(cacheConfig, context);
@@ -130,7 +131,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
     @Override
     @SuppressWarnings("unchecked")
     protected V callGetSync(Object key, ExpiryPolicy expiryPolicy) {
-        final Object nearCacheKey = useObjectKey ? key : toData(key);
+        Object nearCacheKey = useObjectKey ? key : toData(key);
         V value = (V) getCachedValue(nearCacheKey, true);
         if (value != NOT_CACHED) {
             return value;
@@ -138,7 +139,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
 
         try {
             Data keyData = toData(nearCacheKey);
-            long reservationId = nearCache.tryReserveForUpdate(nearCacheKey, keyData);
+            long reservationId = nearCache.tryReserveForUpdate(nearCacheKey, keyData, READ_UPDATE);
             value = super.callGetSync(keyData, expiryPolicy);
             if (reservationId != NOT_RESERVED) {
                 value = (V) tryPublishReserved(nearCacheKey, value, reservationId);
@@ -155,7 +156,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
     @SuppressWarnings("unchecked")
     protected CompletableFuture<V> callGetAsync(Object key, ExpiryPolicy expiryPolicy,
                                                 BiConsumer<V, Throwable> statsCallback) {
-        final Object nearCacheKey = useObjectKey ? key : toData(key);
+        Object nearCacheKey = useObjectKey ? key : toData(key);
         V value = (V) getCachedValue(nearCacheKey, false);
         if (value != NOT_CACHED) {
             return CompletableFuture.completedFuture(value);
@@ -163,7 +164,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
 
         try {
             Data dataKey = toData(nearCacheKey);
-            long reservationId = nearCache.tryReserveForUpdate(nearCacheKey, dataKey);
+            long reservationId = nearCache.tryReserveForUpdate(nearCacheKey, dataKey, READ_UPDATE);
             // if we haven't managed to reserve, no need to create a new consumer.
             BiConsumer<V, Throwable> consumer = reservationId == NOT_RESERVED
                     ? statsCallback
@@ -347,8 +348,11 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
     }
 
     @Override
-    protected void getAllInternal(Set<? extends K> keys, Collection<Data> dataKeys,
-                                  ExpiryPolicy expiryPolicy, List<Object> resultingKeyValuePairs, long startNanos) {
+    protected void getAllInternal(Set<? extends K> keys,
+                                  Collection<Data> dataKeys,
+                                  ExpiryPolicy expiryPolicy,
+                                  List<Object> resultingKeyValuePairs,
+                                  long startNanos) {
         if (!useObjectKey) {
             toDataKeysWithReservations(keys, dataKeys, null, null);
         }
@@ -384,7 +388,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         for (Object key : keys) {
             Data keyData = toData(key);
             if (reservations != null) {
-                long reservationId = tryReserveForUpdate(key, keyData);
+                long reservationId = nearCache.tryReserveForUpdate(key, keyData, READ_UPDATE);
                 if (reservationId != NOT_RESERVED) {
                     reservations.put(key, reservationId);
                 }
@@ -411,7 +415,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
 
     private void createNearCacheReservations(Collection<Data> dataKeys, Map<Object, Long> reservations) {
         for (Data key : dataKeys) {
-            long reservationId = tryReserveForUpdate(key, key);
+            long reservationId = nearCache.tryReserveForUpdate(key, key, READ_UPDATE);
             if (reservationId != NOT_RESERVED) {
                 reservations.put(key, reservationId);
             }
@@ -498,7 +502,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         public void beforeRemoteCall(K key, Data keyData, V value, Data valueData) {
             keyValueId.add(toNearCacheKey(key, keyData));
             keyValueId.add(toNearCacheValue(value, valueData));
-            keyValueId.add(nearCache.tryReserveForCacheOnUpdate(toNearCacheKey(key, keyData), keyData));
+            keyValueId.add(nearCache.tryReserveForUpdate(toNearCacheKey(key, keyData), keyData, WRITE_UPDATE));
         }
 
         @Override
@@ -699,10 +703,6 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         nearCache.invalidate(key);
     }
 
-    private long tryReserveForUpdate(Object nearCacheKey, Data keyData) {
-        return nearCache.tryReserveForUpdate(nearCacheKey, keyData);
-    }
-
     /**
      * Publishes value got from remote or deletes
      * reserved record when remote value is {@code null}.
@@ -776,7 +776,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         }
 
         EventHandler eventHandler = new NearCacheInvalidationEventHandler();
-        nearCacheMembershipRegistrationId = addNearCacheInvalidationListener(eventHandler);
+        invalidationListenerId = addNearCacheInvalidationListener(eventHandler);
     }
 
     private void removeInvalidationListener() {
@@ -784,7 +784,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
             return;
         }
 
-        UUID registrationId = nearCacheMembershipRegistrationId;
+        UUID registrationId = invalidationListenerId;
         if (registrationId != null) {
             getContext().getRepairingTask(getServiceName()).deregisterHandler(nameWithPrefix);
             getContext().getListenerService().deregisterListener(registrationId);
@@ -847,7 +847,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         Object nearCacheKey = toNearCacheKey(key, keyData);
         try {
             long reservationId = cacheOnUpdate
-                    ? nearCache.tryReserveForCacheOnUpdate(nearCacheKey, keyData) : NOT_RESERVED;
+                    ? nearCache.tryReserveForUpdate(nearCacheKey, keyData, WRITE_UPDATE) : NOT_RESERVED;
             T response = remoteCallSupplier.get();
             if (reservationId != NOT_RESERVED
                     && (calledByBooleanMethod && response instanceof Boolean ? ((Boolean) response) : true)) {
@@ -887,7 +887,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
                                                               boolean calledByBooleanMethod) {
         Object nearCacheKey = toNearCacheKey(key, keyData);
         long reservationId = cacheOnUpdate
-                ? nearCache.tryReserveForCacheOnUpdate(nearCacheKey, keyData) : NOT_RESERVED;
+                ? nearCache.tryReserveForUpdate(nearCacheKey, keyData, WRITE_UPDATE) : NOT_RESERVED;
         CompletableFuture<T> future = remoteCallSupplier.get();
         if (reservationId != NOT_RESERVED) {
             return future.whenCompleteAsync((response, throwable) -> {

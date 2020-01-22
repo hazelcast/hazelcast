@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1005,9 +1005,9 @@ public final class ClusterProperty {
     /**
      * Enables/disables metrics collection altogether. This is a master
      * switch for all metrics related functionality.
-     * <p/>
+     * <p>
      * NOTE: This property overrides {@link MetricsConfig#isEnabled()}.
-     * <p/>
+     * <p>
      * Using {@link MetricsConfig#setEnabled(boolean)} and the declarative
      * counterparts are preferred over using this property. The main purpose
      * of making metrics collection configurable from properties too is
@@ -1021,9 +1021,9 @@ public final class ClusterProperty {
     /**
      * Enables/disables collecting metrics for Management Center. If disabled,
      * Management Center can't consume the metrics from this member.
-     * <p/>
+     * <p>
      * NOTE: This property overrides {@link MetricsManagementCenterConfig#isEnabled()}.
-     * <p/>
+     * <p>
      * Using {@link MetricsManagementCenterConfig#setEnabled(boolean)} and the declarative
      * counterparts are preferred over using this property. The main purpose
      * of making metrics collection configurable from properties too is
@@ -1037,9 +1037,9 @@ public final class ClusterProperty {
     /**
      * Sets the duration in seconds for which the collected metrics are retained
      * and Management Center can consume them.
-     * <p/>
+     * <p>
      * NOTE: This property overrides {@link MetricsManagementCenterConfig#getRetentionSeconds()}.
-     * <p/>
+     * <p>
      * Using {@link MetricsManagementCenterConfig#setRetentionSeconds(int)} and the declarative
      * counterparts are preferred over using this property. The main purpose
      * of making metrics collection configurable from properties too is
@@ -1052,9 +1052,9 @@ public final class ClusterProperty {
 
     /**
      * Enables/disables exposing metrics on JMX.
-     * <p/>
+     * <p>
      * NOTE: This property overrides {@link MetricsJmxConfig#isEnabled()}.
-     * <p/>
+     * <p>
      * Using {@link MetricsJmxConfig#setEnabled(boolean)} and the declarative
      * counterparts are preferred over using this property. The main purpose
      * of making metrics collection configurable from properties too is
@@ -1081,9 +1081,9 @@ public final class ClusterProperty {
 
     /**
      * Sets the metrics collection frequency in seconds.
-     * <p/>
+     * <p>
      * NOTE: This property overrides {@link MetricsConfig#getCollectionFrequencySeconds()}.
-     * <p/>
+     * <p>
      * Using {@link MetricsConfig#setCollectionFrequencySeconds(int)} and the declarative
      * counterparts are preferred over using this property. The main purpose
      * of making metrics collection configurable from properties too is

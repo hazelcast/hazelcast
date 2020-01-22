@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.hazelcast.internal.config;
 import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.AzureConfig;
+import com.hazelcast.config.BitmapIndexOptions;
 import com.hazelcast.config.CachePartitionLostListenerConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
@@ -151,8 +152,9 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
     public static final int WAN_REPLICATION_REF = 59;
     public static final int EVICTION_CONFIG = 60;
     public static final int PERMISSION_CONFIG = 61;
+    public static final int BITMAP_INDEX_OPTIONS = 62;
 
-    private static final int LEN = PERMISSION_CONFIG + 1;
+    private static final int LEN = BITMAP_INDEX_OPTIONS + 1;
 
     @Override
     public int getFactoryId() {
@@ -224,6 +226,7 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
         constructors[WAN_REPLICATION_REF] = arg -> new WanReplicationRef();
         constructors[EVICTION_CONFIG] = arg -> new EvictionConfig();
         constructors[PERMISSION_CONFIG] = arg -> new PermissionConfig();
+        constructors[BITMAP_INDEX_OPTIONS] = arg -> new BitmapIndexOptions();
 
         return new ArrayDataSerializableFactory(constructors);
     }

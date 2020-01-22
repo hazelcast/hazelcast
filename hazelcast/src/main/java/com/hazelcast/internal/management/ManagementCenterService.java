@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,7 +77,6 @@ public class ManagementCenterService {
         this.commandHandler = new ConsoleCommandHandler(instance);
         this.bwListConfigHandler = new ClientBwListConfigHandler(instance.node.clientEngine);
         registerExecutor();
-        logger.info("Hazelcast is ready for communication with Hazelcast Management Center");
     }
 
     private void registerExecutor() {

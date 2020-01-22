@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,14 +38,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * This includes retrieving the event journal sequences of the
  * oldest and newest event in the journal.
  */
-@Generated("d92d272058071cdfcc558278ae96d132")
+@Generated("6a30c8bde30ac86729f9d66c6ce83ef4")
 public final class MapEventJournalSubscribeCodec {
-    //hex: 0x014300
-    public static final int REQUEST_MESSAGE_TYPE = 82688;
-    //hex: 0x014301
-    public static final int RESPONSE_MESSAGE_TYPE = 82689;
+    //hex: 0x014100
+    public static final int REQUEST_MESSAGE_TYPE = 82176;
+    //hex: 0x014101
+    public static final int RESPONSE_MESSAGE_TYPE = 82177;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_OLDEST_SEQUENCE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_OLDEST_SEQUENCE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_NEWEST_SEQUENCE_FIELD_OFFSET = RESPONSE_OLDEST_SEQUENCE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_NEWEST_SEQUENCE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
@@ -85,12 +85,12 @@ public final class MapEventJournalSubscribeCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * Sequence id of the oldest event in the event journal.
          */
         public long oldestSequence;
 
         /**
-         * TODO DOC
+         * Sequence id of the newest event in the event journal.
          */
         public long newestSequence;
     }

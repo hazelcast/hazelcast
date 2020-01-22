@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.internal.util;
 
 import com.hazelcast.internal.eviction.Expirable;
+import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.internal.serialization.SerializableByConvention;
 
 import java.util.AbstractMap;
@@ -27,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.function.BiConsumer;
 
 /**
  * ConcurrentHashMap to extend iterator capability.
@@ -55,76 +57,139 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
     }
 
     /**
-     * Fetches keys from given <code>tableIndex</code> as <code>size</code>
-     * and puts them into <code>keys</code> list.
+     * Fetches at least {@code size} keys from the given {@code pointers} and
+     * puts them into the {@code keys} list.
      *
-     * @param tableIndex Index (checkpoint) for starting point of fetch operation
-     * @param size       Count of how many keys will be fetched
-     * @param keys       List that fetched keys will be put into
-     * @return the next index (checkpoint) for later fetches
+     * @param pointers the pointers defining the state where to begin iteration
+     * @param size     Count of how many keys will be fetched
+     * @param keys     List that fetched keys will be put into
+     * @return the pointers defining the state where iteration has ended
      */
-    public int fetchKeys(int tableIndex, int size, List<K> keys) {
-        final long now = Clock.currentTimeMillis();
-        final Segment<K, V> segment = segments[0];
-        final HashEntry<K, V>[] currentTable = segment.table;
-        int nextTableIndex;
-        if (tableIndex >= 0 && tableIndex < segment.table.length) {
-            nextTableIndex = tableIndex;
-        } else {
-            nextTableIndex = currentTable.length - 1;
-        }
-        int counter = 0;
-        while (nextTableIndex >= 0 && counter < size) {
-            HashEntry<K, V> nextEntry = currentTable[nextTableIndex--];
-            while (nextEntry != null) {
-                if (nextEntry.key() != null) {
-                    final V value = nextEntry.value();
-                    if (isValidForFetching(value, now)) {
-                        keys.add(nextEntry.key());
-                        counter++;
-                    }
-                }
-                nextEntry = nextEntry.next;
-            }
-        }
-        return nextTableIndex;
+    public IterationPointer[] fetchKeys(IterationPointer[] pointers, int size, List<K> keys) {
+        return fetchNext(pointers, size, (k, v) -> keys.add(k));
     }
 
     /**
-     * Fetches entries from given <code>tableIndex</code> as <code>size</code>
-     * and puts them into <code>entries</code> list.
+     * Fetches at least {@code size} keys from the given {@code pointers} and
+     * puts them into the {@code entries} list.
      *
-     * @param tableIndex Index (checkpoint) for starting point of fetch operation
-     * @param size       Count of how many entries will be fetched
-     * @param entries    List that fetched entries will be put into
-     * @return the next index (checkpoint) for later fetches
+     * @param pointers the pointers defining the state where to begin iteration
+     * @param size     Count of how many entries will be fetched
+     * @param entries  List that fetched entries will be put into
+     * @return the pointers defining the state where iteration has ended
      */
-    public int fetchEntries(int tableIndex, int size, List<Map.Entry<K, V>> entries) {
-        final long now = Clock.currentTimeMillis();
-        final Segment<K, V> segment = segments[0];
-        final HashEntry<K, V>[] currentTable = segment.table;
-        int nextTableIndex;
-        if (tableIndex >= 0 && tableIndex < segment.table.length) {
-            nextTableIndex = tableIndex;
-        } else {
-            nextTableIndex = currentTable.length - 1;
-        }
-        int counter = 0;
-        while (nextTableIndex >= 0 && counter < size) {
-            HashEntry<K, V> nextEntry = currentTable[nextTableIndex--];
-            while (nextEntry != null) {
-                if (nextEntry.key() != null) {
-                    final V value = nextEntry.value();
+    public IterationPointer[] fetchEntries(IterationPointer[] pointers,
+                                           int size,
+                                           List<Map.Entry<K, V>> entries) {
+        return fetchNext(pointers, size, (k, v) -> entries.add(new AbstractMap.SimpleEntry<>(k, v)));
+    }
+
+    /**
+     * Fetches at least {@code size} keys from the given {@code pointers} and
+     * invokes the {@code entryConsumer} for each key-value pair.
+     *
+     * @param pointers      the pointers defining the state where to begin iteration
+     * @param size          Count of how many entries will be fetched
+     * @param entryConsumer the consumer to call with fetched key-value pairs
+     * @return the pointers defining the state where iteration has ended
+     */
+    private IterationPointer[] fetchNext(IterationPointer[] pointers,
+                                         int size,
+                                         BiConsumer<K, V> entryConsumer) {
+        long now = Clock.currentTimeMillis();
+        Segment<K, V> segment = segments[0];
+        try {
+            segment.lock();
+            HashEntry<K, V>[] currentTable = segment.table;
+            int currentTableSize = currentTable.length;
+
+            pointers = checkPointers(pointers, currentTableSize);
+            IterationPointer lastPointer = pointers[pointers.length - 1];
+
+            int nextTableIndex;
+            if (lastPointer.getIndex() >= 0 && lastPointer.getIndex() < segment.table.length) {
+                nextTableIndex = lastPointer.getIndex();
+            } else {
+                nextTableIndex = currentTable.length - 1;
+            }
+            int counter = 0;
+            while (nextTableIndex >= 0 && counter < size) {
+                HashEntry<K, V> nextEntry = currentTable[nextTableIndex--];
+                while (nextEntry != null) {
+                    V value = nextEntry.value();
                     if (isValidForFetching(value, now)) {
                         K key = nextEntry.key();
-                        entries.add(new AbstractMap.SimpleEntry<K, V>(key, value));
-                        counter++;
+                        if (key != null && hasNotBeenObserved(key, pointers)) {
+                            entryConsumer.accept(key, value);
+                            counter++;
+                        }
                     }
+                    nextEntry = nextEntry.next;
                 }
-                nextEntry = nextEntry.next;
+            }
+            lastPointer.setIndex(nextTableIndex);
+            return pointers;
+        } finally {
+            segment.unlock();
+        }
+    }
+
+    /**
+     * Checks the {@code pointers} to see if we need to restart iteration on the
+     * current table and returns the updated pointers if necessary.
+     *
+     * @param pointers         the pointers defining the state of iteration
+     * @param currentTableSize the current table size
+     * @return the updated pointers, if necessary
+     */
+    private IterationPointer[] checkPointers(IterationPointer[] pointers, int currentTableSize) {
+        IterationPointer lastPointer = pointers[pointers.length - 1];
+        boolean iterationStarted = lastPointer.getSize() == -1;
+        boolean tableResized = lastPointer.getSize() != currentTableSize;
+        // clone pointers to avoid mutating given reference
+        // add new pointer if resize happened during iteration
+        int newLength = !iterationStarted && tableResized ? pointers.length + 1 : pointers.length;
+
+        IterationPointer[] updatedPointers = new IterationPointer[newLength];
+        for (int i = 0; i < pointers.length; i++) {
+            updatedPointers[i] = new IterationPointer(pointers[i]);
+        }
+
+        // reset last pointer if we haven't started iteration or there was a resize
+        if (iterationStarted || tableResized) {
+            updatedPointers[updatedPointers.length - 1] = new IterationPointer(Integer.MAX_VALUE, currentTableSize);
+        }
+        return updatedPointers;
+    }
+
+    /**
+     * Returns {@code true} if the given {@code key} has not been already observed
+     * (or should have been observed) with the iteration state provided by the
+     * {@code pointers}.
+     *
+     * @param key      the key to check
+     * @param pointers the iteration state
+     * @return if the key should have already been observed by the iteration user
+     */
+    private boolean hasNotBeenObserved(K key, IterationPointer[] pointers) {
+        if (pointers.length < 2) {
+            // there was no resize yet so we most definitely haven't observed the entry
+            return true;
+        }
+        int hash = hashOf(key);
+        // check only the pointers up to the last, we haven't observed it with the last pointer
+        for (int i = 0; i < pointers.length - 1; i++) {
+            IterationPointer iterationPointer = pointers[i];
+            int tableSize = iterationPointer.getSize();
+            int tableIndex = iterationPointer.getIndex();
+            int index = hash & (tableSize - 1);
+            if (index > tableIndex) {
+                // entry would have been located after in the table on the given size
+                // so we have observed it
+                return false;
             }
         }
-        return nextTableIndex;
+        return true;
     }
 
     protected boolean isValidForFetching(V value, long now) {

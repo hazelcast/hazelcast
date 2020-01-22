@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
 
 class ReplicatedMapMergeRunnable
-        extends AbstractMergeRunnable<Object, Object, ReplicatedRecordStore, ReplicatedMapMergeTypes> {
+        extends AbstractMergeRunnable<Object, Object, ReplicatedRecordStore, ReplicatedMapMergeTypes<Object, Object>> {
 
     private final ReplicatedMapService service;
 
@@ -50,14 +50,15 @@ class ReplicatedMapMergeRunnable
     }
 
     @Override
-    protected void mergeStore(ReplicatedRecordStore store, BiConsumer<Integer, ReplicatedMapMergeTypes> consumer) {
+    protected void mergeStore(ReplicatedRecordStore store,
+                              BiConsumer<Integer, ReplicatedMapMergeTypes<Object, Object>> consumer) {
         int partitionId = store.getPartitionId();
 
         Iterator<ReplicatedRecord> iterator = store.recordIterator();
         while (iterator.hasNext()) {
             ReplicatedRecord record = iterator.next();
 
-            ReplicatedMapMergeTypes mergingEntry = createMergingEntry(getSerializationService(), record);
+            ReplicatedMapMergeTypes<Object, Object> mergingEntry = createMergingEntry(getSerializationService(), record);
             consumer.accept(partitionId, mergingEntry);
         }
     }
@@ -93,8 +94,10 @@ class ReplicatedMapMergeRunnable
 
     @Override
     protected OperationFactory createMergeOperationFactory(String dataStructureName,
-                                                           SplitBrainMergePolicy<Object, ReplicatedMapMergeTypes> mergePolicy,
-                                                           int[] partitions, List<ReplicatedMapMergeTypes>[] entries) {
+                                                           SplitBrainMergePolicy<Object, ReplicatedMapMergeTypes<Object, Object>,
+                                                                   Object> mergePolicy,
+                                                           int[] partitions,
+                                                           List<ReplicatedMapMergeTypes<Object, Object>>[] entries) {
         return new MergeOperationFactory(dataStructureName, partitions, entries, mergePolicy);
     }
 

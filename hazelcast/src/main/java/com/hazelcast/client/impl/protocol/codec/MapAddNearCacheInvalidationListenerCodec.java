@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,26 +37,26 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds listener to map. This listener will be used to listen near cache invalidation events.
  */
-@Generated("95f3e746a3a9cc8c9dbd613e2d588c04")
+@Generated("6d34cd367d78e8ca9fffb92bfcbb1794")
 public final class MapAddNearCacheInvalidationListenerCodec {
-    //hex: 0x014100
-    public static final int REQUEST_MESSAGE_TYPE = 82176;
-    //hex: 0x014101
-    public static final int RESPONSE_MESSAGE_TYPE = 82177;
+    //hex: 0x013F00
+    public static final int REQUEST_MESSAGE_TYPE = 81664;
+    //hex: 0x013F01
+    public static final int RESPONSE_MESSAGE_TYPE = 81665;
     private static final int REQUEST_LISTENER_FLAGS_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = REQUEST_LISTENER_FLAGS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int EVENT_I_MAP_INVALIDATION_SOURCE_UUID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_I_MAP_INVALIDATION_PARTITION_UUID_FIELD_OFFSET = EVENT_I_MAP_INVALIDATION_SOURCE_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int EVENT_I_MAP_INVALIDATION_SEQUENCE_FIELD_OFFSET = EVENT_I_MAP_INVALIDATION_PARTITION_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int EVENT_I_MAP_INVALIDATION_INITIAL_FRAME_SIZE = EVENT_I_MAP_INVALIDATION_SEQUENCE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    //hex: 0x014102
-    private static final int EVENT_I_MAP_INVALIDATION_MESSAGE_TYPE = 82178;
+    //hex: 0x013F02
+    private static final int EVENT_I_MAP_INVALIDATION_MESSAGE_TYPE = 81666;
     private static final int EVENT_I_MAP_BATCH_INVALIDATION_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    //hex: 0x014103
-    private static final int EVENT_I_MAP_BATCH_INVALIDATION_MESSAGE_TYPE = 82179;
+    //hex: 0x013F03
+    private static final int EVENT_I_MAP_BATCH_INVALIDATION_MESSAGE_TYPE = 81667;
 
     private MapAddNearCacheInvalidationListenerCodec() {
     }
@@ -183,7 +183,21 @@ public final class MapAddNearCacheInvalidationListenerCodec {
             }
             Logger.getLogger(super.getClass()).finest("Unknown message type received on event handler :" + messageType);
         }
+
+        /**
+         * @param key The key of the invalidated entry.
+         * @param sourceUuid UUID of the member who fired this event.
+         * @param partitionUuid UUID of the source partition that invalidated entry belongs to.
+         * @param sequence Sequence number of the invalidation event.
+        */
         public abstract void handleIMapInvalidationEvent(@Nullable com.hazelcast.internal.serialization.Data key, java.util.UUID sourceUuid, java.util.UUID partitionUuid, long sequence);
+
+        /**
+         * @param keys List of the keys of the invalidated entries.
+         * @param sourceUuids List of UUIDs of the members who fired these events.
+         * @param partitionUuids List of UUIDs of the source partitions that invalidated entries belong to.
+         * @param sequences List of sequence numbers of the invalidation events.
+        */
         public abstract void handleIMapBatchInvalidationEvent(java.util.Collection<com.hazelcast.internal.serialization.Data> keys, java.util.Collection<java.util.UUID> sourceUuids, java.util.Collection<java.util.UUID> partitionUuids, java.util.Collection<java.lang.Long> sequences);
     }
 }

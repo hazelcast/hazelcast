@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,6 +56,7 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.core.EntryEventType.INVALIDATION;
 import static com.hazelcast.internal.nearcache.NearCache.CACHED_AS_NULL;
 import static com.hazelcast.internal.nearcache.NearCache.NOT_CACHED;
+import static com.hazelcast.internal.nearcache.NearCache.UpdateSemantic.READ_UPDATE;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.NOT_RESERVED;
 import static com.hazelcast.internal.util.CollectionUtil.objectToDataCollection;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
@@ -102,6 +103,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
     @Override
     protected boolean containsKeyInternal(Object key) {
+        key = toNearCacheKey(key);
         Object cached = getCachedValue(key, false);
         if (cached != NOT_CACHED) {
             return cached != null;
@@ -120,7 +122,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
         try {
             Data keyData = toData(key);
-            long reservationId = nearCache.tryReserveForUpdate(key, keyData);
+            long reservationId = nearCache.tryReserveForUpdate(key, keyData, READ_UPDATE);
             value = (V) super.getInternal(keyData);
             if (reservationId != NOT_RESERVED) {
                 value = (V) tryPublishReserved(key, value, reservationId);
@@ -153,7 +155,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         }
 
         Data keyData = toData(ncKey);
-        final long reservationId = nearCache.tryReserveForUpdate(ncKey, keyData);
+        final long reservationId = nearCache.tryReserveForUpdate(ncKey, keyData, READ_UPDATE);
         ClientInvocationFuture invocationFuture;
         try {
             invocationFuture = super.getAsyncInternal(keyData);
@@ -441,7 +443,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         Map<Object, Long> reservations = createHashMap(nearCacheKeys.size());
         for (Object key : nearCacheKeys) {
             Data keyData = serializeKeys ? (Data) key : keyMap.get(key);
-            long reservationId = nearCache.tryReserveForUpdate(key, keyData);
+            long reservationId = nearCache.tryReserveForUpdate(key, keyData, READ_UPDATE);
             if (reservationId != NOT_RESERVED) {
                 reservations.put(key, reservationId);
             }

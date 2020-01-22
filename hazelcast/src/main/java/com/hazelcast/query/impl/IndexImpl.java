@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.config.IndexConfig;
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.query.impl.getters.Extractors;
 
 import java.util.Set;
@@ -44,8 +44,17 @@ public class IndexImpl extends AbstractIndex {
     }
 
     @Override
-    protected IndexStore createIndexStore(boolean ordered, PerIndexStats stats) {
-        return ordered ? new OrderedIndexStore(copyBehavior) : new UnorderedIndexStore(copyBehavior);
+    protected IndexStore createIndexStore(IndexConfig config, PerIndexStats stats) {
+        switch (config.getType()) {
+            case SORTED:
+                return new OrderedIndexStore(copyBehavior);
+            case HASH:
+                return new UnorderedIndexStore(copyBehavior);
+            case BITMAP:
+                return new BitmapIndexStore(config, ss, extractors);
+            default:
+                throw new IllegalArgumentException("unexpected index type: " + config.getType());
+        }
     }
 
     @Override
@@ -57,6 +66,14 @@ public class IndexImpl extends AbstractIndex {
     @Override
     public boolean hasPartitionIndexed(int partitionId) {
         return indexedPartitions.contains(partitionId);
+    }
+
+    @Override
+    public boolean allPartitionsIndexed(int ownedPartitionCount) {
+        // This check guarantees that all partitions are indexed
+        // only if there is no concurrent migrations. Check migration stamp
+        // to detect concurrent migrations if needed.
+        return ownedPartitionCount < 0 || indexedPartitions.size() == ownedPartitionCount;
     }
 
     @Override

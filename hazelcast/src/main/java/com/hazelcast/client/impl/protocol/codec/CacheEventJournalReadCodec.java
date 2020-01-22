@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,17 +43,17 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * The predicate, filter and projection may be {@code null} in which case all elements are returned
  * and no projection is applied.
  */
-@Generated("eecf3edd946e53710cfdd858c09120bb")
+@Generated("fb9de529acf94f907a0b679380913efc")
 public final class CacheEventJournalReadCodec {
-    //hex: 0x132100
-    public static final int REQUEST_MESSAGE_TYPE = 1253632;
-    //hex: 0x132101
-    public static final int RESPONSE_MESSAGE_TYPE = 1253633;
+    //hex: 0x132000
+    public static final int REQUEST_MESSAGE_TYPE = 1253376;
+    //hex: 0x132001
+    public static final int RESPONSE_MESSAGE_TYPE = 1253377;
     private static final int REQUEST_START_SEQUENCE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_MIN_SIZE_FIELD_OFFSET = REQUEST_START_SEQUENCE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_MAX_SIZE_FIELD_OFFSET = REQUEST_MIN_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_MAX_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_READ_COUNT_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_READ_COUNT_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_NEXT_SEQ_FIELD_OFFSET = RESPONSE_READ_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_NEXT_SEQ_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
@@ -127,22 +127,22 @@ public final class CacheEventJournalReadCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * Number of items that have been read.
          */
         public int readCount;
 
         /**
-         * TODO DOC
+         * List of items that have been read.
          */
         public java.util.List<com.hazelcast.internal.serialization.Data> items;
 
         /**
-         * TODO DOC
+         * Sequence numbers of items in the event journal.
          */
         public @Nullable long[] itemSeqs;
 
         /**
-         * TODO DOC
+         * Sequence number of the item following the last read item.
          */
         public long nextSeq;
     }

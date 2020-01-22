@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.config.BitmapIndexOptions.UniqueKeyTransformation;
+import com.hazelcast.query.QueryConstants;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -41,6 +43,8 @@ public class IndexConfigTest {
 
         assertEquals(IndexType.SORTED, config.getType());
         assertNull(config.getName());
+        assertEquals(QueryConstants.KEY_ATTRIBUTE_NAME.value(), config.getBitmapIndexOptions().getUniqueKey());
+        assertEquals(UniqueKeyTransformation.OBJECT, config.getBitmapIndexOptions().getUniqueKeyTransformation());
     }
 
     @Test
@@ -50,6 +54,16 @@ public class IndexConfigTest {
         checkIndexQuality(new IndexConfig(IndexType.SORTED), new IndexConfig(IndexType.SORTED), true);
         checkIndexQuality(new IndexConfig(IndexType.HASH), new IndexConfig(IndexType.HASH), true);
         checkIndexQuality(new IndexConfig(IndexType.HASH), new IndexConfig(IndexType.SORTED), false);
+        checkIndexQuality(new IndexConfig(IndexType.BITMAP), new IndexConfig(IndexType.BITMAP), true);
+        checkIndexQuality(new IndexConfig(IndexType.BITMAP), new IndexConfig(IndexType.HASH), false);
+
+        IndexConfig actual = new IndexConfig(IndexType.BITMAP);
+        actual.getBitmapIndexOptions().setUniqueKey("a");
+        checkIndexQuality(new IndexConfig(IndexType.BITMAP), actual, false);
+
+        actual = new IndexConfig(IndexType.BITMAP);
+        actual.getBitmapIndexOptions().setUniqueKeyTransformation(UniqueKeyTransformation.RAW);
+        checkIndexQuality(new IndexConfig(IndexType.BITMAP), actual, false);
 
         checkIndexQuality(new IndexConfig().setName("name"), new IndexConfig().setName("name"), true);
         checkIndexQuality(new IndexConfig().setName("name"), new IndexConfig().setName("name2"), false);
@@ -110,4 +124,5 @@ public class IndexConfigTest {
     public void testAttributeEmptyAdd() {
         new IndexConfig().addAttribute("");
     }
+
 }

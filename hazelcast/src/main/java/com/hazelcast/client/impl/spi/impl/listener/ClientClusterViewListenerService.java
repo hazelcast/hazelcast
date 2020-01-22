@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientPartitionServiceImpl;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListener;
@@ -34,6 +33,7 @@ import com.hazelcast.logging.ILogger;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -90,7 +90,7 @@ public class ClientClusterViewListenerService implements ConnectionListener {
         }
 
         @Override
-        public void handlePartitionsViewEvent(int version, Collection<Map.Entry<Address, List<Integer>>> partitions) {
+        public void handlePartitionsViewEvent(int version, Collection<Map.Entry<UUID, List<Integer>>> partitions) {
             partitionService.handlePartitionsViewEvent(connection, partitions, version);
         }
     }

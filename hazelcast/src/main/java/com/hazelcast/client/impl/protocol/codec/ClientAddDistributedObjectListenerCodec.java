@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,23 +35,24 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * TODO DOC
+ * Adds a distributed object listener to the cluster. This listener will be notified
+ * when a distributed object is created or destroyed.
  */
-@Generated("144e5c3164540f34dd468dc838db14b6")
+@Generated("abf6c949d567c7e503ff4468cbc063a6")
 public final class ClientAddDistributedObjectListenerCodec {
-    //hex: 0x000A00
-    public static final int REQUEST_MESSAGE_TYPE = 2560;
-    //hex: 0x000A01
-    public static final int RESPONSE_MESSAGE_TYPE = 2561;
+    //hex: 0x000900
+    public static final int REQUEST_MESSAGE_TYPE = 2304;
+    //hex: 0x000901
+    public static final int RESPONSE_MESSAGE_TYPE = 2305;
     private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INTERNAL_FIELD_OFFSET = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_INTERNAL_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int EVENT_DISTRIBUTED_OBJECT_SOURCE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_DISTRIBUTED_OBJECT_INITIAL_FRAME_SIZE = EVENT_DISTRIBUTED_OBJECT_SOURCE_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
-    //hex: 0x000A02
-    private static final int EVENT_DISTRIBUTED_OBJECT_MESSAGE_TYPE = 2562;
+    //hex: 0x000902
+    private static final int EVENT_DISTRIBUTED_OBJECT_MESSAGE_TYPE = 2306;
 
     private ClientAddDistributedObjectListenerCodec() {
     }
@@ -149,6 +150,13 @@ public final class ClientAddDistributedObjectListenerCodec {
             }
             Logger.getLogger(super.getClass()).finest("Unknown message type received on event handler :" + messageType);
         }
+
+        /**
+         * @param name Name of the distributed object.
+         * @param serviceName Service name of the distributed object.
+         * @param eventType Type of the event. It is either CREATED or DESTROYED.
+         * @param source The UUID (client or member) of the source of this proxy event.
+        */
         public abstract void handleDistributedObjectEvent(java.lang.String name, java.lang.String serviceName, java.lang.String eventType, java.util.UUID source);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,14 +38,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Each item is a Map.Entry<String, byte[]> in the list.
  * key of entry is full class name, and byte[] is the class definition.
  */
-@Generated("cca4b5eb7b36a6b411e3cb925c3a5406")
+@Generated("d64fe00a8f47c54b2edeb12852568fe3")
 public final class ClientDeployClassesCodec {
-    //hex: 0x000E00
-    public static final int REQUEST_MESSAGE_TYPE = 3584;
-    //hex: 0x000E01
-    public static final int RESPONSE_MESSAGE_TYPE = 3585;
+    //hex: 0x000D00
+    public static final int REQUEST_MESSAGE_TYPE = 3328;
+    //hex: 0x000D01
+    public static final int RESPONSE_MESSAGE_TYPE = 3329;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private ClientDeployClassesCodec() {
     }

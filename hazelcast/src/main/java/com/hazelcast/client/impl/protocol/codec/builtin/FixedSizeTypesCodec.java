@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,6 @@ public final class FixedSizeTypesCodec {
     public static final int BYTE_SIZE_IN_BYTES = Bits.BYTE_SIZE_IN_BYTES;
     public static final int LONG_SIZE_IN_BYTES = Bits.LONG_SIZE_IN_BYTES;
     public static final int INT_SIZE_IN_BYTES = Bits.INT_SIZE_IN_BYTES;
-    public static final int ENUM_SIZE_IN_BYTES = Bits.INT_SIZE_IN_BYTES;
     public static final int BOOLEAN_SIZE_IN_BYTES = Bits.BOOLEAN_SIZE_IN_BYTES;
     public static final int UUID_SIZE_IN_BYTES = Bits.BOOLEAN_SIZE_IN_BYTES + Bits.LONG_SIZE_IN_BYTES * 2;
 
@@ -45,19 +44,19 @@ public final class FixedSizeTypesCodec {
         return Bits.readIntL(buffer, pos);
     }
 
-    public static void encodeEnum(byte[] buffer, int pos, CacheEventType cacheEventType) {
+    public static void encodeInt(byte[] buffer, int pos, CacheEventType cacheEventType) {
         encodeInt(buffer, pos, cacheEventType.getType());
     }
 
-    public static void encodeEnum(byte[] buffer, int pos, IndexType indexType) {
+    public static void encodeInt(byte[] buffer, int pos, IndexType indexType) {
         encodeInt(buffer, pos, indexType.getId());
     }
 
-    public static void encodeEnum(byte[] buffer, int pos, ExpiryPolicyType expiryPolicyType) {
+    public static void encodeInt(byte[] buffer, int pos, ExpiryPolicyType expiryPolicyType) {
         encodeInt(buffer, pos, expiryPolicyType.getId());
     }
 
-    public static void encodeEnum(byte[] buffer, int pos, TimeUnit timeUnit) {
+    public static void encodeInt(byte[] buffer, int pos, TimeUnit timeUnit) {
         int timeUnitId;
         if (TimeUnit.NANOSECONDS.equals(timeUnit)) {
             timeUnitId = 0;
@@ -79,12 +78,8 @@ public final class FixedSizeTypesCodec {
         encodeInt(buffer, pos, timeUnitId);
     }
 
-    public static void encodeEnum(byte[] buffer, int pos, ClientBwListEntryDTO.Type clientBwListEntryType) {
+    public static void encodeInt(byte[] buffer, int pos, ClientBwListEntryDTO.Type clientBwListEntryType) {
         encodeInt(buffer, pos, clientBwListEntryType.getId());
-    }
-
-    public static int decodeEnum(byte[] buffer, int pos) {
-        return decodeInt(buffer, pos);
     }
 
     public static void encodeInteger(byte[] buffer, int pos, Integer value) {

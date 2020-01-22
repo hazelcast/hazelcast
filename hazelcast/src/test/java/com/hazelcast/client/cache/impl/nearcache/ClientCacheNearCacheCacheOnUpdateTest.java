@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,9 +60,12 @@ public class ClientCacheNearCacheCacheOnUpdateTest extends ClientNearCacheTestSu
 
         runTest(nearCachedClientCache, CACHE_ON_UPDATE);
 
+        NearCache nearCache = ((NearCachedClientCacheProxy) nearCachedClientCache).getNearCache();
+        int size = nearCache.size();
         NearCacheStats nearCacheStatistics = nearCachedClientCache.getLocalCacheStatistics()
                 .getNearCacheStatistics();
-        assertEquals(nearCacheStatistics.toString(), 0, nearCacheStatistics.getMisses());
+        assertEquals(size + ", " + nearCacheStatistics.toString()
+                + ", " + nearCache.getNearCacheConfig(), 0, nearCacheStatistics.getMisses());
     }
 
     protected void checkNearCacheInstance(ICache iCacheOnClient) {
@@ -93,6 +96,8 @@ public class ClientCacheNearCacheCacheOnUpdateTest extends ClientNearCacheTestSu
                 icacheOnClient.get(i);
             }
         }
+
+        assertEquals(NUM_OF_KEYS, ((NearCachedClientCacheProxy) icacheOnClient).getNearCache().size());
 
         AtomicBoolean stop = new AtomicBoolean();
 

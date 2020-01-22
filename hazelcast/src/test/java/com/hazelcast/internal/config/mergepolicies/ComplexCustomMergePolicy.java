@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,6 @@ import com.hazelcast.spi.merge.MergingExpirationTime;
  * It also uses inheritance to ensure that we check the complete class hierarchy.
  */
 @SuppressWarnings("unused")
-public class ComplexCustomMergePolicy<N extends Number, C extends Comparable<N>>
+public class ComplexCustomMergePolicy<N extends Number, C extends Comparable<N>, U>
         extends ComplexCustomBaseMergePolicy {
 }

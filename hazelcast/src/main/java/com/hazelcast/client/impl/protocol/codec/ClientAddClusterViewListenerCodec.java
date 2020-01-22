@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,16 +35,16 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * TODO DOC
+ * Adds a cluster view listener to a connection.
  */
-@Generated("5d1772412b87cda68e87d8ac98ba3bec")
+@Generated("efcaeabd0e9845cd5fc444af6d8654a4")
 public final class ClientAddClusterViewListenerCodec {
     //hex: 0x000300
     public static final int REQUEST_MESSAGE_TYPE = 768;
     //hex: 0x000301
     public static final int RESPONSE_MESSAGE_TYPE = 769;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int EVENT_MEMBERS_VIEW_VERSION_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_MEMBERS_VIEW_INITIAL_FRAME_SIZE = EVENT_MEMBERS_VIEW_VERSION_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     //hex: 0x000302
@@ -111,7 +111,7 @@ public final class ClientAddClusterViewListenerCodec {
         ListMultiFrameCodec.encode(clientMessage, memberInfos, MemberInfoCodec::encode);
         return clientMessage;
     }
-    public static ClientMessage encodePartitionsViewEvent(int version, java.util.Collection<java.util.Map.Entry<com.hazelcast.cluster.Address, java.util.List<java.lang.Integer>>> partitions) {
+    public static ClientMessage encodePartitionsViewEvent(int version, java.util.Collection<java.util.Map.Entry<java.util.UUID, java.util.List<java.lang.Integer>>> partitions) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_PARTITIONS_VIEW_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
@@ -119,7 +119,7 @@ public final class ClientAddClusterViewListenerCodec {
         encodeInt(initialFrame.content, EVENT_PARTITIONS_VIEW_VERSION_FIELD_OFFSET, version);
         clientMessage.add(initialFrame);
 
-        EntryListCodec.encode(clientMessage, partitions, AddressCodec::encode, ListIntegerCodec::encode);
+        EntryListUUIDListIntegerCodec.encode(clientMessage, partitions);
         return clientMessage;
     }
 
@@ -138,13 +138,24 @@ public final class ClientAddClusterViewListenerCodec {
             if (messageType == EVENT_PARTITIONS_VIEW_MESSAGE_TYPE) {
                 ClientMessage.Frame initialFrame = iterator.next();
                 int version = decodeInt(initialFrame.content, EVENT_PARTITIONS_VIEW_VERSION_FIELD_OFFSET);
-                java.util.Collection<java.util.Map.Entry<com.hazelcast.cluster.Address, java.util.List<java.lang.Integer>>> partitions = EntryListCodec.decode(iterator, AddressCodec::decode, ListIntegerCodec::decode);
+                java.util.Collection<java.util.Map.Entry<java.util.UUID, java.util.List<java.lang.Integer>>> partitions = EntryListUUIDListIntegerCodec.decode(iterator);
                 handlePartitionsViewEvent(version, partitions);
                 return;
             }
             Logger.getLogger(super.getClass()).finest("Unknown message type received on event handler :" + messageType);
         }
+
+        /**
+         * @param version Incremental member list version
+         * @param memberInfos List of member infos  at the cluster associated with the given version
+         *                    params:
+        */
         public abstract void handleMembersViewEvent(int version, java.util.Collection<com.hazelcast.internal.cluster.MemberInfo> memberInfos);
-        public abstract void handlePartitionsViewEvent(int version, java.util.Collection<java.util.Map.Entry<com.hazelcast.cluster.Address, java.util.List<java.lang.Integer>>> partitions);
+
+        /**
+         * @param version Incremental state version of the partition table
+         * @param partitions The partition table. In each entry, it has uuid of the member and list of partitions belonging to that member
+        */
+        public abstract void handlePartitionsViewEvent(int version, java.util.Collection<java.util.Map.Entry<java.util.UUID, java.util.List<java.lang.Integer>>> partitions);
     }
 }

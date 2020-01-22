@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -186,6 +186,9 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
         ListenerMessageCodec codec = listenerRegistration.getCodec();
         ClientMessage request = codec.encodeAddRequest(registersLocalOnly());
         EventHandler handler = listenerRegistration.getHandler();
+        if (logger.isFinestEnabled()) {
+            logger.finest("Register attempt of " + listenerRegistration + " to " + connection);
+        }
         handler.beforeListenerRegister(connection);
 
         ClientInvocation invocation = new ClientInvocation(client, request, null, connection);
@@ -200,6 +203,9 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
         }
 
         UUID serverRegistrationId = codec.decodeAddResponse(clientMessage);
+        if (logger.isFinestEnabled()) {
+            logger.finest("Registered " + listenerRegistration + " to " + connection);
+        }
         handler.onListenerRegister(connection);
         long correlationId = request.getCorrelationId();
         ClientConnectionRegistration registration

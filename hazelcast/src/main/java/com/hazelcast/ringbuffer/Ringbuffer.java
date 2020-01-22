@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -356,6 +356,17 @@ public interface Ringbuffer<E> extends DistributedObject {
      * if store is configured for the Ringbuffer. These cases may increase the
      * execution time significantly depending on the implementation of the store.
      * Note that exceptions thrown by the store are propagated to the caller.
+     * <p>
+     * If the startSequence is smaller than the smallest sequence still available
+     * in the Ringbuffer ({@link #headSequence()}, then the smallest available
+     * sequence will be used as the start sequence and the minimum/maximum
+     * number of items will be attempted to be read from there on.
+     * <p>
+     * If the startSequence is bigger than the last available sequence in the
+     * Ringbuffer ({@link #tailSequence()}), then the last available sequence
+     * plus one will be used as the start sequence and the call will block
+     * until further items become available and it can read at least the
+     * minimum number of items.
      *
      * @param startSequence the startSequence of the first item to read.
      * @param minCount      the minimum number of items to read.
@@ -364,7 +375,6 @@ public interface Ringbuffer<E> extends DistributedObject {
      *                      there is no filter.
      * @return a future containing the items read.
      * @throws IllegalArgumentException if startSequence is smaller than 0
-     *                                  or if startSequence larger than {@link #tailSequence()}
      *                                  or if minCount smaller than 0
      *                                  or if minCount larger than maxCount,
      *                                  or if maxCount larger than the capacity of the ringbuffer

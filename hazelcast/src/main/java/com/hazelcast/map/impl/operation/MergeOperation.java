@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,8 +44,8 @@ public class MergeOperation extends MapOperation
         implements PartitionAwareOperation, BackupAwareOperation {
 
     private boolean disableWanReplicationEvent;
-    private List<MapMergeTypes> mergingEntries;
-    private SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy;
+    private List<MapMergeTypes<Object, Object>> mergingEntries;
+    private SplitBrainMergePolicy<Object, MapMergeTypes<Object, Object>, Object> mergePolicy;
 
     private transient int currentIndex;
     private transient boolean hasMapListener;
@@ -61,8 +61,8 @@ public class MergeOperation extends MapOperation
     public MergeOperation() {
     }
 
-    public MergeOperation(String name, List<MapMergeTypes> mergingEntries,
-                          SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy,
+    public MergeOperation(String name, List<MapMergeTypes<Object, Object>> mergingEntries,
+                          SplitBrainMergePolicy<Object, MapMergeTypes<Object, Object>, Object> mergePolicy,
                           boolean disableWanReplicationEvent) {
         super(name);
         this.mergingEntries = mergingEntries;
@@ -100,8 +100,8 @@ public class MergeOperation extends MapOperation
         }
     }
 
-    private void merge(MapMergeTypes mergingEntry) {
-        Data dataKey = mergingEntry.getKey();
+    private void merge(MapMergeTypes<Object, Object> mergingEntry) {
+        Data dataKey = getNodeEngine().toData(mergingEntry.getRawKey());
         Data oldValue = hasMapListener ? getValue(dataKey) : null;
 
         if (recordStore.merge(mergingEntry, mergePolicy, getCallerProvenance())) {

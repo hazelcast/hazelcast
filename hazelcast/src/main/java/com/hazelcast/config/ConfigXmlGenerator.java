@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1137,9 +1137,9 @@ public class ConfigXmlGenerator {
         if (wan != null) {
             gen.open("wan-replication-ref", "name", wan.getName());
 
-            String mergePolicy = wan.getMergePolicy();
+            String mergePolicy = wan.getMergePolicyClassName();
             if (!isNullOrEmpty(mergePolicy)) {
-                gen.node("merge-policy", mergePolicy);
+                gen.node("merge-policy-class-name", mergePolicy);
             }
 
             List<String> filters = wan.getFilters();
@@ -1439,8 +1439,11 @@ public class ConfigXmlGenerator {
             gen.open("flake-id-generator", "name", m.getName())
                     .node("prefetch-count", m.getPrefetchCount())
                     .node("prefetch-validity-millis", m.getPrefetchValidityMillis())
-                    .node("id-offset", m.getIdOffset())
+                    .node("epoch-start", m.getEpochStart())
                     .node("node-id-offset", m.getNodeIdOffset())
+                    .node("bits-sequence", m.getBitsSequence())
+                    .node("bits-node-id", m.getBitsNodeId())
+                    .node("allowed-future-millis", m.getAllowedFutureMillis())
                     .node("statistics-enabled", m.isStatisticsEnabled());
             gen.close();
         }

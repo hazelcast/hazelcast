@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,17 +40,18 @@ import com.hazelcast.client.impl.spi.ClientProxy;
 import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.ThreadLocalRandomProvider;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapEvent;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.replicatedmap.LocalReplicatedMapStats;
 import com.hazelcast.replicatedmap.ReplicatedMap;
@@ -71,6 +72,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.nearcache.NearCache.CACHED_AS_NULL;
 import static com.hazelcast.internal.nearcache.NearCache.NOT_CACHED;
+import static com.hazelcast.internal.nearcache.NearCache.UpdateSemantic.READ_UPDATE;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.NOT_RESERVED;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -111,6 +113,10 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     private void initNearCache() {
         NearCacheConfig nearCacheConfig = getContext().getClientConfig().getNearCacheConfig(name);
         if (nearCacheConfig != null) {
+            if (nearCacheConfig.isSerializeKeys()) {
+                throw new InvalidConfigurationException("ReplicatedMap doesn't support serializeKeys option of NearCacheConfig");
+            }
+
             nearCache = getContext().getNearCacheManager(getServiceName()).getOrCreateNearCache(name, nearCacheConfig);
             if (nearCacheConfig.isInvalidateOnChange()) {
                 registerInvalidationListener();
@@ -553,7 +559,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         if (nearCache == null) {
             return NOT_RESERVED;
         }
-        return nearCache.tryReserveForUpdate(key, keyData);
+        return nearCache.tryReserveForUpdate(key, keyData, READ_UPDATE);
     }
 
     private void invalidate(K key) {

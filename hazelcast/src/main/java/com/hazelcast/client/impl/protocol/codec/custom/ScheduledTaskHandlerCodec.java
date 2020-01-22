@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,9 +24,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("c681c7f51c51e9519bd59e440f9820aa")
+@Generated("0a95b511c2a1035e3454693f5e263968")
 public final class ScheduledTaskHandlerCodec {
-    private static final int PARTITION_ID_FIELD_OFFSET = 0;
+    private static final int UUID_FIELD_OFFSET = 0;
+    private static final int PARTITION_ID_FIELD_OFFSET = UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private ScheduledTaskHandlerCodec() {
@@ -36,10 +37,10 @@ public final class ScheduledTaskHandlerCodec {
         clientMessage.add(BEGIN_FRAME.copy());
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
+        encodeUUID(initialFrame.content, UUID_FIELD_OFFSET, scheduledTaskHandler.getUuid());
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, scheduledTaskHandler.getPartitionId());
         clientMessage.add(initialFrame);
 
-        CodecUtil.encodeNullable(clientMessage, scheduledTaskHandler.getAddress(), AddressCodec::encode);
         StringCodec.encode(clientMessage, scheduledTaskHandler.getSchedulerName());
         StringCodec.encode(clientMessage, scheduledTaskHandler.getTaskName());
 
@@ -51,14 +52,14 @@ public final class ScheduledTaskHandlerCodec {
         iterator.next();
 
         ClientMessage.Frame initialFrame = iterator.next();
+        java.util.UUID uuid = decodeUUID(initialFrame.content, UUID_FIELD_OFFSET);
         int partitionId = decodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET);
 
-        com.hazelcast.cluster.Address address = CodecUtil.decodeNullable(iterator, AddressCodec::decode);
         java.lang.String schedulerName = StringCodec.decode(iterator);
         java.lang.String taskName = StringCodec.decode(iterator);
 
         fastForwardToEndFrame(iterator);
 
-        return new com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl(address, partitionId, schedulerName, taskName);
+        return new com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl(uuid, partitionId, schedulerName, taskName);
     }
 }

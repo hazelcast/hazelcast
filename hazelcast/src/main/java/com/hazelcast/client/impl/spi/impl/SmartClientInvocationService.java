@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,7 +85,7 @@ public class SmartClientInvocationService extends AbstractClientInvocationServic
 
     @Override
     public void invokeOnPartitionOwner(ClientInvocation invocation, int partitionId) throws IOException {
-        Address partitionOwner = partitionService.getPartitionOwner(partitionId);
+        UUID partitionOwner = partitionService.getPartitionOwner(partitionId);
         if (partitionOwner == null) {
             if (invocationLogger.isFinestEnabled()) {
                 invocationLogger.finest("Partition owner is not assigned yet, Retrying on random target");
@@ -106,15 +106,17 @@ public class SmartClientInvocationService extends AbstractClientInvocationServic
     }
 
     @Override
-    public void invokeOnTarget(ClientInvocation invocation, Address target) throws IOException {
-        if (!isMember(target)) {
+    public void invokeOnTarget(ClientInvocation invocation, UUID uuid) throws IOException {
+        assert (uuid != null);
+        Member member = client.getClientClusterService().getMember(uuid);
+        if (member == null) {
             if (invocationLogger.isFinestEnabled()) {
-                invocationLogger.finest("Target : " + target + " is not in the member list, Retrying on random target");
+                invocationLogger.finest("Target : " + uuid + " is not in the member list, Retrying on random target");
             }
             invokeOnRandomTarget(invocation);
             return;
         }
-        Connection connection = getConnection(target);
+        Connection connection = getConnection(member.getAddress());
         invokeOnConnection(invocation, (ClientConnection) connection);
     }
 
@@ -136,10 +138,5 @@ public class SmartClientInvocationService extends AbstractClientInvocationServic
             invocation.getClientMessage().getStartFrame().flags |= ClientMessage.BACKUP_AWARE_FLAG;
         }
         send(invocation, connection);
-    }
-
-    boolean isMember(Address target) {
-        final Member member = client.getClientClusterService().getMember(target);
-        return member != null;
     }
 }

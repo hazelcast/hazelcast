@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,8 +46,11 @@ public class AddFlakeIdGeneratorConfigMessageTask
         FlakeIdGeneratorConfig config = new FlakeIdGeneratorConfig(parameters.name);
         config.setPrefetchCount(parameters.prefetchCount);
         config.setPrefetchValidityMillis(parameters.prefetchValidity);
-        config.setIdOffset(parameters.idOffset);
         config.setNodeIdOffset(parameters.nodeIdOffset);
+        config.setEpochStart(parameters.epochStart);
+        config.setBitsSequence(parameters.bitsSequence);
+        config.setBitsNodeId(parameters.bitsNodeId);
+        config.setAllowedFutureMillis(parameters.allowedFutureMillis);
         config.setStatisticsEnabled(parameters.statisticsEnabled);
         return config;
     }

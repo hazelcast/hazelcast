@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,9 @@ package com.hazelcast.spi.merge;
 /**
  * Represents a read-only view of memory costs for the merging process after a split-brain.
  *
- * @param <V> the type of the value
  * @since 3.10
  */
-public interface MergingCosts<V> extends MergingValue<V> {
+public interface MergingCosts extends MergingView {
 
     /**
      * Returns the memory cost of the merge data.

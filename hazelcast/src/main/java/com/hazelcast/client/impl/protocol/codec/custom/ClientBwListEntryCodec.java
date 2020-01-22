@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,10 +24,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("f79ef4bfd13dfd02ae9d43f3710f723f")
+@Generated("59b47a13e51ca2fe48fcc41108084463")
 public final class ClientBwListEntryCodec {
     private static final int TYPE_FIELD_OFFSET = 0;
-    private static final int INITIAL_FRAME_SIZE = TYPE_FIELD_OFFSET + ENUM_SIZE_IN_BYTES;
+    private static final int INITIAL_FRAME_SIZE = TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private ClientBwListEntryCodec() {
     }
@@ -36,7 +36,7 @@ public final class ClientBwListEntryCodec {
         clientMessage.add(BEGIN_FRAME.copy());
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
-        encodeEnum(initialFrame.content, TYPE_FIELD_OFFSET, clientBwListEntry.getType());
+        encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, clientBwListEntry.getType());
         clientMessage.add(initialFrame);
 
         StringCodec.encode(clientMessage, clientBwListEntry.getValue());
@@ -49,7 +49,7 @@ public final class ClientBwListEntryCodec {
         iterator.next();
 
         ClientMessage.Frame initialFrame = iterator.next();
-        int type = decodeEnum(initialFrame.content, TYPE_FIELD_OFFSET);
+        int type = decodeInt(initialFrame.content, TYPE_FIELD_OFFSET);
 
         java.lang.String value = StringCodec.decode(iterator);
 

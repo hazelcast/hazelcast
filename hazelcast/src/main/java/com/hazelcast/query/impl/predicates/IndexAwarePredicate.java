@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,9 +59,9 @@ public interface IndexAwarePredicate<K, V> extends Predicate<K, V> {
      * The query engine assumes this method produces the result set faster than
      * a simple evaluation of the predicate on every entry.
      *
-     * @param queryContext the query context to access the indexes. The passed
-     *                     query context is valid only for a duration of a single
-     *                     call to the method.
+     * @param queryContext        the query context to access the indexes. The passed
+     *                            query context is valid only for a duration of a single
+     *                            call to the method.
      * @return the produced filtered entry set.
      */
     Set<QueryableEntry<K, V>> filter(QueryContext queryContext);
@@ -70,8 +70,8 @@ public interface IndexAwarePredicate<K, V> extends Predicate<K, V> {
      * Signals to the query engine that this predicate is able to utilize the
      * indexes available while executing the query in the given query context.
      *
-     * @param queryContext the query context to consult for the available
-     *                     indexes.
+     * @param queryContext        the query context to consult for the available
+     *                            indexes.
      * @return {@code true} if this predicate is able to use the indexes to
      * speed up the processing, {@code false} otherwise.
      */

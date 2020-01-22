@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.Ringbuffer;
-import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.topic.Message;
 import com.hazelcast.topic.MessageListener;
@@ -93,18 +92,24 @@ public abstract class MessageRunner<E> implements BiConsumer<ReadResultSet<Relia
 
     @Override
     public void accept(ReadResultSet<ReliableTopicMessage> result, Throwable throwable) {
+        if (cancelled) {
+            return;
+        }
+
         if (throwable == null) {
             // we process all messages in batch. So we don't release the thread and reschedule ourselves;
             // but we'll process whatever was received in 1 go.
-            for (Object item : result) {
-                ReliableTopicMessage message = (ReliableTopicMessage) item;
 
-                if (cancelled) {
-                    return;
-                }
+            long lostCount = result.getNextSequenceToReadFrom() - result.readCount() - sequence;
+            if (lostCount != 0 && !isLossTolerable(lostCount)) {
+                cancel();
+                return;
+            }
 
+            for (int i = 0; i < result.size(); i++) {
+                ReliableTopicMessage message = result.get(i);
                 try {
-                    listener.storeSequence(sequence);
+                    listener.storeSequence(result.getSequence(i));
                     process(message);
                 } catch (Throwable t) {
                     if (terminate(t)) {
@@ -113,14 +118,11 @@ public abstract class MessageRunner<E> implements BiConsumer<ReadResultSet<Relia
                     }
                 }
 
-                sequence++;
-            }
-            next();
-        } else {
-            if (cancelled) {
-                return;
             }
 
+            sequence = result.getNextSequenceToReadFrom();
+            next();
+        } else {
             throwable = adjustThrowable(throwable);
             if (handleInternalException(throwable)) {
                 next();
@@ -160,8 +162,6 @@ public abstract class MessageRunner<E> implements BiConsumer<ReadResultSet<Relia
             return handleOperationTimeoutException();
         } else if (t instanceof IllegalArgumentException) {
             return handleIllegalArgumentException((IllegalArgumentException) t);
-        } else if (t instanceof StaleSequenceException) {
-            return handleStaleSequenceException((StaleSequenceException) t);
         } else if (t instanceof HazelcastInstanceNotActiveException) {
             if (logger.isFinestEnabled()) {
                 logger.finest("Terminating MessageListener " + listener + " on topic: " + topicName + ". "
@@ -196,33 +196,26 @@ public abstract class MessageRunner<E> implements BiConsumer<ReadResultSet<Relia
     protected abstract Throwable adjustThrowable(Throwable t);
 
     /**
-     * Handles a {@link StaleSequenceException} associated with requesting
-     * a sequence older than the {@code headSequence}.
-     * This may indicate that the reader was too slow and items in the
-     * ringbuffer were already overwritten.
+     * Called when message loss is detected. Checks if the listener is able
+     * to tolerate the loss.
      *
-     * @param staleSequenceException the exception
-     * @return if the exception was handled and the listener may continue reading
+     * @param lossCount number of lost messages
+     * @return if the listener may continue reading
      */
-    private boolean handleStaleSequenceException(StaleSequenceException staleSequenceException) {
-        long headSeq = getHeadSequence(staleSequenceException);
+    private boolean isLossTolerable(long lossCount) {
         if (listener.isLossTolerant()) {
             if (logger.isFinestEnabled()) {
-                logger.finest("MessageListener " + listener + " on topic: " + topicName + " ran into a stale sequence. "
-                        + "Jumping from oldSequence: " + sequence
-                        + " to sequence: " + headSeq);
+                logger.finest("MessageListener " + listener + " on topic: " + topicName + " lost " + lossCount
+                        + "messages");
             }
-            sequence = headSeq;
             return true;
         }
 
         logger.warning("Terminating MessageListener:" + listener + " on topic: " + topicName + ". "
                 + "Reason: The listener was too slow or the retention period of the message has been violated. "
-                + "head: " + headSeq + " sequence:" + sequence);
+                + lossCount + " messages lost.");
         return false;
     }
-
-    protected abstract long getHeadSequence(StaleSequenceException staleSequenceException);
 
     /**
      * Handles the {@link IllegalArgumentException} associated with requesting

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.config.BitmapIndexOptions;
+import com.hazelcast.config.BitmapIndexOptions.UniqueKeyTransformation;
 import com.hazelcast.config.ConfigXmlGenerator;
 import com.hazelcast.internal.config.DomConfigHelper;
 import com.hazelcast.config.IndexConfig;
@@ -31,6 +33,7 @@ import java.util.regex.Pattern;
 import static com.hazelcast.internal.config.DomConfigHelper.childElements;
 import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 
 /**
  * Utility methods for indexes.
@@ -70,6 +73,10 @@ public final class IndexUtils {
                 + " attributes: " + config);
         }
 
+        if (config.getType() == IndexType.BITMAP && originalAttributeNames.size() > 1) {
+            throw new IllegalArgumentException("Composite bitmap indexes are not supported: " + config);
+        }
+
         List<String> normalizedAttributeNames = new ArrayList<>(originalAttributeNames.size());
 
         for (String originalAttributeName : originalAttributeNames) {
@@ -106,11 +113,23 @@ public final class IndexUtils {
             name = null;
         }
 
-        return buildNormalizedConfig(mapName, config.getType(), name, normalizedAttributeNames);
+        IndexConfig normalizedConfig = buildNormalizedConfig(mapName, config.getType(), name, normalizedAttributeNames);
+
+        if (config.getType() == IndexType.BITMAP) {
+            String uniqueKey = config.getBitmapIndexOptions().getUniqueKey();
+            UniqueKeyTransformation uniqueKeyTransformation = config.getBitmapIndexOptions().getUniqueKeyTransformation();
+
+            validateAttribute(uniqueKey);
+            uniqueKey = canonicalizeAttribute(uniqueKey);
+
+            normalizedConfig.getBitmapIndexOptions().setUniqueKey(uniqueKey).setUniqueKeyTransformation(uniqueKeyTransformation);
+        }
+
+        return normalizedConfig;
     }
 
     private static IndexConfig buildNormalizedConfig(String mapName, IndexType indexType, String indexName,
-        List<String> normalizedAttributeNames) {
+                                                     List<String> normalizedAttributeNames) {
         IndexConfig newConfig = new IndexConfig().setType(indexType);
 
         StringBuilder nameBuilder = indexName == null
@@ -250,12 +269,20 @@ public final class IndexUtils {
             }
 
             gen.open("attributes");
-
             for (String attribute : indexCfg.getAttributes()) {
                 gen.node("attribute", attribute);
             }
-
             gen.close();
+
+            if (indexCfg.getType() == IndexType.BITMAP) {
+                BitmapIndexOptions bitmapIndexOptions = indexCfg.getBitmapIndexOptions();
+
+                gen.open("bitmap-index-options");
+                gen.node("unique-key", bitmapIndexOptions.getUniqueKey());
+                gen.node("unique-key-transformation", bitmapIndexOptions.getUniqueKeyTransformation());
+                gen.close();
+            }
+
             gen.close();
         }
         gen.close();
@@ -271,7 +298,6 @@ public final class IndexUtils {
         }
 
         String typeStr = DomConfigHelper.getTextContent(attrs.getNamedItem("type"), domLevel3);
-
         IndexType type = getIndexTypeFromXmlName(typeStr);
 
         IndexConfig res = new IndexConfig().setName(name).setType(type);
@@ -285,6 +311,24 @@ public final class IndexUtils {
                         res.addAttribute(attribute);
                     }
                 }
+            }
+        }
+
+        if (type == IndexType.BITMAP) {
+            Node optionsNode = DomConfigHelper.childElementWithName(indexNode, "bitmap-index-options");
+            if (optionsNode != null) {
+                Node uniqueKeyNode = DomConfigHelper.childElementWithName(optionsNode, "unique-key");
+                String uniqueKeyText = DomConfigHelper.getTextContent(uniqueKeyNode, domLevel3);
+                String uniqueKey = isNullOrEmpty(uniqueKeyText) ? BitmapIndexOptions.DEFAULT_UNIQUE_KEY : uniqueKeyText;
+
+                Node uniqueKeyTransformationNode = DomConfigHelper.childElementWithName(optionsNode, "unique-key-transformation");
+                String uniqueKeyTransformationText = DomConfigHelper.getTextContent(uniqueKeyTransformationNode, domLevel3);
+                UniqueKeyTransformation uniqueKeyTransformation = isNullOrEmpty(uniqueKeyTransformationText)
+                        ? BitmapIndexOptions.DEFAULT_UNIQUE_KEY_TRANSFORMATION
+                        : UniqueKeyTransformation.fromName(uniqueKeyTransformationText);
+
+                res.getBitmapIndexOptions().setUniqueKey(uniqueKey);
+                res.getBitmapIndexOptions().setUniqueKeyTransformation(uniqueKeyTransformation);
             }
         }
 
@@ -302,6 +346,8 @@ public final class IndexUtils {
             return IndexType.SORTED;
         } else if (typeStr.equals(IndexType.HASH.name().toLowerCase())) {
             return IndexType.HASH;
+        } else if (typeStr.equals(IndexType.BITMAP.name().toLowerCase())) {
+            return IndexType.BITMAP;
         } else {
             throw new IllegalArgumentException("Unsupported index type: " + typeStr);
         }
@@ -330,6 +376,8 @@ public final class IndexUtils {
             type = IndexType.SORTED;
         } else if (typeStr.equals(IndexType.HASH.name().toLowerCase())) {
             type = IndexType.HASH;
+        } else if (typeStr.equals(IndexType.BITMAP.name().toLowerCase())) {
+            type = IndexType.BITMAP;
         } else {
             throw new IllegalArgumentException("Unsupported index type: " + typeStr);
         }
@@ -337,11 +385,28 @@ public final class IndexUtils {
         IndexConfig res = new IndexConfig().setName(name).setType(type);
 
         Node attributesNode = attrs.getNamedItem("attributes");
-
         for (Node attributeNode : childElements(attributesNode)) {
             String attribute = attributeNode.getNodeValue();
 
             res.addAttribute(attribute);
+        }
+
+        if (type == IndexType.BITMAP) {
+            Node optionsNode = DomConfigHelper.childElementWithName(indexNode, "bitmap-index-options");
+            if (optionsNode != null) {
+                Node uniqueKeyNode = DomConfigHelper.childElementWithName(optionsNode, "unique-key");
+                String uniqueKeyText = DomConfigHelper.getTextContent(uniqueKeyNode, domLevel3);
+                String uniqueKey = isNullOrEmpty(uniqueKeyText) ? BitmapIndexOptions.DEFAULT_UNIQUE_KEY : uniqueKeyText;
+
+                Node uniqueKeyTransformationNode = DomConfigHelper.childElementWithName(optionsNode, "unique-key-transformation");
+                String uniqueKeyTransformationText = DomConfigHelper.getTextContent(uniqueKeyTransformationNode, domLevel3);
+                UniqueKeyTransformation uniqueKeyTransformation = isNullOrEmpty(uniqueKeyTransformationText)
+                        ? BitmapIndexOptions.DEFAULT_UNIQUE_KEY_TRANSFORMATION
+                        : UniqueKeyTransformation.fromName(uniqueKeyTransformationText);
+
+                res.getBitmapIndexOptions().setUniqueKey(uniqueKey);
+                res.getBitmapIndexOptions().setUniqueKeyTransformation(uniqueKeyTransformation);
+            }
         }
 
         return res;
@@ -354,6 +419,9 @@ public final class IndexUtils {
 
             case HASH:
                 return "hash";
+
+            case BITMAP:
+                return "bitmap";
 
             default:
                 throw new IllegalArgumentException("Unsupported index type: " + type);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,22 +20,18 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.core.EntryAdapter;
-import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapStoreAdapter;
+import com.hazelcast.map.listener.EntryExpiredListener;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleTestObjects.Employee;
 import com.hazelcast.query.SampleTestObjects.PortableEmployee;
 import com.hazelcast.query.SampleTestObjects.ValueType;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -54,18 +50,25 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.map.impl.eviction.MapClearExpiredRecordsTask.PROP_CLEANUP_ENABLED;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class QueryAdvancedTest extends HazelcastTestSupport {
 
+    @Override
+    protected Config getConfig() {
+        return smallInstanceConfig();
+    }
+
     @Test
     public void testQueryOperationAreNotSentToLiteMembers() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        HazelcastInstance fullMember = nodeFactory.newHazelcastInstance();
-        HazelcastInstance liteMember = nodeFactory.newHazelcastInstance(new Config().setLiteMember(true));
+        HazelcastInstance fullMember = nodeFactory.newHazelcastInstance(getConfig());
+        HazelcastInstance liteMember = nodeFactory.newHazelcastInstance(getConfig().setLiteMember(true));
 
         assertClusterSizeEventually(2, fullMember);
 
@@ -106,8 +109,12 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
     @Test
     public void testQueryWithTTL() {
         Config config = getConfig();
+        // disable background expiration task to keep test safe from jitter
+        config.setProperty(PROP_CLEANUP_ENABLED, "false");
+
         String mapName = "default";
-        config.getMapConfig(mapName).setTimeToLiveSeconds(10);
+        config.getMapConfig(mapName)
+                .setTimeToLiveSeconds(3);
 
         HazelcastInstance instance = createHazelcastInstance(config);
 
@@ -121,12 +128,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         int allEmployees = passiveEmployees + activeEmployees;
 
         final CountDownLatch latch = new CountDownLatch(allEmployees);
-        map.addEntryListener(new EntryAdapter() {
-            @Override
-            public void entryExpired(EntryEvent event) {
-                latch.countDown();
-            }
-        }, false);
+        map.addEntryListener((EntryExpiredListener) event -> latch.countDown(), false);
 
         for (int i = 0; i < activeEmployees; i++) {
             Employee employee = new Employee("activeEmployee" + i, 60, true, i);
@@ -143,6 +145,18 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         assertEquals(String.format("Expected %s results but got %s. Number of evicted entries: %s.",
                 activeEmployees, values.size(), allEmployees - latch.getCount()),
                 activeEmployees, values.size());
+
+
+        // delete expire keys by explicitly calling `map#get`
+        assertTrueEventually(() -> {
+            for (int i = 0; i < activeEmployees; i++) {
+                assertNull(map.get("activeEmployee" + i));
+            }
+
+            for (int i = 0; i < passiveEmployees; i++) {
+                assertNull(map.get("passiveEmployee" + i));
+            }
+        });
 
         // wait until eviction is completed
         assertOpenEventually(latch);
@@ -165,7 +179,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         map.addIndex(IndexType.HASH, "active");
 
         for (int i = 0; i < 500; i++) {
-            Employee employee = new Employee(i, "name" + i % 100, "city" + (i % 100), i % 60, ((i & 1) == 1), (double) i);
+            Employee employee = new Employee(i, "name" + i % 100, "city" + (i % 100), i % 60, ((i & 1) == 1), i);
             map.put(String.valueOf(i), employee);
         }
         assertClusterSize(2, instance1, instance2);
@@ -212,7 +226,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         map.addIndex(IndexType.HASH, "active");
 
         for (int i = 0; i < 5000; i++) {
-            Employee employee = new Employee(i, "name" + i % 100, "city" + (i % 100), i % 60, ((i & 1) == 1), (double) i);
+            Employee employee = new Employee(i, "name" + i % 100, "city" + (i % 100), i % 60, ((i & 1) == 1), i);
             map.put(String.valueOf(i), employee);
         }
         assertClusterSize(2, instance1, instance2);
@@ -430,21 +444,17 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         instances[1].shutdown();
 
         assertEquals(totalSize, map.size());
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                final Collection values = map.values(Predicates.sql("typeName = typex"));
-                assertEquals(sampleSize2, values.size());
-            }
+        assertTrueEventually(() -> {
+            final Collection values = map.values(Predicates.sql("typeName = typex"));
+            assertEquals(sampleSize2, values.size());
         });
 
         instances[2].shutdown();
 
         assertEquals(totalSize, map.size());
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                final Collection values = map.values(Predicates.sql("typeName = typex"));
-                assertEquals(sampleSize2, values.size());
-            }
+        assertTrueEventually(() -> {
+            final Collection values = map.values(Predicates.sql("typeName = typex"));
+            assertEquals(sampleSize2, values.size());
         });
     }
 
@@ -459,7 +469,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         mapStoreConfig.setImplementation(new MapStoreAdapter<Integer, Employee>() {
             @Override
             public Map<Integer, Employee> loadAll(Collection<Integer> keys) {
-                Map<Integer, Employee> map = new HashMap<Integer, Employee>();
+                Map<Integer, Employee> map = new HashMap<>();
                 for (Integer key : keys) {
                     Employee emp = new Employee();
                     emp.setActive(true);
@@ -470,7 +480,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
 
             @Override
             public Set<Integer> loadAllKeys() {
-                Set<Integer> set = new HashSet<Integer>();
+                Set<Integer> set = new HashSet<>();
                 for (int i = 0; i < size; i++) {
                     set.add(i);
                 }
@@ -481,12 +491,9 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         config.getMapConfig(name).setMapStoreConfig(mapStoreConfig);
         HazelcastInstance instance = createHazelcastInstance(config);
         final IMap map = instance.getMap(name);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                Collection values = map.values(Predicates.sql("active = true"));
-                assertEquals(size, values.size());
-            }
+        assertTrueEventually(() -> {
+            Collection values = map.values(Predicates.sql("active = true"));
+            assertEquals(size, values.size());
         });
     }
 
@@ -495,11 +502,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
     public void testUnknownPortableField_notCausesQueryException_withoutIndex() {
         String mapName = randomMapName();
         Config config = getConfig();
-        config.getSerializationConfig().addPortableFactory(666, new PortableFactory() {
-            public Portable create(int classId) {
-                return new PortableEmployee();
-            }
-        });
+        config.getSerializationConfig().addPortableFactory(666, classId -> new PortableEmployee());
         HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
 
         IMap<Integer, PortableEmployee> map = hazelcastInstance.getMap(mapName);
@@ -516,11 +519,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
     public void testUnknownPortableField_notCausesQueryException_withIndex() {
         String mapName = "default";
         Config config = getConfig();
-        config.getSerializationConfig().addPortableFactory(666, new PortableFactory() {
-            public Portable create(int classId) {
-                return new PortableEmployee();
-            }
-        });
+        config.getSerializationConfig().addPortableFactory(666, classId -> new PortableEmployee());
         config.getMapConfig(mapName)
                 .addIndexConfig(new IndexConfig(IndexType.HASH, "notExist"))
                 .addIndexConfig(new IndexConfig(IndexType.HASH, "n"));

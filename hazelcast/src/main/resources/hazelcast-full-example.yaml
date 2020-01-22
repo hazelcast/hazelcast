@@ -1,4 +1,4 @@
-# Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+# Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -1200,7 +1200,7 @@ hazelcast:
   #     - "republishing-enabled":
   #         When enabled, an incoming event to a member is forwarded to target cluster of that member. Its
   #         default value is true.
-  #      - "merge-policy":
+  #      - "merge-policy-class-name":
   #         Resolve conflicts that occurred when target cluster already has the replicated
   #         entry key.
   #
@@ -1225,6 +1225,8 @@ hazelcast:
   #         target one.
   #         com.hazelcast.spi.merge.PassThroughMergePolicy: Incoming entry merges from
   #         the source cache to the target cache unless the incoming entry is not null.
+  #
+  #         The default policy is com.hazelcast.spi.merge.PassThroughMergePolicy.
   # * "indexes":
   # You can define indexes for your map using this element's "index" sub-elements. Index definition consists of type,
   # optional name and the list of columns to be indexed. Valid types are SORTED (default) and HASH.
@@ -1291,17 +1293,40 @@ hazelcast:
           eviction-policy: LFU
       wan-replication-ref:
         my-wan-cluster-batch:
-          merge-policy: PassThroughMergePolicy
+          merge-policy-class-name: PassThroughMergePolicy
           filters:
             - com.example.SampleFilter
             - com.example.SampleFilter2
           republishing-enabled: false
       indexes:
+        # unordered/hash index on the name attribute
         - type: HASH
           attributes:
             - "name"
+        # ordered/tree index on the age attribute
         - attributes:
           - "age"
+        # composite unordered/hash index on the name and age attributes
+        - type: HASH
+          attributes:
+            - "name"
+            - "age"
+        # composite ordered/tree index on the age and name attributes
+        - attributes:
+          - "age"
+          - "name"
+        # bitmap index on the age attribute
+        - type: BITMAP
+          attributes:
+            - "age"
+        # bitmap index on the name attribute with options
+        - type: BITMAP
+          attributes:
+            - "name"
+          bitmap-index-options:
+            unique-key: id
+            unique-key-transformation: RAW
+
       attributes:
         currency:
           extractor-class-name: com.bank.CurrencyExtractor
@@ -1621,7 +1646,7 @@ hazelcast:
         eviction-policy: LFU
       wan-replication-ref:
          name: my-wan-cluster-batch
-         merge-policy: PassThroughMergePolicy
+         merge-policy-class-name: PassThroughMergePolicy
          republishing-enabled: true
          filters:
            - com.example.SampleFilter
@@ -1906,26 +1931,26 @@ hazelcast:
   #
   #     This setting pertains only to newId() calls made on the member that configured it.
   #
-  # * "id-offset":
-  #     Sets the offset that will be added to the returned IDs. Default value is 0. Setting might be
-  #     useful when migrating from IdGenerator, default value works for all green-field projects.
-  #
-  #     For example: Largest ID returned from IdGenerator is 150. FlakeIdGenerator now returns
-  #     100. If you configure idOffset of 50 and stop using the IdGenerator, the next ID from
-  #     FlakeIdGenerator will be 151 or larger and no duplicate IDs will be generated. In real-life,
-  #     the IDs are much larger. You also need to add a reserve to the offset because the IDs
-  #     from FlakeIdGenerator are only roughly ordered. Recommended reserve is 2^38, that is
-  #     274877906944.
-  #
-  #     Negative values are allowed to increase the lifespan of the generator, however keep in
-  #     mind that the generated IDs might also be negative.
-  #
+  # * "epoch-start":
+  #     Sets the offset of timestamp component. Time unit is milliseconds, default is 1514764800000
+  #     (1.1.2018 0:00 UTC).
+  #       
   # * "node-id-offset":
   #     Sets the offset that will be added to the node ID assigned to cluster member for this generator.
   #     Might be useful in A/B deployment scenarios where you have cluster A which you want to upgrade.
   #     You create cluster B and for some time both will generate IDs and you want to have them unique.
   #     In this case, configure node ID offset for generators on cluster B.
   #
+  # * "bits-sequence":
+  #     Sets the bit-length of the sequence component, default is 6 bits.
+  #
+  # * "bits-node-id":
+  #     Sets the bit-length of node id component. Default value is 16 bits.
+  #      
+  # * "allowed-future-millis":
+  #     Sets how far to the future is the generator allowed to go to generate IDs without blocking, default is
+  #     15 seconds.
+  #  
   # * "statistics-enabled":
   #     When you enable it, you can retrieve the Flake ID generators statistics. Its default value is true.
   #
@@ -1933,8 +1958,11 @@ hazelcast:
     default:
       prefetch-count: 100
       prefetch-validity-millis: 600000
-      id-offset: 0
+      epoch-start: 1514764800000
       node-id-offset: 0
+      bits-sequence: 6
+      bits-node-id: 16
+      allowed-future-millis: 15000
       statistics-enabled: true
 
   #
@@ -2095,7 +2123,7 @@ hazelcast:
   #
   #  HAZELCAST SECURITY REALMS
   #  Security realms are named security configurations which can be referenced from Hazelcast security configuration.
-  #  Currently, the realms support configuring <authentication> and/or <identity>. Only one type of authentication 
+  #  Currently, the realms support configuring <authentication> and/or <identity>. Only one type of authentication
   #  configuration and one type of identity configuration is allowed per the realm.
   #  Authentication types:
   #  * jaas

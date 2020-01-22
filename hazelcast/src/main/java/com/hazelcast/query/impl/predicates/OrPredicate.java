@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package com.hazelcast.query.impl.predicates;
 
+import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.Indexes;
@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICATE_DS_FACTORY_ID;
+import static com.hazelcast.query.impl.Indexes.SKIP_PARTITIONS_COUNT_CHECK;
 
 /**
  * Or Predicate
@@ -61,7 +62,14 @@ public final class OrPredicate
             if (predicate instanceof IndexAwarePredicate) {
                 IndexAwarePredicate iap = (IndexAwarePredicate) predicate;
                 if (iap.isIndexed(queryContext)) {
+                    // Avoid checking indexed partitions count twice to prevent
+                    // scenario when the owner partitions count changes concurrently and null
+                    // value from the filter method may indicate that the index is under
+                    // construction.
+                    int ownedPartitionsCount = queryContext.getOwnedPartitionCount();
+                    queryContext.setOwnedPartitionCount(SKIP_PARTITIONS_COUNT_CHECK);
                     Set<QueryableEntry> s = iap.filter(queryContext);
+                    queryContext.setOwnedPartitionCount(ownedPartitionsCount);
                     if (s != null) {
                         indexedResults.add(s);
                     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,14 +36,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Applies the projection logic on all map entries and returns the result
  */
-@Generated("a0cf803cd13bed8e92f3d5e31dec7daa")
+@Generated("6965c43d1ed18ce7ac3f5ca4ac3338e3")
 public final class MapProjectCodec {
-    //hex: 0x013C00
-    public static final int REQUEST_MESSAGE_TYPE = 80896;
-    //hex: 0x013C01
-    public static final int RESPONSE_MESSAGE_TYPE = 80897;
+    //hex: 0x013B00
+    public static final int REQUEST_MESSAGE_TYPE = 80640;
+    //hex: 0x013B01
+    public static final int RESPONSE_MESSAGE_TYPE = 80641;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private MapProjectCodec() {
     }

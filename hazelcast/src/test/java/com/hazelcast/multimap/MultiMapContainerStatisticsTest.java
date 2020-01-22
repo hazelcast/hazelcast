@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,9 @@
 package com.hazelcast.multimap;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -148,39 +148,49 @@ public class MultiMapContainerStatisticsTest extends HazelcastTestSupport {
     }
 
     private void assertNewLastAccessTime() {
-        long lastAccessTime = mapContainer.getLastAccessTime();
-        assertTrue(format("Expected the lastAccessTime %d to be higher than the previousAccessTime %d (diff: %d ms)",
-                lastAccessTime, previousAccessTime, lastAccessTime - previousAccessTime),
-                lastAccessTime > previousAccessTime);
-        previousAccessTime = lastAccessTime;
+        assertTrueEventually(() -> {
+            long lastAccessTime = mapContainer.getLastAccessTime();
+            assertTrue(format("Expected the lastAccessTime %d to be higher than the previousAccessTime %d (diff: %d ms)",
+                    lastAccessTime, previousAccessTime, lastAccessTime - previousAccessTime),
+                    lastAccessTime > previousAccessTime);
+            previousAccessTime = lastAccessTime;
+        });
     }
 
     private void assertSameLastUpdateTime() {
-        long lastUpdateTime = mapContainer.getLastUpdateTime();
-        assertEqualsStringFormat("Expected the lastUpdateTime to be %d, but was %d", previousUpdateTime, lastUpdateTime);
-        previousUpdateTime = lastUpdateTime;
+        assertTrueEventually(() -> {
+            long lastUpdateTime = mapContainer.getLastUpdateTime();
+            assertEqualsStringFormat("Expected the lastUpdateTime to be %d, but was %d", previousUpdateTime, lastUpdateTime);
+            previousUpdateTime = lastUpdateTime;
+        });
     }
 
     private void assertNewLastUpdateTime() {
-        long lastUpdateTime = mapContainer.getLastUpdateTime();
-        assertTrue(format("Expected the lastUpdateTime %d to be higher than the previousAccessTime %d (diff: %d ms)",
-                lastUpdateTime, previousUpdateTime, lastUpdateTime - previousUpdateTime),
-                lastUpdateTime > previousUpdateTime);
-        previousUpdateTime = lastUpdateTime;
+        assertTrueEventually(() -> {
+            long lastUpdateTime = mapContainer.getLastUpdateTime();
+            assertTrue(format("Expected the lastUpdateTime %d to be higher than the previousAccessTime %d (diff: %d ms)",
+                    lastUpdateTime, previousUpdateTime, lastUpdateTime - previousUpdateTime),
+                    lastUpdateTime > previousUpdateTime);
+            previousUpdateTime = lastUpdateTime;
+        });
     }
 
     private void assertSameLastAccessTimeOnBackup() {
-        long lastAccessTime = mapBackupContainer.getLastAccessTime();
-        assertEqualsStringFormat("Expected the lastAccessTime on backup to be %d, but was %d",
-                previousAccessTimeOnBackup, lastAccessTime);
-        previousAccessTimeOnBackup = lastAccessTime;
+        assertTrueEventually(() -> {
+            long lastAccessTime = mapBackupContainer.getLastAccessTime();
+            assertEqualsStringFormat("Expected the lastAccessTime on backup to be %d, but was %d",
+                    previousAccessTimeOnBackup, lastAccessTime);
+            previousAccessTimeOnBackup = lastAccessTime;
+        });
     }
 
     private void assertSameLastUpdateTimeOnBackup() {
-        long lastUpdateTime = mapBackupContainer.getLastUpdateTime();
-        assertEqualsStringFormat("Expected the lastUpdateTime on backup to be %d, but was %d",
-                previousUpdateTimeOnBackup, lastUpdateTime);
-        previousUpdateTimeOnBackup = lastUpdateTime;
+        assertTrueEventually(() -> {
+            long lastUpdateTime = mapBackupContainer.getLastUpdateTime();
+            assertEqualsStringFormat("Expected the lastUpdateTime on backup to be %d, but was %d",
+                    previousUpdateTimeOnBackup, lastUpdateTime);
+            previousUpdateTimeOnBackup = lastUpdateTime;
+        });
     }
 
     private static MultiMapContainer getMultiMapContainer(HazelcastInstance hz, String key) {

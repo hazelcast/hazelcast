@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,13 @@
 
 package com.hazelcast.query.impl.predicates;
 
+import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.Comparables;
 import com.hazelcast.query.impl.Index;
+import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 
@@ -35,7 +36,8 @@ import static com.hazelcast.query.impl.predicates.PredicateUtils.isNull;
  * Equal Predicate
  */
 @BinaryInterface
-public class EqualPredicate extends AbstractIndexAwarePredicate implements NegatablePredicate, RangePredicate {
+public class EqualPredicate extends AbstractIndexAwarePredicate
+        implements NegatablePredicate, RangePredicate, VisitablePredicate {
 
     private static final long serialVersionUID = 1L;
 
@@ -54,8 +56,16 @@ public class EqualPredicate extends AbstractIndexAwarePredicate implements Negat
     }
 
     @Override
+    public Predicate accept(Visitor visitor, Indexes indexes) {
+        return visitor.visit(this, indexes);
+    }
+
+    @Override
     public Set<QueryableEntry> filter(QueryContext queryContext) {
         Index index = matchIndex(queryContext, QueryContext.IndexMatchHint.PREFER_UNORDERED);
+        if (index == null) {
+            return null;
+        }
         return index.getRecords(value);
     }
 

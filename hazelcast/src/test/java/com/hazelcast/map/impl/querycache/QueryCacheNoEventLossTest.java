@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,11 +22,9 @@ import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
-import com.hazelcast.map.EventLostEvent;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.listener.EventLostListener;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -54,7 +52,6 @@ public class QueryCacheNoEventLossTest extends HazelcastTestSupport {
 
     private static final String MAP_NAME = "mapName";
     private static final String QUERY_CACHE_NAME = "cacheName";
-    private static final String PARTITION_COUNT = "1999";
     private static final int TEST_DURATION_SECONDS = 3;
 
     private TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
@@ -67,14 +64,11 @@ public class QueryCacheNoEventLossTest extends HazelcastTestSupport {
     @Test
     @Category(SlowTest.class)
     public void no_event_lost_during_migrations__with_many_parallel_nodes() {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                try {
-                    no_event_lost_during_migrations(3, 5);
-                } finally {
-                    factory.shutdownAll();
-                }
+        assertTrueEventually(() -> {
+            try {
+                no_event_lost_during_migrations(3, 5);
+            } finally {
+                factory.shutdownAll();
             }
         });
     }
@@ -83,25 +77,22 @@ public class QueryCacheNoEventLossTest extends HazelcastTestSupport {
         final AtomicInteger eventLostCounter = new AtomicInteger();
         newQueryCacheOnNewNode(eventLostCounter);
 
-        List<Thread> threads = new ArrayList<Thread>();
+        List<Thread> threads = new ArrayList<>();
         for (int i = 0; i < parallelNodeCount; i++) {
             // creates CLEAR_ALL events
-            Thread doMapClear = new Thread() {
-                @Override
-                public void run() {
-                    IMap map = newQueryCacheOnNewNode(eventLostCounter);
+            Thread doMapClear = new Thread(() -> {
+                IMap map = newQueryCacheOnNewNode(eventLostCounter);
 
-                    long endMillis = System.currentTimeMillis() + SECONDS.toMillis(TEST_DURATION_SECONDS);
-                    while (System.currentTimeMillis() < endMillis) {
+                long endMillis = System.currentTimeMillis() + SECONDS.toMillis(TEST_DURATION_SECONDS);
+                while (System.currentTimeMillis() < endMillis) {
 
-                        int key = getInt(10);
-                        int value = getInt(1000);
-                        map.put(key, value);
+                    int key = getInt(10);
+                    int value = getInt(1000);
+                    map.put(key, value);
 
-                        map.clear();
-                    }
+                    map.clear();
                 }
-            };
+            });
 
             threads.add(doMapClear);
         }
@@ -113,12 +104,7 @@ public class QueryCacheNoEventLossTest extends HazelcastTestSupport {
 
         assertJoinable(threads.toArray(new Thread[0]));
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertAllQueryCachesSyncWithMap();
-            }
-        });
+        assertTrueEventually(() -> assertAllQueryCachesSyncWithMap());
 
         assertEquals(0, eventLostCounter.get());
     }
@@ -155,12 +141,8 @@ public class QueryCacheNoEventLossTest extends HazelcastTestSupport {
     }
 
     private void addEventLostListenerToQueryCache(IMap map, final AtomicInteger eventLostCounter) {
-        map.getQueryCache(QUERY_CACHE_NAME).addEntryListener(new EventLostListener() {
-            @Override
-            public void eventLost(EventLostEvent event) {
-                eventLostCounter.incrementAndGet();
-            }
-        }, false);
+        map.getQueryCache(QUERY_CACHE_NAME)
+                .addEntryListener((EventLostListener) event -> eventLostCounter.incrementAndGet(), false);
     }
 
     private Config newConfig() {
@@ -171,8 +153,7 @@ public class QueryCacheNoEventLossTest extends HazelcastTestSupport {
         MapConfig mapConfig = new MapConfig(MAP_NAME)
                 .addQueryCacheConfig(queryCacheConfig);
 
-        return getConfig()
-                .setProperty("hazelcast.partition.count", PARTITION_COUNT)
+        return smallInstanceConfig()
                 .addMapConfig(mapConfig);
     }
 }

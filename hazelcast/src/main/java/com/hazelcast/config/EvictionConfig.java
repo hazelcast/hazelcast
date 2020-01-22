@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
  * <ul>
  * <li>{@link EvictionPolicy#LRU} as eviction policy</li>
  * <li>{@link MaxSizePolicy#ENTRY_COUNT} as max size policy</li>
- * <li>{@value MapConfig#DEFAULT_MAX_SIZE as maximum
+ * <li>{@value MapConfig#DEFAULT_MAX_SIZE} as maximum
  * size for on-heap {@link com.hazelcast.map.IMap}</li>
  * <li>{@value DEFAULT_MAX_ENTRY_COUNT} as maximum size
  *      for all other data structures and configurations</li>

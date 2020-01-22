@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ final class ComparatorsEx {
     }
 
     @BinaryInterface
-    private static class NaturalOrderComparator implements ComparatorEx<Comparable<Object>> {
+    private static final class NaturalOrderComparator implements ComparatorEx<Comparable<Object>> {
 
         @Override
         public int compareEx(Comparable<Object> left, Comparable<Object> right) {
@@ -38,10 +38,14 @@ final class ComparatorsEx {
         public ComparatorEx<Comparable<Object>> reversed() {
             return REVERSE_ORDER;
         }
+
+        private Object readResolve() {
+            return NATURAL_ORDER;
+        }
     }
 
     @BinaryInterface
-    private static class ReverseOrderComparator implements ComparatorEx<Comparable<Object>> {
+    private static final class ReverseOrderComparator implements ComparatorEx<Comparable<Object>> {
 
         @Override
         public int compareEx(Comparable<Object> left, Comparable<Object> right) {
@@ -51,6 +55,10 @@ final class ComparatorsEx {
         @Override
         public ComparatorEx<Comparable<Object>> reversed() {
             return NATURAL_ORDER;
+        }
+
+        private Object readResolve() {
+            return REVERSE_ORDER;
         }
     }
 

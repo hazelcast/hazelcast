@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1211,7 +1211,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    " + mapName + ":\n"
                 + "      wan-replication-ref:\n"
                 + "        test:\n"
-                + "          merge-policy: TestMergePolicy\n"
+                + "          merge-policy-class-name: TestMergePolicy\n"
                 + "          filters:\n"
                 + "            - com.example.SampleFilter\n";
 
@@ -1220,7 +1220,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         WanReplicationRef wanRef = mapConfig.getWanReplicationRef();
 
         assertEquals(refName, wanRef.getName());
-        assertEquals(mergePolicy, wanRef.getMergePolicy());
+        assertEquals(mergePolicy, wanRef.getMergePolicyClassName());
         assertTrue(wanRef.isRepublishingEnabled());
         assertEquals(1, wanRef.getFilters().size());
         assertEquals("com.example.SampleFilter", wanRef.getFilters().get(0));
@@ -1367,8 +1367,11 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    gen:\n"
                 + "      prefetch-count: 3\n"
                 + "      prefetch-validity-millis: 10\n"
-                + "      id-offset: 20\n"
+                + "      epoch-start: 1514764800001\n"
                 + "      node-id-offset: 30\n"
+                + "      bits-sequence: 22\n"
+                + "      bits-node-id: 33\n"
+                + "      allowed-future-millis: 20000\n"
                 + "      statistics-enabled: false\n"
                 + "    gen2:\n"
                 + "      statistics-enabled: true";
@@ -1378,8 +1381,11 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals("gen", fConfig.getName());
         assertEquals(3, fConfig.getPrefetchCount());
         assertEquals(10L, fConfig.getPrefetchValidityMillis());
-        assertEquals(20L, fConfig.getIdOffset());
+        assertEquals(1514764800001L, fConfig.getEpochStart());
         assertEquals(30L, fConfig.getNodeIdOffset());
+        assertEquals(22, fConfig.getBitsSequence());
+        assertEquals(33, fConfig.getBitsNodeId());
+        assertEquals(20000L, fConfig.getAllowedFutureMillis());
         assertFalse(fConfig.isStatisticsEnabled());
 
         FlakeIdGeneratorConfig f2Config = config.findFlakeIdGeneratorConfig("gen2");
@@ -2227,7 +2233,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "          eviction-policy: LFU\n"
                 + "      wan-replication-ref:\n"
                 + "        my-wan-cluster-batch:\n"
-                + "          merge-policy: PassThroughMergePolicy\n"
+                + "          merge-policy-class-name: PassThroughMergePolicy\n"
                 + "          filters:\n"
                 + "            - com.example.SampleFilter\n"
                 + "          republishing-enabled: false\n"
@@ -2309,7 +2315,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         WanReplicationRef wanReplicationRef = mapConfig.getWanReplicationRef();
         assertNotNull(wanReplicationRef);
         assertFalse(wanReplicationRef.isRepublishingEnabled());
-        assertEquals("PassThroughMergePolicy", wanReplicationRef.getMergePolicy());
+        assertEquals("PassThroughMergePolicy", wanReplicationRef.getMergePolicyClassName());
         assertEquals(1, wanReplicationRef.getFilters().size());
         assertEquals("com.example.SampleFilter".toLowerCase(), wanReplicationRef.getFilters().get(0).toLowerCase());
     }
