@@ -109,6 +109,17 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
 
     @Test
     public void changeClusterState() throws Exception {
+        hazelcastInstances[0].getCluster().changeClusterState(PASSIVE);
+        waitClusterForSafeState(hazelcastInstances[0]);
+        assertClusterState(PASSIVE, hazelcastInstances);
+
+        resolve(managementCenterService.changeClusterState(ACTIVE));
+
+        assertClusterState(ACTIVE, hazelcastInstances);
+    }
+
+    @Test
+    public void changeClusterState_whenPassiveState() throws Exception {
         assertTrueEventually(
                 () -> assertEquals(ACTIVE, hazelcastInstances[0].getCluster().getClusterState()));
         waitClusterForSafeState(hazelcastInstances[0]);
