@@ -31,7 +31,6 @@ public class ConnectionRetryConfig {
     private double multiplier = 1;
     private long connectTimeoutMillis = CLUSTER_CONNECT_TIMEOUT_MILLIS;
     private double jitter = JITTER;
-    private boolean enabled;
 
     public ConnectionRetryConfig() {
     }
@@ -42,7 +41,6 @@ public class ConnectionRetryConfig {
         multiplier = connectionRetryConfig.multiplier;
         connectTimeoutMillis = connectionRetryConfig.connectTimeoutMillis;
         jitter = connectionRetryConfig.jitter;
-        enabled = connectionRetryConfig.enabled;
     }
 
     /**
@@ -171,10 +169,7 @@ public class ConnectionRetryConfig {
         if (connectTimeoutMillis != that.connectTimeoutMillis) {
             return false;
         }
-        if (Double.compare(that.jitter, jitter) != 0) {
-            return false;
-        }
-        return enabled == that.enabled;
+        return Double.compare(that.jitter, jitter) == 0;
     }
 
     @Override
@@ -188,14 +183,12 @@ public class ConnectionRetryConfig {
         result = 31 * result + (int) (connectTimeoutMillis ^ (connectTimeoutMillis >>> 32));
         temp = Double.doubleToLongBits(jitter);
         result = 31 * result + (int) (temp ^ (temp >>> 32));
-        result = 31 * result + (enabled ? 1 : 0);
         return result;
     }
 
     @Override
     public String toString() {
         return "ConnectionRetryConfig{"
-                + "enabled=" + enabled
                 + ", initialBackoffMillis=" + initialBackoffMillis
                 + ", maxBackoffMillis=" + maxBackoffMillis
                 + ", multiplier=" + multiplier

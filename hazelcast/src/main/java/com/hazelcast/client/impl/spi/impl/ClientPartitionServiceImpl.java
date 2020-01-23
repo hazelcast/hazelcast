@@ -50,7 +50,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
     private final ILogger logger;
     private final AtomicReference<PartitionTable> partitionTable =
             new AtomicReference<>(new PartitionTable(null, -1, new Int2ObjectHashMap<>()));
-    private volatile AtomicInteger partitionCount = new AtomicInteger(0);
+    private final AtomicInteger partitionCount = new AtomicInteger(0);
 
     public ClientPartitionServiceImpl(HazelcastClientInstanceImpl client) {
         this.client = client;

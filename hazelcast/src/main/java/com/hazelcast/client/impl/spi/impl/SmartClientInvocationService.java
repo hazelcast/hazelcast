@@ -22,7 +22,6 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientLocalBackupListenerCodec;
 import com.hazelcast.client.impl.spi.ClientListenerService;
 import com.hazelcast.client.impl.spi.EventHandler;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.nio.Connection;
 
@@ -116,14 +115,14 @@ public class SmartClientInvocationService extends AbstractClientInvocationServic
             invokeOnRandomTarget(invocation);
             return;
         }
-        Connection connection = getConnection(member.getAddress());
+        Connection connection = getConnection(member.getUuid());
         invokeOnConnection(invocation, (ClientConnection) connection);
     }
 
-    private Connection getConnection(Address target) throws IOException {
+    private Connection getConnection(UUID target) throws IOException {
         Connection connection = connectionManager.getConnection(target);
         if (connection == null) {
-            throw new IOException("No available connection to address " + target);
+            throw new IOException("No available connection to member " + target);
         }
         return connection;
     }

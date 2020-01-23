@@ -39,14 +39,6 @@ public interface ClientClusterService {
     Client getLocalClient();
 
     /**
-     * Gets the member for the given address.
-     *
-     * @param address The address of the member to look up.
-     * @return The member that was found, or null if not found. If address is null, null is returned.
-     */
-    Member getMember(Address address);
-
-    /**
      * Gets the member with the given UUID.
      *
      * @param uuid The UUID of the member.

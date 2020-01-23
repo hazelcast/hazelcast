@@ -23,6 +23,7 @@ import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.client.impl.connection.Addresses;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nio.Connection;
@@ -57,7 +58,7 @@ public class ClientConnectionManagerTranslateTest extends ClientTestSupport {
         clientConnectionManager = new ClientConnectionManagerImpl(clientInstanceImpl);
         clientConnectionManager.start();
         clientConnectionManager.reset();
-        clientConnectionManager.getOrConnect(new Address("127.0.0.1", 5701));
+        clientConnectionManager.getOrConnect(new MemberImpl(new Address("127.0.0.1", 5701), null, false));
 
         provider.shouldTranslate = true;
 
@@ -98,14 +99,8 @@ public class ClientConnectionManagerTranslateTest extends ClientTestSupport {
     }
 
     @Test
-    public void testTranslatorIsNotUsedGetActiveConnection() {
-        Connection connection = clientConnectionManager.getConnection(privateAddress);
-        assertNotNull(connection);
-    }
-
-    @Test
     public void testTranslatorIsNotUsedOnGetConnection() {
-        Connection connection = clientConnectionManager.getOrConnect(privateAddress);
+        Connection connection = clientConnectionManager.getOrConnect(new MemberImpl(privateAddress, null, false));
         assertNotNull(connection);
     }
 }

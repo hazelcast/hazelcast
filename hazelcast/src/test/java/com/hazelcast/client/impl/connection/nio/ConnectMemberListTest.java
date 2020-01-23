@@ -23,7 +23,7 @@ import com.hazelcast.client.impl.clientside.ClusterDiscoveryService;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.client.test.ClientTestSupport;
-import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
@@ -70,12 +70,12 @@ public class ConnectMemberListTest extends ClientTestSupport {
         config.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         HazelcastInstance client = HazelcastClient.newHazelcastClient(config);
 
-        Collection<Address> possibleMemberAddresses = getPossibleMemberAddresses(client);
+        Collection<Member> possibleMemberAddresses = getPossibleMemberAddresses(client);
         //make sure last known member list is used. otherwise it returns 3
         assertEquals(4, possibleMemberAddresses.size());
     }
 
-    private Collection<Address> getPossibleMemberAddresses(HazelcastInstance client) {
+    private Collection<Member> getPossibleMemberAddresses(HazelcastInstance client) {
         HazelcastClientInstanceImpl instanceImpl = getHazelcastClientInstanceImpl(client);
         ClusterDiscoveryService clusterDiscoveryService = instanceImpl.getClusterDiscoveryService();
         CandidateClusterContext clusterContext = clusterDiscoveryService.current();

@@ -40,6 +40,7 @@ import java.nio.channels.CancelledKeyException;
 import java.security.cert.Certificate;
 import java.util.Collections;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -78,6 +79,7 @@ public class ClientConnection implements Connection {
     private volatile Throwable closeCause;
     private volatile String closeReason;
     private String connectedServerVersion;
+    private volatile UUID remoteUuid;
 
     public ClientConnection(HazelcastClientInstanceImpl client, int connectionId, Channel channel) {
         this.client = client;
@@ -114,9 +116,21 @@ public class ClientConnection implements Connection {
         return false;
     }
 
+    public void setRemoteEndpoint(Address remoteEndpoint) {
+        this.remoteEndpoint = remoteEndpoint;
+    }
+
     @Override
     public Address getEndPoint() {
         return remoteEndpoint;
+    }
+
+    public UUID getRemoteUuid() {
+        return remoteUuid;
+    }
+
+    public void setRemoteUuid(UUID remoteUuid) {
+        this.remoteUuid = remoteUuid;
     }
 
     @Override
@@ -171,10 +185,6 @@ public class ClientConnection implements Connection {
 
     public ClientConnectionManager getConnectionManager() {
         return connectionManager;
-    }
-
-    public void setRemoteEndpoint(Address remoteEndpoint) {
-        this.remoteEndpoint = remoteEndpoint;
     }
 
     public InetSocketAddress getLocalSocketAddress() {
