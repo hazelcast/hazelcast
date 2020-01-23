@@ -118,6 +118,17 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
         assertClusterState(PASSIVE, hazelcastInstances);
     }
 
+    @Test
+    public void changeClusterState_whenPassiveState() throws Exception {
+        waitClusterForSafeState(hazelcastInstances[0]);
+        hazelcastInstances[0].getCluster().changeClusterState(PASSIVE);
+        assertClusterState(PASSIVE, hazelcastInstances);
+
+        resolve(managementCenterService.changeClusterState(ACTIVE));
+
+        assertClusterState(ACTIVE, hazelcastInstances);
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void changeClusterState_exception() throws Throwable {
         assertTrueEventually(
