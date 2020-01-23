@@ -31,6 +31,7 @@ import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.logging.LoggingService;
+import com.hazelcast.log.Log;
 import com.hazelcast.map.IMap;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.partition.PartitionService;
@@ -73,6 +74,9 @@ public interface HazelcastInstance {
      */
     @Nonnull
     String getName();
+
+    @Nonnull
+    <E> Log<E> getLog(@Nonnull String name);
 
     /**
      * Creates or returns the distributed queue instance with the specified name.

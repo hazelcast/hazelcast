@@ -22,6 +22,7 @@ import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.ListConfig;
+import com.hazelcast.config.LogConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.PNCounterConfig;
@@ -130,6 +131,11 @@ class EmptyConfigurationService implements ConfigurationService {
     }
 
     @Override
+    public Map<String, LogConfig> getLogConfigs() {
+        return emptyMap();
+    }
+
+    @Override
     public Map<String, QueueConfig> getQueueConfigs() {
         return emptyMap();
     }
@@ -209,4 +215,8 @@ class EmptyConfigurationService implements ConfigurationService {
         throw new IllegalStateException("Cannot add a new config while Hazelcast is starting.");
     }
 
+    @Override
+    public LogConfig findLogConfig(String name) {
+        return null;
+    }
 }

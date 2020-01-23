@@ -104,6 +104,7 @@ import com.hazelcast.internal.util.ConcurrencyDetection;
 import com.hazelcast.internal.util.ServiceLoader;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
+import com.hazelcast.log.Log;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.multimap.MultiMap;
@@ -447,6 +448,12 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     @Override
     public String getName() {
         return instanceName;
+    }
+
+    @Nonnull
+    @Override
+    public <E> Log<E> getLog(@Nonnull String name) {
+        throw new UnsupportedOperationException();
     }
 
     @Nonnull

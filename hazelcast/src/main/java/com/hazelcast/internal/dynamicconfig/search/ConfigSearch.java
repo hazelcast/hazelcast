@@ -24,6 +24,7 @@ import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.ListConfig;
+import com.hazelcast.config.LogConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.PNCounterConfig;
@@ -317,6 +318,22 @@ public final class ConfigSearch {
             @Override
             public Map<String, PNCounterConfig> getStaticConfigs(@Nonnull Config staticConfig) {
                 return staticConfig.getPNCounterConfigs();
+            }
+        });
+        CONFIG_SUPPLIERS.put(LogConfig.class, new ConfigSupplier<LogConfig>() {
+            @Override
+            public LogConfig getDynamicConfig(@Nonnull ConfigurationService configurationService, @Nonnull String name) {
+                return configurationService.findLogConfig(name);
+            }
+
+            @Override
+            public LogConfig getStaticConfig(@Nonnull Config staticConfig, @Nonnull String name) {
+                return staticConfig.getLogConfig(name);
+            }
+
+            @Override
+            public Map<String, LogConfig> getStaticConfigs(@Nonnull Config staticConfig) {
+                return staticConfig.getLogConfigs();
             }
         });
     }

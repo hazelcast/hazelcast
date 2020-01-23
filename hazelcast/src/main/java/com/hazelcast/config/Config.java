@@ -30,6 +30,7 @@ import com.hazelcast.internal.config.ConfigUtils;
 import com.hazelcast.internal.config.DurableExecutorConfigReadOnly;
 import com.hazelcast.internal.config.ExecutorConfigReadOnly;
 import com.hazelcast.internal.config.ListConfigReadOnly;
+import com.hazelcast.internal.config.LogConfigReadonly;
 import com.hazelcast.internal.config.MapConfigReadOnly;
 import com.hazelcast.internal.config.MultiMapConfigReadOnly;
 import com.hazelcast.internal.config.PNCounterConfigReadOnly;
@@ -136,6 +137,9 @@ public class Config {
     private final Map<String, FlakeIdGeneratorConfig> flakeIdGeneratorConfigMap = new ConcurrentHashMap<>();
 
     private final Map<String, PNCounterConfig> pnCounterConfigs = new ConcurrentHashMap<>();
+
+    private final Map<String, LogConfig> logConfigs = new ConcurrentHashMap<>();
+
 
     // @since 3.12
     private AdvancedNetworkConfig advancedNetworkConfig = new AdvancedNetworkConfig();
@@ -1421,6 +1425,28 @@ public class Config {
         for (final Entry<String, TopicConfig> entry : this.topicConfigs.entrySet()) {
             entry.getValue().setName(entry.getKey());
         }
+        return this;
+    }
+
+    public Map<String,LogConfig> getLogConfigs(){
+        return logConfigs;
+    }
+
+    public LogConfig findLogConfig(String name) {
+        name = getBaseName(name);
+        LogConfig config = lookupByPattern(configPatternMatcher, logConfigs, name);
+        if (config != null) {
+            return new LogConfig(config);
+        }
+        return new LogConfigReadonly(getLogConfig("default"));
+    }
+
+    public LogConfig getLogConfig(String name) {
+        return ConfigUtils.getConfig(configPatternMatcher, logConfigs, name, LogConfig.class);
+    }
+
+    public Config addLogConfig(LogConfig logConfig) {
+        logConfigs.put(logConfig.getName(), logConfig);
         return this;
     }
 

@@ -39,6 +39,7 @@ import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.instance.impl.TerminatedLifecycleService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.LoggingService;
+import com.hazelcast.log.Log;
 import com.hazelcast.map.IMap;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.partition.PartitionService;
@@ -81,6 +82,12 @@ public class HazelcastClientProxy implements HazelcastInstance, SerializationSer
     @Override
     public String getName() {
         return getClient().getName();
+    }
+
+    @Nonnull
+    @Override
+    public <E> Log<E> getLog(@Nonnull String name) {
+        return getClient().getLog(name);
     }
 
     @Nonnull

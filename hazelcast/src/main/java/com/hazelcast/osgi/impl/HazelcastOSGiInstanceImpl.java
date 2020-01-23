@@ -36,6 +36,7 @@ import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.logging.LoggingService;
+import com.hazelcast.log.Log;
 import com.hazelcast.map.IMap;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.osgi.HazelcastOSGiInstance;
@@ -78,6 +79,12 @@ class HazelcastOSGiInstanceImpl
     @Override
     public String getName() {
         return delegatedInstance.getName();
+    }
+
+    @Nonnull
+    @Override
+    public <E> Log<E> getLog(@Nonnull String name) {
+        return delegatedInstance.getLog(name);
     }
 
     @Nonnull

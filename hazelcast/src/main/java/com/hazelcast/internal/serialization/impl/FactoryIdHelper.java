@@ -134,6 +134,10 @@ public final class FactoryIdHelper {
     public static final String METRICS_DS_FACTORY = "hazelcast.serialization.metrics";
     public static final int METRICS_DS_FACTORY_ID = -37;
 
+    public static final String LOG_DS_FACTORY = "hazelcast.serialization.ds.log";
+    public static final int LOG_DS_FACTORY_ID = -38;
+
+
     // factory ID 0 is reserved for Cluster objects (Data, Address, Member etc)...
 
     private FactoryIdHelper() {

@@ -25,6 +25,7 @@ import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ListConfig;
+import com.hazelcast.config.LogConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.MultiMapConfig;
@@ -116,6 +117,8 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
             new ConcurrentHashMap<String, CacheSimpleConfig>();
     private final ConcurrentMap<String, FlakeIdGeneratorConfig> flakeIdGeneratorConfigs =
             new ConcurrentHashMap<String, FlakeIdGeneratorConfig>();
+    private final ConcurrentMap<String, LogConfig> logConfigs =
+            new ConcurrentHashMap<String, LogConfig>();
 
     private final ConfigPatternMatcher configPatternMatcher;
     private final ILogger logger;
@@ -138,6 +141,7 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
             cacheSimpleConfigs,
             flakeIdGeneratorConfigs,
             pnCounterConfigs,
+            logConfigs,
     };
 
     private volatile Version version;
@@ -304,6 +308,9 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
         } else if (newConfig instanceof PNCounterConfig) {
             PNCounterConfig config = (PNCounterConfig) newConfig;
             currentConfig = pnCounterConfigs.putIfAbsent(config.getName(), config);
+        } else if (newConfig instanceof LogConfig) {
+            LogConfig config = (LogConfig) newConfig;
+            currentConfig = logConfigs.putIfAbsent(config.getName(), config);
         } else {
             throw new UnsupportedOperationException("Unsupported config type: " + newConfig);
         }
@@ -379,6 +386,16 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
     @Override
     public PNCounterConfig findPNCounterConfig(String name) {
         return lookupByPattern(configPatternMatcher, pnCounterConfigs, name);
+    }
+
+    @Override
+    public LogConfig findLogConfig(String name) {
+        return lookupByPattern(configPatternMatcher, logConfigs,name);
+    }
+
+    @Override
+    public Map<String, LogConfig> getLogConfigs() {
+        return logConfigs;
     }
 
     @Override
