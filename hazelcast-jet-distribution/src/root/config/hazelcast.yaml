@@ -74,6 +74,8 @@ hazelcast:
           enabled: true
         CLUSTER_WRITE:
           enabled: true
+        CP:
+          enabled: true
   # Configures Jet's background collection of performance and health
   # monitoring metrics.
   metrics:

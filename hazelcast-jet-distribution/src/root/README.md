@@ -16,6 +16,7 @@ What's Included
 * `bin/jet`: submits and manages jobs
 * `bin/jet-cluster-admin`: manages the Jet cluster (for example, shutting
   down the cluster)
+* `bin/jet-cluster-cp-admin`: manages the CP Subsystem in the Jet cluster
 * `config/hazelcast-jet.yaml`: The jet configuration file
 * `config/hazelcast.yaml`: The IMDG configuration used by the Jet instance
 * `config/hazelcast-client.yaml`: The client configuration file used by the 
