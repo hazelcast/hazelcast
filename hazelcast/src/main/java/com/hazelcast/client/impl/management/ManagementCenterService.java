@@ -795,7 +795,7 @@ public class ManagementCenterService {
                 serializationService,
                 clientMessage -> MCGetCPMembersCodec.decodeResponse(clientMessage).cpMembers
                         .stream()
-                        .map(uuid -> new CPMemberInfo(client.getClientClusterService().getMember(uuid)))
+                        .map(e -> new CPMemberInfo(e.getKey(), e.getValue()))
                         .collect(Collectors.toList())
         );
     }
