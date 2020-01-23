@@ -65,7 +65,7 @@ public class KeyValueRow implements Row {
         if (res == null) {
             KeyValueExtractorExpression fieldExpression = fieldExpressions.get(idx);
 
-            res = fieldExpression.eval(null, this);
+            res = fieldExpression.eval(this);
 
             cache[idx] = res != null ? res : NULL;
         } else if (res == NULL) {

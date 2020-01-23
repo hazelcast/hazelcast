@@ -130,7 +130,7 @@ public abstract class AbstractMapScanExec extends AbstractExec implements KeyVal
         keyValueRow.setKeyValue(key, val);
 
         // Filter.
-        if (filter != null && !filter.eval(ctx, keyValueRow)) {
+        if (filter != null && !filter.eval(keyValueRow)) {
             return null;
         }
 

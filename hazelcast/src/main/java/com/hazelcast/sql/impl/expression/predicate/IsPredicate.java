@@ -19,9 +19,8 @@ package com.hazelcast.sql.impl.expression.predicate;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.impl.QueryContext;
-import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.CallOperator;
+import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.UniCallExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
@@ -50,8 +49,8 @@ public class IsPredicate extends UniCallExpression<Boolean> {
     }
 
     @Override
-    public Boolean eval(QueryContext ctx, Row row) {
-        Object operandValue = operand.eval(ctx, row);
+    public Boolean eval(Row row) {
+        Object operandValue = operand.eval(row);
 
         switch (operator) {
             case CallOperator.IS_NULL:

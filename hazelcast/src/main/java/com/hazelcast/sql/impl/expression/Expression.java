@@ -16,10 +16,9 @@
 
 package com.hazelcast.sql.impl.expression;
 
-import com.hazelcast.sql.impl.QueryContext;
-import com.hazelcast.sql.impl.type.DataType;
-import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.sql.impl.row.Row;
+import com.hazelcast.sql.impl.type.DataType;
 
 /**
  * Generic expression.
@@ -30,11 +29,10 @@ public interface Expression<T> extends DataSerializable {
     /**
      * Evaluate the expression.
      *
-     * @param ctx Context.
      * @param row Row.
      * @return Result.
      */
-    T eval(QueryContext ctx, Row row);
+    T eval(Row row);
 
     /**
      * @return Return type of the expression.

@@ -20,10 +20,9 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlErrorCode;
-import com.hazelcast.sql.impl.QueryContext;
-import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.BiCallExpression;
 import com.hazelcast.sql.impl.expression.CallOperator;
+import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
 
@@ -53,8 +52,8 @@ public class MathBiFunction extends BiCallExpression<Double> {
     }
 
     @Override
-    public Double eval(QueryContext ctx, Row row) {
-        Object operand1Value = operand1.eval(ctx, row);
+    public Double eval(Row row) {
+        Object operand1Value = operand1.eval(row);
 
         if (operand1Value == null) {
             return null;
@@ -68,7 +67,7 @@ public class MathBiFunction extends BiCallExpression<Double> {
             operandType1 = type;
         }
 
-        Object operand2Value = operand2.eval(ctx, row);
+        Object operand2Value = operand2.eval(row);
 
         if (operand2Value == null) {
             return null;

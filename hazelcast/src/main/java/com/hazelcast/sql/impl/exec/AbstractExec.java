@@ -46,6 +46,21 @@ public abstract class AbstractExec implements Exec {
         setup0(ctx);
     }
 
+    @Override
+    public final QueryContext getContext() {
+        return ctx;
+    }
+
+    @Override
+    public IterationResult advance() {
+        return null;
+    }
+
+    @Override
+    public boolean canReset() {
+        return false;
+    }
+
     protected void setup0(QueryContext ctx) {
         // No-op.
     }

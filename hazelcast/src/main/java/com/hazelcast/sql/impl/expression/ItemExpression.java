@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.expression;
 
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.impl.QueryContext;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
 
@@ -41,8 +40,8 @@ public class ItemExpression<T> extends BiCallExpressionWithType<T> {
 
     @SuppressWarnings("unchecked")
     @Override
-    public T eval(QueryContext ctx, Row row) {
-        Object container = operand1.eval(ctx, row);
+    public T eval(Row row) {
+        Object container = operand1.eval(row);
 
         if (container == null) {
             return null;
@@ -50,7 +49,7 @@ public class ItemExpression<T> extends BiCallExpressionWithType<T> {
             containerType = resolveContainerType(container);
         }
 
-        int index = getIndex(ctx, row);
+        int index = getIndex(row);
 
         Object res;
 
@@ -76,8 +75,8 @@ public class ItemExpression<T> extends BiCallExpressionWithType<T> {
         return (T) res;
     }
 
-    private int getIndex(QueryContext ctx, Row row) {
-        Object indexValue = operand2.eval(ctx, row);
+    private int getIndex(Row row) {
+        Object indexValue = operand2.eval(row);
 
         if (indexValue == null) {
             throw new HazelcastSqlException(-1, "Index cannot be null.");

@@ -36,6 +36,11 @@ public interface Exec {
     void setup(QueryContext ctx);
 
     /**
+     * @return Current context.
+     */
+    QueryContext getContext();
+
+    /**
      * Try advancing executor. Content of the current batch will be changed as a result of this call.
      *
      * @return Result of iteration.

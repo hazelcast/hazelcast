@@ -203,7 +203,7 @@ public class ReceiveSortMergeExec extends AbstractExec {
         List<Object> key = new ArrayList<>(expressions.size());
 
         for (Expression expression : expressions) {
-            key.add(expression.eval(ctx, row));
+            key.add(expression.eval(row));
         }
 
         return new SortKey(key, stripe);

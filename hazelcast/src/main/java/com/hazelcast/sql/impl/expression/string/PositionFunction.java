@@ -17,9 +17,8 @@
 package com.hazelcast.sql.impl.expression.string;
 
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.impl.QueryContext;
-import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.CallOperator;
+import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.TriCallExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
@@ -47,13 +46,13 @@ public class PositionFunction extends TriCallExpression<Integer> {
 
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity", "checkstyle:NestedIfDepth"})
     @Override
-    public Integer eval(QueryContext ctx, Row row) {
+    public Integer eval(Row row) {
         String seek;
         String source;
         int pos;
 
         // Get seek operand.
-        Object seekValue = operand1.eval(ctx, row);
+        Object seekValue = operand1.eval(row);
 
         if (seekValue == null) {
             return null;
@@ -66,7 +65,7 @@ public class PositionFunction extends TriCallExpression<Integer> {
         seek = seekType.getConverter().asVarchar(seekValue);
 
         // Get source operand.
-        Object op2 = operand2.eval(ctx, row);
+        Object op2 = operand2.eval(row);
 
         if (op2 == null) {
             return null;
@@ -82,7 +81,7 @@ public class PositionFunction extends TriCallExpression<Integer> {
         if (operand3 == null) {
             pos = 0;
         } else {
-            Object op3 = operand3.eval(ctx, row);
+            Object op3 = operand3.eval(row);
 
             if (op3 == null) {
                 pos = 0;

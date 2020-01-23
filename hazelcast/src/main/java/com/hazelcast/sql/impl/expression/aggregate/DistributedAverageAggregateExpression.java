@@ -50,9 +50,9 @@ public class DistributedAverageAggregateExpression<T> extends AggregateExpressio
     }
 
     @Override
-    public void collect(QueryContext ctx, Row row, AggregateCollector collector) {
-        Object sumOperandValue = sumOperand.eval(ctx, row);
-        Object countOperandValue = countOperand.eval(ctx, row);
+    public void collect(Row row, AggregateCollector collector) {
+        Object sumOperandValue = sumOperand.eval(row);
+        Object countOperandValue = countOperand.eval(row);
 
         assert sumOperandValue != null;
         assert countOperandValue != null;

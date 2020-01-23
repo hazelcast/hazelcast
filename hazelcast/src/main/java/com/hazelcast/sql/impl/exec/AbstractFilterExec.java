@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.exec;
 
-import com.hazelcast.sql.impl.QueryContext;
 import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
@@ -40,7 +39,7 @@ public abstract class AbstractFilterExec extends AbstractUpstreamAwareExec {
             }
 
             for (Row upstreamRow : state) {
-                boolean matches = eval(ctx, upstreamRow);
+                boolean matches = eval(upstreamRow);
 
                 if (matches) {
                     curRow = upstreamRow;
@@ -67,5 +66,5 @@ public abstract class AbstractFilterExec extends AbstractUpstreamAwareExec {
         curRow = null;
     }
 
-    protected abstract boolean eval(QueryContext ctx, Row row);
+    protected abstract boolean eval(Row row);
 }

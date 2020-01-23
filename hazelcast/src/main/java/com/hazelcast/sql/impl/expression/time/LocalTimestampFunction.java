@@ -18,7 +18,6 @@ package com.hazelcast.sql.impl.expression.time;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.sql.impl.QueryContext;
 import com.hazelcast.sql.impl.expression.CallExpression;
 import com.hazelcast.sql.impl.expression.CallOperator;
 import com.hazelcast.sql.impl.row.Row;
@@ -32,7 +31,7 @@ import java.time.OffsetDateTime;
  */
 public class LocalTimestampFunction implements CallExpression<OffsetDateTime> {
     @Override
-    public OffsetDateTime eval(QueryContext ctx, Row row) {
+    public OffsetDateTime eval(Row row) {
         return OffsetDateTime.now();
     }
 

@@ -248,7 +248,13 @@ public class QueryWorker implements Runnable {
     }
 
     private void advanceExecutor(Exec exec) {
-        exec.advance();
+        QueryContext.setCurrentContext(exec.getContext());
+
+        try {
+            exec.advance();
+        } finally {
+            QueryContext.setCurrentContext(null);
+        }
 
         // TODO: Cleanup context if finished.
     }

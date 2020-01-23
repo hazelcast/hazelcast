@@ -22,7 +22,6 @@ import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlDaySecondInterval;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.SqlYearMonthInterval;
-import com.hazelcast.sql.impl.QueryContext;
 import com.hazelcast.sql.impl.expression.BiCallExpressionWithType;
 import com.hazelcast.sql.impl.expression.CallOperator;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -67,15 +66,15 @@ public class PlusMinusFunction<T> extends BiCallExpressionWithType<T> {
 
     @SuppressWarnings("unchecked")
     @Override
-    public T eval(QueryContext ctx, Row row) {
+    public T eval(Row row) {
         // Calculate child operands with fail-fast NULL semantics.
-        Object operand1Value = operand1.eval(ctx, row);
+        Object operand1Value = operand1.eval(row);
 
         if (operand1Value == null) {
             return null;
         }
 
-        Object operand2Value = operand2.eval(ctx, row);
+        Object operand2Value = operand2.eval(row);
 
         if (operand2Value == null) {
             return null;

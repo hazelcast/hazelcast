@@ -45,8 +45,8 @@ public class ParameterExpression<T> implements Expression<T> {
 
     @SuppressWarnings("unchecked")
     @Override
-    public T eval(QueryContext ctx, Row row) {
-        Object value = ctx.getArgument(index);
+    public T eval(Row row) {
+        Object value = QueryContext.getCurrentContext().getArgument(index);
 
         if (value != null) {
             type = DataType.resolveType(value);

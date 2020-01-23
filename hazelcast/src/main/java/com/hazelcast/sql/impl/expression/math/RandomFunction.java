@@ -17,9 +17,8 @@
 package com.hazelcast.sql.impl.expression.math;
 
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.impl.QueryContext;
-import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.CallOperator;
+import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.UniCallExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
@@ -43,8 +42,8 @@ public class RandomFunction extends UniCallExpression<Double> {
     }
 
     @Override
-    public Double eval(QueryContext ctx, Row row) {
-        Random random = getRandom(ctx, row);
+    public Double eval(Row row) {
+        Random random = getRandom(row);
 
         return random.nextDouble();
     }
@@ -52,16 +51,15 @@ public class RandomFunction extends UniCallExpression<Double> {
     /**
      * Get random generator.
      *
-     * @param ctx Context.
      * @param row Row.
      * @return Random generator.
      */
     @SuppressWarnings("checkstyle:NestedIfDepth")
-    private Random getRandom(QueryContext ctx, Row row) {
+    private Random getRandom(Row row) {
         Expression seedExp = operand;
 
         if (seedExp != null) {
-            Object seedRes0 = seedExp.eval(ctx, row);
+            Object seedRes0 = seedExp.eval(row);
 
             if (seedRes0 != null) {
                 if (seedType == null) {

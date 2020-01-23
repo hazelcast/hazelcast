@@ -18,10 +18,9 @@ package com.hazelcast.sql.impl.expression;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.sql.impl.QueryContext;
-import com.hazelcast.sql.impl.type.DataType;
 import com.hazelcast.sql.impl.row.KeyValueRow;
 import com.hazelcast.sql.impl.row.Row;
+import com.hazelcast.sql.impl.type.DataType;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -51,7 +50,7 @@ public class KeyValueExtractorExpression<T> implements Expression<T> {
 
     @SuppressWarnings("unchecked")
     @Override
-    public T eval(QueryContext ctx, Row row) {
+    public T eval(Row row) {
         assert row instanceof KeyValueRow;
 
         KeyValueRow row0 = (KeyValueRow) row;

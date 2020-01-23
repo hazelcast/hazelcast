@@ -19,7 +19,6 @@ package com.hazelcast.sql.impl.expression.predicate;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.impl.QueryContext;
 import com.hazelcast.sql.impl.expression.BiCallExpression;
 import com.hazelcast.sql.impl.expression.CallOperator;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -53,9 +52,9 @@ public class AndOrPredicate extends BiCallExpression<Boolean> {
     }
 
     @Override
-    public Boolean eval(QueryContext ctx, Row row) {
-        Object operand1Value = operand1.eval(ctx, row);
-        Object operand2Value = operand2.eval(ctx, row);
+    public Boolean eval(Row row) {
+        Object operand1Value = operand1.eval(row);
+        Object operand2Value = operand2.eval(row);
 
         if (operand1Value != null && !operand1Checked) {
             if (operand1.getType() != DataType.BIT) {

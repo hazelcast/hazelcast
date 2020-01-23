@@ -55,11 +55,10 @@ public abstract class AggregateExpression<T> implements DataSerializable {
     /**
      * Collect value of the aggregate.
      *
-     * @param ctx Query context.
      * @param row Row.
      * @param collector Collector.
      */
-    public abstract void collect(QueryContext ctx, Row row, AggregateCollector collector);
+    public abstract void collect(Row row, AggregateCollector collector);
 
     /**
      * Create new collector for the given expression.

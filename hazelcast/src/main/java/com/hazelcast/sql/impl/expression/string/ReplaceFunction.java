@@ -17,9 +17,8 @@
 package com.hazelcast.sql.impl.expression.string;
 
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.impl.QueryContext;
-import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.CallOperator;
+import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.TriCallExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
@@ -46,13 +45,13 @@ public class ReplaceFunction extends TriCallExpression<String> {
     }
 
     @Override
-    public String eval(QueryContext ctx, Row row) {
+    public String eval(Row row) {
         String source;
         String search;
         String replacement;
 
         // Get source operand.
-        Object sourceValue = operand1.eval(ctx, row);
+        Object sourceValue = operand1.eval(row);
 
         if (sourceValue == null) {
             return null;
@@ -65,7 +64,7 @@ public class ReplaceFunction extends TriCallExpression<String> {
         source = sourceType.getConverter().asVarchar(sourceValue);
 
         // Get search operand.
-        Object searchValue = operand2.eval(ctx, row);
+        Object searchValue = operand2.eval(row);
 
         if (searchValue == null) {
             return null;
@@ -82,7 +81,7 @@ public class ReplaceFunction extends TriCallExpression<String> {
         }
 
         // Get replacement operand.
-        Object replacementValue = operand3.eval(ctx, row);
+        Object replacementValue = operand3.eval(row);
 
         if (replacementValue == null) {
             return null;

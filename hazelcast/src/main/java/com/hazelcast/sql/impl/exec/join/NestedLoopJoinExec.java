@@ -119,7 +119,7 @@ public class NestedLoopJoinExec extends AbstractUpstreamAwareExec {
                     JoinRow row = new JoinRow(leftRow, rightRow);
 
                     // Evaluate the condition.
-                    if (filter.eval(ctx, row)) {
+                    if (filter.eval(row)) {
                         curRow = row;
 
                         rightMatchFound = true;

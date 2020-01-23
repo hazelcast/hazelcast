@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.expression.string;
 
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.impl.QueryContext;
 import com.hazelcast.sql.impl.expression.CallOperator;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.TriCallExpression;
@@ -74,13 +73,13 @@ public class LikeFunction extends TriCallExpression<Boolean> {
     }
 
     @Override
-    public Boolean eval(QueryContext ctx, Row row) {
+    public Boolean eval(Row row) {
         String source;
         String pattern;
         String escape;
 
         // Get source operand.
-        Object sourceValue = operand1.eval(ctx, row);
+        Object sourceValue = operand1.eval(row);
 
         if (sourceValue == null) {
             return null;
@@ -93,7 +92,7 @@ public class LikeFunction extends TriCallExpression<Boolean> {
         source = sourceType.getConverter().asVarchar(sourceValue);
 
         // Get search operand.
-        Object patternValue = operand2.eval(ctx, row);
+        Object patternValue = operand2.eval(row);
 
         if (patternValue == null) {
             return null;
@@ -106,7 +105,7 @@ public class LikeFunction extends TriCallExpression<Boolean> {
         pattern = patternType.getConverter().asVarchar(patternValue);
 
         // Get replacement operand.
-        Object escapeValue = operand3 != null ? operand3.eval(ctx, row) : null;
+        Object escapeValue = operand3 != null ? operand3.eval(row) : null;
 
         if (escapeValue != null) {
             if (escapeType == null) {

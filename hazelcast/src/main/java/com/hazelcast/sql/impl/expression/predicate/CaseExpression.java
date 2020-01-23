@@ -18,7 +18,6 @@ package com.hazelcast.sql.impl.expression.predicate;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.sql.impl.QueryContext;
 import com.hazelcast.sql.impl.expression.CallExpression;
 import com.hazelcast.sql.impl.expression.CallOperator;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -67,18 +66,18 @@ public class CaseExpression<T> implements CallExpression<T> {
 
     @SuppressWarnings("unchecked")
     @Override
-    public T eval(QueryContext ctx, Row row) {
+    public T eval(Row row) {
         for (int i = 0; i < conditions.length; i++) {
             Expression<Boolean> condition = conditions[i];
 
-            Boolean conditionRes = condition.eval(ctx, row);
+            Boolean conditionRes = condition.eval(row);
 
             if (conditionRes != null && conditionRes) {
-                return getResult(results[i], ctx, row);
+                return getResult(results[i], row);
             }
         }
 
-        return getResult(results[results.length - 1], ctx, row);
+        return getResult(results[results.length - 1], row);
     }
 
     /**
@@ -90,12 +89,12 @@ public class CaseExpression<T> implements CallExpression<T> {
      * @return Result.
      */
     @SuppressWarnings("unchecked")
-    private T getResult(Expression operand, QueryContext ctx, Row row) {
+    private T getResult(Expression operand, Row row) {
         if (operand == null) {
             return null;
         }
 
-        Object operandValue = operand.eval(ctx, row);
+        Object operandValue = operand.eval(row);
 
         if (operandValue == null) {
             return null;

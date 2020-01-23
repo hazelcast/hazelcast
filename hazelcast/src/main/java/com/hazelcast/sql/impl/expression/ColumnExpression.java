@@ -18,7 +18,6 @@ package com.hazelcast.sql.impl.expression;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.sql.impl.QueryContext;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
 
@@ -44,7 +43,7 @@ public class ColumnExpression<T> implements Expression<T> {
     }
 
     @SuppressWarnings("unchecked")
-    @Override public T eval(QueryContext ctx, Row row) {
+    @Override public T eval(Row row) {
         Object res = row.getColumn(index);
 
         if (res != null) {

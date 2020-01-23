@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.exec;
 
-import com.hazelcast.sql.impl.QueryContext;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.Row;
 
@@ -38,8 +37,8 @@ public class FilterExec extends AbstractFilterExec {
     }
 
     @Override
-    protected boolean eval(QueryContext ctx, Row row) {
-        Boolean res = filter.eval(ctx, row);
+    protected boolean eval(Row row) {
+        Boolean res = filter.eval(row);
 
         return res != null && res;
     }

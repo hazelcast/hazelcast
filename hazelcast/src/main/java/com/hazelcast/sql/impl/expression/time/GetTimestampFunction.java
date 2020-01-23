@@ -19,9 +19,8 @@ package com.hazelcast.sql.impl.expression.time;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.impl.QueryContext;
-import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.CallOperator;
+import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.UniCallExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
@@ -53,8 +52,8 @@ public class GetTimestampFunction<T> extends UniCallExpression<T> {
 
     @SuppressWarnings("unchecked")
     @Override
-    public T eval(QueryContext ctx, Row row) {
-        int precision = getPrecision(ctx, row);
+    public T eval(Row row) {
+        int precision = getPrecision(row);
 
         switch (operator) {
             case CallOperator.CURRENT_TIMESTAMP:
@@ -101,12 +100,12 @@ public class GetTimestampFunction<T> extends UniCallExpression<T> {
         return res;
     }
 
-    private int getPrecision(QueryContext ctx, Row row) {
+    private int getPrecision(Row row) {
         if (operand == null) {
             return TemporalUtils.NANO_PRECISION;
         }
 
-        Object operandValue = operand.eval(ctx, row);
+        Object operandValue = operand.eval(row);
 
         if (operandValue == null) {
             return TemporalUtils.NANO_PRECISION;

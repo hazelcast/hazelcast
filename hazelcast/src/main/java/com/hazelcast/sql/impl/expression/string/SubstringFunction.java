@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.expression.string;
 
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.impl.QueryContext;
 import com.hazelcast.sql.impl.expression.CallOperator;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.TriCallExpression;
@@ -46,13 +45,13 @@ public class SubstringFunction extends TriCallExpression<String> {
     }
 
     @Override
-    public String eval(QueryContext ctx, Row row) {
+    public String eval(Row row) {
         String source;
         int start;
         int length;
 
         // Get source operand.
-        Object sourceValue = operand1.eval(ctx, row);
+        Object sourceValue = operand1.eval(row);
 
         if (sourceValue == null) {
             return null;
@@ -65,7 +64,7 @@ public class SubstringFunction extends TriCallExpression<String> {
         source = sourceType.getConverter().asVarchar(sourceValue);
 
         // Get search operand.
-        Object startValue = operand2.eval(ctx, row);
+        Object startValue = operand2.eval(row);
 
         if (startValue == null) {
             return null;
@@ -78,7 +77,7 @@ public class SubstringFunction extends TriCallExpression<String> {
         start = startType.getConverter().asInt(startValue);
 
         // Get replacement operand.
-        Object lengthValue = operand3.eval(ctx, row);
+        Object lengthValue = operand3.eval(row);
 
         if (lengthValue == null) {
             return null;

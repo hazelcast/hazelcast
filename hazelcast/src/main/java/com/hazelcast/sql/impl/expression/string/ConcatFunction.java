@@ -16,10 +16,9 @@
 
 package com.hazelcast.sql.impl.expression.string;
 
-import com.hazelcast.sql.impl.QueryContext;
-import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.BiCallExpression;
 import com.hazelcast.sql.impl.expression.CallOperator;
+import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
 
@@ -42,9 +41,9 @@ public class ConcatFunction extends BiCallExpression<String> {
     }
 
     @Override
-    public String eval(QueryContext ctx, Row row) {
-        Object operand1Value = operand1.eval(ctx, row);
-        Object operand2Value = operand2.eval(ctx, row);
+    public String eval(Row row) {
+        Object operand1Value = operand1.eval(row);
+        Object operand2Value = operand2.eval(row);
 
         if (operand1Value != null && operand1Type == null) {
             operand1Type = operand1.getType();

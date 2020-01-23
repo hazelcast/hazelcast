@@ -17,9 +17,8 @@
 package com.hazelcast.sql.impl.expression.math;
 
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.impl.QueryContext;
-import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.CallOperator;
+import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.UniCallExpressionWithType;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
@@ -38,8 +37,8 @@ public class SignFunction extends UniCallExpressionWithType<Number> {
     }
 
     @Override
-    public Number eval(QueryContext ctx, Row row) {
-        Object operandValue = operand.eval(ctx, row);
+    public Number eval(Row row) {
+        Object operandValue = operand.eval(row);
 
         if (operandValue == null) {
             return null;

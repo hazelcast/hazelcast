@@ -18,7 +18,6 @@ package com.hazelcast.sql.impl.exec;
 
 import com.hazelcast.internal.util.HashUtil;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
-import com.hazelcast.sql.impl.QueryContext;
 import com.hazelcast.sql.impl.physical.hash.HashFunction;
 import com.hazelcast.sql.impl.row.Row;
 
@@ -40,7 +39,7 @@ public class ReplicatedToPartitionedExec extends AbstractFilterExec {
     }
 
     @Override
-    protected boolean eval(QueryContext ctx, Row row) {
+    protected boolean eval(Row row) {
         int hash = hashFunction.getHash(row);
         int part = HashUtil.hashToIndex(hash, parts.getPartitionCount());
 

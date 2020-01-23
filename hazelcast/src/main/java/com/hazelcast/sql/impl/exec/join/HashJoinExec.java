@@ -169,7 +169,7 @@ public class HashJoinExec extends AbstractUpstreamAwareExec {
 
                 JoinRow row = new JoinRow(leftRow, rightRow);
 
-                if (filter.eval(ctx, row)) {
+                if (filter.eval(row)) {
                     rightRowPos = i + 1;
 
                     curRow = row;

@@ -19,10 +19,9 @@ package com.hazelcast.sql.impl.expression.math;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.impl.QueryContext;
-import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.BiCallExpressionWithType;
 import com.hazelcast.sql.impl.expression.CallOperator;
+import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
 
@@ -55,14 +54,14 @@ public class RoundTruncateFunction<T> extends BiCallExpressionWithType<T> {
 
     @SuppressWarnings("unchecked")
     @Override
-    public T eval(QueryContext ctx, Row row) {
-        Object val = getValue(ctx, row);
+    public T eval(Row row) {
+        Object val = getValue(row);
 
         if (val == null) {
             return null;
         }
 
-        int len = getLength(ctx, row);
+        int len = getLength(row);
 
         return (T) (doRoundTruncate(val, len));
     }
@@ -70,12 +69,11 @@ public class RoundTruncateFunction<T> extends BiCallExpressionWithType<T> {
     /**
      * Get value.
      *
-     * @param ctx Context.
      * @param row Row.
      * @return Value.
      */
-    public Object getValue(QueryContext ctx, Row row) {
-        Object val = operand1.eval(ctx, row);
+    public Object getValue(Row row) {
+        Object val = operand1.eval(row);
 
         if (val == null) {
             return null;
@@ -121,12 +119,11 @@ public class RoundTruncateFunction<T> extends BiCallExpressionWithType<T> {
     /**
      * Get length (second operand).
      *
-     * @param ctx Context.
      * @param row Row.
      * @return Length.
      */
-    private int getLength(QueryContext ctx, Row row) {
-        Object len = operand2 != null ? operand2.eval(ctx, row) : null;
+    private int getLength(Row row) {
+        Object len = operand2 != null ? operand2.eval(row) : null;
 
         if (len == null) {
             return 0;

@@ -18,7 +18,6 @@ package com.hazelcast.sql.impl.expression;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.sql.impl.QueryContext;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
 
@@ -46,7 +45,7 @@ public class ConstantExpression<T> implements Expression<T> {
     }
 
     @Override
-    public T eval(QueryContext ctx, Row row) {
+    public T eval(Row row) {
         if (val != null && type == null) {
             type = DataType.resolveType(val);
         }

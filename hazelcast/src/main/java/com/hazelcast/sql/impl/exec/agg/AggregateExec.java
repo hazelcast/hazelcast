@@ -111,7 +111,7 @@ public class AggregateExec extends AbstractUpstreamAwareExec {
                     AggregateExpression expression = expressions.get(i);
                     AggregateCollector value = values.get(i);
 
-                    expression.collect(ctx, upstreamRow, value);
+                    expression.collect(upstreamRow, value);
                 }
 
                 // Special handling of non-blocking mode: if the key has changed, replace old key/value pair with the

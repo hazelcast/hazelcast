@@ -18,7 +18,6 @@ package com.hazelcast.sql.impl.expression.time;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.sql.impl.QueryContext;
 import com.hazelcast.sql.impl.expression.CallExpression;
 import com.hazelcast.sql.impl.expression.CallOperator;
 import com.hazelcast.sql.impl.row.Row;
@@ -32,7 +31,7 @@ import java.time.LocalDate;
  */
 public class CurrentDateFunction implements CallExpression<LocalDate> {
     @Override
-    public LocalDate eval(QueryContext ctx, Row row) {
+    public LocalDate eval(Row row) {
         return LocalDate.now();
     }
 

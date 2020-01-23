@@ -48,10 +48,10 @@ public class ExtractorExpression<T> implements Expression<T> {
 
     @SuppressWarnings("unchecked")
     @Override
-    public T eval(QueryContext ctx, Row row) {
-        Object operandValue = operand.eval(ctx, row);
+    public T eval(Row row) {
+        Object operandValue = operand.eval(row);
 
-        Object res = ctx.getExtractors().extract(operandValue, path, null);
+        Object res = QueryContext.getCurrentContext().getExtractors().extract(operandValue, path, null);
 
         if (res != null && type == null) {
             type = DataType.resolveType(res);

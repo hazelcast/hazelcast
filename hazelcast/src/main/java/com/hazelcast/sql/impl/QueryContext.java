@@ -32,6 +32,9 @@ public class QueryContext {
     private static final AtomicReferenceFieldUpdater<QueryContext, Extractors> EXTRACTORS_UPDATER =
         AtomicReferenceFieldUpdater.newUpdater(QueryContext.class, Extractors.class, "extractors");
 
+    /** Current query context. */
+    private static final ThreadLocal<QueryContext> CURRENT = new ThreadLocal<>();
+
     /** Node engine. */
     private final NodeEngine nodeEngine;
 
@@ -108,5 +111,13 @@ public class QueryContext {
         } else {
             return extractors;
         }
+    }
+
+    public static QueryContext getCurrentContext() {
+        return CURRENT.get();
+    }
+
+    public static void setCurrentContext(QueryContext context) {
+        CURRENT.set(context);
     }
 }
