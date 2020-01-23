@@ -110,7 +110,6 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
         this.extractKeyFn = extractKeyFn;
     }
 
-
     @Override
     protected void init(@Nonnull Processor.Context context) throws Exception {
         super.init(context);
@@ -155,7 +154,7 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
 
     @Override
     public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
-        if (getOutbox().hasUnfinishedItem() && !emitFromTraverser(currentTraverser)) {
+        if (!emitFromTraverser(currentTraverser)) {
             return false;
         }
         assert lastEmittedWm <= lastReceivedWm : "lastEmittedWm=" + lastEmittedWm + ", lastReceivedWm=" + lastReceivedWm;

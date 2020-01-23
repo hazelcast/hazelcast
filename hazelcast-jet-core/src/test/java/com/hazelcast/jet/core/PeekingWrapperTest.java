@@ -25,7 +25,7 @@ import com.hazelcast.jet.core.test.TestOutbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -55,7 +55,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 public class PeekingWrapperTest {
 
     private static final JetEvent<Integer> TEST_JET_EVENT = jetEvent(123, 2);
@@ -184,10 +184,10 @@ public class PeekingWrapperTest {
     @Test
     public void when_peekOutput_metaSupplier() throws Exception {
         // Given
-        ProcessorMetaSupplier passThroughPSupplier = ProcessorMetaSupplier.of(peekOutputProcessorSupplier());
+        ProcessorMetaSupplier sourceSupplier = ProcessorMetaSupplier.of(peekOutputProcessorSupplier());
         ProcessorMetaSupplier peekingMetaSupplier = toStringFn == null
-                ? peekOutputP(passThroughPSupplier)
-                : peekOutputP(toStringFn, shouldLogFn, passThroughPSupplier);
+                ? peekOutputP(sourceSupplier)
+                : peekOutputP(toStringFn, shouldLogFn, sourceSupplier);
         peekP = supplierFrom(peekingMetaSupplier).get();
 
         // When+Then
@@ -270,7 +270,7 @@ public class PeekingWrapperTest {
         TestOutbox outbox = new TestOutbox(1, 1);
         peekP.init(outbox, context);
 
-        Watermark wm = new Watermark(3);
+        Watermark wm = new Watermark(1);
         peekP.tryProcessWatermark(wm);
         verify(logger).info("Output to ordinal 0: " + wm);
         verify(logger).info("Output to ordinal 1: " + wm);
