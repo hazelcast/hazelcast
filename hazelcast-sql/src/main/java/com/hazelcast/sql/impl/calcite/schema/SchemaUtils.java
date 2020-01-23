@@ -104,7 +104,11 @@ public final class SchemaUtils {
         HashMap<String, Table> res = new HashMap<>();
 
         for (String mapName : mapNames) {
-            DistributedObject map = nodeEngine.getProxyService().getDistributedObject(serviceName, mapName);
+            DistributedObject map = nodeEngine.getProxyService().getDistributedObject(
+                serviceName,
+                mapName,
+                nodeEngine.getLocalMember().getUuid()
+            );
 
             long rowCount = statisticProvider.getRowCount(map);
 

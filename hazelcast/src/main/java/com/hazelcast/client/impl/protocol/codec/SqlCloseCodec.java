@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,14 +36,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Closes server-side query cursor.
  */
-@Generated("a187d2ecbda2fee9413c45d8096779ac")
+@Generated("0caba402377e0f7471ef90b1645ed3c5")
 public final class SqlCloseCodec {
     //hex: 0x210300
     public static final int REQUEST_MESSAGE_TYPE = 2163456;
     //hex: 0x210301
     public static final int RESPONSE_MESSAGE_TYPE = 2163457;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private SqlCloseCodec() {
     }
@@ -54,15 +54,16 @@ public final class SqlCloseCodec {
         /**
          * Query ID.
          */
-        public com.hazelcast.nio.serialization.Data queryId;
+        public com.hazelcast.internal.serialization.Data queryId;
     }
 
-    public static ClientMessage encodeRequest(com.hazelcast.nio.serialization.Data queryId) {
+    public static ClientMessage encodeRequest(com.hazelcast.internal.serialization.Data queryId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("Sql.Close");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         DataCodec.encode(clientMessage, queryId);
         return clientMessage;
