@@ -66,12 +66,9 @@ public final class TestClusterUpgradeUtils {
                 waitAllForSafeState(membersToUpgrade);
                 if (assertClusterSize) {
                     // assert all members are in the cluster
-                    assertTrueEventually(new AssertTask() {
-                        @Override
-                        public void run() {
-                            assertEquals(membersToUpgrade.length, membersToUpgrade[0].getCluster().getMembers().size());
-                        }
-                    }, 30);
+                    assertTrueEventually(()
+                            -> assertEquals(membersToUpgrade[0].toString(),
+                            membersToUpgrade.length, membersToUpgrade[0].getCluster().getMembers().size()));
                 }
             }
         } finally {
