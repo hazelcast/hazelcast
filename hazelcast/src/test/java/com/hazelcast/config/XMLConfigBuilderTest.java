@@ -783,13 +783,13 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Test
     public void testManagementCenterConfig() {
         String xml = HAZELCAST_START_TAG
-                + "<management-center scripting-enabled='false' />"
+                + "<management-center scripting-enabled='true' />"
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
         ManagementCenterConfig mcConfig = config.getManagementCenterConfig();
 
-        assertFalse(mcConfig.isScriptingEnabled());
+        assertTrue(mcConfig.isScriptingEnabled());
     }
 
     @Override

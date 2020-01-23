@@ -788,12 +788,12 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         String yaml = ""
                 + "hazelcast:\n"
                 + "  management-center:\n"
-                + "    scripting-enabled: false\n";
+                + "    scripting-enabled: true\n";
 
         Config config = buildConfig(yaml);
         ManagementCenterConfig mcConfig = config.getManagementCenterConfig();
 
-        assertFalse(mcConfig.isScriptingEnabled());
+        assertTrue(mcConfig.isScriptingEnabled());
     }
 
     @Override

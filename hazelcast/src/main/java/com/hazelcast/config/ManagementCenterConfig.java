@@ -16,14 +16,14 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.instance.BuildInfoProvider;
+import java.util.Objects;
 
 /**
  * Contains the configuration for Hazelcast Management Center.
  */
-public class ManagementCenterConfig {
+public final class ManagementCenterConfig {
 
-    private boolean scriptingEnabled = ! BuildInfoProvider.getBuildInfo().isEnterprise();
+    private boolean scriptingEnabled;
 
     public ManagementCenterConfig() {
     }
@@ -57,5 +57,22 @@ public class ManagementCenterConfig {
         return "ManagementCenterConfig{"
                 + "scriptingEnabled=" + scriptingEnabled
                 + "}";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        ManagementCenterConfig that = (ManagementCenterConfig) o;
+        return scriptingEnabled == that.scriptingEnabled;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(scriptingEnabled);
     }
 }
