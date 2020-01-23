@@ -72,7 +72,7 @@ public class MetricsTest extends JetTestSupport {
     }
 
     @Test
-    public void counter_notUsed() {
+    public void unusedMetrics() {
         pipeline.readFrom(TestSources.items(0L, 1L, 2L, 3L, 4L))
                 .filter(l -> {
                     boolean pass = l % 2 == 0;
@@ -84,34 +84,39 @@ public class MetricsTest extends JetTestSupport {
 
                     return pass;
                 })
-                .writeTo(Sinks.logger());
+                .writeTo(Sinks.noop());
 
         Job job = runPipeline(pipeline.toDag());
         assertMetricsProduced(job, "dropped", 0, "total", null);
     }
 
     @Test
-    public void counter() {
-        pipeline.readFrom(TestSources.items(0L, 1L, 2L, 3L, 4L))
+    public void typicalUsage() {
+        pipeline.readFrom(TestSources.items(5L, 4L, 3L, 2L, 1L, 0L))
                 .filter(l -> {
                     boolean pass = l % 2 == 0;
 
-                    if (!pass) {
+                    if (pass) {
+                        Metrics.metric("single-flip-flop").decrement();
+                        Metrics.metric("multi-flip-flop").decrement(10);
+                    } else {
                         Metrics.metric("dropped").increment();
+                        Metrics.metric("single-flip-flop").increment();
+                        Metrics.metric("multi-flip-flop").increment(10);
                     }
                     Metrics.metric("total").increment();
                     Metrics.metric("last").set(l);
 
                     return pass;
                 })
-                .writeTo(Sinks.logger());
+                .writeTo(Sinks.noop());
 
         Job job = runPipeline(pipeline.toDag());
-        assertMetricsProduced(job, "dropped", 2, "total", 5);
+        assertMetricsProduced(job, "dropped", 3, "total", 6, "single-flip-flop", 0, "multi-flip-flop", 0);
     }
 
     @Test
-    public void gauge() {
+    public void customUnit() {
         pipeline.readFrom(TestSources.items(0L, 1L, 2L, 3L, 4L))
                 .mapStateful(LongAccumulator::new, (acc, i) -> {
                     acc.add(i);
@@ -119,21 +124,21 @@ public class MetricsTest extends JetTestSupport {
                     metric.set(acc.get());
                     return acc.get();
                 })
-                .writeTo(Sinks.logger());
+                .writeTo(Sinks.noop());
 
         Job job = runPipeline(pipeline.toDag());
         assertMetricsProduced(job, "sum", 10);
     }
 
     @Test
-    public void gauge_notUsed() {
+    public void customUnit_notUsed() {
         pipeline.readFrom(TestSources.items(0L, 1L, 2L, 3L, 4L))
                 .mapStateful(LongAccumulator::new, (acc, i) -> {
                     acc.add(i);
                     Metrics.metric("sum", Unit.COUNT);
                     return acc.get();
                 })
-                .writeTo(Sinks.logger());
+                .writeTo(Sinks.noop());
 
         Job job = runPipeline(pipeline.toDag());
         assertMetricsProduced(job, "sum", 0L);
@@ -169,7 +174,7 @@ public class MetricsTest extends JetTestSupport {
                     Metrics.metric("total", Unit.COUNT).set(input.length);
                     return l;
                 })
-                .writeTo(Sinks.logger());
+                .writeTo(Sinks.noop());
 
         Job job = instance.newJob(pipeline, new JobConfig().setMetricsEnabled(false));
         job.join();
@@ -226,7 +231,7 @@ public class MetricsTest extends JetTestSupport {
                     Metrics.metric("total").increment();
                     return t;
                 })
-                .writeTo(Sinks.logger());
+                .writeTo(Sinks.noop());
 
         Job job = instance.newJob(pipeline, JOB_CONFIG_WITH_METRICS);
         assertTrueEventually(() -> {
@@ -262,7 +267,7 @@ public class MetricsTest extends JetTestSupport {
                     Metrics.metric("emittedCount").increment(1000);
                     return true;
                 })
-                .writeTo(Sinks.logger());
+                .writeTo(Sinks.noop());
 
         Job job = runPipeline(pipeline.toDag());
         // expected value is number_of_emitted_items (5) * number_of_vertex (2) = 10
@@ -288,7 +293,7 @@ public class MetricsTest extends JetTestSupport {
                     Metrics.metric("inBoth").increment();
                     return t;
                 })
-                .writeTo(Sinks.logger());
+                .writeTo(Sinks.noop());
 
         Job job = runPipeline(pipeline.toDag());
         assertMetricsProduced(job, "onlyInFilter", inputSize, "onlyInMap", inputSize, "inBoth", 2 * inputSize);
@@ -313,7 +318,7 @@ public class MetricsTest extends JetTestSupport {
                     Metrics.metric("inBoth").increment();
                     return t;
                 })
-                .writeTo(Sinks.logger());
+                .writeTo(Sinks.noop());
 
         Job job = runPipeline(pipeline.toDag());
         assertMetricsProduced(job, "onlyInFilter", inputSize, "onlyInMap", inputSize, "inBoth", 2 * inputSize);
@@ -326,7 +331,7 @@ public class MetricsTest extends JetTestSupport {
                     Metrics.metric("total").increment();
                     return true;
                 })
-                .writeTo(Sinks.logger());
+                .writeTo(Sinks.noop());
 
         Job job = runPipeline(pipeline.toDag());
         assertMetricsProduced(job, "total", 5);
@@ -345,7 +350,7 @@ public class MetricsTest extends JetTestSupport {
                     }
                     return t;
                 })
-                .writeTo(Sinks.logger());
+                .writeTo(Sinks.noop());
 
         Pipeline pipeline2 = Pipeline.create();
         pipeline2.readFrom(TestSources.itemStream(1_000))
@@ -357,7 +362,7 @@ public class MetricsTest extends JetTestSupport {
                     }
                     return t;
                 })
-                .writeTo(Sinks.logger());
+                .writeTo(Sinks.noop());
 
         Job job = instance.newJob(pipeline, JOB_CONFIG_WITH_METRICS);
         Job job2 = instance.newJob(pipeline2, JOB_CONFIG_WITH_METRICS);
@@ -382,7 +387,7 @@ public class MetricsTest extends JetTestSupport {
                     Metrics.metric("total").increment();
                     return t;
                 })
-                .writeTo(Sinks.logger());
+                .writeTo(Sinks.noop());
 
         Job job = instance.newJob(pipeline, JOB_CONFIG_WITH_METRICS);
         assertTrueEventually(() -> {

@@ -28,6 +28,8 @@ import javax.annotation.Nonnull;
  * To obtain an instance, use {@link Metrics#metric}. The instance is tied to
  * the processor it was created for and is or is not thread-safe based on the
  * method that was used to create it.
+ *
+ * @since 4.0
  */
 public interface Metric {
 

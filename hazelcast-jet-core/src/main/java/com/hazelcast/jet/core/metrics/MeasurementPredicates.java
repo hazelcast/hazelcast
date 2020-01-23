@@ -22,6 +22,8 @@ import java.util.regex.Pattern;
 /**
  * Static utility class for creating various {@link Measurement} filtering
  * predicates.
+ *
+ * @since 3.2
  */
 public final class MeasurementPredicates {
 

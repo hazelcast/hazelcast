@@ -25,6 +25,8 @@ import com.hazelcast.jet.impl.metrics.MetricsImpl;
  * User-defined metrics are simple numeric values used to count or measure
  * things. A code submitted to Jet can use them to publish any custom run-time
  * values.
+ *
+ * @since 4.0
  */
 public final class Metrics {
 
