@@ -51,7 +51,6 @@ import com.hazelcast.client.impl.spi.impl.listener.LazyDistributedObjectEvent;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
-import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectEvent;
 import com.hazelcast.core.DistributedObjectListener;
@@ -117,15 +116,6 @@ public final class ProxyManager implements DistributedObjectListener {
     @SuppressWarnings("checkstyle:methodlength")
     public void init(ClientConfig config, ClientContext clientContext) {
         addDistributeObjectListenerInternal(this, true);
-
-        List<ListenerConfig> listenerConfigs = client.getClientConfig().getListenerConfigs();
-        if (listenerConfigs != null && !listenerConfigs.isEmpty()) {
-            for (ListenerConfig listenerConfig : listenerConfigs) {
-                if (listenerConfig.getImplementation() instanceof DistributedObjectListener) {
-                    addDistributedObjectListener((DistributedObjectListener) listenerConfig.getImplementation());
-                }
-            }
-        }
 
         context = clientContext;
         // register defaults
