@@ -111,10 +111,10 @@ public class JobMetrics_StressTest extends JetTestSupport {
 
     private static final class IncrementingProcessor implements Processor {
 
-        @Probe
+        @Probe(name = "initCount")
         static final AtomicInteger initCount = new AtomicInteger();
 
-        @Probe
+        @Probe(name = "completeCount")
         static final AtomicInteger completeCount = new AtomicInteger();
 
         @Override

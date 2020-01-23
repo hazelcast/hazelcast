@@ -75,7 +75,8 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
         reset(MEMBER_COUNT);
 
         JetConfig config = new JetConfig();
-        config.getHazelcastConfig().getMetricsConfig().setCollectionFrequencySeconds(1);
+        config.setProperty("hazelcast.jmx", "true");
+        config.configureHazelcast(hzConfig -> hzConfig.getMetricsConfig().setCollectionFrequencySeconds(1));
 
         jetInstance = createJetMember(config);
 

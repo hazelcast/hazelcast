@@ -22,6 +22,7 @@ import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.accumulator.LongAccumulator;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
@@ -66,7 +67,7 @@ public class MetricsTest extends JetTestSupport {
 
     @Before
     public void before() {
-        instance = createJetMember();
+        instance = createJetMember(new JetConfig().setProperty("hazelcast.jmx", "true"));
         pipeline = Pipeline.create();
     }
 
