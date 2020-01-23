@@ -109,7 +109,7 @@ public class TimedMemberStateIntegrationTest extends HazelcastTestSupport {
         TimedMemberStateFactory factory = new TimedMemberStateFactory(getHazelcastInstanceImpl(hz));
 
         TimedMemberState timedMemberState = factory.createTimedMemberState();
-        boolean expected = enabled == null ? true : enabled;
+        boolean expected = enabled == null ? false : enabled;
         assertEquals(expected, timedMemberState.scriptingEnabled);
     }
 }

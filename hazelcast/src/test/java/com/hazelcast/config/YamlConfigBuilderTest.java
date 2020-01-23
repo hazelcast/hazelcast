@@ -806,7 +806,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         Config config = buildConfig(yaml);
         ManagementCenterConfig mcConfig = config.getManagementCenterConfig();
 
-        assertTrue(mcConfig.isScriptingEnabled());
+        assertFalse(mcConfig.isScriptingEnabled());
     }
 
     @Override
@@ -817,7 +817,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         Config config = buildConfig(yaml);
         ManagementCenterConfig mcConfig = config.getManagementCenterConfig();
 
-        assertTrue(mcConfig.isScriptingEnabled());
+        assertFalse(mcConfig.isScriptingEnabled());
     }
 
     @Override
