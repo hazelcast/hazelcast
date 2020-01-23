@@ -141,6 +141,11 @@ public abstract class AbstractIndex implements InternalIndex {
     }
 
     @Override
+    public boolean isEvaluateOnly() {
+        return indexStore.isEvaluateOnly();
+    }
+
+    @Override
     public boolean canEvaluate(Class<? extends Predicate> predicateClass) {
         return indexStore.canEvaluate(predicateClass);
     }

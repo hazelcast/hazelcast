@@ -126,11 +126,6 @@ public class AttributeIndexRegistry {
         public boolean unorderedWorseThan(InternalIndex candidate) {
             assert !candidate.isOrdered();
 
-            if (candidate.getUniqueKey() != null) {
-                // if user adds a bitmap index, that is for a reason
-                return true;
-            }
-
             // we have no index and the unordered candidate is not composite
             return unordered == null && candidate.getComponents().length == 1;
         }
@@ -223,6 +218,11 @@ public class AttributeIndexRegistry {
         @Override
         public void removeEntry(Data key, Object value, OperationSource operationSource) {
             throw newUnsupportedException();
+        }
+
+        @Override
+        public boolean isEvaluateOnly() {
+            return delegate.isEvaluateOnly();
         }
 
         @Override

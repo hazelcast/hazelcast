@@ -103,6 +103,12 @@ public interface IndexStore {
     void destroy();
 
     /**
+     * @return {@code true} if this index store supports querying only with
+     * {@link #evaluate} method, {@code false} otherwise.
+     */
+    boolean isEvaluateOnly();
+
+    /**
      * @return {@code true} if this index store can evaluate a predicate of the
      * given predicate class, {@code false} otherwise.
      */

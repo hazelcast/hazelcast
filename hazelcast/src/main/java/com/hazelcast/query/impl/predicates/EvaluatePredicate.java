@@ -82,7 +82,7 @@ public final class EvaluatePredicate implements Predicate, IndexAwarePredicate {
 
     @Override
     public boolean isIndexed(QueryContext queryContext) {
-        return queryContext.matchIndex(indexName, QueryContext.IndexMatchHint.EXACT_NAME) != null;
+        return true;
     }
 
     @Override

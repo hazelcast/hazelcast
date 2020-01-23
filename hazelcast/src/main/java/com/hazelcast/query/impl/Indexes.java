@@ -63,6 +63,7 @@ public class Indexes {
 
     private final Map<String, InternalIndex> indexesByName = new ConcurrentHashMap<String, InternalIndex>(3);
     private final AttributeIndexRegistry attributeIndexRegistry = new AttributeIndexRegistry();
+    private final AttributeIndexRegistry evaluateOnlyAttributeIndexRegistry = new AttributeIndexRegistry();
     private final ConverterCache converterCache = new ConverterCache(this);
     private final ConcurrentMap<String, Boolean> definitions = new ConcurrentHashMap<String, Boolean>();
 
@@ -143,7 +144,11 @@ public class Indexes {
                 stats.createPerIndexStats(ordered, usesCachedQueryableEntries));
 
         indexesByName.put(definition.getName(), index);
-        attributeIndexRegistry.register(index);
+        if (index.isEvaluateOnly()) {
+            evaluateOnlyAttributeIndexRegistry.register(index);
+        } else {
+            attributeIndexRegistry.register(index);
+        }
         converterCache.invalidate(index);
 
         indexes = indexesByName.values().toArray(EMPTY_INDEXES);
@@ -225,6 +230,7 @@ public class Indexes {
         compositeIndexes = EMPTY_INDEXES;
         indexesByName.clear();
         attributeIndexRegistry.clear();
+        evaluateOnlyAttributeIndexRegistry.clear();
         converterCache.clear();
 
         for (InternalIndex index : indexesSnapshot) {
@@ -361,7 +367,7 @@ public class Indexes {
      *                            Negative value indicates that the value is not defined.
      * @return the matched index or {@code null} if nothing matched.
      * @see QueryContext.IndexMatchHint
-     * @see Indexes#matchIndex
+     * @see QueryContext#matchIndex
      */
     public InternalIndex matchIndex(String pattern, QueryContext.IndexMatchHint matchHint, int ownedPartitionCount) {
         InternalIndex index;
@@ -372,6 +378,48 @@ public class Indexes {
         }
 
         if (index == null || !index.allPartitionsIndexed(ownedPartitionCount)) {
+            return null;
+        }
+
+        return index;
+    }
+
+    /**
+     * Matches an index for the given pattern and match hint that can evaluate
+     * the given predicate class.
+     *
+     * @param pattern             the pattern to match an index for. May be either an
+     *                            attribute name or an exact index name.
+     * @param predicateClass      the predicate class the matched index must be
+     *                            able to evaluate.
+     * @param matchHint           the match hint.
+     * @param ownedPartitionCount a count of owned partitions a query runs on.
+     *                            Negative value indicates that the value is not defined.
+     * @return the matched index or {@code null} if nothing matched.
+     * @see QueryContext.IndexMatchHint
+     * @see Index#evaluate
+     */
+    public InternalIndex matchIndex(String pattern, Class<? extends Predicate> predicateClass,
+                                    QueryContext.IndexMatchHint matchHint, int ownedPartitionCount) {
+        InternalIndex index;
+        if (matchHint == QueryContext.IndexMatchHint.EXACT_NAME) {
+            index = indexesByName.get(pattern);
+        } else {
+            index = evaluateOnlyAttributeIndexRegistry.match(pattern, matchHint);
+            if (index == null) {
+                index = attributeIndexRegistry.match(pattern, matchHint);
+            }
+        }
+
+        if (index == null) {
+            return null;
+        }
+
+        if (!index.canEvaluate(predicateClass)) {
+            return null;
+        }
+
+        if (!index.allPartitionsIndexed(ownedPartitionCount)) {
             return null;
         }
 
