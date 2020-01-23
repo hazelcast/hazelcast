@@ -313,6 +313,16 @@ public class MapConfigTest {
     }
 
     @Test
+    public void givenCacheDeserializedValuesSetToALWAYS_whenSetOptimizeQueriesToTrue_thenNoException() {
+        // given
+        MapConfig mapConfig = new MapConfig();
+        mapConfig.setCacheDeserializedValues(CacheDeserializedValues.ALWAYS);
+
+        // when
+        mapConfig.setOptimizeQueries(true);
+    }
+
+    @Test
     public void givenCacheDeserializedValuesSetToINDEX_ONLY_whenSetOptimizeQueriesToFalse_thenNoException() {
         // given
         MapConfig mapConfig = new MapConfig();
@@ -330,6 +340,16 @@ public class MapConfigTest {
 
         // when
         mapConfig.setOptimizeQueries(true);
+    }
+
+    @Test
+    public void givenCacheDeserializedValuesSetToNEVER_whenSetOptimizeQueriesToFalse_thenNoException() {
+        // given
+        MapConfig mapConfig = new MapConfig();
+        mapConfig.setCacheDeserializedValues(CacheDeserializedValues.NEVER);
+
+        // when
+        mapConfig.setOptimizeQueries(false);
     }
 
     @Test(expected = ConfigurationException.class)

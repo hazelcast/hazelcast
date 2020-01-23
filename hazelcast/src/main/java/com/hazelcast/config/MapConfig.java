@@ -822,8 +822,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
         if (!setCacheDeserializedValuesExplicitlyInvoked) {
             return;
         }
-        if ((cacheDeserializedValues == CacheDeserializedValues.INDEX_ONLY
-                || cacheDeserializedValues == CacheDeserializedValues.NEVER) && optimizeQueries) {
+        if (cacheDeserializedValues != CacheDeserializedValues.ALWAYS && optimizeQueries) {
             throw new ConfigurationException("Deprecated option 'optimize-queries' is being set to true, "
                     + "but 'cacheDeserializedValues' was set to NEVER or INDEX_ONLY. "
                     + "These are conflicting options. Please remove the `optimize-queries'");
@@ -864,7 +863,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
                     + " These are conflicting options. Please remove the `optimize-queries'");
         } else if (!optimizeQueryFlag && newValue == CacheDeserializedValues.ALWAYS) {
             throw new ConfigurationException("Deprecated option 'optimize-queries' is set to `false`, "
-                    + "but 'cacheDeserializedValues' is begin set to ALWAYS. These are conflicting options."
+                    + "but 'cacheDeserializedValues' is being set to ALWAYS. These are conflicting options."
                     + " Please remove the `optimize-queries'");
         }
     }
