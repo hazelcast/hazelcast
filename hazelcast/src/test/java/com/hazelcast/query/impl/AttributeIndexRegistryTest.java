@@ -195,17 +195,6 @@ public class AttributeIndexRegistryTest {
         assertSame(a12, undecorated(registry.match("a1", IndexMatchHint.NONE)));
     }
 
-    @Test
-    public void testBitmapIndexesArePreferred() {
-        InternalIndex unordered = index(HASH, "a");
-        registry.register(unordered);
-        assertSame(unordered, undecorated(registry.match("a", IndexMatchHint.NONE)));
-
-        InternalIndex bitmap = index(BITMAP, "a");
-        registry.register(bitmap);
-        assertSame(bitmap, undecorated(registry.match("a", IndexMatchHint.NONE)));
-    }
-
     private static InternalIndex index(IndexType type, String... components) {
         IndexConfig config = IndexUtils.createTestIndexConfig(type, components);
 
