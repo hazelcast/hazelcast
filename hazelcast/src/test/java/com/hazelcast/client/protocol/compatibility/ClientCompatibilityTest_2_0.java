@@ -6802,7 +6802,7 @@ public class ClientCompatibilityTest_2_0 {
         int fileClientMessageIndex = 808;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MCGetCPMembersCodec.ResponseParameters parameters = MCGetCPMembersCodec.decodeResponse(fromFile);
-        assertTrue(isEqual(aListOfUUIDs, parameters.cpMembers));
+        assertTrue(isEqual(aListOfUUIDToUUID, parameters.cpMembers));
     }
 
     @Test
