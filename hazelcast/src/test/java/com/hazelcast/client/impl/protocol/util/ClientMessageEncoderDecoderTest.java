@@ -224,7 +224,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
 
         assertEquals(2, parameters.status);
         assertEquals(new Address("127.0.0.1", 5701), parameters.address);
-        assertEquals(uuid, parameters.uuid);
+        assertEquals(uuid, parameters.memberUuid);
         assertEquals(1, parameters.serializationVersion);
         assertEquals("3.12", parameters.serverHazelcastVersion);
         assertEquals(271, parameters.partitionCount);

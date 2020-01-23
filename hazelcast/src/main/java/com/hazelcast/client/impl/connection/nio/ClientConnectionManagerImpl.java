@@ -821,7 +821,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             checkPartitionCount(response.partitionCount);
             connection.setConnectedServerVersion(response.serverHazelcastVersion);
             connection.setRemoteEndpoint(response.address);
-            connection.setRemoteUuid(response.uuid);
+            connection.setRemoteUuid(response.memberUuid);
 
             UUID newClusterId = response.clusterId;
 
@@ -836,7 +836,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 client.onClusterRestart();
             }
 
-            activeConnections.put(response.uuid, connection);
+            activeConnections.put(response.memberUuid, connection);
 
             if (initialConnection) {
                 clusterId = newClusterId;
@@ -849,7 +849,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 }
             }
 
-            logger.info("Authenticated with server " + response.address + ":" + response.uuid
+            logger.info("Authenticated with server " + response.address + ":" + response.memberUuid
                     + ", server version: " + response.serverHazelcastVersion
                     + ", local address: " + connection.getLocalSocketAddress());
 

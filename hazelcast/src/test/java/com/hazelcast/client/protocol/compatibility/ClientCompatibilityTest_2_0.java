@@ -77,7 +77,7 @@ public class ClientCompatibilityTest_2_0 {
         ClientAuthenticationCodec.ResponseParameters parameters = ClientAuthenticationCodec.decodeResponse(fromFile);
         assertTrue(isEqual(aByte, parameters.status));
         assertTrue(isEqual(anAddress, parameters.address));
-        assertTrue(isEqual(aUUID, parameters.uuid));
+        assertTrue(isEqual(aUUID, parameters.memberUuid));
         assertTrue(isEqual(aByte, parameters.serializationVersion));
         assertTrue(isEqual(aString, parameters.serverHazelcastVersion));
         assertTrue(isEqual(anInt, parameters.partitionCount));
@@ -100,7 +100,7 @@ public class ClientCompatibilityTest_2_0 {
         ClientAuthenticationCustomCodec.ResponseParameters parameters = ClientAuthenticationCustomCodec.decodeResponse(fromFile);
         assertTrue(isEqual(aByte, parameters.status));
         assertTrue(isEqual(anAddress, parameters.address));
-        assertTrue(isEqual(aUUID, parameters.uuid));
+        assertTrue(isEqual(aUUID, parameters.memberUuid));
         assertTrue(isEqual(aByte, parameters.serializationVersion));
         assertTrue(isEqual(aString, parameters.serverHazelcastVersion));
         assertTrue(isEqual(anInt, parameters.partitionCount));

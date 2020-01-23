@@ -41,7 +41,6 @@ import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 
 import javax.annotation.Nonnull;
@@ -115,9 +114,6 @@ public class ClientClusterServiceImpl implements ClientClusterService {
             }
             if (listener instanceof MembershipListener) {
                 addMembershipListenerWithoutInit((MembershipListener) listener);
-            }
-            if (listener instanceof PartitionLostListener) {
-                client.getPartitionService().addPartitionLostListener((PartitionLostListener) listener);
             }
         }
     }
