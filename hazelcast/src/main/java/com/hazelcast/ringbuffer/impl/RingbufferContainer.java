@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.ringbuffer.StaleSequenceException;
@@ -432,6 +432,31 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
 
     public boolean isTooLargeSequence(long sequence) {
         return sequence > tailSequence() + 1;
+    }
+
+    /**
+     * Checks if the provided {@code sequence} can be read immediately. If
+     * not, it will return the current oldest or newest immediately readable
+     * sequence. This method can be used for a loss-tolerant reader when
+     * trying to avoid a {@link com.hazelcast.ringbuffer.StaleSequenceException}.
+     *
+     * @param readSequence the sequence wanting to be read
+     * @return the bounded sequence
+     */
+    public long clampReadSequenceToBounds(long readSequence) {
+        // fast forward if late and no store is configured
+        final long headSequence = headSequence();
+        if (readSequence < headSequence && !store.isEnabled()) {
+            return headSequence;
+        }
+
+        // jump back if too far in future
+        final long tailSequence = tailSequence();
+        if (readSequence > tailSequence + 1) {
+            return tailSequence + 1;
+        }
+
+        return readSequence;
     }
 
     /**

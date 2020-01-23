@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,13 +34,13 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * Configuration for WAN replication. This configuration is referenced from a
  * IMap or ICache configuration to determine the receivers for the WAN events.
  * Each receiver is defined with a either a
- * {@link WanBatchReplicationPublisherConfig} or a {@link CustomWanPublisherConfig}.
+ * {@link WanBatchPublisherConfig} or a {@link WanCustomPublisherConfig}.
  * <p>
  * A single WAN replication configuration may consist of several WAN publisher
  * configurations. The built-in WAN publisher implementation should be
- * configured using {@link WanBatchReplicationPublisherConfig} and custom
+ * configured using {@link WanBatchPublisherConfig} and custom
  * WAN publisher implementations can be configured using
- * {@link CustomWanPublisherConfig}.
+ * {@link WanCustomPublisherConfig}.
  * <p>
  * You may consider each WAN publisher configuration as a single target cluster
  * or a single external system. The WAN subsystem will track replication for
@@ -59,9 +59,9 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 public class WanReplicationConfig implements IdentifiedDataSerializable {
 
     private String name;
-    private WanConsumerConfig wanConsumerConfig;
-    private List<CustomWanPublisherConfig> customPublisherConfigs = new ArrayList<>(0);
-    private List<WanBatchReplicationPublisherConfig> batchPublisherConfigs = new ArrayList<>(1);
+    private WanConsumerConfig consumerConfig;
+    private List<WanCustomPublisherConfig> customPublisherConfigs = new ArrayList<>(0);
+    private List<WanBatchPublisherConfig> batchPublisherConfigs = new ArrayList<>(1);
 
     public String getName() {
         return name;
@@ -85,8 +85,8 @@ public class WanReplicationConfig implements IdentifiedDataSerializable {
      * WAN replication. The WAN consumer is in charge of consuming (processing)
      * incoming WAN events.
      */
-    public WanConsumerConfig getWanConsumerConfig() {
-        return wanConsumerConfig;
+    public WanConsumerConfig getConsumerConfig() {
+        return consumerConfig;
     }
 
     /**
@@ -94,11 +94,11 @@ public class WanReplicationConfig implements IdentifiedDataSerializable {
      * WAN replication. The WAN consumer is in charge of consuming (processing)
      * incoming WAN events.
      *
-     * @param wanConsumerConfig the WAN consumer configuration
+     * @param consumerConfig the WAN consumer configuration
      * @return this config
      */
-    public WanReplicationConfig setWanConsumerConfig(WanConsumerConfig wanConsumerConfig) {
-        this.wanConsumerConfig = wanConsumerConfig;
+    public WanReplicationConfig setConsumerConfig(WanConsumerConfig consumerConfig) {
+        this.consumerConfig = consumerConfig;
         return this;
     }
 
@@ -107,7 +107,7 @@ public class WanReplicationConfig implements IdentifiedDataSerializable {
      * replication.
      */
     public @Nonnull
-    List<CustomWanPublisherConfig> getCustomPublisherConfigs() {
+    List<WanCustomPublisherConfig> getCustomPublisherConfigs() {
         return customPublisherConfigs;
     }
 
@@ -119,7 +119,7 @@ public class WanReplicationConfig implements IdentifiedDataSerializable {
      * @return this config
      */
     public WanReplicationConfig setCustomPublisherConfigs(
-            @Nonnull List<CustomWanPublisherConfig> customPublisherConfigs) {
+            @Nonnull List<WanCustomPublisherConfig> customPublisherConfigs) {
         this.customPublisherConfigs = checkNotNull(customPublisherConfigs, "Publisher configurations must not be null");
         return this;
     }
@@ -130,7 +130,7 @@ public class WanReplicationConfig implements IdentifiedDataSerializable {
      * batching WAN implementation for this WAN replication.
      */
     public @Nonnull
-    List<WanBatchReplicationPublisherConfig> getBatchPublisherConfigs() {
+    List<WanBatchPublisherConfig> getBatchPublisherConfigs() {
         return batchPublisherConfigs;
     }
 
@@ -142,7 +142,7 @@ public class WanReplicationConfig implements IdentifiedDataSerializable {
      * @return this config
      */
     public WanReplicationConfig setBatchPublisherConfigs(
-            @Nonnull List<WanBatchReplicationPublisherConfig> batchPublisherConfigs) {
+            @Nonnull List<WanBatchPublisherConfig> batchPublisherConfigs) {
         this.batchPublisherConfigs = checkNotNull(batchPublisherConfigs, "Publisher configurations must not be null");
         return this;
     }
@@ -154,7 +154,7 @@ public class WanReplicationConfig implements IdentifiedDataSerializable {
      * @param config the WAN publisher configuration
      * @return this config
      */
-    public WanReplicationConfig addWanBatchReplicationPublisherConfig(WanBatchReplicationPublisherConfig config) {
+    public WanReplicationConfig addBatchReplicationPublisherConfig(WanBatchPublisherConfig config) {
         this.batchPublisherConfigs.add(config);
         return this;
     }
@@ -166,7 +166,7 @@ public class WanReplicationConfig implements IdentifiedDataSerializable {
      * @param config the WAN publisher configuration
      * @return this config
      */
-    public WanReplicationConfig addCustomPublisherConfig(CustomWanPublisherConfig config) {
+    public WanReplicationConfig addCustomPublisherConfig(WanCustomPublisherConfig config) {
         this.customPublisherConfigs.add(config);
         return this;
     }
@@ -175,7 +175,7 @@ public class WanReplicationConfig implements IdentifiedDataSerializable {
     public String toString() {
         return "WanReplicationConfig{"
                 + "name='" + name + '\''
-                + ", wanConsumerConfig=" + wanConsumerConfig
+                + ", wanConsumerConfig=" + consumerConfig
                 + ", customPublisherConfigs=" + customPublisherConfigs
                 + ", batchPublisherConfigs=" + batchPublisherConfigs
                 + '}';
@@ -194,7 +194,7 @@ public class WanReplicationConfig implements IdentifiedDataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
-        out.writeObject(wanConsumerConfig);
+        out.writeObject(consumerConfig);
         writeCollection(batchPublisherConfigs, out);
         writeCollection(customPublisherConfigs, out);
     }
@@ -202,7 +202,7 @@ public class WanReplicationConfig implements IdentifiedDataSerializable {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
-        wanConsumerConfig = in.readObject();
+        consumerConfig = in.readObject();
 
         batchPublisherConfigs = readList(in);
         customPublisherConfigs = readList(in);
@@ -222,7 +222,7 @@ public class WanReplicationConfig implements IdentifiedDataSerializable {
         if (name != null ? !name.equals(that.name) : that.name != null) {
             return false;
         }
-        if (wanConsumerConfig != null ? !wanConsumerConfig.equals(that.wanConsumerConfig) : that.wanConsumerConfig != null) {
+        if (consumerConfig != null ? !consumerConfig.equals(that.consumerConfig) : that.consumerConfig != null) {
             return false;
         }
         if (!customPublisherConfigs.equals(that.customPublisherConfigs)) {
@@ -234,7 +234,7 @@ public class WanReplicationConfig implements IdentifiedDataSerializable {
     @Override
     public int hashCode() {
         int result = name != null ? name.hashCode() : 0;
-        result = 31 * result + (wanConsumerConfig != null ? wanConsumerConfig.hashCode() : 0);
+        result = 31 * result + (consumerConfig != null ? consumerConfig.hashCode() : 0);
         result = 31 * result + customPublisherConfigs.hashCode();
         result = 31 * result + batchPublisherConfigs.hashCode();
         return result;

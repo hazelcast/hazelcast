@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("6e0f94fa7c1cbd2912b9490d1dac3b49")
+@Generated("957ae5fdc274ec0b2fc8eb7bb58bd758")
 public final class PredicateConfigHolderCodec {
 
     private PredicateConfigHolderCodec() {
@@ -46,7 +46,7 @@ public final class PredicateConfigHolderCodec {
 
         java.lang.String className = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         java.lang.String sql = CodecUtil.decodeNullable(iterator, StringCodec::decode);
-        com.hazelcast.nio.serialization.Data implementation = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        com.hazelcast.internal.serialization.Data implementation = CodecUtil.decodeNullable(iterator, DataCodec::decode);
 
         fastForwardToEndFrame(iterator);
 

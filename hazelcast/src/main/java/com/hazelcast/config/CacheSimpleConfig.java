@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,10 @@
 package com.hazelcast.config;
 
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
+import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
-import com.hazelcast.spi.merge.SplitBrainMergeTypes;
-import com.hazelcast.internal.partition.IPartition;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -43,7 +41,7 @@ import static com.hazelcast.internal.util.Preconditions.isNotNull;
  * CacheConfig depends on the JCache API. If the JCache API is not in the classpath,
  * you can use CacheSimpleConfig as a communicator between the code and CacheConfig.
  */
-public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSerializable, NamedConfig {
+public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfig {
 
     /**
      * The minimum number of backups.
@@ -122,7 +120,9 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
         this.cacheLoaderFactory = cacheSimpleConfig.cacheLoaderFactory;
         this.cacheWriterFactory = cacheSimpleConfig.cacheWriterFactory;
         this.expiryPolicyFactoryConfig = cacheSimpleConfig.expiryPolicyFactoryConfig;
-        this.cacheEntryListeners = cacheSimpleConfig.cacheEntryListeners;
+        this.cacheEntryListeners = cacheSimpleConfig.cacheEntryListeners == null
+                ? null
+                : new ArrayList<>(cacheSimpleConfig.cacheEntryListeners);
         this.asyncBackupCount = cacheSimpleConfig.asyncBackupCount;
         this.backupCount = cacheSimpleConfig.backupCount;
         this.inMemoryFormat = cacheSimpleConfig.inMemoryFormat;
@@ -131,8 +131,9 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
             this.evictionConfig = cacheSimpleConfig.evictionConfig;
         }
         this.wanReplicationRef = cacheSimpleConfig.wanReplicationRef;
-        this.partitionLostListenerConfigs =
-                new ArrayList<>(cacheSimpleConfig.getPartitionLostListenerConfigs());
+        this.partitionLostListenerConfigs = cacheSimpleConfig.partitionLostListenerConfigs == null
+                ? null
+                : new ArrayList<>(cacheSimpleConfig.partitionLostListenerConfigs);
         this.splitBrainProtectionName = cacheSimpleConfig.splitBrainProtectionName;
         this.mergePolicyConfig = new MergePolicyConfig(cacheSimpleConfig.mergePolicyConfig);
         this.hotRestartConfig = new HotRestartConfig(cacheSimpleConfig.hotRestartConfig);
@@ -563,7 +564,7 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
      */
     public List<CachePartitionLostListenerConfig> getPartitionLostListenerConfigs() {
         if (partitionLostListenerConfigs == null) {
-            partitionLostListenerConfigs = new ArrayList<CachePartitionLostListenerConfig>();
+            partitionLostListenerConfigs = new ArrayList<>();
         }
         return partitionLostListenerConfigs;
     }
@@ -626,11 +627,6 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
     public CacheSimpleConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
         this.mergePolicyConfig = checkNotNull(mergePolicyConfig, "mergePolicyConfig cannot be null!");
         return this;
-    }
-
-    @Override
-    public Class getProvidedMergeTypes() {
-        return SplitBrainMergeTypes.CacheMergeTypes.class;
     }
 
     /**

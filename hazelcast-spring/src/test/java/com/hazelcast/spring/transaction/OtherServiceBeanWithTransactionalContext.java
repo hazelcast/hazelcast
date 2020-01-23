@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,22 +36,13 @@ public class OtherServiceBeanWithTransactionalContext {
     }
 
     @Transactional
-    public DummyObject get(Long id) {
-        return (DummyObject) transactionalContext.getMap("dummyObjectMap").get(id);
-    }
-
-    @Transactional
     public void putWithException(DummyObject object) {
         put(object);
         throw new RuntimeException("oops, let's rollback in " + this.getClass().getSimpleName() + "!");
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void putInNewTransaction(DummyObject object1, DummyObject object2) {
-        if (get(object1.getId()) != null) {
-            return;
-        }
-        put(object2);
+    public void putInNewTransaction(DummyObject object) {
+        put(object);
     }
-
 }

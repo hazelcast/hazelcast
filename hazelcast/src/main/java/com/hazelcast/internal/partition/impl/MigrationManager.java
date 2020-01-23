@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.partition.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
@@ -24,8 +25,9 @@ import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.partition.IPartitionLostEvent;
 import com.hazelcast.internal.partition.InternalPartition;
-import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.MigrationEndpoint;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.MigrationInfo.MigrationStatus;
 import com.hazelcast.internal.partition.MigrationStateImpl;
@@ -48,7 +50,6 @@ import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.internal.util.scheduler.CoalescingDelayedTrigger;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.partition.ReplicaMigrationEvent;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
@@ -57,14 +58,13 @@ import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import com.hazelcast.internal.partition.IPartitionLostEvent;
-import com.hazelcast.internal.partition.MigrationEndpoint;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -75,6 +75,7 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -86,6 +87,9 @@ import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MIGRATION_METRIC_MIGRATION_MANAGER_MIGRATION_ACTIVE;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITIONS_PREFIX;
+import static com.hazelcast.internal.metrics.ProbeUnit.BOOLEAN;
 import static com.hazelcast.internal.partition.IPartitionService.SERVICE_NAME;
 
 /**
@@ -121,6 +125,7 @@ public class MigrationManager {
     private final boolean fragmentedMigrationEnabled;
     private final long memberHeartbeatTimeoutMillis;
     private boolean triggerRepartitioningWhenClusterStateAllowsMigration;
+    private final Set<MigrationInfo> finalizingMigrationsRegistry = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
     MigrationManager(Node node, InternalPartitionServiceImpl service, Lock partitionServiceLock) {
         this.node = node;
@@ -142,10 +147,10 @@ public class MigrationManager {
         delayedResumeMigrationTrigger = new CoalescingDelayedTrigger(
                 executionService, migrationPauseDelayMs, 2 * migrationPauseDelayMs, this::resumeMigration);
         this.memberHeartbeatTimeoutMillis = properties.getMillis(ClusterProperty.MAX_NO_HEARTBEAT_SECONDS);
-        nodeEngine.getMetricsRegistry().registerStaticMetrics(stats, "partitions");
+        nodeEngine.getMetricsRegistry().registerStaticMetrics(stats, PARTITIONS_PREFIX);
     }
 
-    @Probe(name = "migrationActive")
+    @Probe(name = MIGRATION_METRIC_MIGRATION_MANAGER_MIGRATION_ACTIVE, unit = BOOLEAN)
     private int migrationActiveProbe() {
         return migrationTasksAllowed.get() ? 1 : 0;
     }
@@ -213,8 +218,8 @@ public class MigrationManager {
 
                 MigrationEndpoint endpoint = source ? MigrationEndpoint.SOURCE : MigrationEndpoint.DESTINATION;
                 FinalizeMigrationOperation op = new FinalizeMigrationOperation(migrationInfo, endpoint, success);
-                op.setPartitionId(partitionId).setNodeEngine(nodeEngine).setValidateTarget(false)
-                        .setService(partitionService);
+                op.setPartitionId(partitionId).setNodeEngine(nodeEngine).setValidateTarget(false).setService(partitionService);
+                registerFinalizingMigration(migrationInfo);
                 OperationServiceImpl operationService = nodeEngine.getOperationService();
                 if (operationService.isRunAllowed(op)) {
                     // When migration finalization is triggered by subsequent migrations
@@ -242,6 +247,18 @@ public class MigrationManager {
         } finally {
             migrationInfo.doneProcessing();
         }
+    }
+
+    private void registerFinalizingMigration(MigrationInfo migration) {
+        finalizingMigrationsRegistry.add(migration);
+    }
+
+    public boolean removeFinalizingMigration(MigrationInfo migration) {
+        return finalizingMigrationsRegistry.remove(migration);
+    }
+
+    public boolean isFinalizingMigrationRegistered(int partitionId) {
+        return finalizingMigrationsRegistry.stream().anyMatch(m -> partitionId == m.getPartitionId());
     }
 
     /**
@@ -1056,12 +1073,9 @@ public class MigrationManager {
             int partitionStateVersion = partitionStateManager.getVersion();
             Operation op = new MigrationRequestOperation(migrationInfo, completedMigrations, partitionStateVersion,
                     fragmentedMigrationEnabled);
-            Future future = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, op,
-                    fromMember.getAddress())
+            Future future = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, op, fromMember.getAddress())
                     .setCallTimeout(partitionMigrationTimeout)
-                    .setTryCount(InternalPartitionService.MIGRATION_RETRY_COUNT)
-                    .setTryPauseMillis(InternalPartitionService.MIGRATION_RETRY_PAUSE).invoke();
-
+                    .invoke();
             try {
                 Object response = future.get();
                 return (Boolean) nodeEngine.toObject(response);

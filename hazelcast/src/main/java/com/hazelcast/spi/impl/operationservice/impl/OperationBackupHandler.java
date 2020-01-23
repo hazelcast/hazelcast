@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionReplicaVersionManager;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -66,9 +66,8 @@ final class OperationBackupHandler {
      *
      * @param op the Operation to backup.
      * @return the number of ACKS required to complete the invocation.
-     * @throws Exception if there is any exception sending the backups.
      */
-    int sendBackups(Operation op) throws Exception {
+    int sendBackups(Operation op) {
         if (!(op instanceof BackupAwareOperation)) {
             return 0;
         }

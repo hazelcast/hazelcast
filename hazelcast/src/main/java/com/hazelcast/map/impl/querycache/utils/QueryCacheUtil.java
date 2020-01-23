@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,8 @@ import com.hazelcast.map.impl.querycache.publisher.PartitionAccumulatorRegistry;
 import com.hazelcast.map.impl.querycache.publisher.PublisherContext;
 import com.hazelcast.map.impl.querycache.publisher.PublisherRegistry;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.Map;
 
@@ -37,6 +39,7 @@ public final class QueryCacheUtil {
     /**
      * Returns accumulators of a {@code QueryCache}.
      */
+    @Nonnull
     public static Map<Integer, Accumulator> getAccumulators(QueryCacheContext context, String mapName, String cacheId) {
         PartitionAccumulatorRegistry partitionAccumulatorRegistry = getAccumulatorRegistryOrNull(context, mapName, cacheId);
         if (partitionAccumulatorRegistry == null) {
@@ -50,6 +53,7 @@ public final class QueryCacheUtil {
      *
      * @see PartitionAccumulatorRegistry
      */
+    @Nullable
     public static PartitionAccumulatorRegistry getAccumulatorRegistryOrNull(QueryCacheContext context,
                                                                             String mapName, String cacheId) {
         PublisherContext publisherContext = context.getPublisherContext();
@@ -66,6 +70,7 @@ public final class QueryCacheUtil {
      *
      * @see Accumulator
      */
+    @Nullable
     public static Accumulator getAccumulatorOrNull(QueryCacheContext context,
                                                    String mapName, String cacheId, int partitionId) {
         PartitionAccumulatorRegistry accumulatorRegistry = getAccumulatorRegistryOrNull(context, mapName, cacheId);

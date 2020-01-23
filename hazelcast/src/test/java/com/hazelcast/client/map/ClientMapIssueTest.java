@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -102,7 +102,7 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
         final CompletionStage<Integer> future = map.getAsync(1);
         final CountDownLatch latch = new CountDownLatch(1);
         future.thenRun(latch::countDown);
-        assertOpenEventually(latch, 10);
+        assertOpenEventually(latch);
     }
 
     @Test
@@ -114,7 +114,6 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
         HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance(config);
 
         ClientConfig clientConfig = getClientConfig();
-        clientConfig.setExecutorPoolSize(1);
         clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), "10");
 
@@ -147,7 +146,6 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
         HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance(config);
 
         ClientConfig clientConfig = getClientConfig();
-        clientConfig.setExecutorPoolSize(1);
         clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), "10");
 

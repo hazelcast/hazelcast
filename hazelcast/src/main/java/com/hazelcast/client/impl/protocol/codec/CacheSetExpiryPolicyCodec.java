@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,14 +38,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * {@code expiryPolicy} takes precedence for these particular {@code keys} against any cache wide expiry policy.
  * If some keys in {@code keys} do not exist or are already expired, this call has no effect for those.
  */
-@Generated("55755f94ee6aa58d60097c31fc34015b")
+@Generated("ee7ef9d3402bf9e627abfa55af477450")
 public final class CacheSetExpiryPolicyCodec {
-    //hex: 0x132200
-    public static final int REQUEST_MESSAGE_TYPE = 1253888;
-    //hex: 0x132201
-    public static final int RESPONSE_MESSAGE_TYPE = 1253889;
+    //hex: 0x132100
+    public static final int REQUEST_MESSAGE_TYPE = 1253632;
+    //hex: 0x132101
+    public static final int RESPONSE_MESSAGE_TYPE = 1253633;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
 
     private CacheSetExpiryPolicyCodec() {
@@ -62,20 +62,21 @@ public final class CacheSetExpiryPolicyCodec {
         /**
          * The keys that are associated with the specified expiry policy.
          */
-        public java.util.List<com.hazelcast.nio.serialization.Data> keys;
+        public java.util.List<com.hazelcast.internal.serialization.Data> keys;
 
         /**
          * custom expiry policy for this operation
          */
-        public com.hazelcast.nio.serialization.Data expiryPolicy;
+        public com.hazelcast.internal.serialization.Data expiryPolicy;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<com.hazelcast.nio.serialization.Data> keys, com.hazelcast.nio.serialization.Data expiryPolicy) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<com.hazelcast.internal.serialization.Data> keys, com.hazelcast.internal.serialization.Data expiryPolicy) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("Cache.SetExpiryPolicy");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         ListMultiFrameCodec.encode(clientMessage, keys, DataCodec::encode);

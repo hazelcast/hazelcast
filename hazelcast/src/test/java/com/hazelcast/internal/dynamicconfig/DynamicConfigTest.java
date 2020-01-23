@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EntryListenerConfig;
+import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
@@ -43,9 +44,12 @@ import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.MergePolicyConfig;
+import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.QueueConfig;
@@ -59,14 +63,14 @@ import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.spi.eviction.EvictableEntryView;
-import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 import com.hazelcast.map.MapPartitionLostEvent;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.ringbuffer.RingbufferStore;
 import com.hazelcast.ringbuffer.RingbufferStoreFactory;
+import com.hazelcast.spi.eviction.EvictableEntryView;
+import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -87,8 +91,8 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
-import static com.hazelcast.config.MaxSizePolicy.PER_NODE;
 import static com.hazelcast.config.MultiMapConfig.ValueCollectionType.LIST;
+import static com.hazelcast.test.TestConfigUtils.NON_DEFAULT_BACKUP_COUNT;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -131,7 +135,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
         driver.getConfig().addMultiMapConfig(multiMapConfig);
 
-        assertConfigurationsEqualsOnAllMembers(multiMapConfig);
+        assertConfigurationsEqualOnAllMembers(multiMapConfig);
     }
 
     @Test
@@ -147,7 +151,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
         driver.getConfig().addMultiMapConfig(multiMapConfig);
 
-        assertConfigurationsEqualsOnAllMembers(multiMapConfig);
+        assertConfigurationsEqualOnAllMembers(multiMapConfig);
     }
 
     @Test
@@ -156,7 +160,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
                 .setMergePolicyConfig(new MergePolicyConfig("com.hazelcast.spi.merge.DiscardMergePolicy", 20));
         driver.getConfig().addCardinalityEstimatorConfig(config);
 
-        assertConfigurationsEqualsOnAllMembers(config);
+        assertConfigurationsEqualOnAllMembers(config);
     }
 
     @Test
@@ -165,7 +169,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
         driver.getConfig().addListConfig(config);
 
-        assertConfigurationsEqualsOnAllMembers(config);
+        assertConfigurationsEqualOnAllMembers(config);
     }
 
     @Test
@@ -176,7 +180,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
         driver.getConfig().addListConfig(config);
 
-        assertConfigurationsEqualsOnAllMembers(config);
+        assertConfigurationsEqualOnAllMembers(config);
     }
 
     @Test
@@ -187,7 +191,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
         driver.getConfig().addExecutorConfig(config);
 
-        assertConfigurationsEqualsOnAllMembers(config);
+        assertConfigurationsEqualOnAllMembers(config);
     }
 
     @Test
@@ -196,17 +200,18 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
         driver.getConfig().addDurableExecutorConfig(config);
 
-        assertConfigurationsEqualsOnAllMembers(config);
+        assertConfigurationsEqualOnAllMembers(config);
     }
 
     @Test
     public void testScheduledExecutorConfig() {
         ScheduledExecutorConfig config = new ScheduledExecutorConfig(name, 2, 3, 10, null,
-                new MergePolicyConfig(NON_DEFAULT_MERGE_POLICY, NON_DEFAULT_MERGE_BATCH_SIZE));
+                new MergePolicyConfig(NON_DEFAULT_MERGE_POLICY, NON_DEFAULT_MERGE_BATCH_SIZE),
+                ScheduledExecutorConfig.CapacityPolicy.PER_NODE);
 
         driver.getConfig().addScheduledExecutorConfig(config);
 
-        assertConfigurationsEqualsOnAllMembers(config);
+        assertConfigurationsEqualOnAllMembers(config);
     }
 
     @Test
@@ -215,7 +220,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
         driver.getConfig().addRingBufferConfig(config);
 
-        assertConfigurationsEqualsOnAllMembers(config);
+        assertConfigurationsEqualOnAllMembers(config);
     }
 
     @Test
@@ -227,7 +232,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
         driver.getConfig().addRingBufferConfig(config);
 
-        assertConfigurationsEqualsOnAllMembers(config);
+        assertConfigurationsEqualOnAllMembers(config);
     }
 
     @Test
@@ -239,7 +244,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
         driver.getConfig().addRingBufferConfig(config);
 
-        assertConfigurationsEqualsOnAllMembers(config);
+        assertConfigurationsEqualOnAllMembers(config);
     }
 
     @Test
@@ -251,7 +256,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
         driver.getConfig().addRingBufferConfig(config);
 
-        assertConfigurationsEqualsOnAllMembers(config);
+        assertConfigurationsEqualOnAllMembers(config);
     }
 
     @Test
@@ -263,7 +268,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
         driver.getConfig().addRingBufferConfig(config);
 
-        assertConfigurationsEqualsOnAllMembers(config);
+        assertConfigurationsEqualOnAllMembers(config);
     }
 
     @Test
@@ -272,7 +277,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
         driver.getConfig().addQueueConfig(config);
 
-        assertConfigurationsEqualsOnAllMembers(config);
+        assertConfigurationsEqualOnAllMembers(config);
     }
 
     @Test
@@ -281,7 +286,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
         driver.getConfig().addQueueConfig(config);
 
-        assertConfigurationsEqualsOnAllMembers(config);
+        assertConfigurationsEqualOnAllMembers(config);
     }
 
     @Test
@@ -290,7 +295,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
         driver.getConfig().addReplicatedMapConfig(config);
 
-        assertConfigurationsEqualsOnAllMembers(config);
+        assertConfigurationsEqualOnAllMembers(config);
     }
 
     @Test
@@ -300,7 +305,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
         driver.getConfig().addReplicatedMapConfig(config);
 
-        assertConfigurationsEqualsOnAllMembers(config);
+        assertConfigurationsEqualOnAllMembers(config);
     }
 
     @Test
@@ -309,7 +314,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         driver.getConfig().addReplicatedMapConfig(config);
         ReplicatedMap map = driver.getReplicatedMap(name);
         driver.getConfig().addReplicatedMapConfig(config);
-        assertConfigurationsEqualsOnAllMembers(config);
+        assertConfigurationsEqualOnAllMembers(config);
     }
 
     @Test
@@ -323,7 +328,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
         driver.getConfig().addReplicatedMapConfig(config);
 
-        assertConfigurationsEqualsOnAllMembers(config);
+        assertConfigurationsEqualOnAllMembers(config);
     }
 
     @Test
@@ -337,7 +342,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
         driver.getConfig().addReplicatedMapConfig(config);
 
-        assertConfigurationsEqualsOnAllMembers(config);
+        assertConfigurationsEqualOnAllMembers(config);
     }
 
     @Test
@@ -346,7 +351,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
         driver.getConfig().addSetConfig(setConfig);
 
-        assertConfigurationsEqualsOnAllMembers(setConfig);
+        assertConfigurationsEqualOnAllMembers(setConfig);
     }
 
     @Test
@@ -355,7 +360,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
         driver.getConfig().addMapConfig(config);
 
-        assertConfigurationsEqualsOnAllMembers(config);
+        assertConfigurationsEqualOnAllMembers(config);
     }
 
     @Test
@@ -364,7 +369,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
         driver.getConfig().addMapConfig(config);
 
-        assertConfigurationsEqualsOnAllMembers(config);
+        assertConfigurationsEqualOnAllMembers(config);
     }
 
     @Test
@@ -373,7 +378,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
         driver.getConfig().addMapConfig(config);
 
-        assertConfigurationsEqualsOnAllMembers(config);
+        assertConfigurationsEqualOnAllMembers(config);
     }
 
     @Test
@@ -382,7 +387,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
         driver.getConfig().addMapConfig(config);
 
-        assertConfigurationsEqualsOnAllMembers(config);
+        assertConfigurationsEqualOnAllMembers(config);
     }
 
     @Test
@@ -391,7 +396,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
         driver.getConfig().addMapConfig(config);
 
-        assertConfigurationsEqualsOnAllMembers(config);
+        assertConfigurationsEqualOnAllMembers(config);
     }
 
     @Test
@@ -401,7 +406,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
         driver.getConfig().addMapConfig(config);
 
-        assertConfigurationsEqualsOnAllMembers(config);
+        assertConfigurationsEqualOnAllMembers(config);
     }
 
     @Test
@@ -411,7 +416,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
         driver.getConfig().addMapConfig(config);
 
-        assertConfigurationsEqualsOnAllMembers(config);
+        assertConfigurationsEqualOnAllMembers(config);
     }
 
     @Test
@@ -421,7 +426,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
         driver.getConfig().addMapConfig(config);
 
-        assertConfigurationsEqualsOnAllMembers(config);
+        assertConfigurationsEqualOnAllMembers(config);
     }
 
     @Test
@@ -431,7 +436,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
         driver.getConfig().addMapConfig(config);
 
-        assertConfigurationsEqualsOnAllMembers(config);
+        assertConfigurationsEqualOnAllMembers(config);
     }
 
     @Test
@@ -442,7 +447,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
         driver.getConfig().addSetConfig(setConfig);
 
-        assertConfigurationsEqualsOnAllMembers(setConfig);
+        assertConfigurationsEqualOnAllMembers(setConfig);
     }
 
     @Test
@@ -452,7 +457,18 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
         driver.getConfig().addCacheConfig(config);
 
-        assertConfigurationsEqualsOnAllMembers(config);
+        assertConfigurationsEqualOnAllMembers(config);
+    }
+
+    @Test
+    public void testSameCacheConfig_canBeAddedTwice() {
+        CacheSimpleConfig config = new CacheSimpleConfig()
+                .setName(name)
+                .setBackupCount(NON_DEFAULT_BACKUP_COUNT);
+
+        driver.getConfig().addCacheConfig(config);
+        driver.getCacheManager().getCache(name);
+        driver.getConfig().addCacheConfig(config);
     }
 
     @Test
@@ -462,7 +478,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
         driver.getConfig().addCacheConfig(config);
 
-        assertConfigurationsEqualsOnAllMembers(config);
+        assertConfigurationsEqualOnAllMembers(config);
     }
 
     @Test
@@ -476,7 +492,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
         driver.getConfig().addCacheConfig(config);
 
-        assertConfigurationsEqualsOnAllMembers(config);
+        assertConfigurationsEqualOnAllMembers(config);
     }
 
     @Test
@@ -488,7 +504,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
         driver.getConfig().addCacheConfig(config);
 
-        assertConfigurationsEqualsOnAllMembers(config);
+        assertConfigurationsEqualOnAllMembers(config);
     }
 
     @Test
@@ -501,7 +517,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
         driver.getConfig().addCacheConfig(config);
 
-        assertConfigurationsEqualsOnAllMembers(config);
+        assertConfigurationsEqualOnAllMembers(config);
     }
 
     @Test
@@ -511,7 +527,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
         driver.getConfig().addCacheConfig(config);
 
-        assertConfigurationsEqualsOnAllMembers(config);
+        assertConfigurationsEqualOnAllMembers(config);
     }
 
     @Test
@@ -523,7 +539,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
         driver.getConfig().addCacheConfig(config);
 
-        assertConfigurationsEqualsOnAllMembers(config);
+        assertConfigurationsEqualOnAllMembers(config);
     }
 
     @Test
@@ -531,11 +547,13 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         FlakeIdGeneratorConfig config = new FlakeIdGeneratorConfig(randomName())
                 .setPrefetchCount(123)
                 .setPrefetchValidityMillis(456)
-                .setIdOffset(789)
+                .setEpochStart(789)
                 .setNodeIdOffset(890)
+                .setBitsNodeId(11)
+                .setBitsSequence(22)
                 .setStatisticsEnabled(false);
         driver.getConfig().addFlakeIdGeneratorConfig(config);
-        assertConfigurationsEqualsOnAllMembers(config);
+        assertConfigurationsEqualOnAllMembers(config);
     }
 
     @Test
@@ -547,7 +565,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
         driver.getConfig().addTopicConfig(topicConfig);
 
-        assertConfigurationsEqualsOnAllMembers(topicConfig);
+        assertConfigurationsEqualOnAllMembers(topicConfig);
     }
 
     @Test
@@ -560,7 +578,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
         driver.getConfig().addTopicConfig(topicConfig);
 
-        assertConfigurationsEqualsOnAllMembers(topicConfig);
+        assertConfigurationsEqualOnAllMembers(topicConfig);
     }
 
     @Test
@@ -573,7 +591,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
         driver.getConfig().addTopicConfig(topicConfig);
 
-        assertConfigurationsEqualsOnAllMembers(topicConfig);
+        assertConfigurationsEqualOnAllMembers(topicConfig);
     }
 
     @Test
@@ -585,7 +603,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
         driver.getConfig().addReliableTopicConfig(reliableTopicConfig);
 
-        assertConfigurationsEqualsOnAllMembers(reliableTopicConfig);
+        assertConfigurationsEqualOnAllMembers(reliableTopicConfig);
     }
 
     @Test
@@ -598,7 +616,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
         driver.getConfig().addReliableTopicConfig(reliableTopicConfig);
 
-        assertConfigurationsEqualsOnAllMembers(reliableTopicConfig);
+        assertConfigurationsEqualOnAllMembers(reliableTopicConfig);
     }
 
     @Test
@@ -611,7 +629,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
         driver.getConfig().addReliableTopicConfig(reliableTopicConfig);
 
-        assertConfigurationsEqualsOnAllMembers(reliableTopicConfig);
+        assertConfigurationsEqualOnAllMembers(reliableTopicConfig);
     }
 
     @Test
@@ -624,10 +642,28 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
         driver.getConfig().addReliableTopicConfig(reliableTopicConfig);
 
-        assertConfigurationsEqualsOnAllMembers(reliableTopicConfig);
+        assertConfigurationsEqualOnAllMembers(reliableTopicConfig);
     }
 
-    private void assertConfigurationsEqualsOnAllMembers(CacheSimpleConfig config) {
+    @Test
+    public void testPNCounterConfig() {
+        PNCounterConfig pnCounterConfig = new PNCounterConfig(name)
+                .setReplicaCount(NON_DEFAULT_BACKUP_COUNT)
+                .setStatisticsEnabled(false);
+
+        driver.getConfig().addPNCounterConfig(pnCounterConfig);
+        assertConfigurationsEqualOnAllMembers(pnCounterConfig);
+    }
+
+    private void assertConfigurationsEqualOnAllMembers(PNCounterConfig config) {
+        String name = config.getName();
+        for (HazelcastInstance instance : members) {
+            PNCounterConfig registeredConfig = instance.getConfig().getPNCounterConfig(name);
+            assertEquals(config, registeredConfig);
+        }
+    }
+
+    private void assertConfigurationsEqualOnAllMembers(CacheSimpleConfig config) {
         String name = config.getName();
         for (HazelcastInstance instance : members) {
             CacheSimpleConfig registeredConfig = instance.getConfig().getCacheConfig(name);
@@ -635,7 +671,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         }
     }
 
-    private void assertConfigurationsEqualsOnAllMembers(QueueConfig queueConfig) {
+    private void assertConfigurationsEqualOnAllMembers(QueueConfig queueConfig) {
         String name = queueConfig.getName();
         for (HazelcastInstance instance : members) {
             QueueConfig registeredConfig = instance.getConfig().getQueueConfig(name);
@@ -643,7 +679,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         }
     }
 
-    private void assertConfigurationsEqualsOnAllMembers(CardinalityEstimatorConfig cardinalityEstimatorConfig) {
+    private void assertConfigurationsEqualOnAllMembers(CardinalityEstimatorConfig cardinalityEstimatorConfig) {
         String name = cardinalityEstimatorConfig.getName();
         for (HazelcastInstance instance : members) {
             CardinalityEstimatorConfig registeredConfig = instance.getConfig().getCardinalityEstimatorConfig(name);
@@ -651,7 +687,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         }
     }
 
-    private void assertConfigurationsEqualsOnAllMembers(MultiMapConfig multiMapConfig) {
+    private void assertConfigurationsEqualOnAllMembers(MultiMapConfig multiMapConfig) {
         String name = multiMapConfig.getName();
         for (HazelcastInstance instance : members) {
             MultiMapConfig registeredConfig = instance.getConfig().getMultiMapConfig(name);
@@ -659,7 +695,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         }
     }
 
-    private void assertConfigurationsEqualsOnAllMembers(ExecutorConfig executorConfig) {
+    private void assertConfigurationsEqualOnAllMembers(ExecutorConfig executorConfig) {
         String name = executorConfig.getName();
         for (HazelcastInstance instance : members) {
             ExecutorConfig registeredConfig = instance.getConfig().getExecutorConfig(name);
@@ -667,7 +703,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         }
     }
 
-    private void assertConfigurationsEqualsOnAllMembers(RingbufferConfig ringbufferConfig) {
+    private void assertConfigurationsEqualOnAllMembers(RingbufferConfig ringbufferConfig) {
         String name = ringbufferConfig.getName();
         for (HazelcastInstance instance : members) {
             RingbufferConfig registeredConfig = instance.getConfig().getRingbufferConfig(name);
@@ -675,7 +711,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         }
     }
 
-    private void assertConfigurationsEqualsOnAllMembers(DurableExecutorConfig durableExecutorConfig) {
+    private void assertConfigurationsEqualOnAllMembers(DurableExecutorConfig durableExecutorConfig) {
         String name = durableExecutorConfig.getName();
         for (HazelcastInstance instance : members) {
             DurableExecutorConfig registeredConfig = instance.getConfig().getDurableExecutorConfig(name);
@@ -683,7 +719,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         }
     }
 
-    private void assertConfigurationsEqualsOnAllMembers(ScheduledExecutorConfig scheduledExecutorConfig) {
+    private void assertConfigurationsEqualOnAllMembers(ScheduledExecutorConfig scheduledExecutorConfig) {
         String name = scheduledExecutorConfig.getName();
         for (HazelcastInstance instance : members) {
             ScheduledExecutorConfig registeredConfig = instance.getConfig().getScheduledExecutorConfig(name);
@@ -691,7 +727,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         }
     }
 
-    private void assertConfigurationsEqualsOnAllMembers(SetConfig setConfig) {
+    private void assertConfigurationsEqualOnAllMembers(SetConfig setConfig) {
         String name = setConfig.getName();
         for (HazelcastInstance instance : members) {
             SetConfig registeredConfig = instance.getConfig().getSetConfig(name);
@@ -699,7 +735,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         }
     }
 
-    private void assertConfigurationsEqualsOnAllMembers(MapConfig mapConfig) {
+    private void assertConfigurationsEqualOnAllMembers(MapConfig mapConfig) {
         String name = mapConfig.getName();
         for (HazelcastInstance instance : members) {
             MapConfig registeredConfig = instance.getConfig().getMapConfig(name);
@@ -707,7 +743,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         }
     }
 
-    private void assertConfigurationsEqualsOnAllMembers(ReplicatedMapConfig replicatedMapConfig) {
+    private void assertConfigurationsEqualOnAllMembers(ReplicatedMapConfig replicatedMapConfig) {
         String name = replicatedMapConfig.getName();
         for (HazelcastInstance instance : members) {
             ReplicatedMapConfig registeredConfig = instance.getConfig().getReplicatedMapConfig(name);
@@ -715,7 +751,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         }
     }
 
-    private void assertConfigurationsEqualsOnAllMembers(ListConfig listConfig) {
+    private void assertConfigurationsEqualOnAllMembers(ListConfig listConfig) {
         String name = listConfig.getName();
         for (HazelcastInstance instance : members) {
             ListConfig registeredConfig = instance.getConfig().getListConfig(name);
@@ -723,14 +759,14 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         }
     }
 
-    private void assertConfigurationsEqualsOnAllMembers(FlakeIdGeneratorConfig config) {
+    private void assertConfigurationsEqualOnAllMembers(FlakeIdGeneratorConfig config) {
         for (HazelcastInstance instance : members) {
             FlakeIdGeneratorConfig registeredConfig = instance.getConfig().getFlakeIdGeneratorConfig(config.getName());
             assertEquals(config, registeredConfig);
         }
     }
 
-    private void assertConfigurationsEqualsOnAllMembers(TopicConfig topicConfig) {
+    private void assertConfigurationsEqualOnAllMembers(TopicConfig topicConfig) {
         String name = topicConfig.getName();
         for (HazelcastInstance instance : members) {
             TopicConfig registeredConfig = instance.getConfig().getTopicConfig(name);
@@ -738,7 +774,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         }
     }
 
-    private void assertConfigurationsEqualsOnAllMembers(ReliableTopicConfig reliableTopicConfig) {
+    private void assertConfigurationsEqualOnAllMembers(ReliableTopicConfig reliableTopicConfig) {
         String name = reliableTopicConfig.getName();
         for (HazelcastInstance instance : members) {
             ReliableTopicConfig registeredConfig = instance.getConfig().getReliableTopicConfig(name);
@@ -753,7 +789,6 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         entryListenerConfig.setOldValueRequired(true);
         entryListenerConfig.setCacheEntryEventFilterFactory("CacheEntryEventFilterFactory");
 
-        // TODO add journal config when client protocol for map codec is updated
         CacheSimpleConfig config = new CacheSimpleConfig()
                 .setName(name)
                 .setSplitBrainProtectionName("split-brain-protection")
@@ -768,10 +803,9 @@ public class DynamicConfigTest extends HazelcastTestSupport {
                 .setReadThrough(true)
                 .setWriteThrough(true)
                 .setHotRestartConfig(new HotRestartConfig().setEnabled(true).setFsync(true))
-//                .setEventJournalConfig(new EventJournalConfig().setEnabled(true)
-//                                                               .setCapacity(42)
-//                                                               .setTimeToLiveSeconds(52))
-                ;
+                .setEventJournalConfig(new EventJournalConfig().setEnabled(true)
+                                                               .setCapacity(42)
+                                                               .setTimeToLiveSeconds(52));
 
         config.setWanReplicationRef(new WanReplicationRef(randomName(), "com.hazelcast.MergePolicy",
                 Collections.singletonList("filter"), true));
@@ -813,11 +847,10 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         mapConfig.setAsyncBackupCount(3)
                 .setBackupCount(2)
                 .setCacheDeserializedValues(CacheDeserializedValues.ALWAYS)
-                // TODO add merkle tree and journal config when client protocol for map codec is updated
-                //.setMerkleTreeConfig(new MerkleTreeConfig().setEnabled(true).setDepth(15))
-//                .setEventJournalConfig(new EventJournalConfig().setEnabled(true)
-//                                                               .setCapacity(42)
-//                                                               .setTimeToLiveSeconds(52))
+                .setMerkleTreeConfig(new MerkleTreeConfig().setEnabled(true).setDepth(15))
+                .setEventJournalConfig(new EventJournalConfig().setEnabled(true)
+                                                               .setCapacity(42)
+                                                               .setTimeToLiveSeconds(52))
                 .setHotRestartConfig(new HotRestartConfig().setEnabled(true).setFsync(true))
                 .setInMemoryFormat(InMemoryFormat.OBJECT)
                 .setMergePolicyConfig(new MergePolicyConfig(NON_DEFAULT_MERGE_POLICY, NON_DEFAULT_MERGE_BATCH_SIZE))
@@ -832,7 +865,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         mapConfig.getEvictionConfig()
                 .setEvictionPolicy(EvictionPolicy.RANDOM)
                 .setSize(4096)
-                .setMaxSizePolicy(PER_NODE);
+                .setMaxSizePolicy(MaxSizePolicy.PER_NODE);
         return mapConfig;
     }
 

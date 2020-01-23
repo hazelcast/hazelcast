@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,14 @@
 package com.hazelcast.client.impl.protocol.task.executorservice;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.ExecutorServiceSubmitToAddressCodec;
+import com.hazelcast.client.impl.protocol.codec.ExecutorServiceSubmitToMemberCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.executor.impl.operations.MemberCallableTaskOperation;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -34,7 +35,7 @@ import java.security.Permission;
 import java.util.concurrent.Callable;
 
 public class ExecutorServiceSubmitToAddressMessageTask
-        extends AbstractInvocationMessageTask<ExecutorServiceSubmitToAddressCodec.RequestParameters> {
+        extends AbstractInvocationMessageTask<ExecutorServiceSubmitToMemberCodec.RequestParameters> {
 
     public ExecutorServiceSubmitToAddressMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -43,7 +44,8 @@ public class ExecutorServiceSubmitToAddressMessageTask
     @Override
     protected InvocationBuilder getInvocationBuilder(Operation op) {
         final OperationServiceImpl operationService = nodeEngine.getOperationService();
-        return operationService.createInvocationBuilder(getServiceName(), op, parameters.address);
+        Member member = nodeEngine.getClusterService().getMember(parameters.memberUUID);
+        return operationService.createInvocationBuilder(getServiceName(), op, member.getAddress());
     }
 
     @Override
@@ -68,16 +70,14 @@ public class ExecutorServiceSubmitToAddressMessageTask
     }
 
     @Override
-    protected ExecutorServiceSubmitToAddressCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        parameters = ExecutorServiceSubmitToAddressCodec.decodeRequest(clientMessage);
-        parameters.address = clientEngine.memberAddressOf(parameters.address);
-        return parameters;
+    protected ExecutorServiceSubmitToMemberCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ExecutorServiceSubmitToMemberCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
         Data data = serializationService.toData(response);
-        return ExecutorServiceSubmitToAddressCodec.encodeResponse(data);
+        return ExecutorServiceSubmitToMemberCodec.encodeResponse(data);
     }
 
     @Override

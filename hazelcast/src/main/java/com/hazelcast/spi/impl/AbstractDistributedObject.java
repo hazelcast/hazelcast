@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.internal.services.RemoteService;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -27,6 +27,8 @@ import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import com.hazelcast.spi.impl.proxyservice.ProxyService;
 import com.hazelcast.version.Version;
+
+import java.util.UUID;
 
 /**
  * Abstract DistributedObject implementation. Useful to provide basic functionality.
@@ -61,10 +63,13 @@ public abstract class AbstractDistributedObject<S extends RemoteService> impleme
 
     @Override
     public final void destroy() {
+        // IMPORTANT NOTE: This method should NOT be called from client MessageTasks.
+
         if (preDestroy()) {
             NodeEngine engine = getNodeEngine();
             ProxyService proxyService = engine.getProxyService();
-            proxyService.destroyDistributedObject(getServiceName(), getDistributedObjectName());
+            UUID source = engine.getLocalMember().getUuid();
+            proxyService.destroyDistributedObject(getServiceName(), getDistributedObjectName(), source);
             postDestroy();
         }
     }

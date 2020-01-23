@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,8 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_CONNECTION_CONNECTION_TYPE;
+import static com.hazelcast.internal.metrics.ProbeUnit.ENUM;
 import static com.hazelcast.internal.nio.ConnectionType.MEMBER;
 import static com.hazelcast.internal.nio.ConnectionType.NONE;
 
@@ -103,7 +105,7 @@ public class TcpIpConnection implements Connection {
         return connectionType;
     }
 
-    @Probe(name = "connectionType")
+    @Probe(name = TCP_METRIC_CONNECTION_CONNECTION_TYPE, unit = ENUM)
     private int getType() {
         return ConnectionType.getTypeId(connectionType);
     }

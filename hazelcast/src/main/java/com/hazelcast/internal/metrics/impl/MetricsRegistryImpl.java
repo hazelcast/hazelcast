@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricDescriptor;
-import com.hazelcast.internal.metrics.MetricTarget;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeFunction;
 import com.hazelcast.internal.metrics.ProbeLevel;
@@ -41,6 +40,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static com.hazelcast.internal.metrics.impl.MetricsUtil.extractExcludedTargets;
 import static com.hazelcast.internal.util.ConcurrentReferenceHashMap.Option.IDENTITY_COMPARISONS;
 import static com.hazelcast.internal.util.ConcurrentReferenceHashMap.ReferenceType.STRONG;
 import static com.hazelcast.internal.util.ConcurrentReferenceHashMap.ReferenceType.WEAK;
@@ -48,7 +48,6 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
 import static java.lang.Boolean.TRUE;
 import static java.lang.String.format;
-import static java.util.Collections.emptySet;
 import static java.util.Collections.unmodifiableSet;
 import static java.util.EnumSet.of;
 
@@ -234,7 +233,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
             return;
         }
 
-        descriptor.withExcludedTargets(getExcludedTargets(function));
+        descriptor.withExcludedTargets(extractExcludedTargets(function));
 
         MetricDescriptorImpl.LookupView descriptorLookupView = ((MetricDescriptorImpl) descriptor).lookupView();
         ProbeInstance probeInstance = probeInstances
@@ -254,15 +253,6 @@ public class MetricsRegistryImpl implements MetricsRegistry {
         if (gauge != null) {
             gauge.onProbeInstanceSet(probeInstance);
         }
-    }
-
-    private Set<MetricTarget> getExcludedTargets(Object object) {
-        if (object instanceof ProbeAware) {
-            CachedProbe probe = ((ProbeAware) object).getProbe();
-            return MetricTarget.asSet(probe.excludedTargets());
-        }
-
-        return emptySet();
     }
 
     private void logOverwrite(ProbeInstance probeInstance) {

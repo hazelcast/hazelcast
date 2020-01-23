@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.management.dto;
 
-import com.hazelcast.config.CustomWanPublisherConfig;
-import com.hazelcast.config.WanBatchReplicationPublisherConfig;
+import com.hazelcast.config.WanBatchPublisherConfig;
+import com.hazelcast.config.WanCustomPublisherConfig;
 import com.hazelcast.config.WanConsumerConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.internal.json.JsonArray;
@@ -46,16 +46,16 @@ public class WanReplicationConfigDTO implements JsonSerializable {
         JsonArray batchPublishers = new JsonArray();
         JsonArray customPublishers = new JsonArray();
 
-        for (WanBatchReplicationPublisherConfig publisherConfig : config.getBatchPublisherConfigs()) {
-            batchPublishers.add(new WanBatchReplicationPublisherConfigDTO(publisherConfig).toJson());
+        for (WanBatchPublisherConfig publisherConfig : config.getBatchPublisherConfigs()) {
+            batchPublishers.add(new WanBatchPublisherConfigDTO(publisherConfig).toJson());
         }
-        for (CustomWanPublisherConfig publisherConfig : config.getCustomPublisherConfigs()) {
+        for (WanCustomPublisherConfig publisherConfig : config.getCustomPublisherConfigs()) {
             customPublishers.add(new CustomWanPublisherConfigDTO(publisherConfig).toJson());
         }
         root.add("batchPublishers", batchPublishers);
         root.add("customPublishers", customPublishers);
 
-        WanConsumerConfig consumerConfig = config.getWanConsumerConfig();
+        WanConsumerConfig consumerConfig = config.getConsumerConfig();
         if (consumerConfig != null) {
             root.add("consumer", new WanConsumerConfigDTO(consumerConfig).toJson());
         }
@@ -74,9 +74,9 @@ public class WanReplicationConfigDTO implements JsonSerializable {
         JsonValue batchPublishers = json.get("batchPublishers");
         if (batchPublishers != null && !batchPublishers.isNull()) {
             for (JsonValue jsonValue : batchPublishers.asArray()) {
-                WanBatchReplicationPublisherConfigDTO dto = new WanBatchReplicationPublisherConfigDTO();
+                WanBatchPublisherConfigDTO dto = new WanBatchPublisherConfigDTO();
                 dto.fromJson(jsonValue.asObject());
-                config.addWanBatchReplicationPublisherConfig(dto.getConfig());
+                config.addBatchReplicationPublisherConfig(dto.getConfig());
             }
         }
 
@@ -93,7 +93,7 @@ public class WanReplicationConfigDTO implements JsonSerializable {
         if (consumer != null && !consumer.isNull()) {
             WanConsumerConfigDTO consumerDTO = new WanConsumerConfigDTO();
             consumerDTO.fromJson(consumer.asObject());
-            config.setWanConsumerConfig(consumerDTO.getConfig());
+            config.setConsumerConfig(consumerDTO.getConfig());
         }
     }
 

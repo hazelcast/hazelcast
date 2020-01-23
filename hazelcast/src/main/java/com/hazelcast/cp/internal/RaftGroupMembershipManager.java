@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,6 @@ import com.hazelcast.cp.internal.raft.impl.RaftNode;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeStatus;
 import com.hazelcast.cp.internal.raftop.metadata.CompleteDestroyRaftGroupsOp;
 import com.hazelcast.cp.internal.raftop.metadata.CompleteRaftGroupMembershipChangesOp;
-import com.hazelcast.cp.internal.raftop.metadata.TerminateRaftNodesOp;
 import com.hazelcast.cp.internal.raftop.metadata.GetActiveCPMembersOp;
 import com.hazelcast.cp.internal.raftop.metadata.GetActiveRaftGroupIdsOp;
 import com.hazelcast.cp.internal.raftop.metadata.GetDestroyingRaftGroupIdsOp;
@@ -169,20 +168,7 @@ class RaftGroupMembershipManager {
                 return;
             }
 
-            if (!commitDestroyedRaftGroups(destroyedGroupIds)) {
-                return;
-            }
-
-            for (CPGroupId groupId : destroyedGroupIds) {
-                raftService.terminateRaftNode(groupId, true);
-            }
-
-            OperationService operationService = nodeEngine.getOperationService();
-            for (CPMemberInfo member : raftService.getMetadataGroupManager().getActiveMembers()) {
-                if (!member.equals(raftService.getLocalCPMember())) {
-                    operationService.send(new TerminateRaftNodesOp(destroyedGroupIds), member.getAddress());
-                }
-            }
+            commitDestroyedRaftGroups(destroyedGroupIds);
         }
 
         private Set<CPGroupId> destroyRaftGroups() {
@@ -230,7 +216,7 @@ class RaftGroupMembershipManager {
             }
         }
 
-        private boolean commitDestroyedRaftGroups(Set<CPGroupId> destroyedGroupIds) {
+        private void commitDestroyedRaftGroups(Set<CPGroupId> destroyedGroupIds) {
             RaftOp op = new CompleteDestroyRaftGroupsOp(destroyedGroupIds);
             CPGroupId metadataGroupId = raftService.getMetadataGroupId();
             Future<Collection<CPGroupId>> f = invocationManager.invoke(metadataGroupId, op);
@@ -238,10 +224,8 @@ class RaftGroupMembershipManager {
             try {
                 f.get();
                 logger.info("Terminated CP groups: " + destroyedGroupIds + " are committed.");
-                return true;
             } catch (Exception e) {
                 logger.severe("Cannot commit terminated CP groups: " + destroyedGroupIds, e);
-                return false;
             }
         }
     }
@@ -479,7 +463,6 @@ class RaftGroupMembershipManager {
         private void rebalanceLeaderships() {
             Map<RaftEndpoint, CPMember> members = getMembers();
             Collection<CPGroupId> groupIds = getCpGroupIds();
-            groupIds.remove(raftService.getMetadataGroupId());
 
             final int avgGroupsPerMember = groupIds.size() / members.size();
             final boolean overAvgAllowed = groupIds.size() % members.size() != 0;

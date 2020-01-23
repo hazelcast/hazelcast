@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,28 +18,35 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.LockAware;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.impl.getters.Extractors;
 
 /**
- * Specialization of the LazyMapEntry that is LockAware. Used in EntryProcessor.
- * If serialized the locked property will be nullified, since it's volatile and valid only when on partition-thread.
+ * Specialization of the LazyMapEntry that is LockAware. Used in
+ * EntryProcessor. If serialized the locked property will be nullified,
+ * since it's volatile and valid only when on partition-thread.
  */
 public class LockAwareLazyMapEntry extends LazyMapEntry implements LockAware {
 
     private static final long serialVersionUID = 0L;
 
     // not to be serialized, if serialized should return null
-    private final transient Boolean locked;
+    private transient Boolean locked;
 
     public LockAwareLazyMapEntry() {
-        this.locked = null;
     }
 
     public LockAwareLazyMapEntry(Data key, Object value, InternalSerializationService serializationService,
                                  Extractors extractors, Boolean locked) {
         super(key, value, serializationService, extractors);
         this.locked = locked;
+    }
+
+    public LockAwareLazyMapEntry init(InternalSerializationService serializationService,
+                     Data key, Object value, Extractors extractors, Boolean locked) {
+        super.init(serializationService, key, value, extractors);
+        this.locked = locked;
+        return this;
     }
 
     @Override

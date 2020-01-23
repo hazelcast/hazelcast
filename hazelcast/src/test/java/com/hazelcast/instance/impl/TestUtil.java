@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,14 @@
 
 package com.hazelcast.instance.impl;
 
+import com.hazelcast.client.Client;
+import com.hazelcast.cluster.Endpoint;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionService;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.starter.HazelcastStarter;
 
 import java.io.IOException;
@@ -31,8 +33,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import static com.hazelcast.test.HazelcastTestSupport.sleepMillis;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
+import static com.hazelcast.test.HazelcastTestSupport.sleepMillis;
 import static java.lang.reflect.Proxy.isProxyClass;
 
 @SuppressWarnings("WeakerAccess")
@@ -118,7 +120,24 @@ public final class TestUtil {
      */
     public static void warmUpPartitions(HazelcastInstance... instances) {
         for (HazelcastInstance instance : instances) {
-            warmupPartitions(instance);
+            if (instance == null) {
+                continue;
+            }
+            Endpoint localEndpoint = instance.getLocalEndpoint();
+            if (!(localEndpoint instanceof Client)) {
+                //trigger partition table arrangement and wait on members first
+                warmupPartitions(instance);
+            }
+        }
+
+        //wait on clients to get partition tables.
+        for (HazelcastInstance instance : instances) {
+            if (instance == null) {
+                continue;
+            }
+            if (instance.getLocalEndpoint() instanceof Client) {
+                warmupPartitions(instance);
+            }
         }
     }
 
@@ -128,9 +147,7 @@ public final class TestUtil {
      * @param instances the given Hazelcast instances
      */
     public static void warmUpPartitions(Collection<HazelcastInstance> instances) {
-        for (HazelcastInstance instance : instances) {
-            warmupPartitions(instance);
-        }
+        warmUpPartitions(instances.toArray(new HazelcastInstance[0]));
     }
 
     private static void warmupPartitions(HazelcastInstance instance) {

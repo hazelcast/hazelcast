@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -112,6 +112,10 @@ public class ClientCacheCreationTest extends CacheCreationTest {
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         clientConfig.setProperty(ClientProperty.MAX_CONCURRENT_INVOCATIONS.getName(), "1");
+        // disable metrics collection (the periodic send statistics task may interfere with the test)
+        clientConfig.getMetricsConfig().setEnabled(false);
+        // disable backup acknowledgements (the backup listener registration may interfere with the test)
+        clientConfig.setBackupAckToClientEnabled(false);
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
         HazelcastClientCachingProvider cachingProvider = createClientCachingProvider(client);
         final CacheManager cacheManager = cachingProvider.getCacheManager();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,7 +75,7 @@ public class XAService implements ManagedService, RemoteService, MigrationAwareS
     }
 
     @Override
-    public DistributedObject createDistributedObject(String objectName, boolean local) {
+    public DistributedObject createDistributedObject(String objectName, UUID source, boolean local) {
         return xaResource;
     }
 

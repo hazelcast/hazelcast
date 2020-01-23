@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,6 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
-import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -42,8 +40,7 @@ import static com.hazelcast.internal.util.Preconditions.isNotNull;
 /**
  * Contains the configuration for an {@link IMap}.
  */
-public class MapConfig implements SplitBrainMergeTypeProvider,
-        IdentifiedDataSerializable, NamedConfig {
+public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
 
     /**
      * The minimum number of backups
@@ -201,7 +198,7 @@ public class MapConfig implements SplitBrainMergeTypeProvider,
      * <ul>
      * <li>BINARY (default): keys and values will be stored as binary data</li>
      * <li>OBJECT: values will be stored in their object forms</li>
-     * <li>NATIVE: values will be stored in non-heap region of JVM</li>
+     * <li>NATIVE: values will be stored in non-heap region of JVM (Hazelcast Enterprise only)</li>
      * </ul>
      *
      * @param inMemoryFormat the record type to set for this {@link IMap}
@@ -400,11 +397,6 @@ public class MapConfig implements SplitBrainMergeTypeProvider,
     public MapConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
         this.mergePolicyConfig = checkNotNull(mergePolicyConfig, "mergePolicyConfig cannot be null!");
         return this;
-    }
-
-    @Override
-    public Class getProvidedMergeTypes() {
-        return SplitBrainMergeTypes.MapMergeTypes.class;
     }
 
     /**

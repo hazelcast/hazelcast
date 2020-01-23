@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,10 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.spi.merge.MergingExpirationTime;
 import com.hazelcast.spi.merge.MergingLastStoredTime;
 import com.hazelcast.spi.merge.MergingValue;
+import com.hazelcast.spi.merge.MergingView;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
-import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -51,7 +52,8 @@ public final class MergePolicyValidator {
                                     SplitBrainMergePolicyProvider mergePolicyProvider) {
         String mergePolicyClassName = mapConfig.getMergePolicyConfig().getPolicy();
         SplitBrainMergePolicy mergePolicyInstance = mergePolicyProvider.getMergePolicy(mergePolicyClassName);
-        List<Class> requiredMergeTypes = checkSplitBrainMergePolicy(mapConfig, mergePolicyInstance);
+        List<Class> requiredMergeTypes =
+                checkSplitBrainMergePolicy(SplitBrainMergeTypes.MapMergeTypes.class, mergePolicyInstance);
         if (!mapConfig.isStatisticsEnabled() && requiredMergeTypes != null) {
             checkMapMergePolicyWhenStatisticsAreDisabled(mergePolicyClassName, requiredMergeTypes);
         }
@@ -77,14 +79,15 @@ public final class MergePolicyValidator {
     }
 
     /**
-     * Checks if a {@link SplitBrainMergeTypeProvider} provides all required types of a given merge policy.
+     * Checks if the provided {@code mergeTypes} satisfy the requirements of a
+     * given merge policy.
      *
-     * @param mergeTypeProvider    the {@link SplitBrainMergeTypeProvider} to retrieve the provided merge types
+     * @param mergeTypes           the provided merge types
      * @param mergePolicyProvider  the {@link SplitBrainMergePolicyProvider} to resolve merge policy classes
      * @param mergePolicyClassName the merge policy class name
      * @throws InvalidConfigurationException if the given merge policy is no {@link SplitBrainMergePolicy}
      */
-    static void checkMergeTypeProviderHasRequiredTypes(SplitBrainMergeTypeProvider mergeTypeProvider,
+    static void checkMergeTypeProviderHasRequiredTypes(Class<? extends MergingValue> mergeTypes,
                                                        SplitBrainMergePolicyProvider mergePolicyProvider,
                                                        String mergePolicyClassName) {
         if (mergePolicyProvider == null) {
@@ -93,7 +96,7 @@ public final class MergePolicyValidator {
 
         SplitBrainMergePolicy mergePolicy = getMergePolicyInstance(mergePolicyProvider,
                 mergePolicyClassName);
-        checkSplitBrainMergePolicy(mergeTypeProvider, mergePolicy);
+        checkSplitBrainMergePolicy(mergeTypes, mergePolicy);
     }
 
     private static SplitBrainMergePolicy getMergePolicyInstance(SplitBrainMergePolicyProvider mergePolicyProvider,
@@ -107,22 +110,21 @@ public final class MergePolicyValidator {
     }
 
     /**
-     * Checks if a {@link SplitBrainMergeTypeProvider} provides all required types of a given {@link SplitBrainMergePolicy}.
+     * Checks if the provided {@code mergeTypes} satisfy the requirements of a
+     * given merge policy.
      *
-     * @param mergeTypeProvider   the {@link SplitBrainMergeTypeProvider} to retrieve the provided merge types
+     * @param mergeTypes          the provided merge types
      * @param mergePolicyInstance the {@link SplitBrainMergePolicy} instance
      * @return a list of the required merge types
      */
-    private static List<Class> checkSplitBrainMergePolicy(SplitBrainMergeTypeProvider mergeTypeProvider,
+    private static List<Class> checkSplitBrainMergePolicy(Class<? extends MergingValue> mergeTypes,
                                                           SplitBrainMergePolicy mergePolicyInstance) {
-        List<Class> requiredMergeTypes = new ArrayList<Class>();
-        Class providedMergeTypes = mergeTypeProvider.getProvidedMergeTypes();
+        List<Class> requiredMergeTypes = new ArrayList<>();
         Class<?> mergePolicyClass = mergePolicyInstance.getClass();
         String mergePolicyClassName = mergePolicyClass.getName();
         // iterate over the complete class hierarchy of a merge policy, to check all its generics
         do {
-            checkSplitBrainMergePolicyGenerics(requiredMergeTypes,
-                    providedMergeTypes, mergePolicyClassName, mergePolicyClass);
+            checkSplitBrainMergePolicyGenerics(requiredMergeTypes, mergeTypes, mergePolicyClassName, mergePolicyClass);
             mergePolicyClass = mergePolicyClass.getSuperclass();
         } while (mergePolicyClass != null);
         return requiredMergeTypes;
@@ -175,8 +177,8 @@ public final class MergePolicyValidator {
 
     private static void checkRequiredMergeTypeClass(List<Class> requiredMergeTypes, Class providedMergeTypes,
                                                     String mergePolicyClassName, Class<?> requiredMergeTypeClass) {
-        if (!MergingValue.class.isAssignableFrom(requiredMergeTypeClass)) {
-            // just check types, which inherit from MergingValue
+        if (!MergingView.class.isAssignableFrom(requiredMergeTypeClass)) {
+            // just check types, which inherit from MergingView
             return;
         }
         if (!requiredMergeTypeClass.isAssignableFrom(providedMergeTypes)) {

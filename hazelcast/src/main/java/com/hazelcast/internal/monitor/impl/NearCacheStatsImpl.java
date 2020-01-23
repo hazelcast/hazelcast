@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,29 @@
 
 package com.hazelcast.internal.monitor.impl;
 
-import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.json.internal.JsonSerializable;
 import com.hazelcast.nearcache.NearCacheStats;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NEARCACHE_METRIC_CREATION_TIME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NEARCACHE_METRIC_EVICTIONS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NEARCACHE_METRIC_EXPIRATIONS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NEARCACHE_METRIC_HITS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NEARCACHE_METRIC_INVALIDATIONS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NEARCACHE_METRIC_INVALIDATION_REQUESTS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NEARCACHE_METRIC_LAST_PERSISTENCE_DURATION;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NEARCACHE_METRIC_LAST_PERSISTENCE_KEY_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NEARCACHE_METRIC_LAST_PERSISTENCE_TIME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NEARCACHE_METRIC_LAST_PERSISTENCE_WRITTEN_BYTES;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NEARCACHE_METRIC_MISSES;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NEARCACHE_METRIC_OWNED_ENTRY_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NEARCACHE_METRIC_OWNED_ENTRY_MEMORY_COST;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NEARCACHE_METRIC_PERSISTENCE_COUNT;
+import static com.hazelcast.internal.metrics.ProbeUnit.BYTES;
+import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.util.JsonUtil.getLong;
 import static com.hazelcast.internal.util.JsonUtil.getString;
 import static java.lang.String.format;
@@ -52,35 +68,35 @@ public class NearCacheStatsImpl implements NearCacheStats, JsonSerializable {
     private static final AtomicLongFieldUpdater<NearCacheStatsImpl> PERSISTENCE_COUNT =
             newUpdater(NearCacheStatsImpl.class, "persistenceCount");
 
-    @Probe
+    @Probe(name = NEARCACHE_METRIC_CREATION_TIME, unit = MS)
     private volatile long creationTime;
-    @Probe
+    @Probe(name = NEARCACHE_METRIC_OWNED_ENTRY_COUNT)
     private volatile long ownedEntryCount;
-    @Probe
+    @Probe(name = NEARCACHE_METRIC_OWNED_ENTRY_MEMORY_COST, unit = BYTES)
     private volatile long ownedEntryMemoryCost;
-    @Probe
+    @Probe(name = NEARCACHE_METRIC_HITS)
     private volatile long hits;
-    @Probe
+    @Probe(name = NEARCACHE_METRIC_MISSES)
     private volatile long misses;
-    @Probe
+    @Probe(name = NEARCACHE_METRIC_EVICTIONS)
     private volatile long evictions;
-    @Probe
+    @Probe(name = NEARCACHE_METRIC_EXPIRATIONS)
     private volatile long expirations;
 
-    @Probe
+    @Probe(name = NEARCACHE_METRIC_INVALIDATIONS)
     private volatile long invalidations;
-    @Probe
+    @Probe(name = NEARCACHE_METRIC_INVALIDATION_REQUESTS)
     private volatile long invalidationRequests;
 
-    @Probe
+    @Probe(name = NEARCACHE_METRIC_PERSISTENCE_COUNT)
     private volatile long persistenceCount;
-    @Probe
+    @Probe(name = NEARCACHE_METRIC_LAST_PERSISTENCE_TIME, unit = MS)
     private volatile long lastPersistenceTime;
-    @Probe
+    @Probe(name = NEARCACHE_METRIC_LAST_PERSISTENCE_DURATION, unit = MS)
     private volatile long lastPersistenceDuration;
-    @Probe
+    @Probe(name = NEARCACHE_METRIC_LAST_PERSISTENCE_WRITTEN_BYTES, unit = BYTES)
     private volatile long lastPersistenceWrittenBytes;
-    @Probe
+    @Probe(name = NEARCACHE_METRIC_LAST_PERSISTENCE_KEY_COUNT)
     private volatile long lastPersistenceKeyCount;
     private volatile String lastPersistenceFailure = "";
 

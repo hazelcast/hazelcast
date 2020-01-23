@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,23 +40,23 @@ import com.hazelcast.client.impl.spi.ClientProxy;
 import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.util.ResultSet;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.ThreadLocalRandomProvider;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapEvent;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
-import com.hazelcast.replicatedmap.LocalReplicatedMapStats;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.replicatedmap.LocalReplicatedMapStats;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
-import com.hazelcast.internal.util.IterationType;
+import com.hazelcast.spi.impl.UnmodifiableLazySet;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -72,6 +72,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.nearcache.NearCache.CACHED_AS_NULL;
 import static com.hazelcast.internal.nearcache.NearCache.NOT_CACHED;
+import static com.hazelcast.internal.nearcache.NearCache.UpdateSemantic.READ_UPDATE;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.NOT_RESERVED;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -112,6 +113,10 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     private void initNearCache() {
         NearCacheConfig nearCacheConfig = getContext().getClientConfig().getNearCacheConfig(name);
         if (nearCacheConfig != null) {
+            if (nearCacheConfig.isSerializeKeys()) {
+                throw new InvalidConfigurationException("ReplicatedMap doesn't support serializeKeys option of NearCacheConfig");
+            }
+
             nearCache = getContext().getNearCacheManager(getServiceName()).getOrCreateNearCache(name, nearCacheConfig);
             if (nearCacheConfig.isInvalidateOnChange()) {
                 registerInvalidationListener();
@@ -122,12 +127,25 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     @Override
     protected void postDestroy() {
         try {
-            if (nearCache != null) {
-                removeNearCacheInvalidationListener();
-                getContext().getNearCacheManager(getServiceName()).destroyNearCache(name);
-            }
+            destroyNearCache();
         } finally {
             super.postDestroy();
+        }
+    }
+
+    @Override
+    protected void onShutdown() {
+        try {
+            destroyNearCache();
+        } finally {
+            super.onShutdown();
+        }
+    }
+
+    private void destroyNearCache() {
+        if (nearCache != null) {
+            removeNearCacheInvalidationListener();
+            getContext().getNearCacheManager(getServiceName()).destroyNearCache(name);
         }
     }
 
@@ -376,8 +394,8 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     @Nonnull
     @Override
     public UUID addEntryListener(@Nonnull EntryListener<K, V> listener,
-                                   @Nonnull Predicate<K, V> predicate,
-                                   @Nullable K key) {
+                                 @Nonnull Predicate<K, V> predicate,
+                                 @Nullable K key) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
 
@@ -422,11 +440,8 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         ClientMessage request = ReplicatedMapKeySetCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request, targetPartitionId);
         ReplicatedMapKeySetCodec.ResponseParameters result = ReplicatedMapKeySetCodec.decodeResponse(response);
-        List<Entry> keys = new ArrayList<>(result.response.size());
-        for (Data dataKey : result.response) {
-            keys.add(new AbstractMap.SimpleImmutableEntry<K, V>(toObject(dataKey), null));
-        }
-        return (Set) new ResultSet(keys, IterationType.KEY);
+
+        return (Set<K>) new UnmodifiableLazySet(result.response, getSerializationService());
     }
 
     @Nonnull
@@ -441,7 +456,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         ClientMessage request = ReplicatedMapValuesCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request, targetPartitionId);
         ReplicatedMapValuesCodec.ResponseParameters result = ReplicatedMapValuesCodec.decodeResponse(response);
-        return new UnmodifiableLazyList<>(result.response, getSerializationService());
+        return new UnmodifiableLazyList(result.response, getSerializationService());
     }
 
     @Nonnull
@@ -459,13 +474,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         ClientMessage request = ReplicatedMapEntrySetCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request, targetPartitionId);
         ReplicatedMapEntrySetCodec.ResponseParameters result = ReplicatedMapEntrySetCodec.decodeResponse(response);
-        List<Entry> entries = new ArrayList<>(result.response.size());
-        for (Entry<Data, Data> dataEntry : result.response) {
-            K key = toObject(dataEntry.getKey());
-            V value = toObject(dataEntry.getValue());
-            entries.add(new AbstractMap.SimpleImmutableEntry<>(key, value));
-        }
-        return (Set) new ResultSet(entries, IterationType.ENTRY);
+        return (Set) new UnmodifiableLazySet(result.response, getSerializationService());
     }
 
     public UUID addNearCacheInvalidationListener(EventHandler handler) {
@@ -550,7 +559,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         if (nearCache == null) {
             return NOT_RESERVED;
         }
-        return nearCache.tryReserveForUpdate(key, keyData);
+        return nearCache.tryReserveForUpdate(key, keyData, READ_UPDATE);
     }
 
     private void invalidate(K key) {
@@ -705,7 +714,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
         @Override
         public void handleEntryEvent(Data dataKey, Data value, Data oldValue, Data mergingValue,
-                                        int eventType, UUID uuid, int numberOfAffectedEntries) {
+                                     int eventType, UUID uuid, int numberOfAffectedEntries) {
             EntryEventType entryEventType = EntryEventType.getByType(eventType);
             switch (entryEventType) {
                 case ADDED:

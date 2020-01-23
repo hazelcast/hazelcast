@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ import com.hazelcast.internal.util.FutureUtil.ExceptionHandler;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.executor.LocalExecutorStats;
 import com.hazelcast.cluster.Address;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
@@ -417,8 +417,17 @@ public class ExecutorServiceProxy
         Data taskData = nodeEngine.toData(task);
         CallableTaskOperation op = new CallableTaskOperation(name, null, taskData);
         OperationService operationService = nodeEngine.getOperationService();
-        operationService.createInvocationBuilder(DistributedExecutorService.SERVICE_NAME, op, partitionId)
-                .setExecutionCallback((ExecutionCallback) callback).invoke();
+        InvocationFuture<T> future = operationService
+                .createInvocationBuilder(DistributedExecutorService.SERVICE_NAME, op, partitionId)
+                .invoke();
+        if (callback != null) {
+            future.whenCompleteAsync(new ExecutionCallbackAdapter<>(callback))
+                  .whenCompleteAsync((v, t) -> {
+                      if (t instanceof RejectedExecutionException) {
+                          callback.onFailure(t);
+                      }
+                  });
+        }
     }
 
     @Override
@@ -450,9 +459,17 @@ public class ExecutorServiceProxy
         MemberCallableTaskOperation op = new MemberCallableTaskOperation(name, uuid, taskData);
         OperationService operationService = nodeEngine.getOperationService();
         Address address = member.getAddress();
-        operationService
+        InvocationFuture<T> future = operationService
                 .createInvocationBuilder(DistributedExecutorService.SERVICE_NAME, op, address)
-                .setExecutionCallback((ExecutionCallback) callback).invoke();
+                .invoke();
+        if (callback != null) {
+            future.whenCompleteAsync(new ExecutionCallbackAdapter<>(callback))
+                  .whenCompleteAsync((v, t) -> {
+                        if (t instanceof RejectedExecutionException) {
+                            callback.onFailure(t);
+                        }
+                    });
+        }
     }
 
     @Override

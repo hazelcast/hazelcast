@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.cp.internal.raftop.metadata;
 
-import com.hazelcast.cp.internal.CPMemberInfo;
 import com.hazelcast.cp.internal.IndeterminateOperationStateAware;
 import com.hazelcast.cp.internal.MetadataRaftGroupManager;
 import com.hazelcast.cp.internal.RaftServiceDataSerializerHook;
@@ -42,7 +41,7 @@ public class GetActiveCPMembersOp extends MetadataRaftGroupOp implements Indeter
     public Object run(MetadataRaftGroupManager metadataGroupManager, long commitIndex) {
         // returning array list to be able to serialize response
         metadataGroupManager.checkMetadataGroupInitSuccessful();
-        return new ArrayList<CPMemberInfo>(metadataGroupManager.getActiveMembers());
+        return new ArrayList<>(metadataGroupManager.getActiveMembers());
     }
 
     @Override

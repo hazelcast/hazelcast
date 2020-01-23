@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import com.hazelcast.map.ReachedMaxSizeException;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.mapstore.MapStoreTest;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
@@ -38,8 +39,10 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
@@ -54,12 +57,17 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+import static java.util.Arrays.asList;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(SlowTest.class)
 public class ClientMapStoreTest extends HazelcastTestSupport {
+
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
     private static final String MAP_NAME = "clientMapStoreLoad";
 
@@ -247,6 +255,29 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
         }
 
         map.destroy();
+    }
+
+    @Test
+    public void testNullValuesFromMapLoaderAreNotInsertedIntoMap() {
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setImplementation(new MapStoreTest.NullLoader());
+
+        MapConfig mapConfig = new MapConfig();
+        mapConfig.setName(MAP_NAME);
+        mapConfig.setMapStoreConfig(mapStoreConfig);
+
+        Config config = getConfig();
+        config.addMapConfig(mapConfig);
+
+        HazelcastInstance server = hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+        HazelcastInstance node = createHazelcastInstance(config);
+        IMap<String, String> map = node.getMap(MAP_NAME);
+
+        expectedException.expect(NullPointerException.class);
+        expectedException.expectMessage(startsWith("Neither key nor value can be loaded as null"));
+        // load entries.
+        map.getAll(new HashSet<>(asList("key1", "key2", "key3")));
     }
 
     static class SimpleMapStore implements MapStore<String, String>, MapLoader<String, String> {

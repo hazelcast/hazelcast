@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ import com.hazelcast.internal.partition.MigrationAwareService;
 import com.hazelcast.internal.partition.MigrationEndpoint;
 import com.hazelcast.internal.partition.PartitionMigrationEvent;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.internal.services.RemoteService;
@@ -51,7 +52,6 @@ import com.hazelcast.internal.util.ContextMutexFactory;
 import com.hazelcast.internal.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.internal.util.scheduler.EntryTaskSchedulerFactory;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -81,7 +81,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.internal.config.ConfigValidator.checkQueueConfig;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.QUEUE_PREFIX;
 import static com.hazelcast.internal.metrics.impl.ProviderHelper.provide;
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.scheduler.ScheduleType.POSTPONE;
@@ -261,7 +263,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     }
 
     @Override
-    public QueueProxyImpl createDistributedObject(String objectId, boolean local) {
+    public QueueProxyImpl createDistributedObject(String objectId, UUID source, boolean local) {
         QueueConfig queueConfig = nodeEngine.getConfig().findQueueConfig(objectId);
         checkQueueConfig(queueConfig, nodeEngine.getSplitBrainMergePolicyProvider());
 
@@ -294,7 +296,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         EventService eventService = nodeEngine.getEventService();
         QueueEventFilter filter = new QueueEventFilter(includeValue);
         return eventService.registerListenerAsync(QueueService.SERVICE_NAME, name, filter, listener)
-                           .thenApply(EventRegistration::getId);
+                           .thenApplyAsync(EventRegistration::getId, CALLER_RUNS);
     }
 
     public boolean removeItemListener(String name, UUID registrationId) {
@@ -413,10 +415,10 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
 
     @Override
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
-        provide(descriptor, context, "queue", getStats());
+        provide(descriptor, context, QUEUE_PREFIX, getStats());
     }
 
-    private class Merger extends AbstractContainerMerger<QueueContainer, Collection<Object>, QueueMergeTypes> {
+    private class Merger extends AbstractContainerMerger<QueueContainer, Collection<Object>, QueueMergeTypes<Object>> {
 
         Merger(QueueContainerCollector collector) {
             super(collector, nodeEngine);
@@ -437,7 +439,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
                     Queue<QueueItem> items = container.getItemQueue();
 
                     String name = container.getName();
-                    SplitBrainMergePolicy<Collection<Object>, QueueMergeTypes> mergePolicy
+                    SplitBrainMergePolicy<Collection<Object>, QueueMergeTypes<Object>, Collection<Object>> mergePolicy
                             = getMergePolicy(container.getConfig().getMergePolicyConfig());
 
                     QueueMergeTypes mergingValue = createMergingValue(serializationService, items);
@@ -447,7 +449,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         }
 
         private void sendBatch(int partitionId, String name,
-                               SplitBrainMergePolicy<Collection<Object>, QueueMergeTypes> mergePolicy,
+                               SplitBrainMergePolicy<Collection<Object>, QueueMergeTypes<Object>, Collection<Object>> mergePolicy,
                                QueueMergeTypes mergingValue) {
             QueueMergeOperation operation = new QueueMergeOperation(name, mergePolicy, mergingValue);
             invoke(SERVICE_NAME, operation, partitionId);

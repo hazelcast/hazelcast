@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,22 @@
 
 package com.hazelcast.internal.metrics.impl;
 
+import com.hazelcast.internal.metrics.ExcludedMetricTargets;
+import com.hazelcast.internal.metrics.MetricTarget;
 import com.hazelcast.internal.metrics.Probe;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import static com.hazelcast.internal.metrics.impl.FieldProbe.createFieldProbe;
 import static com.hazelcast.internal.metrics.impl.MethodProbe.createMethodProbe;
 import static com.hazelcast.internal.metrics.impl.ProbeUtils.flatten;
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.unmodifiableList;
 
 /**
  * Contains the metadata for an object with @Probe fields/methods.
@@ -33,18 +39,21 @@ import static com.hazelcast.internal.metrics.impl.ProbeUtils.flatten;
  * This object is effectively immutable after construction.
  */
 final class SourceMetadata {
-    private final List<FieldProbe> fields = new ArrayList<FieldProbe>();
-    private final List<MethodProbe> methods = new ArrayList<MethodProbe>();
+    private final List<FieldProbe> fields = new ArrayList<>();
+    private final List<MethodProbe> methods = new ArrayList<>();
+    private final Collection<MetricTarget> excludedTargetsClass;
 
     SourceMetadata(Class clazz) {
         // we scan all the methods/fields of the class/interface hierarchy.
-        List<Class<?>> classList = new ArrayList<Class<?>>();
+        List<Class<?>> classList = new ArrayList<>();
         flatten(clazz, classList);
 
         for (Class flattenedClass : classList) {
             scanFields(flattenedClass);
             scanMethods(flattenedClass);
         }
+
+        excludedTargetsClass = getTypeExcludedTarget(clazz);
     }
 
     void register(MetricsRegistryImpl metricsRegistry, Object source, String namePrefix) {
@@ -57,6 +66,17 @@ final class SourceMetadata {
         }
     }
 
+    private Collection<MetricTarget> getTypeExcludedTarget(Class clazz) {
+        Collection<MetricTarget> typeExclusions;
+        ExcludedMetricTargets targetsAnnotation = (ExcludedMetricTargets) clazz.getAnnotation(ExcludedMetricTargets.class);
+        if (targetsAnnotation != null) {
+            typeExclusions = unmodifiableList(asList(targetsAnnotation.value()));
+        } else {
+            typeExclusions = emptyList();
+        }
+        return typeExclusions;
+    }
+
     private void scanFields(Class<?> clazz) {
         for (Field field : clazz.getDeclaredFields()) {
             Probe probe = field.getAnnotation(Probe.class);
@@ -65,7 +85,7 @@ final class SourceMetadata {
                 continue;
             }
 
-            FieldProbe fieldProbe = createFieldProbe(field, probe);
+            FieldProbe fieldProbe = createFieldProbe(field, probe, this);
             fields.add(fieldProbe);
         }
     }
@@ -78,7 +98,7 @@ final class SourceMetadata {
                 continue;
             }
 
-            MethodProbe methodProbe = createMethodProbe(method, probe);
+            MethodProbe methodProbe = createMethodProbe(method, probe, this);
             methods.add(methodProbe);
         }
     }
@@ -95,5 +115,12 @@ final class SourceMetadata {
      */
     public List<MethodProbe> methods() {
         return methods;
+    }
+
+    /**
+     * Excluded metric targets defined on the class this instance created for.
+     */
+    public Collection<MetricTarget> excludedTargetsClass() {
+        return excludedTargetsClass;
     }
 }

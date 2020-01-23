@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,10 @@ public enum IndexType {
     SORTED(0),
 
     /** Hash index. Can be used with equality predicates. */
-    HASH(1);
+    HASH(1),
+
+    /** Bitmap index. Can be used with equality predicates. */
+    BITMAP(2);
 
     private final int id;
 

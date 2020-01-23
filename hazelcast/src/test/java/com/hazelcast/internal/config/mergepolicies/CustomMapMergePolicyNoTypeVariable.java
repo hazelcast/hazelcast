@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package com.hazelcast.internal.config.mergepolicies;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 
@@ -32,10 +31,12 @@ import java.io.IOException;
  *
  * @see SplitBrainMergeTypes
  */
-public class CustomMapMergePolicyNoTypeVariable implements SplitBrainMergePolicy<Data, SplitBrainMergeTypes.MapMergeTypes> {
+public class CustomMapMergePolicyNoTypeVariable
+        implements SplitBrainMergePolicy<Object, SplitBrainMergeTypes.MapMergeTypes<Object, Object>, Object> {
 
     @Override
-    public Data merge(SplitBrainMergeTypes.MapMergeTypes mergingValue, SplitBrainMergeTypes.MapMergeTypes existingValue) {
+    public Object merge(SplitBrainMergeTypes.MapMergeTypes<Object, Object> mergingValue,
+                      SplitBrainMergeTypes.MapMergeTypes<Object, Object> existingValue) {
         return null;
     }
 

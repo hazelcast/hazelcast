@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,10 +23,13 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.util.Objects;
 import java.util.Properties;
 
-import static com.hazelcast.internal.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Configuration for the {@link QueueStore}.
@@ -56,8 +59,9 @@ public class QueueStoreConfig implements IdentifiedDataSerializable {
         return storeImplementation;
     }
 
-    public QueueStoreConfig setStoreImplementation(QueueStore storeImplementation) {
-        this.storeImplementation = storeImplementation;
+    public QueueStoreConfig setStoreImplementation(@Nonnull QueueStore storeImplementation) {
+        this.storeImplementation = checkNotNull(storeImplementation, "Queue store cannot be null!");
+        this.className = null;
         return this;
     }
 
@@ -74,8 +78,9 @@ public class QueueStoreConfig implements IdentifiedDataSerializable {
         return className;
     }
 
-    public QueueStoreConfig setClassName(String className) {
-        this.className = className;
+    public QueueStoreConfig setClassName(@Nonnull String className) {
+        this.className = checkHasText(className, "Queue store class name must contain text");
+        this.storeImplementation = null;
         return this;
     }
 
@@ -84,7 +89,7 @@ public class QueueStoreConfig implements IdentifiedDataSerializable {
     }
 
     public QueueStoreConfig setProperties(Properties properties) {
-        this.properties = isNotNull(properties, "properties");
+        this.properties = checkNotNull(properties, "Queue store config properties cannot be null");
         return this;
     }
 
@@ -101,8 +106,9 @@ public class QueueStoreConfig implements IdentifiedDataSerializable {
         return factoryClassName;
     }
 
-    public QueueStoreConfig setFactoryClassName(String factoryClassName) {
-        this.factoryClassName = factoryClassName;
+    public QueueStoreConfig setFactoryClassName(@Nonnull String factoryClassName) {
+        this.factoryClassName = checkHasText(factoryClassName, "Queue factory store class name must contain text");
+        this.factoryImplementation = null;
         return this;
     }
 
@@ -110,8 +116,9 @@ public class QueueStoreConfig implements IdentifiedDataSerializable {
         return factoryImplementation;
     }
 
-    public QueueStoreConfig setFactoryImplementation(QueueStoreFactory factoryImplementation) {
-        this.factoryImplementation = factoryImplementation;
+    public QueueStoreConfig setFactoryImplementation(@Nonnull QueueStoreFactory factoryImplementation) {
+        this.factoryImplementation = checkNotNull(factoryImplementation, "Queue store factory cannot be null!");
+        this.factoryClassName = null;
         return this;
     }
 
@@ -119,6 +126,9 @@ public class QueueStoreConfig implements IdentifiedDataSerializable {
         return "QueueStoreConfig{"
                 + "enabled=" + enabled
                 + ", className='" + className + '\''
+                + ", storeImplementation=" + storeImplementation
+                + ", factoryClassName='" + factoryClassName + '\''
+                + ", factoryImplementation=" + factoryImplementation
                 + ", properties=" + properties
                 + '}';
     }
@@ -154,7 +164,6 @@ public class QueueStoreConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
     public final boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -164,36 +173,17 @@ public class QueueStoreConfig implements IdentifiedDataSerializable {
         }
 
         QueueStoreConfig that = (QueueStoreConfig) o;
-        if (isEnabled() != that.isEnabled()) {
-            return false;
-        }
-        if (getClassName() != null ? !getClassName().equals(that.getClassName()) : that.getClassName() != null) {
-            return false;
-        }
-        if (getFactoryClassName() != null ? !getFactoryClassName().equals(that.getFactoryClassName())
-                : that.getFactoryClassName() != null) {
-            return false;
-        }
-        if (getProperties() != null ? !getProperties().equals(that.getProperties()) : that.getProperties() != null) {
-            return false;
-        }
-        if (getStoreImplementation() != null ? !getStoreImplementation().equals(that.getStoreImplementation())
-                : that.getStoreImplementation() != null) {
-            return false;
-        }
-        return getFactoryImplementation() != null ? getFactoryImplementation().equals(that.getFactoryImplementation())
-                : that.getFactoryImplementation() == null;
+        return isEnabled() == that.isEnabled()
+            && Objects.equals(getProperties(), that.getProperties())
+            && Objects.equals(className, that.className)
+            && Objects.equals(storeImplementation, that.storeImplementation)
+            && Objects.equals(factoryClassName, that.factoryClassName)
+            && Objects.equals(factoryImplementation, that.factoryImplementation);
     }
 
     @Override
-    @SuppressWarnings("checkstyle:npathcomplexity")
     public final int hashCode() {
-        int result = (isEnabled() ? 1 : 0);
-        result = 31 * result + (getClassName() != null ? getClassName().hashCode() : 0);
-        result = 31 * result + (getFactoryClassName() != null ? getFactoryClassName().hashCode() : 0);
-        result = 31 * result + (getProperties() != null ? getProperties().hashCode() : 0);
-        result = 31 * result + (getStoreImplementation() != null ? getStoreImplementation().hashCode() : 0);
-        result = 31 * result + (getFactoryImplementation() != null ? getFactoryImplementation().hashCode() : 0);
-        return result;
+        return Objects.hash(isEnabled(), className, storeImplementation, getProperties(), factoryClassName,
+            factoryImplementation);
     }
 }

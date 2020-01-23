@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,10 +37,6 @@ public class ServiceBeanWithTransactionalContext {
         transactionalContext.getMap("dummyObjectMap").put(object.getId(), object);
     }
 
-    public DummyObject get(Long id) {
-        return (DummyObject) transactionalContext.getMap("dummyObjectMap").get(id);
-    }
-
     public void putWithException(DummyObject object) {
         put(object);
         throw new RuntimeException("oops, let's rollback!");
@@ -54,11 +50,8 @@ public class ServiceBeanWithTransactionalContext {
         otherService.putWithException(object);
     }
 
-    public boolean putUsingOtherBean_newTransaction(DummyObject object1, DummyObject object2) {
-        put(object1);
-        otherService.putInNewTransaction(object1, object2);
-
-        return get(object2.getId()) != null;
+    public void putUsingOtherBean_newTransaction(DummyObject object) {
+        otherService.putInNewTransaction(object);
     }
 
     public void putUsingSameBean_thenOtherBeanThrowingException_sameTransaction(DummyObject object, DummyObject otherObject) {

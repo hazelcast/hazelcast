@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package com.hazelcast.client.impl;
 import com.hazelcast.client.Client;
 import com.hazelcast.client.impl.statistics.ClientStatistics;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricConsumer;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricTarget;
@@ -51,8 +50,7 @@ import static com.hazelcast.internal.metrics.MetricTarget.MANAGEMENT_CENTER;
 /**
  * The {@link com.hazelcast.client.impl.ClientEndpoint} and {@link Client} implementation.
  */
-public final class ClientEndpointImpl
-    implements ClientEndpoint, DynamicMetricsProvider {
+public final class ClientEndpointImpl implements ClientEndpoint {
     private static final String METRICS_TAG_CLIENT = "client";
     private static final String METRICS_TAG_TIMESTAMP = "timestamp";
 
@@ -60,9 +58,8 @@ public final class ClientEndpointImpl
     private final ILogger logger;
     private final NodeEngineImpl nodeEngine;
     private final Connection connection;
-    private final ConcurrentMap<UUID, TransactionContext> transactionContextMap
-            = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<UUID, Callable> removeListenerActions = new ConcurrentHashMap<>();
+    private final ConcurrentMap<UUID, TransactionContext> transactionContextMap = new ConcurrentHashMap<>();
+    private final ConcurrentMap<UUID, Callable> removeListenerActions = new ConcurrentHashMap<>();
     private final SocketAddress socketAddress;
     private final long creationTime;
 
@@ -74,6 +71,7 @@ public final class ClientEndpointImpl
     private final AtomicReference<ClientStatistics> statsRef = new AtomicReference<>();
     private String clientName;
     private Set<String> labels;
+    private volatile boolean destroyed;
 
     public ClientEndpointImpl(ClientEngine clientEngine, NodeEngineImpl nodeEngine, Connection connection) {
         this.clientEngine = clientEngine;
@@ -83,7 +81,6 @@ public final class ClientEndpointImpl
         this.socketAddress = connection.getRemoteSocketAddress();
         this.clientVersion = "Unknown";
         this.creationTime = System.currentTimeMillis();
-        nodeEngine.getMetricsRegistry().registerDynamicMetricsProvider(this);
     }
 
     @Override
@@ -185,6 +182,9 @@ public final class ClientEndpointImpl
     @Override
     public void setTransactionContext(TransactionContext transactionContext) {
         transactionContextMap.put(transactionContext.getTxnId(), transactionContext);
+        if (destroyed) {
+            removedAndRollbackTransactionContext(transactionContext.getTxnId());
+        }
     }
 
     @Override
@@ -201,6 +201,9 @@ public final class ClientEndpointImpl
     @Override
     public void addDestroyAction(UUID registrationId, Callable<Boolean> removeAction) {
         removeListenerActions.put(registrationId, removeAction);
+        if (destroyed) {
+            removeAndCallRemoveAction(registrationId);
+        }
     }
 
     @Override
@@ -208,29 +211,44 @@ public final class ClientEndpointImpl
         return removeListenerActions.remove(id) != null;
     }
 
-    @Override
-    public void clearAllListeners() {
-        for (Callable removeAction : removeListenerActions.values()) {
+    public void destroy() throws LoginException {
+        destroyed = true;
+        nodeEngine.onClientDisconnected(getUuid());
+
+        for (UUID registrationId : removeListenerActions.keySet()) {
+            removeAndCallRemoveAction(registrationId);
+        }
+
+        for (UUID txnId : transactionContextMap.keySet()) {
+            removedAndRollbackTransactionContext(txnId);
+        }
+
+        try {
+            LoginContext lc = loginContext;
+            if (lc != null) {
+                lc.logout();
+            }
+        } finally {
+            authenticated = false;
+        }
+    }
+
+    private void removeAndCallRemoveAction(UUID uuid) {
+        Callable callable = removeListenerActions.remove(uuid);
+        if (callable != null) {
             try {
-                removeAction.call();
+                callable.call();
             } catch (Exception e) {
                 logger.warning("Exception during remove listener action", e);
             }
         }
-        removeListenerActions.clear();
     }
 
-    public void destroy() throws LoginException {
-        clearAllListeners();
-        nodeEngine.onClientDisconnected(getUuid());
-
-        LoginContext lc = loginContext;
-        if (lc != null) {
-            lc.logout();
-        }
-        for (TransactionContext context : transactionContextMap.values()) {
+    private void removedAndRollbackTransactionContext(UUID txnId) {
+        TransactionContext context = transactionContextMap.remove(txnId);
+        if (context != null) {
             if (context instanceof XATransactionContextImpl) {
-                continue;
+                return;
             }
             try {
                 context.rollbackTransaction();
@@ -240,7 +258,6 @@ public final class ClientEndpointImpl
                 logger.warning(e);
             }
         }
-        authenticated = false;
     }
 
     @Override
@@ -274,13 +291,13 @@ public final class ClientEndpointImpl
 
                 private MetricDescriptor enhanceDescriptor(MetricDescriptor descriptor, long timestamp) {
                     return descriptor
-                        // we exclude all metric targets here besides MANAGEMENT_CENTER
-                        // since we want to send the client-side metrics only to MC
-                        .withExcludedTargets(MetricTarget.VALUES_LIST)
-                        .withIncludedTarget(MANAGEMENT_CENTER)
-                        // we add "client" and "timestamp" tags for MC
-                        .withTag(METRICS_TAG_CLIENT, getUuid().toString())
-                        .withTag(METRICS_TAG_TIMESTAMP, Long.toString(timestamp));
+                            // we exclude all metric targets here besides MANAGEMENT_CENTER
+                            // since we want to send the client-side metrics only to MC
+                            .withExcludedTargets(MetricTarget.ALL_TARGETS)
+                            .withIncludedTarget(MANAGEMENT_CENTER)
+                            // we add "client" and "timestamp" tags for MC
+                            .withTag(METRICS_TAG_CLIENT, getUuid().toString())
+                            .withTag(METRICS_TAG_TIMESTAMP, Long.toString(timestamp));
                 }
             };
             MetricsCompressor.extractMetrics(metricsBlob, consumer);

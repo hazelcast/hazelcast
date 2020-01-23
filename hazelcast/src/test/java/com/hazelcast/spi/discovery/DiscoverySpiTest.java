@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,10 +38,10 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.cluster.Address;
-import com.hazelcast.partition.membergroup.DefaultMemberGroup;
-import com.hazelcast.partition.membergroup.MemberGroup;
-import com.hazelcast.partition.membergroup.MemberGroupFactory;
-import com.hazelcast.partition.membergroup.SPIAwareMemberGroupFactory;
+import com.hazelcast.internal.partition.membergroup.DefaultMemberGroup;
+import com.hazelcast.spi.partitiongroup.MemberGroup;
+import com.hazelcast.internal.partition.membergroup.MemberGroupFactory;
+import com.hazelcast.internal.partition.membergroup.SPIAwareMemberGroupFactory;
 import com.hazelcast.spi.discovery.impl.DefaultDiscoveryService;
 import com.hazelcast.spi.discovery.impl.DefaultDiscoveryServiceProvider;
 import com.hazelcast.spi.discovery.integration.DiscoveryMode;

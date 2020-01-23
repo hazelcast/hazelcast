@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,13 @@
 package com.hazelcast.wan.impl;
 
 import com.hazelcast.config.WanReplicationConfig;
+import com.hazelcast.internal.cluster.impl.operations.WanOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.wan.MigrationAwareWanReplicationPublisher;
-import com.hazelcast.wan.WanReplicationPublisher;
+import com.hazelcast.wan.WanMigrationAwarePublisher;
+import com.hazelcast.wan.WanPublisher;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -41,22 +42,22 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * in a single cluster and not over different clusters.
  * Silently skips publishers not supporting replication.
  *
- * @see com.hazelcast.internal.cluster.impl.operations.WanReplicationOperation
+ * @see WanOperation
  */
 public class WanEventContainerReplicationOperation extends Operation implements IdentifiedDataSerializable {
-    private Collection<WanReplicationConfig> wanConfigs;
+    private Collection<WanReplicationConfig> wanReplicationConfigs;
     private Map<String, Map<String, Object>> eventContainers;
 
     public WanEventContainerReplicationOperation() {
     }
 
-    public WanEventContainerReplicationOperation(@Nonnull Collection<WanReplicationConfig> wanConfigs,
+    public WanEventContainerReplicationOperation(@Nonnull Collection<WanReplicationConfig> wanReplicationConfigs,
                                                  @Nonnull Map<String, Map<String, Object>> eventContainers,
                                                  int partitionId,
                                                  int replicaIndex) {
-        checkNotNull(wanConfigs);
+        checkNotNull(wanReplicationConfigs);
         checkNotNull(eventContainers);
-        this.wanConfigs = wanConfigs;
+        this.wanReplicationConfigs = wanReplicationConfigs;
         this.eventContainers = eventContainers;
         setPartitionId(partitionId).setReplicaIndex(replicaIndex);
     }
@@ -67,8 +68,8 @@ public class WanEventContainerReplicationOperation extends Operation implements 
         WanReplicationService service = getWanReplicationService();
         int partitionId = getPartitionId();
 
-        for (WanReplicationConfig wanConfig : wanConfigs) {
-            service.appendWanReplicationConfig(wanConfig);
+        for (WanReplicationConfig wanReplicationConfig : wanReplicationConfigs) {
+            service.appendWanReplicationConfig(wanReplicationConfig);
         }
 
         // first ensure all publishers have configuration
@@ -77,14 +78,14 @@ public class WanEventContainerReplicationOperation extends Operation implements 
 
         // then ingest replication data
         forAllReplicationContainers((publisher, eventContainer) -> {
-            if (publisher instanceof MigrationAwareWanReplicationPublisher) {
-                ((MigrationAwareWanReplicationPublisher) publisher)
+            if (publisher instanceof WanMigrationAwarePublisher) {
+                ((WanMigrationAwarePublisher) publisher)
                         .processEventContainerReplicationData(partitionId, eventContainer);
             }
         });
     }
 
-    private void forAllReplicationContainers(BiConsumer<WanReplicationPublisher, Object> publisherContainerConsumer) {
+    private void forAllReplicationContainers(BiConsumer<WanPublisher, Object> publisherContainerConsumer) {
         WanReplicationService service = getWanReplicationService();
         for (Entry<String, Map<String, Object>> wanReplicationSchemeEntry : eventContainers.entrySet()) {
             String wanReplicationScheme = wanReplicationSchemeEntry.getKey();
@@ -92,7 +93,7 @@ public class WanEventContainerReplicationOperation extends Operation implements 
             for (Entry<String, Object> publisherEventContainer : eventContainersByPublisherId.entrySet()) {
                 String publisherId = publisherEventContainer.getKey();
                 Object eventContainer = publisherEventContainer.getValue();
-                WanReplicationPublisher publisher = service.getPublisherOrFail(wanReplicationScheme, publisherId);
+                WanPublisher publisher = service.getPublisherOrFail(wanReplicationScheme, publisherId);
                 publisherContainerConsumer.accept(publisher, eventContainer);
             }
         }
@@ -124,9 +125,9 @@ public class WanEventContainerReplicationOperation extends Operation implements 
             }
         }
 
-        out.writeInt(wanConfigs.size());
-        for (WanReplicationConfig wanConfig : wanConfigs) {
-            out.writeObject(wanConfig);
+        out.writeInt(wanReplicationConfigs.size());
+        for (WanReplicationConfig wanReplicationConfig : wanReplicationConfigs) {
+            out.writeObject(wanReplicationConfig);
         }
     }
 
@@ -147,9 +148,9 @@ public class WanEventContainerReplicationOperation extends Operation implements 
         }
 
         int wanConfigCount = in.readInt();
-        wanConfigs = new ArrayList<>(wanConfigCount);
+        wanReplicationConfigs = new ArrayList<>(wanConfigCount);
         for (int i = 0; i < wanConfigCount; i++) {
-            wanConfigs.add(in.readObject());
+            wanReplicationConfigs.add(in.readObject());
         }
     }
 

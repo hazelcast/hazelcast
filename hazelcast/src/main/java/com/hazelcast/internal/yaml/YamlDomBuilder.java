@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,13 +77,15 @@ public final class YamlDomBuilder {
             return buildScalar(parent, nodeName, sourceNode);
         } else {
             throw new YamlException("An unsupported scalar type is encountered: " + nodeName + " is an instance of "
-                    + sourceNode.getClass().getName() + ". The supported types are String, Integer, Double and Boolean.");
+                    + sourceNode.getClass().getName()
+                    + ". The supported types are String, Integer, Long, Double and Boolean.");
         }
     }
 
     private static boolean isSupportedScalarType(Object sourceNode) {
         return sourceNode instanceof String
                 || sourceNode instanceof Integer
+                || sourceNode instanceof Long
                 || sourceNode instanceof Double
                 || sourceNode instanceof Boolean;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,6 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListener;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.EmptyStatement;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.UuidUtil;
@@ -51,36 +50,31 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_METRIC_LISTENER_SERVICE_EVENTS_PROCESSED;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_METRIC_LISTENER_SERVICE_EVENT_QUEUE_SIZE;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_PREFIX_LISTENERS;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 public class ClientListenerServiceImpl implements ClientListenerService, StaticMetricsProvider, ConnectionListener {
 
-    protected final HazelcastClientInstanceImpl client;
-    protected final SerializationService serializationService;
-    protected final Map<UUID, ClientListenerRegistration> registrations = new ConcurrentHashMap<>();
+    private final HazelcastClientInstanceImpl client;
+    private final Map<UUID, ClientListenerRegistration> registrations = new ConcurrentHashMap<>();
     private final ClientConnectionManager clientConnectionManager;
     private final ILogger logger;
     private final ExecutorService registrationExecutor;
-
-    @Probe(name = "eventHandlerCount", level = MANDATORY)
-    private final ConcurrentMap<Long, EventHandler> eventHandlerMap
-            = new ConcurrentHashMap<Long, EventHandler>();
-
     private final StripedExecutor eventExecutor;
     private final boolean isSmart;
 
     public ClientListenerServiceImpl(HazelcastClientInstanceImpl client) {
         this.client = client;
         this.isSmart = client.getClientConfig().getNetworkConfig().isSmartRouting();
-        this.serializationService = client.getSerializationService();
         this.logger = client.getLoggingService().getLogger(ClientListenerService.class);
         String name = client.getName();
         HazelcastProperties properties = client.getProperties();
@@ -151,26 +145,29 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
 
     @Override
     public void provideStaticMetrics(MetricsRegistry registry) {
-        registry.registerStaticMetrics(this, "listeners");
+        registry.registerStaticMetrics(this, CLIENT_PREFIX_LISTENERS);
     }
 
-    @Probe(level = MANDATORY)
+    @Probe(name = CLIENT_METRIC_LISTENER_SERVICE_EVENT_QUEUE_SIZE, level = MANDATORY)
     private int eventQueueSize() {
         return eventExecutor.getWorkQueueSize();
     }
 
-    @Probe(level = MANDATORY)
+    @Probe(name = CLIENT_METRIC_LISTENER_SERVICE_EVENTS_PROCESSED, level = MANDATORY)
     private long eventsProcessed() {
         return eventExecutor.processedCount();
     }
 
-    public void addEventHandler(long callId, EventHandler handler) {
-        eventHandlerMap.put(callId, handler);
-    }
-
     public void handleEventMessage(ClientMessage clientMessage) {
+        Runnable eventProcessor;
+        if (clientMessage.getPartitionId() == -1) {
+            // Execute on a random worker
+            eventProcessor = () -> handleEventMessageOnCallingThread(clientMessage);
+        } else {
+            eventProcessor = new ClientEventProcessor(clientMessage);
+        }
         try {
-            eventExecutor.execute(new ClientEventProcessor(clientMessage));
+            eventExecutor.execute(eventProcessor);
         } catch (RejectedExecutionException e) {
             logger.warning("Event clientMessage could not be handled", e);
         }
@@ -178,7 +175,8 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
 
     public void handleEventMessageOnCallingThread(ClientMessage clientMessage) {
         long correlationId = clientMessage.getCorrelationId();
-        EventHandler eventHandler = eventHandlerMap.get(correlationId);
+        ClientConnection connection = (ClientConnection) clientMessage.getConnection();
+        EventHandler eventHandler = connection.getEventHandler(correlationId);
         if (eventHandler == null) {
             logger.warning("No eventHandler for callId: " + correlationId + ", event: " + clientMessage);
             return;
@@ -198,6 +196,9 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
         ListenerMessageCodec codec = listenerRegistration.getCodec();
         ClientMessage request = codec.encodeAddRequest(registersLocalOnly());
         EventHandler handler = listenerRegistration.getHandler();
+        if (logger.isFinestEnabled()) {
+            logger.finest("Register attempt of " + listenerRegistration + " to " + connection);
+        }
         handler.beforeListenerRegister(connection);
 
         ClientInvocation invocation = new ClientInvocation(client, request, null, connection);
@@ -212,6 +213,9 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
         }
 
         UUID serverRegistrationId = codec.decodeAddResponse(clientMessage);
+        if (logger.isFinestEnabled()) {
+            logger.finest("Registered " + listenerRegistration + " to " + connection);
+        }
         handler.onListenerRegister(connection);
         long correlationId = request.getCorrelationId();
         ClientConnectionRegistration registration
@@ -248,10 +252,7 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
 
         registrationExecutor.submit(() -> {
             for (ClientListenerRegistration registry : registrations.values()) {
-                ClientConnectionRegistration registration = registry.getConnectionRegistrations().remove(connection);
-                if (registration != null) {
-                    removeEventHandler(registration.getCallId());
-                }
+                registry.getConnectionRegistrations().remove(connection);
             }
         });
     }
@@ -285,11 +286,6 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
         return Collections.unmodifiableMap(registrations);
     }
 
-    // used in tests
-    public Map<Long, EventHandler> getEventHandlers() {
-        return Collections.unmodifiableMap(eventHandlerMap);
-    }
-
     private void invokeFromInternalThread(ClientListenerRegistration registrationKey, Connection connection) {
         //This method should only be called from registrationExecutor
         assert (Thread.currentThread().getName().contains("eventRegistration"));
@@ -304,10 +300,6 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
 
     private boolean registersLocalOnly() {
         return isSmart;
-    }
-
-    private void removeEventHandler(long callId) {
-        eventHandlerMap.remove(callId);
     }
 
     private Boolean deregisterListenerInternal(@Nullable UUID userRegistrationId) {
@@ -333,7 +325,7 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
                 if (request != null) {
                     new ClientInvocation(client, request, null, subscriber).invoke().get();
                 }
-                removeEventHandler(registration.getCallId());
+                ((ClientConnection) subscriber).removeEventHandler(registration.getCallId());
                 iterator.remove();
             } catch (Exception e) {
                 if (subscriber.isAlive()) {

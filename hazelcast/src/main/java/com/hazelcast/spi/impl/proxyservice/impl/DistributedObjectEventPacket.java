@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,14 @@
 
 package com.hazelcast.spi.impl.proxyservice.impl;
 
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 
 import java.io.IOException;
+import java.util.UUID;
 
 import static com.hazelcast.core.DistributedObjectEvent.EventType;
 
@@ -30,14 +32,16 @@ public final class DistributedObjectEventPacket implements IdentifiedDataSeriali
     private EventType eventType;
     private String serviceName;
     private String name;
+    private UUID source;
 
     public DistributedObjectEventPacket() {
     }
 
-    public DistributedObjectEventPacket(EventType eventType, String serviceName, String name) {
+    public DistributedObjectEventPacket(EventType eventType, String serviceName, String name, UUID source) {
         this.eventType = eventType;
         this.serviceName = serviceName;
         this.name = name;
+        this.source = source;
     }
 
     public String getServiceName() {
@@ -52,11 +56,16 @@ public final class DistributedObjectEventPacket implements IdentifiedDataSeriali
         return name;
     }
 
+    public UUID getSource() {
+        return source;
+    }
+
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeBoolean(eventType == EventType.CREATED);
         out.writeUTF(serviceName);
         out.writeUTF(name);
+        UUIDSerializationUtil.writeUUID(out, source);
     }
 
     @Override
@@ -64,6 +73,7 @@ public final class DistributedObjectEventPacket implements IdentifiedDataSeriali
         eventType = in.readBoolean() ? EventType.CREATED : EventType.DESTROYED;
         serviceName = in.readUTF();
         name = in.readUTF();
+        source = UUIDSerializationUtil.readUUID(in);
     }
 
     @Override
@@ -72,6 +82,7 @@ public final class DistributedObjectEventPacket implements IdentifiedDataSeriali
                 + "eventType=" + eventType
                 + ", serviceName='" + serviceName + '\''
                 + ", name=" + name
+                + ", source=" + source
                 + '}';
     }
 

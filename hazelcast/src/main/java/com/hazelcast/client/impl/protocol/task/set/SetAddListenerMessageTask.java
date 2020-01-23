@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import com.hazelcast.collection.impl.common.DataAwareItemEvent;
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.SetPermission;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
@@ -37,6 +37,7 @@ import java.security.Permission;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
 
 /**
@@ -61,7 +62,7 @@ public class SetAddListenerMessageTask
         }
 
         return eventService.registerListenerAsync(getServiceName(), parameters.name, filter, listener)
-                           .thenApply(EventRegistration::getId);
+                           .thenApplyAsync(EventRegistration::getId, CALLER_RUNS);
     }
 
     private ItemListener createItemListener(final ClientEndpoint endpoint, final Data partitionKey) {

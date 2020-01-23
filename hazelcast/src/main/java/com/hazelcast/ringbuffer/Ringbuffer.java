@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,6 +82,19 @@ import java.util.concurrent.CompletionStage;
  * <p>
  * Supports split brain protection {@link SplitBrainProtectionConfig} since 3.10 in
  * cluster versions 3.10 and higher.
+ * <p>
+ * <b>Asynchronous methods</b>
+ * <p>
+ * Asynchronous methods return a {@link CompletionStage} that can be used to
+ * chain further computation stages. Alternatively, a {@link java.util.concurrent.CompletableFuture}
+ * can be obtained via {@link CompletionStage#toCompletableFuture()} to wait
+ * for the operation to complete in a blocking way.
+ * <p>
+ * Actions supplied for dependent completions of default non-async methods and async methods
+ * without an explicit {@link java.util.concurrent.Executor} argument are performed
+ * by the {@link java.util.concurrent.ForkJoinPool#commonPool()} (unless it does not
+ * support a parallelism level of at least 2, in which case a new {@code Thread} is
+ * created per task).
  *
  * @param <E> The type of the elements that the Ringbuffer contains
  * @since 3.5
@@ -202,7 +215,7 @@ public interface Ringbuffer<E> extends DistributedObject {
      * <pre>{@code
      * long sleepMs = 100;
      * for (; ; ) {
-     *   long result = ringbuffer.addAsync(item, FAIL).get();
+     *   long result = ringbuffer.addAsync(item, FAIL).toCompletableFuture().get();
      *   if (result != -1) {
      *     break;
      *   }
@@ -343,6 +356,17 @@ public interface Ringbuffer<E> extends DistributedObject {
      * if store is configured for the Ringbuffer. These cases may increase the
      * execution time significantly depending on the implementation of the store.
      * Note that exceptions thrown by the store are propagated to the caller.
+     * <p>
+     * If the startSequence is smaller than the smallest sequence still available
+     * in the Ringbuffer ({@link #headSequence()}, then the smallest available
+     * sequence will be used as the start sequence and the minimum/maximum
+     * number of items will be attempted to be read from there on.
+     * <p>
+     * If the startSequence is bigger than the last available sequence in the
+     * Ringbuffer ({@link #tailSequence()}), then the last available sequence
+     * plus one will be used as the start sequence and the call will block
+     * until further items become available and it can read at least the
+     * minimum number of items.
      *
      * @param startSequence the startSequence of the first item to read.
      * @param minCount      the minimum number of items to read.
@@ -351,7 +375,6 @@ public interface Ringbuffer<E> extends DistributedObject {
      *                      there is no filter.
      * @return a future containing the items read.
      * @throws IllegalArgumentException if startSequence is smaller than 0
-     *                                  or if startSequence larger than {@link #tailSequence()}
      *                                  or if minCount smaller than 0
      *                                  or if minCount larger than maxCount,
      *                                  or if maxCount larger than the capacity of the ringbuffer

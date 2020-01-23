@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,7 +69,7 @@ public class AliasedDiscoveryConfigUtilsTest {
     @Test
     public void createDiscoveryStrategyConfigsFromWanPublisherConfig() {
         // given
-        WanBatchReplicationPublisherConfig config = new WanBatchReplicationPublisherConfig();
+        WanBatchPublisherConfig config = new WanBatchPublisherConfig();
         config.getGcpConfig().setEnabled(true);
 
         // when
@@ -173,7 +173,7 @@ public class AliasedDiscoveryConfigUtilsTest {
     @Test
     public void getConfigByTagFromWanPublisherConfig() {
         // given
-        WanBatchReplicationPublisherConfig config = new WanBatchReplicationPublisherConfig();
+        WanBatchPublisherConfig config = new WanBatchPublisherConfig();
 
         // when
         AliasedDiscoveryConfig result = AliasedDiscoveryConfigUtils.getConfigByTag(config, "gcp");
@@ -185,7 +185,7 @@ public class AliasedDiscoveryConfigUtilsTest {
     @Test(expected = IllegalArgumentException.class)
     public void getConfigByInvalidTagFromWanPublisherConfig() {
         // given
-        WanBatchReplicationPublisherConfig config = new WanBatchReplicationPublisherConfig();
+        WanBatchPublisherConfig config = new WanBatchPublisherConfig();
 
         // when
         AliasedDiscoveryConfigUtils.getConfigByTag(config, "unknown");

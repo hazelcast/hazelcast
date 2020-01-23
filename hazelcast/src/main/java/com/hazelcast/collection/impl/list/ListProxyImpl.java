@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import com.hazelcast.collection.impl.list.operations.ListSetOperation;
 import com.hazelcast.collection.impl.list.operations.ListSubOperation;
 import com.hazelcast.config.CollectionConfig;
 import com.hazelcast.collection.IList;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.SerializableList;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
@@ -140,7 +140,7 @@ public class ListProxyImpl<E> extends AbstractCollectionProxyImpl<ListService, E
         SerializableList result = invoke(operation);
         List<Data> collection = result.getCollection();
         SerializationService serializationService = getNodeEngine().getSerializationService();
-        return new UnmodifiableLazyList<E>(collection, serializationService);
+        return new UnmodifiableLazyList(collection, serializationService);
     }
 
     @Override

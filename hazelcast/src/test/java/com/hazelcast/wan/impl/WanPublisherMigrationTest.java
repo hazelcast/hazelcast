@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ package com.hazelcast.wan.impl;
 
 import com.hazelcast.config.AbstractWanPublisherConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.CustomWanPublisherConfig;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.WanCustomPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.HazelcastInstance;
@@ -36,9 +36,9 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.wan.MigrationAwareWanReplicationPublisher;
-import com.hazelcast.wan.WanReplicationEvent;
-import com.hazelcast.wan.WanReplicationPublisher;
+import com.hazelcast.wan.WanEvent;
+import com.hazelcast.wan.WanMigrationAwarePublisher;
+import com.hazelcast.wan.WanPublisher;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -49,6 +49,7 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -59,6 +60,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests for custom WAN publisher implementation migration support.
@@ -114,48 +116,66 @@ public class WanPublisherMigrationTest extends HazelcastTestSupport {
         MigrationCountingWanPublisher publisher = getPublisher(member2);
 
         if (!failMigrations) {
-            assertEquals(partitionsToMigrate, publisher.migrationStart.intValue());
-            assertEquals(partitionsToMigrate, publisher.migrationProcess.intValue());
-            assertEquals(partitionsToMigrate, publisher.migrationCommit.intValue());
+            assertEquals(exceptionMsg("migrationStart", publisher),
+                    partitionsToMigrate, publisher.migrationStart.intValue());
+            // it may happen that we have additional partition anti-entropy operations
+            // that call process but don't show up as migration operations
+            assertTrue("Expected at least " + partitionsToMigrate
+                            + " migration operations to be processed but was " + publisher,
+                    publisher.migrationProcess.intValue() >= partitionsToMigrate);
+            assertEquals(exceptionMsg("migrationCommit", publisher),
+                    partitionsToMigrate, publisher.migrationCommit.intValue());
         } else {
-            assertEquals(partitionsToMigrate + 1, publisher.migrationStart.intValue());
-            assertEquals(partitionsToMigrate, publisher.migrationProcess.intValue());
-            assertEquals(partitionsToMigrate, publisher.migrationCommit.intValue());
-            assertEquals(1, publisher.migrationRollback.intValue());
+            assertEquals(exceptionMsg("migrationStart", publisher),
+                    partitionsToMigrate + 1, publisher.migrationStart.intValue());
+            // it may happen that we have additional partition anti-entropy operations
+            // that call process but don't show up as migration operations
+            assertTrue("Expected at least " + partitionsToMigrate
+                            + " migration operations to be processed but was " + publisher,
+                    publisher.migrationProcess.intValue() >= partitionsToMigrate);
+            assertEquals(exceptionMsg("migrationCommit", publisher),
+                    partitionsToMigrate, publisher.migrationCommit.intValue());
+            assertEquals(exceptionMsg("migrationRollback", publisher),
+                    1, publisher.migrationRollback.intValue());
         }
+    }
+
+    @Nonnull
+    private static String exceptionMsg(String counterName, MigrationCountingWanPublisher publisher) {
+        return "not expected " + counterName + " count (" + publisher.toString() + ")";
     }
 
     @Override
     protected Config getConfig() {
-        CustomWanPublisherConfig publisherConfig = new CustomWanPublisherConfig()
+        WanCustomPublisherConfig publisherConfig = new WanCustomPublisherConfig()
                 .setPublisherId("dummyPublisherId")
                 .setClassName(MigrationCountingWanPublisher.class.getName());
         publisherConfig.getProperties().put("failMigrations", failMigrations);
 
-        WanReplicationConfig wanConfig = new WanReplicationConfig()
+        WanReplicationConfig wanReplicationConfig = new WanReplicationConfig()
                 .setName("dummyWan")
                 .addCustomPublisherConfig(publisherConfig);
 
         WanReplicationRef wanRef = new WanReplicationRef()
                 .setName("dummyWan")
-                .setMergePolicy(PassThroughMergePolicy.class.getName());
+                .setMergePolicyClassName(PassThroughMergePolicy.class.getName());
 
         MapConfig mapConfig = new MapConfig("default")
                 .setWanReplicationRef(wanRef);
 
         return smallInstanceConfig()
-                .addWanReplicationConfig(wanConfig)
+                .addWanReplicationConfig(wanReplicationConfig)
                 .addMapConfig(mapConfig);
     }
 
     private MigrationCountingWanPublisher getPublisher(HazelcastInstance instance) {
         WanReplicationService service = getNodeEngineImpl(instance).getWanReplicationService();
-        DelegatingWanReplicationScheme delegate = service.getWanReplicationPublishers("dummyWan");
+        DelegatingWanScheme delegate = service.getWanReplicationPublishers("dummyWan");
         return (MigrationCountingWanPublisher) delegate.getPublishers().iterator().next();
     }
 
     public static class MigrationCountingWanPublisher implements
-            WanReplicationPublisher, MigrationAwareWanReplicationPublisher<Map<String, String>> {
+            WanPublisher, WanMigrationAwarePublisher<Map<String, String>> {
         private final AtomicBoolean failMigration = new AtomicBoolean();
 
         final AtomicLong migrationStart = new AtomicLong();
@@ -180,12 +200,12 @@ public class WanPublisherMigrationTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void publishReplicationEvent(WanReplicationEvent eventObject) {
+        public void publishReplicationEvent(WanEvent eventObject) {
 
         }
 
         @Override
-        public void publishReplicationEventBackup(WanReplicationEvent eventObject) {
+        public void publishReplicationEventBackup(WanEvent eventObject) {
 
         }
 
@@ -227,6 +247,17 @@ public class WanPublisherMigrationTest extends HazelcastTestSupport {
         public void collectAllServiceNamespaces(PartitionReplicationEvent event,
                                                 Set<ServiceNamespace> set) {
             set.add(new DistributedObjectNamespace(MapService.SERVICE_NAME, "testMap"));
+        }
+
+        @Override
+        public String toString() {
+            return "MigrationCountingWanPublisher{"
+                    + "failMigration=" + failMigration
+                    + ", migrationStart=" + migrationStart
+                    + ", migrationCommit=" + migrationCommit
+                    + ", migrationRollback=" + migrationRollback
+                    + ", migrationProcess=" + migrationProcess
+                    + '}';
         }
     }
 }

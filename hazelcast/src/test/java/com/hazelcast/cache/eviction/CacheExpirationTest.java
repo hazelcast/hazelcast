@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,20 +79,19 @@ public class CacheExpirationTest extends CacheTestSupport {
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
                 {true},
-                {false},
+                {false}
         });
     }
 
     @Parameterized.Parameter(0)
     public boolean useSyncBackups;
 
-    private final Duration THREE_SECONDS = new Duration(TimeUnit.SECONDS, 3);
+    protected static final int KEY_RANGE = 1000;
+    protected static final int CLUSTER_SIZE = 2;
+    protected final Duration THREE_SECONDS = new Duration(TimeUnit.SECONDS, 3);
 
-    private static final int CLUSTER_SIZE = 3;
-    private static final int KEY_RANGE = 1000;
-
-    private HazelcastInstance[] instances = new HazelcastInstance[3];
-    private TestHazelcastInstanceFactory factory;
+    protected TestHazelcastInstanceFactory factory;
+    protected HazelcastInstance[] instances = new HazelcastInstance[3];
 
     @Override
     protected HazelcastInstance getHazelcastInstance() {
@@ -101,7 +100,7 @@ public class CacheExpirationTest extends CacheTestSupport {
 
     @Override
     protected void onSetup() {
-        factory = createHazelcastInstanceFactory(3);
+        factory = createHazelcastInstanceFactory(CLUSTER_SIZE);
         for (int i = 0; i < CLUSTER_SIZE; i++) {
             instances[i] = factory.newHazelcastInstance(getConfig());
         }
@@ -127,9 +126,8 @@ public class CacheExpirationTest extends CacheTestSupport {
         return cacheConfig;
     }
 
-    protected <K, V, M extends Serializable & ExpiryPolicy>
-    CacheConfig<K, V> createCacheConfig(M expiryPolicy) {
-        CacheConfig<K, V> cacheConfig = new CacheConfig<K, V>();
+    protected <K, V, M extends Serializable & ExpiryPolicy> CacheConfig<K, V> createCacheConfig(M expiryPolicy) {
+        CacheConfig<K, V> cacheConfig = new CacheConfig<>();
         cacheConfig.setExpiryPolicyFactory(FactoryBuilder.factoryOf(expiryPolicy));
         cacheConfig.setName(randomName());
 
@@ -296,44 +294,6 @@ public class CacheExpirationTest extends CacheTestSupport {
                 assertEquals(i, backupAccessor.get(i));
             }
         }
-    }
-
-    @Test
-    public void test_backupOperationAppliesDefaultExpiryPolicy() {
-        HazelcastExpiryPolicy defaultExpiryPolicy = new HazelcastExpiryPolicy(THREE_SECONDS, THREE_SECONDS, THREE_SECONDS);
-
-        CacheConfig cacheConfig = createCacheConfig(defaultExpiryPolicy);
-        ICache cache = createCache(cacheConfig);
-
-        for (int i = 0; i < 100; i++) {
-            cache.put(i, i);
-        }
-
-        // Check if all backup entries have applied the default expiry policy
-        for (int i = 1; i < CLUSTER_SIZE; i++) {
-            BackupAccessor backupAccessor = TestBackupUtils.newCacheAccessor(instances, cache.getName(), i);
-            for (int j = 0; j < 100; j++) {
-                TestBackupUtils.assertExpirationTimeExistsEventually(j, backupAccessor);
-            }
-        }
-
-        // terminate 2 nodes to cause backup promotion at the 0th member
-        getNode(instances[1]).shutdown(true);
-        getNode(instances[2]).shutdown(true);
-
-        // expiration time is over.
-        sleepAtLeastSeconds(3);
-
-        // Check if there are unexpired entries after backup promotion
-        int unExpiredCount = 0;
-        for (int i = 0; i < 100; i++) {
-            if (cache.get(i) != null) {
-                unExpiredCount++;
-                break;
-            }
-        }
-
-        assertEquals(0, unExpiredCount);
     }
 
     @Test

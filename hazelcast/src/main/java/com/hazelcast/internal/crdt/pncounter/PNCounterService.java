@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,9 +44,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PNCOUNTER_PREFIX;
 import static com.hazelcast.internal.metrics.impl.ProviderHelper.provide;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
 
@@ -154,7 +156,7 @@ public class PNCounterService implements ManagedService, RemoteService, CRDTRepl
     }
 
     @Override
-    public PNCounterProxy createDistributedObject(String objectName, boolean local) {
+    public PNCounterProxy createDistributedObject(String objectName, UUID source, boolean local) {
         return new PNCounterProxy(objectName, nodeEngine, this);
     }
 
@@ -269,6 +271,6 @@ public class PNCounterService implements ManagedService, RemoteService, CRDTRepl
 
     @Override
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
-        provide(descriptor, context, "pnCounter", getStats());
+        provide(descriptor, context, PNCOUNTER_PREFIX, getStats());
     }
 }

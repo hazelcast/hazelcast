@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -96,7 +96,7 @@ public class LockReplicationOperation extends Operation
         out.writeInt(len);
         if (len > 0) {
             for (LockStoreImpl ls : locks) {
-                ls.writeData(out);
+                out.writeObject(ls);
             }
         }
     }
@@ -107,9 +107,7 @@ public class LockReplicationOperation extends Operation
         int len = in.readInt();
         if (len > 0) {
             for (int i = 0; i < len; i++) {
-                LockStoreImpl ls = new LockStoreImpl();
-                ls.readData(in);
-                locks.add(ls);
+                locks.add(in.readObject());
             }
         }
     }

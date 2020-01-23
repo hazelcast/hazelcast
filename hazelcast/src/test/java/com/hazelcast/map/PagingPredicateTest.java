@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,7 +78,7 @@ public class PagingPredicateTest extends HazelcastTestSupport {
         Config config = getConfig();
         local = hazelcastFactory.newHazelcastInstance(config);
         remote = createRemote(config);
-        map = local.getMap(randomString());
+        map = remote.getMap(randomString());
         for (int i = 0; i < size; i++) {
             map.put(i, i);
         }
@@ -148,7 +148,7 @@ public class PagingPredicateTest extends HazelcastTestSupport {
 
     @Test
     public void testPagingWithoutFilteringAndComparator() {
-        Set<Integer> set = new HashSet<>();
+        List<Integer> set = new ArrayList<>();
         PagingPredicate<Integer, Integer> predicate = Predicates.pagingPredicate(pageSize);
 
         Collection<Integer> values = map.values(predicate);

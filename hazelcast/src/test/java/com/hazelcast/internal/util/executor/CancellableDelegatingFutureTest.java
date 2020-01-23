@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,6 +55,18 @@ public class CancellableDelegatingFutureTest extends HazelcastTestSupport {
         }
     }
 
+    @Test
+    public void testCancellationOfDoneFutureDoesNothing() throws Exception {
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        final HazelcastInstance instance = factory.newHazelcastInstance();
+        IExecutorService executorService = instance.getExecutorService(randomString());
+        final DummyCancellationCallable callable = new DummyCancellationCallable();
+        final DelegatingCompletableFuture<Void> future = (DelegatingCompletableFuture<Void>) executorService.submit(callable);
+
+        future.get();
+        future.cancel(true);
+    }
+
     static class CompletesOnInterruptionCallable implements Callable<Boolean>, Serializable {
 
         @Override
@@ -66,6 +78,13 @@ public class CancellableDelegatingFutureTest extends HazelcastTestSupport {
                     return Boolean.TRUE;
                 }
             }
+        }
+    }
+
+    static class DummyCancellationCallable implements Callable<Void>, Serializable {
+        @Override
+        public Void call() throws Exception {
+            return null;
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.client.impl.clientside.ClientTestUtil.getHazelcastClientInstanceImpl;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_PREFIX;
 import static com.hazelcast.internal.metrics.ProbeUnit.COUNT;
 import static com.hazelcast.internal.metrics.impl.DefaultMetricDescriptorSupplier.DEFAULT_DESCRIPTOR_SUPPLIER;
 import static org.junit.Assert.assertFalse;
@@ -85,7 +86,7 @@ public class ReadMetricsTest extends HazelcastTestSupport {
             boolean operationMetricFound = false;
             byte[] blob = result.collections().get(0).getValue();
             MetricDescriptor expectedDescriptor = DEFAULT_DESCRIPTOR_SUPPLIER.get()
-                                                                             .withPrefix("operation")
+                                                                             .withPrefix(OPERATION_PREFIX)
                                                                              .withMetric("queueSize")
                                                                              .withUnit(COUNT);
             MetricKeyConsumer metricConsumer = new MetricKeyConsumer(expectedDescriptor);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,12 +20,11 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapGetCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.util.RootCauseMatcher;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.sequence.CallIdSequence;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -39,15 +38,12 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
 import static com.hazelcast.test.HazelcastTestSupport.assertInstanceOf;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
-import static com.hazelcast.test.HazelcastTestSupport.ignore;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
@@ -56,6 +52,7 @@ import static org.mockito.Mockito.mock;
 public class ClientDelegatingFutureTest {
 
     private static final String DESERIALIZED_VALUE = "value";
+    private static final String DESERIALIZED_DEFAULT_VALUE = "default_value";
 
     @Rule
     public ExpectedException expected = ExpectedException.none();
@@ -67,7 +64,7 @@ public class ClientDelegatingFutureTest {
     private Data key;
     private Data value;
     private ClientInvocationFuture invocationFuture;
-    private InternalCompletableFuture<String> delegatingFuture;
+    private ClientDelegatingFuture<String> delegatingFuture;
     private CallIdSequence callIdSequence;
 
     @Before
@@ -125,119 +122,17 @@ public class ClientDelegatingFutureTest {
     }
 
     @Test
-    public void thenApply() {
-        CompletableFuture<Long> nextStage = delegatingFuture.thenApply(v -> {
-            assertEquals(DESERIALIZED_VALUE, v);
-            return 1L;
-        });
-
-        invocationFuture.complete(response);
-        assertEquals(1L, nextStage.join().longValue());
+    public void getNow_whenNotDoneShouldReturnDefaultValue() throws Exception {
+        assertTrue(!delegatingFuture.isDone());
+        assertEquals(DESERIALIZED_DEFAULT_VALUE, delegatingFuture.getNow(DESERIALIZED_DEFAULT_VALUE));
     }
 
     @Test
-    public void thenAccept() {
-        CompletableFuture<Void> nextStage = delegatingFuture.thenAccept(v -> {
-            assertEquals(DESERIALIZED_VALUE, v);
-        });
+    public void getNow_whenDoneReturnValue() throws Exception {
         invocationFuture.complete(response);
 
-        nextStage.join();
-    }
-
-    @Test
-    public void thenRun() throws Exception {
-        CountDownLatch latch = new CountDownLatch(1);
-        CompletableFuture<Void> nextStage = delegatingFuture.thenRun(latch::countDown);
-        invocationFuture.complete(response);
-
-        latch.await(10, TimeUnit.SECONDS);
-        nextStage.get();
-    }
-
-    @Test
-    public void thenRun_whenCompletedExceptionally() throws Exception {
-        CountDownLatch latch = new CountDownLatch(1);
-        CompletableFuture<Void> nextStage = delegatingFuture.thenRun(latch::countDown);
-        invocationFuture.completeExceptionally(new IllegalStateException());
-
-        expected.expect(ExecutionException.class);
-        expected.expectCause(new RootCauseMatcher(IllegalStateException.class));
-        nextStage.get();
-    }
-
-    @Test
-    public void thenCombine() {
-        CompletableFuture<String> nextStage = delegatingFuture.thenCombine(newCompletedFuture("value2"),
-                (v1, v2) -> v1);
-        invocationFuture.complete(response);
-
-        assertTrueEventually(() -> assertTrue(nextStage.isDone()));
-        assertEquals(DESERIALIZED_VALUE, nextStage.join());
-    }
-
-    @Test
-    public void thenAcceptBoth() {
-        CompletableFuture<Void> nextStage = delegatingFuture.thenAcceptBoth(newCompletedFuture("otherValue"),
-                (v1, v2) -> assertEquals(DESERIALIZED_VALUE, v1));
-        invocationFuture.complete(response);
-
-        assertTrueEventually(() -> assertTrue(nextStage.isDone()));
-        nextStage.join();
-    }
-
-    @Test
-    public void runAfterBoth() {
-        CompletableFuture<Void> nextStage = delegatingFuture.runAfterBoth(newCompletedFuture("otherValue"),
-                () -> ignore(null));
-        invocationFuture.complete(response);
-
-        assertTrueEventually(() -> assertTrue(nextStage.isDone()));
-        nextStage.join();
-    }
-
-    @Test
-    public void applyToEither() {
-        CompletableFuture<Long> nextStage = delegatingFuture.applyToEither(new CompletableFuture<String>(),
-                (v) -> {
-            assertEquals(DESERIALIZED_VALUE, v);
-            return 1L;
-        });
-        invocationFuture.complete(response);
-
-        assertTrueEventually(() -> assertTrue(nextStage.isDone()));
-        assertEquals(1L, nextStage.join().longValue());
-    }
-
-    @Test
-    public void acceptEither() {
-        CompletableFuture<Void> nextStage = delegatingFuture.acceptEither(new CompletableFuture<>(),
-                (v) -> assertEquals(DESERIALIZED_VALUE, v));
-        invocationFuture.complete(response);
-
-        assertTrueEventually(() -> assertTrue(nextStage.isDone()));
-        nextStage.join();
-    }
-
-    @Test
-    public void runAfterEither() {
-        CompletableFuture<Void> nextStage = delegatingFuture.runAfterEither(new CompletableFuture<>(),
-                () -> ignore(null));
-        invocationFuture.complete(response);
-
-        assertTrueEventually(() -> assertTrue(nextStage.isDone()));
-    }
-
-    @Test
-    public void thenCompose() {
-        CompletableFuture<Long> nextStage = delegatingFuture.thenCompose(v -> {
-            assertEquals(DESERIALIZED_VALUE, v);
-            return newCompletedFuture(1L);
-        });
-        invocationFuture.complete(response);
-
-        assertTrueEventually(() -> assertTrue(nextStage.isDone()));
-        assertEquals(1L, nextStage.join().longValue());
+        assertTrue(delegatingFuture.isDone());
+        assertEquals(DESERIALIZED_VALUE, delegatingFuture.getNow(DESERIALIZED_DEFAULT_VALUE));
     }
 
     @Test
@@ -290,7 +185,6 @@ public class ClientDelegatingFutureTest {
         invocationFuture.cancel(true);
 
         assertTrue(invocationFuture.isCancelled());
-        assertTrue(delegatingFuture.isCancelled());
     }
 
     @Test
@@ -299,5 +193,25 @@ public class ClientDelegatingFutureTest {
 
         assertTrue(invocationFuture.isCancelled());
         assertTrue(delegatingFuture.isCancelled());
+    }
+
+    @Test
+    public void get_cachedValue() throws Exception {
+        invocationFuture.complete(response);
+
+        assertTrue(delegatingFuture.isDone());
+        String cachedValue = delegatingFuture.get();
+        assertEquals(DESERIALIZED_VALUE, cachedValue);
+        assertSame(cachedValue, delegatingFuture.get());
+    }
+
+    @Test
+    public void getNow_cachedValue() throws Exception {
+        invocationFuture.complete(response);
+
+        assertTrue(delegatingFuture.isDone());
+        String cachedValue = delegatingFuture.get();
+        assertEquals(DESERIALIZED_VALUE, cachedValue);
+        assertSame(cachedValue, delegatingFuture.getNow(DESERIALIZED_DEFAULT_VALUE));
     }
 }

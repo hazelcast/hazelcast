@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,15 @@ package com.hazelcast.internal.nearcache;
 
 import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.nearcache.impl.invalidation.StaleReadDetector;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nearcache.NearCacheStats;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.InitializingObject;
 
+import javax.annotation.Nullable;
+
 /**
- * {@link NearCacheRecordStore} is the contract point to store keys and values as
- * {@link NearCacheRecord} internally and to serve them.
+ * {@link NearCacheRecordStore} is the contract point to store keys
+ * and values as {@link NearCacheRecord} internally and to serve them.
  *
  * @param <K> the type of the key
  * @param <V> the type of the value
@@ -40,39 +42,19 @@ public interface NearCacheRecordStore<K, V> extends InitializingObject {
     V get(K key);
 
     /**
-     * Puts (associates) a value with the given {@code key}.
-     *
-     * @param key       the key to which the given value will be associated.
-     * @param keyData   the key as {@link Data} to which the given value will be associated.
-     * @param value     the value that will be associated with the key.
-     * @param valueData
+     * @see NearCache#put
      */
     void put(K key, Data keyData, V value, Data valueData);
 
     /**
-     * Tries to reserve supplied key for update. <p> If one thread takes
-     * reservation, only that thread can update the key.
-     *
-     * @param key     key to be reserved for update
-     * @param keyData key to be reserved for update as {@link Data}
-     * @return reservation ID if reservation succeeds, else returns {@link
-     * NearCacheRecord#NOT_RESERVED}
+     * @see NearCache#tryReserveForUpdate
      */
-    long tryReserveForUpdate(K key, Data keyData);
+    long tryReserveForUpdate(K key, Data keyData, NearCache.UpdateSemantic updateSemantic);
 
     /**
-     * Tries to update reserved key with supplied value. If update
-     * happens, value is published. Publishing means making the value
-     * readable to all threads. If update fails, record is not updated.
-     *
-     * @param key           reserved key for update
-     * @param value         value to be associated with reserved key
-     * @param reservationId ID for this reservation
-     * @param deserialize   eagerly deserialize
-     *                      returning value
-     * @return associated value if deserialize is {@code
-     * true} and update succeeds, otherwise returns null
+     * @see NearCache#tryPublishReserved
      */
+    @Nullable
     V tryPublishReserved(K key, V value, long reservationId, boolean deserialize);
 
     /**
@@ -127,8 +109,10 @@ public interface NearCacheRecordStore<K, V> extends InitializingObject {
      * @param withoutMaxSizeCheck set {@code true} to evict regardless of a max
      *                            size check, otherwise set {@code false} to evict
      *                            after a max size check.
+     * @return {@code true} to indicate eviction
+     * is done otherwise returns {@code false}
      */
-    void doEviction(boolean withoutMaxSizeCheck);
+    boolean doEviction(boolean withoutMaxSizeCheck);
 
     /**
      * Loads the keys into the Near Cache.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.Collection;
 import java.util.Map;
+import java.util.UUID;
 
 @SuppressWarnings({"checkstyle:methodcount"})
 public interface IOService {
@@ -120,4 +121,11 @@ public interface IOService {
     OutboundHandler[] createOutboundHandlers(EndpointQualifier qualifier, TcpIpConnection connection);
 
     AuditlogService getAuditLogService();
+
+    /**
+     * Returns UUID of the local member.
+     *
+     * @return member UUID
+     */
+    UUID getUuid();
 }

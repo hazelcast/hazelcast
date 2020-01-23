@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,14 @@
 
 package com.hazelcast.map.impl.iterator;
 
-import com.hazelcast.map.IMap;
-import com.hazelcast.map.impl.query.Query;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.projection.Projection;
-import com.hazelcast.query.Predicate;
+import com.hazelcast.internal.iteration.IterationPointer;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.IterationType;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.impl.query.Query;
+import com.hazelcast.projection.Projection;
+import com.hazelcast.query.Predicate;
 
 import java.util.Iterator;
 import java.util.List;
@@ -52,13 +53,13 @@ public abstract class AbstractMapQueryPartitionIterator<K, V, R> implements Iter
     protected final Query query;
 
     /**
-     * The table is segment table of hash map, which is an array that stores the actual records.
-     * This field is used to mark where the latest entry is read.
-     * <p>
-     * The iteration will start from highest index available to the table.
-     * It will be converted to array size on the server side.
+     * The iteration pointers define the iteration state over a backing map.
+     * Each array item represents an iteration state for a certain size of the
+     * backing map structure (either allocated slot count for HD or table size
+     * for on-heap). Each time the table is resized, this array will carry an
+     * additional iteration pointer.
      */
-    protected int lastTableIndex = Integer.MAX_VALUE;
+    protected IterationPointer[] pointers;
 
     protected int index;
     protected int currentIndex = -1;
@@ -79,6 +80,7 @@ public abstract class AbstractMapQueryPartitionIterator<K, V, R> implements Iter
                           .predicate(predicate)
                           .projection(projection)
                           .build();
+        resetPointers();
     }
 
     @Override
@@ -102,8 +104,8 @@ public abstract class AbstractMapQueryPartitionIterator<K, V, R> implements Iter
     }
 
     protected boolean advance() {
-        if (lastTableIndex < 0) {
-            lastTableIndex = Integer.MAX_VALUE;
+        if (pointers[pointers.length - 1].getIndex() < 0) {
+            resetPointers();
             return false;
         }
         segment = fetch();
@@ -114,9 +116,23 @@ public abstract class AbstractMapQueryPartitionIterator<K, V, R> implements Iter
         return false;
     }
 
-    protected void setLastTableIndex(List<Data> segment, int lastTableIndex) {
+    /**
+     * Resets the iteration state.
+     */
+    private void resetPointers() {
+        pointers = new IterationPointer[]{new IterationPointer(Integer.MAX_VALUE, -1)};
+    }
+
+    /**
+     * Sets the iteration state to the state defined by the {@code pointers}
+     * if the given response contains items.
+     *
+     * @param segment  the iteration response
+     * @param pointers the pointers defining the state of iteration
+     */
+    protected void setLastTableIndex(List<Data> segment, IterationPointer[] pointers) {
         if (isNotEmpty(segment)) {
-            this.lastTableIndex = lastTableIndex;
+            this.pointers = pointers;
         }
     }
 

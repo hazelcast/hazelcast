@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ import com.hazelcast.collection.ItemEvent;
 import com.hazelcast.collection.ItemListener;
 import com.hazelcast.collection.impl.common.DataAwareItemEvent;
 import com.hazelcast.core.ItemEventType;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
 
 import javax.annotation.Nonnull;
@@ -150,7 +150,7 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
         ClientMessage response = invokeOnPartition(request);
         ListIteratorCodec.ResponseParameters resultParameters = ListIteratorCodec.decodeResponse(response);
         List<Data> resultCollection = resultParameters.response;
-        return new UnmodifiableLazyList<E>(resultCollection, getSerializationService()).iterator();
+        return (Iterator<E>) new UnmodifiableLazyList(resultCollection, getSerializationService()).iterator();
     }
 
     @Override
@@ -273,7 +273,7 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
         ClientMessage request = ListGetAllCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request);
         ListGetAllCodec.ResponseParameters resultParameters = ListGetAllCodec.decodeResponse(response);
-        return new UnmodifiableLazyList<E>(resultParameters.response, getSerializationService());
+        return new UnmodifiableLazyList(resultParameters.response, getSerializationService());
     }
 
     @Override
@@ -307,7 +307,7 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
         ClientMessage response = invokeOnPartition(request);
         ListListIteratorCodec.ResponseParameters resultParameters = ListListIteratorCodec.decodeResponse(response);
         List<Data> resultCollection = resultParameters.response;
-        return new UnmodifiableLazyList<E>(resultCollection, getSerializationService()).listIterator();
+        return (ListIterator<E>) new UnmodifiableLazyList(resultCollection, getSerializationService()).listIterator();
     }
 
     @Override
@@ -316,7 +316,7 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
         ClientMessage response = invokeOnPartition(request);
         ListSubCodec.ResponseParameters resultParameters = ListSubCodec.decodeResponse(response);
         List<Data> resultCollection = resultParameters.response;
-        return new UnmodifiableLazyList<E>(resultCollection, getSerializationService());
+        return new UnmodifiableLazyList(resultCollection, getSerializationService());
     }
 
     @Override

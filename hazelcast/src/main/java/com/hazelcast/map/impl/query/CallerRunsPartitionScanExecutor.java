@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.query;
 
+import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryableEntriesSegment;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
@@ -55,7 +56,9 @@ public class CallerRunsPartitionScanExecutor implements PartitionScanExecutor {
     }
 
     @Override
-    public QueryableEntriesSegment execute(String mapName, Predicate predicate, int partitionId, int tableIndex, int fetchSize) {
-        return partitionScanRunner.run(mapName, predicate, partitionId, tableIndex, fetchSize);
+    public QueryableEntriesSegment execute(
+            String mapName, Predicate predicate, int partitionId,
+            IterationPointer[] pointers, int fetchSize) {
+        return partitionScanRunner.run(mapName, predicate, partitionId, pointers, fetchSize);
     }
 }

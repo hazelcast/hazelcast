@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,10 @@
 
 package com.hazelcast.internal.jmx;
 
-import com.hazelcast.map.IMap;
 import com.hazelcast.internal.jmx.suppliers.LocalMapStatsSupplier;
 import com.hazelcast.internal.jmx.suppliers.StatsSupplier;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.LocalMapStats;
-import com.hazelcast.query.Predicate;
-import com.hazelcast.query.Predicates;
-
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * Management bean for {@link IMap}
@@ -40,7 +34,7 @@ public class MapMBean extends HazelcastMBean<IMap> {
         super(managedObject, service);
         this.objectName = service.createObjectName("IMap", managedObject.getName());
         StatsSupplier<LocalMapStats> localMapStatsSupplier = new LocalMapStatsSupplier(managedObject);
-        this.localMapStatsDelegate = new LocalStatsDelegate<LocalMapStats>(localMapStatsSupplier, updateIntervalSec);
+        this.localMapStatsDelegate = new LocalStatsDelegate<>(localMapStatsSupplier, updateIntervalSec);
     }
 
     @ManagedAnnotation("localOwnedEntryCount")
@@ -227,55 +221,5 @@ public class MapMBean extends HazelcastMBean<IMap> {
     @ManagedDescription("Clear Map")
     public void clear() {
         managedObject.clear();
-    }
-
-    @ManagedAnnotation(value = "values", operation = true)
-    public String values(String query) {
-        Collection coll;
-        if (query != null && !query.isEmpty()) {
-            Predicate predicate = Predicates.sql(query);
-            coll = managedObject.values(predicate);
-        } else {
-            coll = managedObject.values();
-        }
-        StringBuilder buf = new StringBuilder();
-        if (coll.size() == 0) {
-            buf.append("Empty");
-        } else {
-            buf.append("[");
-            for (Object obj : coll) {
-                buf.append(obj);
-                buf.append(", ");
-            }
-            buf.replace(buf.length() - 1, buf.length(), "]");
-        }
-        return buf.toString();
-    }
-
-    @ManagedAnnotation(value = "entrySet", operation = true)
-    public String entrySet(String query) {
-        Set<Map.Entry> entrySet;
-        if (query != null && !query.isEmpty()) {
-            Predicate predicate = Predicates.sql(query);
-            entrySet = managedObject.entrySet(predicate);
-        } else {
-            entrySet = managedObject.entrySet();
-        }
-
-        StringBuilder buf = new StringBuilder();
-        if (entrySet.size() == 0) {
-            buf.append("Empty");
-        } else {
-            buf.append("[");
-            for (Map.Entry entry : entrySet) {
-                buf.append("{key:");
-                buf.append(entry.getKey());
-                buf.append(", value:");
-                buf.append(entry.getValue());
-                buf.append("}, ");
-            }
-            buf.replace(buf.length() - 1, buf.length(), "]");
-        }
-        return buf.toString();
     }
 }

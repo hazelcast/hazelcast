@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,6 +72,10 @@ public final class FinalizeMigrationOperation extends AbstractPartitionOperation
         PartitionStateManager partitionStateManager = partitionService.getPartitionStateManager();
         int partitionId = migrationInfo.getPartitionId();
 
+        if (!partitionService.getMigrationManager().removeFinalizingMigration(migrationInfo)) {
+            throw new IllegalStateException("This migration is not registered as finalizing: " + migrationInfo);
+        }
+
         if (isOldBackupReplicaOwner() && partitionStateManager.isMigrating(partitionId)) {
             // On old backup replica, migrating flag is not set during migration.
             // Because replica is copied from partition owner to new backup replica.
@@ -79,11 +83,8 @@ public final class FinalizeMigrationOperation extends AbstractPartitionOperation
             // and completed migration is published by master.
             // If this partition's migrating flag is set, then it means another migration
             // is submitted to this member for the same partition and it's already executed.
-            // This finalization is now obsolete.
-            getLogger().fine("Cannot execute migration finalization, because this member was previous owner of a backup replica,"
-                    + " and a new migration operation has already superseded this finalization. "
-                    + "This operation is now obsolete. -> " + migrationInfo);
-            return;
+            throw new IllegalStateException("Another replica migration is started on the same partition before finalizing "
+                    + migrationInfo);
         }
 
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
@@ -185,8 +186,7 @@ public final class FinalizeMigrationOperation extends AbstractPartitionOperation
                         + partitionId);
             }
         } else {
-            int replicaOffset = migrationInfo.getDestinationCurrentReplicaIndex() <= 1 ? 1 : migrationInfo
-                    .getDestinationCurrentReplicaIndex();
+            int replicaOffset = Math.max(migrationInfo.getDestinationCurrentReplicaIndex(), 1);
 
             for (ServiceNamespace namespace : replicaManager.getNamespaces(partitionId)) {
                 long[] versions = updatePartitionReplicaVersions(replicaManager, partitionId, namespace, replicaOffset - 1);

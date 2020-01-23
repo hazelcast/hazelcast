@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,12 @@
 
 package com.hazelcast.config;
 
+import javax.annotation.Nonnull;
+import java.util.Objects;
 import java.util.Properties;
+
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * SSL configuration.
@@ -59,8 +64,9 @@ public final class SSLConfig {
      *
      * @param factoryClassName the name implementation class
      */
-    public SSLConfig setFactoryClassName(String factoryClassName) {
-        this.factoryClassName = factoryClassName;
+    public SSLConfig setFactoryClassName(@Nonnull String factoryClassName) {
+        this.factoryClassName = checkHasText(factoryClassName, "SSL context factory class name cannot be null!");
+        this.factoryImplementation = null;
         return this;
     }
 
@@ -92,8 +98,9 @@ public final class SSLConfig {
      * @param factoryImplementation the implementation object
      * @return this SSLConfig instance
      */
-    public SSLConfig setFactoryImplementation(Object factoryImplementation) {
-        this.factoryImplementation = factoryImplementation;
+    public SSLConfig setFactoryImplementation(@Nonnull Object factoryImplementation) {
+        this.factoryImplementation = checkNotNull(factoryImplementation, "SSL context factory cannot be null!");
+        this.factoryClassName = null;
         return this;
     }
 
@@ -168,7 +175,6 @@ public final class SSLConfig {
     }
 
     @Override
-    @SuppressWarnings({"checkstyle:npathcomplexity"})
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -179,26 +185,14 @@ public final class SSLConfig {
 
         SSLConfig sslConfig = (SSLConfig) o;
 
-        if (enabled != sslConfig.enabled) {
-            return false;
-        }
-        if (factoryClassName != null
-                ? !factoryClassName.equals(sslConfig.factoryClassName) : sslConfig.factoryClassName != null) {
-            return false;
-        }
-        if (factoryImplementation != null
-                ? !factoryImplementation.equals(sslConfig.factoryImplementation) : sslConfig.factoryImplementation != null) {
-            return false;
-        }
-        return properties != null ? properties.equals(sslConfig.properties) : sslConfig.properties == null;
+        return Objects.equals(enabled, sslConfig.enabled)
+            && Objects.equals(properties, sslConfig.properties)
+            && Objects.equals(factoryImplementation, sslConfig.factoryImplementation)
+            && Objects.equals(factoryClassName, sslConfig.factoryClassName);
     }
 
     @Override
     public int hashCode() {
-        int result = (enabled ? 1 : 0);
-        result = 31 * result + (factoryClassName != null ? factoryClassName.hashCode() : 0);
-        result = 31 * result + (factoryImplementation != null ? factoryImplementation.hashCode() : 0);
-        result = 31 * result + (properties != null ? properties.hashCode() : 0);
-        return result;
+        return Objects.hash(enabled, factoryImplementation, factoryClassName, properties);
     }
 }

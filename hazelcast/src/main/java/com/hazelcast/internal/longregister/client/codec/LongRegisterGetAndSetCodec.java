@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,9 @@ package com.hazelcast.internal.longregister.client.codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
+
+import javax.annotation.Nullable;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -33,15 +36,15 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Atomically sets the given value and returns the old value.
  */
-@Generated("f92212f8d76527cf9dc7c63478c7977c")
+@Generated("5657e74606bdb08f6f16d420e66c5617")
 public final class LongRegisterGetAndSetCodec {
-    //hex: 0xFF0600
-    public static final int REQUEST_MESSAGE_TYPE = 16713216;
-    //hex: 0xFF0601
-    public static final int RESPONSE_MESSAGE_TYPE = 16713217;
+    //hex: 0xFF0500
+    public static final int REQUEST_MESSAGE_TYPE = 16712960;
+    //hex: 0xFF0501
+    public static final int RESPONSE_MESSAGE_TYPE = 16712961;
     private static final int REQUEST_NEW_VALUE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_NEW_VALUE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
     private LongRegisterGetAndSetCodec() {
@@ -53,7 +56,7 @@ public final class LongRegisterGetAndSetCodec {
         /**
          * The name of this IAtomicLong instance.
          */
-        public java.lang.String name;
+        public String name;
 
         /**
          * the new value
@@ -61,12 +64,11 @@ public final class LongRegisterGetAndSetCodec {
         public long newValue;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, long newValue) {
+    public static ClientMessage encodeRequest(String name, long newValue) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("LongRegister.GetAndSet");
-        ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
+        Frame initialFrame = new Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeLong(initialFrame.content, REQUEST_NEW_VALUE_FIELD_OFFSET, newValue);
         clientMessage.add(initialFrame);
@@ -74,10 +76,10 @@ public final class LongRegisterGetAndSetCodec {
         return clientMessage;
     }
 
-    public static LongRegisterGetAndSetCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
+    public static RequestParameters decodeRequest(ClientMessage clientMessage) {
+        ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
-        ClientMessage.Frame initialFrame = iterator.next();
+        Frame initialFrame = iterator.next();
         request.newValue = decodeLong(initialFrame.content, REQUEST_NEW_VALUE_FIELD_OFFSET);
         request.name = StringCodec.decode(iterator);
         return request;
@@ -94,7 +96,7 @@ public final class LongRegisterGetAndSetCodec {
 
     public static ClientMessage encodeResponse(long response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
-        ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
+        Frame initialFrame = new Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         encodeLong(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET, response);
         clientMessage.add(initialFrame);
@@ -102,10 +104,10 @@ public final class LongRegisterGetAndSetCodec {
         return clientMessage;
     }
 
-    public static LongRegisterGetAndSetCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
+    public static ResponseParameters decodeResponse(ClientMessage clientMessage) {
+        ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
-        ClientMessage.Frame initialFrame = iterator.next();
+        Frame initialFrame = iterator.next();
         response.response = decodeLong(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
         return response;
     }

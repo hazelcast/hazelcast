@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Applies given MC config (client filter list).
  */
-@Generated("227735a254c41ff2917773d241228fe3")
+@Generated("dbc66179deaff27e7a2ad3f75a4d33b5")
 public final class MCApplyMCConfigCodec {
     //hex: 0x200D00
     public static final int REQUEST_MESSAGE_TYPE = 2100480;
@@ -44,7 +44,7 @@ public final class MCApplyMCConfigCodec {
     public static final int RESPONSE_MESSAGE_TYPE = 2100481;
     private static final int REQUEST_CLIENT_BW_LIST_MODE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_CLIENT_BW_LIST_MODE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private MCApplyMCConfigCodec() {
     }
@@ -68,19 +68,20 @@ public final class MCApplyMCConfigCodec {
         /**
          * Client filter list entries.
          */
-        public @Nullable java.util.List<com.hazelcast.internal.management.dto.ClientBwListEntryDTO> clientBwListEntries;
+        public java.util.List<com.hazelcast.internal.management.dto.ClientBwListEntryDTO> clientBwListEntries;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String eTag, int clientBwListMode, @Nullable java.util.List<com.hazelcast.internal.management.dto.ClientBwListEntryDTO> clientBwListEntries) {
+    public static ClientMessage encodeRequest(java.lang.String eTag, int clientBwListMode, java.util.Collection<com.hazelcast.internal.management.dto.ClientBwListEntryDTO> clientBwListEntries) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("MC.ApplyMCConfig");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeInt(initialFrame.content, REQUEST_CLIENT_BW_LIST_MODE_FIELD_OFFSET, clientBwListMode);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, eTag);
-        ListMultiFrameCodec.encodeNullable(clientMessage, clientBwListEntries, ClientBwListEntryCodec::encode);
+        ListMultiFrameCodec.encode(clientMessage, clientBwListEntries, ClientBwListEntryCodec::encode);
         return clientMessage;
     }
 
@@ -90,7 +91,7 @@ public final class MCApplyMCConfigCodec {
         ClientMessage.Frame initialFrame = iterator.next();
         request.clientBwListMode = decodeInt(initialFrame.content, REQUEST_CLIENT_BW_LIST_MODE_FIELD_OFFSET);
         request.eTag = StringCodec.decode(iterator);
-        request.clientBwListEntries = ListMultiFrameCodec.decodeNullable(iterator, ClientBwListEntryCodec::decode);
+        request.clientBwListEntries = ListMultiFrameCodec.decode(iterator, ClientBwListEntryCodec::decode);
         return request;
     }
 

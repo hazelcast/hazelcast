@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("364eb9f0f4270c6430a7780010e47d3a")
+@Generated("bc0dc1323c50c7d751a6116b3ef9f1b6")
 public final class CacheConfigHolderCodec {
     private static final int BACKUP_COUNT_FIELD_OFFSET = 0;
     private static final int ASYNC_BACKUP_COUNT_FIELD_OFFSET = BACKUP_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -96,13 +96,13 @@ public final class CacheConfigHolderCodec {
         com.hazelcast.config.WanReplicationRef wanReplicationRef = CodecUtil.decodeNullable(iterator, WanReplicationRefCodec::decode);
         java.lang.String keyClassName = StringCodec.decode(iterator);
         java.lang.String valueClassName = StringCodec.decode(iterator);
-        com.hazelcast.nio.serialization.Data cacheLoaderFactory = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-        com.hazelcast.nio.serialization.Data cacheWriterFactory = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-        com.hazelcast.nio.serialization.Data expiryPolicyFactory = DataCodec.decode(iterator);
+        com.hazelcast.internal.serialization.Data cacheLoaderFactory = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        com.hazelcast.internal.serialization.Data cacheWriterFactory = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        com.hazelcast.internal.serialization.Data expiryPolicyFactory = DataCodec.decode(iterator);
         com.hazelcast.config.HotRestartConfig hotRestartConfig = CodecUtil.decodeNullable(iterator, HotRestartConfigCodec::decode);
         com.hazelcast.config.EventJournalConfig eventJournalConfig = CodecUtil.decodeNullable(iterator, EventJournalConfigCodec::decode);
         java.lang.String splitBrainProtectionName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
-        java.util.List<com.hazelcast.nio.serialization.Data> listenerConfigurations = ListMultiFrameCodec.decodeNullable(iterator, DataCodec::decode);
+        java.util.List<com.hazelcast.internal.serialization.Data> listenerConfigurations = ListMultiFrameCodec.decodeNullable(iterator, DataCodec::decode);
         com.hazelcast.config.MergePolicyConfig mergePolicyConfig = MergePolicyConfigCodec.decode(iterator);
         java.util.List<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> cachePartitionLostListenerConfigs = ListMultiFrameCodec.decodeNullable(iterator, ListenerConfigHolderCodec::decode);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.wan.WanReplicationEvent;
-import com.hazelcast.wan.WanReplicationPublisher;
+import com.hazelcast.wan.WanEvent;
+import com.hazelcast.wan.WanPublisher;
 
 import java.io.Serializable;
 
-public class DummyWanPublisher implements WanReplicationPublisher, Serializable {
+public class DummyWanPublisher implements WanPublisher, Serializable {
     @Override
     public void init(WanReplicationConfig wanReplicationConfig, AbstractWanPublisherConfig publisherConfig) {
 
@@ -38,12 +38,12 @@ public class DummyWanPublisher implements WanReplicationPublisher, Serializable 
     }
 
     @Override
-    public void publishReplicationEvent(WanReplicationEvent eventObject) {
+    public void publishReplicationEvent(WanEvent eventObject) {
 
     }
 
     @Override
-    public void publishReplicationEventBackup(WanReplicationEvent eventObject) {
+    public void publishReplicationEventBackup(WanEvent eventObject) {
 
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.internal.util;
 
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -47,7 +47,7 @@ public class UnmodifiableLazyListTest extends HazelcastTestSupport {
 
     private static final int SIZE = 10;
     private static SerializationService serializationService;
-    private UnmodifiableLazyList<Integer> list;
+    private UnmodifiableLazyList list;
 
     @BeforeClass
     public static void setupSerializationService() {
@@ -60,7 +60,7 @@ public class UnmodifiableLazyListTest extends HazelcastTestSupport {
         for (int i = 0; i < SIZE; i++) {
             dataList.add(serializationService.toData(i));
         }
-        list = new UnmodifiableLazyList<Integer>(dataList, serializationService);
+        list = new UnmodifiableLazyList(dataList, serializationService);
     }
 
     @Test
@@ -70,7 +70,7 @@ public class UnmodifiableLazyListTest extends HazelcastTestSupport {
 
     @Test(expected = UnsupportedOperationException.class)
     public void testIterator_remove() {
-        Iterator<Integer> iterator = list.iterator();
+        Iterator<Object> iterator = list.iterator();
         iterator.next();
         iterator.remove();
     }
@@ -82,7 +82,7 @@ public class UnmodifiableLazyListTest extends HazelcastTestSupport {
 
     @Test
     public void testIsEmpty_True() {
-        list = new UnmodifiableLazyList<Integer>(Collections.emptyList(), serializationService);
+        list = new UnmodifiableLazyList(Collections.emptyList(), serializationService);
         assertTrue(list.isEmpty());
     }
 
@@ -110,14 +110,14 @@ public class UnmodifiableLazyListTest extends HazelcastTestSupport {
     @Test
     public void testToArray_AsGenericType_SmallSize() {
         Integer[] a = new Integer[randomInt()];
-        Integer[] array = list.toArray(a);
+        Integer[] array = (Integer[]) list.toArray(a);
         assertParamsEquals(array, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
     }
 
     @Test
     public void testToArray_AsGenericType_GreaterSize() {
         Integer[] a = new Integer[SIZE + 1];
-        Integer[] array = list.toArray(a);
+        Integer[] array = (Integer[]) list.toArray(a);
         assertParamsEquals(array, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, null);
     }
 
@@ -222,7 +222,7 @@ public class UnmodifiableLazyListTest extends HazelcastTestSupport {
     @Test
     public void testListIterator() {
         int i = randomInt();
-        ListIterator<Integer> listIterator = list.listIterator(i);
+        ListIterator listIterator = list.listIterator(i);
         while (listIterator.hasNext()) {
             assertEquals(i++, (int) listIterator.next());
         }
@@ -233,21 +233,21 @@ public class UnmodifiableLazyListTest extends HazelcastTestSupport {
 
     @Test(expected = UnsupportedOperationException.class)
     public void testListIterator_Add() {
-        ListIterator<Integer> listIterator = list.listIterator();
+        ListIterator<Object> listIterator = list.listIterator();
         listIterator.next();
         listIterator.add(randomInt());
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testListIterator_Remove() {
-        ListIterator<Integer> listIterator = list.listIterator();
+        ListIterator<Object> listIterator = list.listIterator();
         listIterator.next();
         listIterator.remove();
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testListIterator_Set() {
-        ListIterator<Integer> listIterator = list.listIterator();
+        ListIterator<Object> listIterator = list.listIterator();
         listIterator.next();
         listIterator.set(randomInt());
     }

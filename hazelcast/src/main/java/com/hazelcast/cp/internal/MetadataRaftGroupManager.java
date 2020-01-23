@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,10 +65,14 @@ import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_S
 import static com.hazelcast.cp.CPGroup.CPGroupStatus.ACTIVE;
 import static com.hazelcast.cp.CPGroup.CPGroupStatus.DESTROYED;
 import static com.hazelcast.cp.CPGroup.CPGroupStatus.DESTROYING;
+import static com.hazelcast.cp.CPGroup.DEFAULT_GROUP_NAME;
 import static com.hazelcast.cp.CPGroup.METADATA_CP_GROUP_NAME;
 import static com.hazelcast.cp.internal.MembershipChangeSchedule.CPGroupMembershipChange;
 import static com.hazelcast.cp.internal.RaftService.CP_SUBSYSTEM_EXECUTOR;
 import static com.hazelcast.cp.internal.RaftService.CP_SUBSYSTEM_MANAGEMENT_EXECUTOR;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CP_METRIC_METADATA_RAFT_GROUP_MANAGER_ACTIVE_MEMBERS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CP_METRIC_METADATA_RAFT_GROUP_MANAGER_ACTIVE_MEMBERS_COMMIT_INDEX;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CP_METRIC_METADATA_RAFT_GROUP_MANAGER_GROUPS;
 import static com.hazelcast.internal.util.Preconditions.checkFalse;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkState;
@@ -114,12 +118,12 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
 
     // all fields below are state of the Metadata CP group and put into Metadata snapshot and reset while restarting...
     // these fields are accessed outside of Raft while restarting or local querying, etc.
-    @Probe
+    @Probe(name = CP_METRIC_METADATA_RAFT_GROUP_MANAGER_GROUPS)
     private final ConcurrentMap<CPGroupId, CPGroupInfo> groups = new ConcurrentHashMap<>();
     // activeMembers must be an ordered non-null collection
-    @Probe
+    @Probe(name = CP_METRIC_METADATA_RAFT_GROUP_MANAGER_ACTIVE_MEMBERS)
     private volatile Collection<CPMemberInfo> activeMembers = Collections.emptySet();
-    @Probe
+    @Probe(name = CP_METRIC_METADATA_RAFT_GROUP_MANAGER_ACTIVE_MEMBERS_COMMIT_INDEX)
     private volatile long activeMembersCommitIndex;
     private volatile List<CPMemberInfo> initialCPMembers;
     private volatile MembershipChangeSchedule membershipChangeSchedule;
@@ -470,7 +474,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         throw exception;
     }
 
-    public CPGroupSummary createRaftGroup(String groupName, Collection<RaftEndpoint> groupEndpoints, long commitIndex) {
+    public CPGroupSummary createRaftGroup(String groupName, Collection<RaftEndpoint> groupEndpoints, long groupId) {
         checkFalse(METADATA_CP_GROUP_NAME.equalsIgnoreCase(groupName), groupName + " is reserved for internal usage!");
         checkMetadataGroupInitSuccessful();
 
@@ -490,6 +494,12 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
             throw new IllegalStateException(msg);
         }
 
+        group = getRaftGroupById(groupId);
+        if (group != null) {
+            throw new CannotCreateRaftGroupException("Cannot create CP group: " + groupName + " with members: " + groupEndpoints
+                    + " because group index: " + groupId + " already belongs to " + group.name());
+        }
+
         Map<UUID, CPMemberInfo> activeMembersMap = getActiveMembersMap();
 
         CPMemberInfo leavingMember = membershipChangeSchedule != null ? membershipChangeSchedule.getLeavingMember() : null;
@@ -505,7 +515,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
             }
         }
 
-        return createRaftGroup(new CPGroupInfo(new RaftGroupId(groupName, getGroupIdSeed(), commitIndex), groupEndpoints));
+        return createRaftGroup(new CPGroupInfo(new RaftGroupId(groupName, getGroupIdSeed(), groupId), groupEndpoints));
     }
 
     private CPGroupSummary createRaftGroup(CPGroupInfo group) {
@@ -552,6 +562,15 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
     private CPGroupInfo getRaftGroupByName(String name) {
         for (CPGroupInfo group : groups.values()) {
             if (group.status() != DESTROYED && group.name().equals(name)) {
+                return group;
+            }
+        }
+        return null;
+    }
+
+    private CPGroupInfo getRaftGroupById(long groupId) {
+        for (CPGroupInfo group : groups.values()) {
+            if (group.id().getId() == groupId) {
                 return group;
             }
         }
@@ -644,12 +663,13 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
         Map<UUID, CPMemberInfo> activeMembersMap = getActiveMembersMap();
         RaftEndpoint localEndpoint = getLocalCPMember().toRaftEndpoint();
         OperationService operationService = nodeEngine.getOperationService();
-        Operation op = new TerminateRaftNodesOp(Collections.singleton(group.id()));
         for (RaftEndpoint endpoint : group.members())  {
             if (endpoint.equals(localEndpoint)) {
                 terminateRaftNodeAsync(group.id());
             } else {
-                operationService.send(op, activeMembersMap.get(endpoint.getUuid()).getAddress());
+                Operation op = new TerminateRaftNodesOp(Collections.singleton(group.id()));
+                CPMemberInfo cpMember = activeMembersMap.get(endpoint.getUuid());
+                operationService.invokeOnTarget(RaftService.SERVICE_NAME, op, cpMember.getAddress());
             }
         }
     }
@@ -835,8 +855,8 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
 
         logger.severe("Could not apply add-member: " + (addedMember != null ? addedMember : "-")
                 + " and remove-member: " + (removedMember != null ? removedMember : "-") + " in "  + group
-                + " with new members commit index: " + newMembersCommitIndex + " expected members commit index: "
-                + expectedMembersCommitIndex + " known members commit index: " + group.getMembersCommitIndex());
+                + " with new members commit index: " + newMembersCommitIndex + ", expected members commit index: "
+                + expectedMembersCommitIndex + ", known members commit index: " + group.getMembersCommitIndex());
 
         return false;
     }
@@ -881,10 +901,6 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
 
     public Collection<CPMemberInfo> getActiveMembers() {
         return activeMembers;
-    }
-
-    public long getActiveMembersCommitIndex() {
-        return activeMembersCommitIndex;
     }
 
     @SuppressFBWarnings("JLM_JSR166_UTILCONCURRENT_MONITORENTER")
@@ -1376,7 +1392,18 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
     private static class CPGroupIdComparator implements Comparator<CPGroupId> {
         @Override
         public int compare(CPGroupId o1, CPGroupId o2) {
-            return Long.compare(o1.getId(), o2.getId());
+            if (o1.getName().equals(METADATA_CP_GROUP_NAME)) {
+                return -1;
+            } else if (o2.getName().equals(METADATA_CP_GROUP_NAME)) {
+                return 1;
+            } else if (o1.getName().equals(DEFAULT_GROUP_NAME)) {
+                return -1;
+            } else if (o2.getName().equals(DEFAULT_GROUP_NAME)) {
+                return 1;
+            }
+
+            return o1.getName().compareTo(o2.getName());
         }
     }
+
 }

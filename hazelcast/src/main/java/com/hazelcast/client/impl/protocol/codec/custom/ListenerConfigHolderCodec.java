@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("b605440c4ebd207baa98eb688638f831")
+@Generated("b81bcbdd6a26944926ed5170c1b05cb6")
 public final class ListenerConfigHolderCodec {
     private static final int LISTENER_TYPE_FIELD_OFFSET = 0;
     private static final int INCLUDE_VALUE_FIELD_OFFSET = LISTENER_TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -58,7 +58,7 @@ public final class ListenerConfigHolderCodec {
         boolean includeValue = decodeBoolean(initialFrame.content, INCLUDE_VALUE_FIELD_OFFSET);
         boolean local = decodeBoolean(initialFrame.content, LOCAL_FIELD_OFFSET);
 
-        com.hazelcast.nio.serialization.Data listenerImplementation = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        com.hazelcast.internal.serialization.Data listenerImplementation = CodecUtil.decodeNullable(iterator, DataCodec::decode);
         java.lang.String className = CodecUtil.decodeNullable(iterator, StringCodec::decode);
 
         fastForwardToEndFrame(iterator);

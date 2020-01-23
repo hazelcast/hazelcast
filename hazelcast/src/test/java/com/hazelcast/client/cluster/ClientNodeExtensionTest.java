@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -96,7 +96,7 @@ public class ClientNodeExtensionTest
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().addAddress("127.0.0.1:5555");
-        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setMaxBackoffMillis(2000);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(2000);
         clientConfig.setProperty(ClientProperty.HEARTBEAT_TIMEOUT.getName(), "1000");
         factory.newHazelcastClient(clientConfig);
     }

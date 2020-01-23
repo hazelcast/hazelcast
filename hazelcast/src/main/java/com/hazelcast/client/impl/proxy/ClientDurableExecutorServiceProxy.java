@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import com.hazelcast.durableexecutor.DurableExecutorServiceFuture;
 import com.hazelcast.executor.impl.RunnableAdapter;
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.spi.impl.DeserializingCompletableFuture;
 
@@ -222,7 +223,7 @@ public final class ClientDurableExecutorServiceProxy extends ClientProxy impleme
             ClientMessage response = invokeOnPartition(request, partitionId);
             sequence = DurableExecutorSubmitToPartitionCodec.decodeResponse(response).response;
         } catch (Throwable t) {
-            return completedExceptionally(t, getUserExecutor());
+            return completedExceptionally(t, ConcurrencyUtil.DEFAULT_ASYNC_EXECUTOR);
         }
         ClientMessage clientMessage = DurableExecutorRetrieveResultCodec.encodeRequest(name, sequence);
         ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage, getName(), partitionId).invoke();
@@ -230,10 +231,6 @@ public final class ClientDurableExecutorServiceProxy extends ClientProxy impleme
         return new ClientDurableExecutorServiceDelegatingFuture<>(future, getSerializationService(),
                 message -> DurableExecutorRetrieveResultCodec.decodeResponse(message).response,
                 result, taskId);
-    }
-
-    private Executor getUserExecutor() {
-        return getContext().getExecutionService().getUserExecutor();
     }
 
     private <T> RunnableAdapter<T> createRunnableAdapter(Runnable command) {

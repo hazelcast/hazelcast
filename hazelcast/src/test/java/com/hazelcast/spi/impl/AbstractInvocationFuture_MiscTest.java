@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,6 +55,12 @@ public class AbstractInvocationFuture_MiscTest extends AbstractInvocationFuture_
         future.whenCompleteAsync((v, t) -> ignore(null));
         future.thenRun(() -> ignore(null));
         assertEquals(2, future.getNumberOfDependents());
+    }
+
+    @Test
+    public void getNumberOfDependents_whenOneIsRegistered() {
+        future.thenRun(() -> ignore(null));
+        assertEquals(1, future.getNumberOfDependents());
     }
 
     @Test

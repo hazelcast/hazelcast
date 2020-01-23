@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,25 @@
 
 package com.hazelcast.client.impl.protocol.task.cache;
 
-import com.hazelcast.cache.impl.CacheKeyIterationResult;
+import com.hazelcast.cache.impl.CacheKeysWithCursor;
 import com.hazelcast.cache.impl.CacheOperationProvider;
-import com.hazelcast.cache.impl.operation.CacheKeyIteratorOperation;
+import com.hazelcast.cache.impl.operation.CacheFetchKeysOperation;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheIterateCodec;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.Collections;
 
+import static com.hazelcast.internal.iteration.IterationPointer.decodePointers;
+import static com.hazelcast.internal.iteration.IterationPointer.encodePointers;
+
 /**
- * This client request  specifically calls {@link CacheKeyIteratorOperation} on the server side.
+ * This client request  specifically calls {@link CacheFetchKeysOperation} on the server side.
  *
- * @see CacheKeyIteratorOperation
+ * @see CacheFetchKeysOperation
  */
 public class CacheIterateMessageTask
         extends AbstractCacheMessageTask<CacheIterateCodec.RequestParameters> {
@@ -43,7 +46,8 @@ public class CacheIterateMessageTask
     @Override
     protected Operation prepareOperation() {
         CacheOperationProvider operationProvider = getOperationProvider(parameters.name);
-        return operationProvider.createKeyIteratorOperation(parameters.tableIndex, parameters.batch);
+        IterationPointer[] pointers = decodePointers(parameters.iterationPointers);
+        return operationProvider.createFetchKeysOperation(pointers, parameters.batch);
     }
 
     @Override
@@ -54,10 +58,11 @@ public class CacheIterateMessageTask
     @Override
     protected ClientMessage encodeResponse(Object response) {
         if (response == null) {
-            return CacheIterateCodec.encodeResponse(0, Collections.<Data>emptyList());
+            return CacheIterateCodec.encodeResponse(Collections.emptyList(), Collections.emptyList());
         }
-        CacheKeyIterationResult keyIteratorResult = (CacheKeyIterationResult) response;
-        return CacheIterateCodec.encodeResponse(keyIteratorResult.getTableIndex(), keyIteratorResult.getKeys());
+        CacheKeysWithCursor keyIteratorResult = (CacheKeysWithCursor) response;
+        IterationPointer[] pointers = keyIteratorResult.getPointers();
+        return CacheIterateCodec.encodeResponse(encodePointers(pointers), keyIteratorResult.getKeys());
     }
 
     @Override

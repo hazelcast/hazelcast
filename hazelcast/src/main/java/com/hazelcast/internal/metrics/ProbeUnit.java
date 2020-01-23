@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@ public enum ProbeUnit {
     BYTES,
     /** Timestamp or duration represented in ms */
     MS,
+    /** Timestamp or duration represented in nanoseconds */
+    NS,
     /** An integer mostly in range 0..100 or a double mostly in range 0..1 */
     PERCENT,
     /** Number of items: size, counter... */

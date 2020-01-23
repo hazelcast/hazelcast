@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package com.hazelcast.cache.impl.operation;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareOperationFactory;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
@@ -39,15 +38,15 @@ import java.util.List;
 public class CacheMergeOperationFactory extends PartitionAwareOperationFactory {
 
     private String name;
-    private List<CacheMergeTypes>[] mergingEntries;
-    private SplitBrainMergePolicy<Data, CacheMergeTypes> mergePolicy;
+    private List<CacheMergeTypes<Object, Object>>[] mergingEntries;
+    private SplitBrainMergePolicy<Object, CacheMergeTypes<Object, Object>, Object> mergePolicy;
 
     public CacheMergeOperationFactory() {
     }
 
     @SuppressFBWarnings("EI_EXPOSE_REP2")
-    public CacheMergeOperationFactory(String name, int[] partitions, List<CacheMergeTypes>[] mergingEntries,
-                                      SplitBrainMergePolicy<Data, CacheMergeTypes> mergePolicy) {
+    public CacheMergeOperationFactory(String name, int[] partitions, List<CacheMergeTypes<Object, Object>>[] mergingEntries,
+                                      SplitBrainMergePolicy<Object, CacheMergeTypes<Object, Object>, Object> mergePolicy) {
         this.name = name;
         this.partitions = partitions;
         this.mergingEntries = mergingEntries;
@@ -68,9 +67,9 @@ public class CacheMergeOperationFactory extends PartitionAwareOperationFactory {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeIntArray(partitions);
-        for (List<CacheMergeTypes> list : mergingEntries) {
+        for (List<CacheMergeTypes<Object, Object>> list : mergingEntries) {
             out.writeInt(list.size());
-            for (CacheMergeTypes mergingEntry : list) {
+            for (CacheMergeTypes<Object, Object> mergingEntry : list) {
                 out.writeObject(mergingEntry);
             }
         }
@@ -85,9 +84,9 @@ public class CacheMergeOperationFactory extends PartitionAwareOperationFactory {
         mergingEntries = new List[partitions.length];
         for (int partitionIndex = 0; partitionIndex < partitions.length; partitionIndex++) {
             int size = in.readInt();
-            List<CacheMergeTypes> list = new ArrayList<CacheMergeTypes>(size);
+            List<CacheMergeTypes<Object, Object>> list = new ArrayList<>(size);
             for (int i = 0; i < size; i++) {
-                CacheMergeTypes mergingEntry = in.readObject();
+                CacheMergeTypes<Object, Object> mergingEntry = in.readObject();
                 list.add(mergingEntry);
             }
             mergingEntries[partitionIndex] = list;

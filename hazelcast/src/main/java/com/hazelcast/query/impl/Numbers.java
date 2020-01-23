@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -98,7 +98,7 @@ public final class Numbers {
             if (isDoubleRepresentable(rhsClass)) {
                 return compareLongWithDouble(lhsNumber.longValue(), rhsNumber.doubleValue());
             } else if (isLongRepresentable(rhsClass)) {
-                return compareLongs(lhsNumber.longValue(), rhsNumber.longValue());
+                return Long.compare(lhsNumber.longValue(), rhsNumber.longValue());
             }
         }
 
@@ -233,6 +233,7 @@ public final class Numbers {
      * @return an int representation of the given number.
      * @throws IllegalArgumentException if no exact representation exists.
      */
+    @SuppressWarnings("RedundantCast")
     public static int asIntExactly(Number number) {
         Class clazz = number.getClass();
 
@@ -310,10 +311,6 @@ public final class Numbers {
         return clazz == Integer.class || clazz == Short.class || clazz == Byte.class;
     }
 
-    private static int compareLongs(long lhs, long rhs) {
-        return lhs < rhs ? -1 : (lhs == rhs ? 0 : +1);
-    }
-
     @SuppressWarnings("checkstyle:magicnumber")
     private static int compareLongWithDouble(long l, double d) {
         if (d > -0x1p53 && d < +0x1p53) {
@@ -362,7 +359,7 @@ public final class Numbers {
 
         // All remaining double values are whole numbers and less than 2^63 in
         // magnitude, so we may just cast them to long.
-        return compareLongs(l, (long) d);
+        return Long.compare(l, (long) d);
     }
 
 }

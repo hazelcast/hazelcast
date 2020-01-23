@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,18 +19,20 @@ package com.hazelcast.client.executor;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.client.executor.tasks.MapPutRunnable;
+import com.hazelcast.client.impl.clientside.ClientTestUtil;
+import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.client.test.executor.tasks.CancellationAwareTask;
 import com.hazelcast.client.test.executor.tasks.FailingCallable;
 import com.hazelcast.client.test.executor.tasks.SelectNoMembers;
 import com.hazelcast.client.test.executor.tasks.SerializedCounterCallable;
 import com.hazelcast.client.test.executor.tasks.TaskWithUnserializableResponse;
+import com.hazelcast.cluster.MemberSelector;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.cluster.MemberSelector;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -44,9 +46,11 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -55,6 +59,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
+import static com.hazelcast.test.HazelcastTestSupport.ignore;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -301,5 +306,58 @@ public class ClientExecutorServiceTest {
         });
         assertOpenEventually(countDownLatch);
         throw throwable.get();
+    }
+
+    @Ignore("Behaviour needs a better test, due to switching from user executor to ForkJoinPool.commonPool")
+    @Test
+    public void testExecutionCallback_whenExecutionRejected() {
+        final AtomicReference<Throwable> exceptionThrown = new AtomicReference<>();
+        final CountDownLatch waitForShutdown = new CountDownLatch(1);
+        final CountDownLatch didShutdown = new CountDownLatch(1);
+        final HazelcastClientInstanceImpl hzClient = ClientTestUtil.getHazelcastClientInstanceImpl(client);
+
+        ExecutionRejectedRunnable.waitForShutdown = waitForShutdown;
+        ExecutionRejectedRunnable.didShutdown = didShutdown;
+
+        IExecutorService executorService = hzClient.getExecutorService("executor");
+        Thread t = new Thread(() -> {
+            try {
+                waitForShutdown.await(30, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                ignore(e);
+            }
+            ForkJoinPool.commonPool().shutdown();
+            didShutdown.countDown();
+        });
+        t.start();
+        executorService.submit(new ExecutionRejectedRunnable(), new ExecutionCallback<Object>() {
+            @Override
+            public void onResponse(Object response) {
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                exceptionThrown.set(t);
+            }
+        });
+
+        // assert a RejectedExecutionException is thrown from already shutdown user executor
+        // it is not wrapped in a HazelcastClientNotActiveException because the client is still running
+        assertTrueEventually(() -> assertTrue(exceptionThrown.get() instanceof RejectedExecutionException));
+    }
+
+    private static class ExecutionRejectedRunnable implements Runnable, Serializable {
+        static CountDownLatch waitForShutdown;
+        static CountDownLatch didShutdown;
+
+        @Override
+        public void run() {
+            waitForShutdown.countDown();
+            try {
+                didShutdown.await(30, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                ignore(e);
+            }
+        }
     }
 }

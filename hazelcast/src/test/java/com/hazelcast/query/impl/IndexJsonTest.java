@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,14 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastJsonValue;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.AndPredicate;
 import com.hazelcast.query.impl.predicates.EqualPredicate;
+import com.hazelcast.query.impl.predicates.SqlPredicate;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -38,6 +39,7 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 import java.util.Arrays;
 import java.util.Collection;
 
+import static com.hazelcast.query.impl.Indexes.SKIP_PARTITIONS_COUNT_CHECK;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
@@ -78,9 +80,9 @@ public class IndexJsonTest {
         assertEquals(0, numberIndex.getRecords(-1).size());
         assertEquals(1001, stringIndex.getRecords("sancar").size());
         assertEquals(501, boolIndex.getRecords(true).size());
-        assertEquals(501, is.query(new AndPredicate(new EqualPredicate("name", "sancar"), new EqualPredicate("active", "true"))).size());
-        assertEquals(300, is.query(Predicates.and(Predicates.greaterThan("age", 400), Predicates.equal("active", true))).size());
-        assertEquals(1001, is.query(Predicates.sql("name == sancar")).size());
+        assertEquals(501, is.query(new AndPredicate(new EqualPredicate("name", "sancar"), new EqualPredicate("active", "true")), SKIP_PARTITIONS_COUNT_CHECK).size());
+        assertEquals(300, is.query(Predicates.and(Predicates.greaterThan("age", 400), Predicates.equal("active", true)), SKIP_PARTITIONS_COUNT_CHECK).size());
+        assertEquals(1001, is.query(new SqlPredicate("name == sancar"), SKIP_PARTITIONS_COUNT_CHECK).size());
     }
 
 }

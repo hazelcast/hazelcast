@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -121,7 +121,6 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
             }
         }
         System.setProperty("hazelcast.phone.home.enabled", "false");
-        System.setProperty("hazelcast.mancenter.enabled", "false");
         System.setProperty("hazelcast.wait.seconds.before.join", "1");
         System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
         System.setProperty("java.net.preferIPv4Stack", "true");
@@ -308,6 +307,9 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
                     Hazelcast.shutdownAll();
                     throw new IllegalStateException(message);
                 }
+
+                // check for leftover JMX beans
+                JmxLeakHelper.checkJmxBeans();
 
                 // check for leftover CachingProvider instances
                 int registrySize = getCachingProviderRegistrySize();

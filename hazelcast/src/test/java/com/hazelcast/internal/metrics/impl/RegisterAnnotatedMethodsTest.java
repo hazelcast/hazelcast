@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,7 +61,7 @@ public class RegisterAnnotatedMethodsTest extends HazelcastTestSupport {
     }
 
     public class MethodWithArgument {
-        @Probe
+        @Probe(name = "method")
         private long method(int x) {
             return 10;
         }
@@ -90,7 +90,7 @@ public class RegisterAnnotatedMethodsTest extends HazelcastTestSupport {
     }
 
     public class VoidMethod {
-        @Probe
+        @Probe(name = "method")
         private void method() {
         }
     }
@@ -105,7 +105,7 @@ public class RegisterAnnotatedMethodsTest extends HazelcastTestSupport {
     }
 
     public class PrimitiveByteMethod {
-        @Probe
+        @Probe(name = "method")
         private byte method() {
             return 10;
         }
@@ -121,7 +121,7 @@ public class RegisterAnnotatedMethodsTest extends HazelcastTestSupport {
     }
 
     public class PrimitiveShortMethod {
-        @Probe
+        @Probe(name = "method")
         private short method() {
             return 10;
         }
@@ -138,7 +138,7 @@ public class RegisterAnnotatedMethodsTest extends HazelcastTestSupport {
     }
 
     public class PrimitiveIntMethod {
-        @Probe
+        @Probe(name = "method")
         private int method() {
             return 10;
         }
@@ -155,7 +155,7 @@ public class RegisterAnnotatedMethodsTest extends HazelcastTestSupport {
 
 
     public class PrimitiveLongMethod {
-        @Probe
+        @Probe(name = "method")
         private long method() {
             return 10;
         }
@@ -171,7 +171,7 @@ public class RegisterAnnotatedMethodsTest extends HazelcastTestSupport {
     }
 
     public class PrimitiveFloatMethod {
-        @Probe
+        @Probe(name = "method")
         private float method() {
             return 10f;
         }
@@ -187,7 +187,7 @@ public class RegisterAnnotatedMethodsTest extends HazelcastTestSupport {
     }
 
     public class PrimitiveDoubleMethod {
-        @Probe
+        @Probe(name = "method")
         private double method() {
             return 10d;
         }
@@ -203,7 +203,7 @@ public class RegisterAnnotatedMethodsTest extends HazelcastTestSupport {
     }
 
     public class AtomicLongMethod {
-        @Probe
+        @Probe(name = "method")
         private AtomicLong method() {
             return new AtomicLong(10);
         }
@@ -219,7 +219,7 @@ public class RegisterAnnotatedMethodsTest extends HazelcastTestSupport {
     }
 
     public class AtomicIntegerMethod {
-        @Probe
+        @Probe(name = "method")
         private AtomicInteger method() {
             return new AtomicInteger(10);
         }
@@ -235,7 +235,7 @@ public class RegisterAnnotatedMethodsTest extends HazelcastTestSupport {
     }
 
     public class CounterMethod {
-        @Probe
+        @Probe(name = "method")
         private Counter method() {
             Counter counter = newSwCounter();
             counter.inc(10);
@@ -253,7 +253,7 @@ public class RegisterAnnotatedMethodsTest extends HazelcastTestSupport {
     }
 
     public class CollectionMethod {
-        @Probe
+        @Probe(name = "method")
         private Collection method() {
             ArrayList list = new ArrayList();
             for (int k = 0; k < 10; k++) {
@@ -273,7 +273,7 @@ public class RegisterAnnotatedMethodsTest extends HazelcastTestSupport {
     }
 
     public class MapMethod {
-        @Probe
+        @Probe(name = "method")
         private Map method() {
             HashMap map = new HashMap();
             for (int k = 0; k < 10; k++) {
@@ -293,7 +293,7 @@ public class RegisterAnnotatedMethodsTest extends HazelcastTestSupport {
     }
 
     public class SubclassMethod {
-        @Probe
+        @Probe(name = "method")
         private IdentityHashMap method() {
             IdentityHashMap map = new IdentityHashMap();
             for (int k = 0; k < 10; k++) {
@@ -313,7 +313,7 @@ public class RegisterAnnotatedMethodsTest extends HazelcastTestSupport {
     }
 
     public static class StaticMethod {
-        @Probe
+        @Probe(name = "method")
         private static long method() {
             return 10;
         }
@@ -329,7 +329,7 @@ public class RegisterAnnotatedMethodsTest extends HazelcastTestSupport {
     }
 
     public interface SomeInterface {
-        @Probe
+        @Probe(name = "method")
         int method();
     }
 
@@ -353,12 +353,12 @@ public class RegisterAnnotatedMethodsTest extends HazelcastTestSupport {
     }
 
     abstract static class ClassWithGauges {
-        @Probe
+        @Probe(name = "method")
         int method() {
             return 10;
         }
 
-        @Probe
+        @Probe(name = "field")
         int field = 10;
     }
 

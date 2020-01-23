@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package com.hazelcast.spring.transaction;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
 import com.hazelcast.transaction.TransactionalMap;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -35,11 +34,11 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.transaction.NoTransactionException;
+import org.springframework.transaction.TransactionSuspensionNotSupportedException;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"transaction-applicationContext-hazelcast.xml"})
@@ -186,25 +185,15 @@ public class TestSpringManagedHazelcastTransaction {
 
     /**
      * Tests that if propagation is set to {@link org.springframework.transaction.annotation.Propagation#REQUIRES_NEW REQUIRES_NEW},
-     * then nested transaction will be created.
+     * then an exception will be thrown, since Hazelcast doesn't support nested transaction, so {@link HazelcastTransactionManager}
+     * doesn't support transaction suspension.
      */
     @Test
     public void transactionalServiceBeanInvocation_nestedWithPropagationRequiresNew() {
         // given
-        DummyObject dummyObject1 = new DummyObject(1L, "magic1");
-        DummyObject dummyObject2 = new DummyObject(2L, "magic2");
-        IMap<Object, Object> dummyObjectMap = instance.getMap("dummyObjectMap");
+        expectedException.expect(TransactionSuspensionNotSupportedException.class);
 
         // when
-        boolean result = service.putUsingOtherBean_newTransaction(dummyObject1, dummyObject2);
-
-        // then
-        assertTrue("No data changes within nested transaction .", result);
-        assertEquals("Both transactions should have data changes.", 2L, dummyObjectMap.size());
-        assertTrue("No data changes within parent transaction.", dummyObjectMap.containsKey(1L));
-        assertEquals("Invalid data within parent transaction.", dummyObject1, dummyObjectMap.get(1L));
-        assertTrue("No data changes within nested transaction.", dummyObjectMap.containsKey(2L));
-        assertEquals("Invalid data within nested transaction.", dummyObject2, dummyObjectMap.get(2L));
+        service.putUsingOtherBean_newTransaction(new DummyObject(1L, "magic"));
     }
-
 }

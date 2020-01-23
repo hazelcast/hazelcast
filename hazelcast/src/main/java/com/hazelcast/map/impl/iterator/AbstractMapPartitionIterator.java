@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,12 @@
 
 package com.hazelcast.map.impl.iterator;
 
-import com.hazelcast.map.IMap;
+import com.hazelcast.internal.iteration.IterationPointer;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.map.impl.LazyMapEntry;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.impl.LazyMapEntry;
 
 import java.util.Iterator;
 import java.util.List;
@@ -28,14 +29,65 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 
 /**
+ * {@link AbstractMapPartitionIterator} provides the core iterator functionality
+ * shared by its descendants.
  * Base class for iterating a partition. When iterating you can control:
  * <ul>
  * <li>the fetch size</li>
  * <li>whether values are prefetched or fetched when iterating</li>
  * </ul>
+ * <p>
+ * <p>The Hazelcast cluster is made out of partitions which holds a slice of
+ * the cluster data. The partition count never increases or decreases in a
+ * cluster. In order to implement an iterator over a partitioned data, we use
+ * the following parameters.
+ * <ul>
+ * <li>the {@code partitionId}</li>
+ * <li>Each partition may have a lot of entries, so we use a second parameter
+ * to track the iteration of the partition.</li>
+ * </ul>
+ * </p>
+ * <p>
+ * Iteration steps:
+ * <ul>
+ * <li>fetching fixed number of keys from the partition defined by {@code partitionId}.</li>
+ * <li>iteration on fetched keys.</li>
+ * <li>get value of a key when the {@link #next()} method is called.</li>
+ * <li>when fetched keys are exhausted by calling {@link #next()}, more keys
+ * are fetched from the cluster.</li>
+ * </ul>
+ * This implementation iterates over partitions and for each partition it
+ * iterates over the internal map using the {@link IterationPointer}s.
+ * </p>
+ * <p>
+ * <h2>Fetching data from cluster:</h2>
+ * Fetching is getting a fixed size of keys from the internal table of records
+ * of a partition defined by {@code partitionId} and the
+ * {@link IterationPointer}s. The fetch response is the keys and the
+ * {@link IterationPointer}s used for the following fetch operation.
+ * </p>
+ * <p>
+ * <h2>Notes:</h2>
+ * <ul>
+ * <li>Iterator fetches keys in batch with a fixed size that is configurable.</li>
+ * <li>Fetched keys are cached in the iterator to be used in each iteration step.</li>
+ * <li>{@link #hasNext()} may return {@code true} for a key already removed.</li>
+ * <li>{@link #hasNext()} may only return {@code false} when all known keys
+ * are fetched and iterated.</li>
+ * <li>{@link #next()} may return {@code null} although the map does not
+ * have a {@code null} value. This may happen, for example, when someone
+ * removes the entry after the current thread has checked with
+ * {@link #hasNext()}.</li>
+ * <li>This implementation is not affected by value updates as each value is
+ * retrieved from the cluster when {@link #next()} called.</li>
+ * </ul>
+ * </p>
  *
- * @param <K> the key type
- * @param <V> the value type
+ * @param <K> the type of key.
+ * @param <V> the type of value.
+ * @see RecordStore#fetchKeys(com.hazelcast.internal.iteration.IterationPointer[], int)
+ * @see MapPartitionIterator
+ * @see AbstractCursor
  */
 public abstract class AbstractMapPartitionIterator<K, V> implements Iterator<Map.Entry<K, V>> {
 
@@ -45,13 +97,13 @@ public abstract class AbstractMapPartitionIterator<K, V> implements Iterator<Map
     protected boolean prefetchValues;
 
     /**
-     * The table is segment table of hash map, which is an array that stores the actual records.
-     * This field is used to mark where the latest entry is read.
-     * <p>
-     * The iteration will start from highest index available to the table.
-     * It will be converted to array size on the server side.
+     * The iteration pointers define the iteration state over a backing map.
+     * Each array item represents an iteration state for a certain size of the
+     * backing map structure (either allocated slot count for HD or table size
+     * for on-heap). Each time the table is resized, this array will carry an
+     * additional iteration pointer.
      */
-    protected int lastTableIndex = Integer.MAX_VALUE;
+    protected IterationPointer[] pointers;
 
     protected int index;
     protected int currentIndex = -1;
@@ -63,6 +115,7 @@ public abstract class AbstractMapPartitionIterator<K, V> implements Iterator<Map
         this.fetchSize = fetchSize;
         this.partitionId = partitionId;
         this.prefetchValues = prefetchValues;
+        resetPointers();
     }
 
     @Override
@@ -72,14 +125,12 @@ public abstract class AbstractMapPartitionIterator<K, V> implements Iterator<Map
 
     @Override
     public Map.Entry<K, V> next() {
-        while (hasNext()) {
+        if (hasNext()) {
             currentIndex = index;
             index++;
-            final Data keyData = getKey(currentIndex);
-            final Object value = getValue(currentIndex, keyData);
-            if (value != null) {
-                return new LazyMapEntry(keyData, value, (InternalSerializationService) getSerializationService());
-            }
+            Data keyData = getKey(currentIndex);
+            Object value = getValue(currentIndex, keyData);
+            return new LazyMapEntry<>(keyData, value, (InternalSerializationService) getSerializationService());
         }
         throw new NoSuchElementException();
     }
@@ -95,8 +146,8 @@ public abstract class AbstractMapPartitionIterator<K, V> implements Iterator<Map
     }
 
     protected boolean advance() {
-        if (lastTableIndex < 0) {
-            lastTableIndex = Integer.MAX_VALUE;
+        if (pointers[pointers.length - 1].getIndex() < 0) {
+            resetPointers();
             return false;
         }
         result = fetch();
@@ -107,9 +158,23 @@ public abstract class AbstractMapPartitionIterator<K, V> implements Iterator<Map
         return false;
     }
 
-    protected void setLastTableIndex(List response, int lastTableIndex) {
+    /**
+     * Resets the iteration state.
+     */
+    private void resetPointers() {
+        pointers = new IterationPointer[]{new IterationPointer(Integer.MAX_VALUE, -1)};
+    }
+
+    /**
+     * Sets the iteration state to the state defined by the {@code pointers}
+     * if the given response contains items.
+     *
+     * @param response the iteration response
+     * @param pointers the pointers defining the state of iteration
+     */
+    protected void setIterationPointers(List response, IterationPointer[] pointers) {
         if (response != null && response.size() > 0) {
-            this.lastTableIndex = lastTableIndex;
+            this.pointers = pointers;
         }
     }
 

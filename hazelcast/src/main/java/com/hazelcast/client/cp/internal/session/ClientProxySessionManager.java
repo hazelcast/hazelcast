@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,7 +78,7 @@ public class ClientProxySessionManager extends AbstractProxySessionManager {
 
     @Override
     protected ScheduledFuture<?> scheduleWithRepetition(Runnable task, long period, TimeUnit unit) {
-        return client.getClientExecutionService().scheduleWithRepetition(task, period, period, unit);
+        return client.getTaskScheduler().scheduleWithRepetition(task, period, period, unit);
     }
 
     @Override

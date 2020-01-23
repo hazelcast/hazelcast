@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,6 +53,7 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_PREFIX;
 import static com.hazelcast.internal.metrics.impl.ProviderHelper.provide;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
 
@@ -179,7 +180,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
     }
 
     @Override
-    public ExecutorServiceProxy createDistributedObject(String name, boolean local) {
+    public ExecutorServiceProxy createDistributedObject(String name, UUID source, boolean local) {
         return new ExecutorServiceProxy(name, nodeEngine, this);
     }
 
@@ -256,7 +257,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
 
     @Override
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
-        provide(descriptor, context, "executor", getStats());
+        provide(descriptor, context, EXECUTOR_PREFIX, getStats());
     }
 
     private final class Processor extends FutureTask implements Runnable {

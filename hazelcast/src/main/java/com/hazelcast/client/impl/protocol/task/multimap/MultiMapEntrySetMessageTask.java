@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,11 +20,11 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MultiMapEntrySetCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.multimap.impl.operations.EntrySetResponse;
 import com.hazelcast.multimap.impl.operations.MultiMapOperationFactory;
-import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
@@ -33,7 +33,6 @@ import java.security.Permission;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Client Protocol Task for handling messages with type ID:
@@ -53,16 +52,13 @@ public class MultiMapEntrySetMessageTask
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
-        List<Map.Entry<Data, Data>> entries = new ArrayList<Map.Entry<Data, Data>>();
+        List<Map.Entry<Data, Data>> entries = new ArrayList<>();
         for (Object obj : map.values()) {
             if (obj == null) {
                 continue;
             }
             EntrySetResponse response = (EntrySetResponse) obj;
-            Set<Map.Entry<Data, Data>> entrySet = response.getDataEntrySet();
-            for (Map.Entry<Data, Data> entry : entrySet) {
-                entries.add(entry);
-            }
+            entries.addAll(response.getDataEntrySet());
         }
         return entries;
     }

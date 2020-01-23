@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,8 @@ import com.hazelcast.cache.impl.CacheEventData;
 import com.hazelcast.cache.impl.CacheEventListenerAdaptor;
 import com.hazelcast.cache.impl.event.CachePartitionLostEvent;
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
-import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheAddEntryListenerCodec;
-import com.hazelcast.client.impl.protocol.codec.CacheAddNearCacheInvalidationListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheAddPartitionLostListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheRemoveEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheRemovePartitionLostListenerCodec;
@@ -31,10 +29,8 @@ import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.NativeMemoryConfig;
-import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import javax.cache.CacheException;
 import javax.cache.integration.CompletionListener;
@@ -42,14 +38,14 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.function.BiConsumer;
 
 import static com.hazelcast.cache.CacheEventType.PARTITION_LOST;
-import static com.hazelcast.config.InMemoryFormat.NATIVE;
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
-import static com.hazelcast.internal.util.Preconditions.checkTrue;
 
 /**
  * Helper class mainly for {@link ClientCacheProxySupport} that contains utility-methods and utility-classes.
@@ -76,7 +72,7 @@ final class ClientCacheProxySupportUtil {
         }
     }
 
-    static  <T> T getSafely(Future<T> future) {
+    static <T> T getSafely(Future<T> future) {
         try {
             return future.get();
         } catch (Throwable throwable) {
@@ -84,22 +80,9 @@ final class ClientCacheProxySupportUtil {
         }
     }
 
-    static <T> void addCallback(ClientDelegatingFuture<T> delegatingFuture, BiConsumer<T, Throwable> callback) {
-        if (callback == null) {
-            return;
-        }
-        delegatingFuture.whenComplete(callback);
-    }
-
-    static NearCacheConfig checkNearCacheConfig(NearCacheConfig nearCacheConfig, NativeMemoryConfig nativeMemoryConfig) {
-        InMemoryFormat inMemoryFormat = nearCacheConfig.getInMemoryFormat();
-        if (inMemoryFormat != NATIVE) {
-            return nearCacheConfig;
-        }
-
-        checkTrue(nativeMemoryConfig.isEnabled(), "Enable native memory config to use NATIVE in-memory-format "
-                + "for Near Cache");
-        return nearCacheConfig;
+    static <T> CompletableFuture<T> addCallback(InternalCompletableFuture<T> future,
+                                                BiConsumer<T, Throwable> callback) {
+        return callback == null ? future : future.whenCompleteAsync(callback, CALLER_RUNS);
     }
 
     static EventHandler createHandler(CacheEventListenerAdaptor<?, ?> adaptor) {
@@ -112,10 +95,6 @@ final class ClientCacheProxySupportUtil {
 
     static ListenerMessageCodec createPartitionLostListenerCodec(String name) {
         return new PartitionLostListenerCodec(name);
-    }
-
-    static ListenerMessageCodec createInvalidationListenerCodec(String nameWithPrefix) {
-        return new InvalidationListenerCodec(nameWithPrefix);
     }
 
     static class CacheEntryListenerCodec implements ListenerMessageCodec {
@@ -173,35 +152,6 @@ final class ClientCacheProxySupportUtil {
         @Override
         public boolean decodeRemoveResponse(ClientMessage clientMessage) {
             return CacheRemovePartitionLostListenerCodec.decodeResponse(clientMessage).response;
-        }
-    }
-
-    static class InvalidationListenerCodec implements ListenerMessageCodec {
-
-        private final String nameWithPrefix;
-
-        InvalidationListenerCodec(String nameWithPrefix) {
-            this.nameWithPrefix = nameWithPrefix;
-        }
-
-        @Override
-        public ClientMessage encodeAddRequest(boolean localOnly) {
-            return CacheAddNearCacheInvalidationListenerCodec.encodeRequest(nameWithPrefix, localOnly);
-        }
-
-        @Override
-        public UUID decodeAddResponse(ClientMessage clientMessage) {
-            return CacheAddNearCacheInvalidationListenerCodec.decodeResponse(clientMessage).response;
-        }
-
-        @Override
-        public ClientMessage encodeRemoveRequest(UUID realRegistrationId) {
-            return CacheRemoveEntryListenerCodec.encodeRequest(nameWithPrefix, realRegistrationId);
-        }
-
-        @Override
-        public boolean decodeRemoveResponse(ClientMessage clientMessage) {
-            return CacheRemoveEntryListenerCodec.decodeResponse(clientMessage).response;
         }
     }
 

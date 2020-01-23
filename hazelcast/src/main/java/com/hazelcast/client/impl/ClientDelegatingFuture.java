@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.DelegatingCompletableFuture;
 
 import javax.annotation.Nonnull;
@@ -51,11 +51,9 @@ public class ClientDelegatingFuture<V> extends DelegatingCompletableFuture<V> {
 
     private static final AtomicReferenceFieldUpdater<ClientDelegatingFuture, Object> DECODED_RESPONSE =
             AtomicReferenceFieldUpdater.newUpdater(ClientDelegatingFuture.class, Object.class, "decodedResponse");
-    private static final Object VOID = "VOID";
 
     final boolean deserializeResponse;
     private final ClientMessageDecoder clientMessageDecoder;
-    private final Executor userExecutor;
     private volatile Object decodedResponse = VOID;
 
     public ClientDelegatingFuture(ClientInvocationFuture clientInvocationFuture,
@@ -63,7 +61,6 @@ public class ClientDelegatingFuture<V> extends DelegatingCompletableFuture<V> {
                                   ClientMessageDecoder clientMessageDecoder, V defaultValue, boolean deserializeResponse) {
         super(serializationService, clientInvocationFuture, defaultValue);
         this.clientMessageDecoder = clientMessageDecoder;
-        this.userExecutor = clientInvocationFuture.getInvocation().getUserExecutor();
         this.deserializeResponse = deserializeResponse;
     }
 
@@ -115,15 +112,22 @@ public class ClientDelegatingFuture<V> extends DelegatingCompletableFuture<V> {
             return (V) result;
         }
 
+        // if there already is a deserialized value set, use it.
+        if (deserializedValue != VOID) {
+            return (V) deserializedValue;
+        }
+
         ClientMessage clientMessage = (ClientMessage) object;
         Object decoded = decodeResponse(clientMessage);
         if (deserializeResponse) {
-            return serializationService.toObject(decoded);
+            decoded = serializationService.toObject(decoded);
         }
+        cacheDeserializedValue(decoded);
+
         return (V) decoded;
     }
 
-        private Object resolveAny(Object o) {
+    private Object resolveAny(Object o) {
         if (o instanceof ClientMessage) {
             return resolve(o);
         }
@@ -150,12 +154,12 @@ public class ClientDelegatingFuture<V> extends DelegatingCompletableFuture<V> {
 
     @Override
     public <U> CompletableFuture<U> thenApply(Function<? super V, ? extends U> fn) {
-        return future.thenApply(new DeserializingFunction<>(fn));
+        return future.thenApplyAsync(new DeserializingFunction<>(fn), defaultExecutor());
     }
 
     @Override
     public <U> CompletableFuture<U> thenApplyAsync(Function<? super V, ? extends U> fn) {
-        return future.thenApplyAsync(new DeserializingFunction<>(fn));
+        return future.thenApplyAsync(new DeserializingFunction<>(fn), defaultExecutor());
     }
 
     @Override
@@ -165,12 +169,12 @@ public class ClientDelegatingFuture<V> extends DelegatingCompletableFuture<V> {
 
     @Override
     public CompletableFuture<Void> thenAccept(Consumer<? super V> action) {
-        return future.thenAccept(new DeserializingConsumer(action));
+        return future.thenAcceptAsync(new DeserializingConsumer(action), defaultExecutor());
     }
 
     @Override
     public CompletableFuture<Void> thenAcceptAsync(Consumer<? super V> action) {
-        return future.thenAcceptAsync(new DeserializingConsumer(action), userExecutor);
+        return future.thenAcceptAsync(new DeserializingConsumer(action), defaultExecutor());
     }
 
     @Override
@@ -180,12 +184,12 @@ public class ClientDelegatingFuture<V> extends DelegatingCompletableFuture<V> {
 
     @Override
     public CompletableFuture<Void> thenRun(Runnable action) {
-        return future.thenRun(action);
+        return future.thenRunAsync(action, defaultExecutor());
     }
 
     @Override
     public CompletableFuture<Void> thenRunAsync(Runnable action) {
-        return future.thenRunAsync(action, userExecutor);
+        return future.thenRunAsync(action, defaultExecutor());
     }
 
     @Override
@@ -196,13 +200,13 @@ public class ClientDelegatingFuture<V> extends DelegatingCompletableFuture<V> {
     @Override
     public <U, V1> CompletableFuture<V1> thenCombine(CompletionStage<? extends U> other,
                                                      BiFunction<? super V, ? super U, ? extends V1> fn) {
-        return future.thenCombine(other, new DeserializingBiFunction<>(fn));
+        return future.thenCombineAsync(other, new DeserializingBiFunction<>(fn), defaultExecutor());
     }
 
     @Override
     public <U, V1> CompletableFuture<V1> thenCombineAsync(CompletionStage<? extends U> other,
                                                           BiFunction<? super V, ? super U, ? extends V1> fn) {
-        return future.thenCombineAsync(other, new DeserializingBiFunction<>(fn), userExecutor);
+        return future.thenCombineAsync(other, new DeserializingBiFunction<>(fn), defaultExecutor());
     }
 
     @Override
@@ -214,13 +218,13 @@ public class ClientDelegatingFuture<V> extends DelegatingCompletableFuture<V> {
     @Override
     public <U> CompletableFuture<Void> thenAcceptBoth(CompletionStage<? extends U> other,
                                                       BiConsumer<? super V, ? super U> action) {
-        return future.thenAcceptBoth(other, new DeserializingBiConsumer<>(action));
+        return future.thenAcceptBothAsync(other, new DeserializingBiConsumer<>(action), defaultExecutor());
     }
 
     @Override
     public <U> CompletableFuture<Void> thenAcceptBothAsync(CompletionStage<? extends U> other,
                                                            BiConsumer<? super V, ? super U> action) {
-        return future.thenAcceptBothAsync(other, new DeserializingBiConsumer<>(action), userExecutor);
+        return future.thenAcceptBothAsync(other, new DeserializingBiConsumer<>(action), defaultExecutor());
     }
 
     @Override
@@ -231,12 +235,12 @@ public class ClientDelegatingFuture<V> extends DelegatingCompletableFuture<V> {
 
     @Override
     public CompletableFuture<Void> runAfterBoth(CompletionStage<?> other, Runnable action) {
-        return future.runAfterBoth(other, action);
+        return future.runAfterBothAsync(other, action, defaultExecutor());
     }
 
     @Override
     public CompletableFuture<Void> runAfterBothAsync(CompletionStage<?> other, Runnable action) {
-        return future.runAfterBothAsync(other, action);
+        return future.runAfterBothAsync(other, action, defaultExecutor());
     }
 
     @Override
@@ -247,13 +251,13 @@ public class ClientDelegatingFuture<V> extends DelegatingCompletableFuture<V> {
     @SuppressWarnings("unchecked")
     @Override
     public <U> CompletableFuture<U> applyToEitherAsync(CompletionStage<? extends V> other, Function<? super V, U> fn) {
-        return applyToEitherAsync(future, other, new DeserializingFunction(fn));
+        return applyToEitherAsync(future, other, new DeserializingFunction(fn), defaultExecutor());
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public <U> CompletableFuture<U> applyToEither(CompletionStage<? extends V> other, Function<? super V, U> fn) {
-         return applyToEither(future, other, new DeserializingFunction(fn));
+         return applyToEitherAsync(future, other, new DeserializingFunction(fn), defaultExecutor());
     }
 
     @SuppressWarnings("unchecked")
@@ -263,46 +267,14 @@ public class ClientDelegatingFuture<V> extends DelegatingCompletableFuture<V> {
         return applyToEitherAsync(future, other, new DeserializingFunction(fn), executor);
     }
 
-    @SuppressWarnings("unchecked")
-    private static CompletableFuture applyToEither(CompletableFuture stage, CompletionStage other, Function fn) {
-        return stage.applyToEither(other, fn);
-    }
-
-    @SuppressWarnings("unchecked")
-    private static CompletableFuture applyToEitherAsync(CompletableFuture stage, CompletionStage other, Function fn) {
-        return stage.applyToEitherAsync(other, fn);
-    }
-
-    @SuppressWarnings("unchecked")
-    private static CompletableFuture applyToEitherAsync(CompletableFuture stage, CompletionStage other,
-                                                       Function fn, Executor executor) {
-        return stage.applyToEitherAsync(other, fn, executor);
-    }
-
     @Override
     public CompletableFuture<Void> acceptEither(CompletionStage<? extends V> other, Consumer<? super V> action) {
-        return acceptEither(future, other, new DeserializingConsumer(action));
-    }
-
-    @SuppressWarnings("unchecked")
-    private static CompletableFuture<Void> acceptEither(CompletionStage stage, CompletionStage other, Consumer action) {
-        return (CompletableFuture<Void>) stage.acceptEither(other, action);
-    }
-
-    @SuppressWarnings("unchecked")
-    private static CompletableFuture<Void> acceptEitherAsync(CompletionStage stage, CompletionStage other, Consumer action) {
-        return (CompletableFuture<Void>) stage.acceptEitherAsync(other, action);
-    }
-
-    @SuppressWarnings("unchecked")
-    private static CompletableFuture<Void> acceptEitherAsync(CompletionStage stage, CompletionStage other,
-                                                             Consumer action, Executor executor) {
-        return (CompletableFuture<Void>) stage.acceptEitherAsync(other, action, executor);
+        return acceptEitherAsync(future, other, new DeserializingConsumer(action), defaultExecutor());
     }
 
     @Override
     public CompletableFuture<Void> acceptEitherAsync(CompletionStage<? extends V> other, Consumer<? super V> action) {
-        return acceptEitherAsync(future, other, new DeserializingConsumer(action));
+        return acceptEitherAsync(future, other, new DeserializingConsumer(action), defaultExecutor());
     }
 
     @Override
@@ -313,12 +285,12 @@ public class ClientDelegatingFuture<V> extends DelegatingCompletableFuture<V> {
 
     @Override
     public CompletableFuture<Void> runAfterEither(CompletionStage<?> other, Runnable action) {
-        return future.runAfterEither(other, action);
+        return future.runAfterEitherAsync(other, action, defaultExecutor());
     }
 
     @Override
     public CompletableFuture<Void> runAfterEitherAsync(CompletionStage<?> other, Runnable action) {
-        return future.runAfterEitherAsync(other, action, userExecutor);
+        return future.runAfterEitherAsync(other, action, defaultExecutor());
     }
 
     @Override
@@ -328,12 +300,12 @@ public class ClientDelegatingFuture<V> extends DelegatingCompletableFuture<V> {
 
     @Override
     public <U> CompletableFuture<U> thenCompose(Function<? super V, ? extends CompletionStage<U>> fn) {
-        return future.thenCompose(new DeserializingFunction<>(fn));
+        return future.thenComposeAsync(new DeserializingFunction<>(fn), defaultExecutor());
     }
 
     @Override
     public <U> CompletableFuture<U> thenComposeAsync(Function<? super V, ? extends CompletionStage<U>> fn) {
-        return future.thenComposeAsync(new DeserializingFunction<>(fn), userExecutor);
+        return future.thenComposeAsync(new DeserializingFunction<>(fn), defaultExecutor());
     }
 
     @Override
@@ -343,12 +315,12 @@ public class ClientDelegatingFuture<V> extends DelegatingCompletableFuture<V> {
 
     @Override
     public CompletableFuture<V> whenComplete(BiConsumer<? super V, ? super Throwable> action) {
-        return future.handle(new WhenCompleteAdapter(action));
+        return future.handleAsync(new WhenCompleteAdapter(action), defaultExecutor());
     }
 
     @Override
     public CompletableFuture<V> whenCompleteAsync(BiConsumer<? super V, ? super Throwable> action) {
-        return future.handleAsync(new WhenCompleteAdapter(action), userExecutor);
+        return future.handleAsync(new WhenCompleteAdapter(action), defaultExecutor());
     }
 
     @Override
@@ -358,12 +330,12 @@ public class ClientDelegatingFuture<V> extends DelegatingCompletableFuture<V> {
 
     @Override
     public <U> CompletableFuture<U> handle(BiFunction<? super V, Throwable, ? extends U> fn) {
-        return future.handle(new DeserializingBiFunction<>(fn));
+        return future.handleAsync(new DeserializingBiFunction<>(fn), defaultExecutor());
     }
 
     @Override
     public <U> CompletableFuture<U> handleAsync(BiFunction<? super V, Throwable, ? extends U> fn) {
-        return future.handleAsync(new DeserializingBiFunction<>(fn), userExecutor);
+        return future.handleAsync(new DeserializingBiFunction<>(fn), defaultExecutor());
     }
 
     @Override
@@ -378,7 +350,7 @@ public class ClientDelegatingFuture<V> extends DelegatingCompletableFuture<V> {
 
     @Override
     public CompletableFuture<V> exceptionally(Function<Throwable, ? extends V> fn) {
-        return future.handleAsync(new ExceptionallyAdapter(fn));
+        return future.handleAsync(new ExceptionallyAdapter(fn), defaultExecutor());
     }
 
     @Override
@@ -414,6 +386,18 @@ public class ClientDelegatingFuture<V> extends DelegatingCompletableFuture<V> {
     @Override
     public String toString() {
         return future.toString();
+    }
+
+    @SuppressWarnings("unchecked")
+    private static CompletableFuture<Void> acceptEitherAsync(CompletableFuture stage, CompletionStage other,
+                                                             Consumer action, Executor executor) {
+        return stage.acceptEitherAsync(other, action, executor);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static CompletableFuture applyToEitherAsync(CompletableFuture stage, CompletionStage other,
+                                                        Function fn, Executor executor) {
+        return stage.applyToEitherAsync(other, fn, executor);
     }
 
     class DeserializingFunction<R> implements Function<ClientMessage, R> {

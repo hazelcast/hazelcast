@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.FlakeIdGeneratorPermission;
 
 import java.security.Permission;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 public class NewIdBatchMessageTask
@@ -53,8 +54,10 @@ public class NewIdBatchMessageTask
 
     @Override
     protected void processMessage() {
+        UUID source = endpoint.getUuid();
         FlakeIdGeneratorProxy proxy = (FlakeIdGeneratorProxy) nodeEngine.getProxyService()
-                                                                        .getDistributedObject(getServiceName(), parameters.name);
+                                                                        .getDistributedObject(getServiceName(), parameters.name,
+                                                                                source);
         final IdBatchAndWaitTime result = proxy.newIdBatch(parameters.batchSize);
         if (result.waitTimeMillis == 0) {
             sendResponse(result.idBatch);

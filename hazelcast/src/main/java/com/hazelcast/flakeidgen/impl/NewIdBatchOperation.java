@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ class NewIdBatchOperation extends Operation implements IdentifiedDataSerializabl
     @Override
     public void run() throws Exception {
         FlakeIdGeneratorProxy proxy = (FlakeIdGeneratorProxy) getNodeEngine().getProxyService()
-                .getDistributedObject(getServiceName(), flakeIdGenName);
+                .getDistributedObject(getServiceName(), flakeIdGenName, getCallerUuid());
         final IdBatchAndWaitTime result = proxy.newIdBaseLocal(batchSize);
         if (result.waitTimeMillis == 0) {
             sendResponse(result.idBatch.base());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,7 +83,7 @@ public class MethodProbeTest extends HazelcastTestSupport {
         SomeSource source = new SomeSource();
         Method method = source.getClass().getDeclaredMethod("getSomeIntegerMethod");
         Probe probe = method.getAnnotation(Probe.class);
-        MethodProbe methodProbe = createMethodProbe(method, probe);
+        MethodProbe methodProbe = createMethodProbe(method, probe, new SourceMetadata(SomeSource.class));
 
         MetricsRegistryImpl metricsRegistry = new MetricsRegistryImpl(mock(ILogger.class), ProbeLevel.DEBUG);
         methodProbe.register(metricsRegistry, source, "prefix");
@@ -98,7 +98,7 @@ public class MethodProbeTest extends HazelcastTestSupport {
         SomeSource source = new SomeSource();
         Method method = source.getClass().getDeclaredMethod(methodName);
         Probe probe = method.getAnnotation(Probe.class);
-        MethodProbe methodProbe = createMethodProbe(method, probe);
+        MethodProbe methodProbe = createMethodProbe(method, probe, new SourceMetadata(SomeSource.class));
 
         LongMethodProbe longMethodProbe = assertInstanceOf(LongMethodProbe.class, methodProbe);
 
@@ -122,7 +122,7 @@ public class MethodProbeTest extends HazelcastTestSupport {
         SomeSource source = new SomeSource();
         Method method = source.getClass().getDeclaredMethod(fieldName);
         Probe probe = method.getAnnotation(Probe.class);
-        MethodProbe methodProbe = createMethodProbe(method, probe);
+        MethodProbe methodProbe = createMethodProbe(method, probe, new SourceMetadata(SomeSource.class));
 
         MethodProbe.DoubleMethodProbe doubleMethodProbe = assertInstanceOf(MethodProbe.DoubleMethodProbe.class, methodProbe);
         double value = doubleMethodProbe.get(source);
@@ -132,158 +132,158 @@ public class MethodProbeTest extends HazelcastTestSupport {
 
 
     private class SomeSource {
-        @Probe
+        @Probe(name = "byteMethod")
         private byte byteMethod() {
             return 10;
         }
 
-        @Probe
+        @Probe(name = "shortMethod")
         private short shortMethod() {
             return 10;
         }
 
-        @Probe
+        @Probe(name = "intMethod")
         private int intMethod() {
             return 10;
         }
 
-        @Probe
+        @Probe(name = "longMethod")
         private long longMethod() {
             return 10;
         }
 
-        @Probe
+        @Probe(name = "floatMethod")
         private float floatMethod() {
             return 10;
         }
 
-        @Probe
+        @Probe(name = "doubleMethod")
         private double doubleMethod() {
             return 10;
         }
 
-        @Probe
+        @Probe(name = "atomicLongMethod")
         private AtomicLong atomicLongMethod() {
             return new AtomicLong(10);
 
         }
 
-        @Probe
+        @Probe(name = "nullAtomicLongMethod")
         private AtomicLong nullAtomicLongMethod() {
             return null;
         }
 
-        @Probe
+        @Probe(name = "atomicIntegerMethod")
         private AtomicInteger atomicIntegerMethod() {
             return new AtomicInteger(10);
         }
 
-        @Probe
+        @Probe(name = "nullAtomicIntegerMethod")
         private AtomicInteger nullAtomicIntegerMethod() {
             return null;
         }
 
-        @Probe
+        @Probe(name = "counterMethod")
         private Counter counterMethod() {
             return newSwCounter(10);
         }
 
-        @Probe
+        @Probe(name = "nullCounterMethod")
         private Counter nullCounterMethod() {
             return null;
         }
 
-        @Probe
+        @Probe(name = "collectionMethod")
         private Collection collectionMethod() {
             return Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
         }
 
-        @Probe
+        @Probe(name = "nullCollectionMethod")
         private Collection nullCollectionMethod() {
             return null;
         }
 
-        @Probe
+        @Probe(name = "mapMethod")
         private Map mapMethod() {
             return MetricsUtils.createMap(10);
         }
 
-        @Probe
+        @Probe(name = "nullMapMethod")
         private Map nullMapMethod() {
             return null;
         }
 
-        @Probe
+        @Probe(name = "ByteMethod")
         private Byte ByteMethod() {
             return (byte) 10;
         }
 
-        @Probe
+        @Probe(name = "ShortMethod")
         private Short ShortMethod() {
             return (short) 10;
         }
 
-        @Probe
+        @Probe(name = "IntegerMethod")
         private Integer IntegerMethod() {
             return 10;
         }
 
-        @Probe
+        @Probe(name = "LongMethod")
         private Long LongMethod() {
             return (long) 10;
         }
 
-        @Probe
+        @Probe(name = "FloatMethod")
         private Float FloatMethod() {
             return (float) 10;
         }
 
-        @Probe
+        @Probe(name = "DoubleMethod")
         private Double DoubleMethod() {
             return (double) 10;
         }
 
-        @Probe
+        @Probe(name = "SemaphoreMethod")
         private Semaphore SemaphoreMethod() {
             return new Semaphore(10);
         }
 
-        @Probe
+        @Probe(name = "nullByteMethod")
         private Byte nullByteMethod() {
             return null;
         }
 
-        @Probe
+        @Probe(name = "nullShortMethod")
         private Short nullShortMethod() {
             return null;
         }
 
-        @Probe
+        @Probe(name = "nullIntegerMethod")
         private Integer nullIntegerMethod() {
             return null;
         }
 
-        @Probe
+        @Probe(name = "nullLongMethod")
         private Long nullLongMethod() {
             return null;
         }
 
-        @Probe
+        @Probe(name = "nullFloatMethod")
         private Float nullFloatMethod() {
             return null;
         }
 
-        @Probe
+        @Probe(name = "nullDoubleMethod")
         private Double nullDoubleMethod() {
             return null;
         }
 
-        @Probe
+        @Probe(name = "nullSemaphoreMethod")
         private Semaphore nullSemaphoreMethod() {
             return null;
         }
 
-        @Probe
+        @Probe(name = "someIntegerMethod")
         private Integer getSomeIntegerMethod() {
             return null;
         }

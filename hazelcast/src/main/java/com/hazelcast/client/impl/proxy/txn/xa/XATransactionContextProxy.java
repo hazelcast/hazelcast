@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -88,16 +88,6 @@ public class XATransactionContextProxy implements ClientTransactionContext {
     @Override
     public void rollbackTransaction() {
         throw new UnsupportedOperationException("XA Transaction cannot be rolled back manually!");
-    }
-
-    @Override
-    public void suspendTransaction() {
-        throw new UnsupportedOperationException("XA Transaction cannot be suspended manually!");
-    }
-
-    @Override
-    public void resumeTransaction() {
-        throw new UnsupportedOperationException("XA Transaction cannot be resumed manually!");
     }
 
     @Override

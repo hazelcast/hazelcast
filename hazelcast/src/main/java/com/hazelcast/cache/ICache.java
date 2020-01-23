@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,6 +74,15 @@ import java.util.concurrent.ForkJoinPool;
  *   Value value = stage.toCompletableFuture().get();
  *   System.out.println( value );
  * </pre>
+ *
+ * <b>Execution properties of returned {@code CompletionStage}s</b>
+ * <p>
+ *     Actions supplied for dependent completions of non-async methods and async methods
+ *     without an explicit {@link java.util.concurrent.Executor} argument are performed
+ *     by the {@link ForkJoinPool#commonPool()} (unless it does not support a parallelism
+ *     level of at least 2, in which case a new {@code Thread} is created per task).
+ * </p>
+ *
  *
  * <p>
  * Dependent actions can be registered on the returned {@link CompletionStage}.

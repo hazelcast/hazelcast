@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,8 @@ import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.CredentialsFactoryConfig;
-import com.hazelcast.config.CustomWanPublisherConfig;
+import com.hazelcast.config.WanBatchPublisherConfig;
+import com.hazelcast.config.WanCustomPublisherConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EncryptionAtRestConfig;
 import com.hazelcast.config.EndpointConfig;
@@ -50,7 +51,6 @@ import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.LoginModuleConfig;
-import com.hazelcast.config.MCMutualAuthConfig;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
@@ -103,7 +103,6 @@ import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.VaultSecureStoreConfig;
-import com.hazelcast.config.WanBatchReplicationPublisherConfig;
 import com.hazelcast.config.WanConsumerConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
@@ -124,6 +123,7 @@ import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
+import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
@@ -1374,7 +1374,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 if ("custom-publisher".equals(nName)) {
                     customPublishers.add(handleCustomPublisher(n));
                 } else if ("consumer".equals(nName)) {
-                    replicationConfigBuilder.addPropertyValue("wanConsumerConfig", handleWanConsumer(n));
+                    replicationConfigBuilder.addPropertyValue("consumerConfig", handleWanConsumer(n));
                 }
             }
             replicationConfigBuilder.addPropertyValue("batchPublisherConfigs", batchPublishers);
@@ -1383,13 +1383,13 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         }
 
         private AbstractBeanDefinition handleBatchPublisher(Node n) {
-            BeanDefinitionBuilder builder = createBeanBuilder(WanBatchReplicationPublisherConfig.class);
+            BeanDefinitionBuilder builder = createBeanBuilder(WanBatchPublisherConfig.class);
             AbstractBeanDefinition definition = builder.getBeanDefinition();
 
             ArrayList<String> excluded = new ArrayList<>(AliasedDiscoveryConfigUtils.getTags());
             excluded.add("properties");
             excluded.add("discoveryStrategies");
-            excluded.add("wanSync");
+            excluded.add("sync");
 
             fillValues(n, builder, excluded.toArray(new String[0]));
 
@@ -1402,15 +1402,15 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleAliasedDiscoveryStrategy(child, builder, nodeName);
                 } else if ("discovery-strategies".equals(nodeName)) {
                     handleDiscoveryStrategies(child, builder);
-                } else if ("wan-sync".equals(nodeName)) {
-                    createAndFillBeanBuilder(child, WanSyncConfig.class, "wanSyncConfig", builder);
+                } else if ("sync".equals(nodeName)) {
+                    createAndFillBeanBuilder(child, WanSyncConfig.class, "syncConfig", builder);
                 }
             }
             return definition;
         }
 
         private AbstractBeanDefinition handleCustomPublisher(Node n) {
-            BeanDefinitionBuilder builder = createBeanBuilder(CustomWanPublisherConfig.class);
+            BeanDefinitionBuilder builder = createBeanBuilder(WanCustomPublisherConfig.class);
             AbstractBeanDefinition definition = builder.getBeanDefinition();
             fillValues(n, builder, "properties");
 
@@ -1440,7 +1440,9 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             String implementation = getAttribute(n, "implementation");
             boolean persistWanReplicatedData = getBooleanValue(getAttribute(n, "persist-wan-replicated-data"));
 
-            consumerConfigBuilder.addPropertyValue("className", className);
+            if (!StringUtil.isNullOrEmptyAfterTrim(className)) {
+                consumerConfigBuilder.addPropertyValue("className", className);
+            }
             if (implementation != null) {
                 consumerConfigBuilder.addPropertyReference("implementation", implementation);
             }
@@ -1481,41 +1483,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         private void handleManagementCenter(Node node) {
             BeanDefinitionBuilder managementCenterConfigBuilder = createBeanBuilder(ManagementCenterConfig.class);
             fillAttributeValues(node, managementCenterConfigBuilder);
-            // < 3.9 - Backwards compatibility
-            boolean isComplexType = false;
-            List<String> complexTypeElements = Arrays.asList("url", "mutual-auth");
-            for (Node c : childElements(node)) {
-                if (complexTypeElements.contains(cleanNodeName(c))) {
-                    isComplexType = true;
-                    break;
-                }
-            }
-            if (isComplexType) {
-                for (Node child : childElements(node)) {
-                    if ("url".equals(cleanNodeName(child))) {
-                        String url = getTextContent(child);
-                        managementCenterConfigBuilder.addPropertyValue("url", url);
-                    } else if ("mutual-auth".equals(cleanNodeName(child))) {
-                        managementCenterConfigBuilder.addPropertyValue("mutualAuthConfig",
-                                handleMcMutualAuthConfig(child).getBeanDefinition());
-                    }
-                }
-            }
             configBuilder.addPropertyValue("managementCenterConfig", managementCenterConfigBuilder.getBeanDefinition());
-        }
-
-        private BeanDefinitionBuilder handleMcMutualAuthConfig(Node node) {
-            BeanDefinitionBuilder mcMutualAuthConfigBuilder = createBeanBuilder(MCMutualAuthConfig.class);
-            fillAttributeValues(node, mcMutualAuthConfigBuilder);
-            for (Node n : childElements(node)) {
-                String nodeName = cleanNodeName(n);
-                if ("factory-class-name".equals(nodeName)) {
-                    mcMutualAuthConfigBuilder.addPropertyValue("factoryClassName", getTextContent(n).trim());
-                } else if ("properties".equals(nodeName)) {
-                    handleProperties(n, mcMutualAuthConfigBuilder);
-                }
-            }
-            return mcMutualAuthConfigBuilder;
         }
 
         public void handleNearCacheConfig(Node node, BeanDefinitionBuilder configBuilder) {

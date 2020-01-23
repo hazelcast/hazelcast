@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,6 +43,7 @@ import com.hazelcast.internal.partition.IPartitionLostEvent;
 import com.hazelcast.internal.partition.MigrationEndpoint;
 import com.hazelcast.internal.partition.PartitionAwareService;
 import com.hazelcast.internal.partition.PartitionMigrationEvent;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.services.PreJoinAwareService;
 import com.hazelcast.internal.services.SplitBrainHandlerService;
 import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
@@ -55,7 +56,6 @@ import com.hazelcast.internal.util.InvocationUtil;
 import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.internal.util.ServiceLoader;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -90,7 +90,9 @@ import static com.hazelcast.cache.impl.AbstractCacheRecordStore.SOURCE_NOT_AVAIL
 import static com.hazelcast.cache.impl.PreJoinCacheConfig.asCacheConfig;
 import static com.hazelcast.config.CacheConfigAccessor.getTenantControl;
 import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CACHE_PREFIX;
 import static com.hazelcast.internal.metrics.impl.ProviderHelper.provide;
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.FutureUtil.RETHROW_EVERYTHING;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
@@ -241,7 +243,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     }
 
     @Override
-    public DistributedObject createDistributedObject(String cacheNameWithPrefix, boolean local) {
+    public DistributedObject createDistributedObject(String cacheNameWithPrefix, UUID source, boolean local) {
         try {
             /*
              * In here, cacheNameWithPrefix is the full cache name.
@@ -612,7 +614,8 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
         EventService eventService = getNodeEngine().getEventService();
 
         return eventService.registerListenerAsync(AbstractCacheService.SERVICE_NAME, cacheNameWithPrefix, listener)
-                           .thenApply((eventRegistration) -> updateRegisteredListeners(listener, eventRegistration));
+                           .thenApplyAsync((eventRegistration) -> updateRegisteredListeners(listener, eventRegistration),
+                                   CALLER_RUNS);
     }
 
     @Override
@@ -621,7 +624,8 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
         EventService eventService = getNodeEngine().getEventService();
 
         return eventService.registerListenerAsync(AbstractCacheService.SERVICE_NAME, cacheNameWithPrefix, eventFilter, listener)
-                           .thenApply((eventRegistration) -> updateRegisteredListeners(listener, eventRegistration));
+                           .thenApplyAsync((eventRegistration) -> updateRegisteredListeners(listener, eventRegistration),
+                                   CALLER_RUNS);
     }
 
     private UUID updateRegisteredListeners(CacheEventListener listener, EventRegistration eventRegistration) {
@@ -663,10 +667,10 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
         EventService eventService = getNodeEngine().getEventService();
 
         return eventService.deregisterListenerAsync(AbstractCacheService.SERVICE_NAME, cacheNameWithPrefix, registrationId)
-                           .thenApply(result -> {
+                           .thenApplyAsync(result -> {
                                removeFromLocalResources(registrationId);
                                return result;
-                           });
+                           }, CALLER_RUNS);
     }
 
     private void removeFromLocalResources(UUID registrationId) {
@@ -838,7 +842,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
      * from mentioned source with <code>sourceUuid</code>.
      *
      * @param cacheNameWithPrefix the name of the cache that invalidation event is sent for
-     * @param key                 the {@link com.hazelcast.nio.serialization.Data} represents the invalidation event
+     * @param key                 the {@link Data} represents the invalidation event
      * @param sourceUuid          an ID that represents the source for invalidation event
      */
     @Override
@@ -882,6 +886,6 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
 
     @Override
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
-        provide(descriptor, context, "cache", getStats());
+        provide(descriptor, context, CACHE_PREFIX, getStats());
     }
 }

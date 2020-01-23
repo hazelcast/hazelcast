@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,9 +80,8 @@ public class MapMBeanTest extends HazelcastTestSupport {
         map.remove("secondKey");
         map.set("thirdKey", "thirdValue");
         map.remove("thirdKey");
+        map.size();
         String value = map.get("firstKey");
-        String values = invokeMethod("values", EMPTY_STRING_PARAMETER);
-        String entries = invokeMethod("entrySet", EMPTY_STRING_PARAMETER);
 
         long localEntryCount = getLongAttribute("localOwnedEntryCount");
         long localBackupEntryCount = getLongAttribute("localBackupEntryCount");
@@ -118,8 +117,6 @@ public class MapMBeanTest extends HazelcastTestSupport {
         int size = getIntegerAttribute("size");
 
         assertEquals("firstValue", value);
-        assertEquals("[firstValue,]", values);
-        assertEquals("[{key:firstKey, value:firstValue},]", entries);
 
         assertEquals(1, localEntryCount);
         assertEquals(0, localBackupEntryCount);
@@ -155,12 +152,8 @@ public class MapMBeanTest extends HazelcastTestSupport {
         assertEquals(1, size);
 
         holder.invokeMBeanOperation(TYPE_NAME, objectName, "clear", null, null);
-        values = invokeMethod("values", EMPTY_STRING_PARAMETER);
-        entries = invokeMethod("entrySet", EMPTY_STRING_PARAMETER);
         size = getIntegerAttribute("size");
 
-        assertEquals("Empty", values);
-        assertEquals("Empty", entries);
         assertEquals(0, size);
     }
 

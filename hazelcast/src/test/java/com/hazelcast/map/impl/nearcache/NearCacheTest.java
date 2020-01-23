@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.partition.InternalPartitionService;
@@ -545,17 +544,6 @@ public class NearCacheTest extends NearCacheTestSupport {
         populateNearCache(map, mapSize);
 
         final CountDownLatch latch = new CountDownLatch(10);
-        ExecutionCallback<Integer> callback = new ExecutionCallback<Integer>() {
-            @Override
-            public void onResponse(Integer response) {
-                latch.countDown();
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-            }
-        };
-
         int randomKey = random.nextInt(mapSize);
         map.submitToKey(randomKey,
                 entry -> {
@@ -563,7 +551,8 @@ public class NearCacheTest extends NearCacheTestSupport {
                     int newValue = currentValue + 1;
                     entry.setValue(newValue);
                     return newValue;
-                }, callback);
+                })
+            .thenRunAsync(latch::countDown);
 
         latch.await(3, TimeUnit.SECONDS);
 

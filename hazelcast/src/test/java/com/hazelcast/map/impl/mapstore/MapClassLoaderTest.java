@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,7 +65,6 @@ public class MapClassLoaderTest extends HazelcastTestSupport {
         mapStoreConfig.setEnabled(true);
         mapStoreConfig.setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER);
         mapStoreConfig.setWriteDelaySeconds(WRITE_DELAY_SECONDS);
-        mapStoreConfig.setClassName(null);
         mapStoreConfig.setImplementation(store);
         mapConfig.setMapStoreConfig(mapStoreConfig);
 

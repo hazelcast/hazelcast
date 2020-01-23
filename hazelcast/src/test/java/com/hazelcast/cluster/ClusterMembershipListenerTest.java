@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,23 +30,21 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EventObject;
-import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -132,23 +130,33 @@ public class ClusterMembershipListenerTest extends HazelcastTestSupport {
     @Test
     public void testMembershipListener() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        HazelcastInstance hz1 = factory.newHazelcastInstance();
-        MembershipListenerImpl listener = new MembershipListenerImpl();
-        hz1.getCluster().addMembershipListener(listener);
 
-        //start a second instance
-        HazelcastInstance hz2 = factory.newHazelcastInstance();
+        MembershipListenerImpl listener1 = new MembershipListenerImpl();
+        HazelcastInstance hz1 = factory.newHazelcastInstance(
+                new Config().addListenerConfig(new ListenerConfig().setImplementation(listener1))
+        );
 
-        assertEventuallySizeAtLeast(listener.events, 1);
-        assertMembershipAddedEvent(listener.events.get(0), hz2.getCluster().getLocalMember(),
+        MembershipListenerImpl listener2 = new MembershipListenerImpl();
+        HazelcastInstance hz2 = factory.newHazelcastInstance(
+                new Config().addListenerConfig(new ListenerConfig().setImplementation(listener2))
+        );
+
+        assertEventuallySizeAtLeast(listener1.events, 2);
+        assertMembershipAddedEvent(listener1.events.get(0), hz1.getCluster().getLocalMember(), hz1.getCluster().getLocalMember());
+        assertMembershipAddedEvent(listener1.events.get(1), hz2.getCluster().getLocalMember(),
+                hz1.getCluster().getLocalMember(), hz2.getCluster().getLocalMember());
+
+        assertEventuallySizeAtLeast(listener2.events, 2);
+        assertMembershipAddedEvent(listener2.events.get(0), hz2.getCluster().getLocalMember(), hz2.getCluster().getLocalMember());
+        assertMembershipAddedEvent(listener2.events.get(1), hz1.getCluster().getLocalMember(),
                 hz1.getCluster().getLocalMember(), hz2.getCluster().getLocalMember());
 
         //terminate the second instance
         Member member2 = hz2.getCluster().getLocalMember();
         hz2.shutdown();
 
-        assertEventuallySizeAtLeast(listener.events, 2);
-        assertMembershipRemovedEvent(listener.events.get(1), member2, hz1.getCluster().getLocalMember());
+        assertEventuallySizeAtLeast(listener1.events, 3);
+        assertMembershipRemovedEvent(listener1.events.get(2), member2, hz1.getCluster().getLocalMember());
     }
 
     @Test
@@ -238,8 +246,8 @@ public class ClusterMembershipListenerTest extends HazelcastTestSupport {
         assertTrue(e instanceof InitialMembershipEvent);
 
         InitialMembershipEvent initialMembershipEvent = (InitialMembershipEvent) e;
-        Set<Member> foundMembers = initialMembershipEvent.getMembers();
-        assertEquals(new HashSet<Member>(Arrays.asList(expectedMembers)), foundMembers);
+        List<Member> foundMembers = new ArrayList<>(initialMembershipEvent.getMembers());
+        assertEquals(Arrays.asList(expectedMembers), foundMembers);
     }
 
     public void assertMembershipAddedEvent(EventObject e, Member addedMember, Member... expectedMembers) {
@@ -254,33 +262,18 @@ public class ClusterMembershipListenerTest extends HazelcastTestSupport {
         assertTrue(e instanceof MembershipEvent);
 
         MembershipEvent membershipEvent = (MembershipEvent) e;
-        Set<Member> foundMembers = membershipEvent.getMembers();
+        List<Member> foundMembers = new ArrayList<>(membershipEvent.getMembers());
         assertEquals(type, membershipEvent.getEventType());
         assertEquals(changedMember, membershipEvent.getMember());
-        assertEquals(new HashSet<Member>(Arrays.asList(expectedMembers)), foundMembers);
+        assertEquals(Arrays.asList(expectedMembers), foundMembers);
     }
 
-    public void assertEventuallySizeAtLeast(List list, int expectedSize) {
-        long startTimeMs = System.currentTimeMillis();
-        for (; ; ) {
-            if (list.size() >= expectedSize) {
-                return;
-            }
-
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-
-            if (System.currentTimeMillis() - startTimeMs > TimeUnit.SECONDS.toMillis(10)) {
-                fail("Timeout, size of the list didn't reach size: " + expectedSize + " in time");
-            }
-        }
+    public void assertEventuallySizeAtLeast(List<?> list, int expectedSize) {
+        assertTrueEventually(() -> assertThat("List: " + list, list.size(), greaterThanOrEqualTo(expectedSize)), 10);
     }
 
-    private static class MembershipListenerImpl implements MembershipListener {
-        private List<EventObject> events = Collections.synchronizedList(new LinkedList<EventObject>());
+    static class MembershipListenerImpl implements MembershipListener {
+        final List<EventObject> events = Collections.synchronizedList(new ArrayList<>());
 
         public void memberAdded(MembershipEvent e) {
             events.add(e);
@@ -290,31 +283,15 @@ public class ClusterMembershipListenerTest extends HazelcastTestSupport {
             events.add(e);
         }
 
-        public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
+        <E> E getEvent(int index) {
+            return (E) events.get(index);
         }
     }
 
-    private static class InitialMembershipListenerImpl implements InitialMembershipListener {
-
-        private List<EventObject> events = Collections.synchronizedList(new LinkedList<EventObject>());
+    private static class InitialMembershipListenerImpl extends MembershipListenerImpl implements InitialMembershipListener {
 
         public void init(InitialMembershipEvent e) {
             events.add(e);
-        }
-
-        public void memberAdded(MembershipEvent e) {
-            events.add(e);
-        }
-
-        public void memberRemoved(MembershipEvent e) {
-            events.add(e);
-        }
-
-        public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
-        }
-
-        public void assertEventCount(int expected) {
-            assertEquals(expected, events.size());
         }
     }
 }

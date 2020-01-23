@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("2ea61ee15bf4fddcc389a73f8c767313")
+@Generated("e36c5dd64f0104dba795be33745efef3")
 public final class MapStoreConfigHolderCodec {
     private static final int ENABLED_FIELD_OFFSET = 0;
     private static final int WRITE_COALESCING_FIELD_OFFSET = ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -66,9 +66,9 @@ public final class MapStoreConfigHolderCodec {
         int writeBatchSize = decodeInt(initialFrame.content, WRITE_BATCH_SIZE_FIELD_OFFSET);
 
         java.lang.String className = CodecUtil.decodeNullable(iterator, StringCodec::decode);
-        com.hazelcast.nio.serialization.Data implementation = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        com.hazelcast.internal.serialization.Data implementation = CodecUtil.decodeNullable(iterator, DataCodec::decode);
         java.lang.String factoryClassName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
-        com.hazelcast.nio.serialization.Data factoryImplementation = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        com.hazelcast.internal.serialization.Data factoryImplementation = CodecUtil.decodeNullable(iterator, DataCodec::decode);
         java.util.Map<java.lang.String, java.lang.String> properties = MapCodec.decodeNullable(iterator, StringCodec::decode, StringCodec::decode);
         java.lang.String initialLoadMode = StringCodec.decode(iterator);
 

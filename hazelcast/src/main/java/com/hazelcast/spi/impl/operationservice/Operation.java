@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,8 +38,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.logging.Level;
 
-import static com.hazelcast.spi.impl.operationservice.CallStatus.DONE_RESPONSE;
-import static com.hazelcast.spi.impl.operationservice.CallStatus.DONE_VOID;
+import static com.hazelcast.spi.impl.operationservice.CallStatus.RESPONSE;
+import static com.hazelcast.spi.impl.operationservice.CallStatus.VOID;
 import static com.hazelcast.spi.impl.operationservice.CallStatus.WAIT;
 import static com.hazelcast.spi.impl.operationservice.ExceptionAction.RETRY_INVOCATION;
 import static com.hazelcast.spi.impl.operationservice.ExceptionAction.THROW_EXCEPTION;
@@ -166,7 +166,7 @@ public abstract class Operation implements DataSerializable {
      * In the future it is very likely that for regular Operation that want to
      * return a concrete response, the actual response can be returned directly.
      * In this case we'll change the return type to {@link Object} to prevent
-     * forcing the response to be wrapped in a {@link CallStatus#DONE_RESPONSE}
+     * forcing the response to be wrapped in a {@link CallStatus#RESPONSE}
      * monad since that would force additional litter to be created.
      *
      * @return the CallStatus.
@@ -182,7 +182,7 @@ public abstract class Operation implements DataSerializable {
         }
 
         run();
-        return returnsResponse() ? DONE_RESPONSE : DONE_VOID;
+        return returnsResponse() ? RESPONSE : VOID;
     }
 
     /**

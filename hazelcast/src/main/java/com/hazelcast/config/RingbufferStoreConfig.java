@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,10 +23,13 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.ringbuffer.RingbufferStore;
 import com.hazelcast.ringbuffer.RingbufferStoreFactory;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.util.Objects;
 import java.util.Properties;
 
-import static com.hazelcast.internal.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Configuration for the {@link RingbufferStore}.
@@ -56,8 +59,9 @@ public class RingbufferStoreConfig implements IdentifiedDataSerializable {
         return storeImplementation;
     }
 
-    public RingbufferStoreConfig setStoreImplementation(RingbufferStore storeImplementation) {
-        this.storeImplementation = storeImplementation;
+    public RingbufferStoreConfig setStoreImplementation(@Nonnull RingbufferStore storeImplementation) {
+        this.storeImplementation = checkNotNull(storeImplementation, "Ringbuffer store cannot be null!");
+        this.className = null;
         return this;
     }
 
@@ -74,8 +78,9 @@ public class RingbufferStoreConfig implements IdentifiedDataSerializable {
         return className;
     }
 
-    public RingbufferStoreConfig setClassName(String className) {
-        this.className = className;
+    public RingbufferStoreConfig setClassName(@Nonnull String className) {
+        this.className = checkHasText(className, "Ringbuffer store class name must contain text");
+        this.storeImplementation = null;
         return this;
     }
 
@@ -84,7 +89,7 @@ public class RingbufferStoreConfig implements IdentifiedDataSerializable {
     }
 
     public RingbufferStoreConfig setProperties(Properties properties) {
-        this.properties = isNotNull(properties, "properties");
+        this.properties = checkNotNull(properties, "Ringbuffer store config properties cannot be null!");
         return this;
     }
 
@@ -101,8 +106,9 @@ public class RingbufferStoreConfig implements IdentifiedDataSerializable {
         return factoryClassName;
     }
 
-    public RingbufferStoreConfig setFactoryClassName(String factoryClassName) {
-        this.factoryClassName = factoryClassName;
+    public RingbufferStoreConfig setFactoryClassName(@Nonnull String factoryClassName) {
+        this.factoryClassName = checkHasText(factoryClassName, "Ringbuffer store factory class name must contain text");
+        this.factoryImplementation = null;
         return this;
     }
 
@@ -110,8 +116,9 @@ public class RingbufferStoreConfig implements IdentifiedDataSerializable {
         return factoryImplementation;
     }
 
-    public RingbufferStoreConfig setFactoryImplementation(RingbufferStoreFactory factoryImplementation) {
-        this.factoryImplementation = factoryImplementation;
+    public RingbufferStoreConfig setFactoryImplementation(@Nonnull RingbufferStoreFactory factoryImplementation) {
+        this.factoryImplementation = checkNotNull(factoryImplementation, "Ringbuffer store factory cannot be null");
+        this.factoryClassName = null;
         return this;
     }
 
@@ -119,6 +126,9 @@ public class RingbufferStoreConfig implements IdentifiedDataSerializable {
         return "RingbufferStoreConfig{"
                 + "enabled=" + enabled
                 + ", className='" + className + '\''
+                + ", storeImplementation=" + storeImplementation
+                + ", factoryClassName='" + factoryClassName + '\''
+                + ", factoryImplementation=" + factoryImplementation
                 + ", properties=" + properties
                 + '}';
     }
@@ -154,7 +164,6 @@ public class RingbufferStoreConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
     public final boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -165,36 +174,16 @@ public class RingbufferStoreConfig implements IdentifiedDataSerializable {
 
         RingbufferStoreConfig that = (RingbufferStoreConfig) o;
 
-        if (enabled != that.enabled) {
-            return false;
-        }
-        if (className != null ? !className.equals(that.className) : that.className != null) {
-            return false;
-        }
-        if (factoryClassName != null
-                ? !factoryClassName.equals(that.factoryClassName) : that.factoryClassName != null) {
-            return false;
-        }
-        if (properties != null ? !properties.equals(that.properties) : that.properties != null) {
-            return false;
-        }
-        if (storeImplementation != null
-                ? !storeImplementation.equals(that.storeImplementation) : that.storeImplementation != null) {
-            return false;
-        }
-        return factoryImplementation != null
-                ? factoryImplementation.equals(that.factoryImplementation) : that.factoryImplementation == null;
+        return enabled == that.enabled
+            && Objects.equals(storeImplementation, that.storeImplementation)
+            && Objects.equals(className, that.className)
+            && Objects.equals(properties, that.properties)
+            && Objects.equals(factoryImplementation, that.factoryImplementation)
+            && Objects.equals(factoryClassName, that.factoryClassName);
     }
 
     @Override
-    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
     public final int hashCode() {
-        int result = (enabled ? 1 : 0);
-        result = 31 * result + (className != null ? className.hashCode() : 0);
-        result = 31 * result + (factoryClassName != null ? factoryClassName.hashCode() : 0);
-        result = 31 * result + (properties != null ? properties.hashCode() : 0);
-        result = 31 * result + (storeImplementation != null ? storeImplementation.hashCode() : 0);
-        result = 31 * result + (factoryImplementation != null ? factoryImplementation.hashCode() : 0);
-        return result;
+        return Objects.hash(enabled, properties, storeImplementation, className, factoryImplementation, factoryClassName);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,16 @@
 
 package com.hazelcast.internal.eviction;
 
-import java.util.function.BiFunction;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.partition.IPartition;
+import com.hazelcast.internal.partition.IPartitionService;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.partition.PartitionLostEvent;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import com.hazelcast.internal.partition.IPartition;
-import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
-import com.hazelcast.internal.util.Clock;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.ArrayList;
@@ -35,6 +34,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiFunction;
 
 import static com.hazelcast.internal.eviction.ToBackupSender.newToBackupSender;
 import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
@@ -54,6 +54,7 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
     protected final ToBackupSender<S> toBackupSender;
     protected final IPartitionService partitionService;
 
+    private final boolean cleanupEnabled;
     private final int partitionCount;
     private final int taskPeriodSeconds;
     private final int cleanupPercentage;
@@ -72,6 +73,7 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
     @SuppressFBWarnings({"EI_EXPOSE_REP2"})
     protected ClearExpiredRecordsTask(String serviceName,
                                       T[] containers,
+                                      HazelcastProperty cleanupEnabled,
                                       HazelcastProperty cleanupOpProperty,
                                       HazelcastProperty cleanupPercentageProperty,
                                       HazelcastProperty taskPeriodProperty,
@@ -91,6 +93,7 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
         checkTrue(cleanupPercentage > 0 && cleanupPercentage <= 100,
                 "cleanupPercentage should be in range (0,100]");
         this.taskPeriodSeconds = properties.getSeconds(taskPeriodProperty);
+        this.cleanupEnabled = properties.getBoolean(cleanupEnabled);
         this.toBackupSender = newToBackupSender(serviceName, newBackupExpiryOpSupplier(),
                 newBackupExpiryOpFilter(), nodeEngine);
     }
@@ -273,12 +276,7 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
     }
 
     private BiFunction<S, Collection<ExpiredKey>, Operation> newBackupExpiryOpSupplier() {
-        return new BiFunction<S, Collection<ExpiredKey>, Operation>() {
-            @Override
-            public Operation apply(S recordStore, Collection<ExpiredKey> expiredKeys) {
-                return newBackupExpiryOp(recordStore, expiredKeys);
-            }
-        };
+        return (recordStore, expiredKeys) -> newBackupExpiryOp(recordStore, expiredKeys);
     }
 
     public final void sendQueuedExpiredKeys(T container) {
@@ -326,6 +324,10 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
     public abstract void tryToSendBackupExpiryOp(S store, boolean sendIfAtBatchSize);
 
     public abstract Iterator<S> storeIterator(T container);
+
+    public boolean isCleanupEnabled() {
+        return cleanupEnabled;
+    }
 
     /**
      * Used when traversing partitions. Map needs to traverse both

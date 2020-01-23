@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,9 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hazelcast.scheduledexecutor.impl.ScheduledTaskDescriptor.Status.ACTIVE;
+import static com.hazelcast.scheduledexecutor.impl.ScheduledTaskDescriptor.Status.SUSPENDED;
+
 /**
  * Metadata holder for scheduled tasks.
  * Active tasks, eg. not suspended, hold a non-null {@link #future} reference. Suspended ones, i.e., backups
@@ -41,11 +44,13 @@ import java.util.concurrent.atomic.AtomicReference;
 public class ScheduledTaskDescriptor
         implements IdentifiedDataSerializable {
 
+    private final transient AtomicReference<Status> status = new AtomicReference<>(SUSPENDED);
+
     private TaskDefinition definition;
 
-    private transient ScheduledFuture<?> future;
-
     private final AtomicReference<ScheduledTaskResult> resultRef = new AtomicReference<ScheduledTaskResult>(null);
+
+    private transient volatile ScheduledFuture<?> future;
 
     private volatile ScheduledTaskStatisticsImpl stats;
 
@@ -98,10 +103,44 @@ public class ScheduledTaskDescriptor
 
     void setScheduledFuture(ScheduledFuture<?> future) {
         this.future = future;
+        this.status.set(ACTIVE);
+    }
+
+    boolean isActive() {
+        return this.status.get() == ACTIVE;
+    }
+
+    void setActive() {
+        this.status.set(ACTIVE);
     }
 
     void setTaskResult(ScheduledTaskResult result) {
         this.resultRef.set(result);
+    }
+
+    boolean canBeScheduled() {
+        // Stashed tasks that never got scheduled, and weren't cancelled in-between
+        return !isActive() && future == null && this.resultRef.get() == null;
+    }
+
+    /**
+     * Suspended is a task that either has never been scheduled before (aka. backups) or it got suspended (aka. temporarily
+     * stopped) during migration from one member to another.
+     *
+     * <p> When suspended, a task (if ever scheduled before), maintains its statistics and its actual runState,
+     * however its associated {@link java.util.concurrent.Future} is cancelled and nullified. Upon future, rescheduling,
+     * it will be assigned a different Future.
+     *
+     * @return <code>true</code> if the task's status was previously {@link Status#ACTIVE}
+     */
+    boolean suspend() {
+        // Result is not set, allowing task to get re-scheduled, if/when needed.
+        if (future != null) {
+            this.future.cancel(true);
+            this.future = null;
+        }
+
+        return status.getAndSet(SUSPENDED) == ACTIVE;
     }
 
     Object get()
@@ -114,24 +153,6 @@ public class ScheduledTaskDescriptor
         }
 
         return future.get();
-    }
-
-    /**
-     * Suspended is a task that either has never been scheduled before (aka. backups) or it got suspended (aka. temporarily
-     * stopped) during migration from one member to another.
-     *
-     * <p> When suspended, a task (if ever scheduled before), maintains its statistics and its actual runState,
-     * however its associated {@link java.util.concurrent.Future} is cancelled and nullified. Upon future, rescheduling,
-     * it will acquire be assigned on a different Future. <p> Task ownership is also restored to default,
-     * which will be fixed when migrations finish and a new master is selected.
-     */
-    void suspend() {
-        // Result is not set, allowing task to get re-scheduled, if/when needed.
-
-        if (future != null) {
-            this.future.cancel(true);
-            this.future = null;
-        }
     }
 
     boolean cancel(boolean mayInterrupt) {
@@ -160,11 +181,6 @@ public class ScheduledTaskDescriptor
     boolean isDone() {
         boolean wasDone = resultRef.get() != null;
         return wasDone || (future != null && future.isDone());
-    }
-
-    boolean shouldSchedule() {
-        // Stashed tasks that never got scheduled, and weren't cancelled in-between
-        return future == null && this.resultRef.get() == null;
     }
 
     @Override
@@ -216,11 +232,29 @@ public class ScheduledTaskDescriptor
     public String toString() {
         return "ScheduledTaskDescriptor{"
                 + "definition=" + definition
+                + ", status=" + status
                 + ", future=" + future
                 + ", stats=" + stats
                 + ", resultRef=" + resultRef.get()
                 + ", state=" + state
                 + '}';
+    }
+
+    /**
+     * Local (not serializable) status of the descriptor.
+     */
+    enum Status {
+
+        /**
+         * Tasks that have been scheduled or promoted (regardless if they have a {@link ScheduledFuture} associated with them
+         */
+        ACTIVE,
+
+        /**
+         * Tasks that have been just created or suspended
+         */
+        SUSPENDED
+
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.util.Clock;
 import com.hazelcast.map.EntryStore;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
@@ -38,8 +37,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Collection;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -95,7 +95,7 @@ public class WriteBehindEntryStoreQueueReplicationTest extends HazelcastTestSupp
     }
 
     private static String dumpNotExpiredRecordsToString(HazelcastInstance node, String mapName) {
-        String msg = "";
+        List<Long> msg = new ArrayList<>();
         NodeEngineImpl nodeEngine = getNode(node).getNodeEngine();
         MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
@@ -105,14 +105,9 @@ public class WriteBehindEntryStoreQueueReplicationTest extends HazelcastTestSupp
             if (recordStore == null) {
                 continue;
             }
-            Collection<Record> records = recordStore.getStorage().values();
-            for (Record record : records) {
-                if (!recordStore.isExpired(record, Clock.currentTimeMillis(), false)) {
-                    msg += record.getTtl() + ", ";
-                }
-            }
+            recordStore.forEach((data, record) -> msg.add(record.getTtl()), false);
         }
-        return msg;
+        return msg.toString();
     }
 
     @Test

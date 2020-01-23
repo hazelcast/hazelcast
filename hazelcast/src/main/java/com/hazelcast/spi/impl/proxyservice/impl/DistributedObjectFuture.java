@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.spi.impl.InitializingObject;
 import com.hazelcast.internal.util.ExceptionUtil;
 
+import java.util.UUID;
+
 public class DistributedObjectFuture {
 
     private volatile DistributedObject proxy;
@@ -27,6 +29,12 @@ public class DistributedObjectFuture {
 
     // non-initialized distributed object
     private volatile DistributedObject rawProxy;
+
+    private final UUID source;
+
+    public DistributedObjectFuture(UUID source) {
+        this.source = source;
+    }
 
     boolean isSetAndInitialized() {
         return proxy != null || error != null;
@@ -51,6 +59,18 @@ public class DistributedObjectFuture {
             return proxy;
         }
         throw ExceptionUtil.rethrow(error);
+    }
+
+    public UUID getSource() {
+        return source;
+    }
+
+    public DistributedObject getNow() {
+        if (error != null) {
+            throw ExceptionUtil.rethrow(error);
+        }
+        // return completed proxy or null
+        return proxy;
     }
 
     private boolean waitUntilSetAndInitialized() {
@@ -89,10 +109,12 @@ public class DistributedObjectFuture {
             throw new IllegalArgumentException("Proxy should not be null!");
         }
         synchronized (this) {
-            if (!initialized && o instanceof InitializingObject) {
-                rawProxy = o;
-            } else {
-                proxy = o;
+            if (error == null) {
+                if (!initialized && o instanceof InitializingObject) {
+                    rawProxy = o;
+                } else {
+                    proxy = o;
+                }
             }
             notifyAll();
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,9 +22,11 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Marks methods which are not available in a {@link DataStructureAdapter} implementation.
+ * Marks methods which are not available in a
+ * {@llink DataStructureAdapter} implementation.
  *
- * This annotation can be used to automatically skip tests which require a specific method to be available.
+ * This annotation can be used to automatically skip
+ * tests which require a specific method to be available.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,11 +22,10 @@ import com.hazelcast.client.impl.protocol.codec.ClientDestroyProxyCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.cluster.Address;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.strategy.StringPartitioningStrategy;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 
 import javax.annotation.Nonnull;
 import java.util.UUID;
@@ -192,9 +191,9 @@ public abstract class ClientProxy implements DistributedObject {
         }
     }
 
-    protected <T> T invokeOnAddress(ClientMessage clientMessage, Address address) {
+    protected <T> T invokeOnMember(ClientMessage clientMessage, UUID uuid) {
         try {
-            final Future future = new ClientInvocation(getClient(), clientMessage, getName(), address).invoke();
+            final Future future = new ClientInvocation(getClient(), clientMessage, getName(), uuid).invoke();
             return (T) future.get();
         } catch (Exception e) {
             throw rethrow(e);

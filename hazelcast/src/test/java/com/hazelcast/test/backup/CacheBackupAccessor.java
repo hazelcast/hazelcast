@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,12 +26,12 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.internal.partition.IPartition;
 
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.spi.CachingProvider;
@@ -50,6 +50,8 @@ import static com.hazelcast.test.TestTaskExecutorUtil.runOnPartitionThread;
  * @param <V> type of values
  */
 class CacheBackupAccessor<K, V> extends AbstractBackupAccessor<K, V> implements BackupAccessor<K, V> {
+
+    static final long NON_EXISTENT_KEY = -2;
 
     private final String cacheName;
 
@@ -109,13 +111,17 @@ class CacheBackupAccessor<K, V> extends AbstractBackupAccessor<K, V> implements 
         return cacheRecord == null ? null : (ExpiryPolicy) serializationService.toObject(cacheRecord.getExpiryPolicy());
     }
 
+    /**
+     * @return expiration time when key exists,
+     * otherwise when there is no key it returns {@value
+     * NON_EXISTENT_KEY} to indicate this situation
+     */
     long getExpirationTime(K key) {
         CacheRecord cacheRecord = getCacheRecord(key);
-        return cacheRecord != null ? cacheRecord.getExpirationTime() : -1L;
+        return cacheRecord != null ? cacheRecord.getExpirationTime() : NON_EXISTENT_KEY;
     }
 
     private CacheRecord getCacheRecord(K key) {
-
         InternalPartition partition = getPartitionForKey(key);
         HazelcastInstance hz = getHazelcastInstance(partition);
 
@@ -201,7 +207,7 @@ class CacheBackupAccessor<K, V> extends AbstractBackupAccessor<K, V> implements 
         private final K key;
 
         GetCacheRecordCallable(SerializationService serializationService, CacheService cacheService, String cacheNameWithPrefix,
-                       int partitionId, K key) {
+                               int partitionId, K key) {
             this.serializationService = serializationService;
             this.cacheService = cacheService;
             this.cacheNameWithPrefix = cacheNameWithPrefix;
@@ -218,5 +224,11 @@ class CacheBackupAccessor<K, V> extends AbstractBackupAccessor<K, V> implements 
             Data keyData = serializationService.toData(key);
             return recordStore.getReadOnlyRecords().get(keyData);
         }
+    }
+
+    @Override
+    public String toString() {
+        return "CacheBackupAccessor{cacheName='"
+                + cacheName + '\'' + "} " + super.toString();
     }
 }

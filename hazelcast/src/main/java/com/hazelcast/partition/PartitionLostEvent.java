@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,11 @@ public interface PartitionLostEvent extends PartitionEvent {
      * Returns the number of lost backups for the partition. 0: the owner, 1: first backup, 2: second backup...
      */
     int getLostBackupCount();
+
+    /**
+     * Returns true if all replicas of a partition are lost
+     */
+    boolean allReplicasInPartitionLost();
 
     /**
      * Returns the address of the node that dispatches the event

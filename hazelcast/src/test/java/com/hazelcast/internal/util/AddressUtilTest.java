@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,14 @@
 
 package com.hazelcast.internal.util;
 
-import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.internal.util.AddressUtil.AddressMatcher;
 import com.hazelcast.internal.util.AddressUtil.InvalidAddressException;
 import com.hazelcast.internal.util.AddressUtil.Ip4AddressMatcher;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.JmxLeakHelper;
+import com.hazelcast.test.annotation.QuickTest;
+import org.junit.AfterClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -29,15 +31,16 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.modules.junit4.PowerMockRunnerDelegate;
+
 import java.net.Inet6Address;
+import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.net.InetAddress;
-import java.util.Collections;
 import java.util.Collection;
-import java.util.Vector;
+import java.util.Collections;
 import java.util.Enumeration;
+import java.util.Vector;
 
 import static com.hazelcast.internal.util.AddressUtil.AddressHolder;
 import static java.util.Arrays.asList;
@@ -46,9 +49,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.when;
 
 /**
@@ -59,6 +62,14 @@ import static org.mockito.Mockito.when;
 @PrepareForTest({Inet6Address.class, AddressUtil.class, NetworkInterface.class})
 @Category(QuickTest.class)
 public class AddressUtilTest extends HazelcastTestSupport {
+    @AfterClass
+    public static void afterClass() {
+        // PowerMock substitutes certain classes, which makes the usage of MBeanServerFactory.createMBeanServer impossible.
+        // Therefore we suppress the check for JMX beans in that test. Alternatively, we may swallow the exception in the
+        // JmxLeakHelper.checkJmxBeans() method, but this may hide some unexpected exceptions from us. Hence, the decision
+        // is to selectively ignore the check for this test class.
+        JmxLeakHelper.ignoreOnce();
+    }
 
     @Test
     public void testMatchAnyInterface() {

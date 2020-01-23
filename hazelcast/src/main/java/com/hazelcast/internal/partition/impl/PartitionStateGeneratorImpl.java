@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,8 @@ import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionStateGenerator;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.partition.membergroup.MemberGroup;
-import com.hazelcast.partition.membergroup.SingleMemberGroup;
+import com.hazelcast.spi.partitiongroup.MemberGroup;
+import com.hazelcast.internal.partition.membergroup.SingleMemberGroup;
 
 import java.util.Collection;
 import java.util.Collections;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,13 +39,5 @@ public interface MembershipAwareService {
      * @param event the event for an existing member leaving the cluster
      */
     void memberRemoved(MembershipServiceEvent event);
-
-
-    /**
-     * Invoked when a member attribute is changed.
-     *
-     * @param event the event for a member attribute being changed
-     */
-    void memberAttributeChanged(MemberAttributeServiceEvent event);
 
 }

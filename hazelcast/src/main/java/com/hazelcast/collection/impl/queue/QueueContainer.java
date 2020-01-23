@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.internal.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -92,20 +92,13 @@ public class QueueContainer implements IdentifiedDataSerializable {
     // to avoid reloading same items
     private long lastIdLoaded;
 
-    /**
-     * The default no-args constructor is only meant for factory usage.
-     */
     public QueueContainer() {
     }
 
-    public QueueContainer(String name) {
+    public QueueContainer(String name, QueueConfig config, NodeEngine nodeEngine, QueueService service) {
         this.name = name;
         this.pollWaitNotifyKey = new QueueWaitNotifyKey(name, "poll");
         this.offerWaitNotifyKey = new QueueWaitNotifyKey(name, "offer");
-    }
-
-    public QueueContainer(String name, QueueConfig config, NodeEngine nodeEngine, QueueService service) {
-        this(name);
         setConfig(config, nodeEngine, service);
     }
 
@@ -1000,7 +993,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
         stats.setMinAge(minAge);
         stats.setMaxAge(maxAge);
         long totalAgedCountVal = Math.max(totalAgedCount, 1);
-        stats.setAveAge(totalAge / totalAgedCountVal);
+        stats.setAverageAge(totalAge / totalAgedCountVal);
     }
 
     /**
@@ -1014,7 +1007,8 @@ public class QueueContainer implements IdentifiedDataSerializable {
         }
         if (getItemQueue().isEmpty() && txMap.isEmpty() && !isEvictionScheduled) {
             if (emptyQueueTtl == 0) {
-                nodeEngine.getProxyService().destroyDistributedObject(QueueService.SERVICE_NAME, name);
+                UUID source = nodeEngine.getLocalMember().getUuid();
+                nodeEngine.getProxyService().destroyDistributedObject(QueueService.SERVICE_NAME, name, source);
             } else {
                 service.scheduleEviction(name, TimeUnit.SECONDS.toMillis(emptyQueueTtl));
                 isEvictionScheduled = true;

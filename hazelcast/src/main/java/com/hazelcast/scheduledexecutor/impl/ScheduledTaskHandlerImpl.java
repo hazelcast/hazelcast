@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,12 @@
 
 package com.hazelcast.scheduledexecutor.impl;
 
-import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 
 import java.io.IOException;
-import java.net.UnknownHostException;
+import java.util.UUID;
 
 public final class ScheduledTaskHandlerImpl
         extends ScheduledTaskHandler {
@@ -31,7 +30,7 @@ public final class ScheduledTaskHandlerImpl
     private static final char DESC_SEP = '\0';
     private static final int URN_PARTS = 4;
 
-    private Address address;
+    private UUID uuid;
 
     private int partitionId;
 
@@ -42,17 +41,17 @@ public final class ScheduledTaskHandlerImpl
     public ScheduledTaskHandlerImpl() {
     }
 
-    public ScheduledTaskHandlerImpl(Address address, int partitionId, String schedulerName, String taskName) {
+    public ScheduledTaskHandlerImpl(UUID uuid, int partitionId, String schedulerName, String taskName) {
         super();
-        this.address = address;
+        this.uuid = uuid;
         this.partitionId = partitionId;
         this.schedulerName = schedulerName;
         this.taskName = taskName;
     }
 
     @Override
-    public Address getAddress() {
-        return address;
+    public UUID getUuid() {
+        return uuid;
     }
 
     @Override
@@ -72,18 +71,18 @@ public final class ScheduledTaskHandlerImpl
 
     @Override
     public boolean isAssignedToPartition() {
-        return address == null;
+        return uuid == null;
     }
 
     @Override
     public boolean isAssignedToMember() {
-        return address != null;
+        return uuid != null;
     }
 
     @Override
     public String toUrn() {
-        return URN_BASE + (address == null ? "-" : (address.getHost() + ":" + String.valueOf(address.getPort()))) + DESC_SEP
-                + String.valueOf(partitionId) + DESC_SEP + schedulerName + DESC_SEP + taskName;
+        return URN_BASE + (uuid == null ? "-" : uuid) + DESC_SEP
+                + partitionId + DESC_SEP + schedulerName + DESC_SEP + taskName;
     }
 
     @Override
@@ -106,7 +105,7 @@ public final class ScheduledTaskHandlerImpl
     public void readData(ObjectDataInput in)
             throws IOException {
         ScheduledTaskHandler handler = of(in.readUTF());
-        this.address = handler.getAddress();
+        this.uuid = handler.getUuid();
         this.partitionId = handler.getPartitionId();
         this.schedulerName = handler.getSchedulerName();
         this.taskName = handler.getTaskName();
@@ -126,7 +125,7 @@ public final class ScheduledTaskHandlerImpl
         if (partitionId != that.partitionId) {
             return false;
         }
-        if (address != null ? !address.equals(that.address) : that.address != null) {
+        if (uuid != null ? !uuid.equals(that.uuid) : that.uuid != null) {
             return false;
         }
         if (!schedulerName.equals(that.schedulerName)) {
@@ -137,7 +136,7 @@ public final class ScheduledTaskHandlerImpl
 
     @Override
     public int hashCode() {
-        int result = address != null ? address.hashCode() : 0;
+        int result = uuid != null ? uuid.hashCode() : 0;
         result = 31 * result + partitionId;
         result = 31 * result + schedulerName.hashCode();
         result = 31 * result + taskName.hashCode();
@@ -146,16 +145,16 @@ public final class ScheduledTaskHandlerImpl
 
     @Override
     public String toString() {
-        return "ScheduledTaskHandler{" + "address=" + address + ", partitionId=" + partitionId + ", schedulerName='"
+        return "ScheduledTaskHandler{" + "uuid=" + uuid + ", partitionId=" + partitionId + ", schedulerName='"
                 + schedulerName + '\'' + ", taskName='" + taskName + '\'' + '}';
     }
 
-    void setAddress(Address address) {
-        this.address = address;
+    void setUuid(UUID uuid) {
+        this.uuid = uuid;
     }
 
-    public static ScheduledTaskHandler of(Address addr, String schedulerName, String taskName) {
-        return new ScheduledTaskHandlerImpl(addr, -1, schedulerName, taskName);
+    public static ScheduledTaskHandler of(UUID uuid, String schedulerName, String taskName) {
+        return new ScheduledTaskHandlerImpl(uuid, -1, schedulerName, taskName);
     }
 
     public static ScheduledTaskHandler of(int partitionId, String schedulerName, String taskName) {
@@ -175,22 +174,15 @@ public final class ScheduledTaskHandlerImpl
             throw new IllegalArgumentException("Wrong urn format.");
         }
 
-        Address addr = null;
+        UUID uuid = null;
         if (!"-".equals(parts[0])) {
-            int lastColonIx = parts[0].lastIndexOf(':');
-            String host = parts[0].substring(0, lastColonIx);
-            int port = Integer.parseInt(parts[0].substring(lastColonIx + 1));
-            try {
-                addr = new Address(host, port);
-            } catch (UnknownHostException e) {
-                throw new IllegalArgumentException("Wrong urn format.", e);
-            }
+            uuid = UUID.fromString(parts[0]);
         }
 
         int partitionId = Integer.parseInt(parts[1]);
         String scheduler = parts[2];
         String task = parts[3];
 
-        return new ScheduledTaskHandlerImpl(addr, partitionId, scheduler, task);
+        return new ScheduledTaskHandlerImpl(uuid, partitionId, scheduler, task);
     }
 }

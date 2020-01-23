@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,8 +34,8 @@ public class ResultSet extends AbstractSet<Map.Entry> {
     private final List<Map.Entry> entries;
     private final IterationType iterationType;
 
-    public ResultSet(List<Map.Entry> entries, IterationType iterationType) {
-        this.entries = entries;
+    public ResultSet(List<? extends Map.Entry> entries, IterationType iterationType) {
+        this.entries = (List<Map.Entry>) entries;
         this.iterationType = iterationType;
     }
 

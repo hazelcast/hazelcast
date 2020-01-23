@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import com.hazelcast.client.impl.spi.ClientPartitionService;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.partition.NoDataMemberInClusterException;
+import com.hazelcast.instance.impl.TestUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -31,6 +31,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.client.impl.clientside.ClientTestUtil.getHazelcastClientInstanceImpl;
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -51,25 +53,29 @@ public class ClientPartitionServiceLiteMemberTest {
         factory.terminateAll();
     }
 
-    @Test(expected = NoDataMemberInClusterException.class)
-    public void testGetPartitionsBlockingFailWithOnlyLiteMember() {
+    @Test
+    public void testWithOnlyLiteMember() {
         factory.newHazelcastInstance(new Config().setLiteMember(true));
 
-        final HazelcastInstance client = factory.newHazelcastClient();
-        final ClientPartitionService clientPartitionService = getClientPartitionService(client);
+        HazelcastInstance client = factory.newHazelcastClient();
+        ClientPartitionService clientPartitionService = getClientPartitionService(client);
+        assertTrueEventually(() -> assertEquals(271, clientPartitionService.getPartitionCount()));
         assertNull(clientPartitionService.getPartitionOwner(0));
-        clientPartitionService.getPartitionCount();
+
     }
 
     @Test
-    public void testPartitionsBlockingSucceedsWithLiteMemberAndDataMember() {
-        factory.newHazelcastInstance();
+    public void testWithLiteMemberAndDataMember() {
+        HazelcastInstance hazelcastInstance = factory.newHazelcastInstance();
         factory.newHazelcastInstance(new Config().setLiteMember(true));
 
-        final HazelcastInstance client = factory.newHazelcastClient();
-        final ClientPartitionService clientPartitionService = getClientPartitionService(client);
-        assertNotEquals(0, clientPartitionService.getPartitionCount());
-        assertNotNull(clientPartitionService.getPartitionOwner(0));
+        TestUtil.warmUpPartitions(hazelcastInstance);
+        HazelcastInstance client = factory.newHazelcastClient();
+        ClientPartitionService clientPartitionService = getClientPartitionService(client);
+        assertTrueEventually(() -> {
+            assertNotEquals(0, clientPartitionService.getPartitionCount());
+            assertNotNull(clientPartitionService.getPartitionOwner(0));
+        });
     }
 
     private ClientPartitionService getClientPartitionService(HazelcastInstance client) {

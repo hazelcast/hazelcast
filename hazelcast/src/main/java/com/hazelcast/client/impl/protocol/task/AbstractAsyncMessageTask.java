@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,8 @@ import com.hazelcast.internal.nio.Connection;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 
 /**
  *
@@ -67,8 +69,9 @@ public abstract class AbstractAsyncMessageTask<P, T> extends AbstractMessageTask
     protected void processMessage() {
         beforeProcess();
         CompletableFuture<T> internalFuture = processInternal();
-        internalFuture.thenApply(this::processResponseBeforeSending).whenComplete(this::sendResponseOrHandleFailure)
-                      .whenComplete(this::afterSendingResponse);
+        internalFuture.thenApplyAsync(this::processResponseBeforeSending, CALLER_RUNS)
+                      .whenCompleteAsync(this::sendResponseOrHandleFailure, CALLER_RUNS)
+                      .whenCompleteAsync(this::afterSendingResponse, CALLER_RUNS);
     }
 
     private void sendResponseOrHandleFailure(Object response, Throwable throwable) {

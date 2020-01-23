@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,8 +40,9 @@ public enum MetricTarget {
     DIAGNOSTICS,
     JET_JOB;
 
-    public static final List<MetricTarget> VALUES_LIST = unmodifiableList(asList(values()));
+    public static final List<MetricTarget> ALL_TARGETS = unmodifiableList(asList(values()));
     public static final Collection<MetricTarget> NONE_OF = EnumSet.noneOf(MetricTarget.class);
+    public static final Collection<MetricTarget> ALL_TARGETS_BUT_DIAGNOSTICS;
 
     static final Int2ObjectHashMap<Set<MetricTarget>> BITSET_TO_SET_CACHE = new Int2ObjectHashMap<>();
 
@@ -52,6 +53,8 @@ public enum MetricTarget {
         for (int i = 0; i <= values().length; i++) {
             generateCombinations(new int[i], 0, values().length - 1, 0);
         }
+
+        ALL_TARGETS_BUT_DIAGNOSTICS = asSetWithout(ALL_TARGETS, DIAGNOSTICS);
     }
 
     private static void generateCombinations(int[] ordinals, int start, int end, int index) {
@@ -121,6 +124,18 @@ public enum MetricTarget {
     public static Set<MetricTarget> asSetWithout(Collection<MetricTarget> targets, MetricTarget excludedTarget) {
         int bitset = bitset(targets) ^ targetMask(excludedTarget);
         return BITSET_TO_SET_CACHE.get(bitset);
+    }
+
+    /**
+     * Returns the union of two MetricTarget collections as a Set.
+     * Set objects are returned from a preliminary warmed up cache, so this method has no memory overhead.
+     *
+     * @param targets1 The first MetricTarget collection
+     * @param targets2 The second MetricTarget collection
+     * @return the union of the two MetricTarget collections
+     */
+    public static Set<MetricTarget> union(Collection<MetricTarget> targets1, Collection<MetricTarget> targets2) {
+        return asSet(bitset(targets1) | bitset(targets2));
     }
 
     /**

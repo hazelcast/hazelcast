@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,15 @@ package com.hazelcast.internal.nearcache.impl.store;
 
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.internal.nearcache.impl.record.NearCacheDataRecord;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 
 import static com.hazelcast.internal.nearcache.NearCacheRecord.TIME_NOT_SET;
+import static com.hazelcast.internal.nearcache.impl.record.AbstractNearCacheRecord.NUMBER_OF_BOOLEAN_FIELD_TYPES;
 import static com.hazelcast.internal.nearcache.impl.record.AbstractNearCacheRecord.NUMBER_OF_INTEGER_FIELD_TYPES;
 import static com.hazelcast.internal.nearcache.impl.record.AbstractNearCacheRecord.NUMBER_OF_LONG_FIELD_TYPES;
 import static com.hazelcast.internal.util.Clock.currentTimeMillis;
+import static com.hazelcast.internal.util.JVMUtil.REFERENCE_COST_IN_BYTES;
 
 /**
  * {@link com.hazelcast.internal.nearcache.NearCacheRecordStore} implementation for Near Caches
@@ -47,7 +49,7 @@ public class NearCacheDataRecordStore<K, V> extends BaseHeapNearCacheRecordStore
         if (key instanceof Data) {
             return
                     // reference to this key data inside map ("store" field)
-                    REFERENCE_SIZE
+                    REFERENCE_COST_IN_BYTES
                             // heap cost of this key data
                             + ((Data) key).getHeapCost();
         } else {
@@ -64,17 +66,18 @@ public class NearCacheDataRecordStore<K, V> extends BaseHeapNearCacheRecordStore
         // TODO: we don't handle object header (mark, class definition) for heap memory cost
         Data value = record.getValue();
         // reference to this record inside map ("store" field)
-        return REFERENCE_SIZE
+        return REFERENCE_COST_IN_BYTES
                 // reference to "value" field
-                + REFERENCE_SIZE
+                + REFERENCE_COST_IN_BYTES
                 // partition Id
                 + (Integer.SIZE / Byte.SIZE)
                 // "uuid" ref size + 2 long in uuid
-                + REFERENCE_SIZE + (2 * (Long.SIZE / Byte.SIZE))
+                + REFERENCE_COST_IN_BYTES + (2 * (Long.SIZE / Byte.SIZE))
                 // heap cost of this value data
                 + (value != null ? value.getHeapCost() : 0)
                 + NUMBER_OF_LONG_FIELD_TYPES * (Long.SIZE / Byte.SIZE)
-                + NUMBER_OF_INTEGER_FIELD_TYPES * (Integer.SIZE / Byte.SIZE);
+                + NUMBER_OF_INTEGER_FIELD_TYPES * (Integer.SIZE / Byte.SIZE)
+                + NUMBER_OF_BOOLEAN_FIELD_TYPES;
     }
 
     @Override

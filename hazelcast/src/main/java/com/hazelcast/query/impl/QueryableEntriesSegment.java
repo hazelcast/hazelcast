@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,9 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.internal.iteration.IterationPointer;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.util.Collection;
 
 /**
@@ -25,18 +28,23 @@ import java.util.Collection;
 public class QueryableEntriesSegment {
 
     private final Collection<QueryableEntry> entries;
-    private final int nextTableIndexToReadFrom;
+    private final IterationPointer[] pointers;
 
-    public QueryableEntriesSegment(Collection<QueryableEntry> entries, int nextTableIndexToReadFrom) {
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "This is an internal class")
+    public QueryableEntriesSegment(Collection<QueryableEntry> entries, IterationPointer[] pointers) {
         this.entries = entries;
-        this.nextTableIndexToReadFrom = nextTableIndexToReadFrom;
+        this.pointers = pointers;
     }
 
     public Collection<QueryableEntry> getEntries() {
         return entries;
     }
 
-    public int getNextTableIndexToReadFrom() {
-        return nextTableIndexToReadFrom;
+    /**
+     * Returns the iteration pointers representing the current iteration state.
+     */
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "This is an internal class")
+    public IterationPointer[] getPointers() {
+        return pointers;
     }
 }

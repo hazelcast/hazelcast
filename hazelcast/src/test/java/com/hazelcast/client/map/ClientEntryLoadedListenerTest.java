@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,21 @@
 
 package com.hazelcast.client.map;
 
+import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapLoader;
-import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryLoadedListener;
 import com.hazelcast.map.listener.EntryUpdatedListener;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
@@ -55,7 +55,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ClientEntryLoadedListenerTest extends HazelcastTestSupport {
+public class ClientEntryLoadedListenerTest extends ClientTestSupport {
 
     private static final TestHazelcastFactory FACTORY = new TestHazelcastFactory();
 
@@ -210,6 +210,8 @@ public class ClientEntryLoadedListenerTest extends HazelcastTestSupport {
 
         IMap<Integer, Integer> map = client.getMap("load_listener_notified_but_add_listener_not_notified_after_loadAll");
         map.clear();
+
+        makeSureConnectedToServers(client, 2);
 
         MapListener listener = new LoadAndAddListener(loadEventCount, addEventCount);
         map.addEntryListener(listener, true);

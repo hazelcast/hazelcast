@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,12 @@ import com.hazelcast.internal.util.JVMUtil;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.RUNTIME_FULL_METRIC_AVAILABLE_PROCESSORS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.RUNTIME_FULL_METRIC_FREE_MEMORY;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.RUNTIME_FULL_METRIC_MAX_MEMORY;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.RUNTIME_FULL_METRIC_TOTAL_MEMORY;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.RUNTIME_FULL_METRIC_UPTIME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.RUNTIME_FULL_METRIC_USED_MEMORY;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
@@ -44,11 +50,12 @@ public final class RuntimeMetricSet {
         Runtime runtime = Runtime.getRuntime();
         RuntimeMXBean mxBean = ManagementFactory.getRuntimeMXBean();
 
-        metricsRegistry.registerStaticProbe(runtime, "runtime.freeMemory", MANDATORY, Runtime::freeMemory);
-        metricsRegistry.registerStaticProbe(runtime, "runtime.totalMemory", MANDATORY, Runtime::totalMemory);
-        metricsRegistry.registerStaticProbe(runtime, "runtime.maxMemory", MANDATORY, Runtime::maxMemory);
-        metricsRegistry.registerStaticProbe(runtime, "runtime.usedMemory", MANDATORY, JVMUtil::usedMemory);
-        metricsRegistry.registerStaticProbe(runtime, "runtime.availableProcessors", MANDATORY, Runtime::availableProcessors);
-        metricsRegistry.registerStaticProbe(mxBean, "runtime.uptime", MANDATORY, RuntimeMXBean::getUptime);
+        metricsRegistry.registerStaticProbe(runtime, RUNTIME_FULL_METRIC_FREE_MEMORY, MANDATORY, Runtime::freeMemory);
+        metricsRegistry.registerStaticProbe(runtime, RUNTIME_FULL_METRIC_TOTAL_MEMORY, MANDATORY, Runtime::totalMemory);
+        metricsRegistry.registerStaticProbe(runtime, RUNTIME_FULL_METRIC_MAX_MEMORY, MANDATORY, Runtime::maxMemory);
+        metricsRegistry.registerStaticProbe(runtime, RUNTIME_FULL_METRIC_USED_MEMORY, MANDATORY, JVMUtil::usedMemory);
+        metricsRegistry
+                .registerStaticProbe(runtime, RUNTIME_FULL_METRIC_AVAILABLE_PROCESSORS, MANDATORY, Runtime::availableProcessors);
+        metricsRegistry.registerStaticProbe(mxBean, RUNTIME_FULL_METRIC_UPTIME, MANDATORY, RuntimeMXBean::getUptime);
     }
 }

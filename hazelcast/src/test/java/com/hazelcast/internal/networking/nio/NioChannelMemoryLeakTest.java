@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -104,8 +104,9 @@ public class NioChannelMemoryLeakTest extends HazelcastTestSupport {
 
         assertThat(channels.size(), lessThanOrEqualTo(maxChannelCount));
         for (NioChannel channel : channels) {
-            assertTrue("Channel " + channel + " was found closed in instance " + instance,
-                    channel.socketChannel().isOpen());
+            assertTrue("Channel " + channel + " was found closed (channel: " + channel.isClosed() + ", socketChannel: " + !channel
+                            .socketChannel().isOpen() + ") in instance " + instance,
+                    !channel.isClosed() && channel.socketChannel().isOpen());
         }
     }
 

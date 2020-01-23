@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,9 @@ package com.hazelcast.client.impl.protocol.task.dynamicconfig;
 import com.hazelcast.client.impl.protocol.util.PropertiesUtil;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.MapStoreConfig.InitialLoadMode;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.StringUtil;
 
 import java.util.Map;
 
@@ -140,16 +141,26 @@ public class MapStoreConfigHolder {
 
     public MapStoreConfig asMapStoreConfig(SerializationService serializationService) {
         MapStoreConfig config = new MapStoreConfig();
-        config.setClassName(className);
+        if (!StringUtil.isNullOrEmptyAfterTrim(className)) {
+            config.setClassName(className);
+        }
         config.setEnabled(enabled);
-        config.setFactoryClassName(factoryClassName);
+        if (!StringUtil.isNullOrEmptyAfterTrim(factoryClassName)) {
+            config.setFactoryClassName(factoryClassName);
+        }
         config.setInitialLoadMode(InitialLoadMode.valueOf(initialLoadMode));
         config.setProperties(PropertiesUtil.fromMap(properties));
         config.setWriteBatchSize(writeBatchSize);
         config.setWriteCoalescing(writeCoalescing);
         config.setWriteDelaySeconds(writeDelaySeconds);
-        config.setImplementation(serializationService.toObject(implementation));
-        config.setFactoryImplementation(serializationService.toObject(factoryImplementation));
+        Object implementation = serializationService.toObject(this.implementation);
+        if (implementation != null) {
+            config.setImplementation(implementation);
+        }
+        Object factoryImplementation = serializationService.toObject(this.factoryImplementation);
+        if (factoryImplementation != null) {
+            config.setFactoryImplementation(factoryImplementation);
+        }
         return config;
     }
 

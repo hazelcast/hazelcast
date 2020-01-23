@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,21 @@
 
 package com.hazelcast.internal.monitor.impl;
 
-import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.executor.LocalExecutorStats;
+import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.json.internal.JsonSerializable;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_METRIC_CANCELLED;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_METRIC_COMPLETED;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_METRIC_PENDING;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_METRIC_STARTED;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_METRIC_TOTAL_EXECUTION_TIME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_METRIC_TOTAL_START_LATENCY;
+import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.util.JsonUtil.getLong;
 
 public class LocalExecutorStatsImpl implements LocalExecutorStats, JsonSerializable {
@@ -43,17 +50,17 @@ public class LocalExecutorStatsImpl implements LocalExecutorStats, JsonSerializa
     private long creationTime;
 
     // These fields are only accessed through the updaters
-    @Probe
+    @Probe(name = EXECUTOR_METRIC_PENDING)
     private volatile long pending;
-    @Probe
+    @Probe(name = EXECUTOR_METRIC_STARTED)
     private volatile long started;
-    @Probe
+    @Probe(name = EXECUTOR_METRIC_COMPLETED)
     private volatile long completed;
-    @Probe
+    @Probe(name = EXECUTOR_METRIC_CANCELLED)
     private volatile long cancelled;
-    @Probe
+    @Probe(name = EXECUTOR_METRIC_TOTAL_START_LATENCY, unit = MS)
     private volatile long totalStartLatency;
-    @Probe
+    @Probe(name = EXECUTOR_METRIC_TOTAL_EXECUTION_TIME, unit = MS)
     private volatile long totalExecutionTime;
 
     public LocalExecutorStatsImpl() {

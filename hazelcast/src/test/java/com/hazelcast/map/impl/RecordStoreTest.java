@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
@@ -28,7 +29,6 @@ import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleTestObjects;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -39,7 +39,6 @@ import org.junit.runner.RunWith;
 
 import java.util.Collection;
 
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -67,7 +66,11 @@ public class RecordStoreTest extends HazelcastTestSupport {
     public void testRecordStoreResetWithoutClearingIndexes() {
         IMap<Object, Object> map = testRecordStoreReset();
         Collection<Object> values = map.values(Predicates.equal("name", "tom"));
-        assertFalse(values.isEmpty());
+        // Although, on record store reset we don't destroy indexes, we still mark partition as
+        // "unindexed" in the IndexingMutationObserver#clearGlobalIndexes. Since introduction of
+        // indexes consistency check (before using them for query), we don't use incomplete indexes
+        // for query. Thus, the below query ignores the indexes and uses record store to run the query.
+        assertTrue(values.isEmpty());
     }
 
     private IMap<Object, Object> testRecordStoreReset() {

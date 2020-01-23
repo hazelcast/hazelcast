@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,11 @@
 
 package com.hazelcast.cache.impl.record;
 
-import com.hazelcast.cache.impl.CacheEntryIterationResult;
-import com.hazelcast.cache.impl.CacheKeyIterationResult;
+import com.hazelcast.cache.impl.CacheEntriesWithCursor;
+import com.hazelcast.cache.impl.CacheKeysWithCursor;
 import com.hazelcast.internal.eviction.EvictableStore;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.iteration.IterationPointer;
+import com.hazelcast.internal.serialization.Data;
 
 import java.util.Map;
 
@@ -41,21 +42,38 @@ public interface CacheRecordMap<K extends Data, V extends CacheRecord>
     void setEntryCounting(boolean enable);
 
     /**
-     * Fetches keys in bulk as specified <tt>size</tt> at most.
+     * Fetch minimally {@code size} keys from the {@code pointers} position.
+     * The key is fetched on-heap.
+     * The method may return less keys if iteration has completed.
+     * <p>
+     * NOTE: The implementation is free to return more than {@code size} items.
+     * This can happen if we cannot easily resume from the last returned item
+     * by receiving the {@code tableIndex} of the last item. The index can
+     * represent a bucket with multiple items and in this case the returned
+     * object will contain all items in that bucket, regardless if we exceed
+     * the requested {@code size}.
      *
-     * @param nextTableIndex starting point for fetching
-     * @param size           maximum bulk size to fetch the keys
-     * @return the {@link CacheKeyIterationResult} instance contains fetched keys
+     * @param pointers the pointers defining the state of iteration
+     * @param size     the minimal count of returned items, unless iteration has completed
+     * @return fetched keys and the new iteration state
      */
-    CacheKeyIterationResult fetchKeys(int nextTableIndex, int size);
+    CacheKeysWithCursor fetchKeys(IterationPointer[] pointers, int size);
 
     /**
-     * Fetches entries in bulk as specified <tt>size</tt> at most.
+     * Fetch minimally {@code size} items from the {@code pointers} position.
+     * Both the key and value are fetched on-heap.
+     * <p>
+     * NOTE: The implementation is free to return more than {@code size} items.
+     * This can happen if we cannot easily resume from the last returned item
+     * by receiving the {@code tableIndex} of the last item. The index can
+     * represent a bucket with multiple items and in this case the returned
+     * object will contain all items in that bucket, regardless if we exceed
+     * the requested {@code size}.
      *
-     * @param nextTableIndex starting point for fetching
-     * @param size           maximum bulk size to fetch the entries
-     * @return the {@link CacheEntryIterationResult} instance contains fetched keys
+     * @param pointers the pointers defining the state of iteration
+     * @param size     the minimal count of returned items
+     * @return fetched entries and the new iteration state
      */
-    CacheEntryIterationResult fetchEntries(int nextTableIndex, int size);
+    CacheEntriesWithCursor fetchEntries(IterationPointer[] pointers, int size);
 
 }

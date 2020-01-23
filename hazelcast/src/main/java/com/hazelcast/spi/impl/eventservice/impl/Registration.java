@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -109,7 +109,7 @@ public class Registration implements EventRegistration {
         UUIDSerializationUtil.writeUUID(out, id);
         out.writeUTF(serviceName);
         out.writeUTF(topic);
-        subscriber.writeData(out);
+        out.writeObject(subscriber);
         out.writeObject(filter);
     }
 
@@ -118,8 +118,7 @@ public class Registration implements EventRegistration {
         id = UUIDSerializationUtil.readUUID(in);
         serviceName = in.readUTF();
         topic = in.readUTF();
-        subscriber = new Address();
-        subscriber.readData(in);
+        subscriber = in.readObject();
         filter = in.readObject();
     }
 

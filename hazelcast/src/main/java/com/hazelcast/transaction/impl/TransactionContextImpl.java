@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,21 +19,20 @@ package com.hazelcast.transaction.impl;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
-import com.hazelcast.transaction.TransactionalList;
-import com.hazelcast.transaction.TransactionalMap;
-import com.hazelcast.transaction.TransactionalMultiMap;
-import com.hazelcast.transaction.TransactionalQueue;
-import com.hazelcast.transaction.TransactionalSet;
+import com.hazelcast.internal.services.TransactionalService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.internal.services.TransactionalService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions;
+import com.hazelcast.transaction.TransactionalList;
+import com.hazelcast.transaction.TransactionalMap;
+import com.hazelcast.transaction.TransactionalMultiMap;
 import com.hazelcast.transaction.TransactionalObject;
-import com.hazelcast.transaction.impl.TransactionImpl.SuspendedTransactionImpl;
+import com.hazelcast.transaction.TransactionalQueue;
+import com.hazelcast.transaction.TransactionalSet;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -46,9 +45,9 @@ import static com.hazelcast.transaction.impl.Transaction.State.ACTIVE;
 final class TransactionContextImpl implements TransactionContext {
 
     private final NodeEngineImpl nodeEngine;
-    private final TransactionWrapper transaction;
+    private final TransactionImpl transaction;
     private final Map<TransactionalObjectKey, TransactionalObject> txnObjectMap
-            = new HashMap<>(2);
+            = new HashMap<TransactionalObjectKey, TransactionalObject>(2);
 
     TransactionContextImpl(@Nonnull TransactionManagerServiceImpl transactionManagerService,
                            @Nonnull NodeEngineImpl nodeEngine,
@@ -56,8 +55,7 @@ final class TransactionContextImpl implements TransactionContext {
                            @Nullable UUID ownerUuid,
                            boolean originatedFromClient) {
         this.nodeEngine = nodeEngine;
-        this.transaction = new TransactionWrapper(
-                new TransactionImpl(transactionManagerService, nodeEngine, options, ownerUuid, originatedFromClient));
+        this.transaction = new TransactionImpl(transactionManagerService, nodeEngine, options, ownerUuid, originatedFromClient);
     }
 
     @Override
@@ -72,7 +70,7 @@ final class TransactionContextImpl implements TransactionContext {
 
     @Override
     public void commitTransaction() throws TransactionException {
-        if (transaction.getTransactionOfRequiredType(TransactionImpl.class).requiresPrepare()) {
+        if (transaction.requiresPrepare()) {
             transaction.prepare();
         }
         transaction.commit();
@@ -81,18 +79,6 @@ final class TransactionContextImpl implements TransactionContext {
     @Override
     public void rollbackTransaction() {
         transaction.rollback();
-    }
-
-    @Override
-    public void suspendTransaction() {
-        transaction.set(transaction.getTransactionOfRequiredType(TransactionImpl.class).new SuspendedTransactionImpl());
-    }
-
-    @Override
-    public void resumeTransaction() {
-        SuspendedTransactionImpl suspendedTransaction = transaction.getTransactionOfRequiredType(SuspendedTransactionImpl.class);
-        suspendedTransaction.resume();
-        transaction.set(suspendedTransaction.getTransaction());
     }
 
     @SuppressWarnings("unchecked")
@@ -131,7 +117,7 @@ final class TransactionContextImpl implements TransactionContext {
         checkActive(serviceName, name);
 
         if (requiresBackupLogs(serviceName)) {
-            transaction.getTransactionOfRequiredType(TransactionImpl.class).ensureBackupLogsExist();
+            transaction.ensureBackupLogsExist();
         }
 
         TransactionalObjectKey key = new TransactionalObjectKey(serviceName, name);
@@ -141,7 +127,7 @@ final class TransactionContextImpl implements TransactionContext {
         }
 
         TransactionalService transactionalService = getTransactionalService(serviceName);
-        nodeEngine.getProxyService().initializeDistributedObject(serviceName, name);
+        nodeEngine.getProxyService().initializeDistributedObject(serviceName, name, transaction.getOwnerUuid());
         obj = transactionalService.createTransactionalObject(name, transaction);
         txnObjectMap.put(key, obj);
         return obj;

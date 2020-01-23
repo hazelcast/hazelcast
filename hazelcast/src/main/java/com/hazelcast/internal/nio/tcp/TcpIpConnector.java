@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -163,11 +163,13 @@ class TcpIpConnector {
             }
         }
 
+        @SuppressWarnings("unchecked")
         private void tryToConnect(InetSocketAddress socketAddress, int timeout) throws Exception {
             SocketChannel socketChannel = SocketChannel.open();
 
             TcpIpConnection connection = null;
             Channel channel = endpointManager.newChannel(socketChannel, true);
+            channel.attributeMap().put(Address.class, address);
             try {
                 if (ioService.isSocketBind()) {
                     bindSocket(socketChannel);

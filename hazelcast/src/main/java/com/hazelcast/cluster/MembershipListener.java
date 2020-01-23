@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,13 +42,4 @@ public interface MembershipListener extends EventListener {
      * @param membershipEvent membership event when an existing member leaves the cluster
      */
     void memberRemoved(MembershipEvent membershipEvent);
-
-    /**
-     * Invoked when an attribute of a member was changed.
-     *
-     * @param memberAttributeEvent member attribute event when an attribute of a member was changed
-     * @since 3.2
-     */
-    void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent);
-
 }

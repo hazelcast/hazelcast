@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -194,17 +194,17 @@ public class DynamicMetricsCollectionTest extends HazelcastTestSupport {
     }
 
     private static class SourceObject {
-        @Probe
+        @Probe(name = "longField")
         private long longField;
-        @Probe
+        @Probe(name = "doubleField")
         private double doubleField;
 
-        @Probe
+        @Probe(name = "longMethod")
         private long longMethod() {
             return longField + 1;
         }
 
-        @Probe
+        @Probe(name = "doubleMethod")
         private double doubleMethod() {
             return doubleField + 1.1D;
         }

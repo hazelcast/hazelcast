@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,7 +74,7 @@ public class RestCPSubsystemTest extends HazelcastTestSupport {
     public void setup() {
         RestApiConfig restApiConfig = new RestApiConfig()
                 .setEnabled(true)
-                .enableGroups(RestEndpointGroup.CLUSTER_WRITE);
+                .enableGroups(RestEndpointGroup.CP);
         config.getNetworkConfig().setRestApiConfig(restApiConfig);
 
         JoinConfig join = config.getNetworkConfig().getJoin();

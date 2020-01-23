@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.wan.impl;
 
+import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.internal.util.Preconditions;
 
 import java.util.Collection;
@@ -23,7 +24,7 @@ import java.util.Collection;
 /**
  * The result of adding WAN configuration.
  *
- * @see WanReplicationService#addWanReplicationConfig(com.hazelcast.config.WanReplicationConfig)
+ * @see WanReplicationService#addWanReplicationConfig(WanReplicationConfig)
  */
 public class AddWanConfigResult {
 

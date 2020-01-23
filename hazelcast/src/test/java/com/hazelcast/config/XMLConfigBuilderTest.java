@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,7 +89,7 @@ import static org.junit.Assert.assertTrue;
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-@SuppressWarnings({"WeakerAccess", "deprecation"})
+@SuppressWarnings({"WeakerAccess"})
 public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     static final String HAZELCAST_START_TAG = "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n";
@@ -111,6 +111,18 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         Config config = new XmlConfigBuilder(configURL).build();
         assertEquals(configURL, config.getConfigurationUrl());
         assertNull(config.getConfigurationFile());
+    }
+
+    @Override
+    @Test
+    public void testClusterName() {
+        String xml = HAZELCAST_START_TAG
+                + "  <cluster-name>my-cluster</cluster-name>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+
+        assertEquals("my-cluster", config.getClusterName());
     }
 
     @Override
@@ -771,42 +783,13 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Test
     public void testManagementCenterConfig() {
         String xml = HAZELCAST_START_TAG
-                + "<management-center enabled=\"true\" scripting-enabled='false'>"
-                + "someUrl"
-                + "</management-center>"
+                + "<management-center scripting-enabled='false' />"
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
-        ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
+        ManagementCenterConfig mcConfig = config.getManagementCenterConfig();
 
-        assertTrue(manCenterCfg.isEnabled());
-        assertFalse(manCenterCfg.isScriptingEnabled());
-        assertEquals("someUrl", manCenterCfg.getUrl());
-    }
-
-    @Override
-    @Test
-    public void testManagementCenterConfigComplex() {
-        String xml = HAZELCAST_START_TAG
-                + "<management-center enabled=\"true\">"
-                + "<url>wowUrl</url>"
-                + "<mutual-auth enabled=\"true\">"
-                + "<properties>"
-                + "<property name=\"keyStore\">/tmp/foo_keystore</property>"
-                + "<property name=\"trustStore\">/tmp/foo_truststore</property>"
-                + "</properties>"
-                + "</mutual-auth>"
-                + "</management-center>"
-                + HAZELCAST_END_TAG;
-
-        Config config = buildConfig(xml);
-        ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
-
-        assertTrue(manCenterCfg.isEnabled());
-        assertEquals("wowUrl", manCenterCfg.getUrl());
-        assertTrue(manCenterCfg.getMutualAuthConfig().isEnabled());
-        assertEquals("/tmp/foo_keystore", manCenterCfg.getMutualAuthConfig().getProperty("keyStore"));
-        assertEquals("/tmp/foo_truststore", manCenterCfg.getMutualAuthConfig().getProperty("trustStore"));
+        assertFalse(mcConfig.isScriptingEnabled());
     }
 
     @Override
@@ -818,10 +801,9 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
-        ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
+        ManagementCenterConfig mcConfig = config.getManagementCenterConfig();
 
-        assertFalse(manCenterCfg.isEnabled());
-        assertNull(manCenterCfg.getUrl());
+        assertTrue(mcConfig.isScriptingEnabled());
     }
 
     @Override
@@ -830,59 +812,9 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xml = HAZELCAST_START_TAG + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
-        ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
+        ManagementCenterConfig mcConfig = config.getManagementCenterConfig();
 
-        assertFalse(manCenterCfg.isEnabled());
-        assertNull(manCenterCfg.getUrl());
-    }
-
-    @Override
-    @Test
-    public void testNotEnabledManagementCenterConfig() {
-        String xml = HAZELCAST_START_TAG
-                + "<management-center enabled=\"false\">"
-                + "</management-center>"
-                + HAZELCAST_END_TAG;
-
-        Config config = buildConfig(xml);
-        ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
-        assertFalse(manCenterCfg.isEnabled());
-        assertNull(manCenterCfg.getUrl());
-    }
-
-    @Override
-    @Test
-    public void testNotEnabledWithURLManagementCenterConfig() {
-        String xml = HAZELCAST_START_TAG
-                + "<management-center enabled=\"false\">"
-                + "http://localhost:8080/mancenter"
-                + "</management-center>"
-                + HAZELCAST_END_TAG;
-
-        Config config = buildConfig(xml);
-        ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
-
-        assertFalse(manCenterCfg.isEnabled());
-        assertEquals("http://localhost:8080/mancenter", manCenterCfg.getUrl());
-    }
-
-    @Override
-    @Test
-    public void testManagementCenterConfigComplexDisabledMutualAuth() {
-        String xml = HAZELCAST_START_TAG
-                + "<management-center enabled=\"true\">"
-                + "<url>wowUrl</url>"
-                + "<mutual-auth enabled=\"false\">"
-                + "</mutual-auth>"
-                + "</management-center>"
-                + HAZELCAST_END_TAG;
-
-        Config config = buildConfig(xml);
-        ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
-
-        assertTrue(manCenterCfg.isEnabled());
-        assertEquals("wowUrl", manCenterCfg.getUrl());
-        assertFalse(manCenterCfg.getMutualAuthConfig().isEnabled());
+        assertTrue(mcConfig.isScriptingEnabled());
     }
 
     @Override
@@ -1263,7 +1195,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xml = HAZELCAST_START_TAG
                 + "  <map name=\"" + mapName + "\">\n"
                 + "    <wan-replication-ref name=\"test\">\n"
-                + "      <merge-policy>TestMergePolicy</merge-policy>\n"
+                + "      <merge-policy-class-name>TestMergePolicy</merge-policy-class-name>\n"
                 + "      <filters>\n"
                 + "        <filter-impl>com.example.SampleFilter</filter-impl>\n"
                 + "      </filters>\n"
@@ -1276,7 +1208,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         WanReplicationRef wanRef = mapConfig.getWanReplicationRef();
 
         assertEquals(refName, wanRef.getName());
-        assertEquals(mergePolicy, wanRef.getMergePolicy());
+        assertEquals(mergePolicy, wanRef.getMergePolicyClassName());
         assertTrue(wanRef.isRepublishingEnabled());
         assertEquals(1, wanRef.getFilters().size());
         assertEquals("com.example.SampleFilter", wanRef.getFilters().get(0));
@@ -1306,9 +1238,9 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "                <max-target-endpoints>800</max-target-endpoints>\n"
                 + "                <queue-capacity>21</queue-capacity>\n"
                 + "            <target-endpoints>a,b,c,d</target-endpoints>"
-                + "            <wan-sync>\n"
+                + "            <sync>\n"
                 + "                <consistency-check-strategy>MERKLE_TREES</consistency-check-strategy>\n"
-                + "            </wan-sync>\n"
+                + "            </sync>\n"
                 + "            <properties>\n"
                 + "                <property name=\"propName1\">propValue1</property>\n"
                 + "            </properties>\n"
@@ -1335,7 +1267,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
         assertEquals(configName, wanReplicationConfig.getName());
 
-        WanConsumerConfig consumerConfig = wanReplicationConfig.getWanConsumerConfig();
+        WanConsumerConfig consumerConfig = wanReplicationConfig.getConsumerConfig();
         assertNotNull(consumerConfig);
         assertEquals("ConsumerClassName", consumerConfig.getClassName());
 
@@ -1344,10 +1276,10 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(1, properties.size());
         assertEquals("propValue1", properties.get("propName1"));
 
-        List<WanBatchReplicationPublisherConfig> publishers = wanReplicationConfig.getBatchPublisherConfigs();
+        List<WanBatchPublisherConfig> publishers = wanReplicationConfig.getBatchPublisherConfigs();
         assertNotNull(publishers);
         assertEquals(1, publishers.size());
-        WanBatchReplicationPublisherConfig pc = publishers.get(0);
+        WanBatchPublisherConfig pc = publishers.get(0);
 
         assertEquals("nyc", pc.getClusterName());
         assertEquals("publisherId", pc.getPublisherId());
@@ -1367,7 +1299,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(21, pc.getQueueCapacity());
         assertEquals("a,b,c,d", pc.getTargetEndpoints());
         assertEquals("nyc-endpoint", pc.getEndpoint());
-        assertEquals(ConsistencyCheckStrategy.MERKLE_TREES, pc.getWanSyncConfig().getConsistencyCheckStrategy());
+        assertEquals(ConsistencyCheckStrategy.MERKLE_TREES, pc.getSyncConfig().getConsistencyCheckStrategy());
 
         properties = pc.getProperties();
         assertNotNull(properties);
@@ -1375,10 +1307,10 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals("propValue1", properties.get("propName1"));
 
 
-        List<CustomWanPublisherConfig> customPublishers = wanReplicationConfig.getCustomPublisherConfigs();
+        List<WanCustomPublisherConfig> customPublishers = wanReplicationConfig.getCustomPublisherConfigs();
         assertNotNull(customPublishers);
         assertEquals(1, customPublishers.size());
-        CustomWanPublisherConfig customPublisher = customPublishers.get(0);
+        WanCustomPublisherConfig customPublisher = customPublishers.get(0);
         assertEquals("customPublisherId", customPublisher.getPublisherId());
         assertEquals("PublisherClassName", customPublisher.getClassName());
         properties = customPublisher.getProperties();
@@ -1400,7 +1332,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
         Config config = buildConfig(xml);
         WanReplicationConfig wanReplicationConfig = config.getWanReplicationConfig(configName);
-        WanConsumerConfig consumerConfig = wanReplicationConfig.getWanConsumerConfig();
+        WanConsumerConfig consumerConfig = wanReplicationConfig.getConsumerConfig();
         assertFalse(consumerConfig.isPersistWanReplicatedData());
     }
 
@@ -1412,9 +1344,9 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "  <wan-replication name=\"" + configName + "\">\n"
                 + "        <batch-publisher>\n"
                 + "                <cluster-name>nyc</cluster-name>\n"
-                + "                <wan-sync>\n"
+                + "                <sync>\n"
                 + "                    <consistency-check-strategy>MERKLE_TREES</consistency-check-strategy>\n"
-                + "                </wan-sync>\n"
+                + "                </sync>\n"
                 + "            </batch-publisher>\n"
                 + "    </wan-replication>\n"
                 + HAZELCAST_END_TAG;
@@ -1424,11 +1356,11 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
         assertEquals(configName, wanReplicationConfig.getName());
 
-        List<WanBatchReplicationPublisherConfig> publishers = wanReplicationConfig.getBatchPublisherConfigs();
+        List<WanBatchPublisherConfig> publishers = wanReplicationConfig.getBatchPublisherConfigs();
         assertNotNull(publishers);
         assertEquals(1, publishers.size());
-        WanBatchReplicationPublisherConfig pc = publishers.get(0);
-        assertEquals(ConsistencyCheckStrategy.MERKLE_TREES, pc.getWanSyncConfig().getConsistencyCheckStrategy());
+        WanBatchPublisherConfig pc = publishers.get(0);
+        assertEquals(ConsistencyCheckStrategy.MERKLE_TREES, pc.getSyncConfig().getConsistencyCheckStrategy());
     }
 
     @Override
@@ -1438,8 +1370,11 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "<flake-id-generator name='gen'>"
                 + "  <prefetch-count>3</prefetch-count>"
                 + "  <prefetch-validity-millis>10</prefetch-validity-millis>"
-                + "  <id-offset>20</id-offset>"
+                + "  <epoch-start>1514764800001</epoch-start>"
                 + "  <node-id-offset>30</node-id-offset>"
+                + "  <bits-sequence>22</bits-sequence>"
+                + "  <bits-node-id>33</bits-node-id>"
+                + "  <allowed-future-millis>20000</allowed-future-millis>"
                 + "  <statistics-enabled>false</statistics-enabled>"
                 + "</flake-id-generator>"
                 + HAZELCAST_END_TAG;
@@ -1448,8 +1383,11 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals("gen", fConfig.getName());
         assertEquals(3, fConfig.getPrefetchCount());
         assertEquals(10L, fConfig.getPrefetchValidityMillis());
-        assertEquals(20L, fConfig.getIdOffset());
+        assertEquals(1514764800001L, fConfig.getEpochStart());
         assertEquals(30L, fConfig.getNodeIdOffset());
+        assertEquals(22, fConfig.getBitsSequence());
+        assertEquals(33, fConfig.getBitsNodeId());
+        assertEquals(20000L, fConfig.getAllowedFutureMillis());
         assertFalse(fConfig.isStatisticsEnabled());
     }
 
@@ -1602,9 +1540,9 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "                <max-target-endpoints>800</max-target-endpoints>\n"
                 + "                <queue-capacity>21</queue-capacity>\n"
                 + "                <target-endpoints>a,b,c,d</target-endpoints>\n"
-                + "            <wan-sync>\n"
+                + "            <sync>\n"
                 + "                <consistency-check-strategy>MERKLE_TREES</consistency-check-strategy>\n"
-                + "            </wan-sync>\n"
+                + "            </sync>\n"
                 + "            <aws enabled=\"false\" connection-timeout-seconds=\"10\" >\n"
                 + "               <access-key>sample-access-key</access-key>\n"
                 + "               <secret-key>sample-secret-key</secret-key>\n"
@@ -1653,12 +1591,12 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
-        WanReplicationConfig wanConfig = config.getWanReplicationConfig("my-wan-cluster");
-        assertNotNull(wanConfig);
+        WanReplicationConfig wanReplicationConfig = config.getWanReplicationConfig("my-wan-cluster");
+        assertNotNull(wanReplicationConfig);
 
-        List<WanBatchReplicationPublisherConfig> publisherConfigs = wanConfig.getBatchPublisherConfigs();
+        List<WanBatchPublisherConfig> publisherConfigs = wanReplicationConfig.getBatchPublisherConfigs();
         assertEquals(2, publisherConfigs.size());
-        WanBatchReplicationPublisherConfig pc1 = publisherConfigs.get(0);
+        WanBatchPublisherConfig pc1 = publisherConfigs.get(0);
         assertEquals("istanbul", pc1.getClusterName());
         assertEquals("istanbulPublisherId", pc1.getPublisherId());
         assertEquals(100, pc1.getBatchSize());
@@ -1677,7 +1615,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(21, pc1.getQueueCapacity());
         assertEquals("a,b,c,d", pc1.getTargetEndpoints());
         assertEquals("nyc-endpoint", pc1.getEndpoint());
-        assertEquals(ConsistencyCheckStrategy.MERKLE_TREES, pc1.getWanSyncConfig().getConsistencyCheckStrategy());
+        assertEquals(ConsistencyCheckStrategy.MERKLE_TREES, pc1.getSyncConfig().getConsistencyCheckStrategy());
         Map<String, Comparable> pubProperties = pc1.getProperties();
         assertEquals("prop.publisher", pubProperties.get("custom.prop.publisher"));
         assertFalse(pc1.getAwsConfig().isEnabled());
@@ -1688,16 +1626,16 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertFalse(pc1.getEurekaConfig().isEnabled());
         assertDiscoveryConfig(pc1.getDiscoveryConfig());
 
-        WanBatchReplicationPublisherConfig pc2 = publisherConfigs.get(1);
+        WanBatchPublisherConfig pc2 = publisherConfigs.get(1);
         assertEquals("ankara", pc2.getClusterName());
         assertEquals("", pc2.getPublisherId());
         assertEquals(WanQueueFullBehavior.THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE, pc2.getQueueFullBehavior());
         assertEquals(WanPublisherState.STOPPED, pc2.getInitialPublisherState());
 
-        List<CustomWanPublisherConfig> customPublishers = wanConfig.getCustomPublisherConfigs();
+        List<WanCustomPublisherConfig> customPublishers = wanReplicationConfig.getCustomPublisherConfigs();
         assertNotNull(customPublishers);
         assertEquals(1, customPublishers.size());
-        CustomWanPublisherConfig customPublisher = customPublishers.get(0);
+        WanCustomPublisherConfig customPublisher = customPublishers.get(0);
         assertEquals("customPublisherId", customPublisher.getPublisherId());
         assertEquals("PublisherClassName", customPublisher.getClassName());
         Map<String, Comparable> properties = customPublisher.getProperties();
@@ -1705,7 +1643,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(1, properties.size());
         assertEquals("propValue1", properties.get("propName1"));
 
-        WanConsumerConfig consumerConfig = wanConfig.getWanConsumerConfig();
+        WanConsumerConfig consumerConfig = wanReplicationConfig.getConsumerConfig();
         assertEquals("com.hazelcast.wan.custom.WanConsumer", consumerConfig.getClassName());
         Map<String, Comparable> consProperties = consumerConfig.getProperties();
         assertEquals("prop.consumer", consProperties.get("custom.prop.consumer"));
@@ -2278,7 +2216,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "            <eviction size=\"1000\" max-size-policy=\"ENTRY_COUNT\" eviction-policy=\"LFU\"/>\n"
                 + "          </near-cache>"
                 + "        <wan-replication-ref name=\"my-wan-cluster-batch\">\n"
-                + "            <merge-policy>PassThroughMergePolicy</merge-policy>\n"
+                + "            <merge-policy-class-name>PassThroughMergePolicy</merge-policy-class-name>\n"
                 + "            <filters>\n"
                 + "                <filter-impl>com.example.SampleFilter</filter-impl>\n"
                 + "            </filters>\n"
@@ -2367,7 +2305,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         WanReplicationRef wanReplicationRef = mapConfig.getWanReplicationRef();
         assertNotNull(wanReplicationRef);
         assertFalse(wanReplicationRef.isRepublishingEnabled());
-        assertEquals("PassThroughMergePolicy", wanReplicationRef.getMergePolicy());
+        assertEquals("PassThroughMergePolicy", wanReplicationRef.getMergePolicyClassName());
         assertEquals(1, wanReplicationRef.getFilters().size());
         assertEquals("com.example.SampleFilter".toLowerCase(), wanReplicationRef.getFilters().get(0).toLowerCase());
     }

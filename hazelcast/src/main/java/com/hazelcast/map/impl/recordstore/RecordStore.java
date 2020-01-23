@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,10 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.internal.eviction.ExpiredKey;
+import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.internal.monitor.LocalRecordStoreStats;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.comparators.ValueComparator;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapLoader;
@@ -32,7 +34,6 @@ import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordFactory;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
@@ -167,12 +168,12 @@ public interface RecordStore<R extends Record> {
      * com.hazelcast.map.impl.proxy.MapProxySupport#getInternal}
      * <p>
      * Returns corresponding value for key as {@link
-     * com.hazelcast.nio.serialization.Data}. This adds
+     * Data}. This adds
      * an extra serialization step. For the reason of
      * this behaviour please see issue 1292 on github.
      *
      * @param key key to be accessed
-     * @return value as {@link com.hazelcast.nio.serialization.Data}
+     * @return value as {@link Data}
      * independent of {@link com.hazelcast.config.InMemoryFormat}
      */
     @SuppressWarnings("JavadocReference")
@@ -257,8 +258,8 @@ public interface RecordStore<R extends Record> {
      */
     Object putFromLoadBackup(Data key, Object value, long expirationTime);
 
-    boolean merge(MapMergeTypes mergingEntry,
-                  SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy);
+    boolean merge(MapMergeTypes<Object, Object> mergingEntry,
+                  SplitBrainMergePolicy<Object, MapMergeTypes<Object, Object>, Object> mergePolicy);
 
     /**
      * Merges the given {@link MapMergeTypes} via the given {@link SplitBrainMergePolicy}.
@@ -268,8 +269,8 @@ public interface RecordStore<R extends Record> {
      * @param provenance   origin of call to this method.
      * @return {@code true} if merge is applied, otherwise {@code false}
      */
-    boolean merge(MapMergeTypes mergingEntry,
-                  SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy,
+    boolean merge(MapMergeTypes<Object, Object> mergingEntry,
+                  SplitBrainMergePolicy<Object, MapMergeTypes<Object, Object>, Object> mergePolicy,
                   CallerProvenance provenance);
 
     R getRecord(Data key);
@@ -303,18 +304,39 @@ public interface RecordStore<R extends Record> {
     void forEachAfterLoad(BiConsumer<Data, R> consumer, boolean backup);
 
     /**
-     * Fetches specified number of keys from provided tableIndex.
+     * Fetch minimally {@code size} keys from the {@code pointers} position.
+     * The key is fetched on-heap.
+     * The method may return less keys if iteration has completed.
+     * <p>
+     * NOTE: The implementation is free to return more than {@code size} items.
+     * This can happen if we cannot easily resume from the last returned item
+     * by receiving the {@code tableIndex} of the last item. The index can
+     * represent a bucket with multiple items and in this case the returned
+     * object will contain all items in that bucket, regardless if we exceed
+     * the requested {@code size}.
      *
-     * @return {@link MapKeysWithCursor} which is a holder for keys and next index to read from.
+     * @param pointers the pointers defining the state of iteration
+     * @param size     the minimal count of returned items, unless iteration has completed
+     * @return fetched keys and the new iteration state
      */
-    MapKeysWithCursor fetchKeys(int tableIndex, int size);
+    MapKeysWithCursor fetchKeys(IterationPointer[] pointers, int size);
 
     /**
-     * Fetches specified number of entries from provided tableIndex.
+     * Fetch minimally {@code size} items from the {@code pointers} position.
+     * Both the key and value are fetched on-heap.
+     * <p>
+     * NOTE: The implementation is free to return more than {@code size} items.
+     * This can happen if we cannot easily resume from the last returned item
+     * by receiving the {@code tableIndex} of the last item. The index can
+     * represent a bucket with multiple items and in this case the returned
+     * object will contain all items in that bucket, regardless if we exceed
+     * the requested {@code size}.
      *
-     * @return {@link MapEntriesWithCursor} which is a holder for entries and next index to read from.
+     * @param pointers the pointers defining the state of iteration
+     * @param size     the minimal count of returned items
+     * @return fetched entries and the new iteration state
      */
-    MapEntriesWithCursor fetchEntries(int tableIndex, int size);
+    MapEntriesWithCursor fetchEntries(IterationPointer[] pointers, int size);
 
     int size();
 
@@ -554,7 +576,7 @@ public interface RecordStore<R extends Record> {
     /**
      * Called by {@link IMap#destroy()} or {@link
      * com.hazelcast.map.impl.MapMigrationAwareService}
-     *
+     * <p>
      * Clears internal partition data.
      *
      * @param onShutdown           true if {@code close} is called during
@@ -568,7 +590,7 @@ public interface RecordStore<R extends Record> {
 
     /**
      * Called by {@link IMap#clear()}.
-     *
+     * <p>
      * Clears data in this record store.
      *
      * @return number of cleared entries.
@@ -577,7 +599,7 @@ public interface RecordStore<R extends Record> {
 
     /**
      * Resets the record store to it's initial state.
-     *
+     * <p>
      * Used in replication operations.
      *
      * @see #putReplicatedRecord
@@ -586,7 +608,7 @@ public interface RecordStore<R extends Record> {
 
     /**
      * Called by {@link IMap#destroy()}.
-     *
+     * <p>
      * Destroys data in this record store.
      */
     void destroy();

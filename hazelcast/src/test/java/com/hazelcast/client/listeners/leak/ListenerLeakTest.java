@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import com.hazelcast.client.impl.clientside.ClientTestUtil;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.spi.impl.listener.ClientConnectionRegistration;
 import com.hazelcast.client.impl.spi.impl.listener.ClientListenerServiceImpl;
+import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.collection.IList;
 import com.hazelcast.collection.IQueue;
@@ -38,7 +39,6 @@ import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.ITopic;
@@ -64,7 +64,7 @@ import static org.mockito.Mockito.mock;
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ListenerLeakTest extends HazelcastTestSupport {
+public class ListenerLeakTest extends ClientTestSupport {
 
 
     @Parameterized.Parameters(name = "smartRouting:{0}")
@@ -248,11 +248,7 @@ public class ListenerLeakTest extends HazelcastTestSupport {
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
         hazelcast.shutdown();
 
-        HazelcastClientInstanceImpl clientImpl = ClientTestUtil.getHazelcastClientInstanceImpl(client);
-        ClientListenerServiceImpl listenerService = (ClientListenerServiceImpl) clientImpl.getListenerService();
-        assertTrueEventually(() -> {
-            assertEquals(0, listenerService.getEventHandlers().size());
-        });
+        assertTrueEventually(() -> assertEquals(0, getAllEventHandlers(client).size()));
     }
 
     @Test
@@ -266,5 +262,20 @@ public class ListenerLeakTest extends HazelcastTestSupport {
         client.shutdown();
         Map<UUID, Consumer<Long>> backupListeners = ((ClientEngineImpl) getNode(hazelcast).clientEngine).getBackupListeners();
         assertTrueEventually(() -> assertEquals(0, backupListeners.size()));
+    }
+
+    @Test
+    public void testListenerLeakOnMember_whenClientDestroyed() {
+        Collection<Node> nodes = createNodes();
+
+        for (int i = 0; i < 100; i++) {
+            newHazelcastClient().shutdown();
+        }
+
+        assertTrueEventually(() -> {
+            for (Node node : nodes) {
+                assertEquals(0, node.getClientEngine().getClusterListenerService().getClusterListeningEndpoints().size());
+            }
+        });
     }
 }

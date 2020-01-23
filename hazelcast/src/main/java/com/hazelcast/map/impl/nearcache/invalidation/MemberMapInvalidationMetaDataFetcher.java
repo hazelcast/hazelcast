@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationMetaDataFe
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.operation.MapGetInvalidationMetaDataOperation;
 import com.hazelcast.map.impl.operation.MapGetInvalidationMetaDataOperation.MetaDataResponse;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
@@ -55,9 +54,9 @@ public class MemberMapInvalidationMetaDataFetcher extends InvalidationMetaDataFe
     }
 
     @Override
-    protected InternalCompletableFuture fetchMetadataOf(Address address, List<String> names) {
+    protected InternalCompletableFuture fetchMetadataOf(Member member, List<String> names) {
         Operation operation = new MapGetInvalidationMetaDataOperation(names);
-        return operationService.invokeOnTarget(SERVICE_NAME, operation, address);
+        return operationService.invokeOnTarget(SERVICE_NAME, operation, member.getAddress());
     }
 
     @Override

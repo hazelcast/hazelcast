@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,10 +31,10 @@ import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
-import java.util.concurrent.Executor;
 import java.util.function.BiConsumer;
 
 import static com.hazelcast.cp.internal.RaftService.CP_SUBSYSTEM_EXECUTOR;
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 
 /**
  * The base class that replicates the given {@link RaftOp}
@@ -45,9 +45,6 @@ import static com.hazelcast.cp.internal.RaftService.CP_SUBSYSTEM_EXECUTOR;
  */
 public abstract class RaftReplicateOp extends Operation implements IdentifiedDataSerializable, RaftSystemOperation,
                                                                    BiConsumer<Object, Throwable> {
-
-    static final Executor CALLER_RUNS_EXECUTOR = Runnable::run;
-
 
     private CPGroupId groupId;
 
@@ -75,7 +72,7 @@ public abstract class RaftReplicateOp extends Operation implements IdentifiedDat
             return;
         }
 
-        replicate(raftNode).whenCompleteAsync(this, CALLER_RUNS_EXECUTOR);
+        replicate(raftNode).whenCompleteAsync(this, CALLER_RUNS);
     }
 
     protected abstract InternalCompletableFuture replicate(RaftNode raftNode);

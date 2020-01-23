@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -44,7 +44,7 @@ public class WanReplicationRefTest {
         ref = new WanReplicationRef("myRef", "myMergePolicy", singletonList("myFilter"), true);
 
         assertEquals("myRef", ref.getName());
-        assertEquals("myMergePolicy", ref.getMergePolicy());
+        assertEquals("myMergePolicy", ref.getMergePolicyClassName());
         assertEquals(1, ref.getFilters().size());
         assertEquals("myFilter", ref.getFilters().get(0));
         assertTrue(ref.isRepublishingEnabled());
@@ -56,7 +56,7 @@ public class WanReplicationRefTest {
         ref = new WanReplicationRef(original);
 
         assertEquals(original.getName(), ref.getName());
-        assertEquals(original.getMergePolicy(), ref.getMergePolicy());
+        assertEquals(original.getMergePolicyClassName(), ref.getMergePolicyClassName());
         assertEquals(original.getFilters(), ref.getFilters());
         assertEquals(original.isRepublishingEnabled(), ref.isRepublishingEnabled());
     }
@@ -77,7 +77,7 @@ public class WanReplicationRefTest {
     @Test
     public void testSerialization() {
         ref.setName("myWanReplicationRef");
-        ref.setMergePolicy("myMergePolicy");
+        ref.setMergePolicyClassName("myMergePolicy");
         ref.setRepublishingEnabled(true);
         ref.addFilter("myFilter");
 
@@ -86,7 +86,7 @@ public class WanReplicationRefTest {
         WanReplicationRef deserialized = serializationService.toObject(serialized);
 
         assertEquals(ref.getName(), deserialized.getName());
-        assertEquals(ref.getMergePolicy(), deserialized.getMergePolicy());
+        assertEquals(ref.getMergePolicyClassName(), deserialized.getMergePolicyClassName());
         assertEquals(ref.isRepublishingEnabled(), deserialized.isRepublishingEnabled());
         assertEquals(ref.getFilters(), deserialized.getFilters());
         assertEquals(ref.toString(), deserialized.toString());

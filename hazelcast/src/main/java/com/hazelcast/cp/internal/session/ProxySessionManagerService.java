@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,8 +69,7 @@ public class ProxySessionManagerService extends AbstractProxySessionManager impl
     @Override
     protected SessionResponse requestNewSession(RaftGroupId groupId) {
         String instanceName = nodeEngine.getConfig().getInstanceName();
-        long creationTime = System.currentTimeMillis();
-        RaftOp op = new CreateSessionOp(nodeEngine.getThisAddress(), instanceName, SERVER, creationTime);
+        RaftOp op = new CreateSessionOp(nodeEngine.getThisAddress(), instanceName, SERVER);
         InternalCompletableFuture<SessionResponse> future = getInvocationManager().invoke(groupId, op);
         return future.joinInternal();
     }

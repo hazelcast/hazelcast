@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,16 +69,6 @@ public class XATransactionContextImpl implements TransactionContext {
     }
 
     @Override
-    public void suspendTransaction() {
-        throw new UnsupportedOperationException("XA Transaction cannot be suspended manually!");
-    }
-
-    @Override
-    public void resumeTransaction() {
-        throw new UnsupportedOperationException("XA Transaction cannot be resumed manually!");
-    }
-
-    @Override
     public UUID getTxnId() {
         return transaction.getTxnId();
     }
@@ -128,7 +118,7 @@ public class XATransactionContextImpl implements TransactionContext {
 
         final Object service = nodeEngine.getService(serviceName);
         if (service instanceof TransactionalService) {
-            nodeEngine.getProxyService().initializeDistributedObject(serviceName, name);
+            nodeEngine.getProxyService().initializeDistributedObject(serviceName, name, transaction.getOwnerUuid());
             obj = ((TransactionalService) service).createTransactionalObject(name, transaction);
             txnObjectMap.put(key, obj);
         } else {

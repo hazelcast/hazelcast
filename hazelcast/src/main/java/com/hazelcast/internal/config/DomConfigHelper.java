@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,14 +52,7 @@ public final class DomConfigHelper {
             if (n.getNodeType() == Node.TEXT_NODE || n.getNodeType() == Node.COMMENT_NODE) {
                 continue;
             }
-            final String name = cleanNodeName(n);
-            final String propertyName;
-            if ("property".equals(name)) {
-                propertyName = getTextContent(n.getAttributes().getNamedItem("name"), domLevel3).trim();
-            } else {
-                // old way - probably should be deprecated
-                propertyName = name;
-            }
+            final String propertyName = getTextContent(n.getAttributes().getNamedItem("name"), domLevel3).trim();
             final String value = getTextContent(n, domLevel3).trim();
             properties.put(propertyName, value);
         }
@@ -70,11 +63,7 @@ public final class DomConfigHelper {
             return;
         }
         for (Node n : childElements(node)) {
-            final String name = cleanNodeName(n);
-            final String propertyName = "property".equals(name)
-                    ? getTextContent(n.getAttributes().getNamedItem("name"), domLevel3).trim()
-                    // old way - probably should be deprecated
-                    : name;
+            final String propertyName = getTextContent(n.getAttributes().getNamedItem("name"), domLevel3).trim();
             final String value = getTextContent(n, domLevel3).trim();
             properties.setProperty(propertyName, value);
         }

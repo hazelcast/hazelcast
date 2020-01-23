@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,13 +19,14 @@ package com.hazelcast.spi.impl.merge;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceAware;
 
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * Implementation of {@link MapMergeTypes}.
@@ -33,8 +34,8 @@ import java.io.IOException;
  * @since 3.10
  */
 @SuppressWarnings({"WeakerAccess", "checkstyle:methodcount"})
-public class MapMergingEntryImpl
-        implements MapMergeTypes, SerializationServiceAware, IdentifiedDataSerializable {
+public class MapMergingEntryImpl<K, V>
+        implements MapMergeTypes<K, V>, SerializationServiceAware, IdentifiedDataSerializable {
 
     private Data value;
     private Data key;
@@ -61,31 +62,31 @@ public class MapMergingEntryImpl
     }
 
     @Override
-    public Data getValue() {
+    public Data getRawValue() {
         return value;
     }
 
     @Override
-    public Object getDeserializedValue() {
+    public V getValue() {
         return serializationService.toObject(value);
     }
 
-    public MapMergingEntryImpl setValue(Data value) {
+    public MapMergingEntryImpl<K, V> setValue(Data value) {
         this.value = value;
         return this;
     }
 
     @Override
-    public Data getKey() {
+    public Data getRawKey() {
         return key;
     }
 
     @Override
-    public Object getDeserializedKey() {
+    public K getKey() {
         return serializationService.toObject(key);
     }
 
-    public MapMergingEntryImpl setKey(Data key) {
+    public MapMergingEntryImpl<K, V> setKey(Data key) {
         this.key = key;
         return this;
     }
@@ -95,7 +96,7 @@ public class MapMergingEntryImpl
         return cost;
     }
 
-    public MapMergingEntryImpl setCost(long cost) {
+    public MapMergingEntryImpl<K, V> setCost(long cost) {
         this.cost = cost;
         return this;
     }
@@ -105,7 +106,7 @@ public class MapMergingEntryImpl
         return creationTime;
     }
 
-    public MapMergingEntryImpl setCreationTime(long creationTime) {
+    public MapMergingEntryImpl<K, V> setCreationTime(long creationTime) {
         this.creationTime = creationTime;
         return this;
     }
@@ -115,7 +116,7 @@ public class MapMergingEntryImpl
         return expirationTime;
     }
 
-    public MapMergingEntryImpl setExpirationTime(long expirationTime) {
+    public MapMergingEntryImpl<K, V> setExpirationTime(long expirationTime) {
         this.expirationTime = expirationTime;
         return this;
     }
@@ -125,7 +126,7 @@ public class MapMergingEntryImpl
         return hits;
     }
 
-    public MapMergingEntryImpl setHits(long hits) {
+    public MapMergingEntryImpl<K, V> setHits(long hits) {
         this.hits = hits;
         return this;
     }
@@ -135,7 +136,7 @@ public class MapMergingEntryImpl
         return lastAccessTime;
     }
 
-    public MapMergingEntryImpl setLastAccessTime(long lastAccessTime) {
+    public MapMergingEntryImpl<K, V> setLastAccessTime(long lastAccessTime) {
         this.lastAccessTime = lastAccessTime;
         return this;
     }
@@ -145,7 +146,7 @@ public class MapMergingEntryImpl
         return lastStoredTime;
     }
 
-    public MapMergingEntryImpl setLastStoredTime(long lastStoredTime) {
+    public MapMergingEntryImpl<K, V> setLastStoredTime(long lastStoredTime) {
         this.lastStoredTime = lastStoredTime;
         return this;
     }
@@ -155,7 +156,7 @@ public class MapMergingEntryImpl
         return lastUpdateTime;
     }
 
-    public MapMergingEntryImpl setLastUpdateTime(long lastUpdateTime) {
+    public MapMergingEntryImpl<K, V> setLastUpdateTime(long lastUpdateTime) {
         this.lastUpdateTime = lastUpdateTime;
         return this;
     }
@@ -165,7 +166,7 @@ public class MapMergingEntryImpl
         return version;
     }
 
-    public MapMergingEntryImpl setVersion(long version) {
+    public MapMergingEntryImpl<K, V> setVersion(long version) {
         this.version = version;
         return this;
     }
@@ -175,7 +176,7 @@ public class MapMergingEntryImpl
         return ttl;
     }
 
-    public MapMergingEntryImpl setTtl(long ttl) {
+    public MapMergingEntryImpl<K, V> setTtl(long ttl) {
         this.ttl = ttl;
         return this;
     }
@@ -185,7 +186,7 @@ public class MapMergingEntryImpl
         return maxIdle;
     }
 
-    public MapMergingEntryImpl setMaxIdle(Long maxIdle) {
+    public MapMergingEntryImpl<K, V> setMaxIdle(Long maxIdle) {
         this.maxIdle = maxIdle;
         return this;
     }
@@ -287,13 +288,13 @@ public class MapMergingEntryImpl
         if (ttl != that.ttl) {
             return false;
         }
-        if (value != null ? !value.equals(that.value) : that.value != null) {
+        if (!Objects.equals(value, that.value)) {
             return false;
         }
-        if (key != null ? !key.equals(that.key) : that.key != null) {
+        if (!Objects.equals(key, that.key)) {
             return false;
         }
-        return maxIdle != null ? maxIdle.equals(that.maxIdle) : that.maxIdle == null;
+        return Objects.equals(maxIdle, that.maxIdle);
     }
 
     @Override

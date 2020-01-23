@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import java.io.IOException;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ExceptionUtil.peel;
 import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 
@@ -54,10 +55,10 @@ public class ChangeClusterStateOperation extends AbstractManagementOperation {
                     return null;
                 });
 
-        executionService.asCompletableFuture(future).whenComplete(
+        executionService.asCompletableFuture(future).whenCompleteAsync(
                 withTryCatch(
                         logger,
-                        (empty, error) -> sendResponse(error != null ? peel(error) : null)));
+                        (empty, error) -> sendResponse(error != null ? peel(error) : null)), CALLER_RUNS);
     }
 
     @Override

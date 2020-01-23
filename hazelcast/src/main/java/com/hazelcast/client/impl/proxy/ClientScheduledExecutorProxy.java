@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,23 +16,24 @@
 
 package com.hazelcast.client.impl.proxy;
 
+import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetAllScheduledFuturesCodec;
 import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorShutdownCodec;
-import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorSubmitToAddressCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorSubmitToMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorSubmitToPartitionCodec;
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
-import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.function.BiFunctionEx;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.FutureUtil;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.cluster.Address;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.PartitionAware;
-import com.hazelcast.splitbrainprotection.SplitBrainProtectionException;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.IScheduledFuture;
 import com.hazelcast.scheduledexecutor.NamedTask;
@@ -40,17 +41,16 @@ import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.impl.ScheduledRunnableAdapter;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl;
 import com.hazelcast.scheduledexecutor.impl.TaskDefinition;
-import com.hazelcast.internal.util.FutureUtil;
-import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionException;
 
 import javax.annotation.Nonnull;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -302,20 +302,24 @@ public class ClientScheduledExecutorProxy
             throw rethrow(e);
         }
 
-        Collection<Map.Entry<Member, List<ScheduledTaskHandler>>> urnsPerMember =
+        Collection<ScheduledTaskHandler> urnsPerMember =
                 ScheduledExecutorGetAllScheduledFuturesCodec.decodeResponse(response).handlers;
 
         Map<Member, List<IScheduledFuture<V>>> tasksMap = new HashMap<>();
 
-        for (Map.Entry<Member, List<ScheduledTaskHandler>> entry : urnsPerMember) {
-            List<IScheduledFuture<V>> memberTasks = new ArrayList<>();
-            for (ScheduledTaskHandler scheduledTaskHandler : entry.getValue()) {
-                memberTasks.add(new ClientScheduledFutureProxy(scheduledTaskHandler, getContext()));
-            }
+        for (ScheduledTaskHandler scheduledTaskHandler : urnsPerMember) {
+            UUID memberUuid = scheduledTaskHandler.getUuid();
+            Member member = getContext().getClusterService().getMember(memberUuid);
 
-            tasksMap.put(entry.getKey(), memberTasks);
+            tasksMap.compute(member,
+                    (BiFunctionEx<Member, List<IScheduledFuture<V>>, List<IScheduledFuture<V>>>) (m, iScheduledFutures) -> {
+                        if (iScheduledFutures == null) {
+                            iScheduledFutures = new LinkedList<>();
+                        }
+                        iScheduledFutures.add(new ClientScheduledFutureProxy(scheduledTaskHandler, getContext()));
+                        return iScheduledFutures;
+                    });
         }
-
         return tasksMap;
     }
 
@@ -325,8 +329,8 @@ public class ClientScheduledExecutorProxy
         Collection<Future> calls = new LinkedList<>();
 
         for (Member member : members) {
-            ClientMessage request = ScheduledExecutorShutdownCodec.encodeRequest(getName(), member.getAddress());
-            calls.add(doSubmitOnAddress(request, SUBMIT_DECODER, member.getAddress()));
+            ClientMessage request = ScheduledExecutorShutdownCodec.encodeRequest(getName(), member.getUuid());
+            calls.add(doSubmitOnTarget(request, SUBMIT_DECODER, member.getUuid()));
         }
 
         waitWithDeadline(calls, SHUTDOWN_TIMEOUT, TimeUnit.SECONDS, shutdownExceptionHandler);
@@ -349,8 +353,8 @@ public class ClientScheduledExecutorProxy
     }
 
     private @Nonnull
-    <V> IScheduledFuture<V> createFutureProxy(Address address, String taskName) {
-        return createFutureProxy(ScheduledTaskHandlerImpl.of(address, getName(), taskName));
+    <V> IScheduledFuture<V> createFutureProxy(UUID uuid, String taskName) {
+        return createFutureProxy(ScheduledTaskHandlerImpl.of(uuid, getName(), taskName));
     }
 
     private int getKeyPartitionId(Object key) {
@@ -409,23 +413,23 @@ public class ClientScheduledExecutorProxy
         TimeUnit unit = definition.getUnit();
 
         Data commandData = getSerializationService().toData(definition.getCommand());
-        ClientMessage request = ScheduledExecutorSubmitToAddressCodec.encodeRequest(getName(), member.getAddress(),
+        ClientMessage request = ScheduledExecutorSubmitToMemberCodec.encodeRequest(getName(), member.getUuid(),
                 definition.getType().getId(), definition.getName(), commandData,
                 unit.toMillis(definition.getInitialDelay()),
                 unit.toMillis(definition.getPeriod()));
         try {
-            new ClientInvocation(getClient(), request, getName(), member.getAddress()).invoke().get();
+            new ClientInvocation(getClient(), request, getName(), member.getUuid()).invoke().get();
         } catch (Exception e) {
             throw rethrow(e);
         }
-        return createFutureProxy(member.getAddress(), name);
+        return createFutureProxy(member.getUuid(), name);
     }
 
-    private <T> ClientDelegatingFuture<T> doSubmitOnAddress(ClientMessage clientMessage,
-                                                            ClientMessageDecoder clientMessageDecoder,
-                                                            Address address) {
+    private <T> ClientDelegatingFuture<T> doSubmitOnTarget(ClientMessage clientMessage,
+                                                           ClientMessageDecoder clientMessageDecoder,
+                                                           UUID uuid) {
         try {
-            ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage, getName(), address).invoke();
+            ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage, getName(), uuid).invoke();
             return new ClientDelegatingFuture<T>(future, getSerializationService(), clientMessageDecoder);
         } catch (Exception e) {
             throw rethrow(e);

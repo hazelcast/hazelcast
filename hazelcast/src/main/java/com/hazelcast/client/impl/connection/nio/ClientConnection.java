@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,9 @@ package com.hazelcast.client.impl.connection.nio;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.listener.ClientListenerServiceImpl;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
@@ -29,7 +31,6 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.nio.EndpointManager;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.cluster.Address;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -37,10 +38,18 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.channels.CancelledKeyException;
 import java.security.cert.Certificate;
+import java.util.Collections;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_METRIC_CONNECTION_CLOSED_TIME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_METRIC_CONNECTION_CONNECTIONID;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_METRIC_CONNECTION_EVENT_HANDLER_COUNT;
+import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.StringUtil.timeToStringFriendly;
 
 /**
@@ -49,7 +58,7 @@ import static com.hazelcast.internal.util.StringUtil.timeToStringFriendly;
  */
 public class ClientConnection implements Connection {
 
-    @Probe
+    @Probe(name = CLIENT_METRIC_CONNECTION_CONNECTIONID)
     private final int connectionId;
     private final ILogger logger;
     private final Channel channel;
@@ -60,13 +69,17 @@ public class ClientConnection implements Connection {
     private final Consumer<ClientMessage> responseHandler;
     private final ConcurrentMap attributeMap;
 
+    @Probe(name = CLIENT_METRIC_CONNECTION_EVENT_HANDLER_COUNT, level = MANDATORY)
+    private final ConcurrentMap<Long, EventHandler> eventHandlerMap = new ConcurrentHashMap<>();
+
     private volatile Address remoteEndpoint;
-    @Probe(level = ProbeLevel.DEBUG)
+    @Probe(name = CLIENT_METRIC_CONNECTION_CLOSED_TIME, level = ProbeLevel.DEBUG)
     private final AtomicLong closedTime = new AtomicLong();
 
     private volatile Throwable closeCause;
     private volatile String closeReason;
     private String connectedServerVersion;
+    private volatile UUID remoteUuid;
 
     public ClientConnection(HazelcastClientInstanceImpl client, int connectionId, Channel channel) {
         this.client = client;
@@ -103,9 +116,21 @@ public class ClientConnection implements Connection {
         return false;
     }
 
+    public void setRemoteEndpoint(Address remoteEndpoint) {
+        this.remoteEndpoint = remoteEndpoint;
+    }
+
     @Override
     public Address getEndPoint() {
         return remoteEndpoint;
+    }
+
+    public UUID getRemoteUuid() {
+        return remoteUuid;
+    }
+
+    public void setRemoteUuid(UUID remoteUuid) {
+        this.remoteUuid = remoteUuid;
     }
 
     @Override
@@ -162,10 +187,6 @@ public class ClientConnection implements Connection {
         return connectionManager;
     }
 
-    public void setRemoteEndpoint(Address remoteEndpoint) {
-        this.remoteEndpoint = remoteEndpoint;
-    }
-
     public InetSocketAddress getLocalSocketAddress() {
         return (InetSocketAddress) channel.localSocketAddress();
     }
@@ -181,13 +202,14 @@ public class ClientConnection implements Connection {
 
         logClose();
 
+        eventHandlerMap.clear();
         try {
             innerClose();
         } catch (Exception e) {
             logger.warning("Exception while closing connection" + e.getMessage());
         }
 
-        connectionManager.onClose(this);
+        connectionManager.onConnectionClose(this);
     }
 
     private void logClose() {
@@ -291,5 +313,22 @@ public class ClientConnection implements Connection {
     @Override
     public Certificate[] getRemoteCertificates() {
         return attributeMap != null ? (Certificate[]) attributeMap.get(Certificate.class) : null;
+    }
+
+    public EventHandler getEventHandler(long correlationId) {
+        return eventHandlerMap.get(correlationId);
+    }
+
+    public void removeEventHandler(long correlationId) {
+        eventHandlerMap.remove(correlationId);
+    }
+
+    public void addEventHandler(long correlationId, EventHandler handler) {
+        eventHandlerMap.put(correlationId, handler);
+    }
+
+    // used in tests
+    public Map<Long, EventHandler> getEventHandlers() {
+        return Collections.unmodifiableMap(eventHandlerMap);
     }
 }

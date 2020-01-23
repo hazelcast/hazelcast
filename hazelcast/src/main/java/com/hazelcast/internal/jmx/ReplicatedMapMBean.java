@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,10 +21,6 @@ import com.hazelcast.replicatedmap.LocalReplicatedMapStats;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapProxy;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
-
 /**
  * Management bean for {@link ReplicatedMap}
  */
@@ -36,8 +32,7 @@ public class ReplicatedMapMBean extends HazelcastMBean<ReplicatedMapProxy> {
     protected ReplicatedMapMBean(ReplicatedMapProxy managedObject, ManagementService service) {
         super(managedObject, service);
         this.objectName = service.createObjectName("ReplicatedMap", managedObject.getName());
-        this.statsDelegate = new LocalStatsDelegate<LocalReplicatedMapStats>(
-                new LocalReplicatedMapStatsSupplier(managedObject), updateIntervalSec);
+        this.statsDelegate = new LocalStatsDelegate<>(new LocalReplicatedMapStatsSupplier(managedObject), updateIntervalSec);
     }
 
     @ManagedAnnotation("localOwnedEntryCount")
@@ -166,41 +161,4 @@ public class ReplicatedMapMBean extends HazelcastMBean<ReplicatedMapProxy> {
         managedObject.clear();
     }
 
-    @ManagedAnnotation(value = "values", operation = true)
-    public String values() {
-        Collection coll = managedObject.values();
-        StringBuilder buf = new StringBuilder();
-        if (coll.size() == 0) {
-            buf.append("Empty");
-        } else {
-            buf.append("[");
-            for (Object obj : coll) {
-                buf.append(obj);
-                buf.append(", ");
-            }
-            buf.replace(buf.length() - 1, buf.length(), "]");
-        }
-        return buf.toString();
-    }
-
-    @ManagedAnnotation(value = "entrySet", operation = true)
-    public String entrySet() {
-        Set<Map.Entry> entrySet = managedObject.entrySet();
-
-        StringBuilder buf = new StringBuilder();
-        if (entrySet.size() == 0) {
-            buf.append("Empty");
-        } else {
-            buf.append("[");
-            for (Map.Entry entry : entrySet) {
-                buf.append("{key:");
-                buf.append(entry.getKey());
-                buf.append(", value:");
-                buf.append(entry.getValue());
-                buf.append("}, ");
-            }
-            buf.replace(buf.length() - 1, buf.length(), "]");
-        }
-        return buf.toString();
-    }
 }

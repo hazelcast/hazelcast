@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,8 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.core.TypeConverter;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.query.Predicate;
 import com.hazelcast.query.QueryException;
 
 import java.util.Set;
@@ -85,6 +86,22 @@ public interface Index {
      *                        attribute value from the entry.
      */
     void removeEntry(Data key, Object value, OperationSource operationSource);
+
+    /**
+     * @return {@code true} if this index can evaluate a predicate of the given
+     * predicate class, {@code false} otherwise.
+     */
+    boolean canEvaluate(Class<? extends Predicate> predicateClass);
+
+    /**
+     * Evaluates the given predicate using this index.
+     *
+     * @param predicate the predicate to evaluate. The predicate is guaranteed
+     *                  to be evaluable by this index ({@code canEvaluate}
+     *                  returned {@code true} for its class).
+     * @return a set containing entries matching the given predicate.
+     */
+    Set<QueryableEntry> evaluate(Predicate predicate);
 
     /**
      * Produces a result set containing entries whose attribute values are equal

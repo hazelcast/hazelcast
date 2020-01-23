@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,6 +56,10 @@ public class CapturingCollector implements MetricsCollector {
 
     public Map<MetricDescriptor, Capture> captures() {
         return unmodifiableMap(captures);
+    }
+
+    public boolean isCaptured(MetricDescriptor descriptor) {
+        return captures.containsKey(descriptor);
     }
 
     public static final class Capture {

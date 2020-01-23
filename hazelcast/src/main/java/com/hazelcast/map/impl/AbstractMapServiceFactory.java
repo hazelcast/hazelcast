@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import com.hazelcast.internal.services.ClientAwareService;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.internal.services.PostJoinAwareService;
 import com.hazelcast.internal.services.RemoteService;
-import com.hazelcast.internal.services.ReplicationSupportingService;
+import com.hazelcast.internal.services.WanSupportingService;
 import com.hazelcast.internal.services.SplitBrainHandlerService;
 import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.internal.services.TransactionalService;
@@ -98,12 +98,12 @@ abstract class AbstractMapServiceFactory implements MapServiceFactory {
     abstract SplitBrainHandlerService createSplitBrainHandlerService();
 
     /**
-     * Creates a new {@link ReplicationSupportingService} for {@link MapService}.
+     * Creates a new {@link WanSupportingService} for {@link MapService}.
      *
-     * @return Creates a new {@link ReplicationSupportingService} implementation.
-     * @see ReplicationSupportingService
+     * @return Creates a new {@link WanSupportingService} implementation.
+     * @see WanSupportingService
      */
-    abstract ReplicationSupportingService createReplicationSupportingService();
+    abstract WanSupportingService createReplicationSupportingService();
 
     /**
      * Creates a new {@link StatisticsAwareService} for {@link MapService}.
@@ -156,7 +156,7 @@ abstract class AbstractMapServiceFactory implements MapServiceFactory {
         EventPublishingService eventPublishingService = createEventPublishingService();
         PostJoinAwareService postJoinAwareService = createPostJoinAwareService();
         SplitBrainHandlerService splitBrainHandlerService = createSplitBrainHandlerService();
-        ReplicationSupportingService replicationSupportingService = createReplicationSupportingService();
+        WanSupportingService wanSupportingService = createReplicationSupportingService();
         StatisticsAwareService statisticsAwareService = createStatisticsAwareService();
         PartitionAwareService partitionAwareService = createPartitionAwareService();
         MapSplitBrainProtectionAwareService splitBrainProtectionAwareService =
@@ -172,7 +172,7 @@ abstract class AbstractMapServiceFactory implements MapServiceFactory {
         checkNotNull(eventPublishingService, "eventPublishingService should not be null");
         checkNotNull(postJoinAwareService, "postJoinAwareService should not be null");
         checkNotNull(splitBrainHandlerService, "splitBrainHandlerService should not be null");
-        checkNotNull(replicationSupportingService, "replicationSupportingService should not be null");
+        checkNotNull(wanSupportingService, "replicationSupportingService should not be null");
         checkNotNull(statisticsAwareService, "statisticsAwareService should not be null");
         checkNotNull(partitionAwareService, "partitionAwareService should not be null");
         checkNotNull(splitBrainProtectionAwareService, "splitBrainProtectionAwareService should not be null");
@@ -186,7 +186,7 @@ abstract class AbstractMapServiceFactory implements MapServiceFactory {
         mapService.eventPublishingService = eventPublishingService;
         mapService.postJoinAwareService = postJoinAwareService;
         mapService.splitBrainHandlerService = splitBrainHandlerService;
-        mapService.replicationSupportingService = replicationSupportingService;
+        mapService.wanSupportingService = wanSupportingService;
         mapService.statisticsAwareService = statisticsAwareService;
         mapService.mapServiceContext = mapServiceContext;
         mapService.partitionAwareService = partitionAwareService;

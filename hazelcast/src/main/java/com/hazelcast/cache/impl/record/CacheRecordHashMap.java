@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,13 @@ package com.hazelcast.cache.impl.record;
 
 import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.impl.CacheContext;
-import com.hazelcast.cache.impl.CacheEntryIterationResult;
-import com.hazelcast.cache.impl.CacheKeyIterationResult;
+import com.hazelcast.cache.impl.CacheEntriesWithCursor;
+import com.hazelcast.cache.impl.CacheKeysWithCursor;
 import com.hazelcast.internal.eviction.Evictable;
 import com.hazelcast.internal.eviction.EvictionCandidate;
 import com.hazelcast.internal.eviction.EvictionListener;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.iteration.IterationPointer;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializableByConvention;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.SampleableConcurrentHashMap;
@@ -172,7 +173,6 @@ public class CacheRecordHashMap
         public long getHits() {
             return value.getHits();
         }
-
     }
 
     @Override
@@ -181,28 +181,29 @@ public class CacheRecordHashMap
     }
 
     @Override
-    public CacheKeyIterationResult fetchKeys(int nextTableIndex, int size) {
-        List<Data> keys = new ArrayList<Data>(size);
-        int tableIndex = fetchKeys(nextTableIndex, size, keys);
-        return new CacheKeyIterationResult(keys, tableIndex);
+    public CacheKeysWithCursor fetchKeys(IterationPointer[] pointers, int size) {
+        List<Data> keys = new ArrayList<>(size);
+        IterationPointer[] newIterationPointers = fetchKeys(pointers, size, keys);
+        return new CacheKeysWithCursor(keys, newIterationPointers);
     }
 
     @Override
-    public CacheEntryIterationResult fetchEntries(int nextTableIndex, int size) {
-        List<Map.Entry<Data, CacheRecord>> entries = new ArrayList<Map.Entry<Data, CacheRecord>>(size);
-        int newTableIndex = fetchEntries(nextTableIndex, size, entries);
-        List<Map.Entry<Data, Data>> entriesData = new ArrayList<Map.Entry<Data, Data>>(entries.size());
+    public CacheEntriesWithCursor fetchEntries(IterationPointer[] pointers, int size) {
+        List<Map.Entry<Data, CacheRecord>> entries = new ArrayList<>(size);
+        IterationPointer[] newIterationPointers = fetchEntries(pointers, size, entries);
+        List<Map.Entry<Data, Data>> entriesData = new ArrayList<>(entries.size());
         for (Map.Entry<Data, CacheRecord> entry : entries) {
             CacheRecord record = entry.getValue();
             Data dataValue = serializationService.toData(record.getValue());
-            entriesData.add(new AbstractMap.SimpleEntry<Data, Data>(entry.getKey(), dataValue));
+            entriesData.add(new AbstractMap.SimpleEntry<>(entry.getKey(), dataValue));
         }
-        return new CacheEntryIterationResult(entriesData, newTableIndex);
+        return new CacheEntriesWithCursor(entriesData, newIterationPointers);
     }
 
     @Override
-    public <C extends EvictionCandidate<Data, CacheRecord>> boolean tryEvict(C evictionCandidate,
-                                                                 EvictionListener<Data, CacheRecord> evictionListener) {
+    public <C extends EvictionCandidate<Data, CacheRecord>>
+    boolean tryEvict(C evictionCandidate,
+                     EvictionListener<Data, CacheRecord> evictionListener) {
         if (evictionCandidate == null) {
             return false;
         }

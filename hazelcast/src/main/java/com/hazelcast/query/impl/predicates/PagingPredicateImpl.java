@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,17 @@
 
 package com.hazelcast.query.impl.predicates;
 
+import com.hazelcast.internal.serialization.BinaryInterface;
+import com.hazelcast.internal.util.IterationType;
+import com.hazelcast.internal.util.SortingUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
-import com.hazelcast.internal.util.IterationType;
-import com.hazelcast.internal.util.SortingUtil;
 
 import java.io.IOException;
 import java.util.AbstractMap.SimpleImmutableEntry;
@@ -124,6 +124,16 @@ public class PagingPredicateImpl<K, V>
         this(pageSize);
         setInnerPredicate(predicate);
         this.comparator = comparator;
+    }
+
+    public PagingPredicateImpl(List<Map.Entry<Integer, Map.Entry<K, V>>> anchorList, Predicate<K, V> predicate,
+                               Comparator<Map.Entry<K, V>> comparator, int pageSize, int page, IterationType iterationType) {
+        this.anchorList = anchorList;
+        this.predicate = predicate;
+        this.comparator = comparator;
+        this.pageSize = pageSize;
+        this.page = page;
+        this.iterationType = iterationType;
     }
 
     /**
@@ -295,6 +305,14 @@ public class PagingPredicateImpl<K, V>
         } else {
             throw new IllegalArgumentException("Anchor index is not correct, expected: " + page + " found: " + anchorCount);
         }
+    }
+
+    public void setAnchorList(List<Map.Entry<Integer, Map.Entry<K, V>>> anchorList) {
+        this.anchorList = anchorList;
+    }
+
+    public List<Map.Entry<Integer, Map.Entry<K, V>>> getAnchorList() {
+        return anchorList;
     }
 
     public Map.Entry<Integer, Map.Entry> getNearestAnchorEntry() {

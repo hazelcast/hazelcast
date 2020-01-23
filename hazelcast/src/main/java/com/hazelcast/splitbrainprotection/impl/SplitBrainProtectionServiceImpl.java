@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.config.SplitBrainProtectionListenerConfig;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
-import com.hazelcast.internal.services.MemberAttributeServiceEvent;
 import com.hazelcast.internal.services.MembershipAwareService;
 import com.hazelcast.internal.services.MembershipServiceEvent;
 import com.hazelcast.internal.services.ServiceNamespace;
@@ -112,10 +111,13 @@ public class SplitBrainProtectionServiceImpl implements EventPublishingService<S
     }
 
     private Map<String, SplitBrainProtectionImpl> initializeSplitBrainProtections() {
-        Map<String, SplitBrainProtectionImpl> splitBrainProtections = new HashMap<String, SplitBrainProtectionImpl>();
+        Map<String, SplitBrainProtectionImpl> splitBrainProtections = new HashMap<>();
         for (SplitBrainProtectionConfig splitBrainProtectionConfig
                 : nodeEngine.getConfig().getSplitBrainProtectionConfigs().values()) {
             validateSplitBrainProtectionConfig(splitBrainProtectionConfig);
+            if (!splitBrainProtectionConfig.isEnabled()) {
+                continue;
+            }
             SplitBrainProtectionImpl splitBrainProtection = new SplitBrainProtectionImpl(splitBrainProtectionConfig, nodeEngine);
             splitBrainProtections.put(splitBrainProtectionConfig.getName(), splitBrainProtection);
         }
@@ -326,13 +328,6 @@ public class SplitBrainProtectionServiceImpl implements EventPublishingService<S
             return;
         }
         nodeEngine.getExecutionService().execute(SPLIT_BRAIN_PROTECTION_EXECUTOR, new UpdateSplitBrainProtections(event));
-    }
-
-    @Override
-    public void memberAttributeChanged(MemberAttributeServiceEvent event) {
-        // nop
-        // MemberAttributeServiceEvent does NOT contain set of members
-        // They cannot change split brain protection state
     }
 
     @Nonnull

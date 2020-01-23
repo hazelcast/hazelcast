@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,15 @@
 
 package com.hazelcast.internal.crdt;
 
+import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.impl.VectorClock;
 import com.hazelcast.config.CRDTReplicationConfig;
-import com.hazelcast.cluster.Member;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.internal.services.GracefulShutdownAwareService;
-import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.internal.services.ManagedService;
-import com.hazelcast.internal.services.MemberAttributeServiceEvent;
 import com.hazelcast.internal.services.MembershipAwareService;
 import com.hazelcast.internal.services.MembershipServiceEvent;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
@@ -60,9 +59,13 @@ import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_S
  */
 public class CRDTReplicationMigrationService implements ManagedService, MembershipAwareService,
         GracefulShutdownAwareService {
-    /** The name of this service */
+    /**
+     * The name of this service
+     */
     public static final String SERVICE_NAME = "hz:impl:CRDTReplicationMigrationService";
-    /** The executor for the CRDT replication and migration tasks */
+    /**
+     * The executor for the CRDT replication and migration tasks
+     */
     public static final String CRDT_REPLICATION_MIGRATION_EXECUTOR = "hz:CRDTReplicationMigration";
 
     private ScheduledFuture<?> replicationTask;
@@ -190,7 +193,9 @@ public class CRDTReplicationMigrationService implements ManagedService, Membersh
         return false;
     }
 
-    /** Returns a collection of all known CRDT replication aware services */
+    /**
+     * Returns a collection of all known CRDT replication aware services
+     */
     Collection<CRDTReplicationAwareService> getReplicationServices() {
         return nodeEngine.getServices(CRDTReplicationAwareService.class);
     }
@@ -238,11 +243,6 @@ public class CRDTReplicationMigrationService implements ManagedService, Membersh
     @Override
     public void memberRemoved(MembershipServiceEvent event) {
         scheduleMigrationTask(0);
-    }
-
-    @Override
-    public void memberAttributeChanged(MemberAttributeServiceEvent event) {
-        // NOOP
     }
 
     /**

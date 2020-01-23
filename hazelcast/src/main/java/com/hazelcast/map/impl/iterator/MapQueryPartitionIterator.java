@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,17 @@
 
 package com.hazelcast.map.impl.iterator;
 
-import com.hazelcast.map.IMap;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.map.impl.query.ResultSegment;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.internal.serialization.SerializationService;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -35,12 +34,17 @@ import java.util.List;
 import java.util.Map.Entry;
 
 /**
- * Iterator for iterating map entries in the {@code partitionId}. The values are not fetched one-by-one but rather in batches.
- * The {@link Iterator#remove()} method is not supported and will throw an {@link UnsupportedOperationException}.
+ * Iterator for iterating map entries in a single partition.
+ * The values are fetched in batches. The {@link Iterator#remove()} method
+ * is not supported and will throw a {@link UnsupportedOperationException}.
  * <b>NOTE</b>
- * Iterating the map should be done only when the {@link IMap} is not being
- * mutated and the cluster is stable (there are no migrations or membership changes).
- * In other cases, the iterator may not return some entries or may return an entry twice.
+ * The iteration may be done when the map is being mutated or when there are
+ * membership changes. The iterator does not reflect the state when it has
+ * been constructed - it may return some entries that were added after the
+ * iteration has started and may not return some entries that were removed
+ * after iteration has started.
+ * The iterator will not, however, skip an entry if it has not been changed
+ * and will not return an entry twice.
  */
 public class MapQueryPartitionIterator<K, V, R> extends AbstractMapQueryPartitionIterator<K, V, R> {
 
@@ -56,7 +60,7 @@ public class MapQueryPartitionIterator<K, V, R> extends AbstractMapQueryPartitio
 
     protected List<Data> fetch() {
         final MapOperation op = mapProxy.getOperationProvider()
-                                        .createFetchWithQueryOperation(mapProxy.getName(), lastTableIndex, fetchSize, query);
+                                        .createFetchWithQueryOperation(mapProxy.getName(), pointers, fetchSize, query);
 
         final ResultSegment segment = invoke(op);
         final QueryResult queryResult = (QueryResult) segment.getResult();
@@ -66,7 +70,7 @@ public class MapQueryPartitionIterator<K, V, R> extends AbstractMapQueryPartitio
             serialized.add(row.getValue());
         }
 
-        setLastTableIndex(serialized, segment.getNextTableIndexToReadFrom());
+        setLastTableIndex(serialized, segment.getPointers());
         return serialized;
     }
 

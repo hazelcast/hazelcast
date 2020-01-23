@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -119,9 +119,9 @@
             <hz:wan-replication name="testWan2">
                 <hz:batch-publisher>
                     <hz:cluster-name>tokyo</hz:cluster-name>
-                    <hz:wan-sync>
+                    <hz:sync>
                         <hz:consistency-check-strategy>MERKLE_TREES</hz:consistency-check-strategy>
-                    </hz:wan-sync>
+                    </hz:sync>
                 </hz:batch-publisher>
                 <hz:consumer class-name="WanConsumer" persist-wan-replicated-data="true"/>
             </hz:wan-replication>

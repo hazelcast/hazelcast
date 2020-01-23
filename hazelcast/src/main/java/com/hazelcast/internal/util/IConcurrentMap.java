@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.util;
 
-import java.util.function.Function;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
 
 /**
@@ -30,7 +30,6 @@ import java.util.function.BiFunction;
  * actions subsequent to the access or removal of that object from
  * the {@code ConcurrentMap} in another thread.
  *
- *
  * @param <K> the type of keys maintained by this map
  * @param <V> the type of mapped values
  */
@@ -38,8 +37,10 @@ public interface IConcurrentMap<K, V> extends java.util.concurrent.ConcurrentMap
     /**
      * {@inheritDoc}
      *
-     * @implSpec
-     * The default implementation is equivalent to the following steps for this
+     * @throws UnsupportedOperationException {@inheritDoc}
+     * @throws ClassCastException            {@inheritDoc}
+     * @throws NullPointerException          {@inheritDoc}
+     * @implSpec The default implementation is equivalent to the following steps for this
      * {@code map}, then returning the current value or {@code null} if now
      * absent:
      *
@@ -59,18 +60,16 @@ public interface IConcurrentMap<K, V> extends java.util.concurrent.ConcurrentMap
      * values and {@code get()} returning null unambiguously means the key is
      * absent. Implementations which support null values <strong>must</strong>
      * override this default implementation.
-     *
-     * @throws UnsupportedOperationException {@inheritDoc}
-     * @throws ClassCastException {@inheritDoc}
-     * @throws NullPointerException {@inheritDoc}
      */
     V applyIfAbsent(K key, Function<? super K, ? extends V> mappingFunction);
 
     /**
      * {@inheritDoc}
      *
-     * @implSpec
-     * The default implementation is equivalent to performing the following
+     * @throws UnsupportedOperationException {@inheritDoc}
+     * @throws ClassCastException            {@inheritDoc}
+     * @throws NullPointerException          {@inheritDoc}
+     * @implSpec The default implementation is equivalent to performing the following
      * steps for this {@code map}, then returning the current value or
      * {@code null} if now absent. :
      *
@@ -93,10 +92,47 @@ public interface IConcurrentMap<K, V> extends java.util.concurrent.ConcurrentMap
      * values and {@code get()} returning null unambiguously means the key is
      * absent. Implementations which support null values <strong>must</strong>
      * override this default implementation.
+     */
+    V applyIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> mappingFunction);
+
+
+    /**
+     * {@inheritDoc}
+     *
+     * @implSpec
+     * The default implementation is equivalent to performing the following
+     * steps for this {@code map}, then returning the current value or
+     * {@code null} if absent:
+     *
+     * <pre> {@code
+     * V oldValue = map.get(key);
+     * V newValue = remappingFunction.apply(key, oldValue);
+     * if (oldValue != null ) {
+     *    if (newValue != null)
+     *       map.replace(key, oldValue, newValue);
+     *    else
+     *       map.remove(key, oldValue);
+     * } else {
+     *    if (newValue != null)
+     *       map.putIfAbsent(key, newValue);
+     *    else
+     *       return null;
+     * }
+     * }</pre>
+     *
+     * The default implementation may retry these steps when multiple
+     * threads attempt updates including potentially calling the remapping
+     * function multiple times.
+     *
+     * <p>This implementation assumes that the ConcurrentMap cannot contain null
+     * values and {@code get()} returning null unambiguously means the key is
+     * absent. Implementations which support null values <strong>must</strong>
+     * override this default implementation.
      *
      * @throws UnsupportedOperationException {@inheritDoc}
      * @throws ClassCastException {@inheritDoc}
      * @throws NullPointerException {@inheritDoc}
+     * @since 1.8
      */
-    V applyIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> mappingFunction);
+    V apply(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction);
 }

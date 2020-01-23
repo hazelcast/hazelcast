@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,11 @@ package com.hazelcast.client.impl.connection.nio;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.CandidateClusterContext;
-import com.hazelcast.client.impl.clientside.ClientDiscoveryService;
+import com.hazelcast.client.impl.clientside.ClusterDiscoveryService;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.client.test.ClientTestSupport;
-import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
@@ -70,16 +70,15 @@ public class ConnectMemberListTest extends ClientTestSupport {
         config.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         HazelcastInstance client = HazelcastClient.newHazelcastClient(config);
 
-        Collection<Address> possibleMemberAddresses = getPossibleMemberAddresses(client);
+        Collection<Member> possibleMemberAddresses = getPossibleMemberAddresses(client);
         //make sure last known member list is used. otherwise it returns 3
         assertEquals(4, possibleMemberAddresses.size());
     }
 
-    private Collection<Address> getPossibleMemberAddresses(HazelcastInstance client) {
+    private Collection<Member> getPossibleMemberAddresses(HazelcastInstance client) {
         HazelcastClientInstanceImpl instanceImpl = getHazelcastClientInstanceImpl(client);
-        ClientDiscoveryService clientDiscoveryService = instanceImpl.getClientDiscoveryService();
-        clientDiscoveryService.resetSearch();
-        CandidateClusterContext clusterContext = clientDiscoveryService.current();
+        ClusterDiscoveryService clusterDiscoveryService = instanceImpl.getClusterDiscoveryService();
+        CandidateClusterContext clusterContext = clusterDiscoveryService.current();
         ClientConnectionManagerImpl connectionManager = (ClientConnectionManagerImpl) instanceImpl.getConnectionManager();
         return connectionManager.getPossibleMemberAddresses(clusterContext.getAddressProvider());
     }

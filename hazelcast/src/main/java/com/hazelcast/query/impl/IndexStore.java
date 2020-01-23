@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,10 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.monitor.impl.IndexOperationStats;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.query.Predicate;
 
 import java.util.Set;
 
@@ -81,13 +83,14 @@ public interface IndexStore {
      * Removes the existing entry mapping in this index.
      *
      * @param value          the value to remove the mapping from.
-     * @param indexKey       the value to remove the mapping to.
+     * @param entryKey       the entry key to remove the mapping to.
+     * @param entryValue     the entry value to remove the mapping to.
      * @param operationStats the operation stats to update while performing the
      *                       operation.
      * @see Index#removeEntry
      * @see IndexOperationStats#onEntryRemoved
      */
-    void remove(Object value, Data indexKey, IndexOperationStats operationStats);
+    void remove(Object value, Data entryKey, Object entryValue, IndexOperationStats operationStats);
 
     /**
      * Clears the contents of this index by purging all its entries.
@@ -98,6 +101,22 @@ public interface IndexStore {
      * Destroys this index by releasing all its resources.
      */
     void destroy();
+
+    /**
+     * @return {@code true} if this index store can evaluate a predicate of the
+     * given predicate class, {@code false} otherwise.
+     */
+    boolean canEvaluate(Class<? extends Predicate> predicateClass);
+
+    /**
+     * Evaluates the given predicate using this index store.
+     *
+     * @param predicate the predicate to evaluate. The predicate is guaranteed
+     *                  to be evaluable by this index store ({@code canEvaluate}
+     *                  returned {@code true} for its class).
+     * @return a set containing entries matching the given predicate.
+     */
+    Set<QueryableEntry> evaluate(Predicate predicate, TypeConverter converter);
 
     /**
      * Obtains entries that have indexed attribute value equal to the given

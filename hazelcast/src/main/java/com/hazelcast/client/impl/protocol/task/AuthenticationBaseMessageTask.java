@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.protocol.task;
 import com.hazelcast.client.impl.protocol.AuthenticationStatus;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.Credentials;
@@ -55,7 +56,6 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
         super(clientMessage, node, connection);
     }
 
-
     @Override
     public int getPartitionId() {
         return -1;
@@ -63,6 +63,16 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
 
     @Override
     protected boolean requiresAuthentication() {
+        return false;
+    }
+
+    @Override
+    protected boolean acceptOnIncompleteStart() {
+        return true;
+    }
+
+    @Override
+    protected boolean validateNodeStartBeforeDecode() {
         return false;
     }
 
@@ -139,23 +149,29 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
     }
 
     private ClientMessage prepareUnauthenticatedClientMessage() {
+        boolean clientFailoverSupported = nodeEngine.getNode().getNodeExtension().isClientFailoverSupported();
         Connection connection = endpoint.getConnection();
         logger.warning("Received auth from " + connection + " with clientUuid " + clientUuid + ", authentication failed");
         byte status = CREDENTIALS_FAILED.getId();
         return encodeAuth(status, null, null, serializationService.getVersion(),
-                clientEngine.getPartitionService().getPartitionCount(), clientEngine.getClusterService().getClusterId());
+                clientEngine.getPartitionService().getPartitionCount(), clientEngine.getClusterService().getClusterId(),
+                clientFailoverSupported);
     }
 
     private ClientMessage prepareNotAllowedInCluster() {
+        boolean clientFailoverSupported = nodeEngine.getNode().getNodeExtension().isClientFailoverSupported();
         byte status = NOT_ALLOWED_IN_CLUSTER.getId();
         return encodeAuth(status, null, null, serializationService.getVersion(),
-                clientEngine.getPartitionService().getPartitionCount(), clientEngine.getClusterService().getClusterId());
+                clientEngine.getPartitionService().getPartitionCount(), clientEngine.getClusterService().getClusterId(),
+                clientFailoverSupported);
     }
 
     private ClientMessage prepareSerializationVersionMismatchClientMessage() {
+        boolean clientFailoverSupported = nodeEngine.getNode().getNodeExtension().isClientFailoverSupported();
         return encodeAuth(SERIALIZATION_VERSION_MISMATCH.getId(), null, null,
                 serializationService.getVersion(),
-                clientEngine.getPartitionService().getPartitionCount(), clientEngine.getClusterService().getClusterId());
+                clientEngine.getPartitionService().getPartitionCount(),
+                clientEngine.getClusterService().getClusterId(), clientFailoverSupported);
     }
 
     private ClientMessage prepareAuthenticatedClientMessage() {
@@ -164,6 +180,13 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
         endpoint.authenticated(clientUuid, credentials, clientVersion, clientMessage.getCorrelationId(),
                 clientName, labels);
         setConnectionType();
+        validateNodeStart();
+        final UUID clusterId = clientEngine.getClusterService().getClusterId();
+        // additional check: cluster id may be null when member has not started yet;
+        // see AbstractMessageTask#acceptOnIncompleteStart
+        if (clusterId == null) {
+            throw new HazelcastInstanceNotActiveException("Hazelcast instance is not ready yet!");
+        }
         if (!clientEngine.bind(endpoint)) {
             return prepareNotAllowedInCluster();
         }
@@ -171,10 +194,11 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
         logger.info("Received auth from " + connection + ", successfully authenticated" + ", clientUuid: " + clientUuid
                 + ", client version: " + clientVersion);
         final Address thisAddress = clientEngine.getThisAddress();
+        UUID uuid = clientEngine.getClusterService().getLocalMember().getUuid();
         byte status = AUTHENTICATED.getId();
-        return encodeAuth(status, thisAddress, clientUuid,
-                serializationService.getVersion(),
-                clientEngine.getPartitionService().getPartitionCount(), clientEngine.getClusterService().getClusterId());
+        boolean clientFailoverSupported = nodeEngine.getNode().getNodeExtension().isClientFailoverSupported();
+        return encodeAuth(status, thisAddress, uuid, serializationService.getVersion(),
+                clientEngine.getPartitionService().getPartitionCount(), clusterId, clientFailoverSupported);
     }
 
     private void setConnectionType() {
@@ -183,7 +207,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
 
     protected abstract ClientMessage encodeAuth(byte status, Address thisAddress, UUID uuid,
                                                 byte serializationVersion,
-                                                int partitionCount, UUID clusterId);
+                                                int partitionCount, UUID clusterId, boolean failoverSupported);
 
     protected abstract String getClientType();
 

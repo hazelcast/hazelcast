@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.management.dto;
 
-import com.hazelcast.config.CustomWanPublisherConfig;
+import com.hazelcast.config.WanCustomPublisherConfig;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.json.internal.JsonSerializable;
@@ -28,16 +28,16 @@ import static com.hazelcast.internal.util.JsonUtil.toJsonObject;
 import static com.hazelcast.internal.util.MapUtil.isNullOrEmpty;
 
 /**
- * A JSON representation of {@link CustomWanPublisherConfig}.
+ * A JSON representation of {@link WanCustomPublisherConfig}.
  */
 public class CustomWanPublisherConfigDTO implements JsonSerializable {
 
-    private CustomWanPublisherConfig config;
+    private WanCustomPublisherConfig config;
 
     public CustomWanPublisherConfigDTO() {
     }
 
-    public CustomWanPublisherConfigDTO(CustomWanPublisherConfig config) {
+    public CustomWanPublisherConfigDTO(WanCustomPublisherConfig config) {
         this.config = config;
     }
 
@@ -58,7 +58,7 @@ public class CustomWanPublisherConfigDTO implements JsonSerializable {
     @Override
     @SuppressWarnings({"checkstyle:methodlength", "checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
     public void fromJson(JsonObject json) {
-        config = new CustomWanPublisherConfig();
+        config = new WanCustomPublisherConfig();
 
         consumeIfExists(json, "publisherId", v -> config.setPublisherId(v.asString()));
         consumeIfExists(json, "className", v -> config.setClassName(v.asString()));
@@ -73,7 +73,7 @@ public class CustomWanPublisherConfigDTO implements JsonSerializable {
         }
     }
 
-    public CustomWanPublisherConfig getConfig() {
+    public WanCustomPublisherConfig getConfig() {
         return config;
     }
 }

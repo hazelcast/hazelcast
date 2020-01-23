@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,8 +68,8 @@ public class AdvancedNetworkConfigTest extends HazelcastTestSupport {
         config.addWanReplicationConfig(
                 new WanReplicationConfig()
                         .setName("seattle-tokyo")
-                        .addWanBatchReplicationPublisherConfig(
-                                new WanBatchReplicationPublisherConfig()
+                        .addBatchReplicationPublisherConfig(
+                                new WanBatchPublisherConfig()
                                         .setClusterName("target-cluster")
                                         .setEndpoint("does-not-exist")));
 

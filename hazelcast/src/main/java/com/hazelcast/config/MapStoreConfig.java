@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,14 +23,18 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.properties.ClusterProperty;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.util.Objects;
 import java.util.Properties;
 
-import static com.hazelcast.internal.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Contains the configuration for a Map Store.
  */
+@SuppressWarnings("checkstyle:methodcount")
 public class MapStoreConfig implements IdentifiedDataSerializable {
     /**
      * Default delay seconds for writing
@@ -100,8 +104,9 @@ public class MapStoreConfig implements IdentifiedDataSerializable {
      *
      * @param className the name to set for the MapStore implementation class
      */
-    public MapStoreConfig setClassName(String className) {
-        this.className = className;
+    public MapStoreConfig setClassName(@Nonnull String className) {
+        this.className = checkHasText(className, "Map store class name must contain text");
+        this.implementation = null;
         return this;
     }
 
@@ -119,8 +124,9 @@ public class MapStoreConfig implements IdentifiedDataSerializable {
      *
      * @param factoryClassName the name to set for the MapStoreFactory implementation class
      */
-    public MapStoreConfig setFactoryClassName(String factoryClassName) {
-        this.factoryClassName = factoryClassName;
+    public MapStoreConfig setFactoryClassName(@Nonnull String factoryClassName) {
+        this.factoryClassName = checkHasText(factoryClassName, "Map store factory class name must contain text");
+        this.factoryImplementation = null;
         return this;
     }
 
@@ -194,8 +200,9 @@ public class MapStoreConfig implements IdentifiedDataSerializable {
      * @param implementation the map store implementation object to set
      * @return this MapStoreConfig instance
      */
-    public MapStoreConfig setImplementation(Object implementation) {
-        this.implementation = implementation;
+    public MapStoreConfig setImplementation(@Nonnull Object implementation) {
+        this.implementation = checkNotNull(implementation, "Map store cannot be null!");
+        this.className = null;
         return this;
     }
 
@@ -214,8 +221,9 @@ public class MapStoreConfig implements IdentifiedDataSerializable {
      * @param factoryImplementation the factory implementation object
      * @return this MapStoreConfig instance
      */
-    public MapStoreConfig setFactoryImplementation(Object factoryImplementation) {
-        this.factoryImplementation = factoryImplementation;
+    public MapStoreConfig setFactoryImplementation(@Nonnull Object factoryImplementation) {
+        this.factoryImplementation = checkNotNull(factoryImplementation, "Map store factory cannot be null!");
+        this.factoryClassName = null;
         return this;
     }
 
@@ -258,7 +266,7 @@ public class MapStoreConfig implements IdentifiedDataSerializable {
      * @return this MapStoreConfig
      */
     public MapStoreConfig setProperties(Properties properties) {
-        this.properties = isNotNull(properties, "properties");
+        this.properties = checkNotNull(properties, "Map store config properties cannot be null!");
         return this;
     }
 
@@ -331,7 +339,6 @@ public class MapStoreConfig implements IdentifiedDataSerializable {
     }
 
     @Override
-    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
     public final boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -342,52 +349,22 @@ public class MapStoreConfig implements IdentifiedDataSerializable {
 
         MapStoreConfig that = (MapStoreConfig) o;
 
-        if (enabled != that.enabled) {
-            return false;
-        }
-        if (writeCoalescing != that.writeCoalescing) {
-            return false;
-        }
-        if (writeDelaySeconds != that.writeDelaySeconds) {
-            return false;
-        }
-        if (writeBatchSize != that.writeBatchSize) {
-            return false;
-        }
-        if (className != null ? !className.equals(that.className) : that.className != null) {
-            return false;
-        }
-        if (factoryClassName != null ? !factoryClassName.equals(that.factoryClassName) : that.factoryClassName != null) {
-            return false;
-        }
-        if (implementation != null ? !implementation.equals(that.implementation) : that.implementation != null) {
-            return false;
-        }
-        if (factoryImplementation != null ? !factoryImplementation.equals(that.factoryImplementation)
-                : that.factoryImplementation != null) {
-            return false;
-        }
-        if (!properties.equals(that.properties)) {
-            return false;
-        }
-        return initialLoadMode == that.initialLoadMode;
+        return enabled == that.enabled
+            && writeCoalescing == that.writeCoalescing
+            && writeDelaySeconds == that.writeDelaySeconds
+            && writeBatchSize == that.writeBatchSize
+            && Objects.equals(implementation, that.implementation)
+            && Objects.equals(className, that.className)
+            && Objects.equals(factoryImplementation, that.factoryImplementation)
+            && Objects.equals(factoryClassName, that.factoryClassName)
+            && properties.equals(that.properties)
+            && initialLoadMode == that.initialLoadMode;
     }
 
     @Override
-    @SuppressWarnings({"checkstyle:npathcomplexity"})
     public final int hashCode() {
-        final int prime = 31;
-        int result = (enabled ? 1 : 0);
-        result = prime * result + (writeCoalescing ? 1 : 0);
-        result = prime * result + (className != null ? className.hashCode() : 0);
-        result = prime * result + (factoryClassName != null ? factoryClassName.hashCode() : 0);
-        result = prime * result + writeDelaySeconds;
-        result = prime * result + writeBatchSize;
-        result = prime * result + (implementation != null ? implementation.hashCode() : 0);
-        result = prime * result + (factoryImplementation != null ? factoryImplementation.hashCode() : 0);
-        result = prime * result + properties.hashCode();
-        result = prime * result + (initialLoadMode != null ? initialLoadMode.hashCode() : 0);
-        return result;
+        return Objects.hash(enabled, writeCoalescing, implementation, className, factoryImplementation, factoryClassName,
+            writeDelaySeconds, writeBatchSize, properties, initialLoadMode);
     }
 
 

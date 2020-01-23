@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * The behavior of this operation is undefined if the specified collection is modified while the operation is in progress.
  * (Note that this will occur if the specified collection is this list, and it's nonempty.)
  */
-@Generated("aa6b6dd35dc3b859e3fccd1da4d07f56")
+@Generated("72fd0f688450fbfff16007c2769bd0d3")
 public final class ListAddAllWithIndexCodec {
     //hex: 0x050E00
     public static final int REQUEST_MESSAGE_TYPE = 331264;
@@ -48,7 +48,7 @@ public final class ListAddAllWithIndexCodec {
     public static final int RESPONSE_MESSAGE_TYPE = 331265;
     private static final int REQUEST_INDEX_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_INDEX_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
 
     private ListAddAllWithIndexCodec() {
@@ -70,15 +70,16 @@ public final class ListAddAllWithIndexCodec {
         /**
          * The list of value to insert into the list.
          */
-        public java.util.List<com.hazelcast.nio.serialization.Data> valueList;
+        public java.util.List<com.hazelcast.internal.serialization.Data> valueList;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, int index, java.util.Collection<com.hazelcast.nio.serialization.Data> valueList) {
+    public static ClientMessage encodeRequest(java.lang.String name, int index, java.util.Collection<com.hazelcast.internal.serialization.Data> valueList) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("List.AddAllWithIndex");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeInt(initialFrame.content, REQUEST_INDEX_FIELD_OFFSET, index);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);

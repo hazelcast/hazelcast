@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,6 +69,14 @@ public class PartitionLostEventImpl implements PartitionLostEvent, IPartitionLos
     @Override
     public int getLostBackupCount() {
         return lostBackupCount;
+    }
+
+    /**
+     * Returns true if all replicas of a partition are lost
+     */
+    @Override
+    public boolean allReplicasInPartitionLost() {
+        return getLostBackupCount() == InternalPartition.MAX_BACKUP_COUNT;
     }
 
     @Override

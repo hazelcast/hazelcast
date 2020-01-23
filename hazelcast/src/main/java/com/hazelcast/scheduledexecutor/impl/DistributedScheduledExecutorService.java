@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import com.hazelcast.internal.partition.PartitionMigrationEvent;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.ManagedService;
-import com.hazelcast.internal.services.MemberAttributeServiceEvent;
 import com.hazelcast.internal.services.MembershipAwareService;
 import com.hazelcast.internal.services.MembershipServiceEvent;
 import com.hazelcast.internal.services.RemoteService;
@@ -51,6 +50,7 @@ import java.util.UUID;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.config.ConfigValidator.checkScheduledExecutorConfig;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
@@ -69,23 +69,28 @@ public class DistributedScheduledExecutorService
 
     public static final String SERVICE_NAME = "hz:impl:scheduledExecutorService";
     public static final int MEMBER_BIN = -1;
+    public static final CapacityPermit NOOP_PERMIT = new NoopCapacityPermit();
+
+    //Testing only
+    static final AtomicBoolean FAIL_MIGRATIONS = new AtomicBoolean(false);
 
     private static final Object NULL_OBJECT = new Object();
 
     private final ConcurrentMap<String, Boolean> shutdownExecutors = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, CapacityPermit> permits = new ConcurrentHashMap<>();
     private final Set<ScheduledFutureProxy> lossListeners = synchronizedSet(newSetFromMap(new WeakHashMap<>()));
 
     private final ConcurrentMap<String, Object> splitBrainProtectionConfigCache = new ConcurrentHashMap<>();
     private final ContextMutexFactory splitBrainProtectionConfigCacheMutexFactory = new ContextMutexFactory();
     private final ConstructorFunction<String, Object> splitBrainProtectionConfigConstructor =
             new ConstructorFunction<String, Object>() {
-        @Override
-        public Object createNew(String name) {
-            ScheduledExecutorConfig executorConfig = nodeEngine.getConfig().findScheduledExecutorConfig(name);
-            String splitBrainProtectionName = executorConfig.getSplitBrainProtectionName();
-            return splitBrainProtectionName == null ? NULL_OBJECT : splitBrainProtectionName;
-        }
-    };
+                @Override
+                public Object createNew(String name) {
+                    ScheduledExecutorConfig executorConfig = nodeEngine.getConfig().findScheduledExecutorConfig(name);
+                    String splitBrainProtectionName = executorConfig.getSplitBrainProtectionName();
+                    return splitBrainProtectionName == null ? NULL_OBJECT : splitBrainProtectionName;
+                }
+            };
 
     private NodeEngine nodeEngine;
     private ScheduledExecutorPartition[] partitions;
@@ -123,7 +128,7 @@ public class DistributedScheduledExecutorService
     public void reset() {
         shutdown(true);
 
-        memberBin = new ScheduledExecutorMemberBin(nodeEngine);
+        memberBin = new ScheduledExecutorMemberBin(nodeEngine, this);
 
         // Keep using the public API due to the benefit of getting events on all partitions and not just local
         if (partitionLostRegistration == null) {
@@ -134,13 +139,14 @@ public class DistributedScheduledExecutorService
             if (partitions[partitionId] != null) {
                 partitions[partitionId].destroy();
             }
-            partitions[partitionId] = new ScheduledExecutorPartition(nodeEngine, partitionId);
+            partitions[partitionId] = new ScheduledExecutorPartition(nodeEngine, this, partitionId);
         }
     }
 
     @Override
     public void shutdown(boolean terminate) {
         shutdownExecutors.clear();
+        permits.clear();
 
         if (memberBin != null) {
             memberBin.destroy();
@@ -157,12 +163,16 @@ public class DistributedScheduledExecutorService
         }
     }
 
+    CapacityPermit permitFor(String name, ScheduledExecutorConfig config) {
+        return permits.computeIfAbsent(name, n -> new MemberCapacityPermit(n, config.getCapacity()));
+    }
+
     void addLossListener(ScheduledFutureProxy future) {
         this.lossListeners.add(future);
     }
 
     @Override
-    public DistributedObject createDistributedObject(String name, boolean local) {
+    public DistributedObject createDistributedObject(String name, UUID source, boolean local) {
         ScheduledExecutorConfig executorConfig = nodeEngine.getConfig().findScheduledExecutorConfig(name);
         checkScheduledExecutorConfig(executorConfig, nodeEngine.getSplitBrainMergePolicyProvider());
 
@@ -205,6 +215,10 @@ public class DistributedScheduledExecutorService
 
     @Override
     public void beforeMigration(PartitionMigrationEvent event) {
+        if (FAIL_MIGRATIONS.getAndSet(false)) {
+            throw new RuntimeException();
+        }
+
         ScheduledExecutorPartition partition = partitions[event.getPartitionId()];
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE && event.getCurrentReplicaIndex() == 0) {
             // this is the partition owner at the beginning of the migration
@@ -242,6 +256,7 @@ public class DistributedScheduledExecutorService
     }
 
     private void resetPartitionOrMemberBinContainer(String name) {
+        permits.remove(name);
         if (memberBin != null) {
             memberBin.destroyContainer(name);
         }
@@ -293,11 +308,6 @@ public class DistributedScheduledExecutorService
     }
 
     @Override
-    public void memberAttributeChanged(MemberAttributeServiceEvent event) {
-        // ignore
-    }
-
-    @Override
     public String getSplitBrainProtectionName(final String name) {
         Object splitBrainProtectionName = getOrPutSynchronized(splitBrainProtectionConfigCache, name,
                 splitBrainProtectionConfigCacheMutexFactory, splitBrainProtectionConfigConstructor);
@@ -330,8 +340,8 @@ public class DistributedScheduledExecutorService
                 for (ScheduledExecutorContainer container : containers) {
                     String name = container.getName();
                     MergePolicyConfig mergePolicyConfig = collector.getMergePolicyConfig(container);
-                    SplitBrainMergePolicy<ScheduledTaskDescriptor, ScheduledExecutorMergeTypes> mergePolicy
-                            = getMergePolicy(mergePolicyConfig);
+                    SplitBrainMergePolicy<ScheduledTaskDescriptor, ScheduledExecutorMergeTypes,
+                            ScheduledTaskDescriptor> mergePolicy = getMergePolicy(mergePolicyConfig);
                     int batchSize = mergePolicyConfig.getBatchSize();
 
                     mergingEntries = new ArrayList<>(batchSize);
@@ -354,7 +364,8 @@ public class DistributedScheduledExecutorService
         }
 
         private void sendBatch(int partitionId, String name, List<ScheduledExecutorMergeTypes> mergingEntries,
-                               SplitBrainMergePolicy<ScheduledTaskDescriptor, ScheduledExecutorMergeTypes> mergePolicy) {
+                               SplitBrainMergePolicy<ScheduledTaskDescriptor, ScheduledExecutorMergeTypes,
+                                       ScheduledTaskDescriptor> mergePolicy) {
             MergeOperation operation = new MergeOperation(name, mergingEntries, mergePolicy);
             invoke(SERVICE_NAME, operation, partitionId);
         }

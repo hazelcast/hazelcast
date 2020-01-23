@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,11 +23,12 @@ import com.hazelcast.client.HazelcastClientOfflineException;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
+import com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ConnectionRetryConfig;
 import com.hazelcast.client.impl.clientside.CandidateClusterContext;
-import com.hazelcast.client.impl.clientside.ClientDiscoveryService;
 import com.hazelcast.client.impl.clientside.ClientLoggingService;
+import com.hazelcast.client.impl.clientside.ClusterDiscoveryService;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.LifecycleServiceImpl;
 import com.hazelcast.client.impl.connection.AddressProvider;
@@ -37,14 +38,15 @@ import com.hazelcast.client.impl.protocol.AuthenticationStatus;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCustomCodec;
-import com.hazelcast.client.impl.protocol.codec.ClientIsFailoverSupportedCodec;
 import com.hazelcast.client.impl.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
+import com.hazelcast.client.impl.spi.impl.ClientPartitionServiceImpl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.config.InvalidConfigurationException;
-import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
@@ -54,16 +56,15 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.util.AddressUtil;
 import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.EmptyStatement;
+import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.internal.util.executor.LoggingScheduledExecutor;
 import com.hazelcast.internal.util.executor.PoolExecutorThreadFactory;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.SocketInterceptor;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.PasswordCredentials;
 import com.hazelcast.security.TokenCredentials;
@@ -91,20 +92,22 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.OFF;
 import static com.hazelcast.client.impl.management.ManagementCenterService.MC_CLIENT_MODE_PROP;
+import static com.hazelcast.client.impl.protocol.AuthenticationStatus.NOT_ALLOWED_IN_CLUSTER;
 import static com.hazelcast.client.properties.ClientProperty.IO_BALANCER_INTERVAL_SECONDS;
 import static com.hazelcast.client.properties.ClientProperty.IO_INPUT_THREAD_COUNT;
 import static com.hazelcast.client.properties.ClientProperty.IO_OUTPUT_THREAD_COUNT;
 import static com.hazelcast.client.properties.ClientProperty.IO_WRITE_THROUGH_ENABLED;
 import static com.hazelcast.client.properties.ClientProperty.SHUFFLE_MEMBER_LIST;
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.CLIENT_CHANGED_CLUSTER;
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -116,6 +119,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     private static final int DEFAULT_SMART_CLIENT_THREAD_COUNT = 3;
     private static final int EXECUTOR_CORE_POOL_SIZE = 10;
+    private static final int SMALL_MACHINE_PROCESSOR_COUNT = 8;
+
     protected final AtomicInteger connectionIdGen = new AtomicInteger();
 
     private final AtomicBoolean isAlive = new AtomicBoolean();
@@ -123,7 +128,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final int connectionTimeoutMillis;
     private final HazelcastClientInstanceImpl client;
     private final ConcurrentMap<Address, InetSocketAddress> inetSocketAddressCache = new ConcurrentHashMap<>();
-    private final ConcurrentMap<InetSocketAddress, ClientConnection> activeConnections = new ConcurrentHashMap<>();
     private final Collection<ConnectionListener> connectionListeners = new CopyOnWriteArrayList<>();
     private final NioNetworking networking;
     private final HeartbeatManager heartbeat;
@@ -135,20 +139,51 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final Set<String> labels;
     private final int outboundPortCount;
     private final boolean failoverConfigProvided;
-    private final ScheduledExecutorService clusterConnectionExecutor;
+    private final ScheduledExecutorService executor;
     private final boolean shuffleMemberList;
     private final WaitStrategy waitStrategy;
-    private final ClientDiscoveryService discoveryService;
-    private final AtomicInteger connectionCount = new AtomicInteger();
+    private final ClusterDiscoveryService clusterDiscoveryService;
+
     private final boolean asyncStart;
-    private final ClientConnectionStrategyConfig.ReconnectMode reconnectMode;
+    private final ReconnectMode reconnectMode;
     private final LoadBalancer loadBalancer;
     private final boolean isSmartRoutingEnabled;
+    private final Runnable connectToAllClusterMembersTask = new ConnectToAllClusterMembersTask();
     private volatile Credentials currentCredentials;
-    private volatile int partitionCount = -1;
+
+    // following fields are updated inside synchronized(clientStateMutex)
+    private final Object clientStateMutex = new Object();
+    private final ConcurrentMap<UUID, ClientConnection> activeConnections = new ConcurrentHashMap<>();
     private volatile UUID clusterId;
-    //possible states STARTING , CONNECTED , DISCONNECTED
-    private volatile LifecycleEvent.LifecycleState state = LifecycleEvent.LifecycleState.STARTING;
+    private volatile ClientState clientState = ClientState.INITIAL;
+    private volatile boolean connectToClusterTaskSubmitted;
+
+    private enum ClientState {
+        /**
+         * Clients start with this state. Once a client connects to a cluster,
+         * it directly switches to {@link #INITIALIZED_ON_CLUSTER} instead of
+         * {@link #CONNECTED_TO_CLUSTER} because on startup a client has no
+         * local state to send to the cluster.
+         */
+        INITIAL,
+
+        /**
+         * When a client switches to a new cluster, it moves to this state.
+         * It means that the client has connected to a new cluster but not sent
+         * its local state to the new cluster yet.
+         */
+        CONNECTED_TO_CLUSTER,
+
+        /**
+         * When a client sends its local state to the cluster it has connected,
+         * it switches to this state. When a client loses all connections to
+         * the current cluster and connects to a new cluster, its state goes
+         * back to {@link #CONNECTED_TO_CLUSTER}.
+         * <p>
+         * Invocations are allowed in this state.
+         */
+        INITIALIZED_ON_CLUSTER
+    }
 
     public ClientConnectionManagerImpl(HazelcastClientInstanceImpl client) {
         this.client = client;
@@ -164,9 +199,9 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         this.heartbeat = new HeartbeatManager(this, client);
         this.authenticationTimeout = heartbeat.getHeartbeatTimeout();
         this.failoverConfigProvided = client.getFailoverConfig() != null;
-        this.clusterConnectionExecutor = createExecutorService();
+        this.executor = createExecutorService();
         this.shuffleMemberList = client.getProperties().getBoolean(SHUFFLE_MEMBER_LIST);
-        this.discoveryService = client.getClientDiscoveryService();
+        this.clusterDiscoveryService = client.getClusterDiscoveryService();
         this.isSmartRoutingEnabled = client.getClientConfig().getNetworkConfig().isSmartRouting();
         this.waitStrategy = initializeWaitStrategy(client.getClientConfig());
         ClientConnectionStrategyConfig connectionStrategyConfig = client.getClientConfig().getConnectionStrategyConfig();
@@ -210,14 +245,22 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
         int inputThreads;
         if (configuredInputThreads == -1) {
-            inputThreads = isSmartRoutingEnabled ? DEFAULT_SMART_CLIENT_THREAD_COUNT : 1;
+            if (isSmartRoutingEnabled && RuntimeAvailableProcessors.get() > SMALL_MACHINE_PROCESSOR_COUNT) {
+                inputThreads = DEFAULT_SMART_CLIENT_THREAD_COUNT;
+            } else {
+                inputThreads = 1;
+            }
         } else {
             inputThreads = configuredInputThreads;
         }
 
         int outputThreads;
         if (configuredOutputThreads == -1) {
-            outputThreads = isSmartRoutingEnabled ? DEFAULT_SMART_CLIENT_THREAD_COUNT : 1;
+            if (isSmartRoutingEnabled && RuntimeAvailableProcessors.get() > SMALL_MACHINE_PROCESSOR_COUNT) {
+                outputThreads = DEFAULT_SMART_CLIENT_THREAD_COUNT;
+            } else {
+                outputThreads = 1;
+            }
         } else {
             outputThreads = configuredOutputThreads;
         }
@@ -254,25 +297,18 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         heartbeat.start();
         connectToCluster();
         if (isSmartRoutingEnabled) {
-            clusterConnectionExecutor.scheduleWithFixedDelay(this::tryOpenConnectionToAllMembers, 1, 1, TimeUnit.SECONDS);
+            executor.scheduleWithFixedDelay(connectToAllClusterMembersTask, 1, 1, TimeUnit.SECONDS);
         }
     }
 
-    public void tryOpenConnectionToAllMembers() {
+    public void connectToAllClusterMembers() {
         if (!isSmartRoutingEnabled) {
             return;
         }
-        Collection<Member> memberList = client.getClientClusterService().getMemberList();
-        for (Member member : memberList) {
-            if (!client.getLifecycleService().isRunning()) {
-                return;
-            }
-            Address address = member.getAddress();
-            if (getConnection(address) != null) {
-                continue;
-            }
+
+        for (Member member : client.getClientClusterService().getMemberList()) {
             try {
-                getOrConnect(address);
+                getOrConnect(member);
             } catch (Exception e) {
                 EmptyStatement.ignore(e);
             }
@@ -288,7 +324,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             return;
         }
 
-        ClientExecutionServiceImpl.shutdownExecutor("cluster", clusterConnectionExecutor, logger);
+        ClientExecutionServiceImpl.shutdownExecutor("cluster", executor, logger);
         for (Connection connection : activeConnections.values()) {
             connection.close("Hazelcast client is shutting down", null);
         }
@@ -296,7 +332,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         stopNetworking();
         connectionListeners.clear();
         heartbeat.shutdown();
-        discoveryService.current().destroy();
+        clusterDiscoveryService.current().destroy();
     }
 
     protected void stopNetworking() {
@@ -304,146 +340,164 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     private void connectToCluster() {
-        CandidateClusterContext currentClusterContext = discoveryService.current();
-        currentClusterContext.start();
+        clusterDiscoveryService.current().start();
 
         if (asyncStart) {
-            connectToClusterAsync();
+            submitConnectToClusterTask();
         } else {
-            connectToClusterSync();
+            doConnectToCluster();
         }
     }
 
-    private void connectToClusterAsync() {
-        clusterConnectionExecutor.submit(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    connectToClusterSync();
-                } catch (Throwable e) {
-                    logger.warning("Could not connect to any cluster, shutting down the client: " + e.getMessage());
-                    shutdownWithExternalThread();
-                }
-            }
-        });
-    }
+    private void submitConnectToClusterTask() {
+        // called in synchronized(clusterStateMutex)
 
-    private void connectToClusterSync() {
-        CandidateClusterContext currentClusterContext = discoveryService.current();
-        logger.info("Trying to connect to cluster with client name: " + currentClusterContext.getClusterName());
-        if (connectToCandidate(currentClusterContext)) {
+        if (connectToClusterTaskSubmitted) {
             return;
         }
 
-        // we reset the search so that we will iterate the list try-count times, each time we start searching for a new cluster
-        discoveryService.resetSearch();
+        executor.submit(() -> {
+            try {
+                doConnectToCluster();
+                synchronized (clientStateMutex) {
+                    connectToClusterTaskSubmitted = false;
+                    if (activeConnections.isEmpty()) {
+                        if (logger.isFineEnabled()) {
+                            logger.warning("No connection to cluster: " + clusterId);
+                        }
 
-        while (discoveryService.hasNext() && client.getLifecycleService().isRunning()) {
-            discoveryService.current().destroy();
-
-            CandidateClusterContext candidateClusterContext = discoveryService.next();
-            candidateClusterContext.start();
-            ((ClientLoggingService) client.getLoggingService()).updateClusterName(candidateClusterContext.getClusterName());
-
-            logger.info("Trying to connect to next cluster with client name: " + candidateClusterContext.getClusterName());
-
-            if (connectToCandidate(candidateClusterContext)) {
-                return;
+                        submitConnectToClusterTask();
+                    }
+                }
+            } catch (Throwable e) {
+                logger.warning("Could not connect to any cluster, shutting down the client: " + e.getMessage());
+                shutdownWithExternalThread();
             }
-        }
-        if (!client.getLifecycleService().isRunning()) {
-            throw new IllegalStateException("Client is being shutdown.");
-        } else {
-            throw new IllegalStateException("Unable to connect to any cluster.");
-        }
+        });
+
+        connectToClusterTaskSubmitted = true;
     }
 
-    private Connection connect(Address address) {
+    private void doConnectToCluster() {
+        CandidateClusterContext currentContext = clusterDiscoveryService.current();
+
+        logger.info("Trying to connect to cluster: " + currentContext.getClusterName());
+
+        // try the current cluster
+        if (doConnectToCandidateCluster(currentContext)) {
+            return;
+        }
+
+        // try the next cluster
+        if (clusterDiscoveryService.tryNextCluster(this::destroyCurrentClusterConnectionAndTryNextCluster)) {
+            return;
+        }
+
+        // notify when no succeeded cluster connection is found
+        String msg = client.getLifecycleService().isRunning()
+                ? "Unable to connect to any cluster." : "Client is being shutdown.";
+        throw new IllegalStateException(msg);
+    }
+
+    private Boolean destroyCurrentClusterConnectionAndTryNextCluster(CandidateClusterContext currentContext,
+                                                                     CandidateClusterContext nextContext) {
+        currentContext.destroy();
+
+        client.onClusterChange();
+
+        nextContext.start();
+
+        ((ClientLoggingService) client.getLoggingService()).updateClusterName(nextContext.getClusterName());
+
+        logger.info("Trying to connect to next cluster: " + nextContext.getClusterName());
+
+        if (doConnectToCandidateCluster(nextContext)) {
+            client.waitForInitialMembershipEvents();
+            fireLifecycleEvent(CLIENT_CHANGED_CLUSTER);
+            return true;
+        }
+        return false;
+    }
+
+    private Connection connect(Member member) {
         try {
-            logger.info("Trying to connect to " + address);
-            return getOrConnect(address);
+            logger.info("Trying to connect to " + member);
+            return getOrConnect(member);
         } catch (InvalidConfigurationException e) {
-            logger.warning("Exception during initial connection to " + address + ": " + e);
+            logger.warning("Exception during initial connection to " + member + ": " + e);
             throw rethrow(e);
         } catch (ClientNotAllowedInClusterException e) {
-            logger.warning("Exception during initial connection to " + address + ": " + e);
+            logger.warning("Exception during initial connection to " + member + ": " + e);
             throw e;
         } catch (Exception e) {
-            logger.warning("Exception during initial connection to " + address + ": " + e);
+            logger.warning("Exception during initial connection to " + member + ": " + e);
             return null;
         }
     }
 
-    private void fireLifecycleEvent(LifecycleEvent.LifecycleState state) {
+    private void fireLifecycleEvent(LifecycleState state) {
         LifecycleServiceImpl lifecycleService = (LifecycleServiceImpl) client.getLifecycleService();
         lifecycleService.fireLifecycleEvent(state);
     }
 
-    private boolean connectToCandidate(CandidateClusterContext context) {
-        Set<Address> triedAddresses = new HashSet<Address>();
+    private boolean doConnectToCandidateCluster(CandidateClusterContext context) {
+        Set<Member> triedMembers = new HashSet<>();
         try {
             waitStrategy.reset();
             do {
-                Collection<Address> addresses = getPossibleMemberAddresses(context.getAddressProvider());
-                for (Address address : addresses) {
+                Collection<Member> members = getPossibleMemberAddresses(context.getAddressProvider());
+                for (Member member : members) {
                     checkClientActive();
-                    triedAddresses.add(address);
+                    triedMembers.add(member);
 
-                    Connection connection = connect(address);
+                    Connection connection = connect(member);
                     if (connection != null) {
-                        return checkFailoverSupport(connection);
+                        return true;
                     }
                 }
 
                 // If the address providers load no addresses (which seems to be possible), then the above loop is not entered
                 // and the lifecycle check is missing, hence we need to repeat the same check at this point.
                 checkClientActive();
-
             } while (waitStrategy.sleep());
         } catch (ClientNotAllowedInClusterException | InvalidConfigurationException e) {
-            logger.warning("Give up trying on this cluster with name: " + context.getClusterName()
+            logger.warning("Stopped trying on the cluster: " + context.getClusterName()
                     + " reason: " + e.getMessage());
         }
+
         logger.info("Unable to connect to any address from the cluster with name: " + context.getClusterName()
-                + ". The following addresses were tried: " + triedAddresses);
+                + ". The following addresses were tried: " + triedMembers);
         return false;
     }
 
     @Override
     public void checkInvocationAllowed() throws IOException {
-        LifecycleEvent.LifecycleState state = this.state;
-        if (state.equals(LifecycleEvent.LifecycleState.CLIENT_CONNECTED)) {
+        ClientState state = this.clientState;
+        if (state == ClientState.INITIALIZED_ON_CLUSTER && activeConnections.size() > 0) {
             return;
         }
 
-        if (state.equals(LifecycleEvent.LifecycleState.STARTING)) {
+        if (state == ClientState.INITIAL) {
             if (asyncStart) {
                 throw new HazelcastClientOfflineException();
             } else {
                 throw new IOException("No connection found to cluster since the client is starting.");
             }
-        }
-
-        if (ClientConnectionStrategyConfig.ReconnectMode.ASYNC.equals(reconnectMode)) {
+        } else if (ReconnectMode.ASYNC.equals(reconnectMode)) {
             throw new HazelcastClientOfflineException();
         } else {
             throw new IOException("No connection found to cluster.");
         }
     }
 
-    Collection<Address> getPossibleMemberAddresses(AddressProvider addressProvider) {
-        LinkedHashSet<Address> addresses = new LinkedHashSet<>();
-
-        Collection<Member> memberList = client.getClientClusterService().getMemberList();
-        for (Member member : memberList) {
-            addresses.add(member.getAddress());
-        }
-
+    Collection<Member> getPossibleMemberAddresses(AddressProvider addressProvider) {
+        List<Member> memberAddresses = new ArrayList<>(client.getClientClusterService().getMemberList());
         if (shuffleMemberList) {
-            addresses = (LinkedHashSet<Address>) shuffle(addresses);
+            Collections.shuffle(memberAddresses);
         }
 
-        LinkedHashSet<Address> providedAddresses = new LinkedHashSet<Address>();
+        Collection<Member> addresses = new LinkedHashSet<>(memberAddresses);
+
         try {
             Addresses result = addressProvider.loadAddresses();
             if (shuffleMemberList) {
@@ -454,38 +508,22 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 Collections.shuffle(result.primary());
                 Collections.shuffle(result.secondary());
             }
-            providedAddresses.addAll(result.primary());
-            providedAddresses.addAll(result.secondary());
+
+            addresses.addAll(result.primary().stream()
+                    .filter(address -> addresses.stream().noneMatch(member -> address.equals(member.getAddress())))
+                    .map(address -> new MemberImpl(address, null, false))
+                    .collect(Collectors.toList()));
+            addresses.addAll(result.secondary().stream()
+                    .filter(address -> addresses.stream().noneMatch(member -> address.equals(member.getAddress())))
+                    .map(address -> new MemberImpl(address, null, false))
+                    .collect(Collectors.toList()));
         } catch (NullPointerException e) {
             throw e;
         } catch (Exception e) {
-            logger.warning("Exception from AddressProvider: " + discoveryService, e);
+            logger.warning("Exception from AddressProvider: " + clusterDiscoveryService, e);
         }
-
-        addresses.addAll(providedAddresses);
 
         return addresses;
-    }
-
-    private static <T> Set<T> shuffle(Set<T> set) {
-        List<T> shuffleMe = new ArrayList<T>(set);
-        Collections.shuffle(shuffleMe);
-        return new LinkedHashSet<T>(shuffleMe);
-    }
-
-    private void triggerReconnectToCluster() {
-        if (reconnectMode == OFF) {
-            logger.info("RECONNECT MODE is off. Shutting down the client");
-            shutdownWithExternalThread();
-            return;
-        }
-        if (client.getLifecycleService().isRunning()) {
-            try {
-                connectToClusterAsync();
-            } catch (RejectedExecutionException r) {
-                shutdownWithExternalThread();
-            }
-        }
     }
 
     private void shutdownWithExternalThread() {
@@ -493,7 +531,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             try {
                 client.getLifecycleService().shutdown();
             } catch (Exception exception) {
-                logger.severe("Exception during client shutdown ", exception);
+                logger.severe("Exception during client shutdown", exception);
             }
         }, client.getName() + ".clientShutdown-").start();
     }
@@ -514,27 +552,43 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     @Override
-    public Connection getConnection(@Nonnull Address target) {
-        checkClientActive();
-        return activeConnections.get(resolveAddress(target));
+    public Connection getConnection(@Nonnull UUID uuid) {
+        return activeConnections.get(uuid);
     }
 
-    Connection getOrConnect(@Nonnull Address address) {
+    private ClientConnection getConnection(@Nonnull Member member) {
+        UUID uuid = member.getUuid();
+        if (uuid != null) {
+            return activeConnections.get(uuid);
+        }
+
+        for (ClientConnection connection : activeConnections.values()) {
+            if (connection.getEndPoint().equals(member.getAddress())) {
+                return connection;
+            }
+        }
+        return null;
+    }
+
+    Connection getOrConnect(@Nonnull Member member) {
         checkClientActive();
-        InetSocketAddress inetSocketAddress = resolveAddress(address);
-        ClientConnection connection = activeConnections.get(inetSocketAddress);
+        Address address = member.getAddress();
+        ClientConnection connection = getConnection(member);
         if (connection != null) {
             return connection;
         }
-        synchronized (inetSocketAddress) {
-            connection = activeConnections.get(inetSocketAddress);
+
+        synchronized (resolveAddress(address)) {
+            // this critical section is used for making a single connection
+            // attempt to the given address at a time.
+            connection = getConnection(member);
             if (connection != null) {
                 return connection;
             }
 
             address = translate(address);
             connection = createSocketConnection(address);
-            initializeToCluster(connection);
+            authenticateOnCluster(connection);
             return connection;
         }
     }
@@ -559,8 +613,9 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         if (outboundPortCount == 0) {
             return 0;
         }
+
         synchronized (outboundPorts) {
-            final Integer port = outboundPorts.removeFirst();
+            Integer port = outboundPorts.removeFirst();
             outboundPorts.addLast(port);
             return port;
         }
@@ -588,12 +643,16 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                     logger.finest("Could not bind port[ " + port + "]: " + e.getMessage());
                 }
             }
-            throw ex;
+
+            if (ex != null) {
+                throw ex;
+            }
         }
     }
 
+    @SuppressWarnings("unchecked")
     protected ClientConnection createSocketConnection(Address target) {
-        CandidateClusterContext currentClusterContext = discoveryService.current();
+        CandidateClusterContext currentClusterContext = clusterDiscoveryService.current();
         SocketChannel socketChannel = null;
         try {
             socketChannel = SocketChannel.open();
@@ -603,6 +662,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
             ChannelInitializerProvider channelInitializer = currentClusterContext.getChannelInitializerProvider();
             Channel channel = networking.register(null, channelInitializer, socketChannel, true);
+            channel.attributeMap().put(Address.class, target);
             channel.connect(resolveAddress(target), connectionTimeoutMillis);
 
             ClientConnection connection = new ClientConnection(client, connectionIdGen.incrementAndGet(), channel);
@@ -623,14 +683,15 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     private Address translate(Address target) {
-        CandidateClusterContext currentClusterContext = discoveryService.current();
-        AddressProvider addressProvider = currentClusterContext.getAddressProvider();
+        CandidateClusterContext currentContext = clusterDiscoveryService.current();
+        AddressProvider addressProvider = currentContext.getAddressProvider();
         try {
             Address translatedAddress = addressProvider.translate(target);
             if (translatedAddress == null) {
                 throw new NullPointerException("Address Provider " + addressProvider.getClass()
                         + " could not translate address " + target);
             }
+
             return translatedAddress;
         } catch (Exception e) {
             logger.warning("Failed to translate address " + target + " via address provider " + e.getMessage());
@@ -638,12 +699,9 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         }
     }
 
-    void onClose(Connection connection) {
-        removeFromActiveConnections((ClientConnection) connection);
-    }
-
-    private void removeFromActiveConnections(ClientConnection connection) {
+    void onConnectionClose(ClientConnection connection) {
         Address endpoint = connection.getEndPoint();
+        UUID memberUuid = connection.getRemoteUuid();
 
         if (endpoint == null) {
             if (logger.isFinestEnabled()) {
@@ -652,18 +710,38 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             }
             return;
         }
-        if (activeConnections.remove(resolveAddress(endpoint), connection)) {
-            logger.info("Removed connection to endpoint: " + endpoint + ", connection: " + connection);
-            if (connectionCount.decrementAndGet() == 0) {
-                state = LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED;
-                fireLifecycleEvent(LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED);
-                triggerReconnectToCluster();
+
+        synchronized (clientStateMutex) {
+            if (activeConnections.remove(memberUuid, connection)) {
+                logger.info("Removed connection to endpoint: " + endpoint + ":" + memberUuid + ", connection: " + connection);
+                if (activeConnections.isEmpty()) {
+                    if (clientState == ClientState.INITIALIZED_ON_CLUSTER) {
+                        fireLifecycleEvent(LifecycleState.CLIENT_DISCONNECTED);
+                    }
+
+                    triggerClusterReconnection();
+                }
+
+                fireConnectionRemovedEvent(connection);
+            } else if (logger.isFinestEnabled()) {
+                logger.finest("Destroying a connection, but there is no mapping " + endpoint + ":" + memberUuid
+                        + " -> " + connection + " in the connection map.");
             }
-            fireConnectionRemovedEvent(connection);
-        } else {
-            if (logger.isFinestEnabled()) {
-                logger.finest("Destroying a connection, but there is no mapping " + endpoint + " -> " + connection
-                        + " in the connection map.");
+        }
+    }
+
+    private void triggerClusterReconnection() {
+        if (reconnectMode == OFF) {
+            logger.info("RECONNECT MODE is off. Shutting down the client.");
+            shutdownWithExternalThread();
+            return;
+        }
+
+        if (client.getLifecycleService().isRunning()) {
+            try {
+                submitConnectToClusterTask();
+            } catch (RejectedExecutionException r) {
+                shutdownWithExternalThread();
             }
         }
     }
@@ -687,21 +765,200 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     @Override
     public Connection getRandomConnection() {
-        Connection connection = null;
         if (isSmartRoutingEnabled) {
             Member member = loadBalancer.next();
             if (member != null) {
-                connection = getConnection(member.getAddress());
+                Connection connection = getConnection(member.getUuid());
+                if (connection != null) {
+                    return connection;
+                }
             }
         }
-        if (connection != null) {
-            return connection;
-        }
+
         Iterator<ClientConnection> iterator = activeConnections.values().iterator();
-        if (iterator.hasNext()) {
-            return iterator.next();
+        return iterator.hasNext() ? iterator.next() : null;
+    }
+
+    private void authenticateOnCluster(ClientConnection connection) {
+        ClientMessage request = encodeAuthenticationRequest();
+        ClientInvocationFuture future = new ClientInvocation(client, request, null, connection).invokeUrgent();
+        ClientAuthenticationCodec.ResponseParameters response;
+        try {
+            response = ClientAuthenticationCodec.decodeResponse(future.get(authenticationTimeout, MILLISECONDS));
+        } catch (Exception e) {
+            connection.close("Failed to authenticate connection", e);
+            throw rethrow(e);
         }
-        return null;
+
+        AuthenticationStatus authenticationStatus = AuthenticationStatus.getById(response.status);
+        if (failoverConfigProvided && !response.failoverSupported) {
+            logger.warning("Cluster does not support failover. This feature is available in Hazelcast Enterprise");
+            authenticationStatus = NOT_ALLOWED_IN_CLUSTER;
+        }
+        switch (authenticationStatus) {
+            case AUTHENTICATED:
+                handleSuccessfulAuth(connection, response);
+                break;
+            case CREDENTIALS_FAILED:
+                AuthenticationException authException = new AuthenticationException("Invalid credentials!");
+                connection.close("Failed to authenticate connection", authException);
+                throw authException;
+            case NOT_ALLOWED_IN_CLUSTER:
+                ClientNotAllowedInClusterException notAllowedException =
+                        new ClientNotAllowedInClusterException("Client is not allowed in the cluster");
+                connection.close("Failed to authenticate connection", notAllowedException);
+                throw notAllowedException;
+            default:
+                AuthenticationException exception =
+                        new AuthenticationException("Authentication status code not supported. status: " + authenticationStatus);
+                connection.close("Failed to authenticate connection", exception);
+                throw exception;
+        }
+    }
+
+    private void handleSuccessfulAuth(ClientConnection connection, ClientAuthenticationCodec.ResponseParameters response) {
+        synchronized (clientStateMutex) {
+            checkPartitionCount(response.partitionCount);
+            connection.setConnectedServerVersion(response.serverHazelcastVersion);
+            connection.setRemoteEndpoint(response.address);
+            connection.setRemoteUuid(response.memberUuid);
+
+            UUID newClusterId = response.clusterId;
+
+            if (logger.isFineEnabled()) {
+                logger.fine("Checking the cluster: " + newClusterId + ", current cluster: " + this.clusterId);
+            }
+
+            boolean initialConnection = activeConnections.isEmpty();
+            boolean changedCluster = initialConnection && this.clusterId != null && !newClusterId.equals(this.clusterId);
+            if (changedCluster) {
+                logger.warning("Switching from current cluster: " + this.clusterId + " to new cluster: " + newClusterId);
+                client.onClusterRestart();
+            }
+
+            activeConnections.put(response.memberUuid, connection);
+
+            if (initialConnection) {
+                clusterId = newClusterId;
+                if (changedCluster) {
+                    clientState = ClientState.CONNECTED_TO_CLUSTER;
+                    executor.execute(() -> initializeClientOnCluster(newClusterId));
+                } else {
+                    clientState = ClientState.INITIALIZED_ON_CLUSTER;
+                    fireLifecycleEvent(LifecycleState.CLIENT_CONNECTED);
+                }
+            }
+
+            logger.info("Authenticated with server " + response.address + ":" + response.memberUuid
+                    + ", server version: " + response.serverHazelcastVersion
+                    + ", local address: " + connection.getLocalSocketAddress());
+
+            fireConnectionAddedEvent(connection);
+        }
+
+        // It could happen that this connection is already closed and
+        // onConnectionClose() is called even before the synchronized block
+        // above is executed. In this case, now we have a closed but registered
+        // connection. We do a final check here to remove this connection
+        // if needed.
+        if (!connection.isAlive()) {
+            onConnectionClose(connection);
+        }
+    }
+
+    private ClientMessage encodeAuthenticationRequest() {
+        InternalSerializationService ss = client.getSerializationService();
+        byte serializationVersion = ss.getVersion();
+
+        CandidateClusterContext currentContext = clusterDiscoveryService.current();
+        Credentials credentials = currentContext.getCredentialsFactory().newCredentials();
+        String clusterName = currentContext.getClusterName();
+        currentCredentials = credentials;
+
+        if (credentials instanceof PasswordCredentials) {
+            PasswordCredentials cr = (PasswordCredentials) credentials;
+            return ClientAuthenticationCodec
+                    .encodeRequest(clusterName, cr.getName(), cr.getPassword(), clientUuid, connectionType,
+                            serializationVersion, BuildInfoProvider.getBuildInfo().getVersion(), client.getName(), labels);
+        } else {
+            byte[] secretBytes;
+            if (credentials instanceof TokenCredentials) {
+                secretBytes = ((TokenCredentials) credentials).getToken();
+            } else {
+                secretBytes = ss.toData(credentials).toByteArray();
+            }
+            return ClientAuthenticationCustomCodec.encodeRequest(clusterName, secretBytes, clientUuid, connectionType,
+                    serializationVersion, BuildInfoProvider.getBuildInfo().getVersion(), client.getName(), labels);
+        }
+    }
+
+    protected void checkClientActive() {
+        if (!client.getLifecycleService().isRunning()) {
+            throw new HazelcastClientNotActiveException();
+        }
+    }
+
+    private void checkPartitionCount(int newPartitionCount) {
+        ClientPartitionServiceImpl partitionService = (ClientPartitionServiceImpl) client.getClientPartitionService();
+        if (!partitionService.checkAndSetPartitionCount(newPartitionCount)) {
+            throw new ClientNotAllowedInClusterException("Client can not work with this cluster"
+                    + " because it has a different partition count. "
+                    + "Expected partition count: " + partitionService.getPartitionCount()
+                    + ", Member partition count: " + newPartitionCount);
+        }
+    }
+
+    private InetSocketAddress resolveAddress(Address target) {
+        return ConcurrencyUtil.getOrPutIfAbsent(inetSocketAddressCache, target, arg -> {
+            try {
+                return new InetSocketAddress(target.getInetAddress(), target.getPort());
+            } catch (UnknownHostException e) {
+                throw rethrow(e);
+            }
+        });
+    }
+
+    private void initializeClientOnCluster(UUID targetClusterId) {
+        // submitted inside synchronized(clientStateMutex)
+
+        try {
+            synchronized (clientStateMutex) {
+                if (!targetClusterId.equals(clusterId)) {
+                    logger.warning("Won't send client state to cluster: " + targetClusterId
+                            + " Because switched to a new cluster: " + clusterId);
+                    return;
+                }
+            }
+
+            client.sendStateToCluster();
+
+            synchronized (clientStateMutex) {
+                if (targetClusterId.equals(clusterId)) {
+                    if (logger.isFineEnabled()) {
+                        logger.fine("Client state is sent to cluster: " + targetClusterId);
+                    }
+
+                    clientState = ClientState.INITIALIZED_ON_CLUSTER;
+                    fireLifecycleEvent(LifecycleState.CLIENT_CONNECTED);
+                } else if (logger.isFineEnabled()) {
+                    logger.warning("Cannot set client state to " + ClientState.INITIALIZED_ON_CLUSTER
+                            + " because current cluster id: " + this.clusterId + " is different than expected cluster id: "
+                            + targetClusterId);
+                }
+            }
+        } catch (Exception e) {
+            String clusterName = clusterDiscoveryService.current().getClusterName();
+            logger.warning("Failure during sending state to the cluster.", e);
+            synchronized (clientStateMutex) {
+                if (targetClusterId.equals(clusterId)) {
+                    if (logger.isFineEnabled()) {
+                        logger.warning("Retrying sending state to the cluster: " + targetClusterId + ", name: " + clusterName);
+                    }
+
+                    executor.execute(() -> initializeClientOnCluster(targetClusterId));
+                }
+            }
+        }
     }
 
     private class ClientConnectionChannelErrorHandler implements ChannelErrorHandler {
@@ -724,176 +981,40 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         }
     }
 
+    private class ConnectToAllClusterMembersTask implements Runnable {
 
-    private void initializeToCluster(ClientConnection connection) {
-        ClientMessage clientMessage = encodeAuthenticationRequest();
-        ClientInvocation clientInvocation = new ClientInvocation(client, clientMessage, null, connection);
-        ClientInvocationFuture invocationFuture = clientInvocation.invokeUrgent();
+        private Set<UUID> connectingMembers = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
-        ClientMessage response;
-        try {
-            response = invocationFuture.get(authenticationTimeout, MILLISECONDS);
-        } catch (Exception e) {
-            if (logger.isFinestEnabled()) {
-                logger.finest("Authentication of " + connection + " failed.", e);
-            }
-            connection.close("Failed to authenticate connection", e);
-            throw rethrow(e);
-        }
+        @Override
+        public void run() {
+            for (Member member : client.getClientClusterService().getMemberList()) {
+                UUID memberUuid = member.getUuid();
 
-        ClientAuthenticationCodec.ResponseParameters result = ClientAuthenticationCodec.decodeResponse(response);
-        AuthenticationStatus authenticationStatus = AuthenticationStatus.getById(result.status);
-        switch (authenticationStatus) {
-            case AUTHENTICATED:
-                checkPartitionCount(result.partitionCount);
-                connection.setConnectedServerVersion(result.serverHazelcastVersion);
-                connection.setRemoteEndpoint(result.address);
-                UUID newClusterId = result.clusterId;
-
-                if (logger.isFineEnabled()) {
-                    logger.fine("Checking the cluster id.Old: " + this.clusterId + ", new: " + newClusterId);
+                if (!client.getLifecycleService().isRunning()) {
+                    return;
                 }
 
-                boolean changedCluster = clusterId != null && !newClusterId.equals(clusterId);
-                clusterId = newClusterId;
-
-                if (changedCluster) {
-                    client.clear();
+                if (getConnection(memberUuid) != null) {
+                    continue;
                 }
-                activeConnections.put(resolveAddress(result.address), connection);
-                fireConnectionAddedEvent(connection);
 
-                logger.info("Authenticated with server " + result.address + ", server version:" + connection
-                        .getConnectedServerVersion() + " Local address: " + connection.getLocalSocketAddress());
-
-                establishConnectedState(newClusterId, changedCluster);
-
-                // Check if connection is closed by remote before authentication complete, if that is the case
-                // we need to remove it back from active connections.
-                // Race description from https://github.com/hazelcast/hazelcast/pull/8832.(A little bit changed)
-                // - open a connection client -> member
-                // - send auth message
-                // - receive auth reply -> reply processing is offloaded to an executor. Did not start to run yet.
-                // - member closes the connection -> the connection is trying to removed from map
-                //                                                     but it was not there to begin with
-                // - the executor start processing the auth reply -> it put the connection to the connection map.
-                // - we end up with a closed connection in activeConnections map
-                if (!connection.isAlive()) {
-                    removeFromActiveConnections(connection);
+                if (connectingMembers.add(memberUuid)) {
+                    // submit a task for this address only if there is no
+                    // another connection attempt for it
+                    executor.submit(() -> {
+                        try {
+                            if (client.getLifecycleService().isRunning()) {
+                                getOrConnect(member);
+                            }
+                        } catch (Exception e) {
+                            if (logger.isFinestEnabled()) {
+                                logger.finest("Exception occurred while trying to connect to " + member, e);
+                            }
+                        } finally {
+                            connectingMembers.remove(memberUuid);
+                        }
+                    });
                 }
-                break;
-            case CREDENTIALS_FAILED:
-                throw new AuthenticationException("Invalid credentials!");
-            case NOT_ALLOWED_IN_CLUSTER:
-                throw new ClientNotAllowedInClusterException("Client is not allowed in the cluster");
-            default:
-                throw new AuthenticationException("Authentication status code not supported. status: "
-                        + authenticationStatus);
-        }
-    }
-
-    private void establishConnectedState(UUID newClusterId, boolean changedCluster) {
-        boolean isFirstConnectionAfterDisconnection = connectionCount.incrementAndGet() == 1;
-        if (isFirstConnectionAfterDisconnection) {
-            if (changedCluster) {
-                clusterConnectionExecutor.execute(() -> sendStatesToCluster(newClusterId));
-            } else {
-                state = LifecycleEvent.LifecycleState.CLIENT_CONNECTED;
-                fireLifecycleEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
-            }
-        }
-    }
-
-    private ClientMessage encodeAuthenticationRequest() {
-        InternalSerializationService ss = client.getSerializationService();
-        byte serializationVersion = ss.getVersion();
-
-        CandidateClusterContext currentClusterContext = discoveryService.current();
-        Credentials credentials = currentClusterContext.getCredentialsFactory().newCredentials();
-        String clusterName = currentClusterContext.getClusterName();
-        currentCredentials = credentials;
-
-        if (credentials instanceof PasswordCredentials) {
-            PasswordCredentials cr = (PasswordCredentials) credentials;
-            return ClientAuthenticationCodec
-                    .encodeRequest(clusterName, cr.getName(), cr.getPassword(), clientUuid, connectionType,
-                            serializationVersion, BuildInfoProvider.getBuildInfo().getVersion(), client.getName(), labels);
-        } else {
-            Data data;
-            if (credentials instanceof TokenCredentials) {
-                data = new HeapData(((TokenCredentials) credentials).getToken());
-            } else {
-                data = ss.toData(credentials);
-            }
-            return ClientAuthenticationCustomCodec.encodeRequest(clusterName, data, clientUuid, connectionType,
-                    serializationVersion, BuildInfoProvider.getBuildInfo().getVersion(), client.getName(), labels);
-        }
-    }
-
-    protected void checkClientActive() {
-        if (!client.getLifecycleService().isRunning()) {
-            throw new HazelcastClientNotActiveException();
-        }
-    }
-
-    private void checkPartitionCount(int newPartitionCount) {
-        if (partitionCount == -1) {
-            partitionCount = newPartitionCount;
-        } else if (partitionCount != newPartitionCount) {
-            throw new ClientNotAllowedInClusterException("Client can not work with this cluster "
-                    + " because it has a different partition count. "
-                    + "Partition count client expects :" + partitionCount
-                    + ", Member partition count:" + newPartitionCount);
-        }
-    }
-
-    private boolean checkFailoverSupport(Connection connection) {
-        if (!failoverConfigProvided) {
-            return true;
-        }
-        ClientMessage isFailoverSupportedMessage = ClientIsFailoverSupportedCodec.encodeRequest();
-        ClientInvocationFuture future = new ClientInvocation(client, isFailoverSupportedMessage, null, connection).invoke();
-        try {
-            boolean isAllowed = ClientIsFailoverSupportedCodec.decodeResponse(future.get()).response;
-            if (!isAllowed) {
-                logger.warning("Cluster does not support failover. "
-                        + "This feature is available in Hazelcast Enterprise");
-            }
-            return isAllowed;
-        } catch (InterruptedException | ExecutionException e) {
-            logger.warning("Cluster did not answer to failover support query. ", e);
-            return false;
-        }
-    }
-
-    private InetSocketAddress resolveAddress(Address target) {
-        return ConcurrencyUtil.getOrPutIfAbsent(inetSocketAddressCache, target, arg -> {
-            try {
-                return new InetSocketAddress(target.getInetAddress(), target.getPort());
-            } catch (UnknownHostException e) {
-                throw rethrow(e);
-            }
-        });
-    }
-
-    private void sendStatesToCluster(UUID targetClusterId) {
-        try {
-            //trying to prevent sending the state twice to same cluster
-            if (targetClusterId.equals(clusterId)) {
-                //still possible to send state twice to same cluster, since sendState is idempotent, there is no problem
-                client.sendStateToCluster();
-                state = LifecycleEvent.LifecycleState.CLIENT_CONNECTED;
-                fireLifecycleEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
-                if (failoverConfigProvided) {
-                    fireLifecycleEvent(LifecycleEvent.LifecycleState.CLIENT_CHANGED_CLUSTER);
-                }
-            }
-        } catch (Exception e) {
-            String clusterName = discoveryService.current().getClusterName();
-            logger.warning("Got exception when trying to send state to cluster. ", e);
-            if (targetClusterId.equals(clusterId)) {
-                logger.warning("Retrying sending state to cluster with uuid" + targetClusterId + ", name " + clusterName);
-                clusterConnectionExecutor.execute(() -> sendStatesToCluster(targetClusterId));
             }
         }
     }

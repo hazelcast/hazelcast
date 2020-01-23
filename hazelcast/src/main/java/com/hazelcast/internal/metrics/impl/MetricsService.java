@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,6 +43,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.internal.util.MapUtil.entry;
 import static java.util.stream.Collectors.joining;
@@ -148,7 +149,7 @@ public class MetricsService implements ManagedService, LiveOperationsTracker {
 
     // visible for testing
     void collectMetrics() {
-        MetricsPublisher[] publishersArr = publishers.toArray(new MetricsPublisher[publishers.size()]);
+        MetricsPublisher[] publishersArr = publishers.toArray(new MetricsPublisher[0]);
         PublisherMetricsCollector publisherCollector = new PublisherMetricsCollector(publishersArr);
         collectMetrics(publisherCollector);
         publisherCollector.publishCollectedMetrics();
@@ -178,7 +179,7 @@ public class MetricsService implements ManagedService, LiveOperationsTracker {
             throw new IllegalArgumentException("Metrics collection is not enabled");
         }
         CompletableFuture<RingbufferSlice<Map.Entry<Long, byte[]>>> future = new CompletableFuture<>();
-        future.whenComplete(withTryCatch(logger, (s, e) -> pendingReads.remove(future)));
+        future.whenCompleteAsync(withTryCatch(logger, (s, e) -> pendingReads.remove(future)), CALLER_RUNS);
         pendingReads.put(future, startSequence);
 
         tryCompleteRead(future, startSequence);

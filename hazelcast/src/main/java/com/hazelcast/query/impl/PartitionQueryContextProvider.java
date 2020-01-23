@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,12 +29,13 @@ public class PartitionQueryContextProvider implements QueryContextProvider {
      * @param indexes the indexes to construct the new query context for.
      */
     public PartitionQueryContextProvider(Indexes indexes) {
-        queryContext = new QueryContext(indexes);
+        queryContext = new QueryContext(indexes, 1);
     }
 
     @Override
-    public QueryContext obtainContextFor(Indexes indexes) {
+    public QueryContext obtainContextFor(Indexes indexes, int ownedPartitionCount) {
         assert indexes == queryContext.indexes;
+        assert queryContext.ownedPartitionCount == 1 && ownedPartitionCount == 1;
         return queryContext;
     }
 

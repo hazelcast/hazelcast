@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,7 +90,6 @@ public class ClientMessageTest {
 
 
         clientMessage.setRetryable(true);
-        clientMessage.setAcquiresResource(true);
         clientMessage.setOperationName("operationName");
         clientMessage.add(new ClientMessage.Frame(new byte[20], ClientMessage.IS_FINAL_FLAG));
 
@@ -108,7 +107,6 @@ public class ClientMessageTest {
         assertEquals(newCorrelationId, copyMessage.getCorrelationId());
         assertEquals(clientMessage.getPartitionId(), copyMessage.getPartitionId());
         assertEquals(clientMessage.isRetryable(), copyMessage.isRetryable());
-        assertEquals(clientMessage.acquiresResource(), copyMessage.acquiresResource());
         assertEquals(clientMessage.getOperationName(), copyMessage.getOperationName());
     }
 }

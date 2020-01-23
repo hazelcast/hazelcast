@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,11 @@
 
 package com.hazelcast.map.impl;
 
-import com.hazelcast.core.EntryView;
 import com.hazelcast.internal.util.collection.InflatableSet;
 import com.hazelcast.internal.util.collection.InflatableSet.Builder;
+import com.hazelcast.map.impl.wan.WanMapEntryView;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.wan.impl.merkletree.MerkleTree;
 
@@ -37,30 +36,18 @@ import java.util.Set;
  */
 public class MerkleTreeNodeEntries implements IdentifiedDataSerializable {
     private int nodeOrder;
-    private Set<EntryView<Data, Data>> nodeEntries = Collections.emptySet();
+    private Set<WanMapEntryView<Object, Object>> nodeEntries = Collections.emptySet();
 
     public MerkleTreeNodeEntries() {
     }
 
-    public MerkleTreeNodeEntries(int nodeOrder, Set<EntryView<Data, Data>> nodeEntries) {
+    public MerkleTreeNodeEntries(int nodeOrder, Set<WanMapEntryView<Object, Object>> nodeEntries) {
         this.nodeOrder = nodeOrder;
         this.nodeEntries = nodeEntries;
     }
 
-    public int getNodeOrder() {
-        return nodeOrder;
-    }
-
-    public void setNodeOrder(int nodeOrder) {
-        this.nodeOrder = nodeOrder;
-    }
-
-    public Set<EntryView<Data, Data>> getNodeEntries() {
+    public Set<WanMapEntryView<Object, Object>> getNodeEntries() {
         return nodeEntries;
-    }
-
-    public void setNodeEntries(Set<EntryView<Data, Data>> nodeEntries) {
-        this.nodeEntries = nodeEntries;
     }
 
     @Override
@@ -77,7 +64,7 @@ public class MerkleTreeNodeEntries implements IdentifiedDataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(nodeOrder);
         out.writeInt(nodeEntries.size());
-        for (EntryView entryView : nodeEntries) {
+        for (WanMapEntryView<Object, Object> entryView : nodeEntries) {
             out.writeObject(entryView);
         }
     }
@@ -86,7 +73,7 @@ public class MerkleTreeNodeEntries implements IdentifiedDataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         nodeOrder = in.readInt();
         int entryCount = in.readInt();
-        Builder<EntryView<Data, Data>> entries = InflatableSet.newBuilder(entryCount);
+        Builder<WanMapEntryView<Object, Object>> entries = InflatableSet.newBuilder(entryCount);
         for (int j = 0; j < entryCount; j++) {
             entries.add(in.readObject());
         }

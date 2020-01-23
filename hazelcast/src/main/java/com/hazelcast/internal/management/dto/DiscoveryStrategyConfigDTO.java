@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,8 @@ public class DiscoveryStrategyConfigDTO implements JsonSerializable {
 
         if (config.getClassName() != null) {
             root.add("className", config.getClassName());
+        } else if (config.getDiscoveryStrategyFactory() != null) {
+            root.add("className", config.getDiscoveryStrategyFactory().getClass().getName());
         }
         if (!isNullOrEmpty(config.getProperties())) {
             root.add("properties", toJsonObject(config.getProperties()));

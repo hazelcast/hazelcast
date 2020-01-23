@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import java.io.IOException;
 import java.util.function.BiConsumer;
 
 import static com.hazelcast.cp.internal.RaftService.CP_SUBSYSTEM_EXECUTOR;
-import static com.hazelcast.internal.util.InvocationUtil.CALLER_RUNS_EXECUTOR;
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 
 /**
  * The operation that passes a query to leader or a follower of a Raft group.
@@ -86,7 +86,7 @@ public class RaftQueryOp extends Operation implements IndeterminateOperationStat
             ((RaftNodeAware) op).setRaftNode(raftNode);
         }
 
-        raftNode.query(op, queryPolicy).whenCompleteAsync(this, CALLER_RUNS_EXECUTOR);
+        raftNode.query(op, queryPolicy).whenCompleteAsync(this, CALLER_RUNS);
     }
 
     @Override

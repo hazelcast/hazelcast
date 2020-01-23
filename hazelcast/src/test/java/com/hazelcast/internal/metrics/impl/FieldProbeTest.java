@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,12 +49,13 @@ public class FieldProbeTest extends HazelcastTestSupport {
         UnknownFieldType unknownFieldType = new UnknownFieldType();
         Field field = unknownFieldType.getClass().getDeclaredField("field");
         Probe probe = field.getAnnotation(Probe.class);
+        SourceMetadata ignoredSourceMetadata = new SourceMetadata(Object.class);
 
-        createFieldProbe(field, probe);
+        createFieldProbe(field, probe, ignoredSourceMetadata);
     }
 
     private class UnknownFieldType {
-        @Probe
+        @Probe(name = "field")
         private String field;
     }
 
@@ -92,7 +93,7 @@ public class FieldProbeTest extends HazelcastTestSupport {
         SomeSource source = new SomeSource();
         Field field = source.getClass().getDeclaredField(fieldName);
         Probe probe = field.getAnnotation(Probe.class);
-        FieldProbe fieldProbe = createFieldProbe(field, probe);
+        FieldProbe fieldProbe = createFieldProbe(field, probe, new SourceMetadata(SomeSource.class));
 
         LongFieldProbe longFieldProbe = assertInstanceOf(LongFieldProbe.class, fieldProbe);
 
@@ -116,7 +117,7 @@ public class FieldProbeTest extends HazelcastTestSupport {
         Field field = source.getClass().getDeclaredField(fieldName);
         Probe probe = field.getAnnotation(Probe.class);
 
-        FieldProbe fieldProbe = createFieldProbe(field, probe);
+        FieldProbe fieldProbe = createFieldProbe(field, probe, new SourceMetadata(SomeSource.class));
         assertInstanceOf(DoubleFieldProbe.class, fieldProbe);
 
         DoubleFieldProbe doubleFieldProbe = (DoubleFieldProbe) fieldProbe;
@@ -127,69 +128,69 @@ public class FieldProbeTest extends HazelcastTestSupport {
     }
 
     private class SomeSource {
-        @Probe
+        @Probe(name = "byteField")
         private byte byteField = 10;
-        @Probe
+        @Probe(name = "shortField")
         private short shortField = 10;
-        @Probe
+        @Probe(name = "intField")
         private int intField = 10;
-        @Probe
+        @Probe(name = "longField")
         private long longField = 10;
 
-        @Probe
+        @Probe(name = "floatField")
         private float floatField = 10;
-        @Probe
+        @Probe(name = "doubleField")
         private double doubleField = 10;
 
-        @Probe
+        @Probe(name = "atomicLongField")
         private AtomicLong atomicLongField = new AtomicLong(10);
-        @Probe
+        @Probe(name = "nullAtomicLongField")
         private AtomicLong nullAtomicLongField;
-        @Probe
+        @Probe(name = "atomicIntegerField")
         private AtomicInteger atomicIntegerField = new AtomicInteger(10);
-        @Probe
+        @Probe(name = "nullAtomicIntegerField")
         private AtomicInteger nullAtomicIntegerField;
-        @Probe
+        @Probe(name = "counterField")
         private Counter counterField = newSwCounter(10);
-        @Probe
+        @Probe(name = "nullCounterField")
         private Counter nullCounterField;
-        @Probe
+        @Probe(name = "collectionField")
         private Collection collectionField = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
-        @Probe
+        @Probe(name = "nullCollectionField")
         private Collection nullCollectionField;
-        @Probe
+        @Probe(name = "mapField")
         private Map mapField = MetricsUtils.createMap(10);
-        @Probe
+        @Probe(name = "nullMapField")
         private Map nullMapField;
-        @Probe
+        @Probe(name = "semaphoreField")
         private Semaphore semaphoreField = new Semaphore(10);
-        @Probe
+        @Probe(name = "nullSemaphoreField")
         private Semaphore nullSemaphoreField;
 
-        @Probe
+        @Probe(name = "ByteField")
         private Byte ByteField = (byte) 10;
-        @Probe
+        @Probe(name = "ShortField")
         private Short ShortField = (short) 10;
-        @Probe
+        @Probe(name = "IntegerField")
         private Integer IntegerField = 10;
-        @Probe
+        @Probe(name = "LongField")
         private Long LongField = (long) 10;
-        @Probe
+        @Probe(name = "FloatField")
         private Float FloatField = (float) 10;
-        @Probe
+        @Probe(name = "DoubleField")
         private Double DoubleField = (double) 10;
 
-        @Probe
+        @Probe(name = "nullByteField")
         private Byte nullByteField;
-        @Probe
+        @Probe(name = "nullShortField")
         private Short nullShortField;
-        @Probe
+        @Probe(name = "nullIntegerField")
         private Integer nullIntegerField;
-        @Probe
+        @Probe(name = "nullLongField")
         private Long nullLongField;
-        @Probe
+        @Probe(name = "nullFloatField")
         private Float nullFloatField;
-        @Probe
+        @Probe(name = "nullDoubleField")
         private Double nullDoubleField;
 
     }

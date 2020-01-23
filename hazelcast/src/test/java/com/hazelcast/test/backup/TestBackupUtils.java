@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,13 @@
 package com.hazelcast.test.backup;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.AssertTask;
 
 import javax.cache.expiry.ExpiryPolicy;
 
+import static com.hazelcast.internal.util.Preconditions.checkInstanceOf;
 import static com.hazelcast.test.HazelcastTestSupport.assertEqualsStringFormat;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
-import static com.hazelcast.internal.util.Preconditions.checkInstanceOf;
+import static com.hazelcast.test.backup.CacheBackupAccessor.NON_EXISTENT_KEY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -66,7 +66,7 @@ public final class TestBackupUtils {
      * @return accessor for a given map and replica index
      */
     public static <K, V> BackupAccessor<K, V> newMapAccessor(HazelcastInstance[] cluster, String mapName, int replicaIndex) {
-        return new MapBackupAccessor<K, V>(cluster, mapName, replicaIndex);
+        return new MapBackupAccessor<>(cluster, mapName, replicaIndex);
     }
 
     /**
@@ -97,63 +97,53 @@ public final class TestBackupUtils {
      * @return accessor for a given cache and replica index
      */
     public static <K, V> BackupAccessor<K, V> newCacheAccessor(HazelcastInstance[] cluster, String cacheName, int replicaIndex) {
-        return new CacheBackupAccessor<K, V>(cluster, cacheName, replicaIndex);
+        return new CacheBackupAccessor<>(cluster, cacheName, replicaIndex);
     }
 
     public static <K, V> void assertBackupEntryEqualsEventually(final K key, final V expectedValue,
                                                                 final BackupAccessor<K, V> accessor) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                V actualValue = accessor.get(key);
-                assertEqualsStringFormat("Expected backup entry with key '" + key + "' to be '%s', but was '%s'",
-                        expectedValue, actualValue);
-            }
+        assertTrueEventually(() -> {
+            V actualValue = accessor.get(key);
+            assertEqualsStringFormat("Expected backup entry with key '" + key + "' to be '%s', but was '%s'",
+                    expectedValue, actualValue);
         });
     }
 
     public static <K, V> void assertBackupEntryNullEventually(final K key, final BackupAccessor<K, V> accessor) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                V actualValue = accessor.get(key);
-                assertNull("Expected backup entry with key '" + key + "' to be null, but was '" + actualValue + "'", actualValue);
-            }
+        assertTrueEventually(() -> {
+            V actualValue = accessor.get(key);
+            assertNull("Expected backup entry with key '" + key + "' to be null, but was '" + actualValue + "'", actualValue);
         });
     }
 
     public static <K, V> void assertBackupSizeEventually(final int expectedSize, final BackupAccessor<K, V> accessor) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEqualsStringFormat("Expected size %d, but was %d", expectedSize, accessor.size());
-            }
-        });
+        assertTrueEventually(() -> assertEqualsStringFormat("Expected size %d, but was %d", expectedSize, accessor.size()));
     }
 
-    @SuppressWarnings("unchecked")
     public static <K, V> void assertExpiryPolicyEventually(final K key, final ExpiryPolicy expiryPolicy,
                                                            final BackupAccessor<K, V> accessor) {
         checkInstanceOf(CacheBackupAccessor.class, accessor, "Need to supply a CacheBackupAccessor");
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                CacheBackupAccessor<K, V> cacheBackupAccessor = (CacheBackupAccessor<K, V>) accessor;
-                assertEquals(expiryPolicy, cacheBackupAccessor.getExpiryPolicy(key));
-            }
+        assertTrueEventually(() -> {
+            CacheBackupAccessor<K, V> cacheBackupAccessor = (CacheBackupAccessor<K, V>) accessor;
+            assertEquals(expiryPolicy, cacheBackupAccessor.getExpiryPolicy(key));
         });
     }
 
     public static <K, V> void assertExpirationTimeExistsEventually(final K key, final BackupAccessor<K, V> accessor) {
         checkInstanceOf(CacheBackupAccessor.class, accessor, "Need to supply a CacheBackupAccessor");
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                CacheBackupAccessor<K, V> cacheBackupAccessor = (CacheBackupAccessor<K, V>) accessor;
-                long expirationTime = cacheBackupAccessor.getExpirationTime(key);
+        assertTrueEventually(() -> {
+            CacheBackupAccessor<K, V> cacheBackupAccessor = (CacheBackupAccessor<K, V>) accessor;
+            long expirationTime = cacheBackupAccessor.getExpirationTime(key);
+
+            String msg;
+            if (expirationTime == NON_EXISTENT_KEY) {
+                msg = String.format("Non existent key on backup partition key=%s, accessor=%s", key, accessor);
+            } else {
                 // expirationTime is set to Duration.ETERNAL if no expiry policy is defined.
-                assertTrue(expirationTime != Long.MAX_VALUE && expirationTime > 0);
+                msg = String.format("key=%s, expirationTime=%d, accessor=%s", key, expirationTime, accessor);
             }
+
+            assertTrue(msg, expirationTime > 0 && expirationTime < Long.MAX_VALUE);
         });
     }
 }

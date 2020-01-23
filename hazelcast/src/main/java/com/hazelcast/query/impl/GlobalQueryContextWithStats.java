@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,8 @@ package com.hazelcast.query.impl;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.query.Predicate;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -31,13 +32,13 @@ import java.util.Set;
  */
 public class GlobalQueryContextWithStats extends QueryContext {
 
-    private final HashMap<String, QueryTrackingIndex> knownIndexes = new HashMap<String, QueryTrackingIndex>();
+    private final HashMap<String, QueryTrackingIndex> knownIndexes = new HashMap<>();
 
-    private final HashSet<QueryTrackingIndex> trackedIndexes = new HashSet<QueryTrackingIndex>(8);
+    private final HashSet<QueryTrackingIndex> trackedIndexes = new HashSet<>(8);
 
     @Override
-    void attachTo(Indexes indexes) {
-        super.attachTo(indexes);
+    void attachTo(Indexes indexes, int ownedPartitionCount) {
+        super.attachTo(indexes, ownedPartitionCount);
         for (QueryTrackingIndex trackedIndex : trackedIndexes) {
             trackedIndex.resetPerQueryStats();
         }
@@ -53,7 +54,7 @@ public class GlobalQueryContextWithStats extends QueryContext {
 
     @Override
     public Index matchIndex(String pattern, IndexMatchHint matchHint) {
-        InternalIndex delegate = indexes.matchIndex(pattern, matchHint);
+        InternalIndex delegate = indexes.matchIndex(pattern, matchHint, ownedPartitionCount);
         if (delegate == null) {
             return null;
         }
@@ -126,6 +127,18 @@ public class GlobalQueryContextWithStats extends QueryContext {
         }
 
         @Override
+        public boolean canEvaluate(Class<? extends Predicate> predicateClass) {
+            return delegate.canEvaluate(predicateClass);
+        }
+
+        @Override
+        public Set<QueryableEntry> evaluate(Predicate predicate) {
+            Set<QueryableEntry> result = delegate.evaluate(predicate);
+            hasQueries = true;
+            return result;
+        }
+
+        @Override
         public Set<QueryableEntry> getRecords(Comparable value) {
             Set<QueryableEntry> result = delegate.getRecords(value);
             hasQueries = true;
@@ -171,6 +184,11 @@ public class GlobalQueryContextWithStats extends QueryContext {
         @Override
         public boolean hasPartitionIndexed(int partitionId) {
             return delegate.hasPartitionIndexed(partitionId);
+        }
+
+        @Override
+        public boolean allPartitionsIndexed(int ownedPartitionCount) {
+            return delegate.allPartitionsIndexed(ownedPartitionCount);
         }
 
         @Override

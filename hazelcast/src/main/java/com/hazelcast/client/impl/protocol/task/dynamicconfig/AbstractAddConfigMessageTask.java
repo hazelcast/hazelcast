@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import com.hazelcast.internal.dynamicconfig.ClusterWideConfigurationService;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.security.permission.ConfigPermission;
-import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import java.security.Permission;
 import java.util.ArrayList;
@@ -70,8 +69,12 @@ public abstract class AbstractAddConfigMessageTask<P> extends AbstractMessageTas
     public final void processMessage() {
         IdentifiedDataSerializable config = getConfig();
         ClusterWideConfigurationService service = getService(ClusterWideConfigurationService.SERVICE_NAME);
-        InternalCompletableFuture<Object> future = service.broadcastConfigAsync(config);
-        future.whenCompleteAsync(this);
+        if (checkStaticConfigDoesNotExist(config)) {
+            service.broadcastConfigAsync(config)
+                   .whenCompleteAsync(this);
+        } else {
+            sendResponse(null);
+        }
     }
 
     @Override
@@ -100,4 +103,6 @@ public abstract class AbstractAddConfigMessageTask<P> extends AbstractMessageTas
     }
 
     protected abstract IdentifiedDataSerializable getConfig();
+
+    protected abstract boolean checkStaticConfigDoesNotExist(IdentifiedDataSerializable config);
 }

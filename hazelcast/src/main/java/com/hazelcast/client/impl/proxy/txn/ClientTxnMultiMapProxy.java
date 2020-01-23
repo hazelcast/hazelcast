@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import com.hazelcast.client.impl.protocol.codec.TransactionalMultiMapValueCountC
 import com.hazelcast.client.impl.spi.ClientTransactionContext;
 import com.hazelcast.transaction.TransactionalMultiMap;
 import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
 import com.hazelcast.transaction.TransactionException;
 
@@ -61,7 +61,7 @@ public class ClientTxnMultiMapProxy<K, V> extends ClientTxnProxy implements Tran
 
         ClientMessage response = invoke(request);
         List<Data> collection = TransactionalMultiMapGetCodec.decodeResponse(response).response;
-        return new UnmodifiableLazyList<V>(collection, getSerializationService());
+        return new UnmodifiableLazyList(collection, getSerializationService());
     }
 
     @Override
@@ -78,7 +78,7 @@ public class ClientTxnMultiMapProxy<K, V> extends ClientTxnProxy implements Tran
                 .encodeRequest(name, getTransactionId(), getThreadId(), toData(key));
         ClientMessage response = invoke(request);
         List<Data> collection = TransactionalMultiMapRemoveCodec.decodeResponse(response).response;
-        return new UnmodifiableLazyList<V>(collection, getSerializationService());
+        return new UnmodifiableLazyList(collection, getSerializationService());
     }
 
     @Override

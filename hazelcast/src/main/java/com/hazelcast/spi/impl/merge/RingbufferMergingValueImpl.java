@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,12 +51,12 @@ public class RingbufferMergingValueImpl
     }
 
     @Override
-    public RingbufferMergeData getValue() {
+    public RingbufferMergeData getRawValue() {
         return value;
     }
 
     @Override
-    public <DV> DV getDeserializedValue() {
+    public RingbufferMergeData getValue() {
         final RingbufferMergeData deserializedValues = new RingbufferMergeData(value.getItems().length);
         deserializedValues.setHeadSequence(value.getHeadSequence());
         deserializedValues.setTailSequence(value.getTailSequence());
@@ -65,7 +65,7 @@ public class RingbufferMergingValueImpl
             deserializedValues.set(seq, serializationService.toObject(value.read(seq)));
         }
 
-        return (DV) deserializedValues;
+        return deserializedValues;
     }
 
     public RingbufferMergingValueImpl setValues(RingbufferMergeData values) {

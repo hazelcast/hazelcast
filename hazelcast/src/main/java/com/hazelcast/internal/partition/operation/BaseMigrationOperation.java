@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -111,6 +111,15 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
         InternalPartitionServiceImpl partitionService = getService();
         if (!partitionService.applyCompletedMigrations(completedMigrations, migrationInfo.getMaster())) {
             throw new PartitionStateVersionMismatchException(partitionStateVersion, partitionService.getPartitionStateVersion());
+        }
+        if (partitionService.getMigrationManager().isFinalizingMigrationRegistered(migrationInfo.getPartitionId())) {
+            // There's a pending migration finalization operation in the queue.
+            // This happens when this node was the source of a backup replica migration
+            // and now it is destination of another replica migration on the same partition.
+            // Sources of backup migrations are not part of migration transaction
+            // and they learn the migration only while applying completed migrations.
+            throw new RetryableHazelcastException("There is a scheduled FinalizeMigrationOperation for the same partition => "
+                    + migrationInfo);
         }
     }
 
@@ -276,7 +285,7 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
 
     @Override
     public ExceptionAction onInvocationException(Throwable throwable) {
-        if (throwable instanceof MemberLeftException) {
+        if (throwable instanceof MemberLeftException || throwable instanceof TargetNotMemberException) {
             return ExceptionAction.THROW_EXCEPTION;
         }
         if (!migrationInfo.isValid()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,11 +25,13 @@ import com.hazelcast.internal.eviction.EvictionChecker;
 import com.hazelcast.internal.nearcache.NearCacheRecord;
 import com.hazelcast.internal.nearcache.impl.maxsize.EntryCountNearCacheEvictionChecker;
 import com.hazelcast.internal.nearcache.impl.preloader.NearCachePreloader;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.nio.serialization.Data;
 
+import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
 import static java.lang.String.format;
 
@@ -71,7 +73,7 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
 
     @Override
     protected HeapNearCacheRecordMap<K, R> createNearCacheRecordMap(NearCacheConfig nearCacheConfig) {
-        return new HeapNearCacheRecordMap<K, R>(serializationService, DEFAULT_INITIAL_CAPACITY);
+        return new HeapNearCacheRecordMap<>(serializationService, DEFAULT_INITIAL_CAPACITY);
     }
 
     @Override
@@ -134,27 +136,58 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
         }
     }
 
+    @Nullable
     @Override
-    protected R getOrCreateToReserve(K key, Data keyData) {
-        return records.applyIfAbsent(key, new ReserveForUpdateFunction(keyData));
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    protected V updateAndGetReserved(K key, final V value, final long reservationId, boolean deserialize) {
-        R existingRecord = records.applyIfPresent(key, new BiFunction<K, R, R>() {
-            @Override
-            public R apply(K key, R reservedRecord) {
-                return updateReservedRecordInternal(key, value, reservedRecord, reservationId);
-            }
-        });
+    public V tryPublishReserved(K key, V value, long reservationId, boolean deserialize) {
+        R existingRecord = records.applyIfPresent(key,
+                (key1, reservedRecord) -> publishReservedRecord(key1, value, reservedRecord, reservationId));
 
         if (existingRecord == null || !deserialize) {
             return null;
         }
-
         Object cachedValue = existingRecord.getValue();
         return cachedValue instanceof Data ? toValue(cachedValue) : (V) cachedValue;
+    }
+
+    @Override
+    protected R reserveForReadUpdate(K key, Data keyData, long reservationId) {
+        return records.applyIfAbsent(key, new ReadUpdateReservation(keyData, reservationId));
+    }
+
+    @SuppressWarnings("WeakerAccess")
+    private class ReadUpdateReservation implements Function<K, R> {
+        private final Data keyData;
+        private final long reservationId;
+
+        ReadUpdateReservation(Data keyData, long reservationId) {
+            this.keyData = keyData;
+            this.reservationId = reservationId;
+        }
+
+        @Override
+        public R apply(K key) {
+            return newReservationRecord(key, keyData, reservationId);
+        }
+    }
+
+    @Override
+    protected R reserveForWriteUpdate(K key, Data keyData, long reservationId) {
+        return records.apply(key, new WriteUpdateReservation(keyData, reservationId));
+    }
+
+    private class WriteUpdateReservation implements BiFunction<K, R, R> {
+        private final Data keyData;
+        private final long reservationId;
+
+        WriteUpdateReservation(Data keyData, long reservationId) {
+            this.keyData = keyData;
+            this.reservationId = reservationId;
+        }
+
+        @Override
+        public R apply(K key, R existingRecord) {
+            return reserveForWriteUpdate(key, keyData, existingRecord, reservationId);
+        }
     }
 
     @Override

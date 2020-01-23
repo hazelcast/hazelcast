@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import com.hazelcast.cp.internal.session.SessionResponse;
 import com.hazelcast.cp.internal.session.operation.CreateSessionOp;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.util.Clock;
 
 import static com.hazelcast.cp.session.CPSession.CPSessionOwnerType.CLIENT;
 
@@ -45,7 +44,7 @@ public class CreateSessionMessageTask extends AbstractSessionMessageTask<Request
 
     @Override
     RaftOp getRaftOp() {
-        return new CreateSessionOp(connection.getEndPoint(), parameters.endpointName, CLIENT, Clock.currentTimeMillis());
+        return new CreateSessionOp(connection.getEndPoint(), parameters.endpointName, CLIENT);
     }
 
     @Override

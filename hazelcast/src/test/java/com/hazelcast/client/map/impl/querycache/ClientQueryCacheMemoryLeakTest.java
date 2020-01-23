@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,8 @@
 package com.hazelcast.client.map.impl.querycache;
 
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
-import com.hazelcast.client.impl.querycache.ClientQueryCacheContext;
-import com.hazelcast.client.impl.querycache.subscriber.ClientQueryCacheEventService;
-import com.hazelcast.client.impl.querycache.subscriber.QueryCacheToListenerMapper;
+import com.hazelcast.client.map.impl.querycache.subscriber.ClientQueryCacheEventService;
+import com.hazelcast.client.map.impl.querycache.subscriber.QueryCacheToListenerMapper;
 import com.hazelcast.client.impl.proxy.ClientMapProxy;
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.ProxyManager;

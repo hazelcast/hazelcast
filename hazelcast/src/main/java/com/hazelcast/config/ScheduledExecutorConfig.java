@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,27 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
-import com.hazelcast.spi.merge.SplitBrainMergeTypes;
+import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.config.ScheduledExecutorConfig.CapacityPolicy.PER_NODE;
+import static com.hazelcast.config.ScheduledExecutorConfig.CapacityPolicy.getById;
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
 /**
- * Configuration options for the {@link com.hazelcast.scheduledexecutor.IScheduledExecutorService}.
+ * Configuration options for the {@link IScheduledExecutorService}.
  */
-public class ScheduledExecutorConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSerializable,
-        NamedConfig {
+public class ScheduledExecutorConfig implements IdentifiedDataSerializable, NamedConfig {
 
     /**
      * The number of executor threads per Member for the Executor based on this configuration.
@@ -41,9 +44,14 @@ public class ScheduledExecutorConfig implements SplitBrainMergeTypeProvider, Ide
     private static final int DEFAULT_POOL_SIZE = 16;
 
     /**
-     * The number of tasks that can co-exist per scheduler per partition.
+     * The number of tasks that can co-exist per scheduler according to the capacity policy.
      */
     private static final int DEFAULT_CAPACITY = 100;
+
+    /**
+     * The number of tasks that can co-exist per scheduler per partition.
+     */
+    private static final CapacityPolicy DEFAULT_CAPACITY_POLICY = PER_NODE;
 
     /**
      * The number of replicas per task scheduled in each ScheduledExecutor.
@@ -55,6 +63,8 @@ public class ScheduledExecutorConfig implements SplitBrainMergeTypeProvider, Ide
     private int durability = DEFAULT_DURABILITY;
 
     private int capacity = DEFAULT_CAPACITY;
+
+    private CapacityPolicy capacityPolicy = DEFAULT_CAPACITY_POLICY;
 
     private int poolSize = DEFAULT_POOL_SIZE;
 
@@ -70,22 +80,23 @@ public class ScheduledExecutorConfig implements SplitBrainMergeTypeProvider, Ide
     }
 
     public ScheduledExecutorConfig(String name, int durability, int capacity, int poolSize) {
-        this(name, durability, capacity, poolSize, null, new MergePolicyConfig());
+        this(name, durability, capacity, poolSize, null, new MergePolicyConfig(), DEFAULT_CAPACITY_POLICY);
     }
 
     public ScheduledExecutorConfig(String name, int durability, int capacity, int poolSize, String splitBrainProtectionName,
-                                   MergePolicyConfig mergePolicyConfig) {
+                                   MergePolicyConfig mergePolicyConfig, CapacityPolicy capacityPolicy) {
         this.name = name;
         this.durability = durability;
         this.poolSize = poolSize;
         this.capacity = capacity;
+        this.capacityPolicy = capacityPolicy;
         this.splitBrainProtectionName = splitBrainProtectionName;
         this.mergePolicyConfig = mergePolicyConfig;
     }
 
     public ScheduledExecutorConfig(ScheduledExecutorConfig config) {
         this(config.getName(), config.getDurability(), config.getCapacity(), config.getPoolSize(),
-                config.getSplitBrainProtectionName(), config.getMergePolicyConfig());
+                config.getSplitBrainProtectionName(), config.getMergePolicyConfig(), config.getCapacityPolicy());
     }
 
     /**
@@ -165,6 +176,9 @@ public class ScheduledExecutorConfig implements SplitBrainMergeTypeProvider, Ide
      * The capacity represents the maximum number of tasks that a scheduler can have at any given point in time per partition.
      * If this is set to 0 then there is no limit
      *
+     * To prevent any undesirable data-loss, capacity is ignored during partition migrations,
+     * the count is updated accordingly, however the rejection is not enforced.
+     *
      * @param capacity the capacity of the executor
      * @return this executor config instance
      */
@@ -173,6 +187,26 @@ public class ScheduledExecutorConfig implements SplitBrainMergeTypeProvider, Ide
         return this;
     }
 
+    /**
+     * @return the policy of the capacity setting
+     */
+    public CapacityPolicy getCapacityPolicy() {
+        return capacityPolicy;
+    }
+
+    /**
+     * Set the capacity policy for the configured capacity value
+     *
+     * To prevent any undesirable data-loss, capacity is ignored during partition migrations,
+     * the count is updated accordingly, however the rejection is not enforced.
+     *
+     * @param capacityPolicy
+     */
+    public ScheduledExecutorConfig setCapacityPolicy(@Nonnull CapacityPolicy capacityPolicy) {
+        checkNotNull(capacityPolicy);
+        this.capacityPolicy = capacityPolicy;
+        return this;
+    }
     /**
      * Returns the split brain protection name for operations.
      *
@@ -214,17 +248,13 @@ public class ScheduledExecutorConfig implements SplitBrainMergeTypeProvider, Ide
     }
 
     @Override
-    public Class getProvidedMergeTypes() {
-        return SplitBrainMergeTypes.ScheduledExecutorMergeTypes.class;
-    }
-
-    @Override
     public String toString() {
         return "ScheduledExecutorConfig{"
                 + "name='" + name + '\''
                 + ", durability=" + durability
                 + ", poolSize=" + poolSize
                 + ", capacity=" + capacity
+                + ", capacityPolicy=" + capacityPolicy
                 + ", splitBrainProtectionName=" + splitBrainProtectionName
                 + ", mergePolicyConfig=" + mergePolicyConfig
                 + '}';
@@ -248,6 +278,7 @@ public class ScheduledExecutorConfig implements SplitBrainMergeTypeProvider, Ide
         out.writeInt(poolSize);
         out.writeUTF(splitBrainProtectionName);
         out.writeObject(mergePolicyConfig);
+        out.writeByte(capacityPolicy.getId());
     }
 
     @Override
@@ -258,6 +289,7 @@ public class ScheduledExecutorConfig implements SplitBrainMergeTypeProvider, Ide
         poolSize = in.readInt();
         splitBrainProtectionName = in.readUTF();
         mergePolicyConfig = in.readObject();
+        capacityPolicy = getById(in.readByte());
     }
 
     @SuppressWarnings({"checkstyle:npathcomplexity"})
@@ -278,6 +310,9 @@ public class ScheduledExecutorConfig implements SplitBrainMergeTypeProvider, Ide
         if (capacity != that.capacity) {
             return false;
         }
+        if (capacityPolicy != that.capacityPolicy) {
+            return false;
+        }
         if (poolSize != that.poolSize) {
             return false;
         }
@@ -296,9 +331,57 @@ public class ScheduledExecutorConfig implements SplitBrainMergeTypeProvider, Ide
         int result = name.hashCode();
         result = 31 * result + durability;
         result = 31 * result + capacity;
+        result = 31 * result + capacityPolicy.hashCode();
         result = 31 * result + poolSize;
         result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
         result = 31 * result + (mergePolicyConfig != null ? mergePolicyConfig.hashCode() : 0);
         return result;
+    }
+
+    /**
+     * Capacity policy options
+     */
+    public enum CapacityPolicy {
+
+        /**
+         * Capacity policy that counts tasks per Hazelcast instance node/member,
+         * and rejects new ones when {@link #capacity} value is reached
+         */
+        PER_NODE((byte) 0),
+
+        /**
+         * Capacity policy that counts tasks per partition, and rejects new ones when {@link #capacity} value is reached.
+         * Storage size depends on the partition count in a Hazelcast instance.
+         * This policy should not be used often.
+         * Avoid using this policy with a small cluster: if the cluster is small it will
+         * be hosting more partitions, and therefore tasks, than that of a larger cluster.
+         *
+         * This policy has no effect when scheduling is done using the OnMember APIs
+         * eg. {@link IScheduledExecutorService#scheduleOnMember(Runnable, Member, long, TimeUnit)}
+         */
+        PER_PARTITION((byte) 1);
+
+        /**
+         * Unique identifier for a policy, can be used for de/serialization purposes
+         */
+        private final byte id;
+
+        CapacityPolicy(byte id) {
+            this.id = id;
+        }
+
+        public byte getId() {
+            return id;
+        }
+
+        public static CapacityPolicy getById(final byte id) {
+            for (CapacityPolicy policy : values()) {
+                if (policy.id == id) {
+                    return policy;
+                }
+            }
+
+            return null;
+        }
     }
 }

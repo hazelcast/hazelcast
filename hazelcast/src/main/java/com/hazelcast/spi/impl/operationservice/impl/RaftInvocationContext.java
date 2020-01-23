@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import com.hazelcast.cp.exception.CPSubsystemException;
 import com.hazelcast.cp.internal.CPMemberInfo;
 import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.exception.RetryableIOException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -76,7 +77,7 @@ public class RaftInvocationContext {
             CPMembersContainer currentContainer = membersContainer.get();
             if (newContainer.version.compareTo(currentContainer.version) > 0) {
                 if (membersContainer.compareAndSet(currentContainer, newContainer)) {
-                    logger.info("Replaced " + currentContainer + " with " + newContainer);
+                    logger.fine("Replaced " + currentContainer + " with " + newContainer);
                     return true;
                 }
             } else {
@@ -145,7 +146,9 @@ public class RaftInvocationContext {
             if (!setKnownLeader(groupId, getCPMember(e.getLeaderUuid()))) {
                 resetKnownLeader(groupId);
             }
-        } else if (cause instanceof TargetNotMemberException || cause instanceof MemberLeftException) {
+        } else if (cause instanceof TargetNotMemberException
+                || cause instanceof MemberLeftException
+                || cause instanceof RetryableIOException) {
             resetKnownLeader(groupId);
         }
     }

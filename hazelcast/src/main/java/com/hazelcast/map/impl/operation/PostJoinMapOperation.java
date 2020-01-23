@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -174,7 +174,7 @@ public class PostJoinMapOperation extends Operation implements IdentifiedDataSer
 
         out.writeInt(interceptorInfoList.size());
         for (InterceptorInfo interceptorInfo : interceptorInfoList) {
-            interceptorInfo.writeData(out);
+            out.writeObject(interceptorInfo);
         }
         int size = infoList.size();
         out.writeInt(size);
@@ -189,9 +189,7 @@ public class PostJoinMapOperation extends Operation implements IdentifiedDataSer
 
         int interceptorsCount = in.readInt();
         for (int i = 0; i < interceptorsCount; i++) {
-            InterceptorInfo info = new InterceptorInfo();
-            info.readData(in);
-            interceptorInfoList.add(info);
+            interceptorInfoList.add(in.readObject());
         }
         int accumulatorsCount = in.readInt();
         if (accumulatorsCount < 1) {

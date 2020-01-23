@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import com.hazelcast.internal.services.RemoteService;
 import com.hazelcast.internal.services.SplitBrainHandlerService;
 import com.hazelcast.internal.services.TransactionalService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -202,7 +202,7 @@ public abstract class CollectionService implements ManagedService, RemoteService
         return new Merger(collector);
     }
 
-    private class Merger extends AbstractContainerMerger<CollectionContainer, Collection<Object>, CollectionMergeTypes> {
+    private class Merger extends AbstractContainerMerger<CollectionContainer, Collection<Object>, CollectionMergeTypes<Object>> {
 
         Merger(CollectionContainerCollector collector) {
             super(collector, nodeEngine);
@@ -223,10 +223,10 @@ public abstract class CollectionService implements ManagedService, RemoteService
                     Collection<CollectionItem> items = container.getCollection();
 
                     String name = container.getName();
-                    SplitBrainMergePolicy<Collection<Object>, CollectionMergeTypes> mergePolicy
+                    SplitBrainMergePolicy<Collection<Object>, CollectionMergeTypes<Object>, Collection<Object>> mergePolicy
                             = getMergePolicy(container.getConfig().getMergePolicyConfig());
 
-                    CollectionMergeTypes mergingValue = createMergingValue(serializationService, items);
+                    CollectionMergeTypes<Object> mergingValue = createMergingValue(serializationService, items);
                     sendBatch(partitionId, name, mergePolicy, mergingValue);
 
                     items.clear();
@@ -235,8 +235,9 @@ public abstract class CollectionService implements ManagedService, RemoteService
         }
 
         private void sendBatch(int partitionId, String name,
-                               SplitBrainMergePolicy<Collection<Object>, CollectionMergeTypes> mergePolicy,
-                               CollectionMergeTypes mergingValue) {
+                               SplitBrainMergePolicy<Collection<Object>,
+                                       CollectionMergeTypes<Object>, Collection<Object>> mergePolicy,
+                               CollectionMergeTypes<Object> mergingValue) {
             CollectionOperation operation = new CollectionMergeOperation(name, mergePolicy, mergingValue);
             invoke(getServiceName(), operation, partitionId);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,11 +43,8 @@ public class PriorityQueueStreamSerializer<E> extends AbstractCollectionStreamSe
     @Override
     public PriorityQueue<E> read(ObjectDataInput in) throws IOException {
         Comparator<E> comparator = in.readObject();
-
         int size = in.readInt();
-
-        PriorityQueue<E> collection = new PriorityQueue<>(size, comparator);
-
+        PriorityQueue<E> collection = new PriorityQueue<>(Math.max(1, size), comparator);
         return deserializeEntries(in, size, collection);
     }
 }

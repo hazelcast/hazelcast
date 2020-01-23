@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,12 +19,12 @@ package com.hazelcast.nio.serialization.compatibility;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
@@ -51,7 +51,8 @@ import static com.hazelcast.nio.serialization.compatibility.ReferenceObjects.IDE
 import static com.hazelcast.nio.serialization.compatibility.ReferenceObjects.INNER_PORTABLE_CLASS_ID;
 import static com.hazelcast.nio.serialization.compatibility.ReferenceObjects.PORTABLE_FACTORY_ID;
 import static com.hazelcast.test.HazelcastTestSupport.assumeConfiguredByteOrder;
-import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
@@ -95,6 +96,10 @@ public class BinaryCompatibilityTest {
     public static void init() throws IOException {
         for (byte version : versions) {
             InputStream input = BinaryCompatibilityTest.class.getResourceAsStream("/" + createFileName(version));
+            if (input == null) {
+                fail("Could not locate file " + createFileName(version) + ". Follow the instructions in "
+                        + "BinaryCompatibilityFileGenerator to generate the file.");
+            }
             DataInputStream inputStream = new DataInputStream(input);
             while (input.available() != 0) {
                 String objectKey = inputStream.readUTF();

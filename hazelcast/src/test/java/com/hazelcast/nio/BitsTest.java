@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
-import java.io.UTFDataFormatException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Random;
@@ -226,35 +224,6 @@ public class BitsTest {
         assertEquals(1, Bits.writeUtf8Char(bytes, 0, c1));
         assertEquals(2, Bits.writeUtf8Char(bytes, 0, c2));
         assertEquals(3, Bits.writeUtf8Char(bytes, 0, c3));
-    }
-
-    @Test
-    public void testReadUtf8Char() throws IOException {
-        byte[] bytes = new byte[6];
-        char c0 = 0x0010; //1 byte
-        char c1 = 0x0080; //2 byte
-        char c2 = 0x0800; //3 byte
-
-        Bits.writeUtf8Char(bytes, 0, c0);
-        Bits.writeUtf8Char(bytes, 1, c1);
-        Bits.writeUtf8Char(bytes, 3, c2);
-
-        char[] chars = new char[3];
-        Bits.readUtf8Char(bytes, 0, chars, 0);
-        Bits.readUtf8Char(bytes, 1, chars, 1);
-        Bits.readUtf8Char(bytes, 3, chars, 2);
-
-        assertEquals(c0, chars[0]);
-        assertEquals(c1, chars[1]);
-        assertEquals(c2, chars[2]);
-    }
-
-    @Test(expected = UTFDataFormatException.class)
-    public void testReadUtf8CharMalformedBytes() throws IOException {
-        byte[] bytes = new byte[]{(byte) 0xFF};
-
-        char[] chars = new char[1];
-        Bits.readUtf8Char(bytes, 0, chars, 0);
     }
 
     @Test

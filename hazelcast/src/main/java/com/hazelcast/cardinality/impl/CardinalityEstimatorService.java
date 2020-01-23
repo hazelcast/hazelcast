@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -115,7 +116,7 @@ public class CardinalityEstimatorService
     }
 
     @Override
-    public CardinalityEstimatorProxy createDistributedObject(String objectName, boolean local) {
+    public CardinalityEstimatorProxy createDistributedObject(String objectName, UUID source, boolean local) {
         return new CardinalityEstimatorProxy(objectName, nodeEngine, this);
     }
 
@@ -216,7 +217,7 @@ public class CardinalityEstimatorService
 
                 for (CardinalityEstimatorContainer container : containerList) {
                     String containerName = collector.getContainerName(container);
-                    SplitBrainMergePolicy<HyperLogLog, CardinalityEstimatorMergeTypes> mergePolicy
+                    SplitBrainMergePolicy<HyperLogLog, CardinalityEstimatorMergeTypes, HyperLogLog> mergePolicy
                             = getMergePolicy(collector.getMergePolicyConfig(container));
 
                     MergeOperation operation = new MergeOperation(containerName, mergePolicy, container.hll);

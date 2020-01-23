@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.impl.proxy;
 
-import com.hazelcast.client.impl.spi.impl.ClientClusterViewService;
+import com.hazelcast.client.impl.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.Member;
@@ -37,9 +37,9 @@ import java.util.UUID;
  */
 public class ClientClusterProxy implements Cluster {
 
-    private final ClientClusterViewService clusterService;
+    private final ClientClusterServiceImpl clusterService;
 
-    public ClientClusterProxy(ClientClusterViewService clusterService) {
+    public ClientClusterProxy(ClientClusterServiceImpl clusterService) {
         this.clusterService = clusterService;
     }
 

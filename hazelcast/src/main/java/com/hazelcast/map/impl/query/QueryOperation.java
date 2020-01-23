@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.function.BiConsumer;
 
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
-import static com.hazelcast.spi.impl.operationservice.CallStatus.DONE_RESPONSE;
+import static com.hazelcast.spi.impl.operationservice.CallStatus.RESPONSE;
 import static com.hazelcast.spi.impl.operationservice.CallStatus.OFFLOAD_ORDINAL;
 import static com.hazelcast.spi.impl.operationservice.ExceptionAction.THROW_EXCEPTION;
 
@@ -87,13 +87,13 @@ public class QueryOperation extends AbstractNamedOperation implements ReadonlyOp
             case BINARY:
             case OBJECT:
                 result = queryRunner.runIndexOrPartitionScanQueryOnOwnedPartitions(query);
-                return DONE_RESPONSE;
+                return RESPONSE;
             case NATIVE:
                 BitSet localPartitions = localPartitions();
                 if (localPartitions.cardinality() == 0) {
                     // important to deal with situation of not having any partitions
                     result = queryRunner.populateEmptyResult(query, Collections.emptyList());
-                    return DONE_RESPONSE;
+                    return RESPONSE;
                 } else {
                     return new OffloadedImpl(queryRunner, localPartitions);
                 }

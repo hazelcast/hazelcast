@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,14 +38,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * This includes retrieving the event journal sequences of the
  * oldest and newest event in the journal.
  */
-@Generated("67e6f1519f5afaab6dee21cc695d0ca1")
+@Generated("31e48c22805db58aece520b5f4c113fb")
 public final class CacheEventJournalSubscribeCodec {
-    //hex: 0x132000
-    public static final int REQUEST_MESSAGE_TYPE = 1253376;
-    //hex: 0x132001
-    public static final int RESPONSE_MESSAGE_TYPE = 1253377;
+    //hex: 0x131F00
+    public static final int REQUEST_MESSAGE_TYPE = 1253120;
+    //hex: 0x131F01
+    public static final int RESPONSE_MESSAGE_TYPE = 1253121;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_OLDEST_SEQUENCE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_OLDEST_SEQUENCE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_NEWEST_SEQUENCE_FIELD_OFFSET = RESPONSE_OLDEST_SEQUENCE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_NEWEST_SEQUENCE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
@@ -67,6 +67,7 @@ public final class CacheEventJournalSubscribeCodec {
         clientMessage.setOperationName("Cache.EventJournalSubscribe");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         return clientMessage;
@@ -85,12 +86,12 @@ public final class CacheEventJournalSubscribeCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * Sequence id of the oldest event in the event journal.
          */
         public long oldestSequence;
 
         /**
-         * TODO DOC
+         * Sequence id of the newest event in the event journal.
          */
         public long newestSequence;
     }

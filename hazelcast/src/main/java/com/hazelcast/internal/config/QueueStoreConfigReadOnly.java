@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.hazelcast.collection.QueueStore;
 import com.hazelcast.collection.QueueStoreFactory;
 import com.hazelcast.config.QueueStoreConfig;
 
+import javax.annotation.Nonnull;
 import java.util.Properties;
 
 /**
@@ -32,7 +33,7 @@ public class QueueStoreConfigReadOnly extends QueueStoreConfig {
     }
 
     @Override
-    public QueueStoreConfig setStoreImplementation(QueueStore storeImplementation) {
+    public QueueStoreConfig setStoreImplementation(@Nonnull QueueStore storeImplementation) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
@@ -42,7 +43,7 @@ public class QueueStoreConfigReadOnly extends QueueStoreConfig {
     }
 
     @Override
-    public QueueStoreConfig setClassName(String className) {
+    public QueueStoreConfig setClassName(@Nonnull String className) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
@@ -57,12 +58,12 @@ public class QueueStoreConfigReadOnly extends QueueStoreConfig {
     }
 
     @Override
-    public QueueStoreConfig setFactoryClassName(String factoryClassName) {
+    public QueueStoreConfig setFactoryClassName(@Nonnull String factoryClassName) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public QueueStoreConfig setFactoryImplementation(QueueStoreFactory factoryImplementation) {
+    public QueueStoreConfig setFactoryImplementation(@Nonnull QueueStoreFactory factoryImplementation) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 }

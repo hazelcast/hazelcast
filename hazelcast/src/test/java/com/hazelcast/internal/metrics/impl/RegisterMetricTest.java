@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -144,27 +144,27 @@ public class RegisterMetricTest extends HazelcastTestSupport {
     }
 
     public class SomeField {
-        @Probe
+        @Probe(name = "field")
         long field;
     }
 
     public class SomeUnrecognizedField {
-        @Probe
+        @Probe(name = "field")
         OutputStream field;
     }
 
     public class MultiFieldAndMethod {
-        @Probe
+        @Probe(name = "field1")
         long field1;
-        @Probe
+        @Probe(name = "field2")
         double field2;
 
-        @Probe
+        @Probe(name = "method1")
         int method1() {
             return 1;
         }
 
-        @Probe
+        @Probe(name = "method2")
         double method2() {
             return 2;
         }

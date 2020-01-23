@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.cp.internal.raft.impl;
 
+import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.internal.raft.impl.dto.AppendFailureResponse;
 import com.hazelcast.cp.internal.raft.impl.dto.AppendRequest;
@@ -214,7 +215,7 @@ public interface RaftIntegration {
     void schedule(Runnable task, long delay, TimeUnit timeUnit);
 
     /**
-     * Creates a new instance of {@link SimpleCompletableFuture}.
+     * Creates a new instance of {@link InternalCompletableFuture}.
      * @return a new future
      */
     InternalCompletableFuture newCompletableFuture();
@@ -246,4 +247,10 @@ public interface RaftIntegration {
      * @param status new status
      */
     void onNodeStatusChange(RaftNodeStatus status);
+
+    /**
+     * Called when CP group is destroyed.
+     * @param groupId id of CP group
+     */
+    void onGroupDestroyed(CPGroupId groupId);
 }

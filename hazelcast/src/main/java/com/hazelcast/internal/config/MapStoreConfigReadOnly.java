@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.internal.config;
 
 import com.hazelcast.config.MapStoreConfig;
 
+import javax.annotation.Nonnull;
 import java.util.Properties;
 
 /**
@@ -30,12 +31,12 @@ public class MapStoreConfigReadOnly extends MapStoreConfig {
     }
 
     @Override
-    public MapStoreConfig setClassName(String className) {
+    public MapStoreConfig setClassName(@Nonnull String className) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public MapStoreConfig setFactoryClassName(String factoryClassName) {
+    public MapStoreConfig setFactoryClassName(@Nonnull String factoryClassName) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
@@ -55,7 +56,7 @@ public class MapStoreConfigReadOnly extends MapStoreConfig {
     }
 
     @Override
-    public MapStoreConfig setImplementation(Object implementation) {
+    public MapStoreConfig setImplementation(@Nonnull Object implementation) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
@@ -65,7 +66,7 @@ public class MapStoreConfigReadOnly extends MapStoreConfig {
     }
 
     @Override
-    public MapStoreConfig setFactoryImplementation(Object factoryImplementation) {
+    public MapStoreConfig setFactoryImplementation(@Nonnull Object factoryImplementation) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 

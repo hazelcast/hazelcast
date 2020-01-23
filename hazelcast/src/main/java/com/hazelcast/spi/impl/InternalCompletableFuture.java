@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,30 +18,43 @@ package com.hazelcast.spi.impl;
 
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.ExceptionUtil;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 
 import javax.annotation.Nonnull;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ForkJoinPool;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.DEFAULT_ASYNC_EXECUTOR;
 import static com.hazelcast.spi.impl.AbstractInvocationFuture.wrapOrPeel;
 
 /**
  * An extension to {@link CompletableFuture} supporting a {@code joinInternal()}
- * variant with more relaxed exception throwing conventions.
+ * variant with more relaxed exception throwing conventions than {@link #join()}
+ * and the ability to override default executor. This is the base class for all
+ * {@link CompletableFuture} implementations in Hazelcast.
  *
- * This is the base class for all internally used {@link CompletableFuture}s.
+ * <p>Dependent computation stages can be registered with default, async (when
+ * using methods with the {@code Async} suffix) or custom executor (when using
+ * methods with the {@code Async} suffix and an {@link Executor} argument).
+ * Both default and async execution use the default async executor, which is
+ * either the {@link ForkJoinPool#commonPool()} or, in case it does not support
+ * parallelism of at least 2, a thread-per-task executor.
  *
- * Does not perform optional deserialization. Uses {@link ForkJoinPool#commonPool()}
- * or thread-per-task executor as default async executor, as {@link CompletableFuture} does.
- *
- * Provides static factory methods for more specific implementations supporting custom
- * default async executor or deserialization of completion value.
+ * <p>This class provides static factory methods for more specific implementations
+ * supporting custom default async executor or deserialization of completion value.
  */
 public class InternalCompletableFuture<V> extends CompletableFuture<V> {
+
+    public Executor defaultExecutor() {
+        return DEFAULT_ASYNC_EXECUTOR;
+    }
 
     /**
      * Similarly to {@link #join()}, returns the value when complete or throws an unchecked exception if
@@ -57,6 +70,68 @@ public class InternalCompletableFuture<V> extends CompletableFuture<V> {
             Throwable cause = e.getCause();
             throw ExceptionUtil.sneakyThrow(wrapOrPeel(cause));
         }
+    }
+
+    @Override
+    public <U> CompletableFuture<U> thenApply(Function<? super V, ? extends U> fn) {
+        return super.thenApplyAsync(fn, defaultExecutor());
+    }
+
+    @Override
+    public CompletableFuture<Void> thenAccept(Consumer<? super V> action) {
+        return super.thenAcceptAsync(action, defaultExecutor());
+    }
+
+    @Override
+    public CompletableFuture<Void> thenRun(Runnable action) {
+        return super.thenRunAsync(action, defaultExecutor());
+    }
+
+    @Override
+    public <U, V1> CompletableFuture<V1> thenCombine(CompletionStage<? extends U> other,
+                                                     BiFunction<? super V, ? super U, ? extends V1> fn) {
+        return super.thenCombineAsync(other, fn, defaultExecutor());
+    }
+
+    @Override
+    public <U> CompletableFuture<Void> thenAcceptBoth(CompletionStage<? extends U> other,
+                                                      BiConsumer<? super V, ? super U> action) {
+        return super.thenAcceptBothAsync(other, action, defaultExecutor());
+    }
+
+    @Override
+    public CompletableFuture<Void> runAfterBoth(CompletionStage<?> other, Runnable action) {
+        return super.runAfterBothAsync(other, action, defaultExecutor());
+    }
+
+    @Override
+    public <U> CompletableFuture<U> applyToEither(CompletionStage<? extends V> other, Function<? super V, U> fn) {
+        return super.applyToEitherAsync(other, fn, defaultExecutor());
+    }
+
+    @Override
+    public CompletableFuture<Void> acceptEither(CompletionStage<? extends V> other, Consumer<? super V> action) {
+        return super.acceptEitherAsync(other, action, defaultExecutor());
+    }
+
+    @Override
+    public CompletableFuture<Void> runAfterEither(CompletionStage<?> other, Runnable action) {
+        return super.runAfterEitherAsync(other, action, defaultExecutor());
+    }
+
+    @Override
+    public <U> CompletableFuture<U> thenCompose(Function<? super V, ? extends CompletionStage<U>> fn) {
+        return super.thenComposeAsync(fn, defaultExecutor());
+    }
+
+    @Override
+    public CompletableFuture<V> whenComplete(BiConsumer<? super V, ? super Throwable> action) {
+        return super.whenCompleteAsync(action, defaultExecutor());
+    }
+
+    @Override
+    public <U> CompletableFuture<U> handle(BiFunction<? super V, Throwable, ? extends U> fn) {
+        return super.handleAsync(fn, defaultExecutor());
     }
 
     /**

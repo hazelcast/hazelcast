@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -94,14 +94,6 @@ public class SimpleMemberImpl implements Member {
     @Override
     public String getAttribute(String key) {
         return null;
-    }
-
-    @Override
-    public void setAttribute(String key, String value) {
-    }
-
-    @Override
-    public void removeAttribute(String key) {
     }
 
     @Override

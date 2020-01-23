@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,21 +50,14 @@ public interface NearCacheManager {
     <K, V> NearCache<K, V> getOrCreateNearCache(String name, NearCacheConfig nearCacheConfig);
 
     /**
-     * Creates a new {@link NearCache} with given configurations or returns existing one.
+     * Triggers the pre-loading of the created {@link
+     * NearCache} via the supplied {@link DataStructureAdapter}.
      *
-     * Triggers the pre-loading of the created {@link NearCache} via the supplied {@link DataStructureAdapter}.
-     *
-     * @param name                 the name of the {@link NearCache}
-     *                             to be created or existing one
-     * @param nearCacheConfig      the {@link NearCacheConfig} of the {@link NearCache} to be created
-     * @param dataStructureAdapter the {@link DataStructureAdapter} of the {@link NearCache} to be created
-     * @param <K>                  the key type of the {@link NearCache}
-     * @param <V>                  the value type of the {@link NearCache}
-     * @return the created or existing {@link NearCache} instance associated with given {@code name}
+     * @param nearCache {@link NearCache} instance
+     * @param dataStructureAdapter the {@link
+     *                             DataStructureAdapter} of the {@link NearCache} to be created
      */
-    <K, V> NearCache<K, V> getOrCreateNearCache(String name,
-                                                NearCacheConfig nearCacheConfig,
-                                                DataStructureAdapter dataStructureAdapter);
+    void startPreloading(NearCache nearCache, DataStructureAdapter dataStructureAdapter);
 
     /**
      * Lists all existing {@link NearCache} instances.

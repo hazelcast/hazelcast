@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,30 +21,36 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.internal.util.ConstructorFunction;
 
+import static com.hazelcast.config.ScheduledExecutorConfig.CapacityPolicy.PER_PARTITION;
+import static com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService.NOOP_PERMIT;
+
 public class ScheduledExecutorMemberBin
         extends AbstractScheduledExecutorContainerHolder {
 
     private final ILogger logger;
 
-    private final NodeEngine nodeEngine;
+    private final ConstructorFunction<String, ScheduledExecutorContainer> containerConstructorFunction;
 
-    private final ConstructorFunction<String, ScheduledExecutorContainer> containerConstructorFunction =
-            new ConstructorFunction<String, ScheduledExecutorContainer>() {
-                @Override
-                public ScheduledExecutorContainer createNew(String name) {
-                    if (logger.isFinestEnabled()) {
-                        logger.finest("[Partition: -1] Create new scheduled executor container with name: " + name);
-                    }
-
-                    ScheduledExecutorConfig config = nodeEngine.getConfig().findScheduledExecutorConfig(name);
-                    return new ScheduledExecutorMemberOwnedContainer(name, config.getCapacity(), nodeEngine);
-                }
-            };
-
-    public ScheduledExecutorMemberBin(NodeEngine nodeEngine) {
+    public ScheduledExecutorMemberBin(NodeEngine nodeEngine, DistributedScheduledExecutorService service) {
         super(nodeEngine);
         this.logger = nodeEngine.getLogger(getClass());
-        this.nodeEngine = nodeEngine;
+        this.containerConstructorFunction = name -> {
+            if (logger.isFinestEnabled()) {
+                logger.finest("[Partition: -1] Create new scheduled executor container with name: " + name);
+            }
+
+            ScheduledExecutorConfig config = nodeEngine.getConfig().findScheduledExecutorConfig(name);
+            return new ScheduledExecutorMemberOwnedContainer(name, newPermitFor(name, service, config) , nodeEngine);
+        };
+    }
+
+    CapacityPermit newPermitFor(String name, DistributedScheduledExecutorService service,
+                                ScheduledExecutorConfig config) {
+        if (config.getCapacity() == 0 || config.getCapacityPolicy() == PER_PARTITION) {
+            return NOOP_PERMIT;
+        }
+
+        return service.permitFor(name, config);
     }
 
     @Override

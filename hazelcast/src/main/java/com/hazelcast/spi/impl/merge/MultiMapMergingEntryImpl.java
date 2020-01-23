@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package com.hazelcast.spi.impl.merge;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MultiMapMergeTypes;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -28,6 +28,7 @@ import com.hazelcast.internal.serialization.SerializationServiceAware;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Objects;
 
 /**
  * Implementation of {@link MultiMapMergeTypes}.
@@ -35,7 +36,8 @@ import java.util.Collection;
  * @since 3.10
  */
 @SuppressWarnings("WeakerAccess")
-public class MultiMapMergingEntryImpl implements MultiMapMergeTypes, SerializationServiceAware, IdentifiedDataSerializable {
+public class MultiMapMergingEntryImpl<K, V> implements MultiMapMergeTypes<K, V>, SerializationServiceAware,
+                                                       IdentifiedDataSerializable {
 
     private Data key;
     private Collection<Object> value;
@@ -55,35 +57,35 @@ public class MultiMapMergingEntryImpl implements MultiMapMergeTypes, Serializati
     }
 
     @Override
-    public Data getKey() {
+    public Data getRawKey() {
         return key;
     }
 
     @Override
-    public <DK> DK getDeserializedKey() {
+    public K getKey() {
         return serializationService.toObject(key);
     }
 
-    public MultiMapMergingEntryImpl setKey(Data key) {
+    public MultiMapMergingEntryImpl<K, V> setKey(Data key) {
         this.key = key;
         return this;
     }
 
     @Override
-    public Collection<Object> getValue() {
+    public Collection<Object> getRawValue() {
         return value;
     }
 
     @Override
-    public <DV> DV getDeserializedValue() {
-        Collection<Object> deserializedValues = new ArrayList<Object>(value.size());
+    public Collection<V> getValue() {
+        Collection<Object> deserializedValues = new ArrayList<>(value.size());
         for (Object aValue : value) {
             deserializedValues.add(serializationService.toObject(aValue));
         }
-        return (DV) deserializedValues;
+        return (Collection<V>) deserializedValues;
     }
 
-    public MultiMapMergingEntryImpl setValues(Collection<Object> values) {
+    public MultiMapMergingEntryImpl<K, V> setValues(Collection<Object> values) {
         this.value = values;
         return this;
     }
@@ -93,7 +95,7 @@ public class MultiMapMergingEntryImpl implements MultiMapMergeTypes, Serializati
         return creationTime;
     }
 
-    public MultiMapMergingEntryImpl setCreationTime(long creationTime) {
+    public MultiMapMergingEntryImpl<K, V> setCreationTime(long creationTime) {
         this.creationTime = creationTime;
         return this;
     }
@@ -103,7 +105,7 @@ public class MultiMapMergingEntryImpl implements MultiMapMergeTypes, Serializati
         return hits;
     }
 
-    public MultiMapMergingEntryImpl setHits(long hits) {
+    public MultiMapMergingEntryImpl<K, V> setHits(long hits) {
         this.hits = hits;
         return this;
     }
@@ -113,7 +115,7 @@ public class MultiMapMergingEntryImpl implements MultiMapMergeTypes, Serializati
         return lastAccessTime;
     }
 
-    public MultiMapMergingEntryImpl setLastAccessTime(long lastAccessTime) {
+    public MultiMapMergingEntryImpl<K, V> setLastAccessTime(long lastAccessTime) {
         this.lastAccessTime = lastAccessTime;
         return this;
     }
@@ -123,7 +125,7 @@ public class MultiMapMergingEntryImpl implements MultiMapMergeTypes, Serializati
         return lastUpdateTime;
     }
 
-    public MultiMapMergingEntryImpl setLastUpdateTime(long lastUpdateTime) {
+    public MultiMapMergingEntryImpl<K, V> setLastUpdateTime(long lastUpdateTime) {
         this.lastUpdateTime = lastUpdateTime;
         return this;
     }
@@ -198,10 +200,10 @@ public class MultiMapMergingEntryImpl implements MultiMapMergeTypes, Serializati
         if (lastUpdateTime != that.lastUpdateTime) {
             return false;
         }
-        if (key != null ? !key.equals(that.key) : that.key != null) {
+        if (!Objects.equals(key, that.key)) {
             return false;
         }
-        return value != null ? value.equals(that.value) : that.value == null;
+        return Objects.equals(value, that.value);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceAware;
 
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * Implementation of {@link ReplicatedMapMergeTypes}.
@@ -32,8 +33,8 @@ import java.io.IOException;
  * @since 3.10
  */
 @SuppressWarnings("WeakerAccess")
-public class ReplicatedMapMergingEntryImpl
-        implements ReplicatedMapMergeTypes, SerializationServiceAware, IdentifiedDataSerializable {
+public class ReplicatedMapMergingEntryImpl<K, V>
+        implements ReplicatedMapMergeTypes<K, V>, SerializationServiceAware, IdentifiedDataSerializable {
 
     private Object value;
     private Object key;
@@ -53,31 +54,31 @@ public class ReplicatedMapMergingEntryImpl
     }
 
     @Override
-    public Object getValue() {
+    public Object getRawValue() {
         return value;
     }
 
     @Override
-    public Object getDeserializedValue() {
+    public V getValue() {
         return serializationService.toObject(value);
     }
 
-    public ReplicatedMapMergingEntryImpl setValue(Object value) {
+    public ReplicatedMapMergingEntryImpl<K, V> setValue(Object value) {
         this.value = value;
         return this;
     }
 
     @Override
-    public Object getKey() {
+    public Object getRawKey() {
         return key;
     }
 
     @Override
-    public Object getDeserializedKey() {
+    public K getKey() {
         return serializationService.toObject(key);
     }
 
-    public ReplicatedMapMergingEntryImpl setKey(Object key) {
+    public ReplicatedMapMergingEntryImpl<K, V> setKey(Object key) {
         this.key = key;
         return this;
     }
@@ -87,7 +88,7 @@ public class ReplicatedMapMergingEntryImpl
         return creationTime;
     }
 
-    public ReplicatedMapMergingEntryImpl setCreationTime(long creationTime) {
+    public ReplicatedMapMergingEntryImpl<K, V> setCreationTime(long creationTime) {
         this.creationTime = creationTime;
         return this;
     }
@@ -97,7 +98,7 @@ public class ReplicatedMapMergingEntryImpl
         return hits;
     }
 
-    public ReplicatedMapMergingEntryImpl setHits(long hits) {
+    public ReplicatedMapMergingEntryImpl<K, V> setHits(long hits) {
         this.hits = hits;
         return this;
     }
@@ -107,7 +108,7 @@ public class ReplicatedMapMergingEntryImpl
         return lastAccessTime;
     }
 
-    public ReplicatedMapMergingEntryImpl setLastAccessTime(long lastAccessTime) {
+    public ReplicatedMapMergingEntryImpl<K, V> setLastAccessTime(long lastAccessTime) {
         this.lastAccessTime = lastAccessTime;
         return this;
     }
@@ -117,7 +118,7 @@ public class ReplicatedMapMergingEntryImpl
         return lastUpdateTime;
     }
 
-    public ReplicatedMapMergingEntryImpl setLastUpdateTime(long lastUpdateTime) {
+    public ReplicatedMapMergingEntryImpl<K, V> setLastUpdateTime(long lastUpdateTime) {
         this.lastUpdateTime = lastUpdateTime;
         return this;
     }
@@ -127,7 +128,7 @@ public class ReplicatedMapMergingEntryImpl
         return ttl;
     }
 
-    public ReplicatedMapMergingEntryImpl setTtl(long ttl) {
+    public ReplicatedMapMergingEntryImpl<K, V> setTtl(long ttl) {
         this.ttl = ttl;
         return this;
     }
@@ -195,10 +196,10 @@ public class ReplicatedMapMergingEntryImpl
         if (ttl != that.ttl) {
             return false;
         }
-        if (key != null ? !key.equals(that.key) : that.key != null) {
+        if (!Objects.equals(key, that.key)) {
             return false;
         }
-        return value != null ? value.equals(that.value) : that.value == null;
+        return Objects.equals(value, that.value);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,9 +34,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * TODO DOC
+ * Applies the user defined EntryProcessor to entry mapped by the key.
+ * Returns the result of the processing, if any, defined by the implementation.
  */
-@Generated("0188b32f9684d4f5d29cad1af5171a13")
+@Generated("3fc4ad733587da1cce6f5ad70faeb337")
 public final class CacheEntryProcessorCodec {
     //hex: 0x130800
     public static final int REQUEST_MESSAGE_TYPE = 1247232;
@@ -44,7 +45,7 @@ public final class CacheEntryProcessorCodec {
     public static final int RESPONSE_MESSAGE_TYPE = 1247233;
     private static final int REQUEST_COMPLETION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_COMPLETION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private CacheEntryProcessorCodec() {
     }
@@ -60,18 +61,18 @@ public final class CacheEntryProcessorCodec {
         /**
          * the key to the entry
          */
-        public com.hazelcast.nio.serialization.Data key;
+        public com.hazelcast.internal.serialization.Data key;
 
         /**
          * Entry processor to invoke. Byte-array which is serialized from an object implementing
          * javax.cache.processor.EntryProcessor.
          */
-        public com.hazelcast.nio.serialization.Data entryProcessor;
+        public com.hazelcast.internal.serialization.Data entryProcessor;
 
         /**
          * additional arguments to pass to the EntryProcessor
          */
-        public java.util.List<com.hazelcast.nio.serialization.Data> arguments;
+        public java.util.List<com.hazelcast.internal.serialization.Data> arguments;
 
         /**
          * User generated id which shall be received as a field of the cache event upon completion of
@@ -80,12 +81,13 @@ public final class CacheEntryProcessorCodec {
         public int completionId;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data key, com.hazelcast.nio.serialization.Data entryProcessor, java.util.Collection<com.hazelcast.nio.serialization.Data> arguments, int completionId) {
+    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.internal.serialization.Data key, com.hazelcast.internal.serialization.Data entryProcessor, java.util.Collection<com.hazelcast.internal.serialization.Data> arguments, int completionId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("Cache.EntryProcessor");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeInt(initialFrame.content, REQUEST_COMPLETION_ID_FIELD_OFFSET, completionId);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
@@ -113,10 +115,10 @@ public final class CacheEntryProcessorCodec {
         /**
          * the result of the processing, if any, defined by the EntryProcessor implementation
          */
-        public @Nullable com.hazelcast.nio.serialization.Data response;
+        public @Nullable com.hazelcast.internal.serialization.Data response;
     }
 
-    public static ClientMessage encodeResponse(@Nullable com.hazelcast.nio.serialization.Data response) {
+    public static ClientMessage encodeResponse(@Nullable com.hazelcast.internal.serialization.Data response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);

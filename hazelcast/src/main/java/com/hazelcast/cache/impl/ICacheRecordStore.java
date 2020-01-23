@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,10 @@ package com.hazelcast.cache.impl;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.internal.eviction.ExpiredKey;
+import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.map.impl.MapEntries;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
@@ -434,22 +435,39 @@ public interface ICacheRecordStore {
     CacheRecord removeRecord(Data key);
 
     /**
-     * Starting from the provided table index, a set of keys are returned with a maximum size of <code>size</code>
+     * Fetch minimally {@code size} keys from the {@code pointers} position.
+     * The key is fetched on-heap.
+     * The method may return less keys if iteration has completed.
+     * <p>
+     * NOTE: The implementation is free to return more than {@code size} items.
+     * This can happen if we cannot easily resume from the last returned item
+     * by receiving the {@code tableIndex} of the last item. The index can
+     * represent a bucket with multiple items and in this case the returned
+     * object will contain all items in that bucket, regardless if we exceed
+     * the requested {@code size}.
      *
-     * @param tableIndex initial table index.
-     * @param size       maximum key set size.
-     * @return {@link CacheKeyIterationResult} which wraps keys and last tableIndex.
+     * @param pointers the pointers defining the state of iteration
+     * @param size     the minimal count of returned items, unless iteration has completed
+     * @return fetched keys and the new iteration state
      */
-    CacheKeyIterationResult fetchKeys(int tableIndex, int size);
+    CacheKeysWithCursor fetchKeys(IterationPointer[] pointers, int size);
 
     /**
-     * Starting from the provided table index, a set of entries are returned with a maximum size of <code>size</code>
+     * Fetch minimally {@code size} items from the {@code pointers} position.
+     * Both the key and value are fetched on-heap.
+     * <p>
+     * NOTE: The implementation is free to return more than {@code size} items.
+     * This can happen if we cannot easily resume from the last returned item
+     * by receiving the {@code tableIndex} of the last item. The index can
+     * represent a bucket with multiple items and in this case the returned
+     * object will contain all items in that bucket, regardless if we exceed
+     * the requested {@code size}.
      *
-     * @param tableIndex initial table index.
-     * @param size       maximum entry set size.
-     * @return {@link CacheEntryIterationResult} which wraps entries and last tableIndex.
+     * @param pointers the pointers defining the state of iteration
+     * @param size     the minimal count of returned items
+     * @return fetched entries and the new iteration state
      */
-    CacheEntryIterationResult fetchEntries(int tableIndex, int size);
+    CacheEntriesWithCursor fetchEntries(IterationPointer[] pointers, int size);
 
     /**
      * Invokes an {@link EntryProcessor} against the {@link javax.cache.Cache.Entry} specified by
@@ -522,8 +540,9 @@ public interface ICacheRecordStore {
      * @param callerProvenance
      * @return the used {@link CacheRecord} if merge is applied, otherwise {@code null}
      */
-    CacheRecord merge(CacheMergeTypes mergingEntry,
-                      SplitBrainMergePolicy<Data, CacheMergeTypes> mergePolicy, CallerProvenance callerProvenance);
+    CacheRecord merge(CacheMergeTypes<Object, Object> mergingEntry,
+                      SplitBrainMergePolicy<Object, CacheMergeTypes<Object, Object>, Object> mergePolicy,
+                      CallerProvenance callerProvenance);
 
     /**
      * @return partition ID of this store

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,6 @@ import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
-import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
-import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 import com.hazelcast.spi.tenantcontrol.TenantControl;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -66,7 +64,7 @@ import static com.hazelcast.spi.tenantcontrol.TenantControl.NOOP_TENANT_CONTROL;
  * @param <K> the key type
  * @param <V> the value type
  */
-public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements SplitBrainMergeTypeProvider {
+public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
 
     private String name;
     private String managerPrefix;
@@ -417,6 +415,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
      * <ul>
      * <li>BINARY (default): keys and values will be stored as binary data</li>
      * <li>OBJECT: values will be stored in their object forms</li>
+     * <li>NATIVE: values will be stored in non-heap region of JVM (Hazelcast Enterprise only)</li>
      * </ul>
      *
      * @param inMemoryFormat the record type to set
@@ -465,12 +464,6 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
     public CacheConfig<K, V> setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
         this.mergePolicyConfig = checkNotNull(mergePolicyConfig, "mergePolicyConfig cannot be null!");
         return this;
-    }
-
-
-    @Override
-    public Class getProvidedMergeTypes() {
-        return SplitBrainMergeTypes.CacheMergeTypes.class;
     }
 
     /**

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -144,7 +144,25 @@
                                     <xs:annotation>
                                         <xs:documentation>
                                             The maximum number of tasks that a scheduler can have at any given point
-                                            in time per partition.
+                                            in time as per capacity-policy.
+                                            Once the capacity is reached, new tasks will be rejected.
+                                            Capacity is ignored upon migrations to prevent any undesirable data-loss.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="capacity-policy" use="optional" type="scheduled-executor-capacity-policy" default="PER_NODE">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            The active policy for the capacity setting
+                                            capacity-policy has these valid values:
+                                            PER_NODE: Maximum number of tasks in each Hazelcast instance.
+                                            This is the default policy.
+                                            PER_PARTITION: Maximum number of tasks within each partition. Storage size
+                                            depends on the partition count in a Hazelcast instance.
+                                            This attribute should not be used often.
+                                            Avoid using this attribute with a small cluster: if the cluster is small it will
+                                            be hosting more partitions, and therefore tasks, than that of a larger
+                                            cluster.
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
@@ -1517,7 +1535,6 @@
                     <xs:element name="reliable-topic" type="client-reliable-topic" minOccurs="0" maxOccurs="unbounded"/>
                     <xs:element name="metrics" type="client-metrics" minOccurs="0" maxOccurs="unbounded"/>
                 </xs:choice>
-                <xs:attribute name="executor-pool-size" type="xs:int" use="optional"/>
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
@@ -2110,7 +2127,6 @@
             <xs:enumeration value="hazelcast.log.state"/>
             <xs:enumeration value="hazelcast.jmx"/>
             <xs:enumeration value="hazelcast.jmx.detailed"/>
-            <xs:enumeration value="hazelcast.mancenter.enabled"/>
             <xs:enumeration value="hazelcast.map.load.chunk.size"/>
             <xs:enumeration value="hazelcast.in.thread.priority"/>
             <xs:enumeration value="hazelcast.out.thread.priority"/>
@@ -2564,7 +2580,7 @@
             <xs:element name="kubernetes" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
             <xs:element name="eureka" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
             <xs:element name="discovery-strategies" type="discovery-strategies" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="wan-sync" type="wan-sync" minOccurs="0"/>
+            <xs:element name="sync" type="wan-sync" minOccurs="0"/>
             <xs:element name="endpoint" type="xs:string" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
@@ -2657,6 +2673,7 @@
             <xs:enumeration value="WAN"/>
             <xs:enumeration value="DATA"/>
             <xs:enumeration value="MEMCACHE"/>
+            <xs:enumeration value="CP"/>
         </xs:restriction>
     </xs:simpleType>
 
@@ -2675,14 +2692,7 @@
     </xs:complexType>
 
     <xs:complexType name="management-center" mixed="true">
-        <xs:sequence minOccurs="0">
-            <xs:element name="url" type="xs:string" minOccurs="1" maxOccurs="1"/>
-            <xs:element name="mutual-auth" type="mutual-auth" minOccurs="0" maxOccurs="1"/>
-        </xs:sequence>
-        <xs:attribute name="enabled" type="xs:string" default="false" use="optional"/>
         <xs:attribute name="scripting-enabled" type="xs:boolean" use="optional"/>
-        <xs:attribute name="url" type="xs:string" use="optional"/>
-        <xs:attribute name="update-interval" type="xs:string" default="3" use="optional"/>
     </xs:complexType>
     <xs:complexType name="cache-entry-listener">
         <xs:attribute name="cache-entry-listener-factory" type="non-space-string" use="optional"/>
@@ -3263,21 +3273,11 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="idOffset" type="xs:long" default="0" use="optional">
+        <xs:attribute name="epochStart" type="xs:long" default="1514764800000" use="optional">
             <xs:annotation>
                 <xs:documentation>
-                    Sets the offset that will be added to the returned IDs. Default value is 0. Setting might be
-                    useful when migrating from IdGenerator, default value works for all green-field projects.
-
-                    For example: Largest ID returned from IdGenerator is 150. FlakeIdGenerator now returns
-                    100. If you configure idOffset of 50 and stop using the IdGenerator, the next ID from
-                    FlakeIdGenerator will be 151 or larger and no duplicate IDs will be generated. In real-life,
-                    the IDs are much larger. You also need to add a reserve to the offset because the IDs
-                    from FlakeIdGenerator are only roughly ordered. Recommended reserve is 2^38, that is
-                    274877906944.
-
-                    Negative values are allowed to increase the lifespan of the generator, however keep in
-                    mind that the generated IDs might also be negative.
+                    Sets the offset of timestamp component. Time unit is milliseconds, default is 1514764800000 
+                    (1.1.2018 0:00 UTC).
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -3290,6 +3290,44 @@
                     In this case, configure node ID offset for generators on cluster B.
                 </xs:documentation>
             </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="bitsSequence" default="6" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Sets the bit-length of the sequence component, default is 6 bits.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:int">
+                    <xs:minInclusive value="0" />
+                    <xs:maxInclusive value="63" />
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="bitsNodeId" default="16" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Sets the bit-length of node id component. Default value is 16 bits.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:int">
+                    <xs:minInclusive value="0" />
+                    <xs:maxInclusive value="63" />
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="allowedFutureMillis" default="15000" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Sets how far to the future is the generator allowed to go to generate IDs without blocking, default is 15 seconds.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:long">
+                    <xs:minInclusive value="0"/>
+                </xs:restriction>
+            </xs:simpleType>
         </xs:attribute>
         <xs:attribute name="statistics-enabled" type="parameterized-boolean" use="optional" default="true">
             <xs:annotation>
@@ -3474,6 +3512,7 @@
     <xs:complexType name="index">
         <xs:all>
             <xs:element name="attributes" type="index-attributes"/>
+            <xs:element name="bitmap-index-options" type="bitmap-index-options" minOccurs="0"/>
         </xs:all>
         <xs:attribute name="name"/>
         <xs:attribute name="type" type="index-type" default="SORTED"/>
@@ -3487,6 +3526,21 @@
         <xs:restriction base="non-space-string">
             <xs:enumeration value="SORTED"/>
             <xs:enumeration value="HASH"/>
+            <xs:enumeration value="BITMAP"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:complexType name="bitmap-index-options">
+        <xs:all>
+            <xs:element name="unique-key" type="xs:string" default="__key" minOccurs="0"/>
+            <xs:element name="unique-key-transformation" type="bitmap-index-unique-key-transformation"
+                        default="OBJECT" minOccurs="0"/>
+        </xs:all>
+    </xs:complexType>
+    <xs:simpleType name="bitmap-index-unique-key-transformation">
+        <xs:restriction base="non-space-string">
+            <xs:enumeration value="OBJECT"/>
+            <xs:enumeration value="LONG"/>
+            <xs:enumeration value="RAW"/>
         </xs:restriction>
     </xs:simpleType>
     <xs:complexType name="entry-listeners">
@@ -3608,6 +3662,13 @@
         </xs:restriction>
     </xs:simpleType>
 
+    <xs:simpleType name="scheduled-executor-capacity-policy">
+        <xs:restriction base="non-space-string">
+            <xs:enumeration value="PER_NODE"/>
+            <xs:enumeration value="PER_PARTITION"/>
+        </xs:restriction>
+    </xs:simpleType>
+
     <xs:complexType name="eviction">
         <xs:attribute name="size" type="xs:nonNegativeInteger" default="10000" use="optional"/>
         <xs:attribute name="max-size-policy" type="max-size-policy" default="ENTRY_COUNT" use="optional"/>
@@ -3649,11 +3710,13 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="merge-policy" type="xs:string">
+        <xs:attribute name="merge-policy-class-name" type="xs:string"
+                      default="com.hazelcast.spi.merge.PassThroughMergePolicy">
             <xs:annotation>
                 <xs:documentation>
-                    Resolve conflicts that occurred when target cluster already has the replicated
-                    entry key.
+                    Sets the merge policy sent to the WAN replication target to merge
+                    replicated entries with existing target entries.
+                    The default merge policy is com.hazelcast.spi.merge.PassThroughMergePolicy.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

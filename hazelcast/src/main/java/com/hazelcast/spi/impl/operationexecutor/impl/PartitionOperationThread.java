@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,9 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_PARTITION_OPERATION_THREAD_NORMAL_PENDING_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_PARTITION_OPERATION_THREAD_PRIORITY_PENDING_COUNT;
 
 /**
  * An {@link OperationThread} that executes Operations for a particular partition,
@@ -51,12 +54,12 @@ public final class PartitionOperationThread extends OperationThread {
         return partitionOperationRunners[partitionId];
     }
 
-    @Probe
+    @Probe(name = OPERATION_METRIC_PARTITION_OPERATION_THREAD_PRIORITY_PENDING_COUNT)
     int priorityPendingCount() {
         return queue.prioritySize();
     }
 
-    @Probe
+    @Probe(name = OPERATION_METRIC_PARTITION_OPERATION_THREAD_NORMAL_PENDING_COUNT)
     int normalPendingCount() {
         return queue.normalSize();
     }

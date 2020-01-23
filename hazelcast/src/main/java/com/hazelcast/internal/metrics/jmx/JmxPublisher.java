@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.metrics.jmx;
 
-import com.hazelcast.config.MetricsConfig;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsPublisher;
 import com.hazelcast.internal.metrics.ProbeUnit;
@@ -44,6 +43,7 @@ public class JmxPublisher implements MetricsPublisher {
 
     private final MBeanServer platformMBeanServer;
     private final String instanceNameEscaped;
+    private final String domainPrefix;
 
     /**
      * key: metric name, value: MetricData
@@ -59,6 +59,7 @@ public class JmxPublisher implements MetricsPublisher {
     private final Function<? super ObjectName, ? extends MetricsMBean> createMBeanFunction;
 
     public JmxPublisher(String instanceName, String domainPrefix) {
+        this.domainPrefix = domainPrefix;
         platformMBeanServer = ManagementFactory.getPlatformMBeanServer();
         instanceNameEscaped = escapeObjectNameValue(instanceName);
         createMetricDataFunction = n -> new MetricData(n, instanceNameEscaped, domainPrefix);
@@ -175,7 +176,7 @@ public class JmxPublisher implements MetricsPublisher {
         boolean wasPresent;
 
         /**
-         * See {@link MetricsConfig#setJmxEnabled(boolean)}.
+         * See {@link com.hazelcast.config.MetricsJmxConfig#setEnabled(boolean)}.
          */
         @SuppressWarnings({"checkstyle:ExecutableStatementCount", "checkstyle:NPathComplexity",
                            "checkstyle:CyclomaticComplexity"})
@@ -244,15 +245,16 @@ public class JmxPublisher implements MetricsPublisher {
     @Override
     public void shutdown() {
         isShutdown = true;
-        ObjectName name;
         try {
-            name = new ObjectName("com.hazelcast*" + ":instance=" + instanceNameEscaped + ",type=Metrics,*");
+            // unregister the MBeans registered by this JmxPublisher
+            // the mBeans map can't be used since it is not thread-safe
+            // and is meant to be used by the publisher thread only
+            ObjectName name = new ObjectName(domainPrefix + "*" + ":instance=" + instanceNameEscaped + ",type=Metrics,*");
+            for (ObjectName bean : platformMBeanServer.queryNames(name, null)) {
+                unregisterMBeanIgnoreError(bean);
+            }
         } catch (MalformedObjectNameException e) {
             throw new RuntimeException("Exception when unregistering JMX beans", e);
-        }
-
-        for (ObjectName bean : platformMBeanServer.queryNames(name, null)) {
-            unregisterMBeanIgnoreError(bean);
         }
     }
 }

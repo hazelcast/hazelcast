@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Objects;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -69,13 +70,14 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
      */
     public enum LocalUpdatePolicy {
         /**
-         * A local put and local remove immediately invalidates the Near Cache.
+         * Local put and local remove
+         * immediately invalidate Near Cache.
          */
         INVALIDATE,
 
         /**
-         * A local put immediately adds the new value to the Near Cache.
-         * A local remove works as in INVALIDATE mode.
+         * While local remove immediately invalidates
+         * Near Cache, local put adds new value to it.
          */
         CACHE_ON_UPDATE
     }
@@ -426,10 +428,6 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
                 + '}';
     }
 
-    private static int calculateMaxSize(int maxSize) {
-        return (maxSize == 0) ? Integer.MAX_VALUE : checkNotNegative(maxSize, "maxSize cannot be negative!");
-    }
-
     @Override
     @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
     public boolean equals(Object o) {
@@ -463,13 +461,13 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
         if (inMemoryFormat != that.inMemoryFormat) {
             return false;
         }
-        if (evictionConfig != null ? !evictionConfig.equals(that.evictionConfig) : that.evictionConfig != null) {
+        if (!Objects.equals(evictionConfig, that.evictionConfig)) {
             return false;
         }
         if (localUpdatePolicy != that.localUpdatePolicy) {
             return false;
         }
-        return preloaderConfig != null ? preloaderConfig.equals(that.preloaderConfig) : that.preloaderConfig == null;
+        return Objects.equals(preloaderConfig, that.preloaderConfig);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import com.hazelcast.internal.util.MutableInteger;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapLoader;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -52,7 +52,7 @@ class CyclicWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
      * At that point if one tries to get that evicted key, {@link MapLoader} will
      * try to load it from store and that may cause data inconsistencies.
      *
-     * @see WriteBehindStore#loadable(com.hazelcast.nio.serialization.Data)
+     * @see WriteBehindStore#loadable(Data)
      */
     private final Map<Data, MutableInteger> index;
 

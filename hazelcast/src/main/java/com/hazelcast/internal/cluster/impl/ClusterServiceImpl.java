@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,6 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.InitialMembershipEvent;
 import com.hazelcast.cluster.InitialMembershipListener;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.cluster.MemberAttributeEvent;
-import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.cluster.MemberSelector;
 import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.MembershipListener;
@@ -43,8 +41,6 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.internal.services.ManagedService;
-import com.hazelcast.internal.services.MemberAttributeServiceEvent;
-import com.hazelcast.internal.services.MembershipAwareService;
 import com.hazelcast.internal.services.TransactionalService;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.internal.util.executor.ExecutorType;
@@ -70,7 +66,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -82,10 +77,13 @@ import java.util.concurrent.locks.ReentrantLock;
 import static com.hazelcast.cluster.impl.MemberImpl.NA_MEMBER_LIST_JOIN_VERSION;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.NON_LOCAL_MEMBER_SELECTOR;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLUSTER_METRIC_CLUSTER_SERVICE_SIZE;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLUSTER_PREFIX;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLUSTER_PREFIX_CLOCK;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLUSTER_PREFIX_HEARTBEAT;
 import static com.hazelcast.internal.util.Preconditions.checkFalse;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
-import static com.hazelcast.spi.impl.executionservice.ExecutionService.SYSTEM_EXECUTOR;
 import static java.lang.String.format;
 
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classdataabstractioncoupling", "checkstyle:classfanoutcomplexity"})
@@ -146,9 +144,9 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     private void registerMetrics() {
         MetricsRegistry metricsRegistry = node.nodeEngine.getMetricsRegistry();
-        metricsRegistry.registerStaticMetrics(clusterClock, "cluster.clock");
-        metricsRegistry.registerStaticMetrics(clusterHeartbeatManager, "cluster.heartbeat");
-        metricsRegistry.registerStaticMetrics(this, "cluster");
+        metricsRegistry.registerStaticMetrics(clusterClock, CLUSTER_PREFIX_CLOCK);
+        metricsRegistry.registerStaticMetrics(clusterHeartbeatManager, CLUSTER_PREFIX_HEARTBEAT);
+        metricsRegistry.registerStaticMetrics(this, CLUSTER_PREFIX);
     }
 
     @Override
@@ -167,7 +165,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     public void sendLocalMembershipEvent() {
-        membershipManager.sendMembershipEvents(Collections.emptySet(), Collections.singleton(getLocalMember()));
+        membershipManager.sendMembershipEvents(Collections.emptySet(), Collections.singleton(getLocalMember()), false);
     }
 
     public void handleExplicitSuspicion(MembersViewMetadata expectedMembersViewMetadata, Address suspectedAddress) {
@@ -493,20 +491,6 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         return true;
     }
 
-    public void updateMemberAttribute(UUID uuid, MemberAttributeOperationType operationType, String key, String value) {
-        lock.lock();
-        try {
-            MemberMap memberMap = membershipManager.getMemberMap();
-            MemberImpl member = memberMap.getMember(uuid);
-            if (!member.equals(getLocalMember())) {
-                member.updateAttribute(operationType, key, value);
-            }
-            sendMemberAttributeEvent(member, memberMap, operationType, key, value);
-        } finally {
-            lock.unlock();
-        }
-    }
-
     @Override
     public void connectionAdded(Connection connection) {
     }
@@ -555,27 +539,6 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     public void shrinkMissingMembers(Collection<UUID> memberUuidsToRemove) {
         membershipManager.shrinkMissingMembers(memberUuidsToRemove);
-    }
-
-    private void sendMemberAttributeEvent(MemberImpl member, MemberMap memberMap, MemberAttributeOperationType operationType,
-                                          String key, Object value) {
-        Set<Member> members = new HashSet<>(memberMap.getMembers());
-        final MemberAttributeServiceEvent event
-                = new MemberAttributeServiceEvent(this, member, members, operationType, key, value);
-        MemberAttributeEvent attributeEvent = new MemberAttributeEvent(this, member, members, operationType,
-                key, value);
-        Collection<MembershipAwareService> membershipAwareServices = nodeEngine.getServices(MembershipAwareService.class);
-        if (membershipAwareServices != null && !membershipAwareServices.isEmpty()) {
-            for (final MembershipAwareService service : membershipAwareServices) {
-                // service events should not block each other
-                nodeEngine.getExecutionService().execute(SYSTEM_EXECUTOR, () -> service.memberAttributeChanged(event));
-            }
-        }
-        EventService eventService = nodeEngine.getEventService();
-        Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, SERVICE_NAME);
-        for (EventRegistration reg : registrations) {
-            eventService.publishEvent(SERVICE_NAME, reg, attributeEvent, reg.getId().hashCode());
-        }
     }
 
     @Override
@@ -704,7 +667,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         return joined.get();
     }
 
-    @Probe
+    @Probe(name = CLUSTER_METRIC_CLUSTER_SERVICE_SIZE)
     @Override
     public int getSize() {
         return membershipManager.getMemberMap().size();
@@ -786,10 +749,6 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
                 break;
             case MembershipEvent.MEMBER_REMOVED:
                 listener.memberRemoved(event);
-                break;
-            case MembershipEvent.MEMBER_ATTRIBUTE_CHANGED:
-                MemberAttributeEvent memberAttributeEvent = (MemberAttributeEvent) event;
-                listener.memberAttributeChanged(memberAttributeEvent);
                 break;
             default:
                 throw new IllegalArgumentException("Unhandled event: " + event);

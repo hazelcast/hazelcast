@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,13 @@
 
 package com.hazelcast.internal.networking.nio;
 
+import com.hazelcast.internal.metrics.ExcludedMetricTargets;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
+import com.hazelcast.internal.util.concurrent.IdleStrategy;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
-import com.hazelcast.internal.util.concurrent.IdleStrategy;
 
 import java.io.IOException;
 import java.nio.channels.CancelledKeyException;
@@ -34,14 +34,28 @@ import java.util.Queue;
 import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_THREAD_BYTES_TRANSCEIVED;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_THREAD_COMPLETED_TASK_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_THREAD_EVENT_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_THREAD_FRAMES_TRANSCEIVED;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_THREAD_IDLE_TIME_MILLIS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_THREAD_IO_THREAD_ID;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_THREAD_PRIORITY_FRAMES_TRANSCEIVED;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_THREAD_PROCESS_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_THREAD_SELECTOR_IO_EXCEPTION_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_THREAD_SELECTOR_REBUILD_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_THREAD_TASK_QUEUE_SIZE;
+import static com.hazelcast.internal.metrics.MetricTarget.MANAGEMENT_CENTER;
+import static com.hazelcast.internal.metrics.ProbeUnit.BYTES;
+import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT_NOW;
 import static com.hazelcast.internal.networking.nio.SelectorOptimizer.newSelector;
-import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
 
+@ExcludedMetricTargets(MANAGEMENT_CENTER)
 public class NioThread extends Thread implements OperationHostileThread {
 
     // WARNING: This value has significant effect on idle CPU usage!
@@ -60,28 +74,28 @@ public class NioThread extends Thread implements OperationHostileThread {
     @SuppressWarnings("checkstyle:visibilitymodifier")
     // this field is set during construction and is meant for the probes so that the NioPipeline can
     // indicate which thread they are currently bound to.
-    @Probe(name = "ioThreadId", level = ProbeLevel.INFO)
+    @Probe(name = NETWORKING_METRIC_NIO_THREAD_IO_THREAD_ID)
     public int id;
 
-    @Probe(level = INFO)
+    @Probe(name = NETWORKING_METRIC_NIO_THREAD_BYTES_TRANSCEIVED, unit = BYTES)
     volatile long bytesTransceived;
-    @Probe(level = INFO)
+    @Probe(name = NETWORKING_METRIC_NIO_THREAD_FRAMES_TRANSCEIVED)
     volatile long framesTransceived;
-    @Probe(level = INFO)
+    @Probe(name = NETWORKING_METRIC_NIO_THREAD_PRIORITY_FRAMES_TRANSCEIVED)
     volatile long priorityFramesTransceived;
-    @Probe(level = INFO)
+    @Probe(name = NETWORKING_METRIC_NIO_THREAD_PROCESS_COUNT)
     volatile long processCount;
 
-    @Probe(name = "taskQueueSize")
-    private final Queue<Runnable> taskQueue = new ConcurrentLinkedQueue<Runnable>();
-    @Probe
+    @Probe(name = NETWORKING_METRIC_NIO_THREAD_TASK_QUEUE_SIZE)
+    private final Queue<Runnable> taskQueue = new ConcurrentLinkedQueue<>();
+    @Probe(name = NETWORKING_METRIC_NIO_THREAD_EVENT_COUNT)
     private final SwCounter eventCount = newSwCounter();
-    @Probe
+    @Probe(name = NETWORKING_METRIC_NIO_THREAD_SELECTOR_IO_EXCEPTION_COUNT)
     private final SwCounter selectorIOExceptionCount = newSwCounter();
-    @Probe
+    @Probe(name = NETWORKING_METRIC_NIO_THREAD_COMPLETED_TASK_COUNT)
     private final SwCounter completedTaskCount = newSwCounter();
     // count number of times the selector was rebuilt (if selectWorkaround is enabled)
-    @Probe
+    @Probe(name = NETWORKING_METRIC_NIO_THREAD_SELECTOR_REBUILD_COUNT)
     private final SwCounter selectorRebuildCount = newSwCounter();
 
     private final ILogger logger;
@@ -182,8 +196,8 @@ public class NioThread extends Thread implements OperationHostileThread {
      *
      * @return the idle time in ms.
      */
-    @Probe
-    private long idleTimeMs() {
+    @Probe(name = NETWORKING_METRIC_NIO_THREAD_IDLE_TIME_MILLIS, unit = MS)
+    private long idleTimeMillis() {
         return max(currentTimeMillis() - lastSelectTimeMs, 0);
     }
 

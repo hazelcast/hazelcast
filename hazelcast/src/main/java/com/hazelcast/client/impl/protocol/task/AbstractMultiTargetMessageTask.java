@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static java.util.Collections.EMPTY_MAP;
 
@@ -58,11 +59,12 @@ public abstract class AbstractMultiTargetMessageTask<P> extends AbstractAsyncMes
         MultiTargetCallback callback = new MultiTargetCallback(targets, finalResult);
         for (Member target : targets) {
             Operation op = operationSupplier.get();
+            op.setCallerUuid(endpoint.getUuid());
             InvocationBuilder builder = operationService.createInvocationBuilder(getServiceName(), op, target.getAddress())
                                                         .setResultDeserialized(false);
 
             InvocationFuture<Object> invocationFuture = builder.invoke();
-            invocationFuture.whenComplete(new SingleTargetCallback(target, callback));
+            invocationFuture.whenCompleteAsync(new SingleTargetCallback(target, callback), CALLER_RUNS);
         }
 
         return finalResult;

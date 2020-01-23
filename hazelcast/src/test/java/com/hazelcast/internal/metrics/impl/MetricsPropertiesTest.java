@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,11 +24,15 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_DISCRIMINATOR_NAME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_PREFIX;
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static com.hazelcast.internal.metrics.ProbeUnit.COUNT;
@@ -40,6 +44,14 @@ import static org.junit.Assert.assertSame;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class MetricsPropertiesTest extends HazelcastTestSupport {
+
+    @Rule
+    public OverridePropertyRule overrideFrequency =
+            OverridePropertyRule.clear(ClusterProperty.METRICS_COLLECTION_FREQUENCY.getName());
+
+    @Rule
+    public OverridePropertyRule overrideDebug =
+            OverridePropertyRule.clear(ClusterProperty.METRICS_DEBUG.getName());
 
     @Test
     public void testSystemPropertiesOverrideConfig() {
@@ -204,8 +216,8 @@ public class MetricsPropertiesTest extends HazelcastTestSupport {
 
         MetricDescriptor descriptor = DEFAULT_DESCRIPTOR_SUPPLIER
                 .get()
-                .withPrefix("map")
-                .withDiscriminator("name", "testMap")
+                .withPrefix(MAP_PREFIX)
+                .withDiscriminator(MAP_DISCRIMINATOR_NAME, "testMap")
                 .withMetric("putCount")
                 .withUnit(COUNT);
 

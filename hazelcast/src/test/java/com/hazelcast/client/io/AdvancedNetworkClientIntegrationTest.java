@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ package com.hazelcast.client.io;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.cluster.MemberAttributeEvent;
 import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.config.Config;
@@ -28,7 +28,6 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.map.IMap;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.IScheduledFuture;
@@ -128,10 +127,6 @@ public class AdvancedNetworkClientIntegrationTest {
                 memberRemoved.set(membershipEvent.getMember());
             }
 
-            @Override
-            public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
-
-            }
         });
 
         instances[2].shutdown();
@@ -155,8 +150,11 @@ public class AdvancedNetworkClientIntegrationTest {
         for (Partition partition : partitions) {
             Partition memberPartition = memberPartitions.next();
             assertEquals(memberPartition.getPartitionId(), partition.getPartitionId());
-            assertEquals(memberPartition.getOwner().getAddressMap().get(CLIENT),
-                        partition.getOwner().getAddress());
+            assertTrueEventually(() -> {
+                Member owner = partition.getOwner();
+                assertNotNull(owner);
+                assertEquals(memberPartition.getOwner().getAddressMap().get(CLIENT), owner.getAddress());
+            });
         }
     }
 
@@ -185,7 +183,7 @@ public class AdvancedNetworkClientIntegrationTest {
         IScheduledFuture<Address> future = executorService.scheduleOnMember(new ReportExecutionMember(),
                 targetMember, 3, TimeUnit.SECONDS);
 
-        assertEquals(targetMember.getAddress(), future.getHandler().getAddress());
+        assertEquals(targetMember.getUuid(), future.getHandler().getUuid());
 
         Address clusterMemberAddress = null;
         for (HazelcastInstance instance : instances) {

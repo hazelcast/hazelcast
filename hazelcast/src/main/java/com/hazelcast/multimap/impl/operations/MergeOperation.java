@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.multimap.impl.MultiMapValue;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
@@ -45,7 +45,7 @@ import static com.hazelcast.internal.util.MapUtil.createHashMap;
 public class MergeOperation extends AbstractMultiMapOperation implements BackupAwareOperation {
 
     private List<MultiMapMergeContainer> mergeContainers;
-    private SplitBrainMergePolicy<Collection<Object>, MultiMapMergeTypes> mergePolicy;
+    private SplitBrainMergePolicy<Collection<Object>, MultiMapMergeTypes<Object, Object>, Collection<Object>> mergePolicy;
 
     private transient Map<Data, Collection<MultiMapRecord>> resultMap;
 
@@ -53,7 +53,8 @@ public class MergeOperation extends AbstractMultiMapOperation implements BackupA
     }
 
     public MergeOperation(String name, List<MultiMapMergeContainer> mergeContainers,
-                          SplitBrainMergePolicy<Collection<Object>, MultiMapMergeTypes> mergePolicy) {
+                          SplitBrainMergePolicy<Collection<Object>, MultiMapMergeTypes<Object, Object>,
+                                  Collection<Object>> mergePolicy) {
         super(name);
         this.mergeContainers = mergeContainers;
         this.mergePolicy = mergePolicy;

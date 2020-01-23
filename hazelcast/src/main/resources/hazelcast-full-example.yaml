@@ -1,4 +1,4 @@
-# Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+# Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -68,13 +68,9 @@ hazelcast:
           secretKeyAlgorithm: DES
           secretKeyFactoryAlgorithm: PBKDF2WithHmacSHA1
   #
-  # Specifies the name and password for a cluster group you create.
-  # Cluster groups allow you to create separate sub-clusters with different names.
-  # They are also referenced in the WAN Replication configuration.
-  # The group password is only used when the security is enabled (Enterprise edition feature).
-  cluster:
-    name: dev
-    password: dev-pass
+  # Specifies the cluster name. It allows creating separate sub-clusters with different names.
+  #  name is also referenced in the WAN Replication configuration.
+  cluster-name: my-cluster
   #
   # ===== HAZELCAST LICENSE CONFIGURATION =====
   #
@@ -92,23 +88,18 @@ hazelcast:
   #
   # ===== HAZELCAST MANAGEMENT CENTER CONFIGURATION =====
   #
-  # The value for the element "management-center" is the URL where you deploy the Management Center.
-  # It has three optional attributes:
-  # * enabled:
-  # Set to true to be able to use the Management Center. Its default value is false.
+  # The element "management-center" has the following optional attributes:
   # * scripting-enabled:
   # Set to true to allow scripting on the member, false to disallow.
-  # * update-interval:
-  # The time frequency (in seconds) for which Management Center will take information from Hazelcast cluster.
-  # Its default value is 3 seconds. Hazelcast's Open Source edition provides the Management Center with monitoring
-  # at most 2 members in your cluster. To use it for more members, you need to have either a Management Center,
+  # Default value for this config element depends on Hazelcast edition:
+  # false for Hazelcast Enterprise, true for Hazelcast (open source).
+  #
+  # Hazelcast's Open Source edition provides the Management Center with monitoring at most 3 members
+  # in your cluster. To use it for more members, you need to have either a Management Center,
   # Hazelcast Enterprise or Hazelcast Enterprise HD license.
   #
   management-center:
-    enabled: true
     scripting-enabled: false
-    update-interval: 2
-    url: http://localhost:8080/hazelcast-mancenter
   #
   # The "properties" mapping lets you add properties to some of the Hazelcast elements used to configure some of
   # the Hazelcast modules.
@@ -138,7 +129,7 @@ hazelcast:
   #
   # The "wan-replication" element has the following sub-elements:
   # * "batch-publisher":
-  #     WAN publisher using the built-in com.hazelcast.enterprise.wan.impl.replication.WanBatchReplication.
+  #     WAN publisher using the built-in com.hazelcast.enterprise.wan.impl.replication.WanBatchPublisher.
   #     Waits until a batch size is reached or a delay time is passed.
   #     Please see the batch-size and batch-max-delay-millis configuration descriptions below.
   #     * "cluster-name":
@@ -255,7 +246,7 @@ hazelcast:
   #     * "target-endpoints":
   #         Comma separated list of IP addresses of the target cluster members for
   #         which the WAN replication is implemented.
-  #     * "wan-sync":
+  #     * "sync":
   #     Configuration for the WAN sync mechanism. It has the following sub-elements:
   #         - "consistency-check-strategy":
   #             Sets the strategy for checking consistency of data between source and
@@ -359,7 +350,7 @@ hazelcast:
           max-target-endpoints: 2147483647
           queue-capacity: 10000
           target-endpoints: 10.3.5.1:5701,10.3.5.2:5701
-          wan-sync:
+          sync:
             consistency-check-strategy: NONE
           # aws:
           #   enabled: false
@@ -855,6 +846,9 @@ hazelcast:
   # * "capacity":
   #     Capacity of the scheduled executor. The default value is 100.
   #     This is the maximum number of tasks for a given scheduled executor on a particular partition.
+  # * "capacity-policy":
+  #     The active policy for the capacity setting. Default is PER_NODE
+  #     Available options (PER_PARTITION, PER_NODE)
   # * "split-brain-protection-ref":
   #     Adds the Split Brain Protection for this data-structure which you configure using the "split-brain-protection" element. You should set
   #     the "split-brain-protection-ref"'s value as the "split-brain-protection"'s name.
@@ -867,6 +861,7 @@ hazelcast:
       pool-size: 16
       durability: 1
       capacity: 100
+      capacity-policy: PER_NODE
       split-brain-protection-ref: splitBrainProtectionRuleWithThreeNodes
       merge-policy:
         batch-size: 100
@@ -1205,7 +1200,7 @@ hazelcast:
   #     - "republishing-enabled":
   #         When enabled, an incoming event to a member is forwarded to target cluster of that member. Its
   #         default value is true.
-  #      - "merge-policy":
+  #      - "merge-policy-class-name":
   #         Resolve conflicts that occurred when target cluster already has the replicated
   #         entry key.
   #
@@ -1230,6 +1225,8 @@ hazelcast:
   #         target one.
   #         com.hazelcast.spi.merge.PassThroughMergePolicy: Incoming entry merges from
   #         the source cache to the target cache unless the incoming entry is not null.
+  #
+  #         The default policy is com.hazelcast.spi.merge.PassThroughMergePolicy.
   # * "indexes":
   # You can define indexes for your map using this element's "index" sub-elements. Index definition consists of type,
   # optional name and the list of columns to be indexed. Valid types are SORTED (default) and HASH.
@@ -1296,17 +1293,40 @@ hazelcast:
           eviction-policy: LFU
       wan-replication-ref:
         my-wan-cluster-batch:
-          merge-policy: PassThroughMergePolicy
+          merge-policy-class-name: PassThroughMergePolicy
           filters:
             - com.example.SampleFilter
             - com.example.SampleFilter2
           republishing-enabled: false
       indexes:
+        # unordered/hash index on the name attribute
         - type: HASH
           attributes:
             - "name"
+        # ordered/tree index on the age attribute
         - attributes:
           - "age"
+        # composite unordered/hash index on the name and age attributes
+        - type: HASH
+          attributes:
+            - "name"
+            - "age"
+        # composite ordered/tree index on the age and name attributes
+        - attributes:
+          - "age"
+          - "name"
+        # bitmap index on the age attribute
+        - type: BITMAP
+          attributes:
+            - "age"
+        # bitmap index on the name attribute with options
+        - type: BITMAP
+          attributes:
+            - "name"
+          bitmap-index-options:
+            unique-key: id
+            unique-key-transformation: RAW
+
       attributes:
         currency:
           extractor-class-name: com.bank.CurrencyExtractor
@@ -1626,7 +1646,7 @@ hazelcast:
         eviction-policy: LFU
       wan-replication-ref:
          name: my-wan-cluster-batch
-         merge-policy: PassThroughMergePolicy
+         merge-policy-class-name: PassThroughMergePolicy
          republishing-enabled: true
          filters:
            - com.example.SampleFilter
@@ -1911,26 +1931,26 @@ hazelcast:
   #
   #     This setting pertains only to newId() calls made on the member that configured it.
   #
-  # * "id-offset":
-  #     Sets the offset that will be added to the returned IDs. Default value is 0. Setting might be
-  #     useful when migrating from IdGenerator, default value works for all green-field projects.
-  #
-  #     For example: Largest ID returned from IdGenerator is 150. FlakeIdGenerator now returns
-  #     100. If you configure idOffset of 50 and stop using the IdGenerator, the next ID from
-  #     FlakeIdGenerator will be 151 or larger and no duplicate IDs will be generated. In real-life,
-  #     the IDs are much larger. You also need to add a reserve to the offset because the IDs
-  #     from FlakeIdGenerator are only roughly ordered. Recommended reserve is 2^38, that is
-  #     274877906944.
-  #
-  #     Negative values are allowed to increase the lifespan of the generator, however keep in
-  #     mind that the generated IDs might also be negative.
-  #
+  # * "epoch-start":
+  #     Sets the offset of timestamp component. Time unit is milliseconds, default is 1514764800000
+  #     (1.1.2018 0:00 UTC).
+  #       
   # * "node-id-offset":
   #     Sets the offset that will be added to the node ID assigned to cluster member for this generator.
   #     Might be useful in A/B deployment scenarios where you have cluster A which you want to upgrade.
   #     You create cluster B and for some time both will generate IDs and you want to have them unique.
   #     In this case, configure node ID offset for generators on cluster B.
   #
+  # * "bits-sequence":
+  #     Sets the bit-length of the sequence component, default is 6 bits.
+  #
+  # * "bits-node-id":
+  #     Sets the bit-length of node id component. Default value is 16 bits.
+  #      
+  # * "allowed-future-millis":
+  #     Sets how far to the future is the generator allowed to go to generate IDs without blocking, default is
+  #     15 seconds.
+  #  
   # * "statistics-enabled":
   #     When you enable it, you can retrieve the Flake ID generators statistics. Its default value is true.
   #
@@ -1938,8 +1958,11 @@ hazelcast:
     default:
       prefetch-count: 100
       prefetch-validity-millis: 600000
-      id-offset: 0
+      epoch-start: 1514764800000
       node-id-offset: 0
+      bits-sequence: 6
+      bits-node-id: 16
+      allowed-future-millis: 15000
       statistics-enabled: true
 
   #
@@ -2100,7 +2123,7 @@ hazelcast:
   #
   #  HAZELCAST SECURITY REALMS
   #  Security realms are named security configurations which can be referenced from Hazelcast security configuration.
-  #  Currently, the realms support configuring <authentication> and/or <identity>. Only one type of authentication 
+  #  Currently, the realms support configuring <authentication> and/or <identity>. Only one type of authentication
   #  configuration and one type of identity configuration is allowed per the realm.
   #  Authentication types:
   #  * jaas

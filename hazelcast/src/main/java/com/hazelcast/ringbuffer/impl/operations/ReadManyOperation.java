@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,21 +53,21 @@ public class ReadManyOperation<O> extends AbstractRingBufferOperation
 
     @Override
     public void beforeRun() {
-        RingbufferContainer ringbuffer = getRingBufferContainer();
-        ringbuffer.checkBlockableReadSequence(startSequence);
     }
 
     @Override
     public boolean shouldWait() {
         if (resultSet == null) {
-            resultSet = new ReadResultSetImpl<O, O>(minSize, maxSize, getNodeEngine().getSerializationService(), filter);
+            resultSet = new ReadResultSetImpl<>(minSize, maxSize, getNodeEngine().getSerializationService(), filter);
             sequence = startSequence;
         }
 
         RingbufferContainer ringbuffer = getRingBufferContainer();
+        sequence = ringbuffer.clampReadSequenceToBounds(sequence);
+
         if (minSize == 0) {
-            if (!ringbuffer.shouldWait(sequence)) {
-                sequence = ringbuffer.readMany(sequence, resultSet);
+            if (sequence < ringbuffer.tailSequence() + 1) {
+                readMany(ringbuffer);
             }
 
             return false;
@@ -78,16 +78,17 @@ public class ReadManyOperation<O> extends AbstractRingBufferOperation
             return false;
         }
 
-        if (ringbuffer.isTooLargeSequence(sequence) || ringbuffer.isStaleSequence(sequence)) {
-            //no need to wait, let the operation continue and fail in beforeRun
-            return false;
-        }
         if (sequence == ringbuffer.tailSequence() + 1) {
             // the sequence is not readable
             return true;
         }
-        sequence = ringbuffer.readMany(sequence, resultSet);
+        readMany(ringbuffer);
         return !resultSet.isMinSizeReached();
+    }
+
+    private void readMany(RingbufferContainer ringbuffer) {
+        sequence = ringbuffer.readMany(sequence, resultSet);
+        resultSet.setNextSequenceToReadFrom(sequence);
     }
 
     @Override

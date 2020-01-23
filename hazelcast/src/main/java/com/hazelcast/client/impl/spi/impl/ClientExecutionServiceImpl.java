@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,32 +16,28 @@
 
 package com.hazelcast.client.impl.spi.impl;
 
-import com.hazelcast.client.impl.spi.ClientExecutionService;
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.StaticMetricsProvider;
-import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.internal.util.executor.LoggingScheduledExecutor;
 import com.hazelcast.internal.util.executor.PoolExecutorThreadFactory;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
+import com.hazelcast.spi.impl.executionservice.TaskScheduler;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_PREFIX_EXECUTION_SERVICE;
 import static java.lang.Thread.currentThread;
 
-public final class ClientExecutionServiceImpl implements ClientExecutionService, StaticMetricsProvider {
+public final class ClientExecutionServiceImpl implements TaskScheduler, StaticMetricsProvider {
 
     public static final HazelcastProperty INTERNAL_EXECUTOR_POOL_SIZE
             = new HazelcastProperty("hazelcast.client.internal.executor.pool.size", 3);
@@ -49,30 +45,18 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService,
     public static final long TERMINATE_TIMEOUT_SECONDS = 30;
 
     private final ILogger logger;
-    private final ExecutorService userExecutor;
     private final ScheduledExecutorService internalExecutor;
 
     public ClientExecutionServiceImpl(String name, ClassLoader classLoader,
-                                      HazelcastProperties properties, int poolSize, LoggingService loggingService) {
+                                      HazelcastProperties properties, LoggingService loggingService) {
         int internalPoolSize = properties.getInteger(INTERNAL_EXECUTOR_POOL_SIZE);
         if (internalPoolSize <= 0) {
             internalPoolSize = Integer.parseInt(INTERNAL_EXECUTOR_POOL_SIZE.getDefaultValue());
         }
-        int executorPoolSize = poolSize;
-        if (executorPoolSize <= 0) {
-            executorPoolSize = RuntimeAvailableProcessors.get();
-        }
-        logger = loggingService.getLogger(ClientExecutionService.class);
+        logger = loggingService.getLogger(TaskScheduler.class);
         internalExecutor = new LoggingScheduledExecutor(logger, internalPoolSize,
                 new PoolExecutorThreadFactory(name + ".internal-", classLoader), (r, executor) -> {
                     String message = "Internal executor rejected task: " + r + ", because client is shutting down...";
-                    logger.finest(message);
-                    throw new RejectedExecutionException(message);
-                });
-        userExecutor = new ThreadPoolExecutor(executorPoolSize, executorPoolSize, 0L, TimeUnit.MILLISECONDS,
-                new LinkedBlockingQueue<>(),
-                new PoolExecutorThreadFactory(name + ".user-", classLoader), (r, executor) -> {
-                    String message = "User executor rejected task: " + r + ", because client is shutting down...";
                     logger.finest(message);
                     throw new RejectedExecutionException(message);
                 });
@@ -98,18 +82,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService,
         internalExecutor.execute(command);
     }
 
-    @Override
-    public ExecutorService getUserExecutor() {
-        return userExecutor;
-    }
-
-    @Probe (level = MANDATORY)
-    public int getUserExecutorQueueSize() {
-        return ((ThreadPoolExecutor) userExecutor).getQueue().size();
-    }
-
     public void shutdown() {
-        shutdownExecutor("user", userExecutor, logger);
         shutdownExecutor("internal", internalExecutor, logger);
     }
 
@@ -129,6 +102,6 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService,
 
     @Override
     public void provideStaticMetrics(MetricsRegistry registry) {
-        registry.registerStaticMetrics(this, "executionService");
+        registry.registerStaticMetrics(this, CLIENT_PREFIX_EXECUTION_SERVICE);
     }
 }

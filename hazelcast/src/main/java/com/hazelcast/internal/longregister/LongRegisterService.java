@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import com.hazelcast.internal.partition.PartitionReplicationEvent;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -75,7 +76,7 @@ public class LongRegisterService implements ManagedService, RemoteService, Migra
     }
 
     @Override
-    public LongRegisterProxy createDistributedObject(String name, boolean local) {
+    public LongRegisterProxy createDistributedObject(String name, UUID source, boolean local) {
         return new LongRegisterProxy(name, nodeEngine, this);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.management.operation;
 
-import com.hazelcast.internal.management.ConsoleCommandHandler;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -25,6 +25,7 @@ import com.hazelcast.spi.impl.operationservice.AbstractLocalOperation;
 
 import java.util.concurrent.Future;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ExceptionUtil.peel;
 import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
@@ -44,14 +45,17 @@ public class RunConsoleCommandOperation extends AbstractLocalOperation {
 
     @Override
     public void run() throws Exception {
+        final ManagementCenterService mcs = ((NodeEngineImpl) getNodeEngine()).getManagementCenterService();
+        if (mcs == null) {
+            sendResponse(new HazelcastException("ManagementCenterService is not initialized yet"));
+            return;
+        }
         final ILogger logger = getNodeEngine().getLogger(getClass());
-        final ManagementCenterService mcService = ((NodeEngineImpl) getNodeEngine()).getManagementCenterService();
         final ExecutionService executionService = getNodeEngine().getExecutionService();
 
         Future<String> future = executionService.submit(
                 ExecutionService.MC_EXECUTOR,
                 () -> {
-                    ConsoleCommandHandler handler = mcService.getCommandHandler();
                     try {
                         final String ns = namespace;
                         String cmd = command;
@@ -59,18 +63,18 @@ public class RunConsoleCommandOperation extends AbstractLocalOperation {
                             // set namespace as a part of the command
                             cmd = ns + "__" + cmd;
                         }
-                        return handler.handleCommand(cmd);
+                        return mcs.runConsoleCommand(cmd);
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                         throw e;
                     }
                 });
 
-        executionService.asCompletableFuture(future).whenComplete(
+        executionService.asCompletableFuture(future).whenCompleteAsync(
                 withTryCatch(
                         logger,
                         (output, error) -> sendResponse(error != null ? peel(error) : output)
-                )
+                ), CALLER_RUNS
         );
     }
 

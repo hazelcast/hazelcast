@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -38,15 +38,7 @@
             <hz:instance-name>test-instance</hz:instance-name>
             <hz:cluster-name>${cluster.name}</hz:cluster-name>
             <hz:license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</hz:license-key>
-            <hz:management-center enabled="true" update-interval="2" scripting-enabled="false">
-                <hz:url>myserver:80</hz:url>
-                <hz:mutual-auth enabled="true">
-                    <hz:factory-class-name>who.let.the.cat.out.class</hz:factory-class-name>
-                    <hz:properties>
-                        <hz:property name="bool">ean</hz:property>
-                    </hz:properties>
-                </hz:mutual-auth>
-            </hz:management-center>
+            <hz:management-center scripting-enabled="false" />
 
             <hz:properties>
                 <hz:property name="hazelcast.merge.first.run.delay.seconds">5</hz:property>
@@ -98,22 +90,6 @@
                     <hz:eureka enabled="false"
                                self-registration="true"
                                namespace="hazelcast"/>
-                    <hz:discovery-strategies>
-                        <hz:node-filter implementation="dummyNodeFilter"/>
-                        <hz:discovery-strategy discovery-strategy-factory="dummyDiscoveryStrategyFactory">
-                            <hz:properties>
-                                <hz:property name="key-string">foo</hz:property>
-                                <hz:property name="key-int">123</hz:property>
-                                <hz:property name="key-boolean">true</hz:property>
-                            </hz:properties>
-                        </hz:discovery-strategy>
-                        <hz:discovery-strategy class-name="com.hazelcast.spring.DummyDiscoveryStrategy">
-                            <hz:properties>
-                                <hz:property name="key-string">foo2</hz:property>
-                            </hz:properties>
-                        </hz:discovery-strategy>
-                        <hz:discovery-service-provider implementation="dummyDiscoveryServiceProvider"/>
-                    </hz:discovery-strategies>
                 </hz:batch-publisher>
                 <hz:batch-publisher>
                     <hz:cluster-name>ankara</hz:cluster-name>
@@ -135,9 +111,9 @@
             <hz:wan-replication name="testWan2">
                 <hz:batch-publisher>
                     <hz:cluster-name>tokyo</hz:cluster-name>
-                    <hz:wan-sync>
+                    <hz:sync>
                         <hz:consistency-check-strategy>MERKLE_TREES</hz:consistency-check-strategy>
-                    </hz:wan-sync>
+                    </hz:sync>
                 </hz:batch-publisher>
                 <hz:consumer implementation="wanConsumer" persist-wan-replicated-data="false"/>
             </hz:wan-replication>
@@ -188,22 +164,6 @@
                     <hz:eureka enabled="false"
                                self-registration="true"
                                namespace="hazelcast"/>
-                    <hz:discovery-strategies>
-                        <hz:node-filter implementation="dummyNodeFilter"/>
-                        <hz:discovery-strategy discovery-strategy-factory="dummyDiscoveryStrategyFactory">
-                            <hz:properties>
-                                <hz:property name="key-string">foo</hz:property>
-                                <hz:property name="key-int">123</hz:property>
-                                <hz:property name="key-boolean">true</hz:property>
-                            </hz:properties>
-                        </hz:discovery-strategy>
-                        <hz:discovery-strategy class-name="com.hazelcast.spring.DummyDiscoveryStrategy">
-                            <hz:properties>
-                                <hz:property name="key-string">foo2</hz:property>
-                            </hz:properties>
-                        </hz:discovery-strategy>
-                        <hz:discovery-service-provider implementation="dummyDiscoveryServiceProvider"/>
-                    </hz:discovery-strategies>
                 </hz:join>
                 <hz:interfaces enabled="false">
                     <hz:interface>10.10.1.*</hz:interface>
@@ -243,6 +203,7 @@
                     <hz:endpoint-group name="HOT_RESTART" enabled="true"/>
                     <hz:endpoint-group name="WAN" enabled="true"/>
                     <hz:endpoint-group name="DATA" enabled="true"/>
+                    <hz:endpoint-group name="CP" enabled="true"/>
                 </hz:rest-api>
                 <hz:memcache-protocol enabled="true"/>
             </hz:network>
@@ -275,7 +236,7 @@
 
             <hz:scheduled-executor-service name="scheduledExec"
                                            pool-size="10"
-                                           durability="5">
+                                           durability="5" capacity-policy="PER_PARTITION">
                 <hz:split-brain-protection-ref>my-split-brain-protection</hz:split-brain-protection-ref>
                 <hz:merge-policy batch-size="101">PassThroughMergePolicy</hz:merge-policy>
             </hz:scheduled-executor-service>
@@ -401,7 +362,7 @@
                               implementation="dummyMapStore"
                               write-delay-seconds="0"
                               initial-mode="LAZY"/>
-                <hz:wan-replication-ref name="testWan" merge-policy="PUT_IF_ABSENT"/>
+                <hz:wan-replication-ref name="testWan" merge-policy-class-name="PUT_IF_ABSENT"/>
 
                 <hz:entry-listeners>
                     <hz:entry-listener class-name="com.hazelcast.spring.DummyEntryListener" include-value="true"/>
@@ -533,7 +494,7 @@
             </hz:map>
 
             <hz:cache name="testCache" disable-per-entry-invalidation-events="true">
-                <hz:wan-replication-ref name="testWan" merge-policy="PUT_IF_ABSENT"
+                <hz:wan-replication-ref name="testWan" merge-policy-class-name="PUT_IF_ABSENT"
                                         republishing-enabled="false">
                     <hz:filters>
                         <hz:filter-impl>com.example.SampleFilter</hz:filter-impl>
@@ -861,8 +822,10 @@
                 </hz:encryption-at-rest>
             </hz:hot-restart-persistence>
 
-            <hz:flake-id-generator name="flakeIdGenerator*" prefetchCount="3" prefetchValidityMillis="10" idOffset="20"
-                                   nodeIdOffset="30" statistics-enabled="false" />
+            <hz:flake-id-generator name="flakeIdGenerator*" prefetchCount="3" prefetchValidityMillis="10"
+                                   epochStart="1514764800001" nodeIdOffset="30"
+                                   bitsSequence="22" bitsNodeId="33" allowedFutureMillis="20000"
+                                   statistics-enabled="false" />
 
             <hz:crdt-replication max-concurrent-replication-targets="10" replication-period-millis="2000" />
 
@@ -957,7 +920,7 @@
     <bean id="dummyRingbufferStore" class="com.hazelcast.spring.DummyRingbufferStore"/>
     <bean id="dummyRingbufferStoreFactory" class="com.hazelcast.spring.DummyRingbufferStoreFactory"/>
     <bean id="dummyEvictionPolicyComparator" class="com.hazelcast.spring.DummyMapEvictionPolicyComparator"/>
-    <bean id="dummyWanReplication" class="com.hazelcast.spring.DummyWanReplication"/>
+    <bean id="dummyWanReplication" class="com.hazelcast.spring.WanDummyPublisher"/>
     <bean id="dummyMembershipListener" class="com.hazelcast.spring.DummyMembershipListener"/>
     <bean id="dummyEntryListener" class="com.hazelcast.spring.DummyEntryListener"/>
     <bean id="dummySplitBrainProtectionListener" class="com.hazelcast.spring.DummySplitBrainProtectionListener"/>

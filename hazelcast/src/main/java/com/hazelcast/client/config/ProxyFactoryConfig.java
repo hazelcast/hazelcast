@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,12 @@
 package com.hazelcast.client.config;
 
 import com.hazelcast.client.impl.spi.ClientProxyFactory;
+
+import javax.annotation.Nonnull;
+import java.util.Objects;
+
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * This class is related to SPI. To register custom services to java client.
@@ -60,8 +66,9 @@ public class ProxyFactoryConfig {
      *
      * @param className of proxy factory
      */
-    public ProxyFactoryConfig setClassName(String className) {
-        this.className = className;
+    public ProxyFactoryConfig setClassName(@Nonnull String className) {
+        this.className = checkHasText(className, "Client proxy factory class name must contain text");
+        this.factoryImpl = null;
         return this;
     }
 
@@ -92,16 +99,10 @@ public class ProxyFactoryConfig {
      *
      * @param factoryImpl of proxy factory
      */
-    public ProxyFactoryConfig setFactoryImpl(ClientProxyFactory factoryImpl) {
-        this.factoryImpl = factoryImpl;
+    public ProxyFactoryConfig setFactoryImpl(@Nonnull ClientProxyFactory factoryImpl) {
+        this.factoryImpl = checkNotNull(factoryImpl, "Client proxy factory cannot be null!");
+        this.className = null;
         return this;
-    }
-
-    private String internalClassName() {
-        if (factoryImpl != null) {
-            return factoryImpl.getClass().getName();
-        }
-        return className;
     }
 
     @Override
@@ -115,24 +116,14 @@ public class ProxyFactoryConfig {
 
         ProxyFactoryConfig that = (ProxyFactoryConfig) o;
 
-        String thisClassName = internalClassName();
-        String thatClassName = that.internalClassName();
-        if (thisClassName != null ? !thisClassName.equals(thatClassName) : thatClassName != null) {
-            return false;
-        }
-        if (service != null ? !service.equals(that.service) : that.service != null) {
-            return false;
-        }
-
-        return true;
+        return Objects.equals(service, that.service)
+            && Objects.equals(factoryImpl, that.factoryImpl)
+            && Objects.equals(className, that.className);
     }
 
     @Override
     public int hashCode() {
-        int result = service != null ? service.hashCode() : 0;
-        String internalClassName = internalClassName();
-        result = 31 * result + (internalClassName != null ? internalClassName.hashCode() : 0);
-        return result;
+        return Objects.hash(service, factoryImpl, className);
     }
 
     @Override

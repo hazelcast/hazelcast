@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,18 +32,6 @@ import java.util.List;
 public interface InternalPartitionService extends IPartitionService, ManagedService, GracefulShutdownAwareService {
 
     /**
-     * Retry count for migration operations.
-     * <p>
-     * Current Invocation mechanism retries first 5 invocations without pausing.
-     */
-    int MIGRATION_RETRY_COUNT = 12;
-
-    /**
-     * Retry pause for migration operations in milliseconds.
-     */
-    long MIGRATION_RETRY_PAUSE = 10000;
-
-    /**
      * Static constant for dispatching and listening migration events
      */
     String MIGRATION_EVENT_TOPIC = ".migration";
@@ -62,7 +50,7 @@ public interface InternalPartitionService extends IPartitionService, ManagedServ
     /**
      * Number of the member groups to be used in partition assignments.
      *
-     * @see com.hazelcast.partition.membergroup.MemberGroupFactory
+     * @see com.hazelcast.internal.partition.membergroup.MemberGroupFactory
      * @see com.hazelcast.config.PartitionGroupConfig
      * @return number of member groups
      */

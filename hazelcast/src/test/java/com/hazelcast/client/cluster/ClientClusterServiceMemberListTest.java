@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,9 @@ package com.hazelcast.client.cluster;
 import com.hazelcast.client.impl.clientside.ClientTestUtil;
 import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.cluster.Member;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -72,31 +71,23 @@ public class ClientClusterServiceMemberListTest extends HazelcastTestSupport {
 
     @Test
     public void testLiteMembers() {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                final ClientClusterService clusterService = getClientClusterService(client);
-                final Collection<Member> members = clusterService.getMembers(LITE_MEMBER_SELECTOR);
-                verifyMembers(members, singletonList(liteInstance));
+        assertTrueEventually(() -> {
+            final ClientClusterService clusterService = getClientClusterService(client);
+            final Collection<Member> members = clusterService.getMembers(LITE_MEMBER_SELECTOR);
+            verifyMembers(members, singletonList(liteInstance));
 
-                assertEquals(1, clusterService.getSize(LITE_MEMBER_SELECTOR));
-            }
+            assertEquals(1, clusterService.getMembers(LITE_MEMBER_SELECTOR).size());
         });
     }
 
     @Test
     public void testDataMembers() {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                final ClientClusterService clusterService = getClientClusterService(client);
-                final Collection<Member> members = clusterService.getMembers(DATA_MEMBER_SELECTOR);
-                verifyMembers(members, asList(dataInstance, dataInstance2));
+        assertTrueEventually(() -> {
+            final ClientClusterService clusterService = getClientClusterService(client);
+            final Collection<Member> members = clusterService.getMembers(DATA_MEMBER_SELECTOR);
+            verifyMembers(members, asList(dataInstance, dataInstance2));
 
-                assertEquals(2, clusterService.getSize(DATA_MEMBER_SELECTOR));
-            }
+            assertEquals(2, clusterService.getMembers(DATA_MEMBER_SELECTOR).size());
         });
     }
 

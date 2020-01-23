@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,13 +19,13 @@ package com.hazelcast.map.impl.proxy;
 import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryView;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.QueryCache;
@@ -42,10 +42,9 @@ import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.subscriber.QueryCacheEndToEndProvider;
 import com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest;
 import com.hazelcast.map.impl.querycache.subscriber.SubscriberContext;
-import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
@@ -717,7 +716,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         handleHazelcastInstanceAwareParams(entryProcessor);
 
-        Data result = executeOnKeyInternal(key, entryProcessor);
+        Data result = executeOnKeyInternal(key, entryProcessor).joinInternal();
         return toObject(result);
     }
 
@@ -747,22 +746,12 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     @Override
-    public <R> void submitToKey(@Nonnull K key,
-                                @Nonnull EntryProcessor<K, V, R> entryProcessor,
-                                ExecutionCallback<? super R> callback) {
-        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-        handleHazelcastInstanceAwareParams(entryProcessor, callback);
-
-        executeOnKeyInternal(key, entryProcessor, callback);
-    }
-
-    @Override
     public <R> InternalCompletableFuture<R> submitToKey(@Nonnull K key,
                                                         @Nonnull EntryProcessor<K, V, R> entryProcessor) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         handleHazelcastInstanceAwareParams(entryProcessor);
 
-        InternalCompletableFuture future = executeOnKeyInternal(key, entryProcessor, null);
+        InternalCompletableFuture<Data> future = executeOnKeyInternal(key, entryProcessor);
         return newDelegatingFuture(serializationService, future);
     }
 
@@ -842,23 +831,32 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     /**
-     * Returns an iterator for iterating entries in the {@code partitionId}. If {@code prefetchValues} is
-     * {@code true}, values will be sent along with the keys and no additional data will be fetched when
-     * iterating. If {@code false}, only keys will be sent and values will be fetched when calling {@code
-     * Map.Entry.getValue()} lazily.
+     * Returns an iterator for iterating entries in the {@code partitionId}. If
+     * {@code prefetchValues} is {@code true}, values will be sent along with
+     * the keys and no additional data will be fetched when iterating. If
+     * {@code false}, only keys will be sent and values will be fetched when
+     * calling {@code Map.Entry.getValue()} lazily.
      * <p>
-     * The entries are not fetched one-by-one but in batches.
-     * You may control the size of the batch by changing the {@code fetchSize} parameter.
-     * A too small {@code fetchSize} can affect performance since more data will have to be sent to and from the partition owner.
-     * A too high {@code fetchSize} means that more data will be sent which can block other operations from being sent,
-     * including internal operations.
-     * The underlying implementation may send more values in one batch than {@code fetchSize} if it needs to get to
-     * a "safepoint" to resume iteration later.
+     * The values are fetched in batches.
+     * You may control the size of the batch by changing the {@code fetchSize}
+     * parameter.
+     * A too small {@code fetchSize} can affect performance since more data
+     * will have to be sent to and from the partition owner.
+     * A too high {@code fetchSize} means that more data will be sent which
+     * can block other operations from being sent, including internal
+     * operations.
+     * The underlying implementation may send more values in one batch than
+     * {@code fetchSize} if it needs to get to a "safepoint" to later resume
+     * iteration.
      * <p>
      * <b>NOTE</b>
-     * Iterating the map should be done only when the {@link IMap} is not being
-     * mutated and the cluster is stable (there are no migrations or membership changes).
-     * In other cases, the iterator may not return some entries or may return an entry twice.
+     * The iteration may be done when the map is being mutated or when there are
+     * membership changes. The iterator does not reflect the state when it has
+     * been constructed - it may return some entries that were added after the
+     * iteration has started and may not return some entries that were removed
+     * after iteration has started.
+     * The iterator will not, however, skip an entry if it has not been changed
+     * and will not return an entry twice.
      *
      * @param fetchSize      the size of the batches which will be sent when iterating the data
      * @param partitionId    the partition ID which is being iterated
@@ -871,27 +869,36 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     /**
-     * Returns an iterator for iterating the result of the projection on entries in the {@code partitionId} which
-     * satisfy the {@code predicate}.
+     * Returns an iterator for iterating the result of the projection on entries
+     * in the {@code partitionId} which satisfy the {@code predicate}.
      * <p>
-     * The values are not fetched one-by-one but rather in batches.
-     * You may control the size of the batch by changing the {@code fetchSize} parameter.
-     * A too small {@code fetchSize} can affect performance since more data will have to be sent to and from the partition owner.
-     * A too high {@code fetchSize} means that more data will be sent which can block other operations from being sent,
-     * including internal operations.
-     * The underlying implementation may send more values in one batch than {@code fetchSize} if it needs to get to
-     * a "safepoint" to later resume iteration.
+     * The values are fetched in batches.
+     * You may control the size of the batch by changing the {@code fetchSize}
+     * parameter.
+     * A too small {@code fetchSize} can affect performance since more data
+     * will have to be sent to and from the partition owner.
+     * A too high {@code fetchSize} means that more data will be sent which
+     * can block other operations from being sent, including internal
+     * operations.
+     * The underlying implementation may send more values in one batch than
+     * {@code fetchSize} if it needs to get to a "safepoint" to later resume
+     * iteration.
      * Predicates of type {@link PagingPredicate} are not supported.
-     * <p>
      * <b>NOTE</b>
-     * Iterating the map should be done only when the {@link IMap} is not being
-     * mutated and the cluster is stable (there are no migrations or membership changes).
-     * In other cases, the iterator may not return some entries or may return an entry twice.
+     * The iteration may be done when the map is being mutated or when there are
+     * membership changes. The iterator does not reflect the state when it has
+     * been constructed - it may return some entries that were added after the
+     * iteration has started and may not return some entries that were removed
+     * after iteration has started.
+     * The iterator will not, however, skip an entry if it has not been changed
+     * and will not return an entry twice.
      *
      * @param fetchSize   the size of the batches which will be sent when iterating the data
      * @param partitionId the partition ID which is being iterated
-     * @param projection  the projection to apply before returning the value. {@code null} value is not allowed
-     * @param predicate   the predicate which the entries must match. {@code null} value is not allowed
+     * @param projection  the projection to apply before returning the value. {@code null} value
+     *                    is not allowed
+     * @param predicate   the predicate which the entries must match. {@code null} value is not
+     *                    allowed
      * @param <R>         the return type
      * @return the iterator for the projected entries
      * @throws IllegalArgumentException if the predicate is of type {@link PagingPredicate}

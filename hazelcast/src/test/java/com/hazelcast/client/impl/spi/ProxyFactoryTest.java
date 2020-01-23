@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.UUID;
 
 import static com.hazelcast.client.impl.clientside.ClientTestUtil.getHazelcastClientInstanceImpl;
 import static org.junit.Assert.assertEquals;
@@ -130,7 +132,7 @@ public class ProxyFactoryTest {
     private class CustomService implements RemoteService {
 
         @Override
-        public DistributedObject createDistributedObject(String objectName, boolean local) {
+        public DistributedObject createDistributedObject(String objectName, UUID source, boolean local) {
             return new CustomClientProxy(SERVICE_NAME, objectName, context);
         }
 

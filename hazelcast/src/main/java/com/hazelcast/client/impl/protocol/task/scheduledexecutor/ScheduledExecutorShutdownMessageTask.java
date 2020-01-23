@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.protocol.task.scheduledexecutor;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorShutdownCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
@@ -41,7 +42,8 @@ public class ScheduledExecutorShutdownMessageTask
     @Override
     protected InvocationBuilder getInvocationBuilder(Operation op) {
         final OperationServiceImpl operationService = nodeEngine.getOperationService();
-        return operationService.createInvocationBuilder(getServiceName(), op, parameters.address);
+        Member member = nodeEngine.getClusterService().getMember(parameters.memberUuid);
+        return operationService.createInvocationBuilder(getServiceName(), op, member.getAddress());
     }
 
     @Override
@@ -53,9 +55,7 @@ public class ScheduledExecutorShutdownMessageTask
 
     @Override
     protected ScheduledExecutorShutdownCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        parameters = ScheduledExecutorShutdownCodec.decodeRequest(clientMessage);
-        parameters.address = clientEngine.memberAddressOf(parameters.address);
-        return parameters;
+        return ScheduledExecutorShutdownCodec.decodeRequest(clientMessage);
     }
 
     @Override
@@ -85,6 +85,6 @@ public class ScheduledExecutorShutdownMessageTask
 
     @Override
     public Object[] getParameters() {
-        return new Object[] { parameters.schedulerName };
+        return new Object[]{parameters.schedulerName};
     }
 }

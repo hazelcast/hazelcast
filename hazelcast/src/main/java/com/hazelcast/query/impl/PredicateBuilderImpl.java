@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
@@ -26,6 +26,8 @@ import com.hazelcast.query.PredicateBuilder.EntryObject;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.predicates.IndexAwarePredicate;
+import com.hazelcast.query.impl.predicates.VisitablePredicate;
+import com.hazelcast.query.impl.predicates.Visitor;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -36,11 +38,29 @@ import java.util.Set;
 import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
 
 @BinaryInterface
-public class PredicateBuilderImpl implements PredicateBuilder, EntryObject, IndexAwarePredicate, DataSerializable {
+public class PredicateBuilderImpl
+        implements PredicateBuilder, EntryObject, IndexAwarePredicate, VisitablePredicate, DataSerializable {
 
     private List<Predicate> lsPredicates = new ArrayList<>();
 
     private String attribute;
+
+    @Override
+    public Predicate accept(Visitor visitor, Indexes indexes) {
+        Predicate predicate = lsPredicates.get(0);
+        if (predicate instanceof VisitablePredicate) {
+            Predicate newPredicate = ((VisitablePredicate) predicate).accept(visitor, indexes);
+            if (newPredicate != predicate) {
+                PredicateBuilderImpl newPredicateBuilder = new PredicateBuilderImpl();
+                newPredicateBuilder.attribute = attribute;
+                newPredicateBuilder.lsPredicates.addAll(lsPredicates);
+                newPredicateBuilder.lsPredicates.set(0, newPredicate);
+                return newPredicateBuilder;
+            }
+        }
+
+        return this;
+    }
 
     @Override
     public String getAttribute() {

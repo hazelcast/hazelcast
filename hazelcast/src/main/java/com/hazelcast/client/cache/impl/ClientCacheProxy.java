@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,12 +37,13 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.internal.config.CacheConfigReadOnly;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 
+import javax.annotation.Nonnull;
 import javax.cache.CacheException;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.Configuration;
@@ -58,8 +59,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.Future;
-import java.util.function.BiConsumer;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -76,16 +76,21 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.util.Collections.emptyMap;
 
 /**
- * {@link com.hazelcast.cache.ICache} implementation for Hazelcast clients.
+ * {@link com.hazelcast.cache.ICache}
+ * implementation for Hazelcast clients.
  * <p>
- * This proxy is the implementation of {@link com.hazelcast.cache.ICache} and {@link javax.cache.Cache} which is returned by
- * {@link HazelcastClientCacheManager}. Represents a cache on client.
+ * This proxy is the implementation of {@link
+ * com.hazelcast.cache.ICache} and {@link
+ * javax.cache.Cache} which is returned by {@link
+ * HazelcastClientCacheManager}. Represents a cache on client.
  * <p>
- * This implementation is a thin proxy implementation using hazelcast client infrastructure.
+ * This implementation is a thin proxy implementation
+ * using hazelcast client infrastructure.
  *
  * @param <K> key type
  * @param <V> value type
  */
+@SuppressWarnings("checkstyle:classfanoutcomplexity")
 public class ClientCacheProxy<K, V> extends ClientCacheProxySupport<K, V>
         implements EventJournalReader<EventJournalCacheEvent<K, V>>, CacheSyncListenerCompleter {
 
@@ -93,7 +98,7 @@ public class ClientCacheProxy<K, V> extends ClientCacheProxySupport<K, V>
     private ClientMessageDecoder eventJournalSubscribeResponseDecoder;
 
 
-    ClientCacheProxy(CacheConfig<K, V> cacheConfig, ClientContext context) {
+    public ClientCacheProxy(CacheConfig<K, V> cacheConfig, ClientContext context) {
         super(cacheConfig, context);
     }
 
@@ -148,13 +153,6 @@ public class ClientCacheProxy<K, V> extends ClientCacheProxySupport<K, V>
     }
 
     @Override
-    protected void onLoadAll(List<Data> keys, Object response, long startNanos) {
-        if (statisticsEnabled) {
-            statsHandler.onBatchPut(startNanos, keys.size());
-        }
-    }
-
-    @Override
     public void put(K key, V value) {
         put(key, value, null);
     }
@@ -176,13 +174,8 @@ public class ClientCacheProxy<K, V> extends ClientCacheProxySupport<K, V>
 
     @Override
     public boolean remove(K key) {
-        long start = nowInNanosOrDefault();
         try {
-            boolean removed = (Boolean) removeAsyncInternal(key, null, false, true, false);
-            if (statisticsEnabled) {
-                statsHandler.onRemove(false, start, removed);
-            }
-            return removed;
+            return removeSync(key, null, false, true);
         } catch (Throwable e) {
             throw rethrowAllowedTypeFirst(e, CacheException.class);
         }
@@ -190,13 +183,8 @@ public class ClientCacheProxy<K, V> extends ClientCacheProxySupport<K, V>
 
     @Override
     public boolean remove(K key, V oldValue) {
-        long start = nowInNanosOrDefault();
         try {
-            boolean removed = (Boolean) removeAsyncInternal(key, oldValue, true, true, false);
-            if (statisticsEnabled) {
-                statsHandler.onRemove(false, start, removed);
-            }
-            return removed;
+            return removeSync(key, oldValue, true, true);
         } catch (Throwable e) {
             throw rethrowAllowedTypeFirst(e, CacheException.class);
         }
@@ -204,14 +192,8 @@ public class ClientCacheProxy<K, V> extends ClientCacheProxySupport<K, V>
 
     @Override
     public V getAndRemove(K key) {
-        long start = nowInNanosOrDefault();
-        InternalCompletableFuture<V> future = getAndRemoveSyncInternal(key);
         try {
-            V removedValue = toObject(future.get());
-            if (statisticsEnabled) {
-                statsHandler.onRemove(true, start, removedValue);
-            }
-            return removedValue;
+            return toObject(getAndRemoveSyncInternal(key));
         } catch (Throwable e) {
             throw rethrowAllowedTypeFirst(e, CacheException.class);
         }
@@ -293,9 +275,9 @@ public class ClientCacheProxy<K, V> extends ClientCacheProxySupport<K, V>
             CacheEntryProcessorResult<T> cepResult;
             try {
                 T result = invoke(key, entryProcessor, arguments);
-                cepResult = result != null ? new CacheEntryProcessorResult<T>(result) : null;
+                cepResult = result != null ? new CacheEntryProcessorResult<>(result) : null;
             } catch (Exception e) {
-                cepResult = new CacheEntryProcessorResult<T>(e);
+                cepResult = new CacheEntryProcessorResult<>(e);
             }
             if (cepResult != null) {
                 allResult.put(key, cepResult);
@@ -322,21 +304,25 @@ public class ClientCacheProxy<K, V> extends ClientCacheProxySupport<K, V>
     public void registerCacheEntryListener(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration,
                                            boolean addToConfig) {
         ensureOpen();
+
         if (cacheEntryListenerConfiguration == null) {
             throw new NullPointerException("CacheEntryListenerConfiguration can't be null");
         }
+
         CacheEventListenerAdaptor<K, V> adaptor = new CacheEventListenerAdaptor<>(this, cacheEntryListenerConfiguration,
                 getSerializationService());
-        EventHandler handler = createHandler(adaptor);
-        UUID regId = getContext().getListenerService().registerListener(createCacheEntryListenerCodec(nameWithPrefix), handler);
-        if (regId != null) {
-            if (addToConfig) {
-                cacheConfig.addCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
-            }
-            addListenerLocally(regId, cacheEntryListenerConfiguration, adaptor);
-            if (addToConfig) {
-                updateCacheListenerConfigOnOtherNodes(cacheEntryListenerConfiguration, true);
-            }
+
+        UUID regId = getContext().getListenerService()
+                .registerListener(createCacheEntryListenerCodec(nameWithPrefix), createHandler(adaptor));
+
+        if (addToConfig) {
+            cacheConfig.addCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
+        }
+
+        addListenerLocally(regId, cacheEntryListenerConfiguration, adaptor);
+
+        if (addToConfig) {
+            updateCacheListenerConfigOnOtherNodes(cacheEntryListenerConfiguration, true);
         }
     }
 
@@ -358,16 +344,17 @@ public class ClientCacheProxy<K, V> extends ClientCacheProxySupport<K, V>
         }
     }
 
+    @Nonnull
     @Override
     public Iterator<Entry<K, V>> iterator() {
         ensureOpen();
-        return new ClientClusterWideIterator<>(this, getContext(), false);
+        return new ClientCachePartitionsIterator<>(this, getContext(), false);
     }
 
     @Override
     public Iterator<Entry<K, V>> iterator(int fetchSize) {
         ensureOpen();
-        return new ClientClusterWideIterator<>(this, getContext(), fetchSize, false);
+        return new ClientCachePartitionsIterator<>(this, getContext(), fetchSize, false);
     }
 
     @Override
@@ -418,101 +405,98 @@ public class ClientCacheProxy<K, V> extends ClientCacheProxySupport<K, V>
     }
 
     @Override
-    public InternalCompletableFuture<V> getAsync(K key) {
+    public CompletableFuture<V> getAsync(K key) {
         return getAsync(key, null);
     }
 
     @Override
-    public InternalCompletableFuture<V> getAsync(K key, ExpiryPolicy expiryPolicy) {
-        long startNanos = nowInNanosOrDefault();
+    public CompletableFuture<V> getAsync(K key, ExpiryPolicy expiryPolicy) {
         ensureOpen();
         validateNotNull(key);
 
-        BiConsumer<V, Throwable> callback = !statisticsEnabled ? null : statsHandler.newOnGetCallback(startNanos);
-        return getAsyncInternal(key, expiryPolicy, callback);
+        return getAsyncInternal(key, expiryPolicy);
     }
 
     @Override
-    public InternalCompletableFuture<Void> putAsync(K key, V value) {
+    public CompletableFuture<Void> putAsync(K key, V value) {
         return putAsync(key, value, null);
     }
 
     @Override
-    public InternalCompletableFuture<Void> putAsync(K key, V value, ExpiryPolicy expiryPolicy) {
-        return (InternalCompletableFuture<Void>) putAsyncInternal(key, value, expiryPolicy, false, true,
-                newStatsCallbackOrNull(false));
+    public CompletableFuture<Void> putAsync(K key, V value, ExpiryPolicy expiryPolicy) {
+        return putAsyncInternal(key, value, expiryPolicy, false, true);
     }
 
     @Override
-    public InternalCompletableFuture<Boolean> putIfAbsentAsync(K key, V value) {
-        return (InternalCompletableFuture<Boolean>) putIfAbsentInternal(key, value, null, false, true);
+    public CompletableFuture<Boolean> putIfAbsentAsync(K key, V value) {
+        return putIfAbsentAsync(key, value, null, false);
     }
 
     @Override
-    public InternalCompletableFuture<Boolean> putIfAbsentAsync(K key, V value, ExpiryPolicy expiryPolicy) {
-        return (InternalCompletableFuture<Boolean>) putIfAbsentInternal(key, value, expiryPolicy, false, true);
+    public CompletableFuture<Boolean> putIfAbsentAsync(K key, V value, ExpiryPolicy expiryPolicy) {
+        return putIfAbsentAsync(key, value, expiryPolicy, false);
     }
 
     @Override
-    public InternalCompletableFuture<V> getAndPutAsync(K key, V value) {
+    public CompletableFuture<V> getAndPutAsync(K key, V value) {
         return getAndPutAsync(key, value, null);
     }
 
     @Override
-    public InternalCompletableFuture<V> getAndPutAsync(K key, V value, ExpiryPolicy expiryPolicy) {
-        return putAsyncInternal(key, value, expiryPolicy, true, false, newStatsCallbackOrNull(true));
+    public CompletableFuture<V> getAndPutAsync(K key, V value, ExpiryPolicy expiryPolicy) {
+        return putAsyncInternal(key, value, expiryPolicy, true, false);
     }
 
     @Override
-    public InternalCompletableFuture<Boolean> removeAsync(K key) {
-        return (InternalCompletableFuture<Boolean>) removeAsyncInternal(key, null, false, false, true);
+    public CompletableFuture<Boolean> removeAsync(K key) {
+        return removeAsync(key, null, false, false);
     }
 
     @Override
-    public InternalCompletableFuture<Boolean> removeAsync(K key, V oldValue) {
-        return (InternalCompletableFuture<Boolean>) removeAsyncInternal(key, oldValue, true, false, true);
+    public CompletableFuture<Boolean> removeAsync(K key, V oldValue) {
+        return removeAsync(key, oldValue, true, false);
     }
 
     @Override
-    public InternalCompletableFuture<V> getAndRemoveAsync(K key) {
+    public CompletableFuture<V> getAndRemoveAsync(K key) {
         return getAndRemoveAsyncInternal(key);
     }
 
     @Override
-    public InternalCompletableFuture<Boolean> replaceAsync(K key, V value) {
-        return replaceAsyncInternal(key, null, value, null, false, false, true);
+    public CompletableFuture<Boolean> replaceAsync(K key, V value) {
+        return replaceAsync(key, null, value, null, false, false);
     }
 
     @Override
-    public InternalCompletableFuture<Boolean> replaceAsync(K key, V value, ExpiryPolicy expiryPolicy) {
-        return replaceAsyncInternal(key, null, value, expiryPolicy, false, false, true);
+    public CompletableFuture<Boolean> replaceAsync(K key, V value, ExpiryPolicy expiryPolicy) {
+        return replaceAsync(key, null, value, expiryPolicy, false, false);
     }
 
     @Override
-    public InternalCompletableFuture<Boolean> replaceAsync(K key, V oldValue, V newValue) {
-        return replaceAsyncInternal(key, oldValue, newValue, null, true, false, true);
+    public CompletableFuture<Boolean> replaceAsync(K key, V oldValue, V newValue) {
+        return replaceAsync(key, oldValue, newValue, null, true, false);
     }
 
     @Override
-    public InternalCompletableFuture<Boolean> replaceAsync(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy) {
-        return replaceAsyncInternal(key, oldValue, newValue, expiryPolicy, true, false, true);
+    public CompletableFuture<Boolean> replaceAsync(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy) {
+        return replaceAsync(key, oldValue, newValue, expiryPolicy, true, false);
     }
 
     @Override
-    public InternalCompletableFuture<V> getAndReplaceAsync(K key, V value) {
-        return replaceAndGetAsyncInternal(key, null, value, null, false, false, true);
+    public CompletableFuture<V> getAndReplaceAsync(K key, V value) {
+        return getAndReplaceAsync(key, null, value, null, false, false);
     }
 
     @Override
-    public InternalCompletableFuture<V> getAndReplaceAsync(K key, V value, ExpiryPolicy expiryPolicy) {
-        return replaceAndGetAsyncInternal(key, null, value, expiryPolicy, false, false, true);
+    public CompletableFuture<V> getAndReplaceAsync(K key, V value, ExpiryPolicy expiryPolicy) {
+        return getAndReplaceAsync(key, null, value, expiryPolicy, false, false);
     }
 
     @Override
     public V get(K key, ExpiryPolicy expiryPolicy) {
         ensureOpen();
         validateNotNull(key);
-        return toObject(getSyncInternal(key, expiryPolicy));
+        return toObject(callGetSync(key, expiryPolicy));
     }
 
     @Override
@@ -525,8 +509,8 @@ public class ClientCacheProxy<K, V> extends ClientCacheProxySupport<K, V>
         }
 
         int keysSize = keys.size();
-        List<Data> dataKeys = new LinkedList<Data>();
-        List<Object> resultingKeyValuePairs = new ArrayList<Object>(keysSize * 2);
+        List<Data> dataKeys = new LinkedList<>();
+        List<Object> resultingKeyValuePairs = new ArrayList<>(keysSize * 2);
         getAllInternal(keys, dataKeys, expiryPolicy, resultingKeyValuePairs, startNanos);
 
         Map<K, V> result = createHashMap(keysSize);
@@ -557,7 +541,7 @@ public class ClientCacheProxy<K, V> extends ClientCacheProxySupport<K, V>
         if (map.isEmpty()) {
             return;
         }
-        putAllInternal(map, expiryPolicy, null, new List[partitionCount], startNanos);
+        putAllInternal(map, expiryPolicy, new List[partitionCount], startNanos);
     }
 
     @Override
@@ -579,29 +563,23 @@ public class ClientCacheProxy<K, V> extends ClientCacheProxySupport<K, V>
 
     @Override
     public boolean putIfAbsent(K key, V value, ExpiryPolicy expiryPolicy) {
-        return (Boolean) putIfAbsentInternal(key, value, expiryPolicy, true, false);
+        return putIfAbsentSync(key, value, expiryPolicy, true);
     }
 
     @Override
     public boolean replace(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy) {
-        return replaceSyncInternal(key, oldValue, newValue, expiryPolicy, true);
+        return replaceSync(key, oldValue, newValue, expiryPolicy, true);
     }
 
     @Override
     public boolean replace(K key, V value, ExpiryPolicy expiryPolicy) {
-        return replaceSyncInternal(key, null, value, expiryPolicy, false);
+        return replaceSync(key, null, value, expiryPolicy, false);
     }
 
     @Override
     public V getAndReplace(K key, V value, ExpiryPolicy expiryPolicy) {
-        long startNanos = nowInNanosOrDefault();
-        Future<V> future = replaceAndGetAsyncInternal(key, null, value, expiryPolicy, false, true, false);
         try {
-            V oldValue = future.get();
-            if (statisticsEnabled) {
-                statsHandler.onReplace(true, startNanos, oldValue);
-            }
-            return oldValue;
+            return getAndReplaceSync(key, null, value, expiryPolicy, false, true);
         } catch (Throwable e) {
             throw rethrowAllowedTypeFirst(e, CacheException.class);
         }

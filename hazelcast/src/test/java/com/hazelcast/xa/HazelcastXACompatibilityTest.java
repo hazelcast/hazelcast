@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,6 +76,8 @@ public class HazelcastXACompatibilityTest extends HazelcastTestSupport {
         doSomeWorkWithXa(xaResource);
         performPrepareWithXa(xaResource);
         performCommitWithXa(secondXaResource);
+        assertTrueEventually(() -> assertRecoversNothing(xaResource));
+        assertTrueEventually(() -> assertRecoversNothing(secondXaResource));
     }
 
     @Test
@@ -90,11 +92,6 @@ public class HazelcastXACompatibilityTest extends HazelcastTestSupport {
         doSomeWorkWithXa(xaResource);
         performPrepareWithXa(xaResource);
         assertRecoversXid(xaResource);
-    }
-
-    private void assertRecoversXid(XAResource xaResource) throws XAException {
-        Xid[] xids = xaResource.recover(XAResource.TMSTARTRSCAN | XAResource.TMENDRSCAN);
-        assertTrue("" + xids.length, xids.length == 1);
     }
 
     @Test
@@ -238,5 +235,14 @@ public class HazelcastXACompatibilityTest extends HazelcastTestSupport {
         assertOpenEventually(latch, 10);
     }
 
+    private void assertRecoversXid(XAResource xaResource) throws XAException {
+        Xid[] xids = xaResource.recover(XAResource.TMSTARTRSCAN | XAResource.TMENDRSCAN);
+        assertEquals("One Xid was expected when calling recover", 1, xids.length);
+    }
+
+    private void assertRecoversNothing(XAResource xaResource) throws XAException {
+        Xid[] xids = xaResource.recover(XAResource.TMSTARTRSCAN | XAResource.TMENDRSCAN);
+        assertEquals("No prepared transaction should exist", 0, xids.length);
+  }
 
 }

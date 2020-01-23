@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,6 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICacheManager;
-import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -49,7 +48,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
@@ -179,19 +177,14 @@ public class ClientStatisticsTest extends ClientTestSupport {
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
         HazelcastClientInstanceImpl client = createHazelcastClient();
 
+        ReconnectListener reconnectListener = new ReconnectListener();
+        client.getLifecycleService().addLifecycleListener(reconnectListener);
+
         hazelcastInstance.getLifecycleService().terminate();
-
-        final CountDownLatch latch = new CountDownLatch(1);
-        client.getLifecycleService().addLifecycleListener(event -> {
-            if (LifecycleEvent.LifecycleState.CLIENT_CONNECTED.equals(event.getState())) {
-                latch.countDown();
-            }
-        });
-
         hazelcastInstance = hazelcastFactory.newHazelcastInstance();
         ClientEngineImpl clientEngine = getClientEngineImpl(hazelcastInstance);
 
-        assertOpenEventually(latch);
+        assertOpenEventually(reconnectListener.reconnectedLatch);
 
         // wait enough time for statistics collection
         waitForFirstStatisticsCollection(client, clientEngine);

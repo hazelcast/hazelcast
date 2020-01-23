@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,15 +25,14 @@ import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
+import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.map.MapEvent;
 import com.hazelcast.map.MapStoreAdapter;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryExpiredListener;
-import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -114,7 +113,6 @@ public class ClientMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
     public void testIssue537() {
         IMap<String, GenericEvent> map = createMap();
         AddAndExpiredListener listener = new AddAndExpiredListener();
@@ -286,7 +284,6 @@ public class ClientMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
     public void testAsyncPutWithTtl() throws Exception {
         IMap<String, String> map = createMap();
         final CountDownLatch latch = new CountDownLatch(1);
@@ -301,7 +298,6 @@ public class ClientMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
     public void testAsyncPutWithMaxIdle() throws Exception {
         IMap<String, String> map = createMap();
         final CountDownLatch latch = new CountDownLatch(1);
@@ -597,19 +593,11 @@ public class ClientMapTest extends HazelcastTestSupport {
 
         final AtomicInteger result = new AtomicInteger();
         final CountDownLatch latch = new CountDownLatch(1);
-        ExecutionCallback<Integer> executionCallback = new ExecutionCallback<Integer>() {
-            @Override
-            public void onResponse(Integer response) {
-                result.set(response);
-                latch.countDown();
-            }
 
-            @Override
-            public void onFailure(Throwable t) {
-            }
-        };
-
-        map.submitToKey(1, new IncrementerEntryProcessor(), executionCallback);
+        map.submitToKey(1, new IncrementerEntryProcessor()).thenAcceptAsync(v -> {
+            result.set(v);
+            latch.countDown();
+        });
         assertOpenEventually(latch);
         assertEquals(2, result.get());
 
@@ -618,7 +606,6 @@ public class ClientMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
     public void testListener() {
         IMap<String, String> map = createMap();
         final CountDownLatch latch1Add = new CountDownLatch(5);
@@ -670,7 +657,6 @@ public class ClientMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
     public void testPredicateListenerWithPortableKey() throws Exception {
         IMap<Portable, Integer> tradeMap = createMap();
 
@@ -793,7 +779,6 @@ public class ClientMapTest extends HazelcastTestSupport {
      * Issue #996
      */
     @Test
-    @SuppressWarnings({"deprecation", "unchecked"})
     public void testEntryListener() throws Exception {
         CountDownLatch gateAdd = new CountDownLatch(3);
         CountDownLatch gateRemove = new CountDownLatch(1);
@@ -980,7 +965,6 @@ public class ClientMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
     public void testEntryListenerWithPredicateOnDeleteOperation() {
         IMap<String, String> serverMap = server.getMap("A");
         IMap<String, String> clientMap = client.getMap("A");

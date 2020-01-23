@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,14 @@
 package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.core.EntryView;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.iteration.IterationPointer;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.EntryCostEstimator;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.nio.serialization.Data;
 
 import javax.annotation.Nonnull;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -57,17 +56,12 @@ public interface Storage<K, R> {
 
     boolean containsKey(K key);
 
-    Collection<R> values();
-
     /**
-     * Returned iterator from this method doesn't throw {@link
-     * java.util.ConcurrentModificationException} to fail fast.
-     * Because fail fast may not be the desired behaviour
-     * always. For example if you are caching an iterator as in
-     * {@link AbstractEvictableRecordStore#expirationIterator}
-     * and you know that in next rounds you will eventually
-     * visit all entries, you don't need fail fast behaviour.
-     *
+     * Returned iterator from this method doesn't throw {@link java.util.ConcurrentModificationException} to fail fast.
+     * Because fail fast may not be the desired behaviour always. For example if you are caching an iterator as in
+     * {@link AbstractEvictableRecordStore#expirationIterator} and you know that in next rounds you will
+     * eventually visit all entries, you don't need fail fast behaviour.
+     * <p>
      * Note that returned iterator is not thread-safe !!!
      *
      * @return new iterator instance
@@ -102,32 +96,39 @@ public interface Storage<K, R> {
     Iterable<EntryView> getRandomSamples(int sampleCount);
 
     /**
-     * Fetch minimally {@code size} keys from the {@code tableIndex} position. The key is fetched on-heap.
+     * Fetch minimally {@code size} keys from the {@code pointers} position.
+     * The key is fetched on-heap.
+     * The method may return less keys if iteration has completed.
      * <p>
-     * NOTE: The implementation is free to return more than {@code size} items. This can happen if we cannot easily resume
-     * from the last returned item by receiving the {@code tableIndex} of the last item. The index can represent a bucket
-     * with multiple items and in this case the returned object will contain all items in that bucket, regardless if we exceed
+     * NOTE: The implementation is free to return more than {@code size} items.
+     * This can happen if we cannot easily resume from the last returned item
+     * by receiving the {@code pointers} of the last item. The index can
+     * represent a bucket with multiple items and in this case the returned
+     * object will contain all items in that bucket, regardless if we exceed
      * the requested {@code size}.
      *
-     * @param tableIndex the index (position) from which to resume
-     * @param size       the minimal count of returned items
-     * @return fetched keys and the table index for keys AFTER the last returned key
+     * @param pointers the pointers defining the state of iteration
+     * @param size     the minimal count of returned items, unless iteration has completed
+     * @return fetched keys and the new iteration state
      */
-    MapKeysWithCursor fetchKeys(int tableIndex, int size);
+    MapKeysWithCursor fetchKeys(IterationPointer[] pointers, int size);
 
     /**
-     * Fetch minimally {@code size} items from the {@code tableIndex} position. Both the key and value are fetched on-heap.
+     * Fetch minimally {@code size} items from the {@code pointers} position.
+     * Both the key and value are fetched on-heap.
      * <p>
-     * NOTE: The implementation is free to return more than {@code size} items. This can happen if we cannot easily resume
-     * from the last returned item by receiving the {@code tableIndex} of the last item. The index can represent a bucket
-     * with multiple items and in this case the returned object will contain all items in that bucket, regardless if we exceed
+     * NOTE: The implementation is free to return more than {@code size} items.
+     * This can happen if we cannot easily resume from the last returned item
+     * by receiving the {@code pointers} of the last item. The index can
+     * represent a bucket with multiple items and in this case the returned
+     * object will contain all items in that bucket, regardless if we exceed
      * the requested {@code size}.
      *
-     * @param tableIndex the index (position) from which to resume
-     * @param size       the minimal count of returned items
-     * @return fetched entries and the table index for entries AFTER the last returned entry
+     * @param pointers the pointers defining the state of iteration
+     * @param size     the minimal count of returned items
+     * @return fetched entries and the new iteration state
      */
-    MapEntriesWithCursor fetchEntries(int tableIndex, int size, SerializationService serializationService);
+    MapEntriesWithCursor fetchEntries(IterationPointer[] pointers, int size);
 
     Record extractRecordFromLazy(EntryView entryView);
 

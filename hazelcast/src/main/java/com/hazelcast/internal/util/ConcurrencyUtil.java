@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.internal.util;
 
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
@@ -43,6 +44,20 @@ public final class ConcurrencyUtil {
             return "CALLER_RUNS";
         }
     };
+
+    // Default executor for async callbacks: ForkJoinPool.commonPool() or a thread-per-task executor when
+    // the common pool does not support parallelism
+    public static final Executor DEFAULT_ASYNC_EXECUTOR;
+
+    static {
+        Executor asyncExecutor;
+        if (ForkJoinPool.getCommonPoolParallelism() > 1) {
+            asyncExecutor = ForkJoinPool.commonPool();
+        } else {
+            asyncExecutor = command -> new Thread(command).start();
+        }
+        DEFAULT_ASYNC_EXECUTOR = asyncExecutor;
+    }
 
     private ConcurrencyUtil() {
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,14 +21,12 @@ import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.spi.ClientExecutionService;
 import com.hazelcast.client.impl.spi.ClientInvocationService;
-import com.hazelcast.client.impl.spi.ClientPartitionService;
 import com.hazelcast.client.impl.spi.EventHandler;
-import com.hazelcast.client.impl.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
+import com.hazelcast.spi.impl.executionservice.TaskScheduler;
 import com.hazelcast.spi.impl.sequence.CallIdFactory;
 import com.hazelcast.spi.impl.sequence.CallIdSequence;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -45,6 +43,10 @@ import static com.hazelcast.client.properties.ClientProperty.INVOCATION_RETRY_PA
 import static com.hazelcast.client.properties.ClientProperty.INVOCATION_TIMEOUT_SECONDS;
 import static com.hazelcast.client.properties.ClientProperty.MAX_CONCURRENT_INVOCATIONS;
 import static com.hazelcast.client.properties.ClientProperty.OPERATION_BACKUP_TIMEOUT_MILLIS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_METRIC_INVOCATIONS_MAX_CURRENT_INVOCATIONS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_METRIC_INVOCATIONS_PENDING_CALLS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_METRIC_INVOCATIONS_STARTED_INVOCATIONS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_PREFIX_INVOCATIONS;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -56,12 +58,11 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
     protected final HazelcastClientInstanceImpl client;
 
     protected ClientConnectionManager connectionManager;
-    protected ClientPartitionService partitionService;
+    protected ClientPartitionServiceImpl partitionService;
     final ILogger invocationLogger;
-    private ClientListenerServiceImpl clientListenerService;
 
-    @Probe(name = "pendingCalls", level = MANDATORY)
-    private ConcurrentMap<Long, ClientInvocation> invocations = new ConcurrentHashMap<Long, ClientInvocation>();
+    @Probe(name = CLIENT_METRIC_INVOCATIONS_PENDING_CALLS, level = MANDATORY)
+    private ConcurrentMap<Long, ClientInvocation> invocations = new ConcurrentHashMap<>();
 
     private ClientResponseHandlerSupplier responseHandlerSupplier;
 
@@ -72,7 +73,7 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
     private final boolean shouldFailOnIndeterminateOperationState;
     private final int operationBackupTimeoutMillis;
 
-    public AbstractClientInvocationService(HazelcastClientInstanceImpl client) {
+    AbstractClientInvocationService(HazelcastClientInstanceImpl client) {
         this.client = client;
         this.invocationLogger = client.getLoggingService().getLogger(ClientInvocationService.class);
         this.invocationTimeoutMillis = initInvocationTimeoutMillis();
@@ -86,7 +87,7 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
 
         this.operationBackupTimeoutMillis = properties.getInteger(OPERATION_BACKUP_TIMEOUT_MILLIS);
         this.shouldFailOnIndeterminateOperationState = properties.getBoolean(FAIL_ON_INDETERMINATE_OPERATION_STATE);
-        client.getMetricsRegistry().registerStaticMetrics(this, "invocations");
+        client.getMetricsRegistry().registerStaticMetrics(this, CLIENT_PREFIX_INVOCATIONS);
     }
 
     private long initInvocationRetryPauseMillis() {
@@ -97,12 +98,12 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
         return client.getProperties().getPositiveMillisOrDefault(INVOCATION_TIMEOUT_SECONDS);
     }
 
-    @Probe(level = MANDATORY)
+    @Probe(name = CLIENT_METRIC_INVOCATIONS_STARTED_INVOCATIONS, level = MANDATORY)
     private long startedInvocations() {
         return callIdSequence.getLastCallId();
     }
 
-    @Probe(level = MANDATORY)
+    @Probe(name = CLIENT_METRIC_INVOCATIONS_MAX_CURRENT_INVOCATIONS, level = MANDATORY)
     private long maxCurrentInvocations() {
         return callIdSequence.getMaxConcurrentInvocations();
     }
@@ -121,10 +122,9 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
 
     public void start() {
         connectionManager = client.getConnectionManager();
-        clientListenerService = (ClientListenerServiceImpl) client.getListenerService();
-        partitionService = client.getClientPartitionService();
+        partitionService = (ClientPartitionServiceImpl) client.getClientPartitionService();
         responseHandlerSupplier.start();
-        ClientExecutionService executionService = client.getClientExecutionService();
+        TaskScheduler executionService = client.getTaskScheduler();
         long cleanResourcesMillis = client.getProperties().getPositiveMillisOrDefault(CLEAN_RESOURCES_MILLIS);
         executionService.scheduleWithRepetition(new CleanResourcesTask(), cleanResourcesMillis,
                 cleanResourcesMillis, MILLISECONDS);
@@ -144,7 +144,7 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
         if (isShutdown) {
             throw new HazelcastClientNotActiveException();
         }
-        registerInvocation(invocation);
+        registerInvocation(invocation, connection);
 
         ClientMessage clientMessage = invocation.getClientMessage();
         if (!writeToConnection(connection, clientMessage)) {
@@ -158,14 +158,14 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
         return connection.write(clientMessage);
     }
 
-    private void registerInvocation(ClientInvocation clientInvocation) {
+    private void registerInvocation(ClientInvocation clientInvocation, ClientConnection connection) {
 
         ClientMessage clientMessage = clientInvocation.getClientMessage();
         long correlationId = clientMessage.getCorrelationId();
         invocations.put(correlationId, clientInvocation);
         EventHandler handler = clientInvocation.getEventHandler();
         if (handler != null) {
-            clientListenerService.addEventHandler(correlationId, handler);
+            connection.addEventHandler(correlationId, handler);
         }
     }
 

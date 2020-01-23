@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -176,7 +176,7 @@ public class JoinConfig {
     /**
      * Verifies this JoinConfig is valid. At most a single joiner should be active.
      *
-     * @throws IllegalStateException when the join config is not valid
+     * @throws InvalidConfigurationException when the join config is not valid
      */
     @SuppressWarnings("checkstyle:npathcomplexity")
     public void verify() {
@@ -202,28 +202,12 @@ public class JoinConfig {
         if (getEurekaConfig().isEnabled()) {
             countEnabled++;
         }
+        Collection<DiscoveryStrategyConfig> discoveryStrategyConfigs = discoveryConfig.getDiscoveryStrategyConfigs();
+        countEnabled += discoveryStrategyConfigs.size();
 
         if (countEnabled > 1) {
             throw new InvalidConfigurationException("Multiple join configuration cannot be enabled at the same time. Enable only "
-                    + "one of: TCP/IP, Multicast, AWS, GCP, Azure, Kubernetes, or Eureka");
-        }
-
-        verifyDiscoveryProviderConfig();
-    }
-
-    /**
-     * Verifies this JoinConfig is valid. When Discovery SPI enabled other discovery
-     * methods should be disabled
-     *
-     * @throws IllegalStateException when the join config is not valid
-     */
-    private void verifyDiscoveryProviderConfig() {
-        Collection<DiscoveryStrategyConfig> discoveryStrategyConfigs = discoveryConfig.getDiscoveryStrategyConfigs();
-        if (discoveryStrategyConfigs.size() > 0) {
-            if (getMulticastConfig().isEnabled()) {
-                throw new InvalidConfigurationException(
-                        "Multicast and DiscoveryProviders join can't be enabled at the same time");
-            }
+                    + "one of: TCP/IP, Multicast, AWS, GCP, Azure, Kubernetes, Eureka or Discovery Strategy");
         }
     }
 

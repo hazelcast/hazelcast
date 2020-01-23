@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,14 @@
 
 package com.hazelcast.internal.util.comparators;
 
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 
+import java.util.Objects;
+
 /**
- * Comparator for {@link com.hazelcast.config.InMemoryFormat#OBJECT} backed
- * data structures.
+ * Comparator for {@link com.hazelcast.config.InMemoryFormat#OBJECT}
+ * backed data structures.
  */
 final class ObjectValueComparator implements ValueComparator {
 
@@ -40,6 +42,6 @@ final class ObjectValueComparator implements ValueComparator {
         }
         Object v1 = value1 instanceof Data ? ss.toObject(value1) : value1;
         Object v2 = value2 instanceof Data ? ss.toObject(value2) : value2;
-        return v1 != null ? v1.equals(v2) : v2 == null;
+        return Objects.equals(v1, v2);
     }
 }

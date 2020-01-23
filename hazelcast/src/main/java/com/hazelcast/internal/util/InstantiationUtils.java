@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,13 +38,13 @@ public final class InstantiationUtils {
      * When a class constructor contains a primitive argument then it's matching if and only if
      * a parameter at the same position is not null.
      *
-     * It throws {@link AmbigiousInstantiationException} when multiple matching constructors are found.
+     * It throws {@link AmbiguousInstantiationException} when multiple matching constructors are found.
      *
      * @param clazz class to be instantiated
      * @param params parameters to be passed to the constructor
      * @param <T> class type to be instantiated
      * @return a new instance of a given class
-     * @throws AmbigiousInstantiationException when multiple constructors matching the parameters
+     * @throws AmbiguousInstantiationException when multiple constructors matching the parameters
      */
     public static <T> T newInstanceOrNull(Class<? extends T> clazz, Object...params)  {
         Constructor<T> constructor = selectMatchingConstructor(clazz, params);
@@ -70,7 +70,7 @@ public final class InstantiationUtils {
                 if (selectedConstructor == null) {
                     selectedConstructor = (Constructor<T>) constructor;
                 } else {
-                    throw new AmbigiousInstantiationException("Class " + clazz + " has multiple constructors matching "
+                    throw new AmbiguousInstantiationException("Class " + clazz + " has multiple constructors matching "
                             + "given parameters: " + Arrays.toString(params));
                 }
             }

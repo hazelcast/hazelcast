@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -103,5 +103,16 @@ public class MetricTargetTest {
         }
 
         assertEquals(allCombinations, MetricTarget.BITSET_TO_SET_CACHE.size());
+    }
+
+    @Test
+    public void testUnion() {
+        Set<MetricTarget> excludedTargets1 = MetricTarget.asSet(MANAGEMENT_CENTER, JMX);
+        Set<MetricTarget> excludedTargets2 = MetricTarget.asSet(DIAGNOSTICS, JMX);
+
+        assertSame(
+            MetricTarget.asSet(MANAGEMENT_CENTER, DIAGNOSTICS, JMX),
+            MetricTarget.union(excludedTargets1, excludedTargets2)
+        );
     }
 }

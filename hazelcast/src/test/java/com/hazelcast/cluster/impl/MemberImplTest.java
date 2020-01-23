@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,19 @@
 
 package com.hazelcast.cluster.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
-import com.hazelcast.cluster.Address;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.version.MemberVersion;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -165,32 +165,7 @@ public class MemberImplTest extends HazelcastTestSupport {
         assertEquals("stringValue", member.getAttribute("stringKey"));
     }
 
-    @Test
-    public void testRemoveAttribute() {
-        MemberImpl member = new MemberImpl(address, MemberVersion.of("3.8.0"), true);
-        assertNull(member.getAttribute("removeKey"));
-
-        member.setAttribute("removeKey", "removeValue");
-        assertEquals("removeValue", member.getAttribute("removeKey"));
-
-        member.removeAttribute("removeKey");
-        assertNull(member.getAttribute("removeKey"));
-    }
-
-    @Test
-    public void testRemoveAttribute_withHazelcastInstance() {
-        MemberImpl member = new MemberImpl.Builder(address)
-                .version(MemberVersion.of("3.8.0"))
-                .localMember(true)
-                .uuid(newUnsecureUUID())
-                .instance(hazelcastInstance)
-                .build();
-
-        member.removeAttribute("removeKeyWithInstance");
-        assertNull(member.getAttribute("removeKeyWithInstance"));
-    }
-
-    @Test
+    @Test(expected = UnsupportedOperationException.class)
     public void testSetAttribute_withHazelcastInstance() {
         MemberImpl member = new MemberImpl.Builder(address)
                 .version(MemberVersion.of("3.8.0"))
@@ -200,12 +175,6 @@ public class MemberImplTest extends HazelcastTestSupport {
 
         member.setAttribute("setKeyWithInstance", "setValueWithInstance");
         assertEquals("setValueWithInstance", member.getAttribute("setKeyWithInstance"));
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void testRemoveAttribute_onRemoteMember() {
-        MemberImpl member = new MemberImpl(address, MemberVersion.of("3.8.0"), false);
-        member.removeAttribute("remoteMemberRemove");
     }
 
     @Test(expected = UnsupportedOperationException.class)

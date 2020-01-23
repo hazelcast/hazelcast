@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.util.comparators;
 
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 
 /**
@@ -38,7 +38,9 @@ final class BinaryValueComparator implements ValueComparator {
         if (value1 == null || value2 == null) {
             return false;
         }
-        // the PartitioningStrategy is not needed here, since `Data.equals()` only checks the payload, not the partitionHash
+        // the PartitioningStrategy is not needed
+        // here, since `Data.equals()` only checks
+        // the payload, not the partitionHash
         Data data1 = ss.toData(value1);
         Data data2 = ss.toData(value2);
         return data1.equals(data2);

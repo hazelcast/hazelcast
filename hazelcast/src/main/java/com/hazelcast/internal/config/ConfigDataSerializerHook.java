@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,13 @@ package com.hazelcast.internal.config;
 import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.AzureConfig;
+import com.hazelcast.config.BitmapIndexOptions;
 import com.hazelcast.config.CachePartitionLostListenerConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
-import com.hazelcast.config.CustomWanPublisherConfig;
+import com.hazelcast.config.PermissionConfig;
+import com.hazelcast.config.WanCustomPublisherConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.DurableExecutorConfig;
@@ -63,9 +65,9 @@ import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.config.SplitBrainProtectionListenerConfig;
 import com.hazelcast.config.TopicConfig;
-import com.hazelcast.config.WanBatchReplicationPublisherConfig;
-import com.hazelcast.config.WanConsumerConfig;
+import com.hazelcast.config.WanBatchPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
+import com.hazelcast.config.WanConsumerConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanSyncConfig;
 import com.hazelcast.internal.dynamicconfig.AddDynamicConfigOperation;
@@ -149,8 +151,10 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
     public static final int DISCOVERY_STRATEGY_CONFIG = 58;
     public static final int WAN_REPLICATION_REF = 59;
     public static final int EVICTION_CONFIG = 60;
+    public static final int PERMISSION_CONFIG = 61;
+    public static final int BITMAP_INDEX_OPTIONS = 62;
 
-    private static final int LEN = EVICTION_CONFIG + 1;
+    private static final int LEN = BITMAP_INDEX_OPTIONS + 1;
 
     @Override
     public int getFactoryId() {
@@ -163,8 +167,8 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
 
         constructors[WAN_REPLICATION_CONFIG] = arg -> new WanReplicationConfig();
         constructors[WAN_CONSUMER_CONFIG] = arg -> new WanConsumerConfig();
-        constructors[WAN_CUSTOM_PUBLISHER_CONFIG] = arg -> new CustomWanPublisherConfig();
-        constructors[WAN_BATCH_PUBLISHER_CONFIG] = arg -> new WanBatchReplicationPublisherConfig();
+        constructors[WAN_CUSTOM_PUBLISHER_CONFIG] = arg -> new WanCustomPublisherConfig();
+        constructors[WAN_BATCH_PUBLISHER_CONFIG] = arg -> new WanBatchPublisherConfig();
         constructors[NEAR_CACHE_CONFIG] = arg -> new NearCacheConfig();
         constructors[NEAR_CACHE_PRELOADER_CONFIG] = arg -> new NearCachePreloaderConfig();
         constructors[ADD_DYNAMIC_CONFIG_OP] = arg -> new AddDynamicConfigOperation();
@@ -221,6 +225,8 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
         constructors[DISCOVERY_STRATEGY_CONFIG] = arg -> new DiscoveryStrategyConfig();
         constructors[WAN_REPLICATION_REF] = arg -> new WanReplicationRef();
         constructors[EVICTION_CONFIG] = arg -> new EvictionConfig();
+        constructors[PERMISSION_CONFIG] = arg -> new PermissionConfig();
+        constructors[BITMAP_INDEX_OPTIONS] = arg -> new BitmapIndexOptions();
 
         return new ArrayDataSerializableFactory(constructors);
     }

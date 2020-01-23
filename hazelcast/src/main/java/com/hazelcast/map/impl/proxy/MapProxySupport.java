@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,7 +73,7 @@ import com.hazelcast.map.impl.querycache.subscriber.SubscriberContext;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.PartitionPredicate;
@@ -733,14 +733,16 @@ abstract class MapProxySupport<K, V>
 
     public void waitUntilLoaded() {
         try {
-            int mapNamePartition = partitionService.getPartitionId(name);
-            // first we have to check if key-load finished - otherwise the loading on other partitions might not have started.
-            // In this case we can't invoke IsPartitionLoadedOperation -> they will return "true", but it won't be correct
+            int mapNamesPartitionId = partitionService.getPartitionId(name);
+            // first we have to check if key-load finished - otherwise
+            // the loading on other partitions might not have started.
+            // In this case we can't invoke IsPartitionLoadedOperation
+            // -> they will return "true", but it won't be correct
 
             int sleepDurationMillis = INITIAL_WAIT_LOAD_SLEEP_MILLIS;
             while (true) {
                 Operation op = new IsKeyLoadFinishedOperation(name);
-                Future<Boolean> loadingFuture = operationService.invokeOnPartition(SERVICE_NAME, op, mapNamePartition);
+                Future<Boolean> loadingFuture = operationService.invokeOnPartition(SERVICE_NAME, op, mapNamesPartitionId);
                 if (loadingFuture.get()) {
                     break;
                 }
@@ -1067,7 +1069,7 @@ abstract class MapProxySupport<K, V>
                 operationService.invokeOnPartitionsAsync(SERVICE_NAME, factory, singletonMap(address, asIntegerList(partitions)));
         InternalCompletableFuture<Void> resultFuture = new InternalCompletableFuture<>();
         long finalTotalSize = totalSize;
-        future.whenComplete((response, t) -> {
+        future.whenCompleteAsync((response, t) -> {
             putAllVisitSerializedKeys(entries);
             if (t == null) {
                 localMapStats.incrementPutLatencyNanos(finalTotalSize, System.nanoTime() - startTimeNanos);
@@ -1075,7 +1077,7 @@ abstract class MapProxySupport<K, V>
             } else {
                 resultFuture.completeExceptionally(t);
             }
-        });
+        }, CALLER_RUNS);
         return resultFuture;
     }
 
@@ -1087,7 +1089,7 @@ abstract class MapProxySupport<K, V>
 
     @Override
     public void flush() {
-        // TODO: add a feature to mancenter to sync cache to db completely
+        // TODO: add a feature to Management Center to sync cache to db completely
         try {
             MapOperation mapFlushOperation = operationProvider.createMapFlushOperation(name);
             BinaryOperationFactory operationFactory = new BinaryOperationFactory(mapFlushOperation, getNodeEngine());
@@ -1200,21 +1202,16 @@ abstract class MapProxySupport<K, V>
         }
     }
 
-    public Data executeOnKeyInternal(Object key, EntryProcessor entryProcessor) {
+    public InternalCompletableFuture<Data> executeOnKeyInternal(Object key, EntryProcessor entryProcessor) {
         Data keyData = toDataWithStrategy(key);
         int partitionId = partitionService.getPartitionId(keyData);
         MapOperation operation = operationProvider.createEntryOperation(name, keyData, entryProcessor);
         operation.setThreadId(getThreadId());
         validateEntryProcessorForSingleKeyProcessing(entryProcessor);
-        try {
-            Future future = operationService
-                    .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                    .setResultDeserialized(false)
-                    .invoke();
-            return (Data) future.get();
-        } catch (Throwable t) {
-            throw rethrow(t);
-        }
+        return operationService
+                .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
+                .setResultDeserialized(false)
+                .invoke();
     }
 
     private static void validateEntryProcessorForSingleKeyProcessing(EntryProcessor entryProcessor) {
@@ -1256,28 +1253,6 @@ abstract class MapProxySupport<K, V>
                     }
                 });
         return resultFuture;
-    }
-
-    public <R> InternalCompletableFuture<R> executeOnKeyInternal(Object key,
-                                                                 EntryProcessor<K, V, R> entryProcessor,
-                                                                 ExecutionCallback<? super R> callback) {
-        Data keyData = toDataWithStrategy(key);
-        int partitionId = partitionService.getPartitionId(key);
-        MapOperation operation = operationProvider.createEntryOperation(name, keyData, entryProcessor);
-        operation.setThreadId(getThreadId());
-        try {
-            if (callback == null) {
-                return operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
-            } else {
-                InvocationFuture<R> future = operationService
-                        .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                        .invoke();
-                future.whenCompleteAsync(new MapExecutionCallbackAdapter(callback));
-                return future;
-            }
-        } catch (Throwable t) {
-            throw rethrow(t);
-        }
     }
 
     /**

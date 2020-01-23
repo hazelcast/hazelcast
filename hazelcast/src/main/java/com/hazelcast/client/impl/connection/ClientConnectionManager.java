@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package com.hazelcast.client.impl.connection;
 
 import com.hazelcast.client.HazelcastClientOfflineException;
 import com.hazelcast.client.impl.connection.nio.ClientConnection;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListenable;
 
@@ -41,10 +40,10 @@ public interface ClientConnectionManager extends ConnectionListenable {
     boolean isAlive();
 
     /**
-     * @param address to be connected
+     * @param uuid UUID of the member to get connection of
      * @return connection if available, null otherwise
      */
-    Connection getConnection(@Nonnull Address address);
+    Connection getConnection(@Nonnull UUID uuid);
 
     /**
      * Check the connected state and user connection strategy configuration to see if an invocation is allowed at the moment

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,28 +19,33 @@ package com.hazelcast.client.impl.protocol.task.map;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapFetchWithQueryCodec;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.iteration.IterationPointer;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.query.Query;
 import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.map.impl.query.ResultSegment;
-import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.internal.util.IterationType;
 
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.internal.iteration.IterationPointer.decodePointers;
+import static com.hazelcast.internal.iteration.IterationPointer.encodePointers;
+
 /**
- * Fetches by query a batch of items from a single partition ID for a map. The query is run by the query
- * engine which means it supports projections and filtering.
+ * Fetches by query a batch of items from a single partition ID for a map.
+ * The query is run by the query engine which means it supports projections
+ * and filtering.
  *
  * @see com.hazelcast.map.impl.proxy.MapProxyImpl#iterator(int, int, Projection, Predicate)
  * @since 3.9
@@ -52,17 +57,17 @@ public class MapFetchWithQueryMessageTask extends AbstractMapPartitionMessageTas
 
     @Override
     protected Operation prepareOperation() {
-        final MapOperationProvider operationProvider = getMapOperationProvider(parameters.name);
-        final Projection<?, ?> projection = nodeEngine.getSerializationService().toObject(parameters.projection);
-        final Predicate predicate = nodeEngine.getSerializationService().toObject(parameters.predicate);
-        final Query query = Query.of()
-                                 .mapName(parameters.name)
-                                 .iterationType(IterationType.VALUE)
-                                 .predicate(predicate)
-                                 .projection(projection)
-                                 .build();
-
-        return operationProvider.createFetchWithQueryOperation(parameters.name, parameters.tableIndex, parameters.batch, query);
+        MapOperationProvider operationProvider = getMapOperationProvider(parameters.name);
+        Projection<?, ?> projection = nodeEngine.getSerializationService().toObject(parameters.projection);
+        Predicate predicate = nodeEngine.getSerializationService().toObject(parameters.predicate);
+        Query query = Query.of()
+                           .mapName(parameters.name)
+                           .iterationType(IterationType.VALUE)
+                           .predicate(predicate)
+                           .projection(projection)
+                           .build();
+        IterationPointer[] pointers = decodePointers(parameters.iterationPointers);
+        return operationProvider.createFetchWithQueryOperation(parameters.name, pointers, parameters.batch, query);
     }
 
     @Override
@@ -72,15 +77,15 @@ public class MapFetchWithQueryMessageTask extends AbstractMapPartitionMessageTas
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        final ResultSegment resp = (ResultSegment) response;
-        final QueryResult queryResult = (QueryResult) resp.getResult();
+        ResultSegment resp = (ResultSegment) response;
+        QueryResult queryResult = (QueryResult) resp.getResult();
 
-        final List<Data> serialized = new ArrayList<Data>(queryResult.size());
+        List<Data> serialized = new ArrayList<>(queryResult.size());
         for (QueryResultRow row : queryResult) {
             serialized.add(row.getValue());
         }
-
-        return MapFetchWithQueryCodec.encodeResponse(serialized, resp.getNextTableIndexToReadFrom());
+        IterationPointer[] pointers = resp.getPointers();
+        return MapFetchWithQueryCodec.encodeResponse(serialized, encodePointers(pointers));
     }
 
     @Override

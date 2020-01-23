@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ import com.hazelcast.cache.impl.operation.CacheClearOperation;
 import com.hazelcast.cache.impl.operation.CacheClearOperationFactory;
 import com.hazelcast.cache.impl.operation.CacheContainsKeyOperation;
 import com.hazelcast.cache.impl.operation.CacheDestroyOperation;
-import com.hazelcast.cache.impl.operation.CacheEntryIteratorOperation;
+import com.hazelcast.cache.impl.operation.CacheFetchEntriesOperation;
 import com.hazelcast.cache.impl.operation.CacheEntryProcessorOperation;
 import com.hazelcast.cache.impl.operation.CacheExpireBatchBackupOperation;
 import com.hazelcast.cache.impl.operation.CacheGetAllOperation;
@@ -41,7 +41,7 @@ import com.hazelcast.cache.impl.operation.CacheGetAndReplaceOperation;
 import com.hazelcast.cache.impl.operation.CacheGetConfigOperation;
 import com.hazelcast.cache.impl.operation.CacheGetInvalidationMetaDataOperation;
 import com.hazelcast.cache.impl.operation.CacheGetOperation;
-import com.hazelcast.cache.impl.operation.CacheKeyIteratorOperation;
+import com.hazelcast.cache.impl.operation.CacheFetchKeysOperation;
 import com.hazelcast.cache.impl.operation.CacheListenerRegistrationOperation;
 import com.hazelcast.cache.impl.operation.CacheLoadAllOperation;
 import com.hazelcast.cache.impl.operation.CacheLoadAllOperationFactory;
@@ -72,13 +72,13 @@ import com.hazelcast.cache.impl.tenantcontrol.CacheDestroyEventContext;
 import com.hazelcast.client.impl.protocol.task.cache.CacheAssignAndGetUuidsOperation;
 import com.hazelcast.client.impl.protocol.task.cache.CacheAssignAndGetUuidsOperationFactory;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.internal.management.request.GetCacheEntryRequest;
+import com.hazelcast.internal.management.operation.GetCacheEntryViewEntryProcessor;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
+import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.internal.util.ConstructorFunction;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.CACHE_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.CACHE_DS_FACTORY_ID;
@@ -190,8 +190,8 @@ public final class CacheDataSerializerHook
         constructors[LOAD_ALL] = arg -> new CacheLoadAllOperation();
         constructors[LOAD_ALL_FACTORY] = arg -> new CacheLoadAllOperationFactory();
         constructors[EXPIRY_POLICY] = arg -> new HazelcastExpiryPolicy();
-        constructors[KEY_ITERATOR] = arg -> new CacheKeyIteratorOperation();
-        constructors[KEY_ITERATION_RESULT] = arg -> new CacheKeyIterationResult();
+        constructors[KEY_ITERATOR] = arg -> new CacheFetchKeysOperation();
+        constructors[KEY_ITERATION_RESULT] = arg -> new CacheKeysWithCursor();
         constructors[ENTRY_PROCESSOR] = arg -> new CacheEntryProcessorOperation();
         constructors[CLEAR_RESPONSE] = arg -> new CacheClearResponse();
         constructors[GET_CONFIG] = arg -> new CacheGetConfigOperation();
@@ -207,8 +207,8 @@ public final class CacheDataSerializerHook
         constructors[REMOVE_ALL_BACKUP] = arg -> new CacheRemoveAllBackupOperation();
         constructors[REMOVE_ALL_FACTORY] = arg -> new CacheRemoveAllOperationFactory();
         constructors[PUT_ALL] = arg -> new CachePutAllOperation();
-        constructors[ENTRY_ITERATOR] = arg -> new CacheEntryIteratorOperation();
-        constructors[ENTRY_ITERATION_RESULT] = arg -> new CacheEntryIterationResult();
+        constructors[ENTRY_ITERATOR] = arg -> new CacheFetchEntriesOperation();
+        constructors[ENTRY_ITERATION_RESULT] = arg -> new CacheEntriesWithCursor();
         constructors[CACHE_PARTITION_LOST_EVENT_FILTER] = arg -> new CachePartitionLostEventFilter();
         constructors[DEFAULT_CACHE_ENTRY_VIEW] = arg -> new DefaultCacheEntryView();
         constructors[CACHE_REPLICATION] = arg -> new CacheReplicationOperation();
@@ -228,8 +228,8 @@ public final class CacheDataSerializerHook
         constructors[EVENT_JOURNAL_INTERNAL_CACHE_EVENT] = arg -> new InternalEventJournalCacheEvent();
         constructors[EVENT_JOURNAL_READ_RESULT_SET] = arg -> new CacheEventJournalReadResultSetImpl<>();
         constructors[PRE_JOIN_CACHE_CONFIG] = arg -> new PreJoinCacheConfig();
-        constructors[CACHE_BROWSER_ENTRY_VIEW] = arg -> new GetCacheEntryRequest.CacheBrowserEntryView();
-        constructors[GET_CACHE_ENTRY_VIEW_PROCESSOR] = arg -> new GetCacheEntryRequest.GetCacheEntryViewEntryProcessor();
+        constructors[CACHE_BROWSER_ENTRY_VIEW] = arg -> new GetCacheEntryViewEntryProcessor.CacheBrowserEntryView();
+        constructors[GET_CACHE_ENTRY_VIEW_PROCESSOR] = arg -> new GetCacheEntryViewEntryProcessor();
         constructors[MERGE_FACTORY] = arg -> new CacheMergeOperationFactory();
         constructors[MERGE] = arg -> new CacheMergeOperation();
         constructors[ADD_CACHE_CONFIG_OPERATION] = arg -> new AddCacheConfigOperation();

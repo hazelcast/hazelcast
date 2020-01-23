@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import com.hazelcast.internal.eviction.ClearExpiredRecordsTask;
 import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.map.impl.PartitionContainer;
-import com.hazelcast.map.impl.operation.MapClearExpiredOperation;
 import com.hazelcast.map.impl.operation.EvictBatchBackupOperation;
+import com.hazelcast.map.impl.operation.MapClearExpiredOperation;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -85,6 +85,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public class MapClearExpiredRecordsTask
         extends ClearExpiredRecordsTask<PartitionContainer, RecordStore> {
 
+    public static final String PROP_CLEANUP_ENABLED = "hazelcast.internal.map.expiration.cleanup.enabled";
     public static final String PROP_PRIMARY_DRIVES_BACKUP = "hazelcast.internal.map.expiration.primary.drives_backup";
     public static final String PROP_CLEANUP_PERCENTAGE = "hazelcast.internal.map.expiration.cleanup.percentage";
     public static final String PROP_CLEANUP_OPERATION_COUNT = "hazelcast.internal.map.expiration.cleanup.operation.count";
@@ -101,6 +102,8 @@ public class MapClearExpiredRecordsTask
             = new HazelcastProperty(PROP_CLEANUP_PERCENTAGE, DEFAULT_CLEANUP_PERCENTAGE);
     private static final HazelcastProperty CLEANUP_OPERATION_COUNT
             = new HazelcastProperty(PROP_CLEANUP_OPERATION_COUNT);
+    private static final HazelcastProperty CLEANUP_ENABLED
+            = new HazelcastProperty(PROP_CLEANUP_ENABLED, true);
 
     private final boolean primaryDrivesEviction;
 
@@ -111,7 +114,8 @@ public class MapClearExpiredRecordsTask
     };
 
     public MapClearExpiredRecordsTask(PartitionContainer[] containers, NodeEngine nodeEngine) {
-        super(SERVICE_NAME, containers, CLEANUP_OPERATION_COUNT, CLEANUP_PERCENTAGE, TASK_PERIOD_SECONDS, nodeEngine);
+        super(SERVICE_NAME, containers, CLEANUP_ENABLED, CLEANUP_OPERATION_COUNT,
+                CLEANUP_PERCENTAGE, TASK_PERIOD_SECONDS, nodeEngine);
         this.primaryDrivesEviction = nodeEngine.getProperties().getBoolean(PRIMARY_DRIVES_BACKUP);
     }
 

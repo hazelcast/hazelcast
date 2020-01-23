@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.hazelcast.client.map;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.CustomWanPublisherConfig;
+import com.hazelcast.config.WanCustomPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.HazelcastInstance;
@@ -29,8 +29,8 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.internal.util.MapUtil;
-import com.hazelcast.wan.WanReplicationQueueFullException;
-import com.hazelcast.wan.impl.FullQueueWanReplication;
+import com.hazelcast.wan.WanQueueFullException;
+import com.hazelcast.wan.impl.WanFullQueuePublisher;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -59,13 +59,13 @@ public class ClientMapWANExceptionTest extends HazelcastTestSupport {
         hazelcastFactory.terminateAll();
     }
 
-    @Test(expected = WanReplicationQueueFullException.class)
+    @Test(expected = WanQueueFullException.class)
     public void testMapPut() {
         IMap<Object, Object> map = client.getMap("wan-exception-client-test-map");
         map.put(1, 1);
     }
 
-    @Test(expected = WanReplicationQueueFullException.class)
+    @Test(expected = WanQueueFullException.class)
     public void testMapPutAll() {
         IMap<Object, Object> map = client.getMap("wan-exception-client-test-map");
         Map<Object, Object> inputMap = MapUtil.createHashMap(1);
@@ -76,24 +76,24 @@ public class ClientMapWANExceptionTest extends HazelcastTestSupport {
     @Override
     protected Config getConfig() {
         Config config = super.getConfig();
-        WanReplicationConfig wanConfig = new WanReplicationConfig();
-        wanConfig.setName("dummyWan");
+        WanReplicationConfig wanReplicationConfig = new WanReplicationConfig();
+        wanReplicationConfig.setName("dummyWan");
 
-        wanConfig.addCustomPublisherConfig(getWanPublisherConfig());
+        wanReplicationConfig.addCustomPublisherConfig(getWanPublisherConfig());
 
         WanReplicationRef wanRef = new WanReplicationRef();
         wanRef.setName("dummyWan");
-        wanRef.setMergePolicy(PassThroughMergePolicy.class.getName());
+        wanRef.setMergePolicyClassName(PassThroughMergePolicy.class.getName());
 
-        config.addWanReplicationConfig(wanConfig);
+        config.addWanReplicationConfig(wanReplicationConfig);
         config.getMapConfig("default").setWanReplicationRef(wanRef);
         return config;
     }
 
-    private CustomWanPublisherConfig getWanPublisherConfig() {
-        CustomWanPublisherConfig pc = new CustomWanPublisherConfig();
+    private WanCustomPublisherConfig getWanPublisherConfig() {
+        WanCustomPublisherConfig pc = new WanCustomPublisherConfig();
         pc.setPublisherId("customPublisherId")
-          .setClassName(FullQueueWanReplication.class.getName());
+          .setClassName(WanFullQueuePublisher.class.getName());
         return pc;
     }
 }

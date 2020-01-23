@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Hazelcast Google Group
+    url: https://groups.google.com/forum/#!forum/hazelcast
+    about: We're not actively answering questions here so feel free to ask one here
+  - name: Stack Overflow
+    url: https://stackoverflow.com/questions/tagged/hazelcast
+    about: We're not actively answering questions here so feel free to ask one here

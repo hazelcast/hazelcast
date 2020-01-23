@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,6 @@ import com.hazelcast.internal.memory.ByteAccessStrategy;
 import com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry;
 import com.hazelcast.internal.memory.MemoryAccessor;
 
-import java.io.DataInput;
-import java.io.IOException;
-import java.io.UTFDataFormatException;
 import java.nio.ByteBuffer;
 
 /**
@@ -312,63 +309,6 @@ public final class EndiannessUtil {
             strategy.putByte(resource, pos, (byte) (0xC0 | c >> 6 & 0x1F));
             strategy.putByte(resource, pos + 1, (byte) (0x80 | c & 0x3F));
             return 2;
-        }
-    }
-
-    public static char readUtf8Char(DataInput in, byte firstByte) throws IOException {
-        int b = firstByte & 0xFF;
-        switch (b >> 4) {
-            case 0:
-            case 1:
-            case 2:
-            case 3:
-            case 4:
-            case 5:
-            case 6:
-            case 7:
-                return (char) b;
-            case 12:
-            case 13:
-                int first = (b & 0x1F) << 6;
-                int second = in.readByte() & 0x3F;
-                return (char) (first | second);
-            case 14:
-                int first2 = (b & 0x0F) << 12;
-                int second2 = (in.readByte() & 0x3F) << 6;
-                int third2 = in.readByte() & 0x3F;
-                return (char) (first2 | second2 | third2);
-            default:
-                throw new UTFDataFormatException("Malformed byte sequence");
-        }
-    }
-
-    public static int readUtf8Char(byte[] buffer, int pos, char[] dst, int dstPos) throws IOException {
-        int b = buffer[pos] & 0xFF;
-        switch (b >> 4) {
-            case 0:
-            case 1:
-            case 2:
-            case 3:
-            case 4:
-            case 5:
-            case 6:
-            case 7:
-                dst[dstPos] = (char) b;
-                return 1;
-            case 12:
-            case 13:
-                int first = (b & 0x1F) << 6;
-                int second = buffer[pos + 1] & 0x3F;
-                dst[dstPos] = (char) (first | second);
-                return 2;
-            case 14:
-                int first2 = (b & 0x0F) << 12;
-                int second2 = (buffer[pos + 1] & 0x3F) << 6;
-                int third2 = buffer[pos + 2] & 0x3F;
-                dst[dstPos] = (char) (first2 | second2 | third2);
-                return 3;
-            default:
-                throw new UTFDataFormatException("Malformed byte sequence");
         }
     }
 }

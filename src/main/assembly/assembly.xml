@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -27,13 +27,7 @@
                 <include>hazelcast-spring-${project.version}.jar</include>
             </includes>
         </fileSet>
-        <fileSet>
-            <directory>hazelcast-client/target</directory>
-            <outputDirectory>/lib/</outputDirectory>
-            <includes>
-                <include>hazelcast-client-${project.version}.jar</include>
-            </includes>
-        </fileSet>
+
         <fileSet>
             <directory>hazelcast/target/</directory>
             <outputDirectory>/lib/</outputDirectory>
@@ -82,6 +76,7 @@
                 <include>notice.txt</include>
             </includes>
         </fileSet>
+
         <fileSet>
             <directory>hazelcast/target/classes/</directory>
             <outputDirectory>/bin/</outputDirectory>
@@ -104,33 +99,11 @@
                 <include>hazelcast.xml</include>
                 <include>hazelcast-full-example.xml</include>
                 <include>hazelcast-full-example.yaml</include>
-            </includes>
-        </fileSet>
-        <fileSet>
-            <directory>hazelcast-client/target/</directory>
-            <outputDirectory>/bin/</outputDirectory>
-            <includes>
                 <include>hazelcast-client-full-example.xml</include>
                 <include>hazelcast-client-full-example.yaml</include>
                 <include>hazelcast-client-failover-full-example.xml</include>
                 <include>hazelcast-client-failover-full-example.yaml</include>
             </includes>
         </fileSet>
-        <fileSet>
-            <directory>hazelcast-client/target/classes/</directory>
-            <outputDirectory>/bin/</outputDirectory>
-            <includes>
-                <include>*.bat</include>
-            </includes>
-        </fileSet>
-        <fileSet>
-            <directory>hazelcast-client/target/classes/</directory>
-            <outputDirectory>/bin/</outputDirectory>
-            <fileMode>0755</fileMode>
-            <includes>
-                <include>*.sh</include>
-            </includes>
-        </fileSet>
-
     </fileSets>
 </assembly>

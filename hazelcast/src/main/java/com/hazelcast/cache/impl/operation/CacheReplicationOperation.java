@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -63,9 +63,11 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
 
     private final List<CacheConfig> configs = new ArrayList<CacheConfig>();
     private final Map<String, Map<Data, CacheRecord>> data = new HashMap<String, Map<Data, CacheRecord>>();
-    private final CacheNearCacheStateHolder nearCacheStateHolder = new CacheNearCacheStateHolder(this);
+    private CacheNearCacheStateHolder nearCacheStateHolder;
 
     public CacheReplicationOperation() {
+        nearCacheStateHolder = new CacheNearCacheStateHolder();
+        nearCacheStateHolder.setCacheReplicationOperation(this);
     }
 
     public final void prepare(CachePartitionSegment segment, Collection<ServiceNamespace> namespaces,
@@ -178,7 +180,7 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
             IOUtil.writeData(out, null);
         }
 
-        nearCacheStateHolder.writeData(out);
+        out.writeObject(nearCacheStateHolder);
     }
 
     @Override
@@ -211,7 +213,8 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
             }
         }
 
-        nearCacheStateHolder.readData(in);
+        nearCacheStateHolder = in.readObject();
+        nearCacheStateHolder.setCacheReplicationOperation(this);
     }
 
     public boolean isEmpty() {

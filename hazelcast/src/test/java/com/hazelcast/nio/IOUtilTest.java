@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,9 @@ package com.hazelcast.nio;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -45,11 +45,11 @@ import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.internal.serialization.impl.SerializationUtil.createObjectDataInputStream;
-import static com.hazelcast.internal.serialization.impl.SerializationUtil.createObjectDataOutputStream;
 import static com.hazelcast.internal.nio.IOUtil.close;
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
@@ -74,8 +74,12 @@ import static com.hazelcast.internal.nio.IOUtil.toFileName;
 import static com.hazelcast.internal.nio.IOUtil.touch;
 import static com.hazelcast.internal.nio.IOUtil.writeByteArray;
 import static com.hazelcast.internal.nio.IOUtil.writeObject;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.createObjectDataInputStream;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.createObjectDataOutputStream;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static java.lang.Integer.min;
 import static java.lang.String.format;
+import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -105,7 +109,7 @@ public class IOUtilTest extends HazelcastTestSupport {
     public TestName testName = new TestName();
 
     private final InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
-    private final List<File> files = new ArrayList<File>();
+    private final List<File> files = new ArrayList<>();
 
     @After
     public void tearDown() {
@@ -571,6 +575,46 @@ public class IOUtilTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void when_deleteSymlink_then_targetIntact() throws IOException {
+        // Given
+        File symLink = newFile("symLink");
+        Path symLinkP = symLink.toPath();
+
+        File target = createFile("dontDeleteMe");
+        Path targetP = target.toPath();
+
+        Files.createSymbolicLink(symLinkP, targetP);
+        assertTrue(Files.exists(symLinkP, NOFOLLOW_LINKS));
+        assertTrue(Files.exists(targetP, NOFOLLOW_LINKS));
+
+        // When
+        delete(symLink);
+
+        // Then
+        assertFalse(Files.exists(symLinkP, NOFOLLOW_LINKS));
+        assertTrue(Files.exists(targetP, NOFOLLOW_LINKS));
+    }
+
+    @Test
+    public void when_deleteBrokenSymlink_then_success() throws IOException {
+        // Given
+        File symLink = newFile("symLink");
+        Path symLinkP = symLink.toPath();
+
+        File target = newFile("doesntExist");
+        Path targetP = target.toPath();
+
+        Files.createSymbolicLink(symLinkP, targetP);
+        assertTrue(Files.exists(symLinkP, NOFOLLOW_LINKS));
+
+        // When
+        delete(symLink);
+
+        // Then
+        assertFalse("File still exists after deletion", Files.exists(symLinkP, NOFOLLOW_LINKS));
+    }
+
+    @Test
     public void testDelete_shouldDeleteDirectoryRecursively() {
         File parentDir = createDirectory("parent");
         File file1 = createFile(parentDir, "file1");
@@ -587,15 +631,6 @@ public class IOUtilTest extends HazelcastTestSupport {
         assertFalse("childDir should be deleted", childDir.exists());
         assertFalse("childFile1 should be deleted", childFile1.exists());
         assertFalse("childFile2 should be deleted", childFile2.exists());
-    }
-
-    @Test(expected = HazelcastException.class)
-    public void testDelete_shouldThrowIfFileCouldNotBeDeleted() {
-        File file = mock(File.class);
-        when(file.exists()).thenReturn(true);
-        when(file.delete()).thenReturn(false);
-
-        delete(file);
     }
 
     @Test
@@ -852,23 +887,20 @@ public class IOUtilTest extends HazelcastTestSupport {
     }
 
     private File newFile(String filename) {
-        File file = new File(getFilename(filename));
+        File file = new File(uniquize(filename));
         files.add(file);
         return file;
     }
 
     private File newFile(File parent, String filename) {
-        File file = new File(parent, getFilename(filename));
+        File file = new File(parent, uniquize(filename));
         files.add(file);
         return file;
     }
 
-    private String getFilename(String filename) {
-        String name = "IOUtilTest-" + testName.getMethodName() + "-" + filename;
-        if (name.length() > 255) {
-            return name.substring(0, 255);
-        }
-        return name;
+    private String uniquize(String filename) {
+        String name = IOUtilTest.class.getSimpleName() + '-' + testName.getMethodName() + '-' + filename;
+        return name.substring(0, min(255, name.length()));
     }
 
     private File createFile(String fileName) {

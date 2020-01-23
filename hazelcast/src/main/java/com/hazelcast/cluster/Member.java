@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -100,25 +100,6 @@ public interface Member extends DataSerializable, Endpoint {
      * @return The value for this member key.
      */
     String getAttribute(String key);
-
-    /**
-     * Defines a key-value pair string attribute for this member available
-     * to other cluster members.
-     *
-     * @param key The key for this property.
-     * @param value The value that corresponds to this attribute and this member.
-     */
-    void setAttribute(String key, String value);
-
-    /**
-     * Removes a key-value pair attribute for this member if given key was
-     * previously assigned as an attribute.<br>
-     * If key wasn't assigned to a value this method does nothing.
-     *
-     * @param key The key to be deleted from the member attributes
-     * @since 3.2
-     */
-    void removeAttribute(String key);
 
     /**
      * Returns the Hazelcast codebase version of this member; this may or may not be different from the version reported by

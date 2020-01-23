@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.hazelcast.config.RingbufferStoreConfig;
 import com.hazelcast.ringbuffer.RingbufferStore;
 import com.hazelcast.ringbuffer.RingbufferStoreFactory;
 
+import javax.annotation.Nonnull;
 import java.util.Properties;
 
 public class RingbufferStoreConfigReadOnly extends RingbufferStoreConfig {
@@ -29,7 +30,7 @@ public class RingbufferStoreConfigReadOnly extends RingbufferStoreConfig {
     }
 
     @Override
-    public RingbufferStoreConfig setStoreImplementation(RingbufferStore storeImplementation) {
+    public RingbufferStoreConfig setStoreImplementation(@Nonnull RingbufferStore storeImplementation) {
         throw new UnsupportedOperationException("This config is read-only.");
     }
 
@@ -39,7 +40,7 @@ public class RingbufferStoreConfigReadOnly extends RingbufferStoreConfig {
     }
 
     @Override
-    public RingbufferStoreConfig setClassName(String className) {
+    public RingbufferStoreConfig setClassName(@Nonnull String className) {
         throw new UnsupportedOperationException("This config is read-only.");
     }
 
@@ -54,12 +55,12 @@ public class RingbufferStoreConfigReadOnly extends RingbufferStoreConfig {
     }
 
     @Override
-    public RingbufferStoreConfig setFactoryClassName(String factoryClassName) {
+    public RingbufferStoreConfig setFactoryClassName(@Nonnull String factoryClassName) {
         throw new UnsupportedOperationException("This config is read-only.");
     }
 
     @Override
-    public RingbufferStoreConfig setFactoryImplementation(RingbufferStoreFactory factoryImplementation) {
+    public RingbufferStoreConfig setFactoryImplementation(@Nonnull RingbufferStoreFactory factoryImplementation) {
         throw new UnsupportedOperationException("This config is read-only.");
     }
 }

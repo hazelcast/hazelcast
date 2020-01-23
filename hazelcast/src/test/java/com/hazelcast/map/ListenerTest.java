@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.map.impl.MapListenerAdapter;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.event.MapPartitionEventData;
 import com.hazelcast.map.listener.EntryAddedListener;
@@ -35,6 +36,8 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.Predicates;
+import com.hazelcast.query.QueryConstants;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.test.AssertTask;
@@ -49,6 +52,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -68,7 +72,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
-@SuppressWarnings("deprecation")
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ListenerTest extends HazelcastTestSupport {
@@ -595,6 +598,34 @@ public class ListenerTest extends HazelcastTestSupport {
                 });
         assertOpenEventually(latch, 10);
         SerializeCheckerObject.assertNotSerialized();
+    }
+
+    @Test
+    public void test_ListenerShouldNotThrowExceptions_whenAttributeTypeMismatches() {
+        IMap<Example, Example> map = createHazelcastInstance().getMap("map");
+        Predicate predicate = Predicates.in(QueryConstants.KEY_ATTRIBUTE_NAME.value(), Integer.MIN_VALUE);
+
+        Example example = new Example();
+        map.addLocalEntryListener(example, predicate, true);
+
+        HashMap<Example, Example> hashMap = new HashMap<>();
+        hashMap.put(example, example);
+        // Single put
+        map.put(example, example);
+        map.remove(example);
+
+        // PutAll
+        map.putAll(hashMap);
+    }
+
+    static class Example extends MapListenerAdapter<Object, Object>
+            implements Serializable, Comparable<Object> {
+
+        @Override
+        public int compareTo(Object o) {
+            return 0;
+        }
+
     }
 
     private static class EntryAddedLatch extends CountDownLatch implements EntryAddedListener {

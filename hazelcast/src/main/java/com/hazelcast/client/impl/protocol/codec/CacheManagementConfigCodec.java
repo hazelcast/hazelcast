@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,9 +34,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * TODO DOC
+ * Enables or disables the statistics or the management support for the
+ * cache with the given name on a member with the given address.
  */
-@Generated("fa9fbb740890e5196eea57692ee65321")
+@Generated("f13e14917ea02c478ed3fdbfc985bfc9")
 public final class CacheManagementConfigCodec {
     //hex: 0x131100
     public static final int REQUEST_MESSAGE_TYPE = 1249536;
@@ -44,8 +45,9 @@ public final class CacheManagementConfigCodec {
     public static final int RESPONSE_MESSAGE_TYPE = 1249537;
     private static final int REQUEST_IS_STAT_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_ENABLED_FIELD_OFFSET = REQUEST_IS_STAT_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_UUID_FIELD_OFFSET = REQUEST_ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private CacheManagementConfigCodec() {
     }
@@ -69,22 +71,23 @@ public final class CacheManagementConfigCodec {
         public boolean enabled;
 
         /**
-         * the address of the host to enable.
+         * the UUID of the host to enable.
          */
-        public com.hazelcast.cluster.Address address;
+        public java.util.UUID uuid;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, boolean isStat, boolean enabled, com.hazelcast.cluster.Address address) {
+    public static ClientMessage encodeRequest(java.lang.String name, boolean isStat, boolean enabled, java.util.UUID uuid) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setOperationName("Cache.ManagementConfig");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeBoolean(initialFrame.content, REQUEST_IS_STAT_FIELD_OFFSET, isStat);
         encodeBoolean(initialFrame.content, REQUEST_ENABLED_FIELD_OFFSET, enabled);
+        encodeUUID(initialFrame.content, REQUEST_UUID_FIELD_OFFSET, uuid);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
-        AddressCodec.encode(clientMessage, address);
         return clientMessage;
     }
 
@@ -94,8 +97,8 @@ public final class CacheManagementConfigCodec {
         ClientMessage.Frame initialFrame = iterator.next();
         request.isStat = decodeBoolean(initialFrame.content, REQUEST_IS_STAT_FIELD_OFFSET);
         request.enabled = decodeBoolean(initialFrame.content, REQUEST_ENABLED_FIELD_OFFSET);
+        request.uuid = decodeUUID(initialFrame.content, REQUEST_UUID_FIELD_OFFSET);
         request.name = StringCodec.decode(iterator);
-        request.address = AddressCodec.decode(iterator);
         return request;
     }
 

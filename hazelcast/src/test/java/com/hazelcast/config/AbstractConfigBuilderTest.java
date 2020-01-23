@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,6 +57,9 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
 
     @Test
     public abstract void testConfigurationURL() throws Exception;
+
+    @Test
+    public abstract void testClusterName();
 
     @Test
     public abstract void testConfigurationWithFileName() throws Exception;
@@ -125,22 +128,10 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void testManagementCenterConfig();
 
     @Test
-    public abstract void testManagementCenterConfigComplex();
-
-    @Test
     public abstract void testNullManagementCenterConfig();
 
     @Test
     public abstract void testEmptyManagementCenterConfig();
-
-    @Test
-    public abstract void testNotEnabledManagementCenterConfig();
-
-    @Test
-    public abstract void testNotEnabledWithURLManagementCenterConfig();
-
-    @Test
-    public abstract void testManagementCenterConfigComplexDisabledMutualAuth();
 
     @Test
     public abstract void testMapStoreInitialModeLazy();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ public class MobyNamesTest extends HazelcastTestSupport {
 
     @Test
     public void allValuesReturnedFair() {
-        int totalCombinations = 99 * 231;
+        int totalCombinations = 99 * 231; // MobyNames.LEFT.length * MobyNames.RIGHT.length
         Map<String, AtomicInteger> namesCounts = new HashMap<>();
         for (int i = 0; i < totalCombinations * 2; i++) {
             String randomName = MobyNames.getRandomName(i);

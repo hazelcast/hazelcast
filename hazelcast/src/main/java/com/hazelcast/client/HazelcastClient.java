@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,17 +27,22 @@ import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.OutOfMemoryHandler;
+import com.hazelcast.instance.impl.HazelcastInstanceFactory.InstanceFuture;
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.util.EmptyStatement;
+import com.hazelcast.internal.util.ExceptionUtil;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.client.impl.clientside.FailoverClientConfigSupport.resolveClientConfig;
 import static com.hazelcast.client.impl.clientside.FailoverClientConfigSupport.resolveClientFailoverConfig;
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
 /**
  * The HazelcastClient is comparable to the {@link com.hazelcast.core.Hazelcast} class and provides the ability
@@ -62,12 +67,12 @@ import static com.hazelcast.client.impl.clientside.FailoverClientConfigSupport.r
  */
 public final class HazelcastClient {
 
+    private static final AtomicInteger CLIENT_ID_GEN = new AtomicInteger();
+    private static final ConcurrentMap<String, InstanceFuture<HazelcastClientProxy>> CLIENTS = new ConcurrentHashMap<>(5);
+
     static {
         OutOfMemoryErrorDispatcher.setClientHandler(new ClientOutOfMemoryHandler());
     }
-
-    static final ConcurrentMap<String, HazelcastClientProxy> CLIENTS
-            = new ConcurrentHashMap<String, HazelcastClientProxy>(5);
 
     private HazelcastClient() {
     }
@@ -79,7 +84,7 @@ public final class HazelcastClient {
      * <p>
      * To shutdown all running HazelcastInstances (all clients on this JVM)
      * call {@link #shutdownAll()}.
-     *
+     * <p>
      * Hazelcast will look into two places for the configuration file:
      * <ol>
      *     <li>
@@ -134,7 +139,7 @@ public final class HazelcastClient {
     /**
      * Creates a client with cluster switch capability. Client will try to connect to alternative clusters according to
      * {@link ClientFailoverConfig} when it disconnects from a cluster.
-     *
+     * <p>
      * The configuration is loaded using using the following resolution mechanism:
      * <ol>
      * <li>first it checks if a system property 'hazelcast.client.failover.config' is set. If it exist and it begins with
@@ -159,7 +164,7 @@ public final class HazelcastClient {
     /**
      * Creates a client with cluster switch capability. Client will try to connect to alternative clusters according to
      * {@link ClientFailoverConfig} when it disconnects from a cluster.
-     *
+     * <p>
      * If provided clientFailoverConfig is {@code null}, the configuration is loaded using using the following resolution
      * mechanism:
      * <ol>
@@ -174,7 +179,6 @@ public final class HazelcastClient {
      *      <li>if none available {@link HazelcastException} is thrown</li>
      * </ol>
      *
-     *
      * @param clientFailoverConfig config describing the failover configs and try count
      * @return the client instance
      * @throws HazelcastException            if no failover configuration is found
@@ -184,29 +188,6 @@ public final class HazelcastClient {
         return newHazelcastClientInternal(null, null, resolveClientFailoverConfig(clientFailoverConfig));
     }
 
-    static HazelcastInstance newHazelcastClientInternal(AddressProvider addressProvider, ClientConfig clientConfig,
-                                                        ClientFailoverConfig failoverConfig) {
-        final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
-        HazelcastClientProxy proxy;
-        try {
-            Thread.currentThread().setContextClassLoader(HazelcastClient.class.getClassLoader());
-            ClientConnectionManagerFactory factory = new DefaultClientConnectionManagerFactory();
-            HazelcastClientInstanceImpl client =
-                    new HazelcastClientInstanceImpl(clientConfig, failoverConfig, factory, addressProvider);
-            client.start();
-            OutOfMemoryErrorDispatcher.registerClient(client);
-            proxy = new HazelcastClientProxy(client);
-
-            if (CLIENTS.putIfAbsent(client.getName(), proxy) != null) {
-                throw new InvalidConfigurationException("HazelcastClientInstance with name '" + client.getName()
-                        + "' already exists!");
-            }
-        } finally {
-            Thread.currentThread().setContextClassLoader(contextClassLoader);
-        }
-        return proxy;
-    }
-
     /**
      * Returns an existing HazelcastClient with instanceName.
      *
@@ -214,7 +195,95 @@ public final class HazelcastClient {
      * @return HazelcastInstance
      */
     public static HazelcastInstance getHazelcastClientByName(String instanceName) {
-        return CLIENTS.get(instanceName);
+        InstanceFuture<HazelcastClientProxy> future = CLIENTS.get(instanceName);
+        if (future == null) {
+            return null;
+        }
+
+        try {
+            return future.get();
+        } catch (IllegalStateException t) {
+            return null;
+        }
+    }
+
+    /**
+     * Gets or creates a new HazelcastInstance (a new client in a cluster) with the default XML configuration looked up in:
+     * <ol>
+     *     <li>
+     *         System property: Hazelcast will first check if "hazelcast.client.config" system property is set to a file or a
+     *         {@code classpath:...} path. The configuration can either be an XML or a YAML configuration, distinguished by the
+     *         suffix ('.xml' or '.yaml') of the provided configuration file's name
+     *         Examples: -Dhazelcast.client.config=C:/myhazelcastclient.xml ,
+     *         -Dhazelcast.client.config=classpath:the-hazelcast-config.yaml ,
+     *         -Dhazelcast.client.config=classpath:com/mydomain/hazelcast.xml
+     *     </li>
+     *     <li>
+     *         "hazelcast-client.xml" file in current working directory
+     *     </li>
+     *     <li>
+     *         Classpath: Hazelcast will check classpath for hazelcast-client.xml file.
+     *     </li>
+     *     <li>
+     *         "hazelcast-client.yaml" file in current working directory
+     *     </li>
+     *     <li>
+     *         Classpath: Hazelcast will check classpath for hazelcast-client.yaml file.
+     *     </li>
+     * </ol>
+     * <p>
+     * If a configuration file is not located, an {@link IllegalArgumentException} will be thrown.
+     *
+     * If a Hazelcast instance with the same name as the configuration exists, then it is returned, otherwise it is created.
+     *
+     * @return the new HazelcastInstance
+     * @throws IllegalArgumentException if the instance name of the config is null or empty or if no config file can be
+     *                                  located.
+     * @see #getHazelcastClientByName(String) (String)
+     */
+    public static HazelcastInstance getOrCreateHazelcastClient() {
+        return getOrCreateClientInternal(null);
+    }
+
+    /**
+     * Gets or creates a new HazelcastInstance (a new client in a cluster) with a certain name.
+     * <p>
+     * If a Hazelcast instance with the same name as the configuration exists, then it is returned, otherwise it is created.
+     * <p>
+     * If {@code config} is {@code null}, Hazelcast will look into two places for the configuration file:
+     * <ol>
+     *     <li>
+     *         System property: Hazelcast will first check if "hazelcast.client.config" system property is set to a file or a
+     *         {@code classpath:...} path. The configuration can either be an XML or a YAML configuration, distinguished by the
+     *         suffix ('.xml' or '.yaml') of the provided configuration file's name
+     *         Examples: -Dhazelcast.client.config=C:/myhazelcastclient.xml ,
+     *         -Dhazelcast.client.config=classpath:the-hazelcast-config.yaml ,
+     *         -Dhazelcast.client.config=classpath:com/mydomain/hazelcast.xml
+     *     </li>
+     *     <li>
+     *         "hazelcast-client.xml" file in current working directory
+     *     </li>
+     *     <li>
+     *         Classpath: Hazelcast will check classpath for hazelcast-client.xml file.
+     *     </li>
+     *     <li>
+     *         "hazelcast-client.yaml" file in current working directory
+     *     </li>
+     *     <li>
+     *         Classpath: Hazelcast will check classpath for hazelcast-client.yaml file.
+     *     </li>
+     * </ol>
+     * <p>
+     * If a configuration file is not located, an {@link IllegalArgumentException} will be thrown.
+     *
+     * @param config Client configuration
+     * @return the new HazelcastInstance
+     * @throws IllegalArgumentException if the instance name of the config is null or empty or if no config file can be
+     *                                  located.
+     * @see #getHazelcastClientByName(String) (String)
+     */
+    public static HazelcastInstance getOrCreateHazelcastClient(ClientConfig config) {
+        return getOrCreateClientInternal(config);
     }
 
     /**
@@ -230,8 +299,11 @@ public final class HazelcastClient {
      * @return the collection of client HazelcastInstances
      */
     public static Collection<HazelcastInstance> getAllHazelcastClients() {
-        Collection<HazelcastClientProxy> values = CLIENTS.values();
-        return Collections.unmodifiableCollection(new HashSet<HazelcastInstance>(values));
+        Set<HazelcastInstance> result = createHashSet(CLIENTS.size());
+        for (InstanceFuture<HazelcastClientProxy> f : CLIENTS.values()) {
+            result.add(f.get());
+        }
+        return Collections.unmodifiableCollection(result);
     }
 
     /**
@@ -245,13 +317,14 @@ public final class HazelcastClient {
      * @see #getAllHazelcastClients()
      */
     public static void shutdownAll() {
-        for (HazelcastClientProxy proxy : CLIENTS.values()) {
-            HazelcastClientInstanceImpl client = proxy.client;
-            if (client == null) {
-                continue;
-            }
-            proxy.client = null;
+        for (InstanceFuture<HazelcastClientProxy> future : CLIENTS.values()) {
             try {
+                HazelcastClientProxy proxy = future.get();
+                HazelcastClientInstanceImpl client = proxy.client;
+                if (client == null) {
+                    continue;
+                }
+                proxy.client = null;
                 client.shutdown();
             } catch (Throwable ignored) {
                 EmptyStatement.ignore(ignored);
@@ -292,10 +365,12 @@ public final class HazelcastClient {
      * @param instanceName the hazelcast client instance name
      */
     public static void shutdown(String instanceName) {
-        HazelcastClientProxy proxy = CLIENTS.remove(instanceName);
-        if (proxy == null) {
+        InstanceFuture<HazelcastClientProxy> future = CLIENTS.remove(instanceName);
+        if (future == null || !future.isSet()) {
             return;
         }
+
+        HazelcastClientProxy proxy = future.get();
         HazelcastClientInstanceImpl client = proxy.client;
         if (client == null) {
             return;
@@ -325,5 +400,91 @@ public final class HazelcastClient {
      */
     public static void setOutOfMemoryHandler(OutOfMemoryHandler outOfMemoryHandler) {
         OutOfMemoryErrorDispatcher.setClientHandler(outOfMemoryHandler);
+    }
+
+    static HazelcastInstance newHazelcastClientInternal(AddressProvider addressProvider, ClientConfig clientConfig,
+                                                        ClientFailoverConfig failoverConfig) {
+        checkConfigs(clientConfig, failoverConfig);
+        String instanceName = getInstanceName(clientConfig, failoverConfig);
+
+        InstanceFuture<HazelcastClientProxy> future = new InstanceFuture<>();
+        if (CLIENTS.putIfAbsent(instanceName, future) != null) {
+            throw new InvalidConfigurationException("HazelcastClientInstance with name '" + instanceName + "' already exists!");
+        }
+
+        try {
+            return constructHazelcastClient(addressProvider, clientConfig, failoverConfig, instanceName, future);
+        } catch (Throwable t) {
+            CLIENTS.remove(instanceName, future);
+            future.setFailure(t);
+            throw ExceptionUtil.rethrow(t);
+        }
+    }
+
+    private static HazelcastInstance getOrCreateClientInternal(ClientConfig config) {
+        config = resolveClientConfig(config);
+
+        String instanceName = config.getInstanceName();
+        checkHasText(instanceName, "instanceName must contain text");
+
+        InstanceFuture<HazelcastClientProxy> future = CLIENTS.get(instanceName);
+        if (future != null) {
+            return future.get();
+        }
+
+        future = new InstanceFuture<>();
+        InstanceFuture<HazelcastClientProxy> found = CLIENTS.putIfAbsent(instanceName, future);
+        if (found != null) {
+            return found.get();
+        }
+
+        try {
+            return constructHazelcastClient(null, config, null, instanceName, future);
+        } catch (Throwable t) {
+            CLIENTS.remove(instanceName, future);
+            future.setFailure(t);
+            throw ExceptionUtil.rethrow(t);
+        }
+    }
+
+    private static HazelcastInstance constructHazelcastClient(AddressProvider addressProvider, ClientConfig clientConfig,
+                                                              ClientFailoverConfig failoverConfig, String instanceName,
+                                                              InstanceFuture<HazelcastClientProxy> future) {
+        final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+        HazelcastClientProxy proxy;
+        try {
+            Thread.currentThread().setContextClassLoader(HazelcastClient.class.getClassLoader());
+            ClientConnectionManagerFactory factory = new DefaultClientConnectionManagerFactory();
+            HazelcastClientInstanceImpl client = new HazelcastClientInstanceImpl(instanceName, clientConfig,
+                    failoverConfig, factory, addressProvider);
+            client.start();
+            OutOfMemoryErrorDispatcher.registerClient(client);
+            proxy = new HazelcastClientProxy(client);
+            future.set(proxy);
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
+        } finally {
+            Thread.currentThread().setContextClassLoader(contextClassLoader);
+        }
+        return proxy;
+    }
+
+    private static void checkConfigs(ClientConfig clientConfig, ClientFailoverConfig clientFailoverConfig) {
+        assert clientConfig != null || clientFailoverConfig != null : "At most one type of config can be provided";
+        assert clientConfig == null || clientFailoverConfig == null : "At least one config should be provided ";
+    }
+
+    static String getInstanceName(ClientConfig clientConfig, ClientFailoverConfig failoverConfig) {
+        int instanceNum = CLIENT_ID_GEN.incrementAndGet();
+        String instanceName;
+        if (clientConfig != null) {
+            instanceName = clientConfig.getInstanceName();
+        } else {
+            instanceName = failoverConfig.getClientConfigs().get(0).getInstanceName();
+        }
+        if (instanceName == null || instanceName.trim().length() == 0) {
+            instanceName = "hz.client_" + instanceNum;
+        }
+        return instanceName;
     }
 }

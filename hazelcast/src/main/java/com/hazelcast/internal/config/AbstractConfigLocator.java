@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -165,6 +165,21 @@ public abstract class AbstractConfigLocator {
         }
     }
 
+    protected boolean loadConfigurationFromClasspath(String configFilePrefix, Collection<String> acceptedSuffixes) {
+        requireNonNull(acceptedSuffixes, "Parameter acceptedSuffixes must not be null");
+        checkFalse(acceptedSuffixes.isEmpty(), "Parameter acceptedSuffixes must not be empty");
+
+        for (String suffix : acceptedSuffixes) {
+            requireNonNull(suffix, "Parameter acceptedSuffixes must not contain nulls");
+            checkFalse(suffix.isEmpty(), "Parameter acceptedSuffixes must not contain empty strings");
+
+            if (loadConfigurationFromClasspath(configFilePrefix + "." + suffix)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     protected boolean loadFromWorkingDirectory(String configFilePath) {
         try {
             File file = new File(configFilePath);
@@ -185,6 +200,21 @@ public abstract class AbstractConfigLocator {
         } catch (RuntimeException e) {
             throw new HazelcastException(e);
         }
+    }
+
+    protected boolean loadFromWorkingDirectory(String configFilePrefix, Collection<String> acceptedSuffixes) {
+        requireNonNull(acceptedSuffixes, "Parameter acceptedSuffixes must not be null");
+        checkFalse(acceptedSuffixes.isEmpty(), "Parameter acceptedSuffixes must not be empty");
+
+        for (String suffix : acceptedSuffixes) {
+            requireNonNull(suffix, "Parameter acceptedSuffixes must not contain nulls");
+            checkFalse(suffix.isEmpty(), "Parameter acceptedSuffixes must not contain empty strings");
+
+            if (loadFromWorkingDirectory(configFilePrefix + "." + suffix)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     protected boolean loadFromSystemProperty(String propertyKey, Collection<String> acceptedSuffixes) {

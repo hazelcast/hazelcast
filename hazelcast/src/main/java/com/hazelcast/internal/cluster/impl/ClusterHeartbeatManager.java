@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.cluster.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
@@ -30,9 +31,10 @@ import com.hazelcast.internal.cluster.impl.operations.ExplicitSuspicionOp;
 import com.hazelcast.internal.cluster.impl.operations.HeartbeatComplaintOp;
 import com.hazelcast.internal.cluster.impl.operations.HeartbeatOp;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.ICMPHelper;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -40,8 +42,6 @@ import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.splitbrainprotection.impl.SplitBrainProtectionServiceImpl;
-import com.hazelcast.internal.util.Clock;
-import com.hazelcast.internal.util.ICMPHelper;
 
 import java.io.IOException;
 import java.net.ConnectException;
@@ -54,6 +54,8 @@ import java.util.logging.Level;
 import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.CLUSTER_EXECUTOR_NAME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLUSTER_METRIC_HEARTBEAT_MANAGER_LAST_HEARTBEAT;
+import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.StringUtil.timeToString;
 import static java.lang.String.format;
@@ -100,7 +102,7 @@ public class ClusterHeartbeatManager {
     private final int icmpIntervalMillis;
     private final int icmpMaxAttempts;
 
-    @Probe(name = "lastHeartbeat")
+    @Probe(name = CLUSTER_METRIC_HEARTBEAT_MANAGER_LAST_HEARTBEAT, unit = MS)
     private volatile long lastHeartbeat;
     private volatile long lastClusterTimeDiff;
 

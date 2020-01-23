@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,17 +37,15 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Fetches the specified number of entries from the specified partition starting from specified table index
  * that match the predicate and applies the projection logic on them.
  */
-@Generated("4eb6409c48948de6a8eadf5fc2f7fc01")
+@Generated("e4c931bbd07496b33dcc5040f91eed8e")
 public final class MapFetchWithQueryCodec {
-    //hex: 0x014200
-    public static final int REQUEST_MESSAGE_TYPE = 82432;
-    //hex: 0x014201
-    public static final int RESPONSE_MESSAGE_TYPE = 82433;
-    private static final int REQUEST_TABLE_INDEX_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int REQUEST_BATCH_FIELD_OFFSET = REQUEST_TABLE_INDEX_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    //hex: 0x014000
+    public static final int REQUEST_MESSAGE_TYPE = 81920;
+    //hex: 0x014001
+    public static final int RESPONSE_MESSAGE_TYPE = 81921;
+    private static final int REQUEST_BATCH_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_BATCH_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_NEXT_TABLE_INDEX_TO_READ_FROM_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_NEXT_TABLE_INDEX_TO_READ_FROM_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private MapFetchWithQueryCodec() {
     }
@@ -61,9 +59,9 @@ public final class MapFetchWithQueryCodec {
         public java.lang.String name;
 
         /**
-         * The slot number (or index) to start the iterator
+         * The index-size pairs that define the state of iteration
          */
-        public int tableIndex;
+        public java.util.List<java.util.Map.Entry<java.lang.Integer, java.lang.Integer>> iterationPointers;
 
         /**
          * The number of items to be batched
@@ -73,24 +71,25 @@ public final class MapFetchWithQueryCodec {
         /**
          * projection to transform the entries with
          */
-        public com.hazelcast.nio.serialization.Data projection;
+        public com.hazelcast.internal.serialization.Data projection;
 
         /**
          * predicate to filter the entries with
          */
-        public com.hazelcast.nio.serialization.Data predicate;
+        public com.hazelcast.internal.serialization.Data predicate;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, int tableIndex, int batch, com.hazelcast.nio.serialization.Data projection, com.hazelcast.nio.serialization.Data predicate) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<java.util.Map.Entry<java.lang.Integer, java.lang.Integer>> iterationPointers, int batch, com.hazelcast.internal.serialization.Data projection, com.hazelcast.internal.serialization.Data predicate) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setOperationName("Map.FetchWithQuery");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
-        encodeInt(initialFrame.content, REQUEST_TABLE_INDEX_FIELD_OFFSET, tableIndex);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeInt(initialFrame.content, REQUEST_BATCH_FIELD_OFFSET, batch);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
+        EntryListIntegerIntegerCodec.encode(clientMessage, iterationPointers);
         DataCodec.encode(clientMessage, projection);
         DataCodec.encode(clientMessage, predicate);
         return clientMessage;
@@ -100,9 +99,9 @@ public final class MapFetchWithQueryCodec {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        request.tableIndex = decodeInt(initialFrame.content, REQUEST_TABLE_INDEX_FIELD_OFFSET);
         request.batch = decodeInt(initialFrame.content, REQUEST_BATCH_FIELD_OFFSET);
         request.name = StringCodec.decode(iterator);
+        request.iterationPointers = EntryListIntegerIntegerCodec.decode(iterator);
         request.projection = DataCodec.decode(iterator);
         request.predicate = DataCodec.decode(iterator);
         return request;
@@ -112,33 +111,34 @@ public final class MapFetchWithQueryCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * List of fetched entries.
          */
-        public java.util.List<com.hazelcast.nio.serialization.Data> results;
+        public java.util.List<com.hazelcast.internal.serialization.Data> results;
 
         /**
-         * TODO DOC
+         * The index-size pairs that define the state of iteration
          */
-        public int nextTableIndexToReadFrom;
+        public java.util.List<java.util.Map.Entry<java.lang.Integer, java.lang.Integer>> iterationPointers;
     }
 
-    public static ClientMessage encodeResponse(java.util.Collection<com.hazelcast.nio.serialization.Data> results, int nextTableIndexToReadFrom) {
+    public static ClientMessage encodeResponse(java.util.Collection<com.hazelcast.internal.serialization.Data> results, java.util.Collection<java.util.Map.Entry<java.lang.Integer, java.lang.Integer>> iterationPointers) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
-        encodeInt(initialFrame.content, RESPONSE_NEXT_TABLE_INDEX_TO_READ_FROM_FIELD_OFFSET, nextTableIndexToReadFrom);
         clientMessage.add(initialFrame);
 
         ListMultiFrameCodec.encodeContainsNullable(clientMessage, results, DataCodec::encode);
+        EntryListIntegerIntegerCodec.encode(clientMessage, iterationPointers);
         return clientMessage;
     }
 
     public static MapFetchWithQueryCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
-        ClientMessage.Frame initialFrame = iterator.next();
-        response.nextTableIndexToReadFrom = decodeInt(initialFrame.content, RESPONSE_NEXT_TABLE_INDEX_TO_READ_FROM_FIELD_OFFSET);
+        //empty initial frame
+        iterator.next();
         response.results = ListMultiFrameCodec.decodeContainsNullable(iterator, DataCodec::decode);
+        response.iterationPointers = EntryListIntegerIntegerCodec.decode(iterator);
         return response;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,6 @@
 
 package com.hazelcast.internal.nio.ascii;
 
-import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
-import static com.hazelcast.test.HazelcastTestSupport.getAddress;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.io.IOException;
-import java.net.UnknownHostException;
-
 import com.hazelcast.config.Config;
 import com.hazelcast.config.RestApiConfig;
 import com.hazelcast.config.RestEndpointGroup;
@@ -31,12 +23,19 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.cluster.Versions;
 
+import java.io.IOException;
+import java.net.UnknownHostException;
+
 import static com.hazelcast.config.RestEndpointGroup.CLUSTER_READ;
 import static com.hazelcast.config.RestEndpointGroup.CLUSTER_WRITE;
 import static com.hazelcast.config.RestEndpointGroup.DATA;
 import static com.hazelcast.config.RestEndpointGroup.HEALTH_CHECK;
 import static com.hazelcast.config.RestEndpointGroup.HOT_RESTART;
 import static com.hazelcast.config.RestEndpointGroup.WAN;
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
+import static com.hazelcast.test.HazelcastTestSupport.getAddress;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Shared code for HTTP REST API and Memcache protocol testing.
@@ -49,33 +48,28 @@ public abstract class RestApiConfigTestBase extends AbstractTextProtocolsTestBas
     public static final String CRLF = "\r\n";
 
     protected static final TestUrl[] TEST_URLS = new TestUrl[]{
-            new TestUrl(CLUSTER_WRITE, POST, "/hazelcast/rest/mancenter/changeurl ", "HTTP/1.1 403 Forbidden"),
-            new TestUrl(CLUSTER_WRITE, POST, "/hazelcast/rest/mancenter/security/permissions", "HTTP/1.1 403 Forbidden"),
             new TestUrl(CLUSTER_READ, GET, "/hazelcast/rest/cluster", "\"members\":[{\"address\":\""),
-            new TestUrl(CLUSTER_READ, POST, "/hazelcast/rest/management/cluster/state", "HTTP/1.1 403 Forbidden"),
-            new TestUrl(CLUSTER_WRITE, POST, "/hazelcast/rest/management/cluster/changeState", "HTTP/1.1 403 Forbidden"),
-            new TestUrl(CLUSTER_WRITE, POST, "/hazelcast/rest/management/cluster/version", "HTTP/1.1 403 Forbidden"),
+            new TestUrl(CLUSTER_READ, POST, "/hazelcast/rest/management/cluster/state", "HTTP/1.1 400 Bad Request"),
+            new TestUrl(CLUSTER_WRITE, POST, "/hazelcast/rest/management/cluster/changeState", "HTTP/1.1 400 Bad Request"),
+            new TestUrl(CLUSTER_WRITE, POST, "/hazelcast/rest/management/cluster/version", "HTTP/1.1 400 Bad Request"),
             new TestUrl(CLUSTER_READ, GET, "/hazelcast/rest/management/cluster/version", Versions.CURRENT_CLUSTER_VERSION.toString()),
-            new TestUrl(CLUSTER_WRITE, POST, "/hazelcast/rest/management/cluster/clusterShutdown", "HTTP/1.1 403 Forbidden"),
-            new TestUrl(CLUSTER_WRITE, POST, "/hazelcast/rest/management/cluster/memberShutdown", "HTTP/1.1 403 Forbidden"),
-            new TestUrl(CLUSTER_READ, POST, "/hazelcast/rest/management/cluster/nodes", "HTTP/1.1 403 Forbidden"),
+            new TestUrl(CLUSTER_WRITE, POST, "/hazelcast/rest/management/cluster/clusterShutdown", "HTTP/1.1 400 Bad Request"),
+            new TestUrl(CLUSTER_WRITE, POST, "/hazelcast/rest/management/cluster/memberShutdown", "HTTP/1.1 400 Bad Request"),
+            new TestUrl(CLUSTER_READ, POST, "/hazelcast/rest/management/cluster/nodes", "HTTP/1.1 400 Bad Request"),
             new TestUrl(CLUSTER_READ, GET, "/hazelcast/rest/license", getLicenseInfoExpectedResponse()),
-            new TestUrl(HOT_RESTART, POST, "/hazelcast/rest/management/cluster/forceStart", "HTTP/1.1 403 Forbidden"),
-            new TestUrl(HOT_RESTART, POST, "/hazelcast/rest/management/cluster/partialStart", "HTTP/1.1 403 Forbidden"),
-            new TestUrl(HOT_RESTART, POST, "/hazelcast/rest/management/cluster/hotBackup", "HTTP/1.1 403 Forbidden"),
-            new TestUrl(HOT_RESTART, POST, "/hazelcast/rest/management/cluster/hotBackupInterrupt", "HTTP/1.1 403 Forbidden"),
-            new TestUrl(WAN, POST, "/hazelcast/rest/mancenter/wan/sync/map", "HTTP/1.1 403 Forbidden"),
-            new TestUrl(WAN, POST, "/hazelcast/rest/mancenter/wan/sync/allmaps", "HTTP/1.1 403 Forbidden"),
-            new TestUrl(WAN, POST, "/hazelcast/rest/mancenter/wan/clearWanQueues", "HTTP/1.1 403 Forbidden"),
-            new TestUrl(WAN, POST, "/hazelcast/rest/mancenter/wan/addWanConfig", "HTTP/1.1 403 Forbidden"),
-            new TestUrl(WAN, POST, "/hazelcast/rest/mancenter/wan/pausePublisher", "HTTP/1.1 403 Forbidden"),
-            new TestUrl(WAN, POST, "/hazelcast/rest/mancenter/wan/stopPublisher", "HTTP/1.1 403 Forbidden"),
-            new TestUrl(WAN, POST, "/hazelcast/rest/mancenter/wan/resumePublisher", "HTTP/1.1 403 Forbidden"),
-            new TestUrl(WAN, POST, "/hazelcast/rest/mancenter/wan/consistencyCheck/map", "HTTP/1.1 403 Forbidden"),
-            new TestUrl(WAN, POST, "/hazelcast/rest/wan/sync/map", "HTTP/1.1 403 Forbidden"),
-            new TestUrl(WAN, POST, "/hazelcast/rest/wan/sync/allmaps", "HTTP/1.1 403 Forbidden"),
-            new TestUrl(WAN, POST, "/hazelcast/rest/mancenter/clearWanQueues", "HTTP/1.1 403 Forbidden"),
-            new TestUrl(WAN, POST, "/hazelcast/rest/wan/addWanConfig", "HTTP/1.1 403 Forbidden"),
+            new TestUrl(HOT_RESTART, POST, "/hazelcast/rest/management/cluster/forceStart", "HTTP/1.1 400 Bad Request"),
+            new TestUrl(HOT_RESTART, POST, "/hazelcast/rest/management/cluster/partialStart", "HTTP/1.1 400 Bad Request"),
+            new TestUrl(HOT_RESTART, POST, "/hazelcast/rest/management/cluster/hotBackup", "HTTP/1.1 400 Bad Request"),
+            new TestUrl(HOT_RESTART, POST, "/hazelcast/rest/management/cluster/hotBackupInterrupt", "HTTP/1.1 400 Bad Request"),
+            new TestUrl(WAN, POST, "/hazelcast/rest/wan/sync/map", "HTTP/1.1 400 Bad Request"),
+            new TestUrl(WAN, POST, "/hazelcast/rest/wan/sync/allmaps", "HTTP/1.1 400 Bad Request"),
+            new TestUrl(WAN, POST, "/hazelcast/rest/wan/clearWanQueues", "HTTP/1.1 400 Bad Request"),
+            new TestUrl(WAN, POST, "/hazelcast/rest/wan/addWanConfig", "HTTP/1.1 400 Bad Request"),
+            new TestUrl(WAN, POST, "/hazelcast/rest/wan/pausePublisher", "HTTP/1.1 400 Bad Request"),
+            new TestUrl(WAN, POST, "/hazelcast/rest/wan/stopPublisher", "HTTP/1.1 400 Bad Request"),
+            new TestUrl(WAN, POST, "/hazelcast/rest/wan/resumePublisher", "HTTP/1.1 400 Bad Request"),
+            new TestUrl(WAN, POST, "/hazelcast/rest/wan/consistencyCheck/map", "HTTP/1.1 400 Bad Request"),
+            new TestUrl(WAN, POST, "/hazelcast/rest/wan/addWanConfig", "HTTP/1.1 400 Bad Request"),
             new TestUrl(HEALTH_CHECK, GET, "/hazelcast/health/node-state", "ACTIVE"),
             new TestUrl(HEALTH_CHECK, GET, "/hazelcast/health/cluster-state", "ACTIVE"),
             new TestUrl(HEALTH_CHECK, GET, "/hazelcast/health/cluster-safe", "HTTP/1.1 200"),
@@ -87,9 +81,9 @@ public abstract class RestApiConfigTestBase extends AbstractTextProtocolsTestBas
             new TestUrl(DATA, POST, "/hazelcast/rest/queues/", "HTTP/1.1 400"),
             new TestUrl(DATA, GET, "/hazelcast/rest/queues/", "HTTP/1.1 400"),
             new TestUrl(DATA, DELETE, "/hazelcast/rest/queues/", "HTTP/1.1 400"),
-            new TestUrl(CLUSTER_WRITE, POST, "/hazelcast/1", "HTTP/1.1 404"),
-            new TestUrl(CLUSTER_WRITE, GET, "/hazelcast/1", "HTTP/1.1 404"),
-            new TestUrl(CLUSTER_WRITE, DELETE, "/hazelcast/1", "HTTP/1.1 404"),
+            new TestUrl(CLUSTER_WRITE, POST, "/hazelcast/1", ""),
+            new TestUrl(CLUSTER_WRITE, GET, "/hazelcast/1", ""),
+            new TestUrl(CLUSTER_WRITE, DELETE, "/hazelcast/1", ""),
     };
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,12 @@ package com.hazelcast.config;
 
 import com.hazelcast.spi.MemberAddressProvider;
 
+import javax.annotation.Nonnull;
+import java.util.Objects;
 import java.util.Properties;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
-
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
 
 /**
  * Configuration for a custom {@link MemberAddressProvider} strategy.
@@ -55,8 +57,9 @@ public final class MemberAddressProviderConfig {
         return className;
     }
 
-    public MemberAddressProviderConfig setClassName(String className) {
-        this.className = className;
+    public MemberAddressProviderConfig setClassName(@Nonnull String className) {
+        this.className = checkHasText(className, "Member address provider class name must contain text");
+        this.implementation = null;
         return this;
     }
 
@@ -74,8 +77,9 @@ public final class MemberAddressProviderConfig {
         return implementation;
     }
 
-    public MemberAddressProviderConfig setImplementation(MemberAddressProvider implementation) {
-        this.implementation = implementation;
+    public MemberAddressProviderConfig setImplementation(@Nonnull MemberAddressProvider implementation) {
+        this.implementation = checkNotNull(implementation, "Member address provider cannot be null!");
+        this.className = null;
         return this;
     }
 
@@ -90,7 +94,6 @@ public final class MemberAddressProviderConfig {
     }
 
     @Override
-    @SuppressWarnings("checkstyle:npathcomplexity")
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -101,25 +104,14 @@ public final class MemberAddressProviderConfig {
 
         MemberAddressProviderConfig that = (MemberAddressProviderConfig) o;
 
-        if (isEnabled() != that.isEnabled()) {
-            return false;
-        }
-        if (getClassName() != null ? !getClassName().equals(that.getClassName()) : that.getClassName() != null) {
-            return false;
-        }
-        if (!getProperties().equals(that.getProperties())) {
-            return false;
-        }
-        return getImplementation() != null ? getImplementation().equals(that.getImplementation())
-                : that.getImplementation() == null;
+        return isEnabled() == that.isEnabled()
+            && getProperties().equals(that.getProperties())
+            && Objects.equals(className, that.className)
+            && Objects.equals(implementation, that.implementation);
     }
 
     @Override
     public int hashCode() {
-        int result = (isEnabled() ? 1 : 0);
-        result = 31 * result + (getClassName() != null ? getClassName().hashCode() : 0);
-        result = 31 * result + getProperties().hashCode();
-        result = 31 * result + (getImplementation() != null ? getImplementation().hashCode() : 0);
-        return result;
+        return Objects.hash(isEnabled(), getProperties(), className, implementation);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,21 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.core.LocalMemberResetException;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterClock;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
-import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
@@ -56,6 +56,12 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_OPERATION_SERVICE_ASYNC_OPERATIONS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_OPERATION_SERVICE_CALL_TIMEOUT_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_OPERATION_SERVICE_FAILED_BACKUPS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_OPERATION_SERVICE_RETRY_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_OPERATION_SERVICE_TIMEOUT_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_PREFIX;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.CollectionUtil.asIntegerList;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
@@ -98,22 +104,22 @@ public final class OperationServiceImpl implements StaticMetricsProvider, LiveOp
 
     // contains the current executing asyncOperations. This information is needed for the operation-heartbeats.
     // operations are added/removed using the {@link Offload} functionality.
-    @Probe
-    final Set<Operation> asyncOperations = newSetFromMap(new ConcurrentHashMap<Operation, Boolean>());
+    @Probe(name = OPERATION_METRIC_OPERATION_SERVICE_ASYNC_OPERATIONS)
+    final Set<Operation> asyncOperations = newSetFromMap(new ConcurrentHashMap<>());
 
     final InvocationRegistry invocationRegistry;
     final OperationExecutor operationExecutor;
 
-    @Probe(name = "operationTimeoutCount", level = MANDATORY)
+    @Probe(name = OPERATION_METRIC_OPERATION_SERVICE_TIMEOUT_COUNT, level = MANDATORY)
     final MwCounter operationTimeoutCount = newMwCounter();
 
-    @Probe(name = "callTimeoutCount", level = MANDATORY)
+    @Probe(name = OPERATION_METRIC_OPERATION_SERVICE_CALL_TIMEOUT_COUNT, level = MANDATORY)
     final MwCounter callTimeoutCount = newMwCounter();
 
-    @Probe(name = "retryCount", level = MANDATORY)
+    @Probe(name = OPERATION_METRIC_OPERATION_SERVICE_RETRY_COUNT, level = MANDATORY)
     final MwCounter retryCount = newMwCounter();
 
-    @Probe(name = "failedBackups", level = MANDATORY)
+    @Probe(name = OPERATION_METRIC_OPERATION_SERVICE_FAILED_BACKUPS, level = MANDATORY)
     final Counter failedBackupsCount = newMwCounter();
 
     final NodeEngineImpl nodeEngine;
@@ -454,7 +460,7 @@ public final class OperationServiceImpl implements StaticMetricsProvider, LiveOp
 
     @Override
     public void provideStaticMetrics(MetricsRegistry registry) {
-        registry.registerStaticMetrics(this, "operation");
+        registry.registerStaticMetrics(this, OPERATION_PREFIX);
         registry.provideMetrics(invocationRegistry, invocationMonitor, inboundResponseHandlerSupplier, operationExecutor);
     }
 

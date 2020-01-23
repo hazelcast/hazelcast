@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -97,7 +97,7 @@ import static com.hazelcast.internal.util.ServiceLoader.classIterator;
  */
 @SuppressWarnings({"checkstyle:classfanoutcomplexity",
         "checkstyle:classdataabstractioncoupling", "checkstyle:methodcount"})
-public final class ProxyManager {
+public final class ProxyManager implements DistributedObjectListener {
 
     private static final String PROVIDER_ID = ClientProxyDescriptorProvider.class.getCanonicalName();
     private static final Class[] LEGACY_CONSTRUCTOR_ARGUMENT_TYPES = new Class[]{String.class, String.class};
@@ -105,28 +105,6 @@ public final class ProxyManager {
 
     private final ConcurrentMap<String, ClientProxyFactory> proxyFactories = new ConcurrentHashMap<>();
     private final ConcurrentMap<ObjectNamespace, ClientProxyFuture> proxies = new ConcurrentHashMap<>();
-
-    private final ListenerMessageCodec distributedObjectListenerCodec = new ListenerMessageCodec() {
-        @Override
-        public ClientMessage encodeAddRequest(boolean localOnly) {
-            return ClientAddDistributedObjectListenerCodec.encodeRequest(localOnly);
-        }
-
-        @Override
-        public UUID decodeAddResponse(ClientMessage clientMessage) {
-            return ClientAddDistributedObjectListenerCodec.decodeResponse(clientMessage).response;
-        }
-
-        @Override
-        public ClientMessage encodeRemoveRequest(UUID realRegistrationId) {
-            return ClientRemoveDistributedObjectListenerCodec.encodeRequest(realRegistrationId);
-        }
-
-        @Override
-        public boolean decodeRemoveResponse(ClientMessage clientMessage) {
-            return ClientRemoveDistributedObjectListenerCodec.decodeResponse(clientMessage).response;
-        }
-    };
 
     private final HazelcastClientInstanceImpl client;
 
@@ -138,6 +116,8 @@ public final class ProxyManager {
 
     @SuppressWarnings("checkstyle:methodlength")
     public void init(ClientConfig config, ClientContext clientContext) {
+        addDistributeObjectListenerInternal(this, true);
+
         List<ListenerConfig> listenerConfigs = client.getClientConfig().getListenerConfigs();
         if (listenerConfigs != null && !listenerConfigs.isEmpty()) {
             for (ListenerConfig listenerConfig : listenerConfigs) {
@@ -381,8 +361,7 @@ public final class ProxyManager {
     }
 
     public UUID addDistributedObjectListener(@Nonnull DistributedObjectListener listener) {
-        final EventHandler<ClientMessage> eventHandler = new DistributedObjectEventHandler(listener, this);
-        return client.getListenerService().registerListener(distributedObjectListenerCodec, eventHandler);
+        return addDistributeObjectListenerInternal(listener, false);
     }
 
     public void createDistributedObjectsOnCluster() {
@@ -407,6 +386,28 @@ public final class ProxyManager {
         }
     }
 
+    @Override
+    public void distributedObjectCreated(DistributedObjectEvent event) {
+        // no-op
+    }
+
+    @Override
+    public void distributedObjectDestroyed(DistributedObjectEvent event) {
+        /**
+         * TODO: This is a best effort solution. There are cases where a newly created object may still be destroyed.
+         * e.g. client restarts with a new UUID and creates the object and event is delivered later on.
+         * Only aims to fix the issue https://github.com/hazelcast/hazelcast/issues/12470 partially.
+         */
+
+        if (event.getSource().equals(client.getConnectionManager().getClientUuid())) {
+            // ignore destroy events which were originally initiated from this client
+            return;
+        }
+
+        // destroy local proxy
+        destroyProxyLocally(event.getServiceName(), (String) event.getObjectName());
+    }
+
     private final class DistributedObjectEventHandler extends ClientAddDistributedObjectListenerCodec.AbstractEventHandler
             implements EventHandler<ClientMessage> {
 
@@ -420,12 +421,12 @@ public final class ProxyManager {
         }
 
         @Override
-        public void handleDistributedObjectEvent(String name, String serviceName, String eventTypeName) {
+        public void handleDistributedObjectEvent(String name, String serviceName, String eventTypeName, UUID source) {
             final ObjectNamespace ns = new DistributedObjectNamespace(serviceName, name);
             ClientProxyFuture future = proxies.get(ns);
             ClientProxy proxy = future == null ? null : future.get();
             DistributedObjectEvent.EventType eventType = DistributedObjectEvent.EventType.valueOf(eventTypeName);
-            LazyDistributedObjectEvent event = new LazyDistributedObjectEvent(eventType, serviceName, name, proxy,
+            LazyDistributedObjectEvent event = new LazyDistributedObjectEvent(eventType, serviceName, name, proxy, source,
                     proxyManager);
             if (DistributedObjectEvent.EventType.CREATED.equals(eventType)) {
                 listener.distributedObjectCreated(event);
@@ -437,6 +438,39 @@ public final class ProxyManager {
 
     public boolean removeDistributedObjectListener(@Nonnull UUID id) {
         return client.getListenerService().deregisterListener(id);
+    }
+
+    private UUID addDistributeObjectListenerInternal(@Nonnull DistributedObjectListener listener, boolean isInternal) {
+        final EventHandler<ClientMessage> eventHandler = new DistributedObjectEventHandler(listener, this);
+        return client.getListenerService().registerListener(new DistributeObjectListenerMessageCodec(isInternal), eventHandler);
+    }
+
+    private static final class DistributeObjectListenerMessageCodec implements ListenerMessageCodec {
+        private final boolean isInternal;
+
+        private DistributeObjectListenerMessageCodec(boolean isInternal) {
+            this.isInternal = isInternal;
+        }
+
+        @Override
+        public ClientMessage encodeAddRequest(boolean localOnly) {
+            return ClientAddDistributedObjectListenerCodec.encodeRequest(localOnly, isInternal);
+        }
+
+        @Override
+        public UUID decodeAddResponse(ClientMessage clientMessage) {
+            return ClientAddDistributedObjectListenerCodec.decodeResponse(clientMessage).response;
+        }
+
+        @Override
+        public ClientMessage encodeRemoveRequest(UUID realRegistrationId) {
+            return ClientRemoveDistributedObjectListenerCodec.encodeRequest(realRegistrationId);
+        }
+
+        @Override
+        public boolean decodeRemoveResponse(ClientMessage clientMessage) {
+            return ClientRemoveDistributedObjectListenerCodec.decodeResponse(clientMessage).response;
+        }
     }
 
     private static class ClientProxyFuture {

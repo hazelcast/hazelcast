@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.hazelcast.spi.impl;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 
 import javax.annotation.Nonnull;
 import java.util.concurrent.CompletableFuture;
@@ -36,6 +36,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
+import static java.util.Objects.requireNonNull;
 
 /**
  * A {@link InternalCompletableFuture} implementation that delegates the real logic to an underlying
@@ -51,20 +52,22 @@ import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
  */
 @SuppressWarnings("checkstyle:methodcount")
 public class DelegatingCompletableFuture<V> extends InternalCompletableFuture<V> {
-    private static final AtomicReferenceFieldUpdater<DelegatingCompletableFuture, Object> DESERIALIZED_VALUE
-            = AtomicReferenceFieldUpdater.newUpdater(DelegatingCompletableFuture.class,
-            Object.class, "deserializedValue");
 
-    private static final Object VOID = new Object() {
+    protected static final Object VOID = new Object() {
         @Override
         public String toString() {
             return "void";
         }
     };
 
+    private static final AtomicReferenceFieldUpdater<DelegatingCompletableFuture, Object> DESERIALIZED_VALUE
+            = AtomicReferenceFieldUpdater.newUpdater(DelegatingCompletableFuture.class,
+            Object.class, "deserializedValue");
+
     protected final CompletableFuture future;
     protected final InternalSerializationService serializationService;
     protected final Object result;
+
     protected volatile Object deserializedValue = VOID;
 
     public DelegatingCompletableFuture(@Nonnull SerializationService serializationService,
@@ -153,18 +156,23 @@ public class DelegatingCompletableFuture<V> extends InternalCompletableFuture<V>
             //todo do we need to call dispose data here
             serializationService.disposeData(data);
 
-            // now we need to try to set the value for other users.
-            for (; ; ) {
-                Object current = deserializedValue;
-                if (current != VOID) {
-                    object = current;
-                    break;
-                } else if (DESERIALIZED_VALUE.compareAndSet(this, VOID, object)) {
-                    break;
-                }
-            }
+            object = cacheDeserializedValue(object);
         }
         return (V) object;
+    }
+
+    protected Object cacheDeserializedValue(Object object) {
+        for (; ; ) {
+            Object current = deserializedValue;
+            if (current != VOID) {
+                object = current;
+                break;
+            } else if (DESERIALIZED_VALUE.compareAndSet(this, VOID, object)) {
+                break;
+            }
+        }
+
+        return object;
     }
 
     @Override
@@ -419,11 +427,18 @@ public class DelegatingCompletableFuture<V> extends InternalCompletableFuture<V>
         return future.toString();
     }
 
+    // used for testing
+    public V getDeserializedValue() {
+        return (V) deserializedValue;
+    }
+
     static class DeserializingFunction<E, R> implements Function<E, R> {
         private final SerializationService serializationService;
         private final Function<E, R> delegate;
 
         DeserializingFunction(SerializationService serializationService, Function<E, R> delegate) {
+            requireNonNull(delegate);
+
             this.serializationService = serializationService;
             this.delegate = delegate;
         }
@@ -439,6 +454,8 @@ public class DelegatingCompletableFuture<V> extends InternalCompletableFuture<V>
         private final Consumer<E> delegate;
 
         DeserializingConsumer(SerializationService serializationService, Consumer<E> delegate) {
+            requireNonNull(delegate);
+
             this.serializationService = serializationService;
             this.delegate = delegate;
         }
@@ -454,6 +471,8 @@ public class DelegatingCompletableFuture<V> extends InternalCompletableFuture<V>
         private final BiFunction<T, U, R> delegate;
 
         DeserializingBiFunction(SerializationService serializationService, BiFunction<T, U, R> delegate) {
+            requireNonNull(delegate);
+
             this.serializationService = serializationService;
             this.delegate = delegate;
         }
@@ -470,6 +489,8 @@ public class DelegatingCompletableFuture<V> extends InternalCompletableFuture<V>
         private final BiConsumer<T, U> delegate;
 
         DeserializingBiConsumer(SerializationService serializationService, BiConsumer<T, U> delegate) {
+            requireNonNull(delegate);
+
             this.serializationService = serializationService;
             this.delegate = delegate;
         }

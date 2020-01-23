@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,17 +23,18 @@ import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheRecordStore;
 import com.hazelcast.internal.nearcache.impl.store.NearCacheDataRecordStore;
 import com.hazelcast.internal.nearcache.impl.store.NearCacheObjectRecordStore;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nearcache.NearCacheStats;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.executionservice.TaskScheduler;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.internal.serialization.SerializationService;
 
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.config.NearCacheConfig.DEFAULT_MEMORY_FORMAT;
+import static com.hazelcast.internal.util.Preconditions.checkInstanceOf;
 import static com.hazelcast.internal.util.Preconditions.checkNotInstanceOf;
 
 public class DefaultNearCache<K, V> implements NearCache<K, V> {
@@ -99,9 +100,10 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
     }
 
     private ScheduledFuture createAndScheduleExpirationTask() {
-        if (nearCacheConfig.getMaxIdleSeconds() > 0L || nearCacheConfig.getTimeToLiveSeconds() > 0L) {
-            ExpirationTask expirationTask = new ExpirationTask();
-            return expirationTask.schedule(scheduler);
+        if (nearCacheConfig.getMaxIdleSeconds() > 0L
+                || nearCacheConfig.getTimeToLiveSeconds() > 0L) {
+
+            return new ExpirationTask().schedule(scheduler);
         }
         return null;
     }
@@ -112,12 +114,18 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
     }
 
     @Override
+    public NearCacheConfig getNearCacheConfig() {
+        return nearCacheConfig;
+    }
+
+    @Override
     public V get(K key) {
         checkKeyFormat(key);
 
         return nearCacheRecordStore.get(key);
     }
 
+    // only implemented for testing purposes
     @Override
     public void put(K key, Data keyData, V value, Data valueData) {
         checkKeyFormat(key);
@@ -191,10 +199,10 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
     }
 
     @Override
-    public long tryReserveForUpdate(K key, Data keyData) {
+    public long tryReserveForUpdate(K key, Data keyData, UpdateSemantic updateSemantic) {
         nearCacheRecordStore.doEviction(false);
 
-        return nearCacheRecordStore.tryReserveForUpdate(key, keyData);
+        return nearCacheRecordStore.tryReserveForUpdate(key, keyData, updateSemantic);
     }
 
     @Override
@@ -207,7 +215,9 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
     }
 
     private void checkKeyFormat(K key) {
-        if (!serializeKeys) {
+        if (serializeKeys) {
+            checkInstanceOf(Data.class, key, "key must be of type Data!");
+        } else {
             checkNotInstanceOf(Data.class, key, "key cannot be of type Data!");
         }
     }
@@ -233,5 +243,14 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
                     properties.getInteger(TASK_PERIOD_SECONDS),
                     TimeUnit.SECONDS);
         }
+    }
+
+    @Override
+    public String toString() {
+        return "DefaultNearCache{"
+                + "name='" + name + '\''
+                + ", nearCacheConfig=" + nearCacheConfig
+                + ", preloadDone=" + preloadDone
+                + '}';
     }
 }

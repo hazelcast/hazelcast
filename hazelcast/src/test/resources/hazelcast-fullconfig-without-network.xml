@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -41,18 +41,10 @@
            xsi:schemaLocation="http://www.hazelcast.com/schema/config
            http://www.hazelcast.com/schema/config/hazelcast-config-4.0.xsd">
 
-    <cluster-name>dev</cluster-name>
+    <cluster-name>my-cluster</cluster-name>
     <license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</license-key>
     <instance-name>dummy</instance-name>
-    <management-center enabled="true" update-interval="5" scripting-enabled="false">
-        <url>http://mywebserver:8080</url>
-        <mutual-auth enabled="true">
-            <factory-class-name>com.hazelcast.examples.MySSLContextFactory</factory-class-name>
-            <properties>
-                <property name="foo">bar</property>
-            </properties>
-        </mutual-auth>
-    </management-center>
+    <management-center scripting-enabled="false" />
 
     <properties>
         <property name="foo">bar</property>
@@ -70,9 +62,9 @@
             <response-timeout-millis>5000</response-timeout-millis>
             <acknowledge-type>ACK_ON_RECEIPT</acknowledge-type>
             <target-endpoints>10.3.5.1:5701, 10.3.5.2:5701</target-endpoints>
-            <wan-sync>
+            <sync>
                 <consistency-check-strategy>MERKLE_TREES</consistency-check-strategy>
-            </wan-sync>
+            </sync>
         </batch-publisher>
         <batch-publisher>
             <cluster-name>istanbul</cluster-name>
@@ -323,7 +315,7 @@
         </near-cache>
 
         <wan-replication-ref name="my-wan-cluster">
-            <merge-policy>hz.PASS_THROUGH</merge-policy>
+            <merge-policy-class-name>hz.PASS_THROUGH</merge-policy-class-name>
             <filters>
                 <filter-impl>com.example.WanTestFilter1</filter-impl>
                 <filter-impl>com.example.WanTestFilter2</filter-impl>
@@ -332,15 +324,47 @@
         </wan-replication-ref>
 
         <indexes>
+            <!-- unordered/hash index on the name attribute -->
             <index type="HASH">
                 <attributes>
                     <attribute>name</attribute>
                 </attributes>
             </index>
+            <!-- ordered/tree index on the age attribute -->
             <index>
                 <attributes>
                     <attribute>age</attribute>
                 </attributes>
+            </index>
+            <!-- composite unordered/hash index on the name and age attributes -->
+            <index type="HASH">
+                <attributes>
+                    <attribute>name</attribute>
+                    <attribute>age</attribute>
+                </attributes>
+            </index>
+            <!-- composite ordered/tree index on the age and name attributes -->
+            <index>
+                <attributes>
+                    <attribute>age</attribute>
+                    <attribute>name</attribute>
+                </attributes>
+            </index>
+            <!-- bitmap index on the age attribute -->
+            <index type="BITMAP">
+                <attributes>
+                    <attribute>age</attribute>
+                </attributes>
+            </index>
+            <!-- bitmap index on the name attribute with options -->
+            <index type="BITMAP">
+                <attributes>
+                    <attribute>name</attribute>
+                </attributes>
+                <bitmap-index-options>
+                    <unique-key>id</unique-key>
+                    <unique-key-transformation>RAW</unique-key-transformation>
+                </bitmap-index-options>
             </index>
         </indexes>
 
@@ -494,7 +518,7 @@
         <eviction comparator-class-name="DummyClass" eviction-policy="LRU"
                   max-size-policy="ENTRY_COUNT" size="50"/>
         <wan-replication-ref name="my-wan-cluster">
-            <merge-policy>hz.PASS_THROUGH</merge-policy>
+            <merge-policy-class-name>hz.PASS_THROUGH</merge-policy-class-name>
             <filters>
                 <filter-impl>com.example.WanTestFilter1</filter-impl>
                 <filter-impl>com.example.WanTestFilter2</filter-impl>
@@ -517,14 +541,16 @@
     <flake-id-generator name="default">
         <prefetch-count>100</prefetch-count>
         <prefetch-validity-millis>600000</prefetch-validity-millis>
-        <id-offset>0</id-offset>
+        <epoch-start>1514764800000</epoch-start>
         <node-id-offset>0</node-id-offset>
+        <bits-sequence>6</bits-sequence>
+        <bits-node-id>16</bits-node-id>
+        <allowed-future-millis>15000</allowed-future-millis>
         <statistics-enabled>false</statistics-enabled>
     </flake-id-generator>
 
     <listeners>
         <listener>com.hazelcast.examples.MembershipListener</listener>
-        <listener>com.hazelcast.examples.InstanceListener</listener>
         <listener>com.hazelcast.examples.MigrationListener</listener>
         <listener>com.hazelcast.examples.PartitionLostListener</listener>
     </listeners>

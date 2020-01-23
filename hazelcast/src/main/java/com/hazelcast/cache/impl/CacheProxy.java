@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.impl.MapEntries;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -314,13 +314,13 @@ public class CacheProxy<K, V> extends CacheProxySupport<K, V>
     @Override
     public Iterator<Entry<K, V>> iterator() {
         ensureOpen();
-        return new ClusterWideIterator<>(this, false);
+        return new CachePartitionsIterator<>(this, false);
     }
 
     @Override
     public Iterator<Entry<K, V>> iterator(int fetchSize) {
         ensureOpen();
-        return new ClusterWideIterator<>(this, fetchSize, false);
+        return new CachePartitionsIterator<>(this, fetchSize, false);
     }
 
     @Override

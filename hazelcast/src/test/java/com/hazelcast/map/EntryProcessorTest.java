@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.EntryView;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.HazelcastJsonValue;
@@ -38,7 +37,7 @@ import com.hazelcast.map.listener.EntryRemovedListener;
 import com.hazelcast.map.listener.EntryUpdatedListener;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder.EntryObject;
@@ -117,7 +116,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
     @Override
     public Config getConfig() {
-        Config config = super.getConfig();
+        Config config = smallInstanceConfig();
         MapConfig mapConfig = new MapConfig(MAP_NAME);
         mapConfig.setInMemoryFormat(inMemoryFormat);
         config.addMapConfig(mapConfig);
@@ -527,17 +526,11 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         IncrementorEntryProcessor<Integer> entryProcessor = new IncrementorEntryProcessor<>();
         final AtomicInteger result = new AtomicInteger(0);
         final CountDownLatch latch = new CountDownLatch(1);
-        map.submitToKey(1, entryProcessor, new ExecutionCallback<Integer>() {
-            @Override
-            public void onResponse(Integer response) {
-                result.set(response);
-                latch.countDown();
+        map.submitToKey(1, entryProcessor).whenCompleteAsync((v, t) -> {
+            if (t == null) {
+                result.set(v);
             }
-
-            @Override
-            public void onFailure(Throwable t) {
-                latch.countDown();
-            }
+            latch.countDown();
         });
 
         latch.await(10, TimeUnit.SECONDS);
@@ -1039,18 +1032,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         map.put(1, 1);
 
         final CountDownLatch latch = new CountDownLatch(1);
-        ExecutionCallback<Integer> executionCallback = new ExecutionCallback<Integer>() {
-            @Override
-            public void onResponse(Integer response) {
-                latch.countDown();
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-            }
-        };
-
-        map.submitToKey(1, new IncrementorEntryProcessor<>(), executionCallback);
+        map.submitToKey(1, new IncrementorEntryProcessor<>()).thenRunAsync(latch::countDown);
         assertTrue(latch.await(5, TimeUnit.SECONDS));
         assertEquals(2, (int) map.get(1));
     }
@@ -1352,7 +1334,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     public void receivesEntryRemovedEvent_onPostProcessingMapStore_after_executeOnKey() {
         Config config = getConfig();
         config.getMapConfig(MAP_NAME)
-              .getMapStoreConfig().setEnabled(true).setImplementation(new TestPostProcessingMapStore());
+                .getMapStoreConfig().setEnabled(true).setImplementation(new TestPostProcessingMapStore());
         HazelcastInstance node = createHazelcastInstance(config);
         IMap<Integer, Integer> map = node.getMap(MAP_NAME);
         final CountDownLatch latch = new CountDownLatch(1);
@@ -1372,7 +1354,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     public void receivesEntryRemovedEvent_onPostProcessingMapStore_after_executeOnEntries() {
         Config config = getConfig();
         config.getMapConfig(MAP_NAME)
-              .getMapStoreConfig().setEnabled(true).setImplementation(new TestPostProcessingMapStore());
+                .getMapStoreConfig().setEnabled(true).setImplementation(new TestPostProcessingMapStore());
         HazelcastInstance node = createHazelcastInstance(config);
         IMap<Integer, Integer> map = node.getMap(MAP_NAME);
         final CountDownLatch latch = new CountDownLatch(1);
@@ -1646,8 +1628,8 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     private void testEntryProcessorWithPredicate_updatesLastAccessTime(boolean accessExpected) {
         Config config = withoutNetworkJoin(smallInstanceConfig());
         config.getMapConfig(MAP_NAME)
-              .setTimeToLiveSeconds(60)
-              .setMaxIdleSeconds(30);
+                .setTimeToLiveSeconds(60)
+                .setMaxIdleSeconds(30);
 
         HazelcastInstance member = createHazelcastInstance(config);
         IMap<String, String> map = member.getMap(MAP_NAME);

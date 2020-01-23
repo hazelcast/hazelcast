@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ExceptionUtil.peel;
 import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 
@@ -54,7 +55,9 @@ public class ReadMetricsOperation extends Operation implements ReadonlyOperation
         ILogger logger = getNodeEngine().getLogger(getClass());
         MetricsService service = getService();
         CompletableFuture<RingbufferSlice<Entry<Long, byte[]>>> future = service.readMetrics(offset);
-        future.whenComplete(withTryCatch(logger, (slice, error) -> doSendResponse(error != null ? peel(error) : slice)));
+        future.whenCompleteAsync(
+                withTryCatch(logger, (slice, error) -> doSendResponse(error != null ? peel(error) : slice))
+                , CALLER_RUNS);
     }
 
     @Override

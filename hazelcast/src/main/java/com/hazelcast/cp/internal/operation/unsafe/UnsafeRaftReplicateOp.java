@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,9 +44,9 @@ public class UnsafeRaftReplicateOp extends AbstractUnsafeRaftOp implements Backu
         if (response == PostponedResponse.INSTANCE) {
             RaftService service = getService();
             service.registerUnsafeWaitingOperation(groupId, commitIndex, this);
-            return CallStatus.DONE_VOID_BACKUP;
+            return CallStatus.VOID;
         }
-        return CallStatus.DONE_RESPONSE;
+        return CallStatus.RESPONSE;
     }
 
     @Override

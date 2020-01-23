@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,13 +25,13 @@ import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.monitor.impl.LocalTopicStatsImpl;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.internal.services.RemoteService;
 import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.HashUtil;
 import com.hazelcast.internal.util.MapUtil;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.EventPublishingService;
@@ -55,7 +55,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TOPIC_PREFIX;
 import static com.hazelcast.internal.metrics.impl.ProviderHelper.provide;
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
 
 public class TopicService implements ManagedService, RemoteService, EventPublishingService,
@@ -116,7 +118,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
     }
 
     @Override
-    public ITopic createDistributedObject(String name, boolean local) {
+    public ITopic createDistributedObject(String name, UUID source, boolean local) {
         TopicConfig topicConfig = nodeEngine.getConfig().findTopicConfig(name);
 
         if (topicConfig.isGlobalOrderingEnabled()) {
@@ -198,7 +200,8 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
 
     public
     Future<UUID> addMessageListenerAsync(@Nonnull String name, @Nonnull MessageListener listener) {
-        return eventService.registerListenerAsync(TopicService.SERVICE_NAME, name, listener).thenApply(EventRegistration::getId);
+        return eventService.registerListenerAsync(TopicService.SERVICE_NAME, name, listener)
+                           .thenApplyAsync(EventRegistration::getId, CALLER_RUNS);
     }
 
     public boolean removeMessageListener(@Nonnull String name, @Nonnull UUID registrationId) {
@@ -224,6 +227,6 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
 
     @Override
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
-        provide(descriptor, context, "topic", getStats());
+        provide(descriptor, context, TOPIC_PREFIX, getStats());
     }
 }

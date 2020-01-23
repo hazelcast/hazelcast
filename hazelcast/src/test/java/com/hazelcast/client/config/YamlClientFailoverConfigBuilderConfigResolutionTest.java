@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -189,7 +189,7 @@ public class YamlClientFailoverConfigBuilderConfigResolutionTest {
     }
 
     @Test
-    public void testResolveFromWorkDir() throws Exception {
+    public void testResolveFromWorkDirYamlButNotYml() throws Exception {
         helper.givenYamlClientFailoverConfigFileInWorkDir(42);
 
         ClientFailoverConfig config = new YamlClientFailoverConfigBuilder().build();
@@ -198,8 +198,46 @@ public class YamlClientFailoverConfigBuilderConfigResolutionTest {
     }
 
     @Test
-    public void testResolveFromClasspath() throws Exception {
+    public void testResolveFromWorkDirYmlButNotYaml() throws Exception {
+        helper.givenYmlClientFailoverConfigFileInWorkDir(42);
+
+        ClientFailoverConfig config = new YamlClientFailoverConfigBuilder().build();
+
+        assertEquals(42, config.getTryCount());
+    }
+
+    @Test
+    public void testResolveFromWorkDirYamlAndYaml() throws Exception {
+        helper.givenYamlClientFailoverConfigFileInWorkDir(42);
+        helper.givenYmlClientFailoverConfigFileInWorkDir(24);
+
+        ClientFailoverConfig config = new YamlClientFailoverConfigBuilder().build();
+
+        assertEquals(42, config.getTryCount());
+    }
+
+    @Test
+    public void testResolveFromClasspathYamlButNotYml() throws Exception {
         helper.givenYamlClientFailoverConfigFileOnClasspath(42);
+
+        ClientFailoverConfig config = new YamlClientFailoverConfigBuilder().build();
+
+        assertEquals(42, config.getTryCount());
+    }
+
+    @Test
+    public void testResolveFromClasspathYmlButNotYaml() throws Exception {
+        helper.givenYmlClientFailoverConfigFileOnClasspath(42);
+
+        ClientFailoverConfig config = new YamlClientFailoverConfigBuilder().build();
+
+        assertEquals(42, config.getTryCount());
+    }
+
+    @Test
+    public void testResolveFromClasspathYamlAndYml() throws Exception {
+        helper.givenYamlClientFailoverConfigFileOnClasspath(42);
+        helper.givenYmlClientFailoverConfigFileOnClasspath(24);
 
         ClientFailoverConfig config = new YamlClientFailoverConfigBuilder().build();
 

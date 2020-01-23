@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,17 +34,13 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
-import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
 
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.nio.IOUtil.deleteQuietly;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.doThrow;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -127,12 +123,12 @@ public class NearCachePreloaderLockTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testRelease() throws Exception {
-        FileLock lock = mock(FileLock.class);
-        doThrow(new IOException("expected exception")).when(lock).release();
-
-        preloaderLock.releaseInternal(lock, channel);
-
-        verify(logger).severe(anyString(), any(IOException.class));
+    public void testRelease() {
+        try {
+            preloaderLock.release();
+        } catch (Throwable e) {
+            e.printStackTrace();
+            fail("Cannot release preloaderLock");
+        }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,6 +59,9 @@ public final class LifecycleServiceImpl implements LifecycleService {
     private final AtomicBoolean active = new AtomicBoolean(false);
     private final BuildInfo buildInfo;
     private final ExecutorService executor;
+
+    /** Monitor which ensures that all client components are down when shutdown() is finished. */
+    private final Object shutdownMux = new Object();
 
     public LifecycleServiceImpl(HazelcastClientInstanceImpl client) {
         this.client = client;
@@ -159,16 +162,18 @@ public final class LifecycleServiceImpl implements LifecycleService {
     }
 
     private void doShutdown() {
-        if (!active.compareAndSet(true, false)) {
-            return;
+        synchronized (shutdownMux) {
+            if (!active.compareAndSet(true, false)) {
+                return;
+            }
+
+            fireLifecycleEvent(SHUTTING_DOWN);
+            HazelcastClient.shutdown(client.getName());
+            client.doShutdown();
+            fireLifecycleEvent(SHUTDOWN);
+
+            shutdownExecutor();
         }
-
-        fireLifecycleEvent(SHUTTING_DOWN);
-        HazelcastClient.shutdown(client.getName());
-        client.doShutdown();
-        fireLifecycleEvent(SHUTDOWN);
-
-        shutdownExecutor();
     }
 
     private void shutdownExecutor() {

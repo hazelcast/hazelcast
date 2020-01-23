@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.hazelcast.client.config;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.config.AliasedDiscoveryConfig;
+import com.hazelcast.config.ConfigCompatibilityChecker;
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
@@ -42,11 +43,14 @@ import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
+import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.StreamSerializer;
+import com.hazelcast.nio.ssl.SSLContextFactory;
+import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -55,10 +59,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import javax.net.ssl.SSLContext;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.ByteOrder;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -200,9 +204,29 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
         clientConfig.getNetworkConfig().setSSLConfig(expected);
 
         SSLConfig actual = newConfigViaGenerator().getNetworkConfig().getSSLConfig();
-        assertEquals(expected.isEnabled(), actual.isEnabled());
-        assertEquals(expected.getFactoryClassName(), actual.getFactoryClassName());
-        assertProperties(expected.getProperties(), actual.getProperties());
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void networkSsl_class() {
+        SSLConfig expected = new SSLConfig();
+        expected.setFactoryImplementation(new TestSSLContextFactory())
+            .setEnabled(true)
+            .setProperty("prop", randomString());
+        clientConfig.getNetworkConfig().setSSLConfig(expected);
+
+        SSLConfig actual = newConfigViaGenerator().getNetworkConfig().getSSLConfig();
+        ConfigCompatibilityChecker.checkSSLConfig(expected, actual);
+    }
+
+    private static class TestSSLContextFactory implements SSLContextFactory {
+        @Override
+        public void init(Properties properties) throws Exception { }
+
+        @Override
+        public SSLContext getSSLContext() {
+            return null;
+        }
     }
 
     @Test
@@ -263,13 +287,6 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
                         return o1.getClassName().equals(o2.getClassName()) ? 0 : -1;
                     }
                 });
-    }
-
-    @Test
-    public void executorPoolSize() {
-        clientConfig.setExecutorPoolSize(randomInt());
-        ClientConfig actual = newConfigViaGenerator();
-        assertEquals(clientConfig.getExecutorPoolSize(), actual.getExecutorPoolSize());
     }
 
     @Test
@@ -428,16 +445,21 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
         assertTrue(actual instanceof RandomLB);
     }
 
-    @Test
-    public void nearCache() {
+    private NearCacheConfig createNearCacheConfig(String name) {
         NearCacheConfig expected = new NearCacheConfig();
         expected.setInMemoryFormat(InMemoryFormat.NATIVE)
-                .setSerializeKeys(true)
-                .setInvalidateOnChange(false)
-                .setTimeToLiveSeconds(randomInt())
-                .setMaxIdleSeconds(randomInt())
-                .setLocalUpdatePolicy(CACHE_ON_UPDATE)
-                .setName(randomString())
+            .setSerializeKeys(true)
+            .setInvalidateOnChange(false)
+            .setTimeToLiveSeconds(randomInt())
+            .setMaxIdleSeconds(randomInt())
+            .setLocalUpdatePolicy(CACHE_ON_UPDATE)
+            .setName(name);
+        return expected;
+    }
+
+    @Test
+    public void nearCache() {
+        NearCacheConfig expected = createNearCacheConfig(randomString())
                 .setPreloaderConfig(
                         new NearCachePreloaderConfig()
                                 .setEnabled(true)
@@ -449,9 +471,7 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
                         new EvictionConfig()
                                 .setEvictionPolicy(LFU)
                                 .setMaxSizePolicy(USED_NATIVE_MEMORY_SIZE)
-                                //Comparator class name cannot set via xml
-                                //see https://github.com/hazelcast/hazelcast/issues/14093
-                                //.setComparatorClassName(randomString())
+                                .setComparatorClassName(randomString())
                                 .setSize(randomInt())
                 );
         clientConfig.addNearCacheConfig(expected);
@@ -461,39 +481,91 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void queryCache() {
-        QueryCacheConfig expected = new QueryCacheConfig();
-        expected.setBufferSize(randomInt())
-                .setInMemoryFormat(InMemoryFormat.OBJECT)
-                .setName(randomString())
-                .setBatchSize(randomInt())
-                .setCoalesce(true)
-                .setDelaySeconds(randomInt())
-                .setIncludeValue(false)
-                .setPopulate(false)
-                .setPredicateConfig(new PredicateConfig(randomString()))
-                .setEvictionConfig(
-                        new EvictionConfig()
-                                .setEvictionPolicy(LFU)
-                                .setMaxSizePolicy(USED_NATIVE_MEMORY_SIZE)
-                                //Comparator class name cannot set via xml
-                                //see https://github.com/hazelcast/hazelcast/issues/14093
-                                //.setComparatorClassName(randomString())
-                                .setSize(randomInt())
-                ).addIndexConfig(
+    public void nearCache_evictionConfigWithPolicyComparator() {
+        String nearCacheName = randomString();
+        NearCacheConfig expected = createNearCacheConfig(nearCacheName)
+            .setPreloaderConfig(
+                new NearCachePreloaderConfig()
+                    .setEnabled(true)
+                    .setDirectory(randomString())
+                    .setStoreInitialDelaySeconds(randomInt())
+                    .setStoreIntervalSeconds(randomInt())
+            )
+            .setEvictionConfig(
+                new EvictionConfig()
+                    .setEvictionPolicy(LFU)
+                    .setMaxSizePolicy(USED_NATIVE_MEMORY_SIZE)
+                    .setComparator(new TestEvictionPolicyComparator())
+                    .setSize(randomInt())
+            );
+        clientConfig.addNearCacheConfig(expected);
+
+        NearCacheConfig actual = newConfigViaGenerator().getNearCacheConfigMap().get(nearCacheName);
+        ConfigCompatibilityChecker.checkNearCacheConfig(expected, actual);
+    }
+
+    private static class TestEvictionPolicyComparator implements EvictionPolicyComparator {
+        @Override
+        public int compare(Object o1, Object o2) {
+            return 0;
+        }
+    }
+
+    private QueryCacheConfig createQueryCacheConfig(String name) {
+        return new QueryCacheConfig()
+            .setBufferSize(randomInt())
+            .setInMemoryFormat(InMemoryFormat.OBJECT)
+            .setName(name)
+            .setBatchSize(randomInt())
+            .setCoalesce(true)
+            .setDelaySeconds(randomInt())
+            .setIncludeValue(false)
+            .setPopulate(false)
+            .setPredicateConfig(new PredicateConfig(randomString()))
+            .setEvictionConfig(
+                new EvictionConfig()
+                    .setEvictionPolicy(LFU)
+                    .setMaxSizePolicy(USED_NATIVE_MEMORY_SIZE)
+                    .setComparatorClassName(randomString())
+                    .setSize(randomInt())
+            ).addIndexConfig(
                 new IndexConfig()
-                        .setType(IndexType.SORTED)
-                        .addAttribute(randomString())
-        ).addEntryListenerConfig(
+                    .setType(IndexType.SORTED)
+                    .addAttribute(randomString())
+            );
+    }
+
+    @Test
+    public void queryCache() {
+        QueryCacheConfig expected = createQueryCacheConfig(randomString())
+            .addEntryListenerConfig(
                 (EntryListenerConfig) new EntryListenerConfig()
-                        .setIncludeValue(true)
-                        .setLocal(true)
-                        .setClassName(randomString()));
+                    .setIncludeValue(true)
+                    .setLocal(true)
+                    .setClassName(randomString()));
         clientConfig.addQueryCacheConfig(randomString(), expected);
 
         Map<String, Map<String, QueryCacheConfig>> actual = newConfigViaGenerator().getQueryCacheConfigs();
         assertMap(clientConfig.getQueryCacheConfigs(), actual);
     }
+
+    @Test
+    public void queryCache_withEntryEventListenerClass() {
+        String queryCacheName = randomString();
+        QueryCacheConfig expected = createQueryCacheConfig(queryCacheName)
+            .addEntryListenerConfig(
+                new EntryListenerConfig()
+                    .setIncludeValue(true)
+                    .setLocal(true)
+                    .setImplementation(new TestMapListener()));
+        String mapName = randomString();
+        clientConfig.addQueryCacheConfig(mapName, expected);
+
+        QueryCacheConfig actual = newConfigViaGenerator().getQueryCacheConfigs().get(mapName).get(queryCacheName);
+        ConfigCompatibilityChecker.checkQueryCacheConfig(expected, actual);
+    }
+
+    private static class TestMapListener implements MapListener { }
 
     @Test
     public void connectionStrategy() {
@@ -567,11 +639,6 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
 
     private static int randomInt(int bound) {
         return RANDOM.nextInt(bound) + 1;
-    }
-
-    private static <T> void assertCollection(Collection<T> expected, Collection<T> actual) {
-        assertEquals(expected.size(), actual.size());
-        assertContainsAll(actual, expected);
     }
 
     private static <K, V> void assertMap(Map<K, V> expected, Map<K, V> actual) {

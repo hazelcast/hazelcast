@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,13 @@ package com.hazelcast.internal.nearcache.impl.invalidation;
 
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.impl.DefaultNearCache;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.internal.util.ContextMutexFactory;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.executionservice.TaskScheduler;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.util.ConstructorFunction;
-import com.hazelcast.internal.util.ContextMutexFactory;
 
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -218,16 +218,8 @@ public final class RepairingTask implements Runnable {
     private void initRepairingHandler(RepairingHandler handler) {
         logger.finest("Initializing repairing handler");
 
-        boolean initialized = false;
-        try {
-            invalidationMetaDataFetcher.init(handler);
-            initialized = true;
-        } catch (Exception e) {
-            logger.warning(e);
-        } finally {
-            if (!initialized) {
-                initRepairingHandlerAsync(handler);
-            }
+        if (!invalidationMetaDataFetcher.init(handler)) {
+            initRepairingHandlerAsync(handler);
         }
     }
 

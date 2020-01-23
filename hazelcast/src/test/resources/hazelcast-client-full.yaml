@@ -1,4 +1,4 @@
-# Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+# Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -34,9 +34,8 @@ hazelcast-client:
           secretKeyAlgorithm: DES
           secretKeyFactoryAlgorithm: PBKDF2WithHmacSHA1
 
-  cluster-name: dev
+  cluster-name: my-cluster
   instance-name: CLIENT_NAME
-  license-key: HAZELCAST_ENTERPRISE_LICENSE_KEY
   properties:
     hazelcast.client.shuffle.member.list: true
     hazelcast.client.heartbeat.timeout: 60000
@@ -140,8 +139,6 @@ hazelcast-client:
             key-int: 123
             key-boolean: true
 
-  executor-pool-size: 40
-
   security:
     credentials: com.hazelcast.security.UsernamePasswordCredentials
     credentials-factory:
@@ -151,7 +148,6 @@ hazelcast-client:
 
   listeners:
     - com.hazelcast.examples.MembershipListener
-    - com.hazelcast.examples.InstanceListener
     - com.hazelcast.examples.MigrationListener
 
   serialization:

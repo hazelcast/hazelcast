@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import java.util.Set;
  * more information see the {@link Operation#call()}.
  *
  * If the operation 'offloads' some work, but doesn't send a response ever,
- * {@link CallStatus#DONE_VOID} should be used instead.
+ * {@link CallStatus#VOID} should be used instead.
  *
  * <h1>Response handling</h1>
  * When the {@link Offload#init(NodeEngineImpl, Set)} is called, the original

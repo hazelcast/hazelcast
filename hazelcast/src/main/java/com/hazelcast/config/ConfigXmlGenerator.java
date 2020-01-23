@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -131,7 +131,7 @@ public class ConfigXmlGenerator {
                 .node("cluster-name", config.getClusterName())
                 ;
 
-        manCenterXmlGenerator(gen, config);
+        managementCenterXmlGenerator(gen, config);
         gen.appendProperties(config.getProperties());
         securityXmlGenerator(gen, config);
         wanReplicationXmlGenerator(gen, config);
@@ -174,17 +174,11 @@ public class ConfigXmlGenerator {
         return maskSensitiveFields ? MASK_FOR_SENSITIVE_DATA : value;
     }
 
-    private void manCenterXmlGenerator(XmlGenerator gen, Config config) {
+    private void managementCenterXmlGenerator(XmlGenerator gen, Config config) {
         if (config.getManagementCenterConfig() != null) {
             ManagementCenterConfig mcConfig = config.getManagementCenterConfig();
             gen.open("management-center",
-                    "enabled", mcConfig.isEnabled(),
-                    "scripting-enabled", mcConfig.isScriptingEnabled(),
-                    "update-interval", mcConfig.getUpdateInterval());
-            gen.node("url", mcConfig.getUrl());
-            if (mcConfig.getUrl() != null) {
-                mcMutualAuthConfigXmlGenerator(gen, config.getManagementCenterConfig());
-            }
+                    "scripting-enabled", mcConfig.isScriptingEnabled());
             gen.close();
         }
     }
@@ -207,7 +201,6 @@ public class ConfigXmlGenerator {
         }
     }
 
-    @SuppressWarnings("deprecation")
     private static void replicatedMapConfigXmlGenerator(XmlGenerator gen, Config config) {
         for (ReplicatedMapConfig r : config.getReplicatedMapConfigs().values()) {
             MergePolicyConfig mergePolicyConfig = r.getMergePolicyConfig();
@@ -534,6 +527,7 @@ public class ConfigXmlGenerator {
                     .node("pool-size", ex.getPoolSize())
                     .node("durability", ex.getDurability())
                     .node("capacity", ex.getCapacity())
+                    .node("capacity-policy", ex.getCapacityPolicy().name())
                     .node("split-brain-protection-ref", ex.getSplitBrainProtectionName())
                     .node("merge-policy", mergePolicyConfig.getPolicy(), "batch-size", mergePolicyConfig.getBatchSize())
                     .close();
@@ -629,8 +623,10 @@ public class ConfigXmlGenerator {
             QueueStoreConfig storeConfig = q.getQueueStoreConfig();
             if (storeConfig != null) {
                 gen.open("queue-store", "enabled", storeConfig.isEnabled())
-                        .node("class-name", storeConfig.getClassName())
-                        .node("factory-class-name", storeConfig.getFactoryClassName())
+                        .node("class-name",
+                            classNameOrImplClass(storeConfig.getClassName(), storeConfig.getStoreImplementation()))
+                        .node("factory-class-name",
+                            classNameOrImplClass(storeConfig.getFactoryClassName(), storeConfig.getFactoryImplementation()))
                         .appendProperties(storeConfig.getProperties())
                         .close();
             }
@@ -655,8 +651,10 @@ public class ConfigXmlGenerator {
             RingbufferStoreConfig storeConfig = rbConfig.getRingbufferStoreConfig();
             if (storeConfig != null) {
                 gen.open("ringbuffer-store", "enabled", storeConfig.isEnabled())
-                        .node("class-name", storeConfig.getClassName())
-                        .node("factory-class-name", storeConfig.getFactoryClassName())
+                        .node("class-name",
+                            classNameOrImplClass(storeConfig.getClassName(), storeConfig.getStoreImplementation()))
+                        .node("factory-class-name",
+                            classNameOrImplClass(storeConfig.getFactoryClassName(), storeConfig.getFactoryImplementation()))
                         .appendProperties(storeConfig.getProperties());
                 gen.close();
             }
@@ -669,14 +667,14 @@ public class ConfigXmlGenerator {
     private static void wanReplicationXmlGenerator(XmlGenerator gen, Config config) {
         for (WanReplicationConfig wan : config.getWanReplicationConfigs().values()) {
             gen.open("wan-replication", "name", wan.getName());
-            for (WanBatchReplicationPublisherConfig p : wan.getBatchPublisherConfigs()) {
+            for (WanBatchPublisherConfig p : wan.getBatchPublisherConfigs()) {
                 wanBatchReplicationPublisherXmlGenerator(gen, p);
             }
-            for (CustomWanPublisherConfig p : wan.getCustomPublisherConfigs()) {
+            for (WanCustomPublisherConfig p : wan.getCustomPublisherConfigs()) {
                 wanCustomPublisherXmlGenerator(gen, p);
             }
 
-            WanConsumerConfig consumerConfig = wan.getWanConsumerConfig();
+            WanConsumerConfig consumerConfig = wan.getConsumerConfig();
             if (consumerConfig != null) {
                 wanReplicationConsumerGenerator(gen, consumerConfig);
             }
@@ -696,7 +694,7 @@ public class ConfigXmlGenerator {
                 .close();
     }
 
-    private static void wanBatchReplicationPublisherXmlGenerator(XmlGenerator gen, WanBatchReplicationPublisherConfig c) {
+    private static void wanBatchReplicationPublisherXmlGenerator(XmlGenerator gen, WanBatchPublisherConfig c) {
         String publisherId = c.getPublisherId();
         gen.open("batch-publisher");
         gen.node("cluster-name", c.getClusterName())
@@ -725,13 +723,13 @@ public class ConfigXmlGenerator {
         if (c.getEndpoint() != null) {
             gen.node("endpoint", c.getEndpoint());
         }
-        wanReplicationSyncGenerator(gen, c.getWanSyncConfig());
+        wanReplicationSyncGenerator(gen, c.getSyncConfig());
         aliasedDiscoveryConfigsGenerator(gen, aliasedDiscoveryConfigsFrom(c));
         discoveryStrategyConfigXmlGenerator(gen, c.getDiscoveryConfig());
         gen.close();
     }
 
-    private static void wanCustomPublisherXmlGenerator(XmlGenerator gen, CustomWanPublisherConfig c) {
+    private static void wanCustomPublisherXmlGenerator(XmlGenerator gen, WanCustomPublisherConfig c) {
         String publisherId = c.getPublisherId();
         gen.open("custom-publisher")
                 .appendProperties(c.getProperties())
@@ -741,7 +739,7 @@ public class ConfigXmlGenerator {
     }
 
     private static void wanReplicationSyncGenerator(XmlGenerator gen, WanSyncConfig c) {
-        gen.open("wan-sync")
+        gen.open("sync")
                 .node("consistency-check-strategy", c.getConsistencyCheckStrategy())
                 .close();
     }
@@ -885,7 +883,6 @@ public class ConfigXmlGenerator {
         return "wan-endpoint-config";
     }
 
-    @SuppressWarnings("deprecation")
     private static void mapConfigXmlGenerator(XmlGenerator gen, Config config) {
         Collection<MapConfig> mapConfigs = config.getMapConfigs().values();
         for (MapConfig m : mapConfigs) {
@@ -1140,9 +1137,9 @@ public class ConfigXmlGenerator {
         if (wan != null) {
             gen.open("wan-replication-ref", "name", wan.getName());
 
-            String mergePolicy = wan.getMergePolicy();
+            String mergePolicy = wan.getMergePolicyClassName();
             if (!isNullOrEmpty(mergePolicy)) {
-                gen.node("merge-policy", mergePolicy);
+                gen.node("merge-policy-class-name", mergePolicy);
             }
 
             List<String> filters = wan.getFilters();
@@ -1309,28 +1306,6 @@ public class ConfigXmlGenerator {
         gen.close();
     }
 
-    private void mcMutualAuthConfigXmlGenerator(XmlGenerator gen, ManagementCenterConfig mcConfig) {
-        MCMutualAuthConfig mutualAuthConfig = mcConfig.getMutualAuthConfig();
-        gen.open("mutual-auth", "enabled", mutualAuthConfig != null && mutualAuthConfig.isEnabled());
-        if (mutualAuthConfig != null) {
-            Properties props = new Properties();
-            props.putAll(mutualAuthConfig.getProperties());
-
-            if (maskSensitiveFields && props.containsKey("trustStorePassword")) {
-                props.setProperty("trustStorePassword", MASK_FOR_SENSITIVE_DATA);
-            }
-
-            if (maskSensitiveFields && props.containsKey("keyStorePassword")) {
-                props.setProperty("keyStorePassword", MASK_FOR_SENSITIVE_DATA);
-            }
-
-            gen.node("factory-class-name",
-                    classNameOrImplClass(mutualAuthConfig.getFactoryClassName(), mutualAuthConfig.getFactoryImplementation()))
-                    .appendProperties(props);
-        }
-        gen.close();
-    }
-
     private static void socketInterceptorConfigXmlGenerator(XmlGenerator gen, SocketInterceptorConfig socket) {
         gen.open("socket-interceptor", "enabled", socket != null && socket.isEnabled());
         if (socket != null) {
@@ -1464,8 +1439,11 @@ public class ConfigXmlGenerator {
             gen.open("flake-id-generator", "name", m.getName())
                     .node("prefetch-count", m.getPrefetchCount())
                     .node("prefetch-validity-millis", m.getPrefetchValidityMillis())
-                    .node("id-offset", m.getIdOffset())
+                    .node("epoch-start", m.getEpochStart())
                     .node("node-id-offset", m.getNodeIdOffset())
+                    .node("bits-sequence", m.getBitsSequence())
+                    .node("bits-node-id", m.getBitsNodeId())
+                    .node("allowed-future-millis", m.getAllowedFutureMillis())
                     .node("statistics-enabled", m.isStatisticsEnabled());
             gen.close();
         }

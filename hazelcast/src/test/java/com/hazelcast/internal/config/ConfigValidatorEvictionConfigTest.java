@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,13 +72,13 @@ public class ConfigValidatorEvictionConfigTest extends HazelcastTestSupport {
         checkEvictionConfig(null);
     }
 
-    @Test(expected = InvalidConfigurationException.class)
-    public void checkEvictionConfig_whenBothOfComparatorAndComparatorClassNameAreSet() {
+    @Test
+    public void checkEvictionConfig_whenBothOfComparatorAndComparatorClassNameAreSet_oneOnlyShouldBePresent() {
         checkEvictionConfig(getEvictionConfig(true, true));
     }
 
-    @Test(expected = InvalidConfigurationException.class)
-    public void checkEvictionConfig_whenBothOfComparatorAndComparatorClassNameAreSet_forNearCache() {
+    @Test
+    public void checkEvictionConfig_whenBothOfComparatorAndComparatorClassNameAreSet_forNearCache_oneOnlyShouldBePresent() {
         EvictionConfig evictionConfig = getEvictionConfig(true, true);
         checkNearCacheEvictionConfig(evictionConfig.getEvictionPolicy(),
                 evictionConfig.getComparatorClassName(), evictionConfig.getComparator());

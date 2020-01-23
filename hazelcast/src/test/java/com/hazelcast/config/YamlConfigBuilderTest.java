@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -97,6 +97,17 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         Config config = new YamlConfigBuilder(configURL).build();
         assertEquals(configURL, config.getConfigurationUrl());
         assertNull(config.getConfigurationFile());
+    }
+
+    @Override
+    @Test
+    public void testClusterName() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  cluster-name: my-cluster\n";
+
+        Config config = buildConfig(yaml);
+        assertEquals("my-cluster", config.getClusterName());
     }
 
     @Override
@@ -387,13 +398,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "            properties:\n"
                 + "              key-string: foo\n"
                 + "              key-int: 123\n"
-                + "              key-boolean: true\n"
-                + "          - class: DummyDiscoveryStrategy2\n"
-                + "            enabled: true\n"
-                + "            properties:\n"
-                + "              key-string: foobar\n"
-                + "              key-int: 321\n"
-                + "              key-boolean: false\n";
+                + "              key-boolean: true\n";
 
         Config config = buildConfig(yaml);
         DiscoveryConfig discoveryConfig = config.getNetworkConfig().getJoin().getDiscoveryConfig();
@@ -783,40 +788,12 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         String yaml = ""
                 + "hazelcast:\n"
                 + "  management-center:\n"
-                + "    enabled: true\n"
-                + "    scripting-enabled: false\n"
-                + "    url: someUrl\n";
+                + "    scripting-enabled: false\n";
 
         Config config = buildConfig(yaml);
-        ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
+        ManagementCenterConfig mcConfig = config.getManagementCenterConfig();
 
-        assertTrue(manCenterCfg.isEnabled());
-        assertFalse(manCenterCfg.isScriptingEnabled());
-        assertEquals("someUrl", manCenterCfg.getUrl());
-    }
-
-    @Override
-    @Test
-    public void testManagementCenterConfigComplex() {
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  management-center:\n"
-                + "    enabled: true\n"
-                + "    url: wowUrl\n"
-                + "    mutual-auth:\n"
-                + "      enabled: true\n"
-                + "      properties:\n"
-                + "        keyStore: /tmp/foo_keystore\n"
-                + "        trustStore: /tmp/foo_truststore\n";
-
-        Config config = buildConfig(yaml);
-        ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
-
-        assertTrue(manCenterCfg.isEnabled());
-        assertEquals("wowUrl", manCenterCfg.getUrl());
-        assertTrue(manCenterCfg.getMutualAuthConfig().isEnabled());
-        assertEquals("/tmp/foo_keystore", manCenterCfg.getMutualAuthConfig().getProperty("keyStore"));
-        assertEquals("/tmp/foo_truststore", manCenterCfg.getMutualAuthConfig().getProperty("trustStore"));
+        assertFalse(mcConfig.isScriptingEnabled());
     }
 
     @Override
@@ -827,10 +804,9 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "  management-center: {}";
 
         Config config = buildConfig(yaml);
-        ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
+        ManagementCenterConfig mcConfig = config.getManagementCenterConfig();
 
-        assertFalse(manCenterCfg.isEnabled());
-        assertNull(manCenterCfg.getUrl());
+        assertTrue(mcConfig.isScriptingEnabled());
     }
 
     @Override
@@ -839,59 +815,9 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         String yaml = "hazelcast: {}";
 
         Config config = buildConfig(yaml);
-        ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
+        ManagementCenterConfig mcConfig = config.getManagementCenterConfig();
 
-        assertFalse(manCenterCfg.isEnabled());
-        assertNull(manCenterCfg.getUrl());
-    }
-
-    @Override
-    @Test
-    public void testNotEnabledManagementCenterConfig() {
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  management-center:\n"
-                + "    enabled: false\n";
-
-        Config config = buildConfig(yaml);
-        ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
-        assertFalse(manCenterCfg.isEnabled());
-        assertNull(manCenterCfg.getUrl());
-    }
-
-    @Override
-    @Test
-    public void testNotEnabledWithURLManagementCenterConfig() {
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  management-center:\n"
-                + "    enabled: false\n"
-                + "    url: http://localhost:8080/mancenter\n";
-
-        Config config = buildConfig(yaml);
-        ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
-
-        assertFalse(manCenterCfg.isEnabled());
-        assertEquals("http://localhost:8080/mancenter", manCenterCfg.getUrl());
-    }
-
-    @Override
-    @Test
-    public void testManagementCenterConfigComplexDisabledMutualAuth() {
-        String yaml = ""
-                + "hazelcast:\n"
-                + "  management-center:\n"
-                + "    enabled: true\n"
-                + "    url: wowUrl\n"
-                + "    mutual-auth:\n"
-                + "      enabled: false\n";
-
-        Config config = buildConfig(yaml);
-        ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
-
-        assertTrue(manCenterCfg.isEnabled());
-        assertEquals("wowUrl", manCenterCfg.getUrl());
-        assertFalse(manCenterCfg.getMutualAuthConfig().isEnabled());
+        assertTrue(mcConfig.isScriptingEnabled());
     }
 
     @Override
@@ -1285,7 +1211,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    " + mapName + ":\n"
                 + "      wan-replication-ref:\n"
                 + "        test:\n"
-                + "          merge-policy: TestMergePolicy\n"
+                + "          merge-policy-class-name: TestMergePolicy\n"
                 + "          filters:\n"
                 + "            - com.example.SampleFilter\n";
 
@@ -1294,7 +1220,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         WanReplicationRef wanRef = mapConfig.getWanReplicationRef();
 
         assertEquals(refName, wanRef.getName());
-        assertEquals(mergePolicy, wanRef.getMergePolicy());
+        assertEquals(mergePolicy, wanRef.getMergePolicyClassName());
         assertTrue(wanRef.isRepublishingEnabled());
         assertEquals(1, wanRef.getFilters().size());
         assertEquals("com.example.SampleFilter", wanRef.getFilters().get(0));
@@ -1343,7 +1269,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
         assertEquals(configName, wanReplicationConfig.getName());
 
-        WanConsumerConfig consumerConfig = wanReplicationConfig.getWanConsumerConfig();
+        WanConsumerConfig consumerConfig = wanReplicationConfig.getConsumerConfig();
         assertNotNull(consumerConfig);
         assertEquals("ConsumerClassName", consumerConfig.getClassName());
 
@@ -1352,10 +1278,10 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(1, properties.size());
         assertEquals("propValue1", properties.get("propName1"));
 
-        List<WanBatchReplicationPublisherConfig> batchPublishers = wanReplicationConfig.getBatchPublisherConfigs();
+        List<WanBatchPublisherConfig> batchPublishers = wanReplicationConfig.getBatchPublisherConfigs();
         assertNotNull(batchPublishers);
         assertEquals(1, batchPublishers.size());
-        WanBatchReplicationPublisherConfig publisherConfig = batchPublishers.get(0);
+        WanBatchPublisherConfig publisherConfig = batchPublishers.get(0);
         assertEquals("nyc", publisherConfig.getClusterName());
         assertEquals("publisherId", publisherConfig.getPublisherId());
         assertEquals(1000, publisherConfig.getBatchSize());
@@ -1378,10 +1304,10 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(1, properties.size());
         assertEquals("propValue1", properties.get("propName1"));
 
-        List<CustomWanPublisherConfig> customPublishers = wanReplicationConfig.getCustomPublisherConfigs();
+        List<WanCustomPublisherConfig> customPublishers = wanReplicationConfig.getCustomPublisherConfigs();
         assertNotNull(customPublishers);
         assertEquals(1, customPublishers.size());
-        CustomWanPublisherConfig customPublisher = customPublishers.get(0);
+        WanCustomPublisherConfig customPublisher = customPublishers.get(0);
         assertEquals("customPublisherId", customPublisher.getPublisherId());
         assertEquals("PublisherClassName", customPublisher.getClassName());
         properties = customPublisher.getProperties();
@@ -1402,7 +1328,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
         Config config = buildConfig(yaml);
         WanReplicationConfig wanReplicationConfig = config.getWanReplicationConfig(configName);
-        WanConsumerConfig consumerConfig = wanReplicationConfig.getWanConsumerConfig();
+        WanConsumerConfig consumerConfig = wanReplicationConfig.getConsumerConfig();
         assertFalse(consumerConfig.isPersistWanReplicatedData());
     }
 
@@ -1416,7 +1342,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    " + configName + ":\n"
                 + "      batch-publisher:\n"
                 + "        nyc:\n"
-                + "          wan-sync:\n"
+                + "          sync:\n"
                 + "            consistency-check-strategy: MERKLE_TREES\n";
 
         Config config = buildConfig(yaml);
@@ -1424,11 +1350,11 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
         assertEquals(configName, wanReplicationConfig.getName());
 
-        List<WanBatchReplicationPublisherConfig> publishers = wanReplicationConfig.getBatchPublisherConfigs();
+        List<WanBatchPublisherConfig> publishers = wanReplicationConfig.getBatchPublisherConfigs();
         assertNotNull(publishers);
         assertEquals(1, publishers.size());
-        WanBatchReplicationPublisherConfig publisherConfig = publishers.get(0);
-        assertEquals(ConsistencyCheckStrategy.MERKLE_TREES, publisherConfig.getWanSyncConfig()
+        WanBatchPublisherConfig publisherConfig = publishers.get(0);
+        assertEquals(ConsistencyCheckStrategy.MERKLE_TREES, publisherConfig.getSyncConfig()
                 .getConsistencyCheckStrategy());
     }
 
@@ -1441,8 +1367,11 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    gen:\n"
                 + "      prefetch-count: 3\n"
                 + "      prefetch-validity-millis: 10\n"
-                + "      id-offset: 20\n"
+                + "      epoch-start: 1514764800001\n"
                 + "      node-id-offset: 30\n"
+                + "      bits-sequence: 22\n"
+                + "      bits-node-id: 33\n"
+                + "      allowed-future-millis: 20000\n"
                 + "      statistics-enabled: false\n"
                 + "    gen2:\n"
                 + "      statistics-enabled: true";
@@ -1452,8 +1381,11 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals("gen", fConfig.getName());
         assertEquals(3, fConfig.getPrefetchCount());
         assertEquals(10L, fConfig.getPrefetchValidityMillis());
-        assertEquals(20L, fConfig.getIdOffset());
+        assertEquals(1514764800001L, fConfig.getEpochStart());
         assertEquals(30L, fConfig.getNodeIdOffset());
+        assertEquals(22, fConfig.getBitsSequence());
+        assertEquals(33, fConfig.getBitsNodeId());
+        assertEquals(20000L, fConfig.getAllowedFutureMillis());
         assertFalse(fConfig.isStatisticsEnabled());
 
         FlakeIdGeneratorConfig f2Config = config.findFlakeIdGeneratorConfig("gen2");
@@ -1623,12 +1555,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "                  key-string: foo\n"
                 + "                  key-int: 123\n"
                 + "                  key-boolean: true\n"
-                + "              - class: DummyDiscoveryStrategy2\n"
-                + "                enabled: true\n"
-                + "                properties:\n"
-                + "                  key-string: foobar\n"
-                + "                  key-int: 321\n"
-                + "                  key-boolean: false\n"
                 + "          properties:\n"
                 + "            custom.prop.publisher: prop.publisher\n"
                 + "        ankara:\n"
@@ -1641,12 +1567,12 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        persist-wan-replicated-data: false\n";
 
         Config config = buildConfig(yaml);
-        WanReplicationConfig wanConfig = config.getWanReplicationConfig("my-wan-cluster");
-        assertNotNull(wanConfig);
+        WanReplicationConfig wanReplicationConfig = config.getWanReplicationConfig("my-wan-cluster");
+        assertNotNull(wanReplicationConfig);
 
-        List<WanBatchReplicationPublisherConfig> publisherConfigs = wanConfig.getBatchPublisherConfigs();
+        List<WanBatchPublisherConfig> publisherConfigs = wanReplicationConfig.getBatchPublisherConfigs();
         assertEquals(2, publisherConfigs.size());
-        WanBatchReplicationPublisherConfig pc1 = publisherConfigs.get(0);
+        WanBatchPublisherConfig pc1 = publisherConfigs.get(0);
         assertEquals("istanbul", pc1.getClusterName());
         assertEquals("istanbulPublisherId", pc1.getPublisherId());
         assertEquals(100, pc1.getBatchSize());
@@ -1675,13 +1601,13 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertFalse(pc1.getEurekaConfig().isEnabled());
         assertDiscoveryConfig(pc1.getDiscoveryConfig());
 
-        WanBatchReplicationPublisherConfig pc2 = publisherConfigs.get(1);
+        WanBatchPublisherConfig pc2 = publisherConfigs.get(1);
         assertEquals("ankara", pc2.getClusterName());
         assertNull(pc2.getPublisherId());
         assertEquals(WanQueueFullBehavior.THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE, pc2.getQueueFullBehavior());
         assertEquals(WanPublisherState.STOPPED, pc2.getInitialPublisherState());
 
-        WanConsumerConfig consumerConfig = wanConfig.getWanConsumerConfig();
+        WanConsumerConfig consumerConfig = wanReplicationConfig.getConsumerConfig();
         assertEquals("com.hazelcast.wan.custom.WanConsumer", consumerConfig.getClassName());
         Map<String, Comparable> consProperties = consumerConfig.getProperties();
         assertEquals("prop.consumer", consProperties.get("custom.prop.consumer"));
@@ -1696,7 +1622,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
     private void assertDiscoveryConfig(DiscoveryConfig c) {
         assertEquals("DummyFilterClass", c.getNodeFilterClass());
-        assertEquals(2, c.getDiscoveryStrategyConfigs().size());
+        assertEquals(1, c.getDiscoveryStrategyConfigs().size());
 
         Iterator<DiscoveryStrategyConfig> iterator = c.getDiscoveryStrategyConfigs().iterator();
         DiscoveryStrategyConfig config = iterator.next();
@@ -1706,14 +1632,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals("foo", props.get("key-string"));
         assertEquals("123", props.get("key-int"));
         assertEquals("true", props.get("key-boolean"));
-
-        DiscoveryStrategyConfig config2 = iterator.next();
-        assertEquals("DummyDiscoveryStrategy2", config2.getClassName());
-
-        Map<String, Comparable> props2 = config2.getProperties();
-        assertEquals("foobar", props2.get("key-string"));
-        assertEquals("321", props2.get("key-int"));
-        assertEquals("false", props2.get("key-boolean"));
     }
 
     @Override
@@ -2315,7 +2233,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "          eviction-policy: LFU\n"
                 + "      wan-replication-ref:\n"
                 + "        my-wan-cluster-batch:\n"
-                + "          merge-policy: PassThroughMergePolicy\n"
+                + "          merge-policy-class-name: PassThroughMergePolicy\n"
                 + "          filters:\n"
                 + "            - com.example.SampleFilter\n"
                 + "          republishing-enabled: false\n"
@@ -2397,7 +2315,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         WanReplicationRef wanReplicationRef = mapConfig.getWanReplicationRef();
         assertNotNull(wanReplicationRef);
         assertFalse(wanReplicationRef.isRepublishingEnabled());
-        assertEquals("PassThroughMergePolicy", wanReplicationRef.getMergePolicy());
+        assertEquals("PassThroughMergePolicy", wanReplicationRef.getMergePolicyClassName());
         assertEquals(1, wanReplicationRef.getFilters().size());
         assertEquals("com.example.SampleFilter".toLowerCase(), wanReplicationRef.getFilters().get(0).toLowerCase());
     }

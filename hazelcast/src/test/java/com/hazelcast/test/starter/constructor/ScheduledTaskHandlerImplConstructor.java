@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.hazelcast.test.starter.constructor;
 import com.hazelcast.test.starter.HazelcastStarterConstructor;
 
 import java.lang.reflect.Constructor;
+import java.util.UUID;
 
 import static com.hazelcast.test.starter.HazelcastProxyFactory.proxyArgumentsIfNeeded;
 import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
@@ -32,20 +33,19 @@ public class ScheduledTaskHandlerImplConstructor extends AbstractStarterObjectCo
 
     @Override
     Object createNew0(Object delegate) throws Exception {
-        Object address = getFieldValueReflectively(delegate, "address");
-        Integer partitionId = (Integer) getFieldValueReflectively(delegate, "partitionId");
-        String schedulerName = (String) getFieldValueReflectively(delegate, "schedulerName");
-        String taskName = (String) getFieldValueReflectively(delegate, "taskName");
+        Object uuid = getFieldValueReflectively(delegate, "uuid");
+        Integer partitionId = getFieldValueReflectively(delegate, "partitionId");
+        String schedulerName = getFieldValueReflectively(delegate, "schedulerName");
+        String taskName = getFieldValueReflectively(delegate, "taskName");
 
         ClassLoader targetClassloader = targetClass.getClassLoader();
-        Class<?> addressClass = targetClassloader.loadClass("com.hazelcast.cluster.Address");
 
-        Constructor<?> constructor = targetClass.getDeclaredConstructor(addressClass, Integer.TYPE,
+        Constructor<?> constructor = targetClass.getDeclaredConstructor(UUID.class, Integer.TYPE,
                 String.class, String.class);
         constructor.setAccessible(true);
 
-        if (address != null) {
-            Object[] args = new Object[]{address, -1, schedulerName, taskName};
+        if (uuid != null) {
+            Object[] args = new Object[]{uuid, -1, schedulerName, taskName};
             Object[] proxiedArgs = proxyArgumentsIfNeeded(args, targetClassloader);
             return constructor.newInstance(proxiedArgs);
         } else {

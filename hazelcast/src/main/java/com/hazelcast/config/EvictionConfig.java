@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,12 +24,14 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Objects;
 
-import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 
 /**
  * Configuration for eviction.
@@ -41,7 +43,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * <ul>
  * <li>{@link EvictionPolicy#LRU} as eviction policy</li>
  * <li>{@link MaxSizePolicy#ENTRY_COUNT} as max size policy</li>
- * <li>{@value MapConfig#DEFAULT_MAX_SIZE as maximum
+ * <li>{@value MapConfig#DEFAULT_MAX_SIZE} as maximum
  * size for on-heap {@link com.hazelcast.map.IMap}</li>
  * <li>{@value DEFAULT_MAX_ENTRY_COUNT} as maximum size
  *      for all other data structures and configurations</li>
@@ -196,9 +198,10 @@ public class EvictionConfig implements EvictionConfiguration, IdentifiedDataSeri
      *                            configured {@link EvictionPolicyComparator} implementation
      * @return this EvictionConfig instance
      */
-    public EvictionConfig setComparatorClassName(String comparatorClassName) {
-        this.comparatorClassName = checkNotNull(comparatorClassName,
+    public EvictionConfig setComparatorClassName(@Nonnull String comparatorClassName) {
+        this.comparatorClassName = checkHasText(comparatorClassName,
                 "Eviction policy comparator class name cannot be null!");
+        this.comparator = null;
         return this;
     }
 
@@ -227,9 +230,10 @@ public class EvictionConfig implements EvictionConfiguration, IdentifiedDataSeri
      * @see com.hazelcast.map.MapEvictionPolicyComparator
      * @see com.hazelcast.cache.CacheEvictionPolicyComparator
      */
-    public EvictionConfig setComparator(EvictionPolicyComparator comparator) {
+    public EvictionConfig setComparator(@Nonnull EvictionPolicyComparator comparator) {
         this.comparator = checkNotNull(comparator,
                 "Eviction policy comparator cannot be null!");
+        this.comparatorClassName = null;
         return this;
     }
 
@@ -273,7 +277,6 @@ public class EvictionConfig implements EvictionConfiguration, IdentifiedDataSeri
     }
 
     @Override
-    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
     public final boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -284,28 +287,15 @@ public class EvictionConfig implements EvictionConfiguration, IdentifiedDataSeri
 
         EvictionConfig that = (EvictionConfig) o;
 
-        if (size != that.size) {
-            return false;
-        }
-        if (maxSizePolicy != that.maxSizePolicy) {
-            return false;
-        }
-        if (evictionPolicy != that.evictionPolicy) {
-            return false;
-        }
-        if (!Objects.equals(comparatorClassName, that.comparatorClassName)) {
-            return false;
-        }
-        return Objects.equals(comparator, that.comparator);
+        return size == that.size
+            && maxSizePolicy == that.maxSizePolicy
+            && evictionPolicy == that.evictionPolicy
+            && Objects.equals(comparatorClassName, that.comparatorClassName)
+            && Objects.equals(comparator, that.comparator);
     }
 
     @Override
     public final int hashCode() {
-        int result = size;
-        result = 31 * result + (maxSizePolicy != null ? maxSizePolicy.hashCode() : 0);
-        result = 31 * result + (evictionPolicy != null ? evictionPolicy.hashCode() : 0);
-        result = 31 * result + (comparatorClassName != null ? comparatorClassName.hashCode() : 0);
-        result = 31 * result + (comparator != null ? comparator.hashCode() : 0);
-        return result;
+        return Objects.hash(size, maxSizePolicy, evictionPolicy, comparator, comparatorClassName);
     }
 }

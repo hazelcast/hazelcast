@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,20 +26,21 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
-import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.ExcludedMetricTargets;
 import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.PartitionReplica;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.impl.SerializationServiceV1;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.spi.exception.CallerNotMemberException;
 import com.hazelcast.spi.exception.PartitionMigratingException;
@@ -67,13 +68,19 @@ import com.hazelcast.splitbrainprotection.impl.SplitBrainProtectionServiceImpl;
 import java.io.IOException;
 import java.util.logging.Level;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_DISCRIMINATOR_GENERICID;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_DISCRIMINATOR_PARTITIONID;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_OPERATION_RUNNER_EXECUTED_OPERATIONS_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_PREFIX_ADHOC;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_PREFIX_GENERIC;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_PREFIX_PARTITION;
+import static com.hazelcast.internal.metrics.MetricTarget.MANAGEMENT_CENTER;
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
-import static com.hazelcast.spi.impl.operationservice.CallStatus.DONE_RESPONSE_ORDINAL;
-import static com.hazelcast.spi.impl.operationservice.CallStatus.DONE_VOID_BACKUP_ORDINAL;
-import static com.hazelcast.spi.impl.operationservice.CallStatus.DONE_VOID_ORDINAL;
 import static com.hazelcast.spi.impl.operationservice.CallStatus.OFFLOAD_ORDINAL;
+import static com.hazelcast.spi.impl.operationservice.CallStatus.RESPONSE_ORDINAL;
+import static com.hazelcast.spi.impl.operationservice.CallStatus.VOID_ORDINAL;
 import static com.hazelcast.spi.impl.operationservice.CallStatus.WAIT_ORDINAL;
 import static com.hazelcast.spi.impl.operationservice.OperationAccessor.setCallerAddress;
 import static com.hazelcast.spi.impl.operationservice.OperationAccessor.setConnection;
@@ -90,6 +97,7 @@ import static java.util.logging.Level.WARNING;
  * Responsible for processing an Operation.
  */
 @SuppressWarnings("checkstyle:classfanoutcomplexity")
+@ExcludedMetricTargets(MANAGEMENT_CENTER)
 class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvider {
 
     static final int AD_HOC_PARTITION_ID = -2;
@@ -99,7 +107,7 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
     private final Node node;
     private final NodeEngineImpl nodeEngine;
 
-    @Probe(level = DEBUG)
+    @Probe(name = OPERATION_METRIC_OPERATION_RUNNER_EXECUTED_OPERATIONS_COUNT, level = DEBUG)
     private final Counter executedOperationsCounter;
     private final Address thisAddress;
     private final boolean staleReadOnMigrationEnabled;
@@ -146,16 +154,18 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
     public void provideStaticMetrics(MetricsRegistry registry) {
         if (partitionId >= 0) {
             MetricDescriptor descriptor = registry.newMetricDescriptor()
-                                                  .withPrefix("operation.partition")
-                                                  .withDiscriminator("partitionId", String.valueOf(partitionId));
+                                                  .withPrefix(OPERATION_PREFIX_PARTITION)
+                                                  .withDiscriminator(OPERATION_DISCRIMINATOR_PARTITIONID,
+                                                          String.valueOf(partitionId));
             registry.registerStaticMetrics(descriptor, this);
         } else if (partitionId == -1) {
             MetricDescriptor descriptor = registry.newMetricDescriptor()
-                                                  .withPrefix("operation.generic")
-                                                  .withDiscriminator("genericId", String.valueOf(genericId));
+                                                  .withPrefix(OPERATION_PREFIX_GENERIC)
+                                                  .withDiscriminator(OPERATION_DISCRIMINATOR_GENERICID,
+                                                          String.valueOf(genericId));
             registry.registerStaticMetrics(descriptor, this);
         } else {
-            registry.registerStaticMetrics(this, "operation.adhoc");
+            registry.registerStaticMetrics(this, OPERATION_PREFIX_ADHOC);
         }
     }
 
@@ -218,12 +228,22 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
         CallStatus callStatus = op.call();
 
         switch (callStatus.ordinal()) {
-            case DONE_RESPONSE_ORDINAL:
-                handleResponse(op);
+            case RESPONSE_ORDINAL:
+                int backupAcks = backupHandler.sendBackups(op);
+                Object response = op.getResponse();
+                if (backupAcks > 0) {
+                    response = new NormalResponse(response, op.getCallId(), backupAcks, op.isUrgent());
+                }
+                try {
+                    op.sendResponse(response);
+                } catch (ResponseAlreadySentException e) {
+                    logOperationError(op, e);
+                }
                 afterRun(op);
                 break;
-            case DONE_VOID_ORDINAL:
-                op.afterRun();
+            case VOID_ORDINAL:
+                backupHandler.sendBackups(op);
+                afterRun(op);
                 break;
             case OFFLOAD_ORDINAL:
                 op.afterRun();
@@ -234,26 +254,8 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
             case WAIT_ORDINAL:
                 nodeEngine.getOperationParker().park((BlockingOperation) op);
                 break;
-            case DONE_VOID_BACKUP_ORDINAL:
-                backupHandler.sendBackups(op);
-                op.afterRun();
-                break;
             default:
                 throw new IllegalStateException();
-        }
-    }
-
-    private void handleResponse(Operation op) throws Exception {
-        int backupAcks = backupHandler.sendBackups(op);
-
-        try {
-            Object response = op.getResponse();
-            if (backupAcks > 0) {
-                response = new NormalResponse(response, op.getCallId(), backupAcks, op.isUrgent());
-            }
-            op.sendResponse(response);
-        } catch (ResponseAlreadySentException e) {
-            logOperationError(op, e);
         }
     }
 

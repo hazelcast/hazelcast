@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,11 @@ package com.hazelcast.client.impl.proxy;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddPartitionLostListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientRemovePartitionLostListenerCodec;
+import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.client.impl.spi.ClientListenerService;
 import com.hazelcast.client.impl.spi.ClientPartitionService;
 import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.partition.PartitionLostEventImpl;
 import com.hazelcast.partition.MigrationListener;
@@ -46,10 +46,13 @@ public final class PartitionServiceProxy implements PartitionService {
 
     private final ClientPartitionService partitionService;
     private final ClientListenerService listenerService;
+    private final ClientClusterService clusterService;
 
-    public PartitionServiceProxy(ClientPartitionService partitionService, ClientListenerService listenerService) {
+    public PartitionServiceProxy(ClientPartitionService partitionService,
+                                 ClientListenerService listenerService, ClientClusterService clusterService) {
         this.partitionService = partitionService;
         this.listenerService = listenerService;
+        this.clusterService = clusterService;
     }
 
     @Override
@@ -135,7 +138,7 @@ public final class PartitionServiceProxy implements PartitionService {
         throw new UnsupportedOperationException();
     }
 
-    private static class ClientPartitionLostEventHandler extends ClientAddPartitionLostListenerCodec.AbstractEventHandler
+    private class ClientPartitionLostEventHandler extends ClientAddPartitionLostListenerCodec.AbstractEventHandler
             implements EventHandler<ClientMessage> {
 
         private PartitionLostListener listener;
@@ -145,8 +148,9 @@ public final class PartitionServiceProxy implements PartitionService {
         }
 
         @Override
-        public void handlePartitionLostEvent(int partitionId, int lostBackupCount, Address source) {
-            listener.partitionLost(new PartitionLostEventImpl(partitionId, lostBackupCount, source));
+        public void handlePartitionLostEvent(int partitionId, int lostBackupCount, UUID source) {
+            Member member = clusterService.getMember(source);
+            listener.partitionLost(new PartitionLostEventImpl(partitionId, lostBackupCount, member.getAddress()));
         }
     }
 

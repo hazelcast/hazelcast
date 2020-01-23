@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -479,7 +479,13 @@ public class LocalRaftGroup {
 
 
     public void destroy() {
-        for (LocalRaftIntegration integration : integrations) {
+        for (int i = 0; i < nodes.length; i++) {
+            RaftNodeImpl node = nodes[i];
+            LocalRaftIntegration integration = integrations[i];
+            if (integration.isShutdown()) {
+                continue;
+            }
+            node.forceSetTerminatedStatus().joinInternal();
             integration.shutdown();
         }
     }
@@ -651,7 +657,11 @@ public class LocalRaftGroup {
 
     public void terminateNode(int index) {
         split(index);
-        getIntegration(index).shutdown();
+        LocalRaftIntegration integration = getIntegration(index);
+        if (!integration.isShutdown()) {
+            getNode(index).forceSetTerminatedStatus().joinInternal();
+            integration.shutdown();
+        }
     }
 
     public void terminateNode(RaftEndpoint endpoint) {

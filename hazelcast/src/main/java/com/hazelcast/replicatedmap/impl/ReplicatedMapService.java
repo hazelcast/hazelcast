@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,6 +67,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
@@ -74,6 +75,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.internal.config.ConfigValidator.checkReplicatedMapConfig;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.REPLICATED_MAP_PREFIX;
 import static com.hazelcast.internal.metrics.impl.ProviderHelper.provide;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
@@ -196,7 +198,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     }
 
     @Override
-    public DistributedObject createDistributedObject(String objectName, boolean local) {
+    public DistributedObject createDistributedObject(String objectName, UUID source, boolean local) {
         ReplicatedMapConfig replicatedMapConfig = getReplicatedMapConfig(objectName);
         checkReplicatedMapConfig(replicatedMapConfig, mergePolicyProvider);
         if (nodeEngine.getLocalMember().isLiteMember()) {
@@ -382,7 +384,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
 
     @Override
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
-        provide(descriptor, context, "replicatedMap", getStats());
+        provide(descriptor, context, REPLICATED_MAP_PREFIX, getStats());
     }
 
     private class AntiEntropyTask implements Runnable {

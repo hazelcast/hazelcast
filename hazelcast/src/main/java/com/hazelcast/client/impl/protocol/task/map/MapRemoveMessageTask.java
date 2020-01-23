@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,12 +46,11 @@ public class MapRemoveMessageTask
 
     @Override
     protected Object processResponseBeforeSending(Object response) {
-        final long latencyNanos = System.nanoTime() - startTimeNanos;
-        final MapService mapService = getService(MapService.SERVICE_NAME);
+        MapService mapService = getService(MapService.SERVICE_NAME);
         MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(parameters.name);
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
             mapService.getMapServiceContext().getLocalMapStatsProvider().getLocalMapStatsImpl(parameters.name)
-                    .incrementRemoveLatencyNanos(latencyNanos);
+                    .incrementRemoveLatencyNanos(System.nanoTime() - startTimeNanos);
         }
         return response;
     }

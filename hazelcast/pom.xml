@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -178,8 +178,12 @@
                     <execution>
                         <goals>
                             <goal>test-jar</goal>
-                            <!--Need to add sources for this test jar to Maven central. partic TestHazelcastInstanceFactory. Brian request. -->
                         </goals>
+                        <configuration>
+                            <excludes>
+                                <exclude>**/*.serialization.compatibility.binary</exclude>
+                            </excludes>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -205,6 +209,14 @@
                                       tofile="${basedir}/target/hazelcast-full-example.xml"/>
                                 <copy file="${basedir}/src/main/resources/hazelcast-full-example.yaml"
                                       tofile="${basedir}/target/hazelcast-full-example.yaml"/>
+                                <copy file="${basedir}/src/main/resources/hazelcast-client-full-example.xml"
+                                      tofile="${basedir}/target/hazelcast-client-full-example.xml"/>
+                                <copy file="${basedir}/src/main/resources/hazelcast-client-full-example.yaml"
+                                      tofile="${basedir}/target/hazelcast-client-full-example.yaml"/>
+                                <copy file="${basedir}/src/main/resources/hazelcast-client-failover-full-example.xml"
+                                      tofile="${basedir}/target/hazelcast-client-failover-full-example.xml"/>
+                                <copy file="${basedir}/src/main/resources/hazelcast-client-failover-full-example.yaml"
+                                      tofile="${basedir}/target/hazelcast-client-failover-full-example.yaml"/>
                             </target>
                         </configuration>
                     </execution>
@@ -318,7 +330,7 @@
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-aws</artifactId>
-            <version>2.4</version>
+            <version>3.1</version>
             <optional>true</optional>
             <scope>test</scope>
         </dependency>
@@ -466,6 +478,13 @@
             <groupId>org.hdrhistogram</groupId>
             <artifactId>HdrHistogram</artifactId>
             <version>2.1.4</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- Bitmap index benchmarking -->
+        <dependency>
+            <groupId>org.roaringbitmap</groupId>
+            <artifactId>RoaringBitmap</artifactId>
+            <version>0.8.11</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

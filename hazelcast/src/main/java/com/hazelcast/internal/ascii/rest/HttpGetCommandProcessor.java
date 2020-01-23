@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,8 +42,6 @@ import java.util.Collection;
 import java.util.concurrent.CompletionStage;
 
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
-import static com.hazelcast.internal.ascii.rest.HttpCommand.RES_200_WITH_NO_CONTENT;
-import static com.hazelcast.internal.ascii.rest.HttpCommand.RES_503;
 import static com.hazelcast.internal.util.ExceptionUtil.peel;
 
 @SuppressWarnings({"checkstyle:methodcount"})
@@ -58,7 +56,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
     private static final String HEALTH_PATH_PARAM_CLUSTER_SIZE = "/cluster-size";
 
     public HttpGetCommandProcessor(TextCommandService textCommandService) {
-        super(textCommandService);
+        super(textCommandService, textCommandService.getNode().getLogger(HttpPostCommandProcessor.class));
     }
 
     @Override
@@ -97,8 +95,9 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
             }
         } catch (IndexOutOfBoundsException e) {
             command.send400();
-        } catch (Exception e) {
-            command.send500();
+        } catch (Throwable e) {
+            logger.warning("An error occurred while handling request " + command, e);
+            prepareResponse(HttpCommand.RES_500, command, exceptionResponse(e));
         }
 
         if (sendResponse) {
@@ -111,9 +110,9 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
 
         if (node.isRunning()
                 && node.getNodeExtension().isStartCompleted()) {
-            command.setResponse(RES_200_WITH_NO_CONTENT);
+            command.send200();
         } else {
-            command.setResponse(RES_503);
+            command.send503();
         }
     }
 
@@ -133,7 +132,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
         String healthParameter = uri.substring(URI_HEALTH_URL.length());
         if (healthParameter.equals(HEALTH_PATH_PARAM_NODE_STATE)) {
             if (NodeState.SHUT_DOWN.equals(nodeState)) {
-                command.setResponse(RES_503);
+                command.send503();
             } else {
                 prepareResponse(command, Json.value(nodeState.toString()));
             }
@@ -143,7 +142,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
             if (clusterSafe) {
                 command.send200();
             } else {
-                command.setResponse(RES_503);
+                command.send503();
             }
         } else if (healthParameter.equals(HEALTH_PATH_PARAM_MIGRATION_QUEUE_SIZE)) {
             prepareResponse(command, Json.value(migrationQueueSize));
@@ -345,7 +344,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
                       .forEach(membersArray::add);
         JsonObject response = new JsonObject()
                 .add("members", membersArray)
-                .add("connectionCount", cem.getActiveConnections().size())
+                .add("connectionCount", cem == null ? 0 : cem.getActiveConnections().size())
                 .add("allConnectionCount", aem.getActiveConnections().size());
         prepareResponse(command, response);
     }
@@ -391,7 +390,8 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
     }
 
     /**
-     * License info is mplemented in the Enterprise GET command processor. The OS version returns simple "404 Not Found".
+     * License info is implemented in the Enterprise GET command processor. The
+     * OS version returns simple "404 Not Found".
      */
     protected void handleLicense(HttpGetCommand command) {
         command.send404();

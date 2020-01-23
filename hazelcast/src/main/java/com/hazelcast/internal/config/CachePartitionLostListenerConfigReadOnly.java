@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.hazelcast.cache.impl.event.CachePartitionLostListener;
 import com.hazelcast.config.CachePartitionLostListenerConfig;
 import com.hazelcast.config.ListenerConfig;
 
+import javax.annotation.Nonnull;
 import java.util.EventListener;
 
 /**
@@ -40,7 +41,7 @@ public class CachePartitionLostListenerConfigReadOnly
     }
 
     @Override
-    public ListenerConfig setClassName(String className) {
+    public ListenerConfig setClassName(@Nonnull String className) {
         throw new UnsupportedOperationException("this config is read-only");
     }
 

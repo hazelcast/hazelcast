@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.merge.MergingLastStoredTime;
+import com.hazelcast.spi.merge.MergingValue;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 
 import java.io.IOException;
@@ -28,10 +29,11 @@ import java.io.IOException;
  * Custom merge policy which uses a single merge type,
  * which is just provided by by {@link IMap}.
  */
-public class LastStoredTimeMergePolicy<V, T extends MergingLastStoredTime<V>> implements SplitBrainMergePolicy<V, T> {
+public class LastStoredTimeMergePolicy<V, T extends MergingValue<V> & MergingLastStoredTime>
+        implements SplitBrainMergePolicy<V, T, Object> {
 
     @Override
-    public V merge(T mergingValue, T existingValue) {
+    public Object merge(T mergingValue, T existingValue) {
         return null;
     }
 

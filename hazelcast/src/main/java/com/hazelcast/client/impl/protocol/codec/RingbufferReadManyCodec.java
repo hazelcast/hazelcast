@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * true are returned. Using filters is a good way to prevent getting items that are of no value to the receiver.
  * This reduces the amount of IO and the number of operations being executed, and can result in a significant performance improvement.
  */
-@Generated("2d82ba0073d366593d049ba78c5015db")
+@Generated("6fcbf354596dc57f8b1516bad85de897")
 public final class RingbufferReadManyCodec {
     //hex: 0x170900
     public static final int REQUEST_MESSAGE_TYPE = 1509632;
@@ -52,7 +52,7 @@ public final class RingbufferReadManyCodec {
     private static final int REQUEST_MIN_COUNT_FIELD_OFFSET = REQUEST_START_SEQUENCE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_MAX_COUNT_FIELD_OFFSET = REQUEST_MIN_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_MAX_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_READ_COUNT_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_READ_COUNT_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_NEXT_SEQ_FIELD_OFFSET = RESPONSE_READ_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_NEXT_SEQ_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
@@ -85,15 +85,16 @@ public final class RingbufferReadManyCodec {
         /**
          * Filter is allowed to be null, indicating there is no filter.
          */
-        public @Nullable com.hazelcast.nio.serialization.Data filter;
+        public @Nullable com.hazelcast.internal.serialization.Data filter;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, long startSequence, int minCount, int maxCount, @Nullable com.hazelcast.nio.serialization.Data filter) {
+    public static ClientMessage encodeRequest(java.lang.String name, long startSequence, int minCount, int maxCount, @Nullable com.hazelcast.internal.serialization.Data filter) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setOperationName("Ringbuffer.ReadMany");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeLong(initialFrame.content, REQUEST_START_SEQUENCE_FIELD_OFFSET, startSequence);
         encodeInt(initialFrame.content, REQUEST_MIN_COUNT_FIELD_OFFSET, minCount);
         encodeInt(initialFrame.content, REQUEST_MAX_COUNT_FIELD_OFFSET, maxCount);
@@ -119,27 +120,27 @@ public final class RingbufferReadManyCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * Number of items that have been read before filtering.
          */
         public int readCount;
 
         /**
-         * TODO DOC
+         * List of items that have beee read.
          */
-        public java.util.List<com.hazelcast.nio.serialization.Data> items;
+        public java.util.List<com.hazelcast.internal.serialization.Data> items;
 
         /**
-         * TODO DOC
+         * List of sequence numbers for the items that have been read.
          */
         public @Nullable long[] itemSeqs;
 
         /**
-         * TODO DOC
+         * Sequence number of the item following the last read item.
          */
         public long nextSeq;
     }
 
-    public static ClientMessage encodeResponse(int readCount, java.util.Collection<com.hazelcast.nio.serialization.Data> items, @Nullable long[] itemSeqs, long nextSeq) {
+    public static ClientMessage encodeResponse(int readCount, java.util.Collection<com.hazelcast.internal.serialization.Data> items, @Nullable long[] itemSeqs, long nextSeq) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,13 +19,14 @@ package com.hazelcast.spi.impl.merge;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.CacheMergeTypes;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceAware;
 
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * Implementation of {@link CacheMergeTypes}.
@@ -33,7 +34,8 @@ import java.io.IOException;
  * @since 3.10
  */
 @SuppressWarnings("WeakerAccess")
-public class CacheMergingEntryImpl implements CacheMergeTypes, SerializationServiceAware, IdentifiedDataSerializable {
+public class CacheMergingEntryImpl<K, V>
+        implements CacheMergeTypes<K, V>, SerializationServiceAware, IdentifiedDataSerializable {
 
     private Data value;
     private Data key;
@@ -52,31 +54,31 @@ public class CacheMergingEntryImpl implements CacheMergeTypes, SerializationServ
     }
 
     @Override
-    public Data getValue() {
+    public Data getRawValue() {
         return value;
     }
 
     @Override
-    public Object getDeserializedValue() {
+    public V getValue() {
         return serializationService.toObject(value);
     }
 
-    public CacheMergingEntryImpl setValue(Data value) {
+    public CacheMergingEntryImpl<K, V> setValue(Data value) {
         this.value = value;
         return this;
     }
 
     @Override
-    public Data getKey() {
+    public Data getRawKey() {
         return key;
     }
 
     @Override
-    public Object getDeserializedKey() {
+    public K getKey() {
         return serializationService.toObject(key);
     }
 
-    public CacheMergingEntryImpl setKey(Data key) {
+    public CacheMergingEntryImpl<K, V> setKey(Data key) {
         this.key = key;
         return this;
     }
@@ -86,7 +88,7 @@ public class CacheMergingEntryImpl implements CacheMergeTypes, SerializationServ
         return creationTime;
     }
 
-    public CacheMergingEntryImpl setCreationTime(long creationTime) {
+    public CacheMergingEntryImpl<K, V> setCreationTime(long creationTime) {
         this.creationTime = creationTime;
         return this;
     }
@@ -96,7 +98,7 @@ public class CacheMergingEntryImpl implements CacheMergeTypes, SerializationServ
         return expirationTime;
     }
 
-    public CacheMergingEntryImpl setExpirationTime(long expirationTime) {
+    public CacheMergingEntryImpl<K, V> setExpirationTime(long expirationTime) {
         this.expirationTime = expirationTime;
         return this;
     }
@@ -106,7 +108,7 @@ public class CacheMergingEntryImpl implements CacheMergeTypes, SerializationServ
         return hits;
     }
 
-    public CacheMergingEntryImpl setHits(long hits) {
+    public CacheMergingEntryImpl<K, V> setHits(long hits) {
         this.hits = hits;
         return this;
     }
@@ -116,7 +118,7 @@ public class CacheMergingEntryImpl implements CacheMergeTypes, SerializationServ
         return lastAccessTime;
     }
 
-    public CacheMergingEntryImpl setLastAccessTime(long lastAccessTime) {
+    public CacheMergingEntryImpl<K, V> setLastAccessTime(long lastAccessTime) {
         this.lastAccessTime = lastAccessTime;
         return this;
     }
@@ -179,10 +181,10 @@ public class CacheMergingEntryImpl implements CacheMergeTypes, SerializationServ
         if (lastAccessTime != that.lastAccessTime) {
             return false;
         }
-        if (key != null ? !key.equals(that.key) : that.key != null) {
+        if (!Objects.equals(key, that.key)) {
             return false;
         }
-        return value != null ? value.equals(that.value) : that.value == null;
+        return Objects.equals(value, that.value);
     }
 
     @Override

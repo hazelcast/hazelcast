@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("a1e071865bbcb7c02d967964afe23d85")
+@Generated("b31de8317626cb6fe96f8542a003301c")
 public final class SimpleEntryViewCodec {
     private static final int COST_FIELD_OFFSET = 0;
     private static final int CREATION_TIME_FIELD_OFFSET = COST_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -41,7 +41,7 @@ public final class SimpleEntryViewCodec {
     private SimpleEntryViewCodec() {
     }
 
-    public static void encode(ClientMessage clientMessage, com.hazelcast.map.impl.SimpleEntryView<com.hazelcast.nio.serialization.Data, com.hazelcast.nio.serialization.Data> simpleEntryView) {
+    public static void encode(ClientMessage clientMessage, com.hazelcast.map.impl.SimpleEntryView<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data> simpleEntryView) {
         clientMessage.add(BEGIN_FRAME.copy());
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
@@ -63,7 +63,7 @@ public final class SimpleEntryViewCodec {
         clientMessage.add(END_FRAME.copy());
     }
 
-    public static com.hazelcast.map.impl.SimpleEntryView<com.hazelcast.nio.serialization.Data, com.hazelcast.nio.serialization.Data> decode(ClientMessage.ForwardFrameIterator iterator) {
+    public static com.hazelcast.map.impl.SimpleEntryView<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data> decode(ClientMessage.ForwardFrameIterator iterator) {
         // begin frame
         iterator.next();
 
@@ -79,8 +79,8 @@ public final class SimpleEntryViewCodec {
         long ttl = decodeLong(initialFrame.content, TTL_FIELD_OFFSET);
         long maxIdle = decodeLong(initialFrame.content, MAX_IDLE_FIELD_OFFSET);
 
-        com.hazelcast.nio.serialization.Data key = DataCodec.decode(iterator);
-        com.hazelcast.nio.serialization.Data value = DataCodec.decode(iterator);
+        com.hazelcast.internal.serialization.Data key = DataCodec.decode(iterator);
+        com.hazelcast.internal.serialization.Data value = DataCodec.decode(iterator);
 
         fastForwardToEndFrame(iterator);
 

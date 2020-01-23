@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,11 +70,11 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 public @interface Probe {
 
     /**
-     * The name of the Probe. By default the name of the field or method is used.
+     * The name of the Probe.
      *
      * @return the name of the Probe.
      */
-    String name() default "";
+    String name();
 
     /**
      * Returns the ProbeLevel.
@@ -94,8 +94,14 @@ public @interface Probe {
     /**
      * Returns the targets excluded for this Probe. Used for filtering in
      * {@link MetricsPublisher}s.
+     * <p/>
+     * The final excluded targets for a metric will be the union of the
+     * exclusions defined with this annotation and the exclusions defined
+     * on the {@link ExcludedMetricTargets}s annotation of the class
+     * containing the given Probe.
      *
      * @return the targets excluded for this Probe
+     * @see ExcludedMetricTargets
      */
     MetricTarget[] excludedTargets() default {};
 }

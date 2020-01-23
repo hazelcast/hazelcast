@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.client.impl;
 
 import com.hazelcast.client.Client;
 import com.hazelcast.client.impl.statistics.ClientStatistics;
+import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.transaction.TransactionContext;
@@ -31,7 +32,7 @@ import java.util.concurrent.Callable;
 /**
  * Represents an endpoint to a client. So for each client connected to a member, a ClientEndpoint object is available.
  */
-public interface ClientEndpoint extends Client {
+public interface ClientEndpoint extends Client, DynamicMetricsProvider {
 
     /**
      * Checks if the endpoint is alive.
@@ -76,8 +77,6 @@ public interface ClientEndpoint extends Client {
     void removeTransactionContext(UUID txnId);
 
     Subject getSubject();
-
-    void clearAllListeners();
 
     Connection getConnection();
 

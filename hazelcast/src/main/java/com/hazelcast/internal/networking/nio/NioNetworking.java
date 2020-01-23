@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,9 @@ package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.networking.Channel;
@@ -48,6 +48,19 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_NETWORKING_BYTES_RECEIVED;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_NETWORKING_BYTES_SEND;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_NETWORKING_PACKETS_RECEIVED;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NETWORKING_METRIC_NIO_NETWORKING_PACKETS_SEND;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_DISCRIMINATOR_PIPELINEID;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_DISCRIMINATOR_THREAD;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_PREFIX;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_PREFIX_BALANCER;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_PREFIX_CONNECTION_IN;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_PREFIX_CONNECTION_OUT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_PREFIX_INPUTTHREAD;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_PREFIX_OUTPUTTHREAD;
+import static com.hazelcast.internal.metrics.ProbeUnit.BYTES;
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT;
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT_NOW_STRING;
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT_WITH_FIX;
@@ -115,13 +128,13 @@ public final class NioNetworking implements Networking, DynamicMetricsProvider {
     // Currently this is a coarse grained aggregation of the bytes/send received.
     // In the future you probably want to split this up in member and client and potentially
     // wan specific.
-    @Probe
+    @Probe(name = NETWORKING_METRIC_NIO_NETWORKING_BYTES_SEND, unit = BYTES)
     private volatile long bytesSend;
-    @Probe
+    @Probe(name = NETWORKING_METRIC_NIO_NETWORKING_BYTES_RECEIVED, unit = BYTES)
     private volatile long bytesReceived;
-    @Probe
+    @Probe(name = NETWORKING_METRIC_NIO_NETWORKING_PACKETS_SEND)
     private volatile long packetsSend;
-    @Probe
+    @Probe(name = NETWORKING_METRIC_NIO_NETWORKING_PACKETS_RECEIVED)
     private volatile long packetsReceived;
 
     public NioNetworking(Context ctx) {
@@ -345,44 +358,50 @@ public final class NioNetworking implements Networking, DynamicMetricsProvider {
 
             MetricDescriptor descriptorIn = descriptor
                     .copy()
-                    .withPrefix("tcp.connection.in")
-                    .withDiscriminator("pipelineId", pipelineId);
+                    .withPrefix(TCP_PREFIX_CONNECTION_IN)
+                    .withDiscriminator(TCP_DISCRIMINATOR_PIPELINEID, pipelineId);
             context.collect(descriptorIn, channel.inboundPipeline());
 
             MetricDescriptor descriptorOut = descriptor
                     .copy()
-                    .withPrefix("tcp.connection.out")
-                    .withDiscriminator("pipelineId", pipelineId);
+                    .withPrefix(TCP_PREFIX_CONNECTION_OUT)
+                    .withDiscriminator(TCP_DISCRIMINATOR_PIPELINEID, pipelineId);
             context.collect(descriptorOut, channel.outboundPipeline());
         }
 
-        for (NioThread nioThread : inputThreads) {
-            MetricDescriptor descriptorInThread = descriptor
-                    .copy()
-                    .withPrefix("tcp.inputThread")
-                    .withDiscriminator("thread", nioThread.getName());
-            context.collect(descriptorInThread, nioThread);
+        NioThread[] inputThreads = this.inputThreads;
+        if (inputThreads != null) {
+            for (NioThread nioThread : inputThreads) {
+                MetricDescriptor descriptorInThread = descriptor
+                        .copy()
+                        .withPrefix(TCP_PREFIX_INPUTTHREAD)
+                        .withDiscriminator(TCP_DISCRIMINATOR_THREAD, nioThread.getName());
+                context.collect(descriptorInThread, nioThread);
+            }
         }
 
-        for (NioThread nioThread : outputThreads) {
-            MetricDescriptor descriptorOutThread = descriptor
-                    .copy()
-                    .withPrefix("tcp.outputThread")
-                    .withDiscriminator("thread", nioThread.getName());
-            context.collect(descriptorOutThread, nioThread);
+        NioThread[] outputThreads = this.outputThreads;
+        if (outputThreads != null) {
+            for (NioThread nioThread : outputThreads) {
+                MetricDescriptor descriptorOutThread = descriptor
+                        .copy()
+                        .withPrefix(TCP_PREFIX_OUTPUTTHREAD)
+                        .withDiscriminator(TCP_DISCRIMINATOR_THREAD, nioThread.getName());
+                context.collect(descriptorOutThread, nioThread);
+            }
         }
 
         IOBalancer ioBalancer = this.ioBalancer;
         if (ioBalancer != null) {
             MetricDescriptor descriptorBalancer = descriptor
                     .copy()
-                    .withPrefix("tcp.balancer");
+                    .withPrefix(TCP_PREFIX_BALANCER);
             context.collect(descriptorBalancer, ioBalancer);
         }
 
         MetricDescriptor descriptorTcp = descriptor
                 .copy()
-                .withPrefix("tcp");
+                .withPrefix(TCP_PREFIX);
         context.collect(descriptorTcp, this);
     }
 

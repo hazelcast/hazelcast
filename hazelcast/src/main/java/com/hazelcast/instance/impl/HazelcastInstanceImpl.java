@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -350,7 +350,8 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
     @SuppressWarnings("unchecked")
     public <T extends DistributedObject> T getDistributedObject(@Nonnull String serviceName, @Nonnull String name) {
         ProxyService proxyService = node.getNodeEngine().getProxyService();
-        return (T) proxyService.getDistributedObject(serviceName, name);
+        UUID source = node.nodeEngine.getLocalMember().getUuid();
+        return (T) proxyService.getDistributedObject(serviceName, name, source);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.hazelcast.instance.impl;
 
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheService;
-import com.hazelcast.client.impl.ClientClusterListenerService;
+import com.hazelcast.client.impl.ClusterViewListenerService;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.HotRestartPersistenceConfig;
@@ -31,9 +31,6 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.cp.internal.persistence.CPPersistenceService;
 import com.hazelcast.cp.internal.persistence.NopCPPersistenceService;
 import com.hazelcast.hotrestart.HotRestartService;
-import com.hazelcast.internal.hotrestart.InternalHotRestartService;
-import com.hazelcast.internal.hotrestart.NoOpHotRestartService;
-import com.hazelcast.internal.hotrestart.NoopInternalHotRestartService;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.EndpointQualifier;
@@ -64,8 +61,10 @@ import com.hazelcast.internal.diagnostics.SystemLogPlugin;
 import com.hazelcast.internal.diagnostics.SystemPropertiesPlugin;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
 import com.hazelcast.internal.dynamicconfig.EmptyDynamicConfigListener;
+import com.hazelcast.internal.hotrestart.InternalHotRestartService;
+import com.hazelcast.internal.hotrestart.NoOpHotRestartService;
+import com.hazelcast.internal.hotrestart.NoopInternalHotRestartService;
 import com.hazelcast.internal.jmx.ManagementService;
-import com.hazelcast.internal.management.ManagementCenterConnectionFactory;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
 import com.hazelcast.internal.memory.DefaultMemoryStats;
 import com.hazelcast.internal.memory.MemoryStats;
@@ -174,15 +173,33 @@ public class DefaultNodeExtension implements NodeExtension {
     public void printNodeInfo() {
         BuildInfo buildInfo = node.getBuildInfo();
 
+        printBannersBeforeNodeInfo();
+
+        String build = constructBuildString(buildInfo);
+        printNodeInfoInternal(buildInfo, build);
+    }
+
+    protected void printBannersBeforeNodeInfo() {
+    }
+
+    protected String constructBuildString(BuildInfo buildInfo) {
         String build = buildInfo.getBuild();
         String revision = buildInfo.getRevision();
         if (!revision.isEmpty()) {
             build += " - " + revision;
         }
-        systemLogger.info("Hazelcast " + buildInfo.getVersion()
+        return build;
+    }
+
+    private void printNodeInfoInternal(BuildInfo buildInfo, String build) {
+        systemLogger.info(getEditionString() + " " + buildInfo.getVersion()
                 + " (" + build + ") starting at " + node.getThisAddress());
-        systemLogger.info("Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.");
+        systemLogger.info("Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.");
         systemLogger.fine("Configured Hazelcast Serialization version: " + buildInfo.getSerializationVersion());
+    }
+
+    protected String getEditionString() {
+        return "Hazelcast";
     }
 
     @Override
@@ -368,7 +385,7 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public void onPartitionStateChange() {
-        ClientClusterListenerService service = node.clientEngine.getClientClusterListenerService();
+        ClusterViewListenerService service = node.clientEngine.getClusterListenerService();
         if (service != null) {
             service.onPartitionStateChange();
         }
@@ -376,7 +393,7 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public void onMemberListChange() {
-        ClientClusterListenerService service = node.clientEngine.getClientClusterListenerService();
+        ClusterViewListenerService service = node.clientEngine.getClusterListenerService();
         if (service != null) {
             service.onMemberListChange();
         }
@@ -495,11 +512,6 @@ public class DefaultNodeExtension implements NodeExtension {
         diagnostics.register(new NetworkingImbalancePlugin(nodeEngine));
         diagnostics.register(new OperationHeartbeatPlugin(nodeEngine));
         diagnostics.register(new OperationThreadSamplerPlugin(nodeEngine));
-    }
-
-    @Override
-    public ManagementCenterConnectionFactory getManagementCenterConnectionFactory() {
-        return null;
     }
 
     @Override

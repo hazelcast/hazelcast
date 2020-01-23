@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,9 @@ import com.hazelcast.internal.eviction.EvictionPolicyEvaluatorProvider;
 import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.internal.eviction.impl.evaluator.EvictionPolicyEvaluator;
 import com.hazelcast.internal.eviction.impl.strategy.sampling.SamplingEvictionStrategy;
+import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.util.Clock;
@@ -51,7 +53,6 @@ import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.internal.util.comparators.ValueComparator;
 import com.hazelcast.internal.util.comparators.ValueComparatorUtil;
 import com.hazelcast.map.impl.MapEntries;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
@@ -221,7 +222,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             Config config = nodeEngine.getConfig();
             WanReplicationConfig wanReplicationConfig = config.getWanReplicationConfig(wanReplicationRefName);
             if (wanReplicationConfig != null) {
-                WanConsumerConfig wanConsumerConfig = wanReplicationConfig.getWanConsumerConfig();
+                WanConsumerConfig wanConsumerConfig = wanReplicationConfig.getConsumerConfig();
                 if (wanConsumerConfig != null) {
                     persistWanReplicatedData = wanConsumerConfig.isPersistWanReplicatedData();
                 }
@@ -436,11 +437,13 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     protected ExpiryPolicy getExpiryPolicy(CacheRecord record, ExpiryPolicy expiryPolicy) {
         if (expiryPolicy != null) {
             return expiryPolicy;
-        } else if (record != null && record.getExpiryPolicy() != null) {
-            return (ExpiryPolicy) toValue(record.getExpiryPolicy());
-        } else {
-            return defaultExpiryPolicy;
         }
+
+        if (record != null && record.getExpiryPolicy() != null) {
+            return (ExpiryPolicy) toValue(record.getExpiryPolicy());
+        }
+
+        return defaultExpiryPolicy;
     }
 
     protected boolean evictIfExpired(Data key, R record, long now) {
@@ -1737,8 +1740,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     @Override
-    public CacheRecord merge(CacheMergeTypes mergingEntry,
-                             SplitBrainMergePolicy<Data, CacheMergeTypes> mergePolicy,
+    public CacheRecord merge(CacheMergeTypes<Object, Object> mergingEntry,
+                             SplitBrainMergePolicy<Object, CacheMergeTypes<Object, Object>, Object> mergePolicy,
                              CallerProvenance callerProvenance) {
         final long now = Clock.currentTimeMillis();
         final long start = isStatisticsEnabled() ? System.nanoTime() : 0;
@@ -1747,22 +1750,22 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         injectDependencies(mergePolicy);
 
         boolean merged = false;
-        Data key = mergingEntry.getKey();
+        Data key = (Data) mergingEntry.getRawKey();
         long expiryTime = mergingEntry.getExpirationTime();
         R record = records.get(key);
         boolean isExpired = processExpiredEntry(key, record, now);
         boolean disableWriteThrough = !persistenceEnabledFor(callerProvenance);
 
         if (record == null || isExpired) {
-            Data newValue = mergePolicy.merge(mergingEntry, null);
+            Object newValue = mergePolicy.merge(mergingEntry, null);
             if (newValue != null) {
                 record = createRecordWithExpiry(key, newValue, expiryTime, now, disableWriteThrough, IGNORE_COMPLETION);
                 merged = record != null;
             }
         } else {
             Data oldValue = ss.toData(record.getValue());
-            CacheMergeTypes existingEntry = createMergingEntry(ss, key, oldValue, record);
-            Data newValue = mergePolicy.merge(mergingEntry, existingEntry);
+            CacheMergeTypes<Object, Object> existingEntry = createMergingEntry(ss, key, oldValue, record);
+            Object newValue = mergePolicy.merge(mergingEntry, existingEntry);
 
             merged = updateWithMergingValue(key, oldValue, newValue, record, expiryTime, now, disableWriteThrough);
         }
@@ -1796,13 +1799,13 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     @Override
-    public CacheKeyIterationResult fetchKeys(int tableIndex, int size) {
-        return records.fetchKeys(tableIndex, size);
+    public CacheKeysWithCursor fetchKeys(IterationPointer[] pointers, int size) {
+        return records.fetchKeys(pointers, size);
     }
 
     @Override
-    public CacheEntryIterationResult fetchEntries(int tableIndex, int size) {
-        return records.fetchEntries(tableIndex, size);
+    public CacheEntriesWithCursor fetchEntries(IterationPointer[] pointers, int size) {
+        return records.fetchEntries(pointers, size);
     }
 
     @Override

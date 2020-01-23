@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,7 +83,7 @@ public class QueueReplicationOperation extends Operation implements IdentifiedDa
         for (Map.Entry<String, QueueContainer> entry : migrationData.entrySet()) {
             out.writeUTF(entry.getKey());
             QueueContainer container = entry.getValue();
-            container.writeData(out);
+            out.writeObject(container);
         }
     }
 
@@ -93,9 +93,7 @@ public class QueueReplicationOperation extends Operation implements IdentifiedDa
         migrationData = createHashMap(mapSize);
         for (int i = 0; i < mapSize; i++) {
             String name = in.readUTF();
-            QueueContainer container = new QueueContainer(name);
-            container.readData(in);
-            migrationData.put(name, container);
+            migrationData.put(name, in.readObject());
         }
     }
 }

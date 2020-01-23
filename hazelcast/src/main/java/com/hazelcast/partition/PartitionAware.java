@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,10 +25,10 @@ package com.hazelcast.partition;
  * In Hazelcast, disparate data structures will be stored on the same partition,
  * based on the partition key. For example, if "Steve" was used, then the following would be on one partition.
  * <ul>
- *     <li>a customers IMap with an entry of key "Steve"</li>
- *     <li>an orders IMap using a customer key type implementing PartitionAware with key "Steve</li>
- *     <li>any queue named "Steve"</li>
- *     <li>any PartitionAware object with partition key "Steve"</li>
+ *     <li>a customers IMap with an entry of key "Steve"
+ *     <li>an orders IMap using a customer key type implementing PartitionAware with key "Steve"
+ *     <li>any queue named "Steve"
+ *     <li>any PartitionAware object with partition key "Steve"
  * </ul>
  *
  * If you have a {@link com.hazelcast.core.IExecutorService} which needs to deal with a customer and a customer's
@@ -36,7 +36,7 @@ package com.hazelcast.partition;
  * <p>
  * {@link com.hazelcast.core.DistributedObject} also has a notion of the partition key which is of type String
  * to ensure that the same partition as distributed Objects Strings is used for the partition key.
- * <p>
+ *
  * @see com.hazelcast.core.DistributedObject
  * @param <T> key type
  */

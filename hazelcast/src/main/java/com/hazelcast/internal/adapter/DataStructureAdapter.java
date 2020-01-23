@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,11 +70,31 @@ public interface DataStructureAdapter<K, V> {
 
     boolean replace(K key, V oldValue, V newValue);
 
+    @MethodNotAvailable
+    default V getAndReplace(K key, V value) {
+        throw new MethodNotAvailableException();
+    }
+
+    @MethodNotAvailable
+    default CompletionStage<V> getAndReplaceAsync(K key, V value) {
+        throw new MethodNotAvailableException();
+    }
+
     V remove(K key);
 
     boolean remove(K key, V oldValue);
 
     CompletionStage<V> removeAsync(K key);
+
+    @MethodNotAvailable
+    default V getAndRemove(K key) {
+        throw new MethodNotAvailableException();
+    }
+
+    @MethodNotAvailable
+    default CompletionStage<V> getAndRemoveAsync(K key) {
+        throw new MethodNotAvailableException();
+    }
 
     void delete(K key);
 
@@ -145,9 +165,13 @@ public interface DataStructureAdapter<K, V> {
         PUT_IF_ABSENT_ASYNC("putIfAbsentAsync", Object.class, Object.class),
         REPLACE("replace", Object.class, Object.class),
         REPLACE_WITH_OLD_VALUE("replace", Object.class, Object.class, Object.class),
+        GET_AND_REPLACE("getAndReplace", Object.class, Object.class),
+        GET_AND_REPLACE_ASYNC("getAndReplaceAsync", Object.class, Object.class),
         REMOVE("remove", Object.class),
         REMOVE_WITH_OLD_VALUE("remove", Object.class, Object.class),
         REMOVE_ASYNC("removeAsync", Object.class),
+        GET_AND_REMOVE("getAndRemove", Object.class),
+        GET_AND_REMOVE_ASYNC("getAndRemoveAsync", Object.class),
         DELETE("delete", Object.class),
         DELETE_ASYNC("deleteAsync", Object.class),
         EVICT("evict", Object.class),

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,14 +18,34 @@ package com.hazelcast.internal.monitor.impl;
 
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.json.internal.JsonSerializable;
 import com.hazelcast.query.LocalIndexStats;
 import com.hazelcast.replicatedmap.LocalReplicatedMapStats;
-import com.hazelcast.internal.util.Clock;
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.REPLICATED_MAP_CREATION_TIME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.REPLICATED_MAP_MAX_GET_LATENCY;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.REPLICATED_MAP_MAX_PUT_LATENCY;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.REPLICATED_MAP_MAX_REMOVE_LATENCY;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.REPLICATED_MAP_METRIC_GET_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.REPLICATED_MAP_METRIC_HITS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.REPLICATED_MAP_METRIC_LAST_ACCESS_TIME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.REPLICATED_MAP_METRIC_LAST_UPDATE_TIME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.REPLICATED_MAP_METRIC_NUMBER_OF_EVENTS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.REPLICATED_MAP_METRIC_NUMBER_OF_OTHER_OPERATIONS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.REPLICATED_MAP_METRIC_PUT_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.REPLICATED_MAP_METRIC_REMOVE_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.REPLICATED_MAP_METRIC_TOTAL_GET_LATENCIES;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.REPLICATED_MAP_METRIC_TOTAL_PUT_LATENCIES;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.REPLICATED_MAP_METRIC_TOTAL_REMOVE_LATENCIES;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.REPLICATED_MAP_OWNED_ENTRY_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.REPLICATED_MAP_OWNED_ENTRY_MEMORY_COST;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.REPLICATED_MAP_TOTAL;
+import static com.hazelcast.internal.metrics.ProbeUnit.BYTES;
+import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.util.ConcurrencyUtil.setMax;
 import static com.hazelcast.internal.util.JsonUtil.getLong;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
@@ -69,40 +89,40 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats, Jso
             newUpdater(LocalReplicatedMapStatsImpl.class, "ownedEntryMemoryCost");
 
     // these fields are only accessed through the updaters
-    @Probe
+    @Probe(name = REPLICATED_MAP_METRIC_LAST_ACCESS_TIME, unit = MS)
     private volatile long lastAccessTime;
-    @Probe
+    @Probe(name = REPLICATED_MAP_METRIC_LAST_UPDATE_TIME, unit = MS)
     private volatile long lastUpdateTime;
-    @Probe
+    @Probe(name = REPLICATED_MAP_METRIC_HITS)
     private volatile long hits;
-    @Probe
+    @Probe(name = REPLICATED_MAP_METRIC_NUMBER_OF_OTHER_OPERATIONS)
     private volatile long numberOfOtherOperations;
-    @Probe
+    @Probe(name = REPLICATED_MAP_METRIC_NUMBER_OF_EVENTS)
     private volatile long numberOfEvents;
-    @Probe
+    @Probe(name = REPLICATED_MAP_METRIC_GET_COUNT)
     private volatile long getCount;
-    @Probe
+    @Probe(name = REPLICATED_MAP_METRIC_PUT_COUNT)
     private volatile long putCount;
-    @Probe
+    @Probe(name = REPLICATED_MAP_METRIC_REMOVE_COUNT)
     private volatile long removeCount;
-    @Probe
+    @Probe(name = REPLICATED_MAP_METRIC_TOTAL_GET_LATENCIES, unit = MS)
     private volatile long totalGetLatencies;
-    @Probe
+    @Probe(name = REPLICATED_MAP_METRIC_TOTAL_PUT_LATENCIES, unit = MS)
     private volatile long totalPutLatencies;
-    @Probe
+    @Probe(name = REPLICATED_MAP_METRIC_TOTAL_REMOVE_LATENCIES, unit = MS)
     private volatile long totalRemoveLatencies;
-    @Probe
+    @Probe(name = REPLICATED_MAP_MAX_GET_LATENCY, unit = MS)
     private volatile long maxGetLatency;
-    @Probe
+    @Probe(name = REPLICATED_MAP_MAX_PUT_LATENCY, unit = MS)
     private volatile long maxPutLatency;
-    @Probe
+    @Probe(name = REPLICATED_MAP_MAX_REMOVE_LATENCY, unit = MS)
     private volatile long maxRemoveLatency;
 
-    @Probe
+    @Probe(name = REPLICATED_MAP_CREATION_TIME, unit = MS)
     private volatile long creationTime;
-    @Probe
+    @Probe(name = REPLICATED_MAP_OWNED_ENTRY_COUNT)
     private volatile long ownedEntryCount;
-    @Probe
+    @Probe(name = REPLICATED_MAP_OWNED_ENTRY_MEMORY_COST, unit = BYTES)
     private volatile long ownedEntryMemoryCost;
 
     public LocalReplicatedMapStatsImpl() {
@@ -204,7 +224,7 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats, Jso
     public void setDirtyEntryCount(long dirtyEntryCount) {
     }
 
-    @Probe
+    @Probe(name = REPLICATED_MAP_TOTAL)
     @Override
     public long total() {
         return putCount + getCount + removeCount + numberOfOtherOperations;

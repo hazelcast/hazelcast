@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,31 +19,22 @@ package com.hazelcast.internal.management;
 import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.client.impl.ClientSelector;
 import com.hazelcast.client.impl.ClientSelectors;
-import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.dto.ClientBwListDTO;
 import com.hazelcast.internal.management.dto.ClientBwListEntryDTO;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
-import com.hazelcast.spi.impl.operationservice.AbstractLocalOperation;
 
 import java.util.List;
 import java.util.regex.Pattern;
 
-import static com.hazelcast.internal.util.JsonUtil.getObject;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Handles client B/W list configuration received from Management Center and applies changes.
  * <p>
  * This class is thread-safe.
- * <p>
- * Note: Once MC migrates to client comms, this class may be converted into a {@link AbstractLocalOperation}.
- * The {@link #handleLostConnection} and {@link #handleNewConfig} methods won't be required when the migration happens.
  *
  * @see ManagementCenterService ManagementCenterService for more details on usage.
  */
 public class ClientBwListConfigHandler {
-
-    private static final ILogger LOGGER = Logger.getLogger(ClientBwListConfigHandler.class);
 
     private final ClientEngine clientEngine;
 
@@ -52,39 +43,15 @@ public class ClientBwListConfigHandler {
     }
 
     /**
-     * Handles Management Center connection lost event: removes any client B/W list filtering.
-     */
-    public void handleLostConnection() {
-        try {
-            clientEngine.applySelector(ClientSelectors.any());
-        } catch (Exception e) {
-            LOGGER.warning("Could not clean up client B/W list filtering.", e);
-        }
-    }
-
-    /**
-     * Parses client B/W list filtering configuration in JSON format and applies the configuration.
-     * Never throws.
-     *
-     * @param configJson configuration JSON object
-     */
-    public void handleNewConfig(JsonObject configJson) {
-        try {
-            JsonObject bwListConfigJson = getObject(configJson, "clientBwList");
-            ClientBwListDTO configDTO = new ClientBwListDTO();
-            configDTO.fromJson(bwListConfigJson);
-            applyConfig(configDTO);
-        } catch (Exception e) {
-            LOGGER.warning("Could not apply client B/W list filtering.", e);
-        }
-    }
-
-    /**
      * Applies the given config.
      *
      * @param configDTO configuration object
      */
     public void applyConfig(ClientBwListDTO configDTO) {
+        requireNonNull(configDTO, "Client filtering config must not be null");
+        requireNonNull(configDTO.mode, "Config mode must not be null");
+        requireNonNull(configDTO.entries, "Config entries must not be null");
+
         ClientSelector selector;
         switch (configDTO.mode) {
             case DISABLED:
@@ -113,6 +80,9 @@ public class ClientBwListConfigHandler {
     }
 
     private static ClientSelector createSelector(ClientBwListEntryDTO entry) {
+        requireNonNull(entry.type, "Entry type must not be null");
+        requireNonNull(entry.value, "Entry value must not be null");
+
         switch (entry.type) {
             case IP_ADDRESS:
                 return ClientSelectors.ipSelector(entry.value);

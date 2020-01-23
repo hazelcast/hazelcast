@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.locksupport.LockSupportService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -58,14 +58,12 @@ public class NodeEngineTest extends HazelcastTestSupport {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
     public void getServiceOrNull_whenNonExistingService() {
         Object sharedService = nodeEngine.getServiceOrNull("notexist");
         assertNull(sharedService);
     }
 
     @Test
-    @SuppressWarnings("deprecation")
     public void getServiceOrNull_whenExistingService() {
         Object sharedService = nodeEngine.getServiceOrNull(LockSupportService.SERVICE_NAME);
         assertNotNull(sharedService);

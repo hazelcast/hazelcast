@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,19 +39,16 @@ public class ScheduledExecutorMemberOwnedContainer
 
     private final AtomicBoolean memberPartitionLock = new AtomicBoolean();
 
-    ScheduledExecutorMemberOwnedContainer(String name, int capacity, NodeEngine nodeEngine) {
-        super(name, -1, nodeEngine, MEMBER_DURABILITY, capacity, new ConcurrentHashMap<String, ScheduledTaskDescriptor>());
+    ScheduledExecutorMemberOwnedContainer(String name, CapacityPermit permit,
+                                          NodeEngine nodeEngine) {
+        super(name, -1, nodeEngine, permit, MEMBER_DURABILITY, new ConcurrentHashMap<>());
     }
 
     @Override
     public ScheduledFuture schedule(TaskDefinition definition) {
         try {
             acquireMemberPartitionLockIfNeeded();
-
-            checkNotDuplicateTask(definition.getName());
-            checkNotAtCapacity();
-            return createContextAndSchedule(definition);
-
+            return super.schedule(definition);
         } finally {
             releaseMemberPartitionLockIfNeeded();
         }
@@ -67,7 +64,7 @@ public class ScheduledExecutorMemberOwnedContainer
 
     @Override
     public ScheduledTaskHandler offprintHandler(String taskName) {
-        return ScheduledTaskHandlerImpl.of(getNodeEngine().getThisAddress(), getName(), taskName);
+        return ScheduledTaskHandlerImpl.of(getNodeEngine().getClusterService().getLocalMember().getUuid(), getName(), taskName);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -135,239 +135,51 @@ public final class QueueDataSerializerHook implements DataSerializerHook {
 
         //noinspection unchecked
         ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[MERGE_BACKUP + 1];
-        constructors[OFFER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new OfferOperation();
-            }
-        };
-
-        constructors[OFFER_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new OfferBackupOperation();
-            }
-        };
-        constructors[POLL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PollOperation();
-            }
-        };
-        constructors[POLL_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PollBackupOperation();
-            }
-        };
-        constructors[PEEK] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PeekOperation();
-            }
-        };
-        constructors[ADD_ALL_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new AddAllBackupOperation();
-            }
-        };
-        constructors[ADD_ALL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new AddAllOperation();
-            }
-        };
-        constructors[CLEAR_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ClearBackupOperation();
-            }
-        };
-        constructors[CLEAR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ClearOperation();
-            }
-        };
-        constructors[COMPARE_AND_REMOVE_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CompareAndRemoveBackupOperation();
-            }
-        };
-        constructors[COMPARE_AND_REMOVE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CompareAndRemoveOperation();
-            }
-        };
-        constructors[CONTAINS] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ContainsOperation();
-            }
-        };
-        constructors[DRAIN_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new DrainBackupOperation();
-            }
-        };
-        constructors[DRAIN] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new DrainOperation();
-            }
-        };
-        constructors[ITERATOR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new IteratorOperation();
-            }
-        };
-        constructors[QUEUE_EVENT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new QueueEvent();
-            }
-        };
-        constructors[QUEUE_EVENT_FILTER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new QueueEventFilter();
-            }
-        };
-        constructors[QUEUE_ITEM] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new QueueItem();
-            }
-        };
-        constructors[QUEUE_REPLICATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new QueueReplicationOperation();
-            }
-        };
-        constructors[REMOVE_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new RemoveBackupOperation();
-            }
-        };
-        constructors[REMOVE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new RemoveOperation();
-            }
-        };
-        constructors[SIZE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new SizeOperation();
-            }
-        };
-        constructors[TXN_OFFER_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new TxnOfferBackupOperation();
-            }
-        };
-        constructors[TXN_OFFER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new TxnOfferOperation();
-            }
-        };
-        constructors[TXN_POLL_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new TxnPollBackupOperation();
-            }
-        };
-        constructors[TXN_POLL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new TxnPollOperation();
-            }
-        };
-        constructors[TXN_PREPARE_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new TxnPrepareBackupOperation();
-            }
-        };
-        constructors[TXN_PREPARE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new TxnPrepareOperation();
-            }
-        };
-        constructors[TXN_RESERVE_OFFER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new TxnReserveOfferOperation();
-            }
-        };
-        constructors[TXN_RESERVE_OFFER_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new TxnReserveOfferBackupOperation();
-            }
-        };
-        constructors[TXN_RESERVE_POLL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new TxnReservePollOperation();
-            }
-        };
-        constructors[TXN_RESERVE_POLL_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new TxnReservePollBackupOperation();
-            }
-        };
-        constructors[TXN_ROLLBACK_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new TxnRollbackBackupOperation();
-            }
-        };
-        constructors[TXN_ROLLBACK] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new TxnRollbackOperation();
-            }
-        };
-        constructors[CHECK_EVICT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CheckAndEvictOperation();
-            }
-        };
-        constructors[QUEUE_CONTAINER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new QueueContainer(null);
-            }
-        };
-        constructors[TRANSACTION_ROLLBACK] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new QueueTransactionRollbackOperation();
-            }
-        };
-        constructors[TX_QUEUE_ITEM] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new TxQueueItem();
-            }
-        };
-        constructors[TXN_PEEK] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new TxnPeekOperation();
-            }
-        };
-        constructors[IS_EMPTY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new IsEmptyOperation();
-            }
-        };
-        constructors[REMAINING_CAPACITY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new RemainingCapacityOperation();
-            }
-        };
-        constructors[TXN_COMMIT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new TxnCommitOperation();
-            }
-        };
-        constructors[TXN_COMMIT_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new TxnCommitBackupOperation();
-            }
-        };
-        constructors[MERGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new QueueMergeOperation();
-            }
-        };
-        constructors[MERGE_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new QueueMergeBackupOperation();
-            }
-        };
+        constructors[OFFER] = arg -> new OfferOperation();
+        constructors[OFFER_BACKUP] = arg -> new OfferBackupOperation();
+        constructors[POLL] = arg -> new PollOperation();
+        constructors[POLL_BACKUP] = arg -> new PollBackupOperation();
+        constructors[PEEK] = arg -> new PeekOperation();
+        constructors[ADD_ALL_BACKUP] = arg -> new AddAllBackupOperation();
+        constructors[ADD_ALL] = arg -> new AddAllOperation();
+        constructors[CLEAR_BACKUP] = arg -> new ClearBackupOperation();
+        constructors[CLEAR] = arg -> new ClearOperation();
+        constructors[COMPARE_AND_REMOVE_BACKUP] = arg -> new CompareAndRemoveBackupOperation();
+        constructors[COMPARE_AND_REMOVE] = arg -> new CompareAndRemoveOperation();
+        constructors[CONTAINS] = arg -> new ContainsOperation();
+        constructors[DRAIN_BACKUP] = arg -> new DrainBackupOperation();
+        constructors[DRAIN] = arg -> new DrainOperation();
+        constructors[ITERATOR] = arg -> new IteratorOperation();
+        constructors[QUEUE_EVENT] = arg -> new QueueEvent();
+        constructors[QUEUE_EVENT_FILTER] = arg -> new QueueEventFilter();
+        constructors[QUEUE_ITEM] = arg -> new QueueItem();
+        constructors[QUEUE_REPLICATION] = arg -> new QueueReplicationOperation();
+        constructors[REMOVE_BACKUP] = arg -> new RemoveBackupOperation();
+        constructors[REMOVE] = arg -> new RemoveOperation();
+        constructors[SIZE] = arg -> new SizeOperation();
+        constructors[TXN_OFFER_BACKUP] = arg -> new TxnOfferBackupOperation();
+        constructors[TXN_OFFER] = arg -> new TxnOfferOperation();
+        constructors[TXN_POLL_BACKUP] = arg -> new TxnPollBackupOperation();
+        constructors[TXN_POLL] = arg -> new TxnPollOperation();
+        constructors[TXN_PREPARE_BACKUP] = arg -> new TxnPrepareBackupOperation();
+        constructors[TXN_PREPARE] = arg -> new TxnPrepareOperation();
+        constructors[TXN_RESERVE_OFFER] = arg -> new TxnReserveOfferOperation();
+        constructors[TXN_RESERVE_OFFER_BACKUP] = arg -> new TxnReserveOfferBackupOperation();
+        constructors[TXN_RESERVE_POLL] = arg -> new TxnReservePollOperation();
+        constructors[TXN_RESERVE_POLL_BACKUP] = arg -> new TxnReservePollBackupOperation();
+        constructors[TXN_ROLLBACK_BACKUP] = arg -> new TxnRollbackBackupOperation();
+        constructors[TXN_ROLLBACK] = arg -> new TxnRollbackOperation();
+        constructors[CHECK_EVICT] = arg -> new CheckAndEvictOperation();
+        constructors[QUEUE_CONTAINER] = arg -> new QueueContainer();
+        constructors[TRANSACTION_ROLLBACK] = arg -> new QueueTransactionRollbackOperation();
+        constructors[TX_QUEUE_ITEM] = arg -> new TxQueueItem();
+        constructors[TXN_PEEK] = arg -> new TxnPeekOperation();
+        constructors[IS_EMPTY] = arg -> new IsEmptyOperation();
+        constructors[REMAINING_CAPACITY] = arg -> new RemainingCapacityOperation();
+        constructors[TXN_COMMIT] = arg -> new TxnCommitOperation();
+        constructors[TXN_COMMIT_BACKUP] = arg -> new TxnCommitBackupOperation();
+        constructors[MERGE] = arg -> new QueueMergeOperation();
+        constructors[MERGE_BACKUP] = arg -> new QueueMergeBackupOperation();
 
         return new ArrayDataSerializableFactory(constructors);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,14 @@
 
 package com.hazelcast.internal.nearcache;
 
+import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nearcache.NearCacheStats;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.InitializingObject;
 import com.hazelcast.spi.properties.HazelcastProperty;
+
+import javax.annotation.Nullable;
 
 /**
  * {@link NearCache} is the contract point to store keys and values in underlying
@@ -56,6 +59,24 @@ public interface NearCache<K, V> extends InitializingObject {
             DEFAULT_EXPIRATION_TASK_PERIOD_SECONDS);
 
     /**
+     * Indicates how a near cache is updated.
+     */
+    enum UpdateSemantic {
+        /**
+         * A read-only operation is updating near cache,
+         * like {@link com.hazelcast.map.IMap#get}
+         * or {@link com.hazelcast.map.IMap#getAll}
+         */
+        READ_UPDATE,
+        /**
+         * A write operation is updating near cache, like
+         * {@link com.hazelcast.cache.ICache#put} or
+         * {@link com.hazelcast.cache.ICache#putIfAbsent}
+         */
+        WRITE_UPDATE
+    }
+
+    /**
      * NULL Object
      */
     Object CACHED_AS_NULL = new Object();
@@ -71,6 +92,11 @@ public interface NearCache<K, V> extends InitializingObject {
      * @return the name of this {@link NearCache} instance
      */
     String getName();
+
+    /**
+     * @return config object used by {@link NearCache} instance.
+     */
+    NearCacheConfig getNearCacheConfig();
 
     /**
      * Gets the value associated with the given {@code key}.
@@ -166,15 +192,20 @@ public interface NearCache<K, V> extends InitializingObject {
     <T> T unwrap(Class<T> clazz);
 
     /**
+     * Reservations are done with this method.
+     *
      * Tries to reserve supplied key for update. <p> If one thread takes
      * reservation, only that thread can update the key.
      *
-     * @param key     key to be reserved for update
-     * @param keyData key to be reserved for update as {@link Data}
+     * @param key            key to be reserved for update
+     * @param keyData        key to be reserved for update as {@link Data}
+     * @param updateSemantic when {@link UpdateSemantic#WRITE_UPDATE}
+     *                       reservation is done with cacheOnUpdate semantics,
+     *                       otherwise reservations are done without that semantic.
      * @return reservation ID if reservation succeeds, else returns {@link
      * NearCacheRecord#NOT_RESERVED}
      */
-    long tryReserveForUpdate(K key, Data keyData);
+    long tryReserveForUpdate(K key, Data keyData, UpdateSemantic updateSemantic);
 
     /**
      * Tries to update reserved key with supplied value. If update
@@ -184,10 +215,11 @@ public interface NearCache<K, V> extends InitializingObject {
      * @param key           reserved key for update
      * @param value         value to be associated with reserved key
      * @param reservationId ID for this reservation
-     * @param deserialize   eagerly deserialize
+     * @param deserialize   when {@code true} eagerly deserialize
      *                      returning value
      * @return associated value if deserialize is {@code
      * true} and update succeeds, otherwise returns null
      */
+    @Nullable
     V tryPublishReserved(K key, V value, long reservationId, boolean deserialize);
 }

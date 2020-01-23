@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,12 @@
 
 package com.hazelcast.spi.impl.operationservice;
 
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.internal.nio.EndpointManager;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
-
-import javax.annotation.Nullable;
 
 import static com.hazelcast.internal.util.Preconditions.checkFalse;
 import static com.hazelcast.spi.impl.operationservice.Operation.GENERIC_PARTITION_ID;
@@ -65,7 +63,6 @@ public abstract class InvocationBuilder {
     protected final Operation op;
     protected final int partitionId;
     protected final Address target;
-    protected ExecutionCallback<Object> executionCallback;
     protected Runnable doneCallback;
 
     protected long callTimeout = DEFAULT_CALL_TIMEOUT;
@@ -109,7 +106,7 @@ public abstract class InvocationBuilder {
 
     /**
      * Checks if the Future should automatically deserialize the result. In most cases, you don't want
-     * {@link com.hazelcast.nio.serialization.Data} to be returned, but the deserialized object. But in some
+     * {@link Data} to be returned, but the deserialized object. But in some
      * cases, you want to get the raw Data object.
      * <p>
      * Defaults to true.
@@ -250,34 +247,9 @@ public abstract class InvocationBuilder {
         return callTimeout;
     }
 
-    /**
-     * Gets the ExecutionCallback. If none is set, null is returned.
-     *
-     * @return gets the ExecutionCallback.
-     */
-    public ExecutionCallback<Object> getExecutionCallback() {
-        return executionCallback;
-    }
-
-    /**
-     * Sets the ExecutionCallback.
-     *
-     * @param executionCallback the new ExecutionCallback. If null is passed, the ExecutionCallback is unset.
-     * @return the updated InvocationBuilder.
-     */
-    public InvocationBuilder setExecutionCallback(
-            @Nullable ExecutionCallback<Object> executionCallback) {
-        this.executionCallback = executionCallback;
-        return this;
-    }
-
     public InvocationBuilder setEndpointManager(EndpointManager endpointManager) {
         this.endpointManager = endpointManager;
         return this;
-    }
-
-    protected ExecutionCallback getTargetExecutionCallback() {
-        return executionCallback;
     }
 
     /**

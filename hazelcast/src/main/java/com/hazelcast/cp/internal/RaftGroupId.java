@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,16 +35,16 @@ public final class RaftGroupId implements CPGroupId, IdentifiedDataSerializable,
 
     private String name;
     private long seed;
-    private long commitIndex;
+    private long groupId;
 
     public RaftGroupId() {
     }
 
-    public RaftGroupId(String name, long seed, long commitIndex) {
+    public RaftGroupId(String name, long seed, long groupId) {
         assert name != null;
         this.name = name;
         this.seed = seed;
-        this.commitIndex = commitIndex;
+        this.groupId = groupId;
     }
 
     @Override
@@ -58,35 +58,35 @@ public final class RaftGroupId implements CPGroupId, IdentifiedDataSerializable,
 
     @Override
     public long getId() {
-        return commitIndex;
+        return groupId;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeLong(seed);
-        out.writeLong(commitIndex);
+        out.writeLong(groupId);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         seed = in.readLong();
-        commitIndex = in.readLong();
+        groupId = in.readLong();
     }
 
     private void writeObject(ObjectOutputStream out) throws IOException {
         out.defaultWriteObject();
         out.writeUTF(name);
         out.writeLong(seed);
-        out.writeLong(commitIndex);
+        out.writeLong(groupId);
     }
 
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
         name = in.readUTF();
         seed = in.readLong();
-        commitIndex = in.readLong();
+        groupId = in.readLong();
     }
 
     @Override
@@ -113,7 +113,7 @@ public final class RaftGroupId implements CPGroupId, IdentifiedDataSerializable,
         if (seed != that.seed) {
             return false;
         }
-        if (commitIndex != that.commitIndex) {
+        if (groupId != that.groupId) {
             return false;
         }
         return name.equals(that.name);
@@ -123,12 +123,12 @@ public final class RaftGroupId implements CPGroupId, IdentifiedDataSerializable,
     public int hashCode() {
         int result = name.hashCode();
         result = 31 * result + (int) (seed ^ (seed >>> 32));
-        result = 31 * result + (int) (commitIndex ^ (commitIndex >>> 32));
+        result = 31 * result + (int) (groupId ^ (groupId >>> 32));
         return result;
     }
 
     @Override
     public String toString() {
-        return "CPGroupId{" + "name='" + name + '\'' + ", seed=" + seed + ", commitIndex=" + commitIndex + '}';
+        return "CPGroupId{" + "name='" + name + '\'' + ", seed=" + seed + ", groupId=" + groupId + '}';
     }
 }

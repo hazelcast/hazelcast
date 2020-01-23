@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,12 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.EntryAdapter;
-import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
@@ -110,7 +107,7 @@ public class ClientServiceTest extends ClientTestSupport {
         final HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
         final ClientConfig clientConfig = new ClientConfig();
         clientConfig.setClusterName("wrongName");
-        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setMaxBackoffMillis(2000);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(2000);
         try {
             hazelcastFactory.newHazelcastClient(clientConfig);
         } catch (IllegalStateException ignored) {
@@ -126,7 +123,7 @@ public class ClientServiceTest extends ClientTestSupport {
         final HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
         final ClientConfig clientConfig = new ClientConfig();
         clientConfig.setClusterName("wrongName");
-        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setMaxBackoffMillis(2000);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(2000);
         try {
             hazelcastFactory.newHazelcastClient(clientConfig);
         } catch (IllegalStateException ignored) {
@@ -145,7 +142,7 @@ public class ClientServiceTest extends ClientTestSupport {
         final HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
         final ClientConfig clientConfig = new ClientConfig();
         clientConfig.setClusterName("wrongName");
-        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setMaxBackoffMillis(2000);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(2000);
         try {
             hazelcastFactory.newHazelcastClient(clientConfig);
         } catch (IllegalStateException ignored) {
@@ -237,32 +234,20 @@ public class ClientServiceTest extends ClientTestSupport {
         clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE)
                 .setMultiplier(1).setInitialBackoffMillis(5000);
 
-        final CountDownLatch countDownLatch = new CountDownLatch(2);
 
-        clientConfig.addListenerConfig(new ListenerConfig(new LifecycleListener() {
-            @Override
-            public void stateChanged(LifecycleEvent event) {
-                if (event.getState() == LifecycleEvent.LifecycleState.CLIENT_CONNECTED) {
-                    countDownLatch.countDown();
-                }
-            }
-        }));
         HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
-        final HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
+        ReconnectListener reconnectListener = new ReconnectListener();
+        client.getLifecycleService().addLifecycleListener(reconnectListener);
         //restart the node
         instance.shutdown();
         final HazelcastInstance restartedInstance = hazelcastFactory.newHazelcastInstance();
 
         client.getMap(randomMapName()).size(); // do any operation
 
-        assertOpenEventually(countDownLatch); //wait for clients to reconnect & reAuth
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(1, restartedInstance.getClientService().getConnectedClients().size());
-            }
-        });
+        assertOpenEventually(reconnectListener.reconnectedLatch); //wait for clients to reconnect & reAuth
+        assertTrueEventually(() -> assertEquals(1, restartedInstance.getClientService().getConnectedClients().size()));
     }
 
     @Test(timeout = 120000)
@@ -392,7 +377,7 @@ public class ClientServiceTest extends ClientTestSupport {
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         ClientConfig config = new ClientConfig();
-        config.getConnectionStrategyConfig().getConnectionRetryConfig().setMaxBackoffMillis(2000);
+        config.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(2000);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(config);
         client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
             @Override
@@ -511,21 +496,4 @@ public class ClientServiceTest extends ClientTestSupport {
         }, 4);
     }
 
-    @Test
-    public void testAddingListenersOpenConnectionsToAllCluster() {
-        int memberCount = 4;
-        for (int i = 0; i < memberCount; i++) {
-            hazelcastFactory.newHazelcastInstance();
-        }
-
-        HazelcastClientInstanceImpl client = getHazelcastClientInstanceImpl(hazelcastFactory.newHazelcastClient());
-        ClientConnectionManager connectionManager = client.getConnectionManager();
-        IMap<Object, Object> map = client.getMap("test");
-        UUID uuid = map.addEntryListener(mock(EntryListener.class), false);
-
-        assertEquals(memberCount, connectionManager.getActiveConnections().size());
-
-        map.removeEntryListener(uuid);
-
-    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,15 +18,15 @@ package com.hazelcast.wan.impl;
 
 import com.hazelcast.config.AbstractWanPublisherConfig;
 import com.hazelcast.config.InvalidConfigurationException;
-import com.hazelcast.config.WanBatchReplicationPublisherConfig;
+import com.hazelcast.config.WanBatchPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.internal.monitor.LocalWanStats;
 import com.hazelcast.internal.monitor.WanSyncState;
 import com.hazelcast.internal.services.CoreService;
 import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.version.Version;
-import com.hazelcast.wan.DistributedServiceWanEventCounters;
-import com.hazelcast.wan.WanReplicationPublisher;
+import com.hazelcast.wan.WanEventCounters;
+import com.hazelcast.wan.WanPublisher;
 
 import java.util.List;
 import java.util.UUID;
@@ -34,7 +34,7 @@ import java.util.UUID;
 /**
  * This is the WAN replications service API core interface. The
  * WanReplicationService needs to be capable of creating the actual
- * {@link com.hazelcast.wan.WanReplicationPublisher} instances to replicate
+ * {@link WanPublisher} instances to replicate
  * values to other clusters over the wide area network, so it has to deal
  * with long delays, slow uploads and higher latencies.
  */
@@ -58,11 +58,11 @@ public interface WanReplicationService extends CoreService, StatisticsAwareServi
      *                                       with the name {@code wanReplicationName}
      *                                       and publisher ID {@code wanPublisherId}
      * @see WanReplicationConfig#getName
-     * @see WanBatchReplicationPublisherConfig#getClusterName()
+     * @see WanBatchPublisherConfig#getClusterName()
      * @see AbstractWanPublisherConfig#getPublisherId()
      */
-    WanReplicationPublisher getPublisherOrFail(String wanReplicationName,
-                                               String wanPublisherId);
+    WanPublisher getPublisherOrFail(String wanReplicationName,
+                                    String wanPublisherId);
 
     /**
      * Appends the provided {@link WanReplicationConfig} to the configuration of
@@ -81,13 +81,13 @@ public interface WanReplicationService extends CoreService, StatisticsAwareServi
     void appendWanReplicationConfig(WanReplicationConfig newConfig);
 
     /**
-     * Creates a new {@link com.hazelcast.wan.WanReplicationPublisher} by the given name. If
+     * Creates a new {@link WanPublisher} by the given name. If
      * the name already exists, returns the previous instance.
      *
      * @param name name of the WAN replication configuration
      * @return instance of the corresponding replication publisher
      */
-    DelegatingWanReplicationScheme getWanReplicationPublishers(String name);
+    DelegatingWanScheme getWanReplicationPublishers(String name);
 
     /**
      * Starts the shutdown process of the WAN replication service.
@@ -182,7 +182,7 @@ public interface WanReplicationService extends CoreService, StatisticsAwareServi
 
     /**
      * Adds a new {@link WanReplicationConfig} to this member and creates the
-     * {@link WanReplicationPublisher}s specified in the config.
+     * {@link WanPublisher}s specified in the config.
      * This method can also accept WAN configs with an existing WAN replication
      * name. Such configs will be merged into the existing WAN replication
      * config by adding publishers with publisher IDs which are not already part
@@ -190,7 +190,7 @@ public interface WanReplicationService extends CoreService, StatisticsAwareServi
      *
      * @throws UnsupportedOperationException if invoked on OS
      */
-    void addWanReplicationConfigLocally(WanReplicationConfig wanConfig);
+    void addWanReplicationConfigLocally(WanReplicationConfig wanReplicationConfig);
 
     /**
      * Adds a new {@link WanReplicationConfig} to the cluster.
@@ -204,12 +204,12 @@ public interface WanReplicationService extends CoreService, StatisticsAwareServi
      * have the same existing configuration and there might be a concurrent
      * request to add overlapping WAN replication config.
      *
-     * @param wanConfig the WAN replication config to add
+     * @param wanReplicationConfig the WAN replication config to add
      * @return a best-effort guess at the result of adding WAN replication config
      * @throws UnsupportedOperationException if invoked on OS
      * @see #addWanReplicationConfigLocally(WanReplicationConfig)
      */
-    AddWanConfigResult addWanReplicationConfig(WanReplicationConfig wanConfig);
+    AddWanConfigResult addWanReplicationConfig(WanReplicationConfig wanReplicationConfig);
 
     /**
      * Returns current status of WAN sync operation or {@code null} when there
@@ -223,7 +223,7 @@ public interface WanReplicationService extends CoreService, StatisticsAwareServi
      * @param serviceName the name of the service for the WAN events
      * @return the WAN event counter
      */
-    DistributedServiceWanEventCounters getReceivedEventCounters(String serviceName);
+    WanEventCounters getReceivedEventCounters(String serviceName);
 
     /**
      * Returns a counter of sent and processed WAN replication events.
@@ -233,9 +233,9 @@ public interface WanReplicationService extends CoreService, StatisticsAwareServi
      * @param serviceName        the name of the service for the WAN events
      * @return the WAN event counter
      */
-    DistributedServiceWanEventCounters getSentEventCounters(String wanReplicationName,
-                                                            String wanPublisherId,
-                                                            String serviceName);
+    WanEventCounters getSentEventCounters(String wanReplicationName,
+                                          String wanPublisherId,
+                                          String serviceName);
 
     /**
      * Removes all WAN event counters for the given {@code serviceName} and

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,10 @@
 package com.hazelcast.core;
 
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
+import java.util.EventObject;
+import java.util.UUID;
 
 /**
  * DistributedObjectEvent is fired when a {@link DistributedObject}
@@ -25,8 +29,9 @@ import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
  * @see DistributedObject
  * @see DistributedObjectListener
  */
-public class DistributedObjectEvent {
-
+@SuppressFBWarnings("SE_BAD_FIELD")
+public class DistributedObjectEvent extends EventObject {
+    private static final long serialVersionUID = -4532279189146831926L;
     protected DistributedObject distributedObject;
 
     private EventType eventType;
@@ -35,14 +40,15 @@ public class DistributedObjectEvent {
 
     /**
      * Constructs a DistributedObject Event.
-     *
-     * @param eventType         The event type as an enum {@link EventType} integer.
+     *  @param eventType         The event type as an enum {@link EventType} integer.
      * @param serviceName       The service name of the DistributedObject.
      * @param objectName        The name of the DistributedObject.
      * @param distributedObject The DistributedObject for the event.
+     * @param source            The UUID of the client or member which initialized create/destroy.
      */
-    public DistributedObjectEvent(EventType eventType, String serviceName, String objectName,
-                                  DistributedObject distributedObject) {
+    public DistributedObjectEvent(EventType eventType, String serviceName, String objectName, DistributedObject distributedObject,
+                                  UUID source) {
+        super(source);
         this.eventType = eventType;
         this.serviceName = serviceName;
         this.objectName = objectName;
@@ -106,11 +112,7 @@ public class DistributedObjectEvent {
 
     @Override
     public String toString() {
-        return "DistributedObjectEvent{"
-                + "eventType=" + eventType
-                + ", serviceName='" + serviceName + '\''
-                + ", objectName='" + objectName + '\''
-                + ", distributedObject=" + distributedObject
-                + '}';
+        return "DistributedObjectEvent{" + "distributedObject=" + distributedObject + ", eventType=" + eventType
+                + ", serviceName='" + serviceName + '\'' + ", objectName='" + objectName + '\'' + ", source=" + source + '}';
     }
 }

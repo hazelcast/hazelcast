@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,10 @@ package com.hazelcast.spi.impl;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Before;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -31,14 +30,15 @@ import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.Collection;
+import java.util.concurrent.TimeUnit;
 
 import static java.util.Arrays.asList;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class DeserializingCompletableFutureTest
-        extends InternalCompletableFutureTest {
+public class DeserializingCompletableFutureTest {
 
     @Parameters
     public static Collection<Object> parameters() {
@@ -48,28 +48,85 @@ public class DeserializingCompletableFutureTest
     @Parameter
     public boolean deserialize;
 
-    private InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
-    private Data returnValueAsData;
+    private final InternalSerializationService serializationService
+            = new DefaultSerializationServiceBuilder().build();
 
-    @Before
-    public void setup() {
-        returnValueAsData = serializationService.toData(returnValue);
+    @Test
+    public void test_get_Object() throws Exception {
+        Object value = "value";
+        DeserializingCompletableFuture future = new DeserializingCompletableFuture(serializationService, deserialize);
+
+        future.complete(value);
+        assertEquals(value, future.get());
     }
 
-    @Override
-    protected InternalCompletableFuture<Object> incompleteFuture() {
-        return deserialize ? new DeserializingCompletableFuture<>(serializationService, deserialize)
-                    : new DeserializingCompletableFuture<>();
+    @Test
+    public void test_get_Data() throws Exception {
+        Object value = "value";
+        DeserializingCompletableFuture future = new DeserializingCompletableFuture(serializationService, deserialize);
+
+        future.complete(serializationService.toData(value));
+
+        if (deserialize) {
+            assertEquals(value, future.get());
+        } else {
+            assertEquals(serializationService.toData(value), future.get());
+        }
     }
 
-    @Override
-    protected Runnable completeNormally(InternalCompletableFuture<Object> future) {
-        return () -> {
-            if (deserialize) {
-                future.complete(returnValueAsData);
-            } else {
-                future.complete(returnValue);
-            }
-        };
+    @Test
+    public void test_get_Object_withTimeout() throws Exception {
+        Object value = "value";
+        DeserializingCompletableFuture future = new DeserializingCompletableFuture(serializationService, deserialize);
+
+        future.complete(value);
+        assertEquals(value, future.get(1, TimeUnit.MILLISECONDS));
     }
+
+    @Test
+    public void test_get_Data_withTimeout() throws Exception {
+        Object value = "value";
+        DeserializingCompletableFuture future = new DeserializingCompletableFuture(serializationService, deserialize);
+
+        future.complete(serializationService.toData(value));
+
+        if (deserialize) {
+            assertEquals(value, future.get(1, TimeUnit.MILLISECONDS));
+        } else {
+            assertEquals(serializationService.toData(value), future.get());
+        }
+    }
+
+    @Test
+    public void test_getNow_Object() throws Exception {
+        Object value = "value";
+        DeserializingCompletableFuture future = new DeserializingCompletableFuture(serializationService, deserialize);
+
+        future.complete(value);
+        assertEquals(value, future.getNow("default"));
+    }
+
+    @Test
+    public void test_getNow_Data() throws Exception {
+        Object value = "value";
+        DeserializingCompletableFuture future = new DeserializingCompletableFuture(serializationService, deserialize);
+
+        future.complete(serializationService.toData(value));
+
+        if (deserialize) {
+            assertEquals(value, future.getNow("default"));
+        } else {
+            assertEquals(serializationService.toData(value), future.getNow("default"));
+        }
+    }
+
+    @Test
+    public void test_joinInternal() throws Exception {
+        Object value = "value";
+        DeserializingCompletableFuture future = new DeserializingCompletableFuture(serializationService, deserialize);
+
+        future.complete(value);
+        assertEquals(value, future.joinInternal());
+    }
+
 }

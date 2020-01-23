@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,26 +16,28 @@
 
 package com.hazelcast.client.impl.protocol.task.cache;
 
-import com.hazelcast.cache.impl.CacheEntryIterationResult;
+import com.hazelcast.cache.impl.CacheEntriesWithCursor;
 import com.hazelcast.cache.impl.CacheOperationProvider;
-import com.hazelcast.cache.impl.operation.CacheEntryIteratorOperation;
+import com.hazelcast.cache.impl.operation.CacheFetchEntriesOperation;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheIterateEntriesCodec;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.CachePermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
 import java.util.Collections;
-import java.util.Map;
+
+import static com.hazelcast.internal.iteration.IterationPointer.decodePointers;
+import static com.hazelcast.internal.iteration.IterationPointer.encodePointers;
 
 /**
- * This client request specifically calls {@link CacheEntryIteratorOperation} on the server side.
+ * This client request specifically calls {@link CacheFetchEntriesOperation} on the server side.
  *
- * @see CacheEntryIteratorOperation
+ * @see CacheFetchEntriesOperation
  */
 public class CacheIterateEntriesMessageTask
         extends AbstractCacheMessageTask<CacheIterateEntriesCodec.RequestParameters> {
@@ -47,7 +49,8 @@ public class CacheIterateEntriesMessageTask
     @Override
     protected Operation prepareOperation() {
         CacheOperationProvider operationProvider = getOperationProvider(parameters.name);
-        return operationProvider.createEntryIteratorOperation(parameters.tableIndex, parameters.batch);
+        return operationProvider.createFetchEntriesOperation(
+                decodePointers(parameters.iterationPointers), parameters.batch);
     }
 
     @Override
@@ -58,10 +61,12 @@ public class CacheIterateEntriesMessageTask
     @Override
     protected ClientMessage encodeResponse(Object response) {
         if (response == null) {
-            return CacheIterateEntriesCodec.encodeResponse(0, Collections.<Map.Entry<Data, Data>>emptyList());
+            return CacheIterateEntriesCodec.encodeResponse(Collections.emptyList(), Collections.emptyList());
         }
-        CacheEntryIterationResult iteratorResult = (CacheEntryIterationResult) response;
-        return CacheIterateEntriesCodec.encodeResponse(iteratorResult.getTableIndex(), iteratorResult.getEntries());
+        CacheEntriesWithCursor iteratorResult = (CacheEntriesWithCursor) response;
+        IterationPointer[] pointers = iteratorResult.getPointers();
+        return CacheIterateEntriesCodec.encodeResponse(
+                encodePointers(pointers), iteratorResult.getEntries());
     }
 
     @Override

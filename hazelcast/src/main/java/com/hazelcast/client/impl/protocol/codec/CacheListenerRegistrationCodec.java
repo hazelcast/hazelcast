@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,17 +34,19 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * TODO DOC
+ * Tries to register the listener configuration for the cache specified by its name
+ * to the given member.
  */
-@Generated("eb04ab66c353837b656884fda963a9f3")
+@Generated("fc11b831bdf5590be9fc1b64a59d553d")
 public final class CacheListenerRegistrationCodec {
     //hex: 0x130F00
     public static final int REQUEST_MESSAGE_TYPE = 1249024;
     //hex: 0x130F01
     public static final int RESPONSE_MESSAGE_TYPE = 1249025;
     private static final int REQUEST_SHOULD_REGISTER_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_SHOULD_REGISTER_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_UUID_FIELD_OFFSET = REQUEST_SHOULD_REGISTER_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private CacheListenerRegistrationCodec() {
     }
@@ -61,7 +63,7 @@ public final class CacheListenerRegistrationCodec {
          * The listener configuration. Byte-array which is serialized from an object implementing
          * javax.cache.configuration.CacheEntryListenerConfiguration
          */
-        public com.hazelcast.nio.serialization.Data listenerConfig;
+        public com.hazelcast.internal.serialization.Data listenerConfig;
 
         /**
          * true if the listener is being registered, false if the listener is being unregistered.
@@ -69,22 +71,23 @@ public final class CacheListenerRegistrationCodec {
         public boolean shouldRegister;
 
         /**
-         * The address of the member server for which the listener is being registered for.
+         * The UUID of the member server for which the listener is being registered for.
          */
-        public com.hazelcast.cluster.Address address;
+        public java.util.UUID uuid;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.nio.serialization.Data listenerConfig, boolean shouldRegister, com.hazelcast.cluster.Address address) {
+    public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.internal.serialization.Data listenerConfig, boolean shouldRegister, java.util.UUID uuid) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("Cache.ListenerRegistration");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeBoolean(initialFrame.content, REQUEST_SHOULD_REGISTER_FIELD_OFFSET, shouldRegister);
+        encodeUUID(initialFrame.content, REQUEST_UUID_FIELD_OFFSET, uuid);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         DataCodec.encode(clientMessage, listenerConfig);
-        AddressCodec.encode(clientMessage, address);
         return clientMessage;
     }
 
@@ -93,9 +96,9 @@ public final class CacheListenerRegistrationCodec {
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         request.shouldRegister = decodeBoolean(initialFrame.content, REQUEST_SHOULD_REGISTER_FIELD_OFFSET);
+        request.uuid = decodeUUID(initialFrame.content, REQUEST_UUID_FIELD_OFFSET);
         request.name = StringCodec.decode(iterator);
         request.listenerConfig = DataCodec.decode(iterator);
-        request.address = AddressCodec.decode(iterator);
         return request;
     }
 

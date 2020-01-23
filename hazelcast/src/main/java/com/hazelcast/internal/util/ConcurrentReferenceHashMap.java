@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -295,7 +295,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
         return segments[(hash >>> segmentShift) & segmentMask];
     }
 
-    private int hashOf(Object key) {
+    protected int hashOf(Object key) {
         return hash(identityComparisons ? System.identityHashCode(key) : key.hashCode());
     }
 
@@ -740,6 +740,32 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
                     removeInternal(key, hash, oldValue, false);
                     return null;
                 } else {
+                    putInternal(key, hash, newValue, null, false);
+                    return newValue;
+                }
+            } finally {
+                unlock();
+            }
+        }
+
+        V apply(K key, int hash, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+            lock();
+            try {
+                V oldValue = get(key, hash);
+                V newValue = remappingFunction.apply(key, oldValue);
+
+                if (newValue == null) {
+                    // delete mapping
+                    if (oldValue != null) {
+                        // something to remove
+                        removeInternal(key, hash, oldValue, false);
+                        return null;
+                    } else {
+                        // nothing to do. Leave things as they were.
+                        return null;
+                    }
+                } else {
+                    // add or replace old mapping
                     putInternal(key, hash, newValue, null, false);
                     return newValue;
                 }
@@ -1445,6 +1471,16 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
         }
 
         return segmentFor(hash).applyIfPresent(key, hash, remappingFunction);
+    }
+
+    @Override
+    public V apply(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+        checkNotNull(key);
+        checkNotNull(remappingFunction);
+
+        int hash = hashOf(key);
+        Segment<K, V> segment = segmentFor(hash);
+        return segment.apply(key, hash, remappingFunction);
     }
 
     /**

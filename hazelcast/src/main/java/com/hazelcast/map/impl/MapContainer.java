@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,8 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.WanConsumerConfig;
 import com.hazelcast.config.WanReplicationConfig;
+import com.hazelcast.config.WanConsumerConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanSyncConfig;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
@@ -45,7 +45,7 @@ import com.hazelcast.map.impl.query.QueryEntryFactory;
 import com.hazelcast.map.impl.record.DataRecordFactory;
 import com.hazelcast.map.impl.record.ObjectRecordFactory;
 import com.hazelcast.map.impl.record.RecordFactory;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
@@ -54,7 +54,7 @@ import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
-import com.hazelcast.wan.impl.DelegatingWanReplicationScheme;
+import com.hazelcast.wan.impl.DelegatingWanScheme;
 import com.hazelcast.wan.impl.WanReplicationService;
 
 import java.util.HashMap;
@@ -101,7 +101,7 @@ public class MapContainer {
     protected final AtomicInteger invalidationListenerCount = new AtomicInteger();
 
     protected SplitBrainMergePolicy wanMergePolicy;
-    protected DelegatingWanReplicationScheme wanReplicationDelegate;
+    protected DelegatingWanScheme wanReplicationDelegate;
 
     protected volatile MapConfig mapConfig;
     private volatile Evictor evictor;
@@ -229,11 +229,12 @@ public class MapContainer {
 
         WanReplicationService wanReplicationService = nodeEngine.getWanReplicationService();
         wanReplicationDelegate = wanReplicationService.getWanReplicationPublishers(wanReplicationRefName);
-        wanMergePolicy = nodeEngine.getSplitBrainMergePolicyProvider().getMergePolicy(wanReplicationRef.getMergePolicy());
+        wanMergePolicy = nodeEngine.getSplitBrainMergePolicyProvider()
+                                   .getMergePolicy(wanReplicationRef.getMergePolicyClassName());
 
         WanReplicationConfig wanReplicationConfig = config.getWanReplicationConfig(wanReplicationRefName);
         if (wanReplicationConfig != null) {
-            WanConsumerConfig wanConsumerConfig = wanReplicationConfig.getWanConsumerConfig();
+            WanConsumerConfig wanConsumerConfig = wanReplicationConfig.getConsumerConfig();
             if (wanConsumerConfig != null) {
                 persistWanReplicatedData = wanConsumerConfig.isPersistWanReplicatedData();
             }
@@ -258,7 +259,7 @@ public class MapContainer {
         return replicationConfig.getBatchPublisherConfigs()
                 .stream()
                 .anyMatch(c -> {
-                    WanSyncConfig syncConfig = c.getWanSyncConfig();
+                    WanSyncConfig syncConfig = c.getSyncConfig();
                     return syncConfig != null && MERKLE_TREES.equals(syncConfig.getConsistencyCheckStrategy());
                 });
     }
@@ -288,7 +289,7 @@ public class MapContainer {
         return globalIndexes != null;
     }
 
-    public DelegatingWanReplicationScheme getWanReplicationDelegate() {
+    public DelegatingWanScheme getWanReplicationDelegate() {
         return wanReplicationDelegate;
     }
 

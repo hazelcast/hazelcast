@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -46,10 +46,9 @@
         </replacer>
     </config-replacers>
 
-    <cluster-name>dev</cluster-name>
+    <cluster-name>my-cluster</cluster-name>
 
     <instance-name>CLIENT_NAME</instance-name>
-    <license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</license-key>
     <properties>
         <property name="hazelcast.client.shuffle.member.list">true</property>
         <property name="hazelcast.client.heartbeat.timeout">60000</property>
@@ -157,9 +156,6 @@
             </discovery-strategy>
         </discovery-strategies>
     </network>
- 
-
-    <executor-pool-size>40</executor-pool-size>
 
     <security>
         <credentials-factory class-name="com.hazelcast.examples.MyCredentialsFactory">
@@ -171,7 +167,6 @@
 
     <listeners>
         <listener>com.hazelcast.examples.MembershipListener</listener>
-        <listener>com.hazelcast.examples.InstanceListener</listener>
         <listener>com.hazelcast.examples.MigrationListener</listener>
     </listeners>
 

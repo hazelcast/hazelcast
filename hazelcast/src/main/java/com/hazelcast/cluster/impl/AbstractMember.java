@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.cluster.impl;
 
-import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.instance.EndpointQualifier;
@@ -145,19 +144,6 @@ public abstract class AbstractMember implements Member {
         return Collections.unmodifiableMap(attributes);
     }
 
-    public void updateAttribute(MemberAttributeOperationType operationType, String key, String value) {
-        switch (operationType) {
-            case PUT:
-                attributes.put(key, value);
-                break;
-            case REMOVE:
-                attributes.remove(key);
-                break;
-            default:
-                throw new IllegalArgumentException("Not a known OperationType " + operationType);
-        }
-    }
-
     @Override
     public String getAttribute(String key) {
         return attributes.get(key);
@@ -170,8 +156,7 @@ public abstract class AbstractMember implements Member {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        address = new Address();
-        address.readData(in);
+        address = in.readObject();
         uuid = UUIDSerializationUtil.readUUID(in);
         liteMember = in.readBoolean();
         version = in.readObject();
@@ -186,7 +171,7 @@ public abstract class AbstractMember implements Member {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        address.writeData(out);
+        out.writeObject(address);
         UUIDSerializationUtil.writeUUID(out, uuid);
         out.writeBoolean(liteMember);
         out.writeObject(version);
