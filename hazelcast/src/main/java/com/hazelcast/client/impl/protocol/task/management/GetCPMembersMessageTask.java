@@ -20,10 +20,10 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MCGetCPMembersCodec;
 import com.hazelcast.client.impl.protocol.codec.MCGetCPMembersCodec.RequestParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractAsyncMessageTask;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.CPSubsystemManagementService;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.nio.Connection;
 
@@ -35,21 +35,23 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-public class GetCPMembersMessageTask extends AbstractAsyncMessageTask<RequestParameters, List<SimpleEntry<UUID, Address>>> {
+public class GetCPMembersMessageTask extends AbstractAsyncMessageTask<RequestParameters, List<SimpleEntry<UUID, UUID>>> {
 
     public GetCPMembersMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected CompletableFuture<List<SimpleEntry<UUID, Address>>> processInternal() {
+    protected CompletableFuture<List<SimpleEntry<UUID, UUID>>> processInternal() {
         CPSubsystemManagementService cpService =
                 nodeEngine.getHazelcastInstance().getCPSubsystem().getCPSubsystemManagementService();
+        ClusterService clusterService = nodeEngine.getClusterService();
         return cpService.getCPMembers().toCompletableFuture()
                 .thenApply(cpMembers -> {
-                    List<SimpleEntry<UUID, Address>> result = new ArrayList<>(cpMembers.size());
+                    List<SimpleEntry<UUID, UUID>> result = new ArrayList<>(cpMembers.size());
                     for (CPMember cpMember : cpMembers) {
-                        result.add(new SimpleEntry<>(cpMember.getUuid(), cpMember.getAddress()));
+                        UUID apUuid = clusterService.getMember(cpMember.getAddress()).getUuid();
+                        result.add(new SimpleEntry<>(cpMember.getUuid(), apUuid));
                     }
                     return result;
                 });
@@ -62,7 +64,7 @@ public class GetCPMembersMessageTask extends AbstractAsyncMessageTask<RequestPar
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MCGetCPMembersCodec.encodeResponse((List<Map.Entry<UUID, Address>>) response);
+        return MCGetCPMembersCodec.encodeResponse((List<Map.Entry<UUID, UUID>>) response);
     }
 
     @Override

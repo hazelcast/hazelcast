@@ -55,10 +55,9 @@ import com.hazelcast.client.impl.protocol.codec.MCWanSyncMapCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.CPSubsystemManagementService;
-import com.hazelcast.cp.internal.CPMemberInfo;
 import com.hazelcast.internal.management.TimedMemberState;
+import com.hazelcast.internal.management.dto.CPMemberDTO;
 import com.hazelcast.internal.management.dto.ClientBwListDTO;
 import com.hazelcast.internal.management.dto.MCEventDTO;
 import com.hazelcast.internal.metrics.managementcenter.MetricsResultSet;
@@ -783,7 +782,7 @@ public class ManagementCenterService {
      * @see CPSubsystemManagementService#getCPMembers()
      */
     @Nonnull
-    public CompletableFuture<List<CPMember>> getCPMembers() {
+    public CompletableFuture<List<CPMemberDTO>> getCPMembers() {
         ClientInvocation invocation = new ClientInvocation(
                 client,
                 MCGetCPMembersCodec.encodeRequest(),
@@ -795,7 +794,7 @@ public class ManagementCenterService {
                 serializationService,
                 clientMessage -> MCGetCPMembersCodec.decodeResponse(clientMessage).cpMembers
                         .stream()
-                        .map(e -> new CPMemberInfo(e.getKey(), e.getValue()))
+                        .map(e -> new CPMemberDTO(e.getKey(), e.getValue()))
                         .collect(Collectors.toList())
         );
     }
