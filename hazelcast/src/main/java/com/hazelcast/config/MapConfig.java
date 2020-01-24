@@ -819,16 +819,17 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
     }
 
     private void validateSetOptimizeQueriesOption(boolean optimizeQueries) {
-        if (setCacheDeserializedValuesExplicitlyInvoked) {
-            if (optimizeQueries && cacheDeserializedValues == CacheDeserializedValues.NEVER) {
-                throw new ConfigurationException("Deprecated option 'optimize-queries' is set to true, "
-                        + "but 'cacheDeserializedValues' is set to NEVER. "
-                        + "These are conflicting options. Please remove the `optimize-queries'");
-            } else if (!optimizeQueries && cacheDeserializedValues == CacheDeserializedValues.ALWAYS) {
-                throw new ConfigurationException("Deprecated option 'optimize-queries' is set to false, "
-                        + "but 'cacheDeserializedValues' is set to ALWAYS. "
-                        + "These are conflicting options. Please remove the `optimize-queries'");
-            }
+        if (!setCacheDeserializedValuesExplicitlyInvoked) {
+            return;
+        }
+        if (cacheDeserializedValues != CacheDeserializedValues.ALWAYS && optimizeQueries) {
+            throw new ConfigurationException("Deprecated option 'optimize-queries' is being set to true, "
+                    + "but 'cacheDeserializedValues' was set to NEVER or INDEX_ONLY. "
+                    + "These are conflicting options. Please remove the `optimize-queries'");
+        } else if (cacheDeserializedValues == CacheDeserializedValues.ALWAYS && !optimizeQueries) {
+            throw new ConfigurationException("Deprecated option 'optimize-queries' is being set to false, "
+                    + "but 'cacheDeserializedValues' was set to ALWAYS. "
+                    + "These are conflicting options. Please remove the `optimize-queries'");
         }
     }
 
@@ -847,24 +848,23 @@ public class MapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSer
         return this;
     }
 
-    private void validateCacheDeserializedValuesOption(CacheDeserializedValues validatedCacheDeserializedValues) {
-        if (optimizeQueryExplicitlyInvoked) {
-            // deprecated {@link #setOptimizeQueries(boolean)} was explicitly invoked
-            // we need to be strict with validation to detect conflicts
-            boolean optimizeQuerySet = (cacheDeserializedValues == CacheDeserializedValues.ALWAYS);
-            if (optimizeQuerySet && validatedCacheDeserializedValues == CacheDeserializedValues.NEVER) {
-                throw new ConfigurationException("Deprecated option 'optimize-queries' is set to `true`, "
-                        + "but 'cacheDeserializedValues' is set to NEVER. These are conflicting options. "
-                        + "Please remove the `optimize-queries'");
-            }
+    private void validateCacheDeserializedValuesOption(CacheDeserializedValues newValue) {
+        if (!optimizeQueryExplicitlyInvoked) {
+            return;
+        }
 
-            if (cacheDeserializedValues != validatedCacheDeserializedValues) {
-                boolean optimizeQueriesFlagState = cacheDeserializedValues == CacheDeserializedValues.ALWAYS;
-                throw new ConfigurationException("Deprecated option 'optimize-queries' is set to "
-                        + optimizeQueriesFlagState + " but 'cacheDeserializedValues' is set to "
-                        + validatedCacheDeserializedValues + ". These are conflicting options. "
-                        + "Please remove the `optimize-queries'");
-            }
+        // deprecated {@link #setOptimizeQueries(boolean)} was explicitly invoked
+        // we need to be strict with validation to detect conflicts
+        boolean optimizeQueryFlag = (cacheDeserializedValues == CacheDeserializedValues.ALWAYS);
+
+        if (optimizeQueryFlag && newValue != CacheDeserializedValues.ALWAYS) {
+            throw new ConfigurationException("Deprecated option 'optimize-queries' is set to `true`, "
+                    + "but 'cacheDeserializedValues' is being set to NEVER or INDEX_ONLY."
+                    + " These are conflicting options. Please remove the `optimize-queries'");
+        } else if (!optimizeQueryFlag && newValue == CacheDeserializedValues.ALWAYS) {
+            throw new ConfigurationException("Deprecated option 'optimize-queries' is set to `false`, "
+                    + "but 'cacheDeserializedValues' is being set to ALWAYS. These are conflicting options."
+                    + " Please remove the `optimize-queries'");
         }
     }
 
