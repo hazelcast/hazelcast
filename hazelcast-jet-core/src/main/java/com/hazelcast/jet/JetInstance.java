@@ -29,6 +29,7 @@ import com.hazelcast.jet.function.Observer;
 import com.hazelcast.jet.impl.AbstractJetInstance;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.impl.SnapshotValidationRecord;
+import com.hazelcast.jet.impl.pipeline.PipelineImpl;
 import com.hazelcast.jet.pipeline.GeneralStage;
 import com.hazelcast.jet.pipeline.JournalInitialPosition;
 import com.hazelcast.jet.pipeline.Pipeline;
@@ -42,8 +43,11 @@ import com.hazelcast.topic.ITopic;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map.Entry;
 
 import static com.hazelcast.jet.impl.JobRepository.exportedSnapshotMapName;
 import static java.util.stream.Collectors.toList;
@@ -98,7 +102,7 @@ public interface JetInstance {
      */
     @Nonnull
     default Job newJob(@Nonnull Pipeline pipeline) {
-        return newJob(pipeline.toDag());
+        return newJob(pipeline, new JobConfig());
     }
 
     /**
@@ -138,6 +142,24 @@ public interface JetInstance {
      */
     @Nonnull
     default Job newJob(@Nonnull Pipeline pipeline, @Nonnull JobConfig config) {
+        PipelineImpl impl = (PipelineImpl) pipeline;
+        try {
+            for (Entry<String, File> e : impl.attachedFiles().entrySet()) {
+                File file = e.getValue();
+                if (!file.canRead()) {
+                    throw new JetException("Not readable: " + file);
+                }
+                if (file.isDirectory()) {
+                    config.attachDirectory(file, e.getKey());
+                } else if (file.isFile()) {
+                    config.attachFile(file, e.getKey());
+                } else {
+                    throw new JetException("Neither a regular file nor a directory: " + file);
+                }
+            }
+        } catch (FileNotFoundException e) {
+            throw new JetException("A file/directory attached to the pipeline is missing", e);
+        }
         return newJob(pipeline.toDag(), config);
     }
 

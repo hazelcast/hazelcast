@@ -31,8 +31,10 @@ import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.pipeline.StreamSourceStage;
 
 import javax.annotation.Nonnull;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -50,6 +52,7 @@ import static java.util.stream.Collectors.toList;
 public class PipelineImpl implements Pipeline {
 
     private final Map<Transform, List<Transform>> adjacencyMap = new LinkedHashMap<>();
+    private final Map<String, File> attachedFiles = new HashMap<>();
 
     @Nonnull @Override
     @SuppressWarnings("unchecked")
@@ -67,8 +70,8 @@ public class PipelineImpl implements Pipeline {
         return new StreamSourceStageImpl<>(xform, this);
     }
 
-    @Nonnull
-    @Override
+    @Nonnull @Override
+    @SuppressWarnings("rawtypes")
     public <T> SinkStage writeTo(
             @Nonnull Sink<? super T> sink,
             @Nonnull GeneralStage<? extends T> stage0,
@@ -155,5 +158,14 @@ public class PipelineImpl implements Pipeline {
                 transform.setName(addOrIncrementIndexInName(transform.name()));
             }
         }
+    }
+
+    public void attachFiles(@Nonnull Map<String, File> filesToAttach) {
+        this.attachedFiles.putAll(filesToAttach);
+    }
+
+    @Nonnull
+    public Map<String, File> attachedFiles() {
+        return Collections.unmodifiableMap(attachedFiles);
     }
 }
