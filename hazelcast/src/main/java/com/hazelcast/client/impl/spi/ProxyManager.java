@@ -349,7 +349,8 @@ public final class ProxyManager {
     }
 
     public UUID addDistributedObjectListener(@Nonnull DistributedObjectListener listener) {
-        return addDistributeObjectListenerInternal(listener, false);
+        final EventHandler<ClientMessage> eventHandler = new DistributedObjectEventHandler(listener, this);
+        return client.getListenerService().registerListener(new DistributeObjectListenerMessageCodec(), eventHandler);
     }
 
     public void createDistributedObjectsOnCluster() {
@@ -406,21 +407,13 @@ public final class ProxyManager {
         return client.getListenerService().deregisterListener(id);
     }
 
-    private UUID addDistributeObjectListenerInternal(@Nonnull DistributedObjectListener listener, boolean isInternal) {
-        final EventHandler<ClientMessage> eventHandler = new DistributedObjectEventHandler(listener, this);
-        return client.getListenerService().registerListener(new DistributeObjectListenerMessageCodec(isInternal), eventHandler);
-    }
-
     private static final class DistributeObjectListenerMessageCodec implements ListenerMessageCodec {
-        private final boolean isInternal;
-
-        private DistributeObjectListenerMessageCodec(boolean isInternal) {
-            this.isInternal = isInternal;
+        private DistributeObjectListenerMessageCodec() {
         }
 
         @Override
         public ClientMessage encodeAddRequest(boolean localOnly) {
-            return ClientAddDistributedObjectListenerCodec.encodeRequest(localOnly, isInternal);
+            return ClientAddDistributedObjectListenerCodec.encodeRequest(localOnly);
         }
 
         @Override
