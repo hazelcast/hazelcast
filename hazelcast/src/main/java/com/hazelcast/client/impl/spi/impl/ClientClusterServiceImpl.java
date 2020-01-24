@@ -17,7 +17,6 @@
 package com.hazelcast.client.impl.spi.impl;
 
 import com.hazelcast.client.Client;
-import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.ClientImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
@@ -32,10 +31,8 @@ import com.hazelcast.cluster.MemberSelector;
 import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.cluster.impl.MemberImpl;
-import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.MemberSelectingCollection;
-import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.ExceptionUtil;
@@ -98,24 +95,6 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         labels = unmodifiableSet(client.getClientConfig().getLabels());
         logger = client.getLoggingService().getLogger(ClientClusterService.class);
         connectionManager = client.getConnectionManager();
-    }
-
-    private void handleListenerConfigs() {
-        ClientConfig clientConfig = client.getClientConfig();
-        List<ListenerConfig> listenerConfigs = clientConfig.getListenerConfigs();
-        for (ListenerConfig listenerConfig : listenerConfigs) {
-            EventListener listener = listenerConfig.getImplementation();
-            if (listener == null) {
-                try {
-                    listener = ClassLoaderUtil.newInstance(clientConfig.getClassLoader(), listenerConfig.getClassName());
-                } catch (Exception e) {
-                    logger.severe(e);
-                }
-            }
-            if (listener instanceof MembershipListener) {
-                addMembershipListenerWithoutInit((MembershipListener) listener);
-            }
-        }
     }
 
     @Override
@@ -197,8 +176,9 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         return listeners.remove(registrationId) != null;
     }
 
-    public void start() {
-        handleListenerConfigs();
+    public void start(Collection<EventListener> configuredListeners) {
+        configuredListeners.stream().filter(listener -> listener instanceof MembershipListener)
+                           .forEach(listener -> addMembershipListener((MembershipListener) listener));
     }
 
     public void waitInitialMemberListFetched() {
