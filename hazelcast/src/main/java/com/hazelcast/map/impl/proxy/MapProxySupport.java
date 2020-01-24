@@ -26,16 +26,15 @@ import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ReadOnly;
-import com.hazelcast.executor.impl.ExecutionCallbackAdapter;
 import com.hazelcast.internal.locksupport.LockProxySupport;
 import com.hazelcast.internal.locksupport.LockSupportServiceImpl;
 import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.partition.IPartitionService;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.IterableUtil;
@@ -72,7 +71,6 @@ import com.hazelcast.map.impl.querycache.subscriber.SubscriberContext;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.PartitionPredicate;
@@ -244,6 +242,10 @@ abstract class MapProxySupport<K, V>
     @Override
     public final String getServiceName() {
         return SERVICE_NAME;
+    }
+
+    public MapConfig getMapConfig() {
+        return mapConfig;
     }
 
     @Override
@@ -1385,18 +1387,6 @@ abstract class MapProxySupport<K, V>
             if (throwable == null) {
                 mapServiceContext.incrementOperationStats(startTime, localMapStats, name, operation);
             }
-        }
-    }
-
-    private class MapExecutionCallbackAdapter<T> extends ExecutionCallbackAdapter<T> {
-
-        MapExecutionCallbackAdapter(ExecutionCallback<T> executionCallback) {
-            super(executionCallback);
-        }
-
-        @Override
-        protected Object interceptResponse(Object o) {
-            return toObject(o);
         }
     }
 
