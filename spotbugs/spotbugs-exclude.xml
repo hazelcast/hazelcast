@@ -23,6 +23,10 @@
         <Bug pattern="EI_EXPOSE_REP2" />
     </Match>
 
+    <Match>
+        <Class name="~com\.hazelcast\.jet\.python\.grpc\..+" />
+    </Match>
+
     <!-- false positive in Java 11, see https://github.com/spotbugs/spotbugs/issues/756 -->
     <Match>
         <Class name="com.hazelcast.jet.impl.connector.StreamFilesP" />

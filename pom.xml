@@ -39,6 +39,7 @@
         <module>hazelcast-jet-avro</module>
         <module>hazelcast-jet-s3</module>
         <module>examples</module>
+        <module>hazelcast-jet-python</module>
     </modules>
 
     <repositories>
