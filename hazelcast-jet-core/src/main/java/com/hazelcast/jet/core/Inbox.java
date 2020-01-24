@@ -63,13 +63,8 @@ public interface Inbox {
      * @param target the collection to drain this object's items into
      * @return the number of elements actually drained
      */
-    @SuppressWarnings("unchecked")
-    default <E> int drainTo(@Nonnull Collection<E> target) {
-        int drained = 0;
-        for (E o; (o = (E) poll()) != null; drained++) {
-            target.add(o);
-        }
-        return drained;
+    default <E> int drainTo(Collection<E> target) {
+        return drainTo(target, Integer.MAX_VALUE);
     }
 
     /**
