@@ -250,7 +250,7 @@ public class ClientCompatibilityNullTest_2_0 {
     @Test
     public void test_ClientAddDistributedObjectListenerCodec_encodeRequest() {
         int fileClientMessageIndex = 19;
-        ClientMessage encoded = ClientAddDistributedObjectListenerCodec.encodeRequest(aBoolean, aBoolean);
+        ClientMessage encoded = ClientAddDistributedObjectListenerCodec.encodeRequest(aBoolean);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
