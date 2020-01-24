@@ -116,7 +116,10 @@ Please join the mail group if you are interested in using or developing Hazelcas
 
 #### License
 
-Hazelcast is available under the Apache 2 License. Please see the [Licensing section](http://docs.hazelcast.org/docs/latest-dev/manual/html-single/index.html#licensing) for more information.
+Source code in this repository is covered by one of two licenses: (i) the
+Apache License 2.0 (ii) the Hazelcast Community License. The default license
+throughout the repository is Apache License 2.0 unless the header specifies
+another license. Please see the [Licensing section](http://docs.hazelcast.org/docs/latest-dev/manual/html-single/index.html#licensing) and the license files located in this repository under `licenses` for more information.
 
 #### Copyright
 
