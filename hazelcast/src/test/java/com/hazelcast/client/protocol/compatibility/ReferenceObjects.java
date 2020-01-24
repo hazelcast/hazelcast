@@ -717,7 +717,13 @@ public class ReferenceObjects {
 
     public static ListenerConfigHolder aListenerConfigHolder = new ListenerConfigHolder(anInt, aData, aString, aBoolean, aBoolean);
     public static AttributeConfig anAttributeConfig = new AttributeConfig(aString, aString);
-    public static BitmapIndexOptions aBitmapIndexOptions = new BitmapIndexOptions();
+    public static BitmapIndexOptions aBitmapIndexOptions;
+
+    static {
+        aBitmapIndexOptions = new BitmapIndexOptions();
+        aBitmapIndexOptions.setUniqueKey(aString);
+        aBitmapIndexOptions.setUniqueKeyTransformation(BitmapIndexOptions.UniqueKeyTransformation.LONG);
+    }
     public static IndexConfig anIndexConfig = CustomTypeFactory.createIndexConfig(aString, anEnum, aListOfStrings, aBitmapIndexOptions);
     public static MapStoreConfigHolder aMapStoreConfigHolder = new MapStoreConfigHolder(aBoolean, aBoolean, anInt, anInt, aString, aData, aString, aData, aMapOfStringToString, aString);
 
