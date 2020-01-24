@@ -180,7 +180,6 @@ public class BatchStageImpl<T> extends ComputeStageImplBase<T> implements BatchS
     }
 
     @Nonnull @Override
-    @SuppressWarnings("unchecked")
     public <R> BatchStage<R> aggregate(@Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp) {
         return attach(new AggregateTransform<>(singletonList(transform), aggrOp), fnAdapter);
     }

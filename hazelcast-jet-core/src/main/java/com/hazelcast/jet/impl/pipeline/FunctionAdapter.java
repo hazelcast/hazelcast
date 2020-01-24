@@ -365,7 +365,7 @@ class JetEventFunctionAdapter extends FunctionAdapter {
     }
 
     @Nonnull @Override
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "rawtypes"})
     <A, R> AggregateOperation<A, ? extends R> adaptAggregateOperation(
             @Nonnull AggregateOperation<A, ? extends R> aggrOp
     ) {

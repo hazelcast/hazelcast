@@ -82,6 +82,7 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
     private final SortedMap<Long, Long> watermarkCounts = new TreeMap<>();
     private final Map<T, Integer> inFlightItems = new IdentityHashMap<>();
     private Traverser<Object> currentTraverser = Traversers.empty();
+    @SuppressWarnings("rawtypes")
     private Traverser<Entry> snapshotTraverser;
 
     private Long lastReceivedWm = Long.MIN_VALUE;
