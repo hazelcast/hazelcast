@@ -203,6 +203,8 @@ public class MultiValueBitmapIndexTest extends HazelcastTestSupport {
         Config config = HazelcastTestSupport.smallInstanceConfig();
         MapConfig mapConfig = config.getMapConfig("persons");
         mapConfig.addIndexConfig(indexConfig);
+        // disable periodic metrics collection (may interfere with the test)
+        config.getMetricsConfig().setEnabled(false);
         return config;
     }
 
