@@ -124,21 +124,23 @@ public abstract class AbstractDeploymentTest extends SimpleTestInClusterSupport 
     @Test
     public void testDeployment_whenFileAddedAsResource_thenFilesAvailableOnMembers() throws Throwable {
         Pipeline pipeline = Pipeline.create();
+        String fileToAttach = Paths.get(getClass().getResource("/deployment/resource.txt").toURI()).toString();
 
         pipeline.readFrom(TestSources.items(1))
-                .mapUsingService(ServiceFactory.withCreateContextFn(context -> context.attachedFile("resource.txt"))
+                .mapUsingService(ServiceFactory.withCreateContextFn(context -> context.attachedFile(fileToAttach))
                                                .withCreateServiceFn((context, file) -> {
-                                                   context.attachedFile("resource.txt");
+                                                   context.attachedFile(fileToAttach);
                                                    return file;
                                                }),
                         (file, integer) -> {
                             if (!file.exists()) {
-                                throw new AssertionError("File does not exists");
+                                throw new AssertionError("File does not exist");
                             } else {
+                                assertEquals("resource.txt", file.getName());
                                 boolean containsData = Files.readAllLines(file.toPath())
                                                             .stream()
                                                             .findFirst()
-                                                            .orElseThrow(() -> new AssertionError("File does not exists"))
+                                                            .orElseThrow(() -> new AssertionError("File does not exist"))
                                                             .startsWith("AAAP");
                                 assertTrue(containsData);
                                 return file;
@@ -148,7 +150,7 @@ public abstract class AbstractDeploymentTest extends SimpleTestInClusterSupport 
 
         JetInstance jetInstance = getJetInstance();
         JobConfig jobConfig = new JobConfig();
-        jobConfig.attachFile(Paths.get(this.getClass().getResource("/deployment/resource.txt").toURI()).toString());
+        jobConfig.attachFile(fileToAttach, fileToAttach);
 
         executeAndPeel(jetInstance.newJob(pipeline, jobConfig));
     }
@@ -156,10 +158,11 @@ public abstract class AbstractDeploymentTest extends SimpleTestInClusterSupport 
     @Test
     public void testDeployment_whenDirectoryAddedAsResource_thenFilesAvailableOnMembers() throws Throwable {
         Pipeline pipeline = Pipeline.create();
+        String dirToAttach = Paths.get(this.getClass().getResource("/deployment").toURI()).toString();
 
         pipeline.readFrom(TestSources.items(1))
                 .flatMapUsingService(ServiceFactory.withCreateContextFn(context ->
-                                context.attachedDirectory("deployment"))
+                                context.attachedDirectory(dirToAttach))
                                                    .withCreateServiceFn((context, file) -> file),
                         (file, integer) -> Traversers.traverseStream(Files.list(file.toPath()).map(Path::toString)))
                 .apply(assertCollected(c -> {
@@ -170,8 +173,7 @@ public abstract class AbstractDeploymentTest extends SimpleTestInClusterSupport 
 
         JetInstance jetInstance = getJetInstance();
         JobConfig jobConfig = new JobConfig();
-        jobConfig.attachDirectory(Paths.get(this.getClass().getResource("/deployment").toURI()).toString(),
-                "deployment");
+        jobConfig.attachDirectory(dirToAttach, dirToAttach);
 
         executeAndPeel(jetInstance.newJob(pipeline, jobConfig));
     }

@@ -62,6 +62,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
@@ -211,11 +212,12 @@ public class JobRepository {
                         }
                         break;
                     case FILE:
-                        try (
-                                InputStream in = rc.getUrl().openStream();
-                                IMapOutputStream os = new IMapOutputStream(jobFileStorage.get(), fileKeyName(rc.getId()))
+                        Path fnamePath = Paths.get(Objects.requireNonNull(rc.getUrl().getPath())).getFileName();
+                        assert fnamePath != null; // needed to silence SpotBugs
+                        try (InputStream in = rc.getUrl().openStream();
+                             IMapOutputStream os = new IMapOutputStream(jobFileStorage.get(), fileKeyName(rc.getId()))
                         ) {
-                            packStreamIntoZip(in, os, rc.getId());
+                            packStreamIntoZip(in, os, fnamePath.toString());
                         }
                         break;
                     case DIRECTORY:
