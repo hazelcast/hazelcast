@@ -126,6 +126,11 @@ public class GlobalQueryContextWithStats extends QueryContext {
         }
 
         @Override
+        public boolean isEvaluateOnly() {
+            return delegate.isEvaluateOnly();
+        }
+
+        @Override
         public boolean canEvaluate(Class<? extends Predicate> predicateClass) {
             return delegate.canEvaluate(predicateClass);
         }
