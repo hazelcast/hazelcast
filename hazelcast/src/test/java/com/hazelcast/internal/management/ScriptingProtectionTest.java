@@ -81,7 +81,7 @@ public class ScriptingProtectionTest extends HazelcastTestSupport {
      * @return true if the scripting should be enabled by default
      */
     protected boolean getScriptingEnabledDefaultValue() {
-        return true;
+        return false;
     }
 
     /**

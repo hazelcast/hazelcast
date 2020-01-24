@@ -91,8 +91,7 @@ hazelcast:
   # The element "management-center" has the following optional attributes:
   # * scripting-enabled:
   # Set to true to allow scripting on the member, false to disallow.
-  # Default value for this config element depends on Hazelcast edition:
-  # false for Hazelcast Enterprise, true for Hazelcast (open source).
+  # Default value is false.
   #
   # Hazelcast's Open Source edition provides the Management Center with monitoring at most 3 members
   # in your cluster. To use it for more members, you need to have either a Management Center,
@@ -1934,7 +1933,7 @@ hazelcast:
   # * "epoch-start":
   #     Sets the offset of timestamp component. Time unit is milliseconds, default is 1514764800000
   #     (1.1.2018 0:00 UTC).
-  #       
+  #
   # * "node-id-offset":
   #     Sets the offset that will be added to the node ID assigned to cluster member for this generator.
   #     Might be useful in A/B deployment scenarios where you have cluster A which you want to upgrade.
@@ -1946,11 +1945,11 @@ hazelcast:
   #
   # * "bits-node-id":
   #     Sets the bit-length of node id component. Default value is 16 bits.
-  #      
+  #
   # * "allowed-future-millis":
   #     Sets how far to the future is the generator allowed to go to generate IDs without blocking, default is
   #     15 seconds.
-  #  
+  #
   # * "statistics-enabled":
   #     When you enable it, you can retrieve the Flake ID generators statistics. Its default value is true.
   #

@@ -1055,7 +1055,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     public void testManagementCenterConfig() {
         ManagementCenterConfig managementCenterConfig = config.getManagementCenterConfig();
         assertNotNull(managementCenterConfig);
-        assertFalse(managementCenterConfig.isScriptingEnabled());
+        assertTrue(managementCenterConfig.isScriptingEnabled());
     }
 
     @Test
