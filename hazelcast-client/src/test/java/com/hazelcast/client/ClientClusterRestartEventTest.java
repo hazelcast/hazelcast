@@ -19,11 +19,13 @@ package com.hazelcast.client;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
+import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -44,6 +46,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertContains;
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.spawn;
 import static org.junit.Assert.assertEquals;
 
@@ -148,7 +151,17 @@ public class ClientClusterRestartEventTest {
             }
         });
 
-        instance1.getCluster().shutdown();
+        final Cluster cluster = instance1.getCluster();
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                try {
+                    cluster.shutdown();
+                } catch (Exception e) {
+                    throw new AssertionError(e);
+                }
+            }
+        });
 
         Future<HazelcastInstance> f1 = spawn(new Callable<HazelcastInstance>() {
             @Override
