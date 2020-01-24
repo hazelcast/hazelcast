@@ -22,6 +22,7 @@ import com.hazelcast.function.BiPredicateEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
 import com.hazelcast.function.ToLongFunctionEx;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
@@ -39,9 +40,11 @@ import com.hazelcast.jet.pipeline.JoinClause;
 import javax.annotation.Nonnull;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.jet.impl.JetEvent.jetEvent;
+import static com.hazelcast.jet.impl.util.Util.mapList;
 
 public class FunctionAdapter {
 
@@ -69,7 +72,7 @@ public class FunctionAdapter {
 
     @Nonnull
     <T, R> FunctionEx<?, ? extends Traverser<?>> adaptFlatMapFn(
-            @Nonnull FunctionEx<? super T, ? extends Traverser<? extends R>> flatMapFn
+            @Nonnull FunctionEx<? super T, ? extends Traverser<R>> flatMapFn
     ) {
         return flatMapFn;
     }
@@ -103,30 +106,30 @@ public class FunctionAdapter {
     }
 
     @Nonnull
-    <C, T, R> BiFunctionEx<? super C, ?, ?> adaptMapUsingServiceFn(
-            @Nonnull BiFunctionEx<? super C, ? super T, ? extends R> mapFn
+    <S, T, R> BiFunctionEx<? super S, ?, ?> adaptMapUsingServiceFn(
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends R> mapFn
     ) {
         return mapFn;
     }
 
     @Nonnull
-    <C, T> BiPredicateEx<? super C, ?> adaptFilterUsingServiceFn(
-            @Nonnull BiPredicateEx<? super C, ? super T> filterFn
+    <S, T> BiPredicateEx<? super S, ?> adaptFilterUsingServiceFn(
+            @Nonnull BiPredicateEx<? super S, ? super T> filterFn
     ) {
         return filterFn;
     }
 
     @Nonnull
-    <C, T, R> BiFunctionEx<? super C, ?, ? extends Traverser<?>> adaptFlatMapUsingServiceFn(
-            @Nonnull BiFunctionEx<? super C, ? super T, ? extends Traverser<? extends R>> flatMapFn
+    <S, T, R> BiFunctionEx<? super S, ?, ? extends Traverser<?>> adaptFlatMapUsingServiceFn(
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends Traverser<R>> flatMapFn
     ) {
         return flatMapFn;
     }
 
     @Nonnull
-    @SuppressWarnings("unchecked")
-    <C, T, R> BiFunctionEx<? super C, ?, ? extends CompletableFuture<Traverser<?>>> adaptFlatMapUsingServiceAsyncFn(
-            @Nonnull BiFunctionEx<? super C, ? super T, ? extends CompletableFuture<Traverser<R>>> flatMapAsyncFn
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    <S, T, R> BiFunctionEx<? super S, ?, ? extends CompletableFuture<Traverser<?>>> adaptFlatMapUsingServiceAsyncFn(
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends CompletableFuture<Traverser<R>>> flatMapAsyncFn
     ) {
         return (BiFunctionEx) flatMapAsyncFn;
     }
@@ -266,7 +269,7 @@ class JetEventFunctionAdapter extends FunctionAdapter {
 
     @Nonnull @Override
     <T, R> FunctionEx<? super JetEvent<T>, ? extends Traverser<JetEvent<R>>> adaptFlatMapFn(
-            @Nonnull FunctionEx<? super T, ? extends Traverser<? extends R>> flatMapFn
+            @Nonnull FunctionEx<? super T, ? extends Traverser<R>> flatMapFn
     ) {
         return e -> flatMapFn.apply(e.payload()).map(r -> jetEvent(e.timestamp(), r));
     }
@@ -317,7 +320,7 @@ class JetEventFunctionAdapter extends FunctionAdapter {
     @Nonnull @Override
     <S, T, R> BiFunctionEx<? super S, ? super JetEvent<T>, ? extends Traverser<JetEvent<R>>>
     adaptFlatMapUsingServiceFn(
-            @Nonnull BiFunctionEx<? super S, ? super T, ? extends Traverser<? extends R>> flatMapFn
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends Traverser<R>> flatMapFn
     ) {
         return (s, e) -> flatMapFn.apply(s, e.payload()).map(r -> jetEvent(e.timestamp(), r));
     }

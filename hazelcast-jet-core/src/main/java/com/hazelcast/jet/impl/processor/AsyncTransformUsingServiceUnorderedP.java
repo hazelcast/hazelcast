@@ -74,7 +74,7 @@ import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
  */
 public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends AbstractTransformUsingServiceP<C, S> {
 
-    private final BiFunctionEx<? super S, ? super T, CompletableFuture<Traverser<R>>> callAsyncFn;
+    private final BiFunctionEx<? super S, ? super T, ? extends CompletableFuture<Traverser<R>>> callAsyncFn;
     private final Function<? super T, ? extends K> extractKeyFn;
 
     private ManyToOneConcurrentArrayQueue<Tuple3<T, Long, Object>> resultQueue;
@@ -102,7 +102,7 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
     private AsyncTransformUsingServiceUnorderedP(
             @Nonnull ServiceFactory<C, S> serviceFactory,
             @Nonnull C serviceContext,
-            @Nonnull BiFunctionEx<? super S, ? super T, CompletableFuture<Traverser<R>>> callAsyncFn,
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends CompletableFuture<Traverser<R>>> callAsyncFn,
             @Nonnull Function<? super T, ? extends K> extractKeyFn
     ) {
         super(serviceFactory, serviceContext);
@@ -305,7 +305,7 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
      */
     public static <C, S, T, K, R> ProcessorSupplier supplier(
             @Nonnull ServiceFactory<C, S> serviceFactory,
-            @Nonnull BiFunctionEx<? super S, ? super T, CompletableFuture<Traverser<R>>> callAsyncFn,
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends CompletableFuture<Traverser<R>>> callAsyncFn,
             @Nonnull FunctionEx<? super T, ? extends K> extractKeyFn
     ) {
         return supplierWithService(serviceFactory,

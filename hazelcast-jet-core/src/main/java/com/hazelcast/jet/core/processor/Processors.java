@@ -1014,7 +1014,7 @@ public final class Processors {
     public static <C, S, T, K, R> ProcessorSupplier flatMapUsingServiceAsyncP(
             @Nonnull ServiceFactory<C, S> serviceFactory,
             @Nonnull FunctionEx<? super T, ? extends K> extractKeyFn,
-            @Nonnull BiFunctionEx<? super S, ? super T, CompletableFuture<Traverser<R>>> flatMapAsyncFn
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends CompletableFuture<Traverser<R>>> flatMapAsyncFn
     ) {
         return serviceFactory.hasOrderedAsyncResponses()
                 ? AsyncTransformUsingServiceOrderedP.supplier(serviceFactory, flatMapAsyncFn)

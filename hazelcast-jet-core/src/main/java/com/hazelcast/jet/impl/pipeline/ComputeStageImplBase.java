@@ -120,7 +120,7 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
     @Nonnull
     @SuppressWarnings("unchecked")
     <R, RET> RET attachFlatMap(
-            @Nonnull FunctionEx<? super T, ? extends Traverser<? extends R>> flatMapFn
+            @Nonnull FunctionEx<? super T, ? extends Traverser<R>> flatMapFn
     ) {
         checkSerializable(flatMapFn, "flatMapFn");
         return (RET) attach(new FlatMapTransform("flat-map", transform, fnAdapter.adaptFlatMapFn(flatMapFn)), fnAdapter);
@@ -242,7 +242,7 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
     @SuppressWarnings("unchecked")
     <S, R, RET> RET attachFlatMapUsingService(
             @Nonnull ServiceFactory<?, S> serviceFactory,
-            @Nonnull BiFunctionEx<? super S, ? super T, ? extends Traverser<? extends R>> flatMapFn
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends Traverser<R>> flatMapFn
     ) {
         checkSerializable(flatMapFn, "flatMapFn");
         BiFunctionEx adaptedFlatMapFn = fnAdapter.adaptFlatMapUsingServiceFn(flatMapFn);
@@ -303,7 +303,7 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
     <S, K, R, RET> RET attachFlatMapUsingPartitionedService(
             @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull FunctionEx<? super T, ? extends K> partitionKeyFn,
-            @Nonnull BiFunctionEx<? super S, ? super T, ? extends Traverser<? extends R>> flatMapFn
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends Traverser<R>> flatMapFn
     ) {
         checkSerializable(flatMapFn, "flatMapFn");
         checkSerializable(partitionKeyFn, "partitionKeyFn");

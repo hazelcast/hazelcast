@@ -86,7 +86,7 @@ public class ProcessorTransform extends AbstractTransform {
             @Nonnull Transform upstream,
             @Nonnull String operationName,
             @Nonnull ServiceFactory<?, S> serviceFactory,
-            @Nonnull BiFunctionEx<? super S, ? super T, CompletableFuture<Traverser<R>>> flatMapAsyncFn
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends CompletableFuture<Traverser<R>>> flatMapAsyncFn
     ) {
         // TODO use better key so that snapshots are local. Currently they will
         //      be sent to a random member. We keep it this way for simplicity:
