@@ -48,14 +48,15 @@ import static com.hazelcast.jet.impl.processor.ProcessorSupplierWithService.supp
  * @param <T> received item type
  * @param <R> emitted item type
  */
-public final class AsyncTransformUsingServiceOrderedP<C, S, T, R> extends AbstractTransformUsingServiceP<C, S> {
+public class AsyncTransformUsingServiceOrderedP<C, S, T, R> extends AbstractTransformUsingServiceP<C, S> {
 
-    private final BiFunctionEx<? super S, ? super T, CompletableFuture<Traverser<R>>> callAsyncFn;
+    private final BiFunctionEx<? super S, ? super T, ? extends CompletableFuture<Traverser<R>>> callAsyncFn;
 
-    // on the queue there is either:
-    // - tuple2(originalItem, future)
-    // - watermark
+    // The queue holds both watermarks and output items
     private ArrayDeque<Object> queue;
+    // The number of watermarks in the queue
+    private int queuedWmCount;
+
     private Traverser<?> currentTraverser = Traversers.empty();
     private int maxAsyncOps;
     private ResettableSingletonTraverser<Watermark> watermarkTraverser = new ResettableSingletonTraverser<>();
@@ -66,10 +67,10 @@ public final class AsyncTransformUsingServiceOrderedP<C, S, T, R> extends Abstra
     /**
      * Constructs a processor with the given mapping function.
      */
-    private AsyncTransformUsingServiceOrderedP(
-            @Nonnull C serviceContext,
+    AsyncTransformUsingServiceOrderedP(
             @Nonnull ServiceFactory<C, S> serviceFactory,
-            @Nonnull BiFunctionEx<? super S, ? super T, CompletableFuture<Traverser<R>>> callAsyncFn
+            @Nonnull C serviceContext,
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends CompletableFuture<Traverser<R>>> callAsyncFn
     ) {
         super(serviceFactory, serviceContext);
         this.callAsyncFn = callAsyncFn;
@@ -78,32 +79,41 @@ public final class AsyncTransformUsingServiceOrderedP<C, S, T, R> extends Abstra
     @Override
     protected void init(@Nonnull Context context) throws Exception {
         super.init(context);
-
         maxAsyncOps = serviceFactory.maxPendingCallsPerProcessor();
-        queue = new ArrayDeque<>(maxAsyncOps);
+        // Size for the worst case: interleaved output items an WMs
+        queue = new ArrayDeque<>(maxAsyncOps * 2);
     }
 
     @Override
     protected boolean tryProcess(int ordinal, @Nonnull Object item) {
-        if (queue.size() == maxAsyncOps) {
-            // if queue is full, try to emit and apply backpressure
-            tryFlushQueue();
+        if (isQueueFull() && !tryFlushQueue()) {
             return false;
         }
         @SuppressWarnings("unchecked")
         T castItem = (T) item;
-        CompletableFuture<? extends Traverser<R>> future = callAsyncFn.apply(service, castItem);
+        CompletableFuture<? extends Traverser<? extends R>> future = callAsyncFn.apply(service, castItem);
         if (future != null) {
             queue.add(tuple2(castItem, future));
         }
         return true;
     }
 
+    boolean isQueueFull() {
+        return queue.size() - queuedWmCount == maxAsyncOps;
+    }
+
     @Override
     public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
         tryFlushQueue();
-        return queue.size() < maxAsyncOps
-                && queue.add(watermark);
+        if (queue.peekLast() instanceof Watermark) {
+            // conflate the previous wm with the current one
+            queue.removeLast();
+            queue.add(watermark);
+        } else {
+            queue.add(watermark);
+            queuedWmCount++;
+        }
+        return true;
     }
 
     @Override
@@ -137,7 +147,7 @@ public final class AsyncTransformUsingServiceOrderedP<C, S, T, R> extends Abstra
      * @return true if there are no more in-flight items and everything was emitted
      *         to the outbox
      */
-    private boolean tryFlushQueue() {
+    boolean tryFlushQueue() {
         // We check the futures in submission order. While this might increase latency for some
         // later-submitted item that gets the result before some earlier-submitted one, we don't
         // have to do many volatile reads to check all the futures in each call or a concurrent
@@ -153,6 +163,7 @@ public final class AsyncTransformUsingServiceOrderedP<C, S, T, R> extends Abstra
             if (o instanceof Watermark) {
                 watermarkTraverser.accept((Watermark) o);
                 currentTraverser = watermarkTraverser;
+                queuedWmCount--;
             } else {
                 @SuppressWarnings("unchecked")
                 CompletableFuture<Traverser<R>> f = ((Tuple2<T, CompletableFuture<Traverser<R>>>) o).f1();
@@ -178,10 +189,10 @@ public final class AsyncTransformUsingServiceOrderedP<C, S, T, R> extends Abstra
      */
     public static <C, S, T, R> ProcessorSupplier supplier(
             @Nonnull ServiceFactory<C, S> serviceFactory,
-            @Nonnull BiFunctionEx<? super S, ? super T, CompletableFuture<Traverser<R>>> callAsyncFn
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends CompletableFuture<Traverser<R>>> callAsyncFn
     ) {
         return supplierWithService(serviceFactory,
-                (serviceFn, context) -> new AsyncTransformUsingServiceOrderedP<>(context, serviceFn, callAsyncFn)
+                (serviceFn, context) -> new AsyncTransformUsingServiceOrderedP<>(serviceFn, context, callAsyncFn)
         );
     }
 }

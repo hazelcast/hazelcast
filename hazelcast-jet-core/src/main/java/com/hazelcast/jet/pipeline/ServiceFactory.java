@@ -71,6 +71,7 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
  *     <li>{@link GeneralStage#mapUsingServiceAsync}
  *     <li>{@link GeneralStage#filterUsingServiceAsync}
  *     <li>{@link GeneralStage#flatMapUsingServiceAsync}
+ *     <li>{@link GeneralStage#mapUsingServiceAsyncBatched}
  *     <li>{@link GeneralStageWithKey#mapUsingService}
  *     <li>{@link GeneralStageWithKey#filterUsingService}
  *     <li>{@link GeneralStageWithKey#flatMapUsingService}

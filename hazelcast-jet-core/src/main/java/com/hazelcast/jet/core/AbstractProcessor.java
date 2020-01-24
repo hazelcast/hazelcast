@@ -102,7 +102,7 @@ public abstract class AbstractProcessor implements Processor {
      */
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
-    public final void process(int ordinal, @Nonnull Inbox inbox) {
+    public void process(int ordinal, @Nonnull Inbox inbox) {
         try {
             switch (ordinal) {
                 case 0:
@@ -585,43 +585,39 @@ public abstract class AbstractProcessor implements Processor {
     // easier job to the JIT compiler to optimize each case independently, and
     // to ensure that ordinal is dispatched on just once per process(ordinal,
     // inbox) call.
-    // An implementation with a very low-cost tryProcessN() method may want
-    // to override processN() with an identical method, but which the JIT
-    // compiler will be able to independently optimize and avoid the cost
-    // of the megamorphic call site of tryProcessN here.
 
 
-    protected void process0(@Nonnull Inbox inbox) throws Exception {
+    private void process0(@Nonnull Inbox inbox) throws Exception {
         for (Object item; (item = inbox.peek()) != null && tryProcess0(item); ) {
             inbox.remove();
         }
     }
 
-    protected void process1(@Nonnull Inbox inbox) throws Exception {
+    private void process1(@Nonnull Inbox inbox) throws Exception {
         for (Object item; (item = inbox.peek()) != null && tryProcess1(item); ) {
             inbox.remove();
         }
     }
 
-    protected void process2(@Nonnull Inbox inbox) throws Exception {
+    private void process2(@Nonnull Inbox inbox) throws Exception {
         for (Object item; (item = inbox.peek()) != null && tryProcess2(item); ) {
             inbox.remove();
         }
     }
 
-    protected void process3(@Nonnull Inbox inbox) throws Exception {
+    private void process3(@Nonnull Inbox inbox) throws Exception {
         for (Object item; (item = inbox.peek()) != null && tryProcess3(item); ) {
             inbox.remove();
         }
     }
 
-    protected void process4(@Nonnull Inbox inbox) throws Exception {
+    private void process4(@Nonnull Inbox inbox) throws Exception {
         for (Object item; (item = inbox.peek()) != null && tryProcess4(item); ) {
             inbox.remove();
         }
     }
 
-    protected void processAny(int ordinal, @Nonnull Inbox inbox) throws Exception {
+    private void processAny(int ordinal, @Nonnull Inbox inbox) throws Exception {
         for (Object item; (item = inbox.peek()) != null && tryProcess(ordinal, item); ) {
             inbox.remove();
         }

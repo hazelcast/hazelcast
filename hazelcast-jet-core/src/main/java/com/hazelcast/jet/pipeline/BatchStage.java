@@ -36,6 +36,7 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 
 import javax.annotation.Nonnull;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.function.Functions.wholeItem;
@@ -124,6 +125,13 @@ public interface BatchStage<T> extends GeneralStage<T> {
             @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull BiFunctionEx<? super S, ? super T, ? extends CompletableFuture<Traverser<R>>>
                     flatMapAsyncFn
+    );
+
+    @Nonnull @Override
+    <S, R> BatchStage<R> mapUsingServiceAsyncBatched(
+            @Nonnull ServiceFactory<?, S> serviceFactory,
+            int maxBatchSize,
+            @Nonnull BiFunctionEx<? super S, ? super List<T>, ? extends CompletableFuture<List<R>>> mapAsyncFn
     );
 
     @Nonnull @Override

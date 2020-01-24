@@ -33,6 +33,7 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 
 import javax.annotation.Nonnull;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -331,6 +332,55 @@ public interface GeneralStage<T> extends Stage {
     <S, R> GeneralStage<R> mapUsingServiceAsync(
             @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull BiFunctionEx<? super S, ? super T, ? extends CompletableFuture<R>> mapAsyncFn
+    );
+
+    /**
+     * Batched version of {@link #mapUsingService}: {@code mapAsyncFn} takes
+     * a list of input items and returns a {@code CompletableFuture<List<R>>}.
+     * <p>
+     * As opposed to the non-batched variant, this transform cannot perform
+     * filtering. The output list's items must match one-to-one with the input
+     * list's.
+     * <p>
+     * The latency of the async call will add to the total latency of the
+     * output.
+     * <p>
+     * This sample takes a stream of stock items and sets the {@code detail}
+     * field on them by performing batched lookups from a registry:
+     * <pre>{@code
+     * stage.mapUsingServiceAsync(
+     *     ServiceFactory.withCreateFn(jet -> new ItemDetailRegistry(jet)),
+     *     (reg, itemList) -> reg
+     *             .fetchDetailsAsync(itemList)
+     *             .thenApply(detailList -> {
+     *                 for (int i = 0; i < itemList.size(); i++) {
+     *                     itemList.get(i).setDetail(detailList.get(i))
+     *                 }
+     *             })
+     * )
+     * }</pre>
+     *
+     * <h3>Interaction with fault-tolerant unbounded jobs</h3>
+     *
+     * If you use this stage in a fault-tolerant unbounded job, keep in mind
+     * that any state the service object maintains doesn't participate in Jet's
+     * fault tolerance protocol. If the state is local, it will be lost after a
+     * job restart; if it is saved to some durable storage, the state of that
+     * storage won't be rewound to the last checkpoint, so you'll perform
+     * duplicate updates.
+     *
+     * @param serviceFactory the service factory
+     * @param mapAsyncFn a stateless mapping function
+     * @param <S> type of service object
+     * @param <R> the future result type of the mapping function
+     * @return the newly attached stage
+     * @since 4.0
+     */
+    @Nonnull
+    <S, R> GeneralStage<R> mapUsingServiceAsyncBatched(
+            @Nonnull ServiceFactory<?, S> serviceFactory,
+            int maxBatchSize,
+            @Nonnull BiFunctionEx<? super S, ? super List<T>, ? extends CompletableFuture<List<R>>> mapAsyncFn
     );
 
     /**
@@ -1019,6 +1069,9 @@ public interface GeneralStage<T> extends Stage {
     @Nonnull
     <R> GeneralStage<R> customTransform(
             @Nonnull String stageName, @Nonnull ProcessorMetaSupplier procSupplier);
+
+    @Nonnull @Override
+    GeneralStage<T> setLocalParallelism(int localParallelism);
 
     @Nonnull @Override
     GeneralStage<T> setName(@Nonnull String name);

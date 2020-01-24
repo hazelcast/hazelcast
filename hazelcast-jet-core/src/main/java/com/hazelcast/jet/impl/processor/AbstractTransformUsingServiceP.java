@@ -29,9 +29,7 @@ public class AbstractTransformUsingServiceP<C, S> extends AbstractProcessor {
     // package-visible for test
     S service;
 
-    public AbstractTransformUsingServiceP(
-            @Nonnull ServiceFactory<C, S> serviceFactory, @Nonnull C serviceContext
-    ) {
+    public AbstractTransformUsingServiceP(@Nonnull ServiceFactory<C, S> serviceFactory, @Nonnull C serviceContext) {
         this.serviceContext = serviceContext;
         this.serviceFactory = serviceFactory;
     }

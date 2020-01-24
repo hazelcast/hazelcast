@@ -48,9 +48,12 @@ import com.hazelcast.jet.pipeline.StreamStage;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
+import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.core.EventTimePolicy.DEFAULT_IDLE_TIMEOUT;
 import static com.hazelcast.jet.core.EventTimePolicy.eventTimePolicy;
 import static com.hazelcast.jet.core.WatermarkPolicy.limitingLag;
@@ -64,6 +67,7 @@ import static com.hazelcast.jet.impl.pipeline.transform.ProcessorTransform.custo
 import static com.hazelcast.jet.impl.pipeline.transform.ProcessorTransform.filterUsingServiceTransform;
 import static com.hazelcast.jet.impl.pipeline.transform.ProcessorTransform.flatMapUsingServiceAsyncTransform;
 import static com.hazelcast.jet.impl.pipeline.transform.ProcessorTransform.flatMapUsingServiceTransform;
+import static com.hazelcast.jet.impl.pipeline.transform.ProcessorTransform.flatMapUsingServiceAsyncBatchedTransform;
 import static com.hazelcast.jet.impl.pipeline.transform.ProcessorTransform.mapUsingServiceTransform;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static java.util.Arrays.asList;
@@ -262,6 +266,34 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
         BiFunctionEx adaptedFlatMapFn = fnAdapter.adaptFlatMapUsingServiceAsyncFn(flatMapAsyncFn);
         return (RET) attach(
                 flatMapUsingServiceAsyncTransform(transform, operationName, serviceFactory, adaptedFlatMapFn),
+                fnAdapter);
+    }
+
+    @Nonnull
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    <S, R, RET> RET attachFlatMapUsingServiceAsyncBatched(
+            @Nonnull String operationName,
+            @Nonnull ServiceFactory<?, S> serviceFactory,
+            int maxBatchSize,
+            @Nonnull BiFunctionEx<? super S, ? super List<T>,
+                    ? extends CompletableFuture<List<Traverser<R>>>> flatMapAsyncBatchedFn
+    ) {
+        checkSerializable(flatMapAsyncBatchedFn, operationName + "AsyncBatchedFn");
+        BiFunctionEx adaptedFn = fnAdapter.adaptFlatMapUsingServiceAsyncBatchedFn(flatMapAsyncBatchedFn);
+
+        // Here we flatten the result from List<Traverser<R>> to Traverser<R>.
+        // The former is used in pipeline API, the latter in core API.
+        BiFunctionEx<? super S, ? super List<T>, ? extends CompletableFuture<Traverser<R>>> flattenedFn =
+                (svc, items) -> {
+                    // R might actually be JetEvent<R> -- we can't represent this with static types
+                    CompletableFuture<List<Traverser<R>>> f =
+                            (CompletableFuture<List<Traverser<R>>>) adaptedFn.apply(svc, items);
+                    return f.thenApply(res -> traverseIterable(res).flatMap(Function.identity()));
+                };
+
+        return (RET) attach(
+                flatMapUsingServiceAsyncBatchedTransform(
+                        transform, operationName, serviceFactory, maxBatchSize, flattenedFn),
                 fnAdapter);
     }
 

@@ -135,6 +135,20 @@ public class FunctionAdapter {
     }
 
     @Nonnull
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    <S, T, R> BiFunctionEx<? super S, ? super List<?>, ? extends CompletableFuture<List<Traverser<?>>>>
+    adaptFlatMapUsingServiceAsyncBatchedFn(
+            @Nonnull BiFunctionEx<? super S, ? super List<T>, ? extends CompletableFuture<List<Traverser<R>>>>
+                    flatMapAsyncBatchedFn
+    ) {
+        // there's no transformation here, only checking that the input and output list sizes match
+        BiFunctionEx<S, List<T>, CompletableFuture<? extends List<?>>> fn =
+                (svc, items) -> flatMapAsyncBatchedFn.apply(svc, items)
+                        .thenApply(output -> requireSizeMatch(output, items));
+        return (BiFunctionEx) fn;
+    }
+
+    @Nonnull
     <T, R extends CharSequence> FunctionEx<?, ? extends R> adaptToStringFn(
             @Nonnull FunctionEx<? super T, ? extends R> toStringFn
     ) {
@@ -178,6 +192,15 @@ public class FunctionAdapter {
     @Nonnull
     public static ProcessorMetaSupplier adaptingMetaSupplier(ProcessorMetaSupplier metaSup, int[] ordinalsToAdapt) {
         return new WrappingProcessorMetaSupplier(metaSup, p -> new AdaptingProcessor(p, ordinalsToAdapt));
+    }
+
+    static <EI, EO> List<EO> requireSizeMatch(List<EO> output, List<EI> input) {
+        if (input.size() != output.size()) {
+            throw new JetException(String.format(
+                    "Output batch size %,d is not the same as input batch size %,d",
+                    output.size(), input.size()));
+        }
+        return output;
     }
 
     private static final class AdaptingProcessor extends ProcessorWrapper {
@@ -332,6 +355,27 @@ class JetEventFunctionAdapter extends FunctionAdapter {
     ) {
         return (S s, JetEvent<T> e) ->
                 flatMapAsyncFn.apply(s, e.payload()).thenApply(trav -> trav.map(re -> jetEvent(e.timestamp(), re)));
+    }
+
+    @Nonnull @Override
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    <S, T, R> BiFunctionEx<? super S, ? super List<?>, ? extends CompletableFuture<List<Traverser<?>>>>
+    adaptFlatMapUsingServiceAsyncBatchedFn(@Nonnull BiFunctionEx<? super S, ? super List<T>,
+                    ? extends CompletableFuture<List<Traverser<R>>>> flatMapAsyncBatchedFn
+    ) {
+        BiFunctionEx<S, List<JetEvent<T>>, CompletableFuture<List<Traverser<?>>>> fn =
+                (S s, List<JetEvent<T>> input) -> flatMapAsyncBatchedFn
+                        .apply(s, mapList(input, JetEvent::payload))
+                        .thenApply(travList -> {
+                            List<Traverser<?>> output = (List) travList;
+                            requireSizeMatch(output, input);
+                            for (int i = 0; i < output.size(); i++) {
+                                long timestamp = input.get(i).timestamp();
+                                output.set(i, output.get(i).map(r -> jetEvent(timestamp, r)));
+                            }
+                            return output;
+                        });
+        return (BiFunctionEx) fn;
     }
 
     @Nonnull @Override
