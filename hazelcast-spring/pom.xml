@@ -32,6 +32,7 @@
     <properties>
         <!-- needed for CheckStyle -->
         <main.basedir>${project.parent.basedir}</main.basedir>
+        <checkstyle.headerLocation>${main.basedir}/checkstyle/ClassHeaderHazelcastCommunity.txt</checkstyle.headerLocation>
 
         <org.springframework.version>4.3.23.RELEASE</org.springframework.version>
         <jsr250.api.version>1.0</jsr250.api.version>

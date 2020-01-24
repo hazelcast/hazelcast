@@ -58,9 +58,6 @@
     <suppress checks="Header" files="com[\\/]hazelcast[\\/]internal[\\/]util[\\/]collection[\\/]IntHashSetTest"/>
     <suppress checks="Header" files="com[\\/]hazelcast[\\/]internal[\\/]util[\\/]collection[\\/]Long2LongHashMapTest"/>
 
-    <!-- Spring uses different license -->
-    <suppress checks="Header" files="com[\\/]hazelcast[\\/]spring"/>
-
     <!-- Exclude internal, implementation and template packages from JavaDoc checks -->
     <suppress checks="Javadoc(Package|Method|Type|Variable)" files="com[\\/]hazelcast[\\/]internal[\\/]"/>
     <suppress checks="Javadoc(Package|Method|Type|Variable)" files="[\\/]impl[\\/]"/>
