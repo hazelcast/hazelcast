@@ -308,7 +308,7 @@ public interface GeneralStage<T> extends Stage {
      * stage.mapUsingServiceAsync(
      *     ServiceFactory.withCreateFn(jet -> new ItemDetailRegistry(jet)),
      *     (reg, item) -> reg.fetchDetailAsync(item)
-     *                       .thenApply(detail -> item.setDetail(detail)
+     *                       .thenApply(detail -> item.setDetail(detail))
      * )
      * }</pre>
      *
@@ -325,7 +325,7 @@ public interface GeneralStage<T> extends Stage {
      * @param mapAsyncFn a stateless mapping function. Can map to null (return
      *      a null future)
      * @param <S> type of service object
-     * @param <R> the future's result type of the mapping function
+     * @param <R> the future result type of the mapping function
      * @return the newly attached stage
      */
     @Nonnull
