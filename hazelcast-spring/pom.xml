@@ -93,19 +93,19 @@
                             <instructions>
                                 <Import-Package>
                                     !org.junit,
-                                    !com.hazelcast.  ~,
+                                    !com.hazelcast.*,
                                     org.apache.log4j;resolution:=optional,
-                                    org.apache.log4j.  ~;resolution:=optional,
+                                    org.apache.log4j.*;resolution:=optional,
                                     org.apache.logging.log4j;resolution:=optional,
-                                    org.apache.logging.log4j.  ~;resolution:=optional,
+                                    org.apache.logging.log4j.*;resolution:=optional,
                                     org.slf4j;resolution:=optional,
                                     org.apache.commons.logging;resolution:=optional,
                                     com.hazelcast.client;resolution:=optional,
                                     com.hazelcast.hibernate;resolution:=optional,
-                                      ~
+                                    *
                                 </Import-Package>
                                 <Fragment-Host>com.hazelcast</Fragment-Host>
-                                <!--<Embed-Dependency>  ~;scope=compile|runtime</Embed-Dependency>-->
+                                <!--<Embed-Dependency>*;scope=compile|runtime</Embed-Dependency>-->
                             </instructions>
                         </configuration>
                     </execution>
