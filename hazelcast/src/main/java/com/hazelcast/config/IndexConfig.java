@@ -204,6 +204,18 @@ public class IndexConfig implements IdentifiedDataSerializable {
         return bitmapIndexOptions;
     }
 
+    /**
+     * Sets bitmap index options of this index config to the given ones.
+     *
+     * @param bitmapIndexOptions the bitmap index options to set.
+     * @return this index config instance.
+     */
+    public IndexConfig setBitmapIndexOptions(BitmapIndexOptions bitmapIndexOptions) {
+        this.bitmapIndexOptions.setUniqueKey(bitmapIndexOptions.getUniqueKey());
+        this.bitmapIndexOptions.setUniqueKeyTransformation(bitmapIndexOptions.getUniqueKeyTransformation());
+        return this;
+    }
+
     @Override
     public int getFactoryId() {
         return ConfigDataSerializerHook.F_ID;
