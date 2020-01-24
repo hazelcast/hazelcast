@@ -16,12 +16,12 @@
 
 package com.hazelcast.jet.impl.util;
 
-import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.core.Watermark;
+import com.hazelcast.jet.impl.processor.ProcessorWrapper;
 
 import javax.annotation.Nonnull;
+import java.util.function.BooleanSupplier;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
@@ -30,67 +30,21 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 /**
  * A wrapper processor to throttle the output of a processor.
  */
-public final class ThrottleWrappedP implements Processor {
+public final class ThrottleWrappedP extends ProcessorWrapper {
 
-    private final Processor wrappedProcessor;
     private final long itemsPerSecond;
 
     public ThrottleWrappedP(Processor wrappedProcessor, long itemsPerSecond) {
+        super(wrappedProcessor);
         checkNotNull(wrappedProcessor, "wrappedProcessor");
         checkTrue(wrappedProcessor.isCooperative(), "wrappedProcessor must be cooperative");
 
         this.itemsPerSecond = itemsPerSecond;
-        this.wrappedProcessor = wrappedProcessor;
     }
 
     @Override
-    public void init(@Nonnull Outbox outbox, @Nonnull Context context) throws Exception {
-        wrappedProcessor.init(new ThrottlingOutbox(outbox), context);
-    }
-
-    @Override
-    public boolean isCooperative() {
-        return wrappedProcessor.isCooperative();
-    }
-
-    @Override
-    public void process(int ordinal, @Nonnull Inbox inbox) {
-        wrappedProcessor.process(ordinal, inbox);
-    }
-
-    @Override
-    public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
-        return wrappedProcessor.tryProcessWatermark(watermark);
-    }
-
-    @Override
-    public boolean tryProcess() {
-        return wrappedProcessor.tryProcess();
-    }
-
-    @Override
-    public boolean complete() {
-        return wrappedProcessor.complete();
-    }
-
-    @Override
-    public boolean saveToSnapshot() {
-        return wrappedProcessor.saveToSnapshot();
-    }
-
-    @Override
-    public void restoreFromSnapshot(@Nonnull Inbox inbox) {
-        wrappedProcessor.restoreFromSnapshot(inbox);
-    }
-
-    @Override
-    public boolean completeEdge(int ordinal) {
-        return wrappedProcessor.completeEdge(ordinal);
-    }
-
-    @Override
-    public boolean finishSnapshotRestore() {
-        return wrappedProcessor.finishSnapshotRestore();
+    protected Outbox wrapOutbox(Outbox outbox) {
+        return new ThrottlingOutbox(outbox);
     }
 
     private final class ThrottlingOutbox implements Outbox {
@@ -109,21 +63,25 @@ public final class ThrottleWrappedP implements Processor {
 
         @Override
         public boolean offer(int ordinal, @Nonnull Object item) {
+            return offerInternal(() -> wrappedOutbox.offer(ordinal, item));
+        }
+
+        @Override
+        public boolean offer(@Nonnull int[] ordinals, @Nonnull Object item) {
+            return offerInternal(() -> wrappedOutbox.offer(ordinals, item));
+        }
+
+        private boolean offerInternal(BooleanSupplier action) {
             if (startTs == Long.MIN_VALUE) {
                 startTs = System.nanoTime();
             }
             long elapsed = System.nanoTime() - startTs;
             if (NANOSECONDS.toSeconds(elapsed * itemsPerSecond) <= emitCount
-                    || !wrappedOutbox.offer(ordinal, item)) {
+                    || !action.getAsBoolean()) {
                 return false;
             }
             emitCount++;
             return true;
-        }
-
-        @Override
-        public boolean offer(int[] ordinals, @Nonnull Object item) {
-            return wrappedOutbox.offer(ordinals, item);
         }
 
         @Override
