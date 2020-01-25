@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns <tt>true</tt> if this queue changed after performing the operation
  */
-@Generated("93d50f7bc864e333440b83a75b550894")
+@Generated("f29222adb371d12ca52fa19c4b5b4e2b")
 public final class TransactionalQueueRetainAllCodec {
     //hex: 0x120600
     public static final int REQUEST_MESSAGE_TYPE = 1181184;
@@ -81,6 +81,7 @@ public final class TransactionalQueueRetainAllCodec {
         clientMessage.setOperationName("TransactionalQueue.RetainAll");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeUUID(initialFrame.content, REQUEST_TXN_ID_FIELD_OFFSET, txnId);
         encodeLong(initialFrame.content, REQUEST_THREAD_ID_FIELD_OFFSET, threadId);
         clientMessage.add(initialFrame);
