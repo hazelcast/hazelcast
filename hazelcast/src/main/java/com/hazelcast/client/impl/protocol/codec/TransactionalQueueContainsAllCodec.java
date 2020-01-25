@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns <tt>true</tt> if this queue contains all specified items
  */
-@Generated("75a8a639f3ab7013bcae153220e534e2")
+@Generated("1b3a19ae24c8b5038d440c92b1364adb")
 public final class TransactionalQueueContainsAllCodec {
     //hex: 0x120600
     public static final int REQUEST_MESSAGE_TYPE = 1181184;
@@ -87,6 +87,7 @@ public final class TransactionalQueueContainsAllCodec {
         clientMessage.setOperationName("TransactionalQueue.ContainsAll");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeUUID(initialFrame.content, REQUEST_TXN_ID_FIELD_OFFSET, txnId);
         encodeLong(initialFrame.content, REQUEST_THREAD_ID_FIELD_OFFSET, threadId);
         encodeLong(initialFrame.content, REQUEST_TIMEOUT_FIELD_OFFSET, timeout);
