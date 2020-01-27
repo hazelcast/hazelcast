@@ -108,7 +108,7 @@ public class BitmapIndexOptions implements IdentifiedDataSerializable {
             throw new IllegalArgumentException("unexpected unique key transformation: " + name);
         }
 
-        static UniqueKeyTransformation fromId(int id) {
+        public static UniqueKeyTransformation fromId(int id) {
             for (UniqueKeyTransformation transformation : UniqueKeyTransformation.values()) {
                 if (transformation.id == id) {
                     return transformation;

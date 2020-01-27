@@ -24,41 +24,37 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("3d4ca8289994b4baea8697c3f7eeb415")
-public final class IndexConfigCodec {
-    private static final int TYPE_FIELD_OFFSET = 0;
-    private static final int INITIAL_FRAME_SIZE = TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+@Generated("d41d8edfbfcb4ed6754adb0010f300bf")
+public final class BitmapIndexOptionsCodec {
+    private static final int UNIQUE_KEY_TRANSFORMATION_FIELD_OFFSET = 0;
+    private static final int INITIAL_FRAME_SIZE = UNIQUE_KEY_TRANSFORMATION_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
-    private IndexConfigCodec() {
+    private BitmapIndexOptionsCodec() {
     }
 
-    public static void encode(ClientMessage clientMessage, com.hazelcast.config.IndexConfig indexConfig) {
+    public static void encode(ClientMessage clientMessage, com.hazelcast.config.BitmapIndexOptions bitmapIndexOptions) {
         clientMessage.add(BEGIN_FRAME.copy());
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
-        encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, indexConfig.getType());
+        encodeInt(initialFrame.content, UNIQUE_KEY_TRANSFORMATION_FIELD_OFFSET, bitmapIndexOptions.getUniqueKeyTransformation());
         clientMessage.add(initialFrame);
 
-        CodecUtil.encodeNullable(clientMessage, indexConfig.getName(), StringCodec::encode);
-        ListMultiFrameCodec.encode(clientMessage, indexConfig.getAttributes(), StringCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, indexConfig.getBitmapIndexOptions(), BitmapIndexOptionsCodec::encode);
+        StringCodec.encode(clientMessage, bitmapIndexOptions.getUniqueKey());
 
         clientMessage.add(END_FRAME.copy());
     }
 
-    public static com.hazelcast.config.IndexConfig decode(ClientMessage.ForwardFrameIterator iterator) {
+    public static com.hazelcast.config.BitmapIndexOptions decode(ClientMessage.ForwardFrameIterator iterator) {
         // begin frame
         iterator.next();
 
         ClientMessage.Frame initialFrame = iterator.next();
-        int type = decodeInt(initialFrame.content, TYPE_FIELD_OFFSET);
+        int uniqueKeyTransformation = decodeInt(initialFrame.content, UNIQUE_KEY_TRANSFORMATION_FIELD_OFFSET);
 
-        java.lang.String name = CodecUtil.decodeNullable(iterator, StringCodec::decode);
-        java.util.List<java.lang.String> attributes = ListMultiFrameCodec.decode(iterator, StringCodec::decode);
-        com.hazelcast.config.BitmapIndexOptions bitmapIndexOptions = CodecUtil.decodeNullable(iterator, BitmapIndexOptionsCodec::decode);
+        java.lang.String uniqueKey = StringCodec.decode(iterator);
 
         fastForwardToEndFrame(iterator);
 
-        return CustomTypeFactory.createIndexConfig(name, type, attributes, bitmapIndexOptions);
+        return CustomTypeFactory.createBitmapIndexOptions(uniqueKey, uniqueKeyTransformation);
     }
 }
