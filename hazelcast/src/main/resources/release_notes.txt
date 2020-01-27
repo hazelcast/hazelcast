@@ -1,5 +1,99 @@
 This document lists the new features, enhancements, fixed issues and, removed or deprecated features for Hazelcast IMDG 3.12.x release. The numbers in the square brackets refer to the issues in Hazelcast's GitHub repositories.
 
+==== 3.12.6 ====
+
+1. New Features
+
+* Introduced Bitmap Indexes to significantly lower
+index memory usage for low-cardinality columns and also to speed up
+the queries and lower memory requirements for them
+when the queries have multiple predicates acting on the same bitmap index.
+Note that bitmap indexes usage, currently, is a good fit for
+array/collection attribute indexing, rather than regular
+single-valued attributes. See the Bitmap Indexes section.
+
+2. Enhancements
+
+* Added support for AWS PrivateLink: Now, Hazelcast IMDG Java
+client can work with Hazelcast Cloud when it uses AWS PrivateLink.
+
+3. Fixes
+
+* Fixed the map configuration so that now the value of
+`optimize-queries` element is not serialized anymore. [#16524]
+* Fixed an issue where disabling the quorum had not an effect
+and was still checking the presence of split-brain protection. [#16507]
+* Fixed an issue where the `Imap.containsKey()` method was not
+able to find Near Cached entries when it is called from a
+client. [#16472]
+* Fixed a race condition caused by using on-heap indexes
+while indexing is in progress. [#16461]
+* Fixed the issue with `setInstanceName()` when using Spring Boot
+and Hazelcast client: the `getOrCreate()` method
+has been added to the client configuration. [#16363]
+* Fixed an issue where wildcard usage at
+`CLASSPATH` was breaking the `stop.bat` and
+`start.bat` scripts. [#16355]
+* Fixed an issue where the migration operations were running
+before the previous finalization is completed. [#16190]
+* Fixed an issue where repetitive calls of `IMap.loadAll()`
+may cause memory leaks. [#16172]
+* Fixed the joining mechanism so that when the discovery
+strategy is enabled, multiple join configurations are prevented. [#16143]
+* Fixed an issue where a client in the `CLIENT_DISCONNECTED`
+status was never receiving the changes in the cluster member attributes. [#15623]
+* Fixed an issue where the `MembershipListener.memberAdded()`
+method after a split-brain merge was showing a different
+member order. [#15353]
+
+==== 3.12.5 ====
+
+1. Enhancements
+
+* Added option to disable retrieving the
+`OSMBean.getFreePhysicalMemorySize()` method. [#16065]
+* The `recreateCachesOnCluster` invocation is not being checked
+for the maximum invocations count anymore during cluster restarts. [#16014]
+
+2. Fixes
+
+* Fixed an issue where repetitive calls of `IMap.loadAll()`
+may cause memory leaks. [#16171]
+* Fixed an issue where an HTTP request via
+`hazelcast/rest/cluster` was failing when using the advanced network
+configuration and a client endpoint is
+not specified. In this case, this request's response
+has been improved to report `0` as the client connection count. [#16150]
+* Fixed an issue where an enabled `redoOperation()` was not
+throwing an exception when an empty list is tried to be retrieved
+on the client. [#16019]
+* Fixed an issue where gathering MultiMap statistics was breaking
+the split-brain healing with `LatestAccessMergePolicy`. [#16003]
+* Fixed the `multiplier` element of client's connection
+retry configuration to be set as a `double` in the
+XML configuration (`hazelcast-client.xml). [#15990]
+* Fixed the following Hot Restart issues:
+   ** Introduced an additional stage to the Hot Restart
+procedure, i.e., `HotRestartIntegrationService.startup()`,
+which waits until all members transition from the `PASSIVE` state.
+This guarantees all members to have the same state after Hot
+Restart operation is finished.
+   ** IMap proxies created during Hot Restart are not initialized
+and published to other cluster members. So the operation
+has been improved to force initialize any uninitialized proxies
+and publish them. This fixed the issue where the
+`getDistributedObjects()` method was not reporting the persisted
+objects after a Hot Restart.
+[#15986]
+* Fixed an issue where, after forming a cluster, certain members
+occasionally do not contain `EventService` registrations for
+some other members. [#15950]
+* Fixed an issue where calling the `IMap.removeAll()` method
+without index was updating the last access and expiry time
+for all records. [#15853]
+* Fixed an issue where the client connection count
+was retrieved using an incorrect method. [#15681]
+
 ==== 3.12.4 ====
 
 1. Enhancements
