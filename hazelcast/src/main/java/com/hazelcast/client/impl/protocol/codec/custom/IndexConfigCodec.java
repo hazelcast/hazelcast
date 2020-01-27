@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("6d1adff486fac61d7329546bbd8c2604")
+@Generated("3d4ca8289994b4baea8697c3f7eeb415")
 public final class IndexConfigCodec {
     private static final int TYPE_FIELD_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -41,7 +41,7 @@ public final class IndexConfigCodec {
 
         CodecUtil.encodeNullable(clientMessage, indexConfig.getName(), StringCodec::encode);
         ListMultiFrameCodec.encode(clientMessage, indexConfig.getAttributes(), StringCodec::encode);
-        BitmapIndexOptionsCodec.encode(clientMessage, indexConfig.getBitmapIndexOptions());
+        CodecUtil.encodeNullable(clientMessage, indexConfig.getBitmapIndexOptions(), BitmapIndexOptionsCodec::encode);
 
         clientMessage.add(END_FRAME.copy());
     }
@@ -55,7 +55,7 @@ public final class IndexConfigCodec {
 
         java.lang.String name = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         java.util.List<java.lang.String> attributes = ListMultiFrameCodec.decode(iterator, StringCodec::decode);
-        com.hazelcast.config.BitmapIndexOptions bitmapIndexOptions = BitmapIndexOptionsCodec.decode(iterator);
+        com.hazelcast.config.BitmapIndexOptions bitmapIndexOptions = CodecUtil.decodeNullable(iterator, BitmapIndexOptionsCodec::decode);
 
         fastForwardToEndFrame(iterator);
 
