@@ -244,11 +244,11 @@ and resume the jobs.
 
 Blue/Green deployment refers to a software technique which can be used
 to reduces system downtime by deploying two mirrored production
-environments referred to as Blue and Green. One of the environments is
-running in production while the other one is active standby.
+environments, referred to as Blue and Green. One of the environments is
+running in production while the other one is in active standby.
 
 The Jet client can be configured to switch to the other cluster in case
-of a connection failure on production environment.
+of a connection failure to the production environment.
 
 == Programmatic Configuration
 
@@ -271,18 +271,18 @@ include::{javasource}/ConfigureFaultTolerance.java[tag=s7]
 ----
 
 After switching to the cluster-B, the state of any running job on
-cluster-A will be undefined. The jobs may continue running on cluster-A
+cluster-A will be undefined. The jobs may continue running on cluster-A,
 if the cluster is still alive and the switching was because of a network
 problem. When you try to query the state of the job using the `Job`
 interface you'll get `job not found` exception.
 
-While you can use the Jet client for any IMDG operation, in Jet context,
+While you can use the Jet client for any IMDG operation, in Jet context
 a client is mostly used for submitting jobs to the cluster. After the
 submission the job lives on the cluster, client is used to query the
 state of the job. Therefore Blue/Green deployment is not applicable for
-long living jobs but can be used with short living batch jobs which
-will not cause any problem if runs on different clusters at the same
-time, like queries for example.
+long-lived jobs but can be used with short-lived batch jobs which will
+not cause any problem if run on different clusters at the same time,
+like queries for example.
 
 
 For more information on Blue/Green configuration options see Hazelcast
