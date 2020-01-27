@@ -87,9 +87,11 @@ public class ManagementCenterServiceIntegrationTest extends HazelcastTestSupport
 
     @Test
     public void testTimedMemberState_usesCache_shortTimeFrame() {
-        String responseOne = mcs.getTimedMemberStateJson().orElse(null);
-        String responseTwo = mcs.getTimedMemberStateJson().orElse(null);
-        assertSame(responseOne, responseTwo);
+        assertTrueEventually(() -> {
+            String responseOne = mcs.getTimedMemberStateJson().orElse(null);
+            String responseTwo = mcs.getTimedMemberStateJson().orElse(null);
+            assertSame(responseOne, responseTwo);
+        });
     }
 
     @Test
