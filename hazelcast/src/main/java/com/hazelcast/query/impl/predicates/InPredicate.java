@@ -32,6 +32,7 @@ import java.util.Arrays;
 import java.util.Set;
 
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
+import static com.hazelcast.query.impl.predicates.PredicateUtils.isNull;
 
 /**
  * In Predicate
@@ -68,11 +69,23 @@ public class InPredicate extends AbstractIndexAwarePredicate implements Visitabl
 
     @Override
     protected boolean applyForSingleAttributeValue(Comparable attributeValue) {
-        if (attributeValue == null) {
+        Set<Comparable> set = convertedInValues;
+
+        if (attributeValue == null && set == null) {
+            // Conversion of the values given to the predicate is possible only
+            // if the passed attribute value is non-null, otherwise we are
+            // unable to infer a proper converter. Postpone the conversion and
+            // do a brute-force comparison.
+
+            for (Comparable value : values) {
+                if (isNull(value)) {
+                    return true;
+                }
+            }
             return false;
         }
+
         attributeValue = (Comparable) convertEnumValue(attributeValue);
-        Set<Comparable> set = convertedInValues;
         if (set == null) {
             set = createHashSet(values.length);
             for (Comparable value : values) {
