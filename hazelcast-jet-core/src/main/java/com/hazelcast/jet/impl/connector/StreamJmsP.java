@@ -172,6 +172,9 @@ public class StreamJmsP<T> extends AbstractProcessor {
 
     @Override
     public boolean snapshotCommitPrepare() {
+        if (!emitFromTraverser(pendingTraverser)) {
+            return false;
+        }
         snapshotInProgress = guarantee != NONE;
         if (guarantee != EXACTLY_ONCE) {
             return true;

@@ -29,13 +29,13 @@ import javax.jms.ConnectionFactory;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.Session;
-import javax.jms.XAConnectionFactory;
 import java.util.function.Function;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.jet.core.processor.SourceProcessors.streamJmsQueueP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.streamJmsTopicP;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
+import static java.util.Objects.requireNonNull;
 
 /**
  * See {@link Sources#jmsQueueBuilder} or {@link Sources#jmsTopicBuilder}.
@@ -85,11 +85,10 @@ public final class JmsSourceBuilder {
      * <p>
      * If not provided, this function is used:
      * <pre>
-     *     connectionFn = factory -> factory instanceof XAConnectionFactory
-     *            ? ((XAConnectionFactory) factory).createXAConnection(username, password)
-     *            : factory.createConnection(username, password);
+     *     connectionFn = factory -> username != null || password != null
+     *         ? factory.createConnection(usernameLocal, passwordLocal)
+     *         : factory.createConnection()
      * </pre>
-     * That means it creates an XA connection if the factory is an XA factory.
      * The user name and password set with {@link #connectionParams} are used.
      *
      * @return this instance for fluent API
@@ -234,9 +233,9 @@ public final class JmsSourceBuilder {
         boolean isTopicLocal = isTopic;
 
         if (connectionFn == null) {
-            connectionFn = factory -> factory instanceof XAConnectionFactory
-                    ? ((XAConnectionFactory) factory).createXAConnection(usernameLocal, passwordLocal)
-                    : factory.createConnection(usernameLocal, passwordLocal);
+            connectionFn = factory -> requireNonNull(usernameLocal != null || passwordLocal != null
+                    ? factory.createConnection(usernameLocal, passwordLocal)
+                    : factory.createConnection());
         }
         if (consumerFn == null) {
             checkNotNull(destinationLocal, "neither consumerFn nor destinationName set");

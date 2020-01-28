@@ -40,11 +40,9 @@ import javax.jms.Destination;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
-import javax.jms.QueueBrowser;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.Queue;
 import java.util.function.Function;
@@ -168,23 +166,6 @@ public class StreamJmsPTest extends JetTestSupport {
         session.close();
         connection.close();
         return message;
-    }
-
-    private int queueSize(String queueName) throws Exception {
-        Connection connection = getConnectionFactory().createConnection();
-        connection.start();
-
-        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        QueueBrowser browser = session.createBrowser(session.createQueue(queueName));
-        Enumeration enumeration = browser.getEnumeration();
-        int size = 0;
-        while (enumeration.hasMoreElements()) {
-            enumeration.nextElement();
-            size++;
-        }
-        session.close();
-        connection.close();
-        return size;
     }
 
     private static ConnectionFactory getConnectionFactory() {

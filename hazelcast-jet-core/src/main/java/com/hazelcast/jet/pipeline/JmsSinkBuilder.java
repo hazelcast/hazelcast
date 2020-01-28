@@ -114,7 +114,9 @@ public final class JmsSinkBuilder<T> {
 
         checkNotNull(destinationName);
         if (connectionFn == null) {
-            connectionFn = factory -> factory.createConnection(usernameLocal, passwordLocal);
+            connectionFn = factory -> usernameLocal != null || passwordLocal != null
+                    ? factory.createConnection(usernameLocal, passwordLocal)
+                    : factory.createConnection();
         }
         if (messageFn == null) {
             messageFn = (session, item) ->
