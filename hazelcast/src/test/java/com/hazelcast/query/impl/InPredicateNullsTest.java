@@ -102,7 +102,7 @@ public class InPredicateNullsTest extends HazelcastTestSupport {
 
         final Integer value;
 
-        public Value(Integer value) {
+        Value(Integer value) {
             this.value = value;
         }
 
