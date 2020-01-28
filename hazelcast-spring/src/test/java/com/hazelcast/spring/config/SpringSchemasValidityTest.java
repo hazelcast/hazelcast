@@ -41,7 +41,7 @@ import static org.junit.Assert.fail;
  */
 @RunWith(JUnit4.class)
 @Category(QuickTest.class)
-public class SpringSchemasVadilityTest {
+public class SpringSchemasValidityTest {
 
     private Properties prop;
 
