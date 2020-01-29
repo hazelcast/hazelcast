@@ -118,14 +118,17 @@ public class WordCount {
 
     private static void printResults(Map<String, Long> counts) {
         final int limit = 100;
-        System.out.format(" Top %d entries are:%n", limit);
-        System.out.println("/-------+---------\\");
-        System.out.println("| Count | Word    |");
-        System.out.println("|-------+---------|");
+
+        StringBuilder sb = new StringBuilder(String.format(" Top %d entries are:%n", limit));
+        sb.append("/-------+---------\\\n");
+        sb.append("| Count | Word    |\n");
+        sb.append("|-------+---------|\n");
         counts.entrySet().stream()
-              .sorted(comparingLong(Entry<String, Long>::getValue).reversed())
-              .limit(limit)
-              .forEach(e -> System.out.format("|%6d | %-8s|%n", e.getValue(), e.getKey()));
-        System.out.println("\\-------+---------/");
+                .sorted(comparingLong(Map.Entry<String, Long>::getValue).reversed())
+                .limit(limit)
+                .forEach(e -> sb.append(String.format("|%6d | %-8s|%n", e.getValue(), e.getKey())));
+        sb.append("\\-------+---------/\n");
+
+        System.out.println(sb.toString());
     }
 }

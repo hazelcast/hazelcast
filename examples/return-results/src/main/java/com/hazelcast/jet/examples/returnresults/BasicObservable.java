@@ -14,15 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.examples.helloworld;
+package com.hazelcast.jet.examples.returnresults;
 
 import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Observable;
 import com.hazelcast.jet.aggregate.AggregateOperations;
-import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.datamodel.WindowResult;
 import com.hazelcast.jet.function.Observer;
 import com.hazelcast.jet.pipeline.Pipeline;
@@ -34,45 +32,36 @@ import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Demonstrates a simple job which calculates the top 10 numbers from a
- * stream of random numbers. This code is included in Jet's distribution
- * package as {@code examples/hello-world.jar}, ready to be submitted to
- * a running Jet cluster with {@code bin/jet submit examples/hello-world.java}.
+ * Demonstrates the usage of observable results on client side in most
+ * basic form (similar to Reactive Java Observers & Observables). The biggest
+ * advantage of this form is that it's applicable to both batch and streaming
+ * jobs, as illustrated here.
  * <p>
- * It also uses an {@link Observable} to print the results on the client side.
+ * The concrete job we are observing produces a simple stream of random
+ * numbers, from which we compute the top N for each one second tumbling window.
+ * <p>
+ * The results observed are ordered lists of the top N numbers and are printed
+ * once for each window, as they become available.
  */
-public class HelloWorld {
+public class BasicObservable {
 
-    public static final int TOP = 10;
-    private static final String RESULTS = "top10_results";
+    public static final int TOP = 3;
 
-    private static Pipeline buildPipeline() {
+    public static void main(String[] args) {
+        JetInstance jet = Jet.newJetInstance();
+
+        Observable<List<Long>> observable = jet.newObservable();
+        observable.addObserver(Observer.of(BasicObservable::printResults));
+
         Pipeline p = Pipeline.create();
-        p.readFrom(TestSources.itemStream(100, (ts, seq) -> nextRandomNumber()))
+        p.readFrom(TestSources.itemStream(100, (ts, seq) -> ThreadLocalRandom.current().nextLong()))
                 .withIngestionTimestamps()
                 .window(WindowDefinition.tumbling(1000))
                 .aggregate(AggregateOperations.topN(TOP, ComparatorEx.comparingLong(l -> l)))
                 .map(WindowResult::result)
-                .writeTo(Sinks.observable(RESULTS));
-        return p;
-    }
+                .writeTo(Sinks.observable(observable));
 
-    private static long nextRandomNumber() {
-        return ThreadLocalRandom.current().nextLong();
-    }
-
-    public static void main(String[] args) {
-        JetInstance jet = Jet.bootstrappedInstance();
-
-        Observable<List<Long>> observable = jet.getObservable(RESULTS);
-        observable.addObserver(Observer.of(HelloWorld::printResults));
-
-        Pipeline p = buildPipeline();
-
-        JobConfig config = new JobConfig();
-        config.setName("hello-world");
-        config.setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
-        jet.newJobIfAbsent(p, config);
+        jet.newJob(p);
     }
 
     private static void printResults(List<Long> topNumbers) {

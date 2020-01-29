@@ -102,6 +102,30 @@ samples using the Core API.
   - hash-join an unbounded stream with two batch streams in one step
   - print the results on the console
 
+## Return Results to the Caller
+### [Basic Observables](return-results/src/main/java/com/hazelcast/jet/examples/returnresults/BasicObservable.java)
+  - obtain an `Observable`
+  - incorporate it in a streaming pipeline by wrapping it in a `Sink` 
+  - register an `Observer` on it
+  - execute the pipeline (streaming job)
+  - observe the results as they show up in the `Observer`
+  
+### [Iterable results](return-results/src/main/java/com/hazelcast/jet/examples/returnresults/IterableResults.java)
+  - obtain an `Observable`
+  - use it as `Sink` in a batch job
+  - get a result `Iterator` form of the `Observable`
+  - execute the batch job
+  - observe the results by iterating once execution has finished
+
+### [Results as a Future](return-results/src/main/java/com/hazelcast/jet/examples/returnresults/FutureResults.java)
+  - obtain an `Observable`
+  - use it as `Sink` in a batch job
+  - get the `CompletableFuture` form of the `Observable`
+  - specify actions to be executed once the results are complete
+  - execute the batch job
+  - observe the results when they become available
+  
+
 ## Job Management
 
 - [Suspend/Resume a Job](job-management/src/main/java/com/hazelcast/jet/examples/jobmanagement/JobSuspendResume.java)
