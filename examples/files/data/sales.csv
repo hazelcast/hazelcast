@@ -1,0 +1,1001 @@
+time,product,price,card_type,first_name,last_name,address,state,country
+2019-02-20 12:45:06,Chicken - Thigh Bone In,79.12,diners-club-carte-blanche,Blakeley,Waywell,55 Mifflin Lane,OK,United States
+2020-01-13 06:04:45,Crackers - Water,31.35,jcb,Anderson,Abrehart,4499 Forest Place,FL,United States
+2019-03-19 13:09:53,Island Oasis - Banana Daiquiri,96.26,jcb,Jeramey,Di Maria,3944 Glacier Hill Drive,CO,United States
+2019-03-01 04:43:00,Bread - Multigrain,91.79,laser,Vonnie,Louche,1 Huxley Junction,FL,United States
+2019-03-18 11:08:56,Wine - Gewurztraminer Pierre,99.94,switch,Cinderella,Danielian,1936 Green Road,FL,United States
+2019-08-13 15:33:19,Oil - Shortening - All - Purpose,29.7,bankcard,Agna,Juggings,99632 Mallory Avenue,CO,United States
+2019-10-19 22:30:11,Breakfast Quesadillas,39.41,maestro,Hayley,Bonhill,3 Magdeline Avenue,NY,United States
+2019-04-09 08:20:23,Mushroom - Morels Dry,72.21,visa-electron,Dayna,Neve,23 Green Pass,TX,United States
+2019-10-05 22:31:50,Cod - Fillets,52.88,china-unionpay,Lizzie,Shaul,304 David Crossing,DC,United States
+2019-11-27 09:12:03,Loaf Pan - 2 Lb Foil,27.63,jcb,Tiebold,Aspden,391 Jenna Place,AL,United States
+2019-03-05 13:12:54,Bread - Dark Rye,95.95,china-unionpay,Hedvige,Brockley,82 Utah Place,WA,United States
+2019-03-29 09:12:14,Tea - Lemon Scented,74.26,laser,Marie-ann,Windsor,70409 Farwell Park,MN,United States
+2019-12-17 01:07:30,Sauce Bbq Smokey,56.12,jcb,Lory,Peyro,861 Armistice Center,IL,United States
+2019-10-03 14:03:37,Danishes - Mini Cheese,26.94,bankcard,Dael,Rustadge,2080 1st Avenue,WI,United States
+2019-08-29 17:08:37,Carbonated Water - Lemon Lime,61.57,jcb,Cati,Moncaster,2 Nevada Trail,TX,United States
+2019-06-14 18:25:04,Wine - Red Lurton Merlot De,96.33,jcb,Moselle,Antonov,64957 Dexter Drive,CT,United States
+2019-04-22 14:12:08,Egg - Salad Premix,49.16,jcb,Flin,Nannoni,10 Boyd Lane,MN,United States
+2019-06-06 17:11:59,Temperature Recording Station,38.21,mastercard,Munroe,Bussens,541 Mifflin Place,IL,United States
+2019-11-19 19:49:32,Yukon Jack,36.78,diners-club-us-ca,Lenette,Cumo,16 Waxwing Street,CO,United States
+2019-03-03 09:25:03,Beans - Kidney Canned,53.14,maestro,Kristoffer,Doers,636 Katie Alley,CA,United States
+2019-09-25 07:41:52,Nut - Macadamia,97.8,jcb,Stanley,Budgey,6796 Dayton Crossing,MA,United States
+2020-01-13 08:06:17,Cheese - Camembert,88.64,jcb,Constance,Tanman,53812 Knutson Court,WI,United States
+2019-10-21 05:51:16,Melon - Watermelon Seedless,77.87,instapayment,Fawn,Stenyng,73 Melby Plaza,NH,United States
+2019-10-14 01:43:00,Cheese - Mozzarella Buffalo,80.98,bankcard,Jamie,Dulwitch,1347 Scott Alley,OH,United States
+2019-10-19 05:55:37,Flour - Masa De Harina Mexican,30.02,diners-club-us-ca,Noelani,Gauche,7036 Upham Center,GA,United States
+2019-04-07 17:03:23,Broom - Angled,29.57,solo,Bianca,Toderbrugge,4888 Caliangt Point,AZ,United States
+2019-09-12 18:38:36,Sauce - Gravy Au Jus Mix,47.76,switch,Dore,Vasilmanov,8853 Fuller Hill,AL,United States
+2019-03-31 00:46:48,Cheese - Provolone,82.31,diners-club-carte-blanche,Janeta,Willgoose,17232 Drewry Road,OR,United States
+2019-02-08 07:13:33,Flour - Teff,27.86,laser,Fionnula,Hiley,160 Eagan Point,OH,United States
+2020-01-26 11:46:26,Oil - Truffle White,56.68,maestro,Biddie,Miko,2 Bunting Circle,KY,United States
+2019-05-11 05:47:35,Wine - Shiraz Wolf Blass Premium,51.78,visa-electron,Tamiko,Murrish,4712 Northfield Center,NY,United States
+2019-02-13 16:19:05,Sardines,28.26,jcb,Henrietta,Rainsbury,6 Merrick Court,VA,United States
+2020-01-21 14:23:39,Mushroom - Oyster Fresh,79.51,jcb,Dion,McDill,70442 Nevada Parkway,WI,United States
+2020-01-07 13:15:42,Cake Circle Paprus,27.65,jcb,Kelley,Di Bartolommeo,93574 Memorial Parkway,TX,United States
+2019-11-24 14:26:08,Latex Rubber Gloves Size 9,83.36,mastercard,Mellisa,Carnduff,29 Bonner Terrace,MS,United States
+2019-11-08 04:20:02,Mayonnaise - Individual Pkg,20.03,jcb,Vikky,Lamkin,2333 Northwestern Hill,VA,United States
+2019-11-11 22:48:54,Wine - Port Late Bottled Vintage,51.83,jcb,Crichton,Kepp,78136 Reinke Trail,DC,United States
+2019-06-01 01:47:36,Tomatoes Tear Drop Yellow,41.07,jcb,Farica,Low,80257 Harper Pass,KS,United States
+2019-02-11 19:22:24,Vermouth - White Cinzano,51.81,jcb,Almira,Fearnehough,99 Reindahl Avenue,FL,United States
+2019-02-23 13:23:05,Longos - Lasagna Beef,91.09,diners-club-enroute,Winfield,Czaple,2157 Forest Dale Place,WV,United States
+2019-09-09 02:52:35,Triple Sec - Mcguinness,62.08,jcb,Myrwyn,Dunklee,93970 Summit Alley,FL,United States
+2019-06-24 22:53:15,Juice - Ocean Spray Cranberry,79.76,china-unionpay,Sashenka,Rockliffe,22 Katie Lane,OH,United States
+2019-04-09 07:38:09,Juice - Orange Concentrate,28.38,jcb,Nappy,Penn,06485 Morningstar Center,NJ,United States
+2019-12-11 07:04:04,Wine - Ice Wine,34.65,jcb,Damian,Vasler,8 Dwight Circle,PA,United States
+2019-07-18 22:45:50,Pepper - Red Thai,90.84,china-unionpay,Clyde,Albutt,918 Jay Circle,MN,United States
+2019-02-25 04:29:28,Coffee - Decafenated,62.78,jcb,Marquita,Sanz,4333 Commercial Lane,MS,United States
+2019-04-15 07:40:09,Kiwi,61.82,visa-electron,Jase,Espinal,21 Valley Edge Avenue,FL,United States
+2019-04-28 13:54:00,Coffee - Irish Cream,44.47,china-unionpay,Sawyer,Couch,2 Artisan Terrace,MD,United States
+2019-07-13 04:07:45,Venison - Striploin,50.89,jcb,Simone,Tue,5048 Namekagon Lane,MD,United States
+2019-07-04 04:05:54,Plaintain,37.02,diners-club-international,Reuben,Ivatt,9 Moose Plaza,WV,United States
+2019-05-29 00:46:41,Beef - Inside Round,61.99,americanexpress,Tally,Niemiec,11 Bluestem Alley,TX,United States
+2019-04-17 22:12:03,Almonds Ground Blanched,95.21,switch,Marji,Middas,78 Mockingbird Alley,FL,United States
+2019-10-18 11:32:23,Plaintain,21.16,switch,Johnette,Jakeman,1504 Hoard Junction,TX,United States
+2020-01-09 00:00:37,Veal - Insides Grains,50.02,diners-club-enroute,Modesta,Dawidsohn,4493 Londonderry Avenue,CA,United States
+2019-09-21 14:12:44,Oil - Margarine,86.39,maestro,Luisa,Ronaldson,0152 Goodland Pass,FL,United States
+2019-02-02 01:03:20,Extract - Vanillaartificial,39.58,maestro,Krystalle,Scranedge,988 Basil Crossing,TX,United States
+2019-11-14 17:23:45,V8 Pet,40.46,diners-club-carte-blanche,Cammie,Hintze,678 Hintze Way,PA,United States
+2019-07-15 02:39:01,Crab - Claws 26 - 30,40.99,diners-club-carte-blanche,Gianni,Murr,712 Hansons Way,NY,United States
+2019-04-24 17:30:13,Beer - Camerons Auburn,54.22,jcb,Edmon,Gonzalvo,2 Mandrake Circle,TN,United States
+2019-04-10 20:43:37,Eggplant - Baby,66.71,jcb,Conny,Gascoigne,79745 Scoville Drive,GA,United States
+2020-01-19 21:58:01,Pork - Shoulder,58.47,maestro,Gipsy,Jewel,5 Service Park,NC,United States
+2019-03-21 22:17:29,Kirsch - Schloss,91.43,mastercard,Lennard,Cocher,86 Mcguire Parkway,TN,United States
+2019-12-31 07:56:12,Bread Sour Rolls,81.73,diners-club-carte-blanche,Horacio,Rizzolo,45568 Carioca Lane,TX,United States
+2019-12-07 11:25:43,Tea - Lemon Green Tea,29.07,jcb,Ethelred,Pedlar,5 Sullivan Road,IL,United States
+2019-04-19 04:33:04,Container - Clear 32 Oz,59.71,mastercard,Latia,Wheeler,19 Crownhardt Alley,TN,United States
+2019-08-29 21:01:40,Nut - Cashews Whole Raw,37.78,americanexpress,Laurie,Norsworthy,2 Acker Point,NV,United States
+2019-03-29 19:21:53,Wine - Segura Viudas Aria Brut,35.73,americanexpress,Odo,McIlwraith,7325 Merry Pass,FL,United States
+2019-03-19 08:33:24,Orange Roughy 6/8 Oz,55.69,mastercard,Lynsey,Sigg,50 Wayridge Pass,DC,United States
+2020-01-03 19:47:12,Sprouts - Baby Pea Tendrils,48.99,bankcard,Hagen,Eton,4344 Almo Place,VA,United States
+2019-08-10 17:13:26,Muffin - Mix - Mango Sour Cherry,48.03,jcb,Tracy,Kopfen,0486 Eagan Way,IL,United States
+2019-09-11 22:09:05,Garbage Bags - Black,78.18,jcb,Cris,Kilalea,6043 Huxley Circle,NJ,United States
+2019-07-02 09:23:11,Star Anise Whole,33.5,visa-electron,Nathanial,Windows,55 Walton Place,FL,United States
+2019-07-09 18:14:16,Flower - Carnations,76.69,bankcard,Cullan,Kelk,1607 Troy Way,AL,United States
+2019-04-22 18:03:58,Lamb Rack Frenched Australian,27.8,americanexpress,Fran,Gladding,48716 Walton Road,VA,United States
+2019-01-31 01:25:35,Cookie Trail Mix,85.05,jcb,Lief,Popelay,32 Cherokee Street,TX,United States
+2019-03-17 06:30:14,Arctic Char - Fresh Whole,35.33,jcb,Jody,Discombe,5 4th Place,PA,United States
+2019-07-25 07:20:56,Ice Cream Bar - Drumstick,99.57,maestro,Atlanta,Malpass,81963 Reindahl Drive,NY,United States
+2019-05-02 03:13:14,Nut - Hazelnut Ground Natural,50.84,diners-club-carte-blanche,Garrick,Sarchwell,609 Ruskin Road,TX,United States
+2019-05-04 15:29:42,Pork - Caul Fat,77.74,diners-club-enroute,Emelita,Fero,250 Wayridge Terrace,CT,United States
+2019-12-19 00:23:52,Mix - Cocktail Strawberry Daiquiri,21.2,jcb,Alessandro,Pates,7496 Meadow Valley Drive,MN,United States
+2019-09-10 08:43:19,Sauce - Soya Light,89.06,jcb,Nyssa,Dreinan,433 High Crossing Point,NV,United States
+2019-06-20 21:38:45,Pepper - Red Chili,97.76,americanexpress,Josh,Ianittello,77 Becker Place,KS,United States
+2019-03-19 05:19:00,Tuna - Fresh,61.78,solo,Robinet,Wretham,72 Hollow Ridge Drive,MA,United States
+2019-04-07 05:56:07,Sprouts - Brussel,76.43,laser,Phaidra,Tinker,85 Utah Place,OH,United States
+2019-04-17 22:22:14,Pepper - Scotch Bonnet,76.62,jcb,Malachi,Stanyforth,069 Park Meadow Alley,TX,United States
+2019-09-19 16:06:58,Wine - Soave Folonari,57.63,jcb,Becki,Sidey,97 Dunning Hill,IL,United States
+2019-09-29 11:34:16,Table Cloth - 53x69 Colour,51.26,jcb,Lizbeth,Fratson,5 Shoshone Drive,NY,United States
+2019-03-05 05:37:14,Wine - Sherry Dry Sack William,65.45,mastercard,Noll,Yeowell,12 Springs Avenue,AK,United States
+2019-07-10 01:37:12,Bag - Clear 7 Lb,92.69,visa-electron,Davin,Fensome,145 Bunting Court,OH,United States
+2019-05-13 21:27:20,Canada Dry,84.5,visa-electron,Amata,Geydon,2204 Barnett Hill,LA,United States
+2019-09-08 18:37:39,Cheese - Cheddarsliced,29.38,switch,Dale,Demsey,3129 Elgar Point,MS,United States
+2019-05-08 05:19:39,Flour - Corn Fine,95.23,maestro,Boniface,Fockes,1 Pennsylvania Way,CA,United States
+2019-12-07 07:35:16,Bay Leaf,66.09,jcb,Orville,Huckin,38 Melrose Avenue,OR,United States
+2019-04-19 10:38:54,Peas Snow,59.92,switch,Gabbi,Normaville,1435 Eastlawn Street,MO,United States
+2019-12-20 19:41:55,Wine - Pinot Noir Mondavi Coastal,50.83,jcb,Chauncey,Icke,41 Prairieview Crossing,CA,United States
+2019-11-07 04:32:38,Lettuce - Red Leaf,91.45,jcb,Ray,Kenwood,0111 Grayhawk Avenue,MI,United States
+2019-09-03 15:54:35,Pepper - Chili Powder,31.52,mastercard,Danya,Nolder,9 Sundown Crossing,MN,United States
+2019-05-25 18:52:34,Honey - Comb,79.84,maestro,Magdalena,Atkins,725 Melby Terrace,UT,United States
+2019-02-20 22:40:03,Tea - Herbal Sweet Dreams,59.44,mastercard,Clem,Lorenzetti,91 Northland Street,CA,United States
+2019-05-22 21:34:21,Sprouts - Onion,55.66,jcb,West,Petty,43753 Bowman Terrace,OR,United States
+2019-09-14 12:10:14,Tea - Vanilla Chai,39.22,switch,Zeke,Richardes,9992 Moulton Junction,ID,United States
+2019-04-01 16:21:48,Flavouring - Orange,31.28,maestro,Kerwin,Shakesby,2201 Heffernan Junction,LA,United States
+2019-07-19 01:08:38,Beans - Black Bean Dry,48.36,jcb,Gaby,Bruun,332 Northland Lane,KY,United States
+2019-06-22 16:36:16,Soup - Campbells Beef Noodle,81.31,jcb,Franz,Stanborough,561 David Way,KY,United States
+2019-10-21 08:53:45,Lobster - Canned Premium,45.81,jcb,Curtice,Farthin,2 Dapin Plaza,GA,United States
+2019-02-26 11:41:15,Lemonade - Strawberry 591 Ml,45.99,laser,Maritsa,Buckenham,78318 Lakeland Parkway,CA,United States
+2019-10-06 13:05:05,Easy Off Oven Cleaner,99.79,mastercard,Ronnie,Able,1 Sunnyside Plaza,WV,United States
+2019-07-28 07:24:13,Dried Apple,89.68,laser,Becka,Weeks,56513 Schmedeman Place,TX,United States
+2019-08-01 10:00:35,Milk - 2% 250 Ml,94.6,visa-electron,Art,Garlett,1578 Basil Lane,TX,United States
+2019-09-11 06:50:16,Chocolate Bar - Smarties,36.47,jcb,Way,Rollingson,768 Kim Way,TX,United States
+2019-02-21 03:11:02,Lid Coffeecup 12oz D9542b,30.73,jcb,Christi,Tredget,0235 Hanson Alley,TX,United States
+2019-03-14 17:46:27,Wine - Chianti Classico Riserva,99.6,maestro,Daloris,Gentzsch,09200 Orin Circle,WA,United States
+2019-09-14 00:59:42,Bag Stand,59.93,jcb,Kass,Witherby,4097 Claremont Pass,VA,United States
+2019-08-21 08:09:48,Puree - Kiwi,66.29,jcb,Rosalinde,Dubery,686 Stephen Hill,OH,United States
+2019-09-11 12:29:41,Skewers - Bamboo,63.23,solo,Karyn,Cockshoot,29 Farmco Parkway,MS,United States
+2019-12-21 12:59:07,Cheese - Havarti Salsa,98.99,americanexpress,Galven,Sprowell,1456 Kenwood Avenue,FL,United States
+2019-09-13 23:55:49,Compound - Mocha,34.58,jcb,Alexa,Le Monnier,7 Talmadge Trail,TX,United States
+2020-01-02 18:32:40,Squid U5 - Thailand,27.8,diners-club-carte-blanche,Katrina,Shutle,9 Warbler Crossing,CA,United States
+2020-01-14 23:10:56,Cheese Cloth,63.42,diners-club-carte-blanche,Lodovico,Terris,0 Loeprich Way,VA,United States
+2019-02-13 19:19:53,Scrubbie - Scotchbrite Hand Pad,24.7,jcb,Charo,Antliff,79 Derek Center,LA,United States
+2019-03-20 05:28:14,Greens Mustard,29.95,jcb,Kahlil,Nortunen,45189 Marquette Parkway,CA,United States
+2019-03-25 01:47:07,Tomatoes - Roma,64.97,jcb,Mercedes,Amiss,099 Starling Court,KY,United States
+2019-02-09 08:06:35,Chocolate - Dark,59.8,mastercard,Sloan,Oakwood,50772 Kenwood Plaza,FL,United States
+2019-12-24 17:31:49,Glass - Juice Clear 5oz 55005,21.92,laser,Lacy,Headan,4079 Service Drive,VA,United States
+2019-03-30 21:26:18,Watercress,96.22,jcb,Malinde,Cours,58 Eagan Hill,LA,United States
+2019-08-19 23:11:26,Chicken - Leg / Back Attach,20.01,solo,Rudie,Aukland,92 Elmside Point,MO,United States
+2019-04-14 18:25:17,Compound - Raspberry,51.12,maestro,Nickie,Henmarsh,33 Nelson Avenue,NC,United States
+2019-07-01 09:05:39,Sauce Tomato Pouch,97.89,jcb,Karola,Selwyn,9 Surrey Alley,VA,United States
+2019-12-25 15:28:45,Lamb - Loin Trimmed Boneless,52.84,jcb,Kahlil,Dismore,8 Clarendon Center,MA,United States
+2019-04-12 09:47:09,Containter - 3oz Microwave Rect.,58.99,china-unionpay,Danila,Frankham,86 Novick Parkway,OH,United States
+2019-07-03 11:31:14,Lamb - Shanks,89.05,switch,Marlene,Espadas,21378 Menomonie Drive,GA,United States
+2019-07-22 01:53:11,Tea - Herbal Orange Spice,53.58,jcb,Lovell,Shelbourne,46 Coolidge Way,TX,United States
+2019-08-31 00:04:03,Stock - Veal White,88.78,jcb,Chelsey,Keates,802 Logan Place,FL,United States
+2019-10-18 00:55:42,Mushroom - Enoki Fresh,98.48,visa,Bell,Newiss,2 Doe Crossing Court,NY,United States
+2019-04-18 12:10:06,Shopper Bag - S - 4,83.37,bankcard,Kip,Sirey,13729 Utah Road,SD,United States
+2019-04-30 11:15:43,Wine - Chateau Aqueria Tavel,62.16,bankcard,Gillian,Merrydew,579 Macpherson Parkway,FL,United States
+2019-11-30 20:49:27,Clam - Cherrystone,63.82,jcb,Greta,Dyke,2399 Cody Terrace,OH,United States
+2019-05-15 10:38:16,Aspic - Clear,95.22,jcb,Wenona,Habeshaw,7 Reindahl Park,PA,United States
+2019-04-08 14:25:25,Cheese - Taleggio D.o.p.,77.1,jcb,Marijn,Redgewell,505 Shopko Parkway,DC,United States
+2019-10-06 21:46:23,Apples - Spartan,74.05,instapayment,Margette,De Filippi,2156 Haas Point,NY,United States
+2019-04-26 05:46:46,Napkin White - Starched,31.72,diners-club-enroute,Herta,Pidduck,3 Basil Terrace,TN,United States
+2019-11-07 19:50:46,Coconut - Shredded Sweet,51.88,mastercard,Barr,Wheelhouse,02683 Nobel Avenue,MO,United States
+2019-08-01 14:01:29,Pear - Packum,30.44,bankcard,Peg,Allsup,44 Jenna Parkway,TX,United States
+2019-05-06 01:05:14,Squash - Guords,58.73,laser,Karoly,Stow,528 Basil Parkway,NC,United States
+2019-06-15 08:32:55,Lamb - Ground,38.99,jcb,Charyl,Romayne,3217 Texas Crossing,MN,United States
+2019-07-02 16:44:12,Rice - Aborio,25.14,americanexpress,Jaquith,Rambadt,7 Blaine Terrace,OH,United States
+2019-03-16 08:29:36,Pepper - Orange,93.81,bankcard,Rori,Ledrun,790 Quincy Point,TX,United States
+2019-08-11 07:10:27,Lobster - Base,61.97,jcb,Lisle,Geering,827 Springs Trail,AR,United States
+2019-07-30 12:17:46,Buttons,97.39,jcb,Monty,Salliss,95602 Portage Terrace,MN,United States
+2019-11-18 10:21:00,Blackberries,46.03,laser,Liv,Calles,1003 Moulton Circle,NV,United States
+2019-03-05 20:15:12,Salt - Rock Course,78.33,jcb,Eadie,MacClay,2981 Sugar Street,HI,United States
+2019-04-11 12:31:17,Miso - Soy Bean Paste,88.01,jcb,Bamby,Yanuk,8277 Cardinal Terrace,MD,United States
+2020-01-10 01:44:41,Turkey - Whole Fresh,30.53,visa,Templeton,Sambrook,3669 Thompson Lane,CA,United States
+2019-04-30 01:18:19,Pea - Snow,69.7,visa,Rhetta,Willoughley,25 Heath Plaza,KS,United States
+2019-09-23 10:36:57,Cake - Cheese Cake 9 Inch,89.99,bankcard,Elysee,Reppaport,448 Red Cloud Place,TN,United States
+2020-01-19 09:40:04,Wine - Cave Springs Dry Riesling,93.27,jcb,Kiley,Ludy,5678 Cody Road,PA,United States
+2019-02-23 22:03:44,Piping Jelly - All Colours,94.67,diners-club-carte-blanche,Jilleen,Goodbairn,08104 Ridgeview Trail,WA,United States
+2019-11-01 08:03:30,Clam - Cherrystone,83.57,bankcard,Laurene,Wasiela,1977 Welch Trail,MD,United States
+2019-08-05 14:10:22,Wine - Clavet Saint Emilion,48.42,jcb,Iago,Bassom,116 Lien Trail,WA,United States
+2019-03-25 19:15:06,Sugar Thermometer,39.37,americanexpress,Thom,Crichmer,4 Ryan Circle,DC,United States
+2019-08-09 01:47:16,Towels - Paper / Kraft,53.9,diners-club-us-ca,Chrystel,Wherton,3358 Melrose Street,NY,United States
+2019-07-09 11:30:32,Mace,25.24,bankcard,Brewster,Whyke,4 Crest Line Place,CA,United States
+2019-11-09 00:33:35,Cabbage - Green,90.14,laser,Christal,Langham,2612 Steensland Drive,NC,United States
+2019-03-06 08:08:50,Jagermeister,78.99,jcb,Cecilius,Hallaways,8 Brentwood Junction,DC,United States
+2019-02-19 14:24:58,Wine - Casillero Del Diablo,64.94,diners-club-us-ca,Cynthea,Kimbly,5955 Atwood Place,DC,United States
+2020-01-25 02:39:18,Taro Leaves,71.13,jcb,Zenia,Forder,5710 Southridge Pass,TX,United States
+2019-05-11 06:37:55,Muffin Chocolate Individual Wrap,32.3,jcb,Arnie,Giottoi,52011 Moland Pass,TN,United States
+2019-11-18 07:23:19,Pastry - Cherry Danish - Mini,47.83,jcb,Wat,Blacklock,5 Tomscot Park,TX,United States
+2019-04-04 09:11:32,Water - Mineral Natural,64.24,switch,Pepita,Marcome,660 Transport Street,FL,United States
+2019-06-22 20:20:38,Cups 10oz Trans,82.28,china-unionpay,Darice,Matthiae,04 American Terrace,TX,United States
+2019-08-19 16:25:32,Shrimp - Black Tiger 6 - 8,45.53,visa-electron,Janie,Kornel,58512 Glendale Place,WA,United States
+2019-02-16 11:56:18,Rum - Mount Gay Eclipes,34.12,mastercard,Freddy,Bellenie,52 Fuller Plaza,CA,United States
+2020-01-21 04:34:21,Chocolate - Unsweetened,21.28,mastercard,Belicia,Ludlem,6 8th Alley,VA,United States
+2019-07-02 17:44:56,Salad Dressing,40.58,mastercard,Brigit,Marsie,9854 Schlimgen Road,FL,United States
+2019-09-13 04:33:47,Wine - Muscadet Sur Lie,79.09,laser,Lesli,Elsmore,13021 Blaine Drive,TX,United States
+2019-12-18 17:28:54,Beef - Bones Marrow,26.79,china-unionpay,Anastasia,Anglim,8 Menomonie Crossing,CA,United States
+2019-05-29 16:14:53,Halibut - Fletches,56.49,jcb,Masha,Sugden,5656 Londonderry Circle,AZ,United States
+2020-01-12 12:17:02,Sauerkraut,28.99,maestro,Lea,Van Arsdall,42 Muir Crossing,IL,United States
+2019-12-01 20:34:28,Ham - Cooked Bayonne Tinned,29.36,jcb,Timoteo,Chishull,95778 Arizona Circle,FL,United States
+2019-10-08 22:49:15,Ecolab Digiclean Mild Fm,76.95,jcb,Lurleen,Guilford,8059 Blue Bill Park Junction,MA,United States
+2019-06-04 21:36:11,Beef Dry Aged Tenderloin Aaa,87.9,jcb,Valera,Eacle,5 Brentwood Pass,AZ,United States
+2019-11-18 09:00:51,Cucumber - English,27.41,diners-club-carte-blanche,Care,Shillum,3 Novick Court,IL,United States
+2019-08-04 16:05:30,Dish Towel,52.95,jcb,Renaud,Waggitt,3 Kings Hill,NM,United States
+2019-11-21 19:41:02,Shrimp - Black Tiger 8 - 12,82.2,diners-club-enroute,Melania,Bourbon,9210 Lake View Crossing,MI,United States
+2019-10-24 04:57:23,Chilli Paste Hot Sambal Oelek,82.1,jcb,Cristal,Linzey,10 Gulseth Plaza,CA,United States
+2019-07-05 05:28:59,Wine - Marlbourough Sauv Blanc,91.29,jcb,Iormina,McLeish,6285 Golf View Center,TN,United States
+2019-11-01 00:55:06,Bag - Regular Kraft 20 Lb,67.39,switch,Darwin,Coleson,32 Mallard Park,NV,United States
+2019-02-13 14:26:45,Samosa - Veg,60.96,mastercard,Sasha,Pawlick,6 Oxford Trail,FL,United States
+2019-01-30 16:51:20,Pastry - Apple Muffins - Mini,53.76,switch,Haskel,Janicki,175 Fuller Trail,OR,United States
+2019-09-26 10:35:30,Magnotta Bel Paese Red,53.78,jcb,Douglass,Deuss,10 Cascade Lane,FL,United States
+2019-11-26 08:03:22,Mushroom - Crimini,59.15,jcb,Filberte,Patifield,529 Del Sol Road,NV,United States
+2019-08-21 20:01:25,Shrimp - 100 / 200 Cold Water,51.78,jcb,Kellyann,Zarb,514 Coolidge Hill,NC,United States
+2019-09-15 01:37:36,Liners - Baking Cups,71.24,jcb,Elna,Olivera,70767 Gerald Trail,HI,United States
+2019-09-18 17:50:36,Potatoes - Mini Red,75.38,diners-club-international,Pen,Ottam,0408 Beilfuss Road,AR,United States
+2019-06-04 11:34:58,Soup - Campbells Beef Stew,52.18,maestro,Nonah,Dobsons,756 Anzinger Center,NY,United States
+2019-09-04 20:28:52,Crush - Grape 355 Ml,69.04,maestro,Morrie,Gajownik,9 Sunnyside Street,IL,United States
+2019-08-04 07:06:16,Soup - Canadian Pea Dry Mix,56.03,mastercard,Zacharias,Crowder,5 Jay Lane,FL,United States
+2020-01-20 07:19:49,Ecolab - Hand Soap Form Antibac,29.04,bankcard,Papageno,Hanne,53 Weeping Birch Terrace,OR,United States
+2020-01-24 10:41:39,Pork - Sausage Casing,60.2,jcb,Flemming,Martensen,235 Esker Park,TX,United States
+2019-10-18 04:06:19,Basil - Thai,66.37,jcb,Opalina,Dobbinson,6707 Anhalt Avenue,PA,United States
+2019-08-27 22:21:29,Bagel - Whole White Sesame,33.71,jcb,Amabel,Shouler,53 Brickson Park Terrace,PA,United States
+2019-03-28 13:11:03,Dill Weed - Dry,64.25,jcb,Gordon,Semor,2869 Maple Wood Junction,MO,United States
+2019-04-26 08:13:45,Devonshire Cream,83.32,laser,Panchito,Sibbson,17194 Jay Alley,TX,United States
+2019-06-30 22:36:15,Salmon Steak - Cohoe 6 Oz,85.37,jcb,Ibrahim,Yendle,4 Warner Trail,HI,United States
+2019-12-08 11:21:37,Dish Towel,75.02,mastercard,Normand,Basile,87596 Golf Circle,MD,United States
+2019-08-21 04:10:03,Cake - Bande Of Fruit,28.49,jcb,Antonia,Kittman,14 Dwight Trail,MN,United States
+2019-08-31 11:10:56,Tuna - Canned Flaked Light,96.46,jcb,Aloise,Borne,7732 Vernon Road,MN,United States
+2019-04-01 06:15:39,Appetiser - Bought,30.33,china-unionpay,Babbie,Stirgess,2 Armistice Street,CA,United States
+2019-08-28 02:13:58,Lettuce - Belgian Endive,51.25,jcb,Pia,Thomson,7217 Dorton Plaza,TN,United States
+2019-08-20 10:45:50,Lid - 3oz Med Rec,89.61,jcb,Carly,Sultana,4079 Oakridge Terrace,MT,United States
+2019-03-18 15:38:23,Scallops - 20/30,47.43,jcb,Moselle,Restieaux,482 Pine View Street,NJ,United States
+2019-08-28 05:59:09,Extract - Raspberry,72.93,visa,Karole,Watman,1 Aberg Circle,CA,United States
+2019-12-01 11:55:32,Cabbage - Red,84.98,jcb,Alfonso,Tschiersch,0175 Rieder Alley,UT,United States
+2020-01-10 12:49:09,Versatainer Nc - 888,53.91,jcb,Bibby,Orton,60 Hauk Circle,NJ,United States
+2019-11-19 13:17:40,Wine - Red Metus Rose,34.52,solo,Kinnie,Hambelton,14088 Fairview Way,NY,United States
+2019-06-13 21:06:46,Duck - Fat,65.43,diners-club-carte-blanche,Boote,Sterke,2574 Marquette Crossing,GA,United States
+2019-12-04 23:31:18,Cake - Miini Cheesecake Cherry,31.38,jcb,Melinda,Dary,5582 Springview Place,AK,United States
+2019-04-10 11:05:21,Turnip - White Organic,70.76,mastercard,Hans,Harty,33 Marquette Park,TX,United States
+2019-06-26 13:21:09,Dawn Professionl Pot And Pan,27.25,visa,Lani,Mabb,9632 Pond Parkway,MD,United States
+2020-01-05 04:00:48,Icecream - Dstk Cml And Fdg,48.14,jcb,Kylie,Doe,887 Fairview Lane,AK,United States
+2019-10-19 06:40:20,Burger Veggie,94.64,instapayment,Web,Bovey,9925 Northview Plaza,DC,United States
+2019-01-31 18:17:53,Wine - Sawmill Creek Autumn,64.9,jcb,Haily,Slarke,38 Browning Street,CA,United States
+2019-06-26 06:15:29,Beef - Tender Tips,39.76,jcb,Karylin,Gallard,1 Eliot Plaza,CO,United States
+2019-01-30 18:41:08,Beef - Bones Marrow,65.18,jcb,Aleda,Pedel,9 Mendota Court,CT,United States
+2019-03-02 06:52:14,Cumin - Whole,24.36,jcb,Oren,Grunnell,39 Summerview Parkway,AL,United States
+2019-10-30 06:37:20,Savory,24.16,mastercard,Meade,Cottrell,32770 Eastlawn Hill,NM,United States
+2019-11-23 01:42:42,Lettuce - Arugula,38.22,maestro,Anthiathia,Matyasik,2 Stuart Avenue,AZ,United States
+2019-04-12 21:09:20,Flour - Strong Pizza,50.18,visa-electron,Elka,Danilovitch,0 Vidon Way,OK,United States
+2019-09-15 18:59:53,Nacho Chips,64.65,diners-club-carte-blanche,Pietra,Orneblow,93626 Hoard Road,CA,United States
+2019-07-23 22:26:02,Wine - Red Cabernet Merlot,20.99,jcb,Mattheus,Aupol,86784 Merrick Point,NE,United States
+2019-12-18 10:48:59,Mushroom Morel Fresh,80.69,jcb,Rebecka,Downes,1019 Lawn Parkway,KY,United States
+2019-09-08 05:19:13,Squash - Pepper,66.49,mastercard,Sharlene,Dykes,368 Northview Alley,NE,United States
+2020-01-24 06:30:31,Instant Coffee,53.41,jcb,Coop,Mathivat,62090 David Crossing,LA,United States
+2019-08-04 09:21:11,Wine - Soave Folonari,94.64,americanexpress,Jefferey,McKim,48 Corben Park,VA,United States
+2019-07-29 20:57:31,The Pop Shoppe - Grape,56.89,visa,Elly,Feavearyear,6 Old Shore Junction,OR,United States
+2019-12-01 04:09:13,Cinnamon Rolls,61.22,switch,Costa,Reek,35 Calypso Lane,FL,United States
+2020-01-03 09:27:18,Nori Sea Weed,63.26,americanexpress,Aloin,Dawley,84 Granby Lane,DC,United States
+2019-07-06 11:32:29,Beef - Cooked Corned,70.81,americanexpress,Candis,Durno,61717 Eastlawn Park,TX,United States
+2019-04-10 20:25:24,Loaf Pan - 2 Lb Foil,34.59,mastercard,Archaimbaud,Chappelle,1 Fairfield Avenue,FL,United States
+2019-10-04 06:48:53,Plate - Foam Bread And Butter,29.82,mastercard,Carolus,Oldroyde,2 Dryden Plaza,TX,United States
+2019-12-31 12:08:24,Lobak,80.71,bankcard,Michail,Sawart,37792 Birchwood Center,NM,United States
+2019-04-24 05:02:54,Muffin - Zero Transfat,65.95,visa-electron,Herb,Thumnel,18 Sunnyside Terrace,TX,United States
+2020-01-23 11:14:58,Wine - Red Mosaic Zweigelt,26.77,jcb,Nikolai,Leathart,48 Florence Avenue,TX,United States
+2019-06-24 13:56:16,Muffin Batt - Choc Chk,70.96,bankcard,Sean,Corn,42218 Derek Park,IN,United States
+2019-04-14 14:41:58,Pork - Backfat,77.39,jcb,Brandi,Stitt,41 Aberg Alley,OH,United States
+2019-03-24 16:44:43,Pasta - Spaghetti Dry,94.49,americanexpress,Dorothy,Gever,278 Burning Wood Terrace,WI,United States
+2019-02-07 22:56:10,Smoked Tongue,27.67,solo,Nefen,Carless,76 Almo Pass,PA,United States
+2019-05-19 19:04:08,Hot Chocolate - Individual,91.54,laser,Cecil,Mebius,3 Lyons Court,KS,United States
+2019-05-29 06:29:27,Honey - Lavender,67.11,mastercard,Wit,Vezey,179 Cardinal Trail,TN,United States
+2019-08-21 05:01:52,Ham - Cooked Bayonne Tinned,38.57,diners-club-carte-blanche,Hymie,McParlin,674 Tomscot Park,CA,United States
+2019-04-04 14:28:06,Wine - Magnotta White,83.8,diners-club-enroute,Jackquelin,Ingleson,0 Grasskamp Crossing,AZ,United States
+2019-08-22 18:36:30,Tea - Herbal Orange Spice,44.39,maestro,Jock,Burnes,6 Ohio Park,FL,United States
+2019-02-01 21:12:58,Creme De Cacao Mcguines,93.47,mastercard,Gary,Kingsnod,6688 Clarendon Center,WI,United States
+2019-04-28 19:36:34,Lamb - Loin Chops,35.58,jcb,Demetrius,Speir,48310 Granby Lane,CA,United States
+2019-05-07 20:50:38,Wine - Magnotta White,74.17,americanexpress,Caddric,Grewer,40 Sloan Plaza,AK,United States
+2019-05-22 05:45:03,Truffle Shells - White Chocolate,78.87,maestro,Elysee,Surmeyers,40 Eastlawn Pass,NJ,United States
+2019-12-30 03:18:27,Soup - Campbells Beef Strogonoff,56.19,jcb,Amanda,MacClinton,0 Heath Way,DC,United States
+2019-11-27 11:10:24,Chivas Regal - 12 Year Old,68.44,china-unionpay,Jess,McAirt,73956 Dakota Road,SC,United States
+2019-06-23 08:08:53,Foil - 4oz Custard Cup,33.38,jcb,Marius,Clemendot,6568 Commercial Pass,CA,United States
+2019-04-04 04:00:03,Coffee - Flavoured,88.51,mastercard,Eleonore,Bradborne,2523 Talisman Court,TN,United States
+2019-12-20 20:33:14,White Baguette,78.77,switch,Kerrie,Probetts,989 Esch Parkway,CA,United States
+2019-07-18 06:48:24,Pan Grease,92.85,visa-electron,Lemmy,Sorrill,67861 Lukken Drive,IN,United States
+2019-05-23 12:36:18,Oil - Macadamia,58.8,jcb,Katharyn,Jermyn,99 Elgar Point,CA,United States
+2019-06-07 19:52:21,Flax Seed,79.32,jcb,Addi,Abbison,7 Fairview Court,ID,United States
+2019-05-28 14:28:18,Bag - Clear 7 Lb,23.77,instapayment,Ethe,Pieterick,76 Lukken Way,MI,United States
+2019-06-24 11:54:05,Ham Black Forest,49.75,jcb,Charmain,Capini,2 Marcy Court,IN,United States
+2019-11-15 08:58:36,Artichoke - Bottom Canned,67.55,jcb,Lisabeth,Benjamin,15 Crest Line Parkway,MN,United States
+2019-09-23 22:34:36,Mop Head - Cotton 24 Oz,81.9,jcb,Dougie,Ambrodi,3 Sullivan Parkway,DC,United States
+2019-06-15 12:23:49,Foam Dinner Plate,48.19,visa,Milena,Gowlett,132 Bowman Terrace,GA,United States
+2019-09-25 07:44:53,Bread - Pain Au Liat X12,77.46,china-unionpay,Cris,Crawshay,0 Pawling Way,NY,United States
+2019-03-03 07:58:59,Sauce Tomato Pouch,84.28,diners-club-carte-blanche,Brittan,Yanshinov,36202 Helena Junction,CA,United States
+2019-11-19 04:42:44,Tea - Green,49.41,switch,Crystie,Alsobrook,59 Prairie Rose Point,GA,United States
+2019-11-15 02:05:32,Pork - Liver,42.86,maestro,Ottilie,Quickenden,1 Barby Trail,CA,United States
+2019-05-17 09:57:27,Table Cloth 144x90 White,22.79,china-unionpay,Cara,Weekly,15236 Pine View Terrace,CO,United States
+2020-01-20 19:50:23,Beer - Fruli,74.93,jcb,Bobbie,Littlepage,57 Melby Alley,FL,United States
+2019-02-04 02:55:32,Wine - Peller Estates Late,98.21,maestro,Milton,Brizell,41629 Warrior Place,CT,United States
+2019-06-01 00:43:47,Beef - Cooked Corned,45.42,visa,Heather,Gensavage,998 Gina Parkway,MD,United States
+2019-01-31 04:20:36,Mace Ground,54.74,instapayment,Joaquin,Campany,211 Derek Crossing,OH,United States
+2019-05-17 06:44:24,Bread - 10 Grain,30.42,diners-club-international,Isidro,Godsal,6 Kim Drive,IN,United States
+2019-05-01 17:33:56,Coffee - Egg Nog Capuccino,93.58,jcb,Lorelei,Lodford,045 Fair Oaks Park,CA,United States
+2019-03-15 01:08:36,Mustard Prepared,63.14,mastercard,Jasmina,Bampkin,63 Glacier Hill Plaza,SD,United States
+2019-06-09 03:45:32,V8 - Vegetable Cocktail,47.52,jcb,Berne,Metzing,7707 Ludington Terrace,MS,United States
+2020-01-05 23:15:30,Red Pepper Paste,68.02,jcb,Farrell,Fowley,42 Upham Court,OH,United States
+2019-04-08 06:35:39,Sansho Powder,65.1,visa,Fonsie,Lowin,75313 Pleasure Junction,VA,United States
+2019-07-01 12:57:47,Flavouring Vanilla Artificial,90.39,mastercard,Fielding,Waldron,36 Spohn Avenue,IL,United States
+2019-03-25 15:43:09,Crackers - Soda / Saltins,52.7,diners-club-enroute,Albert,MacCaffrey,723 Forster Plaza,NH,United States
+2019-02-08 11:06:59,Chicken - White Meat No Tender,43.4,visa-electron,Ysabel,Bettleson,85 Spenser Circle,PA,United States
+2020-01-27 19:58:47,Cabbage Roll,54.28,laser,Josefa,Makepeace,66109 Mandrake Hill,AL,United States
+2019-07-01 19:44:56,Bouq All Italian - Primerba,34.78,visa-electron,Llewellyn,Bristow,38539 Spenser Street,OK,United States
+2019-05-30 16:11:48,Wine La Vielle Ferme Cote Du,34.84,jcb,Kakalina,Alleyne,01276 Gerald Circle,OH,United States
+2019-06-12 07:54:45,Table Cloth - 53x69 Colour,38.48,instapayment,Emanuele,Meriton,3729 Warrior Center,DC,United States
+2019-11-09 13:00:39,Dried Peach,33.26,visa,Maynord,Peppin,72626 Sunnyside Place,TX,United States
+2019-11-15 23:46:14,Muffin - Mix - Strawberry Rhubarb,45.45,maestro,Gibb,Wollen,254 Rowland Drive,TX,United States
+2019-06-01 03:08:02,Chilli Paste Sambal Oelek,88.94,mastercard,Jayson,Willas,403 Lillian Crossing,FL,United States
+2019-11-14 00:18:43,Brandy Apricot,40.59,americanexpress,Garrik,Kamien,61448 Susan Park,CA,United States
+2019-05-19 08:19:17,Cocktail Napkin Blue,26.9,laser,Moishe,Likly,3973 Gulseth Trail,PA,United States
+2019-08-08 16:06:22,Cheese - Oka,93.02,jcb,Chev,De la Feld,94 Bowman Center,MN,United States
+2019-05-09 05:59:49,Container - Foam Dixie 12 Oz,53.09,jcb,Nananne,Deards,8174 Anderson Alley,SC,United States
+2019-06-02 08:03:09,Mix Pina Colada,42.54,jcb,Tore,De Beauchemp,66587 Pankratz Avenue,PA,United States
+2019-10-14 10:13:34,Melon - Watermelon Seedless,51.77,diners-club-enroute,Tan,Beat,38011 Montana Way,KS,United States
+2019-07-27 01:58:45,Beer - True North Lager,27.7,mastercard,Sholom,Cashford,6 Bunting Junction,AR,United States
+2019-04-03 21:40:25,Soup - Campbells Creamy,54.86,bankcard,Shari,Sandford,24599 Blaine Place,TX,United States
+2019-04-05 23:41:57,Garam Masala Powder,65.61,jcb,Brennan,Tocknell,752 Charing Cross Drive,CA,United States
+2019-03-15 14:38:27,Chicken - Base,63.2,maestro,Michail,Garrad,1 Steensland Street,DC,United States
+2019-04-06 02:34:58,Sobe - Green Tea,96.11,jcb,Gardener,Limpricht,851 Monterey Hill,CO,United States
+2019-04-09 05:28:51,Curry Paste - Green Masala,30.04,americanexpress,Annmarie,Leisman,645 Bultman Alley,MA,United States
+2019-09-27 13:25:03,Bagels Poppyseed,62.04,bankcard,Sharron,Rammell,1 Coolidge Lane,OH,United States
+2019-07-30 06:05:10,Chicken - Wieners,75.5,jcb,Julio,Axtens,938 Paget Lane,VA,United States
+2019-09-20 03:18:26,Kolrabi,94.8,diners-club-enroute,Ursula,Kays,38415 Lien Parkway,TX,United States
+2019-12-29 00:06:08,Container Clear 8 Oz,64.77,jcb,Bridie,Sheahan,5707 Southridge Hill,NY,United States
+2019-07-13 16:38:29,V8 - Tropical Blend,38.8,bankcard,Dione,Crilley,2 Main Street,MO,United States
+2019-07-02 21:06:56,Bay Leaf Fresh,75.61,jcb,Rosina,Kohrt,1824 Coleman Pass,TX,United States
+2019-02-13 14:49:34,Mushroom - Shitake Fresh,92.93,visa-electron,Allix,Handley,84 Nancy Park,TX,United States
+2020-01-07 13:55:35,Juice - V8 Splash,49.12,jcb,Gaynor,Venditti,6987 Bartillon Place,PA,United States
+2019-05-07 14:27:42,Lobster - Base,63.08,jcb,Ralph,Learoyd,26 Mockingbird Way,LA,United States
+2019-06-27 15:17:10,Crackers - Trio,54.24,bankcard,Chicky,Berriman,621 Merry Junction,WI,United States
+2019-07-24 01:15:17,Icecream - Dstk Super Cone,20.35,jcb,Devy,Mainds,91428 Summerview Hill,OR,United States
+2019-10-12 09:16:07,Mushroom - Enoki Dry,60.66,americanexpress,Hedvig,Raithby,046 Hauk Place,IL,United States
+2019-07-23 13:32:55,Mushroom - Oyster Fresh,34.93,jcb,Cleon,Gravener,5584 Wayridge Street,GA,United States
+2019-05-09 12:01:04,Wine - Ice Wine,31.84,visa-electron,Rawley,Yurevich,5 Thompson Drive,CA,United States
+2019-04-15 12:08:31,Tendrils - Baby Pea Organic,90.57,jcb,Dorise,Sodory,9322 Atwood Center,IN,United States
+2019-12-20 04:55:12,Jam - Raspberryjar,47.22,jcb,Rhys,Colt,84 Drewry Drive,MN,United States
+2019-07-06 02:03:12,Coke - Classic 355 Ml,29.24,bankcard,Marni,Keeping,96747 Hoard Street,WA,United States
+2019-03-13 10:26:48,Arctic Char - Fresh Whole,55.54,diners-club-international,Martainn,Crowth,2 Aberg Parkway,FL,United States
+2019-02-23 05:41:35,Carbonated Water - White Grape,41.09,bankcard,Ofelia,Lassey,86806 Merry Hill,OR,United States
+2019-11-26 04:53:12,Hog / Sausage Casing - Pork,79.11,jcb,De witt,Moodey,75892 Moulton Avenue,WA,United States
+2019-12-21 15:16:25,Chips - Potato Jalapeno,71.35,jcb,Mick,Dungate,7912 Hallows Crossing,MN,United States
+2019-08-31 22:02:44,Rice - Long Grain,39.37,diners-club-carte-blanche,Birk,Mulrenan,61800 Dapin Road,CA,United States
+2019-05-05 18:31:14,Sparkling Wine - Rose Freixenet,72.65,laser,Erina,Meritt,8225 High Crossing Pass,KS,United States
+2019-03-26 12:28:57,Compound - Strawberry,23.18,jcb,Ingram,Ennals,94 North Alley,LA,United States
+2019-12-27 09:23:53,Lettuce - Boston Bib - Organic,39.79,jcb,Arni,Orrobin,033 Lukken Plaza,MD,United States
+2019-05-26 20:05:43,Oil - Shortening - All - Purpose,92.7,jcb,Jacinta,Paulack,6 Arizona Crossing,DC,United States
+2019-08-14 07:58:11,Nutmeg - Ground,61.26,jcb,Meggie,Barracks,51 Debs Circle,OH,United States
+2019-09-27 23:26:09,V8 - Tropical Blend,94.33,americanexpress,Brod,Nealey,9 Milwaukee Road,TX,United States
+2019-04-04 22:09:06,Beer - Upper Canada Lager,43.73,maestro,Lock,Haeslier,9373 Mitchell Court,TX,United States
+2019-11-13 08:29:48,Appetizer - Veg Assortment,59.31,bankcard,Rebekkah,Klesel,26235 Surrey Circle,CA,United States
+2019-05-23 17:12:20,Catfish - Fillets,55.75,jcb,Leroi,Goldthorp,10 Loeprich Parkway,PA,United States
+2019-03-06 06:23:16,Ham - Smoked Bone - In,33.23,diners-club-carte-blanche,Jim,Woodstock,76 Fulton Parkway,MI,United States
+2019-03-10 15:36:22,Blouse / Shirt / Sweater,89.91,mastercard,Chantalle,Sibray,5643 Heffernan Hill,MO,United States
+2019-12-26 20:00:40,Bread - White Epi Baguette,54.19,jcb,Janeta,Rickell,72 Badeau Plaza,IN,United States
+2019-10-22 12:03:27,Silicone Parch. 16.3x24.3,50.32,americanexpress,Vannie,Mateiko,28733 Goodland Park,UT,United States
+2019-03-17 19:46:30,Nectarines,62.86,visa,Addi,Bodemeaid,626 Sutherland Drive,NC,United States
+2019-11-28 14:45:16,General Purpose Trigger,64.88,jcb,Gustavus,Glencrosche,5 Stephen Trail,CA,United States
+2019-04-20 11:17:23,Duck - Legs,74.43,jcb,Tessa,Walkey,5 Walton Crossing,CA,United States
+2019-11-29 14:41:20,Sandwich Wrap,27.4,jcb,Sergeant,Janacek,64000 3rd Parkway,AZ,United States
+2019-09-15 19:39:14,Chicken - Breast 5 - 7 Oz,95.99,jcb,Noll,Beagrie,038 Moose Place,TX,United States
+2019-05-17 15:39:00,Wine - Savigny - Les - Beaune,30.47,jcb,Diahann,Roast,71 Kenwood Place,SC,United States
+2019-08-10 12:09:25,Tomatoes - Plum Canned,52.6,jcb,Georg,Milsap,2 Declaration Hill,TX,United States
+2019-04-05 01:15:05,Melon - Honey Dew,98.65,jcb,Cesaro,Bermingham,20808 Jenna Center,OR,United States
+2019-12-23 09:04:13,Coffee - Cafe Moreno,70.89,diners-club-enroute,Merwin,Silverthorne,32446 Johnson Pass,PA,United States
+2019-03-04 11:11:30,Mushroom - Shitake Dry,39.84,switch,Mortie,Bustin,59 Cottonwood Place,NC,United States
+2019-05-17 14:52:21,Beef - Striploin,64.84,diners-club-carte-blanche,Alfy,Clapshaw,57441 1st Junction,CA,United States
+2019-12-12 13:11:21,Wine - Muscadet Sur Lie,92.03,jcb,Lyn,Ansley,021 Sullivan Lane,IL,United States
+2019-11-11 10:28:09,Chocolate - White,52.62,solo,Alphonse,Langtry,8 Center Parkway,MI,United States
+2019-10-11 05:11:22,Pizza Pizza Dough,75.65,diners-club-enroute,Reilly,Shaudfurth,03514 Farmco Drive,CA,United States
+2020-01-16 18:33:15,Wine - Placido Pinot Grigo,73.78,mastercard,Valencia,Tretwell,00 Upham Parkway,CA,United States
+2019-10-29 02:15:28,Seaweed Green Sheets,32.86,maestro,Deloria,Prettyjohns,43129 Drewry Alley,TX,United States
+2019-02-06 16:39:45,Muffin Mix - Blueberry,74.7,jcb,Fonzie,Sanger,7233 Novick Avenue,VA,United States
+2019-10-30 23:53:57,Apple - Fuji,38.89,americanexpress,Mei,Ketley,236 Center Street,MN,United States
+2019-02-19 01:14:35,Beef - Outside Round,91.6,bankcard,Gisela,Folks,3 Karstens Park,CO,United States
+2019-11-08 06:50:36,Shrimp - Prawn,86.22,jcb,Olive,Okill,25157 Randy Plaza,CO,United States
+2019-05-09 08:25:52,Beets - Pickled,67.06,jcb,Shayna,Screen,45 Thackeray Parkway,VT,United States
+2019-08-15 22:34:06,Parsley Italian - Fresh,25.54,switch,Leda,Ludgrove,28661 Express Way,KY,United States
+2019-10-22 18:39:48,Steampan - Foil,29.9,maestro,Dun,Cairns,7761 South Terrace,TX,United States
+2020-01-27 05:08:47,Appetizer - Cheese Bites,84.47,bankcard,Solomon,McMoyer,52 Bluestem Parkway,VA,United States
+2019-09-21 21:51:47,Corn Kernels - Frozen,51.53,mastercard,Wilow,Gibbe,539 Dwight Plaza,NY,United States
+2019-11-17 22:10:12,Wine - Red Gallo Merlot,26.68,jcb,Shawn,Mingo,19 Holy Cross Parkway,CA,United States
+2019-06-16 02:12:07,Appetizer - Southwestern,22.59,jcb,Evyn,Bampford,68 Loomis Point,HI,United States
+2019-12-25 22:36:54,Vinegar - Rice,49.43,diners-club-enroute,Valentijn,Sikorski,442 Colorado Parkway,NC,United States
+2019-05-31 07:17:40,Veal - Inside Round / Top Lean,79.15,jcb,Dougie,Hellewell,199 Chinook Parkway,FL,United States
+2019-05-18 22:45:03,Table Cloth 54x72 Colour,59.44,switch,Harman,Ungerecht,894 Rockefeller Junction,TX,United States
+2020-01-25 09:43:50,Chilli Paste Ginger Garlic,94.29,switch,Rozanne,Hitscher,37031 Reindahl Place,OH,United States
+2019-12-08 21:15:09,Trout - Smoked,76.0,diners-club-international,Graehme,Huxster,72573 Rigney Road,NY,United States
+2020-01-06 01:14:11,Doilies - 7 Paper,87.41,jcb,Nickie,Hickenbottom,14997 Orin Road,CA,United States
+2019-05-05 09:37:18,Tomatoes - Orange,64.5,jcb,Madel,Feyer,11 Petterle Avenue,VA,United States
+2019-07-05 04:02:25,Wine - Maipo Valle Cabernet,70.36,maestro,Luella,Olenikov,8777 Tomscot Point,FL,United States
+2019-12-05 06:06:06,Bread - White Mini Epi,45.98,instapayment,Elberta,Forbes,513 Service Junction,TX,United States
+2019-11-21 16:17:39,Lettuce - Radicchio,59.5,bankcard,Winfred,Maletratt,9 West Street,MA,United States
+2019-07-21 18:26:37,Soup - Tomato Mush. Florentine,63.26,americanexpress,Annalee,Benedikt,157 Vahlen Trail,TX,United States
+2019-03-07 12:07:50,Melon - Cantaloupe,51.44,jcb,Lionello,Lamberti,9 Ronald Regan Place,TX,United States
+2019-10-29 22:33:03,Cabbage - Nappa,63.37,jcb,Tuckie,MacPeake,9 Summer Ridge Center,TX,United States
+2020-01-02 22:41:07,Jam - Blackberry 20 Ml Jar,40.42,maestro,Jerrie,Gillbard,8138 Mcguire Crossing,FL,United States
+2019-09-21 17:01:23,Cabbage - Savoy,46.76,jcb,Lanae,Clapson,42 Division Lane,FL,United States
+2019-06-07 02:53:07,Crackers - Graham,99.89,diners-club-carte-blanche,Francis,Longworthy,8 Merchant Drive,FL,United States
+2019-10-30 12:07:26,Scallop - St. Jaques,93.98,diners-club-enroute,Oralla,Maw,4 Oriole Pass,CO,United States
+2019-10-21 00:28:52,Mustard - Seed,83.51,diners-club-carte-blanche,Annabelle,Lumsdale,36547 Lakewood Pass,MI,United States
+2019-12-02 14:15:25,Chicken - Leg Fresh,84.93,switch,Monro,Gheorghie,68395 Longview Center,SC,United States
+2019-04-17 17:41:50,Cake - French Pear Tart,94.85,jcb,Jamima,Di Francesco,330 Transport Alley,OH,United States
+2019-07-04 18:54:59,Miso Paste White,66.53,jcb,Helyn,Mitcheson,0 Oakridge Circle,MD,United States
+2019-02-09 19:09:43,Coffee Cup 16oz Foam,61.3,jcb,Obediah,Jannings,60 Huxley Park,AR,United States
+2019-07-31 02:19:34,Bag - Bread White Plain,94.22,jcb,Jessica,Guilaem,71788 Ludington Point,AL,United States
+2019-03-16 00:18:22,Chicken Breast Wing On,52.76,americanexpress,Sherlock,Jenny,4220 Meadow Valley Park,CA,United States
+2019-04-22 01:52:13,Coconut - Shredded Unsweet,22.79,mastercard,Eba,Blacklawe,76 Carioca Drive,FL,United States
+2019-10-22 05:46:21,Dip - Tapenade,56.35,maestro,Jaynell,McWhin,4390 Oak Valley Way,IA,United States
+2019-06-05 01:16:33,Cakes Assorted,98.56,jcb,Eva,Leys,19 Pond Avenue,AZ,United States
+2019-04-22 01:27:05,Bread Bowl Plain,22.7,jcb,Lowrance,McIan,3 Linden Crossing,NV,United States
+2019-02-05 03:01:24,Wild Boar - Tenderloin,77.32,jcb,Shara,Blasik,0265 Waxwing Plaza,NY,United States
+2019-09-16 05:47:28,Rum - Light Captain Morgan,23.09,diners-club-enroute,Sonny,Balsdone,7131 Artisan Hill,SC,United States
+2019-07-31 23:36:34,Wine - Spumante Bambino White,96.21,jcb,Gertrudis,Dillingham,819 Mockingbird Place,FL,United States
+2019-09-30 15:51:15,Spoon - Soup Plastic,29.06,jcb,Fawnia,Paylie,7 2nd Circle,TX,United States
+2020-01-12 08:17:39,Truffle - Peelings,75.04,jcb,Goddart,FitzAlan,67672 Becker Point,FL,United States
+2019-05-13 23:49:35,Jameson Irish Whiskey,25.96,jcb,Daveen,Jamieson,03610 Prairieview Place,MO,United States
+2020-01-28 04:50:40,Skewers - Bamboo,63.09,jcb,Laurent,Hallen,70 Clemons Street,DE,United States
+2020-01-15 16:05:51,Tequila Rose Cream Liquor,60.59,laser,Cherida,Campanelli,69 Meadow Vale Plaza,ID,United States
+2019-10-08 18:24:16,Wine - Rosso Del Veronese Igt,90.92,jcb,Carita,Velez,501 6th Drive,TX,United States
+2019-09-12 06:51:26,Lettuce - Escarole,40.25,jcb,Hart,Cater,64619 Spenser Place,CA,United States
+2019-04-16 17:40:23,Scallops - Live In Shell,92.12,visa,Gwenneth,Thrower,3 Hallows Crossing,FL,United States
+2019-10-11 10:31:54,Cheese - Manchego Spanish,85.55,jcb,Polly,Habden,9164 Southridge Lane,NV,United States
+2019-06-05 02:12:00,Wine - White Pelee Island,34.02,bankcard,Jourdain,I'anson,08684 Golf Course Hill,AL,United States
+2019-11-16 00:05:04,Bread - Burger,54.19,diners-club-carte-blanche,Ailina,McConigal,9264 Anderson Trail,MI,United States
+2019-03-16 03:30:20,Quail - Jumbo,24.9,visa-electron,Everett,Aves,65 Golden Leaf Crossing,NY,United States
+2019-09-25 01:03:09,Cheese - Brie,68.31,jcb,Reade,Duthy,12127 Dapin Way,MA,United States
+2019-11-26 04:08:07,Capicola - Hot,37.21,jcb,Jerrilee,Ricciardelli,53 Sauthoff Trail,GA,United States
+2019-04-15 23:24:59,Bread - Assorted Rolls,86.42,switch,Glynnis,Coal,13 Basil Avenue,IN,United States
+2019-11-13 18:15:29,Energy - Boo - Koo,65.17,bankcard,Dyane,Mahoney,4 Aberg Plaza,TX,United States
+2019-10-14 12:29:17,Truffle Cups - Brown,57.63,diners-club-international,Hinda,Ruseworth,85016 Kings Center,GA,United States
+2019-05-07 02:23:39,Chocolate - Mi - Amere Semi,51.09,jcb,Bret,Beccera,06777 Talisman Park,MN,United States
+2019-10-26 02:55:54,Sugar Thermometer,69.77,diners-club-carte-blanche,Craggy,Clutten,795 Longview Place,TX,United States
+2019-08-07 23:30:22,Artichoke - Hearts Canned,93.45,jcb,Ethelbert,Ruse,06309 Bartillon Junction,VA,United States
+2019-09-16 13:37:07,Turkey - Breast Boneless Sk On,79.26,mastercard,Foster,Kloser,2 Marquette Parkway,AL,United States
+2019-08-03 11:40:31,Chicken - Livers,79.83,diners-club-us-ca,Quintana,Wimpenny,38 American Ash Point,LA,United States
+2019-10-04 03:18:54,Vermouth - White Cinzano,21.57,jcb,Mureil,Kempster,7 Dunning Way,HI,United States
+2019-04-29 15:06:30,Bread - Assorted Rolls,35.07,jcb,Ami,Tumielli,23521 Straubel Pass,WA,United States
+2019-05-08 05:04:09,Bread - 10 Grain Parisian,40.97,jcb,Rob,Knolles-Green,0 Cardinal Junction,OK,United States
+2019-11-12 09:50:08,Sambuca - Ramazzotti,31.11,mastercard,Alberto,Riddoch,3 Darwin Trail,GA,United States
+2019-08-18 09:23:39,Lamb - Shoulder,47.33,jcb,Erin,Redwin,5918 Miller Trail,LA,United States
+2019-11-21 00:25:57,Bread Cranberry Foccacia,33.22,jcb,Beaufort,Bolding,6 Annamark Point,NJ,United States
+2019-08-01 12:31:54,Pie Filling - Apple,93.93,jcb,Fielding,Alcott,71 Sycamore Plaza,CA,United States
+2019-11-30 04:32:01,Longan,98.36,jcb,Borg,Willetts,25862 Brentwood Junction,PA,United States
+2020-01-18 14:42:09,Wine - White Riesling Semi - Dry,35.57,diners-club-us-ca,Clemmy,Wells,0197 Spaight Crossing,WV,United States
+2019-09-02 04:06:37,Soup - Campbells Creamy,83.8,americanexpress,Mord,Chasmar,6583 Hermina Lane,TX,United States
+2019-08-14 20:35:41,Garlic - Primerba Paste,23.32,jcb,Ross,Housam,550 Basil Court,NE,United States
+2019-06-21 08:40:28,Beans - Black Bean Dry,63.81,jcb,Fran,Kemble,9 Maryland Park,AZ,United States
+2019-03-23 10:02:36,Orange - Blood,39.86,jcb,Estel,Burberye,798 Prairie Rose Trail,TX,United States
+2019-12-13 13:04:47,Yogurt - Assorted Pack,22.58,mastercard,Pauletta,Powlett,20 Weeping Birch Plaza,CA,United States
+2019-05-02 17:40:23,Oil - Olive Bertolli,77.61,switch,Emelita,Allaker,317 Namekagon Pass,OH,United States
+2019-05-19 23:33:50,Wine - Toasted Head,49.67,jcb,Augustine,Yushkov,01 Mallory Hill,TX,United States
+2019-09-03 04:03:13,Wine - Cotes Du Rhone,67.67,jcb,Frank,Blancowe,0 Montana Junction,NE,United States
+2019-04-29 01:36:43,Chutney Sauce - Mango,21.03,jcb,Samantha,Witheridge,424 Red Cloud Circle,DC,United States
+2019-03-30 14:05:55,Ham - Cooked Bayonne Tinned,28.63,jcb,Paulette,Gunbie,72 Annamark Alley,TX,United States
+2020-01-15 03:06:24,Steampan - Lid For Half Size,88.26,laser,Israel,Merrgan,0 Hoffman Place,KS,United States
+2019-11-12 04:54:56,Bread Base - Toscano,27.81,bankcard,Darbie,Grindlay,9488 Havey Plaza,AL,United States
+2019-11-29 06:12:44,Chips - Doritos,29.91,jcb,Sheba,Maile,39395 New Castle Alley,IN,United States
+2019-04-10 03:52:04,Apples - Sliced / Wedge,69.64,visa-electron,Noach,Mapstone,4 Pepper Wood Lane,FL,United States
+2019-05-17 06:54:57,Beef - Tenderloin - Aa,69.57,switch,Gardiner,McGinnis,090 Calypso Plaza,FL,United States
+2019-09-10 12:25:39,Pasta - Canelloni,81.69,instapayment,Eva,Kenewell,2 David Hill,MO,United States
+2019-02-26 04:01:57,Bagel - Everything,83.63,maestro,Darrell,Roantree,5 Northport Center,AL,United States
+2019-12-08 02:30:25,Apples - Spartan,21.53,visa-electron,Launce,Snipe,4 Fulton Point,MO,United States
+2019-07-11 17:07:43,Veal - Insides Provini,93.43,mastercard,Dulci,Bellows,6 Grim Terrace,CO,United States
+2019-07-27 12:34:15,Wine - Red Oakridge Merlot,55.32,jcb,Alfonso,Brennenstuhl,74 Grover Circle,CA,United States
+2019-11-27 09:18:51,Icecream Bar - Del Monte,87.12,jcb,Heindrick,Hellewell,00 Bay Park,CA,United States
+2019-04-13 06:21:19,Cookie Trail Mix,26.27,diners-club-enroute,Sada,Barabisch,0 Buena Vista Center,TX,United States
+2019-12-24 02:36:50,Orange - Blood,49.22,jcb,Renard,Gennings,56 Coolidge Avenue,ID,United States
+2019-12-15 12:32:16,Creme De Menthe Green,21.15,jcb,Eddie,Lower,63798 Cambridge Street,CA,United States
+2019-10-21 09:01:19,Seabream Whole Farmed,70.06,switch,Muffin,Haskell,57 Hagan Alley,MS,United States
+2019-02-03 22:30:00,Pasta - Bauletti Chicken White,93.65,jcb,Emelyne,Leak,13 Blaine Avenue,TX,United States
+2019-08-28 08:27:36,Soup Campbells - Tomato Bisque,31.31,bankcard,Gregoire,Cornick,395 Lakewood Gardens Drive,NY,United States
+2020-01-21 01:59:44,Food Colouring - Green,26.49,jcb,Mitchael,Hannibal,6358 Grayhawk Circle,MI,United States
+2019-07-29 07:00:46,Beer - Pilsner Urquell,29.7,jcb,Marji,Espinazo,415 Sachtjen Point,VA,United States
+2019-11-24 21:18:06,Sobe - Liz Blizz,77.73,switch,Mersey,Lavalle,64198 Ludington Road,MS,United States
+2019-06-07 12:31:29,Bandage - Flexible Neon,22.46,instapayment,Vasili,Elsip,0 Macpherson Street,TX,United States
+2019-03-25 22:35:29,Tart Shells - Savory 2,68.4,maestro,Missie,Conklin,944 Columbus Street,FL,United States
+2019-05-12 09:51:32,Veal - Inside Round / Top Lean,45.3,jcb,Lyndy,Hembling,41 Alpine Junction,WI,United States
+2019-08-11 21:32:00,Wine - Peller Estates Late,74.46,maestro,Ree,Fragino,5320 Brickson Park Lane,VA,United States
+2020-01-22 19:12:22,Steel Wool S.o.s,25.17,jcb,Nydia,Gingle,3 Bartillon Road,VA,United States
+2019-09-27 09:29:07,Wine - Prem Select Charddonany,87.15,jcb,Dorisa,Downey,9 Westend Center,NY,United States
+2019-05-15 21:08:01,Bread - Olive,85.27,maestro,Sheeree,MacAlister,7 8th Street,IN,United States
+2019-05-25 19:13:02,Wine - Riesling Dr. Pauly,20.47,visa,Wilow,Cowderay,03 Pleasure Crossing,NY,United States
+2019-08-04 08:58:28,Gooseberry,80.44,switch,Carlee,Squibe,39 Pawling Trail,TX,United States
+2019-04-18 21:25:22,Beef - Tenderloin - Aa,57.04,jcb,Samantha,Ciccetti,84 Forster Park,AZ,United States
+2019-02-11 12:57:43,Steampan - Lid For Half Size,35.79,jcb,Ursula,Woodyatt,93 Oakridge Pass,NV,United States
+2019-08-05 12:17:13,Beef - Tenderloin - Aa,52.32,jcb,Humfrid,Langthorne,2795 Blackbird Avenue,OK,United States
+2019-05-10 20:01:48,Pepper - Roasted Red,77.73,jcb,Felicle,Vlasenko,9780 Donald Parkway,TX,United States
+2019-02-05 23:12:13,Lamb Rack - Ontario,30.13,mastercard,Eddie,Clarridge,313 Lunder Point,AZ,United States
+2020-01-10 05:53:13,V8 Splash Strawberry Banana,79.76,jcb,Julia,Valeri,798 Pond Hill,MD,United States
+2019-05-01 05:09:57,Crab - Claws 26 - 30,91.14,jcb,Sheila,Khristyukhin,7042 Browning Court,NY,United States
+2019-08-17 10:38:45,Salmon - Atlantic Fresh Whole,71.91,china-unionpay,Nanny,Pietranek,46067 Kenwood Pass,TX,United States
+2019-11-03 04:25:13,Wine - Penfolds Koonuga Hill,68.28,jcb,Sybilla,Bidnall,71 Chinook Court,IL,United States
+2019-02-13 13:27:01,Arizona - Green Tea,69.79,jcb,Riordan,Cowdry,9 Gina Park,CA,United States
+2019-02-21 08:44:41,Pasta - Lasagna Noodle Frozen,72.08,jcb,Hunter,Beelby,469 Valley Edge Center,IA,United States
+2019-11-07 06:44:07,Sauce - Black Current Dry Mix,21.31,americanexpress,Merwyn,Bruggeman,4222 Miller Plaza,CA,United States
+2019-12-31 13:00:13,Kiwano,83.3,china-unionpay,Kittie,Kneeland,75 Pennsylvania Junction,CO,United States
+2019-03-08 15:53:04,Coke - Diet 355 Ml,58.74,jcb,Glynis,Wolfenden,6644 Toban Way,FL,United States
+2019-04-13 02:11:33,Nantucket - Pomegranate Pear,49.24,bankcard,Clerc,Hickenbottom,12559 Garrison Place,OR,United States
+2019-11-21 12:20:49,Onions - Dried Chopped,80.63,jcb,Annabel,Loren,5618 Park Meadow Avenue,ID,United States
+2019-09-15 22:07:57,Sambuca - Ramazzotti,75.6,jcb,Tara,Haskew,9106 Bashford Drive,PA,United States
+2019-08-15 14:57:59,Yeast Dry - Fleischman,55.53,visa,Fax,Berg,20951 Birchwood Hill,NE,United States
+2019-05-13 10:55:38,Salmon - Whole 4 - 6 Pounds,75.02,jcb,Anderea,Lound,87 Buell Parkway,SC,United States
+2019-02-11 16:08:17,Plate Pie Foil,65.58,visa-electron,Beauregard,Healey,4 Warbler Trail,KY,United States
+2019-08-12 22:01:34,Sunflower Seed Raw,43.32,solo,Arliene,Hogbin,71 Sutherland Circle,CA,United States
+2019-12-15 14:57:22,Tandoori Curry Paste,22.56,jcb,Celisse,Filimore,9321 Maywood Circle,TX,United States
+2019-10-11 03:58:59,Wine - Bouchard La Vignee Pinot,21.79,maestro,Dyanna,Hinckes,4891 Merrick Trail,TX,United States
+2019-03-06 01:32:41,Glass - Juice Clear 5oz 55005,66.6,jcb,Mariele,Fogel,51 Florence Trail,WA,United States
+2019-02-03 07:31:13,Squid - Breaded,21.08,jcb,Sher,Kevis,266 Fair Oaks Road,TX,United States
+2019-09-01 19:43:46,Fireball Whisky,20.79,jcb,Sal,Skeete,4 Washington Avenue,OH,United States
+2019-12-10 17:41:23,Pork - Tenderloin Fresh,99.64,jcb,Kassie,Redholls,89 Declaration Court,TX,United States
+2019-02-03 23:02:20,Lamb Rack Frenched Australian,25.82,jcb,Rourke,O'Reilly,8383 Maywood Place,NY,United States
+2019-06-19 05:07:05,Pork - Smoked Back Bacon,57.97,jcb,Mara,Truswell,9 Valley Edge Drive,TN,United States
+2019-10-02 23:24:20,Capon - Breast Double Wing On,32.89,jcb,Rock,Kocher,8022 Daystar Circle,TX,United States
+2019-11-16 17:34:14,Juice - Apple 341 Ml,91.22,instapayment,Say,Hofner,295 Alpine Junction,IA,United States
+2019-04-12 17:40:22,Veal - Shank Pieces,57.51,diners-club-enroute,Rina,Gudyer,589 Kings Plaza,WV,United States
+2019-08-15 22:07:25,Sambuca - Opal Nera,31.97,jcb,Olva,Blatcher,6831 American Circle,CA,United States
+2019-08-31 10:24:31,Asparagus - White Canned,66.29,jcb,Bernardina,Tuplin,431 Golden Leaf Trail,UT,United States
+2019-07-21 03:21:16,Carrots - Jumbo,59.88,jcb,Em,Bareham,72 Dahle Way,WA,United States
+2019-02-05 17:25:07,Wine - Sauvignon Blanc,67.72,jcb,Tam,O'Monahan,6993 Novick Lane,PA,United States
+2019-07-31 03:45:13,Pastry - Banana Tea Loaf,97.3,mastercard,Lazare,Renoden,691 Pankratz Drive,TX,United States
+2019-07-27 18:25:46,Soup - Campbells Spinach Crm,76.8,americanexpress,Mandie,Lyte,31581 Luster Way,FL,United States
+2019-03-27 00:30:22,Juice - Lagoon Mango,64.43,mastercard,Tybalt,Kynett,2 Amoth Point,AL,United States
+2020-01-27 05:34:32,Cheese - Brick With Onion,71.77,diners-club-enroute,Meier,Markus,8 Magdeline Park,PA,United States
+2019-07-29 23:22:21,Oyster - In Shell,31.63,jcb,Esta,Nerger,60 Monterey Drive,CA,United States
+2019-11-30 10:03:11,Cookie Choc,67.39,jcb,Roxie,Di Meo,187 Dorton Drive,PA,United States
+2019-09-24 14:47:02,Lid - 3oz Med Rec,92.78,instapayment,Adam,Amorine,782 Calypso Trail,DC,United States
+2019-09-05 08:56:56,Lotus Rootlets - Canned,55.94,switch,Paolina,Cleveland,5312 Grayhawk Terrace,IN,United States
+2019-09-05 09:21:20,Dill Weed - Fresh,91.7,maestro,Delaney,Beney,7 Manitowish Alley,TN,United States
+2020-01-05 06:12:05,Spaghetti Squash,31.64,americanexpress,Morse,Creaven,425 Glendale Plaza,CA,United States
+2019-02-12 00:58:37,Lemonade - Black Cherry 591 Ml,35.18,americanexpress,Jesse,Plaskett,706 Westport Road,UT,United States
+2020-01-08 18:59:42,Eggplant Oriental,73.97,jcb,Ignace,MacCaffery,041 Roxbury Center,VA,United States
+2020-01-26 08:31:56,Shrimp - Black Tiger 8 - 12,26.82,maestro,Mikaela,Bowker,66 Reinke Point,CA,United States
+2019-10-31 18:57:23,Mayonnaise - Individual Pkg,75.74,maestro,Georgeta,Phair,292 Forster Hill,MI,United States
+2019-10-13 03:53:05,Avocado,41.16,jcb,Mill,Bramley,38691 Amoth Plaza,WI,United States
+2019-11-07 14:21:58,Molasses - Fancy,25.37,jcb,Shandeigh,Wittering,77353 Melvin Lane,CT,United States
+2019-10-24 20:04:59,Muffin Hinge - 211n,63.14,visa-electron,Tandy,Newark,833 Bobwhite Trail,TX,United States
+2019-11-02 07:31:26,Crab - Claws Snow 16 - 24,36.57,jcb,Winslow,Clingoe,690 Sage Way,TX,United States
+2019-11-22 23:49:29,Chocolate Bar - Oh Henry,80.61,jcb,Eachelle,Dibbe,86 Lerdahl Terrace,OH,United States
+2019-06-16 02:12:33,Sponge Cake Mix - Vanilla,61.9,solo,Marcos,Fearick,70393 Hintze Court,CA,United States
+2019-03-22 22:29:32,Wine - White Mosel Gold,74.15,diners-club-carte-blanche,Ozzy,Hounsham,99096 Sugar Crossing,FL,United States
+2019-07-08 18:41:06,Pasta - Lasagna Dry,63.41,jcb,Charin,Gowrich,78 Manufacturers Avenue,CA,United States
+2019-07-23 01:34:10,Bread - Multigrain Loaf,35.49,mastercard,Elspeth,Wiggall,7782 Bartelt Lane,CT,United States
+2019-06-16 15:13:29,Pie Shell - 5,98.49,jcb,Vanni,Bulford,0800 Maryland Center,IN,United States
+2019-09-14 11:26:43,Cheese - Parmesan Grated,39.78,jcb,Jerad,Leaning,8364 Macpherson Street,WI,United States
+2019-12-23 20:06:01,Flower - Potmums,70.38,china-unionpay,Jerrome,Kincey,55923 Gulseth Road,PA,United States
+2019-06-07 04:02:15,Tendrils - Baby Pea Organic,91.33,diners-club-international,Alicea,O'Mara,23158 Vahlen Hill,FL,United States
+2019-05-02 12:55:02,Coffee Swiss Choc Almond,74.62,visa-electron,Faustine,Chalcraft,236 Elmside Trail,CO,United States
+2019-11-20 20:32:59,Olives - Black Pitted,86.94,visa-electron,Kiersten,Truce,9 Farragut Terrace,CT,United States
+2019-04-24 08:40:40,Nut - Pumpkin Seeds,40.1,mastercard,Cassie,Fante,04 Meadow Ridge Center,NY,United States
+2019-05-15 05:29:48,Wine - George Duboeuf Rose,27.26,jcb,Kylen,Dorin,80 Darwin Place,TX,United States
+2019-07-25 10:08:57,Cherries - Frozen,77.62,visa-electron,Minor,Thoresby,03568 Dakota Plaza,MO,United States
+2019-11-05 07:22:40,Muffin Mix - Morning Glory,47.57,jcb,Mattie,Teaz,7 Express Drive,NY,United States
+2019-09-13 16:03:44,Grouper - Fresh,73.06,jcb,Christabel,Sacco,98336 Onsgard Street,MO,United States
+2019-03-10 02:33:50,Lotus Root,64.68,china-unionpay,Davey,Alebrooke,894 Cardinal Circle,KY,United States
+2019-02-16 23:29:02,Flour - Masa De Harina Mexican,57.09,diners-club-carte-blanche,Marline,Cragg,8 Shoshone Court,NY,United States
+2019-04-27 09:01:44,Onions - Pearl,99.87,diners-club-carte-blanche,Barnett,Raddin,82 Spenser Road,GA,United States
+2019-12-30 08:35:37,Oil - Shorteningliqud Fry,23.53,jcb,Osmond,Kopta,0 Manitowish Way,NJ,United States
+2019-08-07 15:03:06,Ecolab - Hand Soap Form Antibac,24.93,diners-club-carte-blanche,Alina,Coopper,72 Judy Circle,TN,United States
+2019-03-06 16:48:44,Tomato Paste,27.26,jcb,Chandal,Shermore,2907 Redwing Street,WI,United States
+2019-08-08 19:49:52,Sloe Gin - Mcguinness,36.87,diners-club-international,Marve,Mc Kellen,32 Armistice Center,NY,United States
+2020-01-20 07:41:42,Vanilla Beans,90.97,jcb,Jephthah,Squire,1367 Sauthoff Hill,KS,United States
+2020-01-03 08:43:36,Flour - Buckwheat Dark,41.57,mastercard,Mufinella,Allardyce,98984 Bartillon Road,OR,United States
+2019-04-19 03:24:38,Cleaner - Comet,74.9,jcb,Rakel,Yaldren,48 Steensland Junction,CA,United States
+2019-11-29 03:54:59,Cheese - Brick With Pepper,96.77,bankcard,Pren,Varfolomeev,7344 Farmco Drive,CA,United States
+2019-10-18 07:00:16,Salt - Rock Course,61.06,jcb,Burk,Benner,980 Schlimgen Point,CA,United States
+2019-06-20 04:49:30,V8 - Vegetable Cocktail,80.44,maestro,Marcella,Gillman,8 Darwin Street,OH,United States
+2019-05-02 20:09:20,Glaze - Clear,35.6,switch,Gisella,Overshott,8 Leroy Way,FL,United States
+2019-10-06 08:01:14,Energy Drink Bawls,37.85,americanexpress,Neil,Ghiraldi,31 Eastlawn Avenue,TX,United States
+2019-03-22 14:46:29,Longos - Assorted Sandwich,49.59,maestro,Brenden,Halpeine,6 Algoma Alley,MN,United States
+2019-02-03 07:52:53,Rum - Spiced Captain Morgan,66.11,jcb,Janith,Scoon,24508 Fremont Road,MN,United States
+2019-11-22 09:45:33,Table Cloth 72x144 White,79.93,diners-club-carte-blanche,Melantha,Janicijevic,8123 Gina Street,PA,United States
+2019-12-25 00:05:57,Soup Campbells Turkey Veg.,51.24,jcb,Joane,Balazin,08134 Lerdahl Hill,NC,United States
+2019-07-15 09:23:12,Flavouring - Rum,79.27,mastercard,Alexis,Baggally,25 Dennis Plaza,FL,United States
+2019-05-25 10:15:39,Sage Derby,51.79,switch,Lloyd,Gadsdon,395 Sachs Junction,MN,United States
+2020-01-15 20:28:20,Turkey - Whole Fresh,98.29,jcb,Billie,Lasslett,16478 Maple Lane,NY,United States
+2019-03-10 00:46:46,Chicken - Soup Base,55.1,jcb,Wrennie,Carter,2 Corben Place,CT,United States
+2020-01-11 21:09:21,Container - Clear 16 Oz,59.23,mastercard,Chick,Koeppe,92 Ruskin Street,AZ,United States
+2020-01-17 20:31:18,Chicken - Thigh Bone In,40.73,jcb,Edward,Duckit,70902 Clarendon Road,DC,United States
+2019-05-16 05:47:07,Cherries - Bing Canned,79.05,jcb,Rosabel,Launder,20132 Schlimgen Alley,CA,United States
+2019-03-01 11:50:02,Chips - Doritos,24.22,jcb,Janeva,Welbrock,5057 Claremont Point,TX,United States
+2019-07-14 15:30:49,Beans - Turtle Black Dry,61.8,americanexpress,Tobit,Willowby,703 Hanson Park,WA,United States
+2020-01-25 09:10:28,Cookie - Oreo 100x2,65.0,jcb,Vania,Moxon,310 New Castle Alley,WI,United States
+2019-02-10 13:19:42,Coffee Cup 8oz 5338cd,89.28,jcb,Edan,Hansen,40989 Myrtle Road,GA,United States
+2019-05-20 04:13:27,Chicken - Base Ultimate,98.61,jcb,Hestia,Gronw,5975 Schlimgen Pass,TX,United States
+2019-11-10 06:20:28,Wild Boar - Tenderloin,87.35,switch,Constantina,Riepel,958 Southridge Parkway,FL,United States
+2019-11-21 13:22:27,Nestea - Ice Tea Diet,35.18,visa,Torey,Ridger,0 Union Way,PA,United States
+2019-05-02 02:27:33,Wine - Vovray Sec Domaine Huet,52.49,diners-club-enroute,Tandie,Sarjent,3 Duke Street,TN,United States
+2019-02-07 12:18:52,Shrimp - 16 - 20 Cooked Peeled,57.62,jcb,Fairfax,Elford,44945 Clarendon Street,WV,United States
+2019-11-14 08:21:11,Banana - Green,89.65,laser,Lisette,Lamond,6925 Green Ridge Drive,MN,United States
+2019-04-16 12:15:05,Chocolate - Milk,28.91,maestro,Letisha,Croft,89314 Scott Crossing,WA,United States
+2019-11-20 05:45:36,Wine - Rosso Toscano Igt,66.26,jcb,Ignace,Lukas,0283 Quincy Parkway,OH,United States
+2019-05-16 09:09:45,Wine - Cabernet Sauvignon,97.26,mastercard,Linus,Burchatt,6 Cambridge Junction,TX,United States
+2019-10-13 22:36:35,Peas - Frozen,92.37,jcb,Annaliese,Ellick,54780 Memorial Pass,FL,United States
+2019-03-24 00:25:28,Crab Meat Claw Pasteurise,32.09,visa-electron,Harper,Serrier,00480 Armistice Place,TX,United States
+2019-02-04 17:04:52,Laundry - Bag Cloth,70.63,bankcard,Alane,Dahlgren,6 Commercial Circle,MD,United States
+2019-02-05 13:17:19,Arizona - Green Tea,34.15,maestro,Susette,Scoone,0267 Moland Street,CA,United States
+2019-06-05 15:10:52,Nantucket - Pomegranate Pear,80.98,diners-club-international,Vinni,Baggallay,4520 Florence Road,OR,United States
+2019-01-31 19:45:27,Salt - Sea,21.12,jcb,Nadya,Snodden,9 Center Parkway,TX,United States
+2019-10-30 19:20:08,Glass Clear 7 Oz Xl,95.61,maestro,Forbes,Cutbush,5094 Main Pass,FL,United States
+2019-09-16 05:42:36,Pears - Fiorelle,21.97,jcb,Karol,Scyner,0 Dennis Alley,WA,United States
+2019-08-09 12:20:45,Wine - Sherry Dry Sack William,44.67,instapayment,Billy,Kellett,83 Dottie Crossing,WI,United States
+2019-04-14 15:23:08,Trout Rainbow Whole,56.58,mastercard,Farris,Sharrier,3 Hermina Drive,IL,United States
+2019-12-12 17:28:53,Bread - Pullman Sliced,99.64,jcb,Rozanne,Iorillo,66272 International Avenue,CA,United States
+2019-02-06 05:43:20,Wild Boar - Tenderloin,64.36,jcb,Andree,Cuttell,84572 Dayton Lane,CA,United States
+2019-03-17 06:44:28,Coriander - Seed,42.9,maestro,Daffi,Eggers,6 Bobwhite Trail,MA,United States
+2019-10-15 09:08:52,Bag - Bread White Plain,88.81,jcb,Gayle,Rodinger,1 Moose Parkway,LA,United States
+2019-07-17 06:31:11,Sachet,29.65,jcb,Pyotr,Fairpo,304 Londonderry Road,TX,United States
+2019-06-17 11:01:56,Salmon - Smoked Sliced,67.06,jcb,Sherill,Fist,0182 Dahle Road,DC,United States
+2019-05-14 06:05:28,Beef - Top Butt Aaa,63.09,switch,Art,Goodayle,3 Carioca Point,KS,United States
+2019-07-26 20:32:41,Drambuie,51.83,americanexpress,Aldus,Carrington,5839 Amoth Alley,CA,United States
+2019-04-02 03:54:06,Quail - Whole Boneless,49.34,jcb,Hadrian,Oldrey,44843 Anzinger Lane,SD,United States
+2019-02-12 21:49:12,Drambuie,71.0,visa-electron,Major,Beardwood,5 Messerschmidt Avenue,WA,United States
+2019-05-11 02:29:48,Tomato Paste,93.67,jcb,Gennifer,Lindley,17006 Superior Lane,NY,United States
+2019-10-15 04:25:51,Capon - Whole,93.64,diners-club-carte-blanche,Sanson,Gallie,7 Kipling Park,OK,United States
+2020-01-24 21:39:20,Stock - Beef Brown,74.47,jcb,Ynez,Tender,46202 Lyons Place,IL,United States
+2019-12-22 09:29:17,Spring Roll Veg Mini,89.17,jcb,Sandy,Ormerod,1798 Mockingbird Avenue,OH,United States
+2019-10-07 23:13:40,Remy Red Berry Infusion,26.34,jcb,Salvador,Swepson,4 Cordelia Avenue,NY,United States
+2019-08-06 13:46:43,Juice - Apple Cider,92.68,jcb,Christel,Walbridge,65666 Merrick Way,FL,United States
+2019-05-18 10:03:23,Langers - Ruby Red Grapfruit,75.1,switch,Mel,Graber,9 Killdeer Center,AZ,United States
+2019-03-04 12:54:48,Island Oasis - Magarita Mix,68.52,switch,Kennith,Slowgrove,81 Spohn Crossing,AR,United States
+2019-08-23 10:32:16,Table Cloth 54x72 Colour,21.02,maestro,Valdemar,Sleigh,282 Arizona Circle,IL,United States
+2019-11-06 06:58:28,Bread - Calabrese Baguette,38.49,visa,Edgar,Dowbiggin,8 Rutledge Way,NC,United States
+2019-10-05 01:16:08,Pimento - Canned,27.1,jcb,Erena,Neles,3 Waywood Court,DC,United States
+2019-04-15 12:59:14,Wine - White Mosel Gold,91.79,mastercard,Brewer,Wehner,6714 Corry Plaza,CA,United States
+2019-02-04 20:11:37,Soup - Base Broth Chix,20.68,jcb,Marcellus,Poser,9809 Ridge Oak Road,NM,United States
+2019-08-01 22:53:39,Onions - Green,65.57,jcb,Putnem,Alonso,34 Homewood Terrace,TX,United States
+2019-07-01 09:07:57,Beets,86.08,diners-club-carte-blanche,Dorree,Presdie,4643 Fairfield Place,ME,United States
+2019-06-04 02:48:53,Arizona - Green Tea,60.59,maestro,Amye,Holwell,68621 Sunfield Road,FL,United States
+2019-02-15 01:45:50,Watercress,83.0,jcb,Madel,Banke,48 Homewood Center,IL,United States
+2019-04-19 03:35:37,Cheese - Marble,94.08,jcb,Mirelle,McLese,0114 Daystar Park,TX,United States
+2019-07-25 20:50:44,Basil - Pesto Sauce,65.95,jcb,Connie,Duckering,62 Anthes Junction,CA,United States
+2019-06-30 10:24:06,Tart Shells - Barquettes Savory,53.41,bankcard,Rafael,Tofano,9779 Grover Street,IL,United States
+2020-01-10 20:47:21,Appetizer - Spring Roll Veg,93.52,visa-electron,Tanya,Bulley,16 Anthes Circle,GA,United States
+2019-02-12 05:13:34,Napkin White,63.45,americanexpress,Jo ann,Gores,7297 Dixon Way,NC,United States
+2019-06-03 17:55:28,Wine - White Ej,86.51,mastercard,Griselda,Trower,41 Ruskin Drive,MD,United States
+2019-02-19 06:08:12,Mcgillicuddy Vanilla Schnap,88.82,visa,Towney,Picheford,01926 Golf Circle,TN,United States
+2019-10-10 02:48:31,Kippers - Smoked,68.49,maestro,Janessa,Nutman,92671 Artisan Crossing,CA,United States
+2019-12-30 12:39:53,Coffee - 10oz Cup 92961,65.15,mastercard,Gorden,de Keyser,2 Di Loreto Hill,GA,United States
+2019-09-10 09:30:30,Macaroons - Two Bite Choc,98.82,switch,Bastian,Martina,8198 Jay Trail,OK,United States
+2019-07-14 20:58:07,Butter Ripple - Phillips,57.61,diners-club-enroute,Constancy,Woodstock,12235 Stephen Drive,OK,United States
+2019-10-19 13:07:01,Oil - Sunflower,71.03,jcb,Opalina,Tabert,5386 Dayton Pass,LA,United States
+2019-03-02 17:49:54,Bread - Triangle White,93.78,bankcard,Margalo,Spilisy,956 Rockefeller Alley,DE,United States
+2019-07-27 17:13:27,Nantucket Cranberry Juice,43.92,jcb,Roseanna,Cluff,833 Oxford Road,CO,United States
+2020-01-20 04:30:46,Crab - Claws 26 - 30,41.53,instapayment,Werner,Beadman,0168 Laurel Court,CA,United States
+2019-05-02 11:48:01,Wine - Sawmill Creek Autumn,50.13,jcb,Nanice,Tumber,47 Bayside Way,CO,United States
+2019-09-14 18:02:18,Fireball Whisky,59.08,laser,Wallache,Malpas,7 Logan Point,CA,United States
+2019-05-01 06:38:53,Chip - Potato Dill Pickle,35.6,jcb,Bonnie,Blaymires,32 Northridge Place,OK,United States
+2020-01-25 02:57:46,Tea - Jasmin Green,50.94,bankcard,Orson,Ivanyukov,4 Kropf Crossing,TX,United States
+2019-12-25 15:50:52,Mussels - Frozen,27.88,china-unionpay,Riannon,Alven,25 Carey Circle,OR,United States
+2019-02-27 05:50:17,Sauce - Gravy Au Jus Mix,74.32,jcb,Timotheus,Lukianov,5 Express Alley,CT,United States
+2019-09-22 15:43:33,Wine - Zonnebloem Pinotage,26.31,instapayment,Sheila,Jacobssen,86 Delladonna Road,MO,United States
+2019-07-19 01:13:14,Fish - Atlantic Salmon Cold,95.91,jcb,Wait,Goble,8 Vera Parkway,MS,United States
+2020-01-24 07:38:42,Papadam,29.84,jcb,Adrea,Patrie,561 Sutherland Parkway,CA,United States
+2019-06-13 17:40:26,Wine - Fume Blanc Fetzer,75.0,visa-electron,Tisha,Baysting,46008 Starling Road,PA,United States
+2020-01-13 00:21:00,Extract Vanilla Pure,40.7,jcb,Marlon,Thundercliffe,68099 Granby Avenue,MD,United States
+2019-11-01 18:41:26,Tuna - Canned Flaked Light,96.75,jcb,Goran,O'Henehan,6821 South Terrace,CA,United States
+2019-03-31 23:55:13,Rice Paper,83.24,americanexpress,Alisha,Adam,2518 Amoth Terrace,TX,United States
+2019-07-31 12:17:20,Veal - Striploin,81.02,jcb,Petey,Antuk,9 Green Place,VA,United States
+2019-07-13 23:22:52,Scallops - 10/20,99.91,jcb,Cobb,Tabary,24 Lakewood Plaza,TX,United States
+2019-06-25 05:28:14,Chicken - Leg Fresh,61.24,laser,Nady,Norton,1 Johnson Way,TX,United States
+2019-12-07 18:11:04,Wine - Fino Tio Pepe Gonzalez,71.21,laser,Cobby,Kreutzer,199 Thompson Street,CA,United States
+2019-10-06 07:38:21,Filling - Mince Meat,46.6,jcb,Hubey,Piolli,6726 Bashford Pass,CA,United States
+2019-04-23 09:30:44,Rye Special Old,86.3,jcb,Kendricks,Readman,55 Northview Road,OH,United States
+2019-04-02 05:38:45,Fork - Plastic,45.59,jcb,Talbert,Chetwin,74051 Continental Park,MI,United States
+2019-05-20 20:42:52,Vinegar - Cider,91.64,jcb,Karita,Curtayne,49294 Green Ridge Lane,WV,United States
+2019-05-12 15:23:05,Cake Slab,44.11,diners-club-enroute,Ariana,Flanagan,00085 Spohn Plaza,IA,United States
+2019-12-22 03:45:39,Tart - Pecan Butter Squares,83.99,jcb,Brynna,Sterte,9 Schmedeman Place,LA,United States
+2019-07-03 14:38:00,Soup Campbells Mexicali Tortilla,71.31,visa,Raynor,Sedge,55337 Farwell Avenue,AL,United States
+2019-12-01 04:33:07,Bamboo Shoots - Sliced,47.03,jcb,Marigold,Swadling,20211 Morningstar Avenue,KY,United States
+2019-05-04 08:49:16,Neckerchief Blck,63.86,jcb,Lorita,Biggadyke,6833 Dorton Street,NC,United States
+2019-12-19 13:29:20,Filter - Coffee,87.03,jcb,Oliviero,Sandon,92 Kings Parkway,MO,United States
+2019-11-04 22:48:08,Soup Knorr Chili With Beans,48.41,laser,Aloise,Clineck,6533 Fremont Trail,NM,United States
+2019-09-01 01:17:30,Nantucket Cranberry Juice,23.15,mastercard,Loren,Erwin,1 Debs Circle,AZ,United States
+2019-11-19 12:33:37,Allspice - Jamaican,78.22,jcb,Tedie,Lattimore,300 Hazelcrest Crossing,DC,United States
+2020-01-16 05:00:59,Flavouring - Raspberry,73.28,china-unionpay,Rocky,Pawelski,938 Katie Drive,NY,United States
+2019-07-02 12:31:21,Sprouts - Corn,87.21,laser,Mildred,Ruddick,7526 Heath Way,WA,United States
+2019-10-22 17:43:23,Pepper - Paprika Hungarian,78.41,visa,Carri,Nolleau,2103 Talmadge Plaza,CA,United States
+2019-09-25 14:56:21,Wine - Soave Folonari,26.59,diners-club-enroute,Ronni,Lapthorne,46 Westend Parkway,GA,United States
+2019-12-21 13:19:20,Tart Shells - Sweet 4,76.13,diners-club-carte-blanche,Belvia,Briamo,9463 School Circle,PA,United States
+2019-07-27 10:45:32,Oats Large Flake,66.7,jcb,Kendricks,Colum,2 Lukken Drive,DC,United States
+2019-06-26 00:44:36,Water - Mineral Carbonated,52.59,maestro,Tremayne,Vicent,571 Green Ridge Park,ID,United States
+2019-10-06 13:49:17,Capon - Breast Double Wing On,95.13,maestro,Chrisse,Townson,8 Karstens Avenue,FL,United States
+2019-07-08 11:37:04,Peppercorns - Pink,48.56,bankcard,Mel,Larmor,9490 Melvin Park,DC,United States
+2019-03-04 15:36:21,Sauce - Sesame Thai Dressing,49.78,visa-electron,Kerr,Wardroper,655 Warrior Way,CO,United States
+2019-12-01 00:12:30,Cookies - Oreo 4 Pack,23.19,jcb,Annabella,Yankishin,3 Westridge Lane,PA,United States
+2020-01-02 10:11:47,Temperature Recording Station,50.47,jcb,Nolana,Alder,1 Vermont Way,IL,United States
+2019-03-31 05:47:12,Cheese - Brie Roitelet,57.59,jcb,Clareta,Mattheis,40201 Hermina Center,CA,United States
+2019-09-10 18:05:50,Muffin - Mix - Creme Brule 15l,65.39,americanexpress,Ricky,Loxley,116 Kingsford Pass,NE,United States
+2019-11-15 17:21:50,Sauce - Oyster,44.93,americanexpress,Aymer,Baumber,3873 Bay Avenue,VA,United States
+2019-11-01 20:42:12,Shiro Miso,64.1,mastercard,Laverna,McAllen,4 Dottie Street,CA,United States
+2019-09-08 18:50:28,Potatoes - Mini White 3 Oz,84.72,diners-club-enroute,Tatum,Wallenger,82 Anniversary Alley,FL,United States
+2019-12-02 13:02:12,Cheese - Montery Jack,81.68,jcb,Borden,Kretschmer,887 Burning Wood Alley,MD,United States
+2019-09-12 08:42:50,Pasta - Orzo Dry,70.58,diners-club-enroute,Leslie,Braga,1 Sunfield Park,GA,United States
+2019-04-18 10:26:40,Carbonated Water - Blackberry,84.82,diners-club-carte-blanche,Eden,Eve,33634 Dovetail Hill,WI,United States
+2019-12-17 08:14:23,Dill - Primerba Paste,35.62,jcb,Sander,Raye,48 Arapahoe Center,CA,United States
+2019-10-20 00:53:37,Cheese - Comte,30.55,switch,Lennard,Wathey,91 Prairie Rose Avenue,FL,United States
+2019-09-04 07:10:48,Spice - Onion Powder Granulated,78.74,visa-electron,Ashlan,Dailly,15659 Macpherson Lane,GA,United States
+2019-04-02 08:52:19,Cakes Assorted,72.85,jcb,Levey,Checchi,71 Gale Plaza,NV,United States
+2019-12-12 08:59:35,Ecolab - Solid Fusion,29.98,maestro,Tawnya,Clearley,0 Pepper Wood Street,CA,United States
+2019-10-24 05:44:19,Red Cod Fillets - 225g,48.53,jcb,Jessica,De Nisco,4 Fisk Place,GA,United States
+2019-08-02 08:56:01,Gingerale - Diet - Schweppes,73.97,mastercard,Nissy,Vidyapin,767 Crowley Lane,IA,United States
+2019-03-15 05:25:13,Jam - Raspberryjar,62.77,mastercard,Ami,Sewell,0 Rieder Point,MN,United States
+2019-07-28 03:49:54,Nut - Chestnuts Whole,47.32,diners-club-enroute,Marshall,Pretor,895 Grayhawk Center,FL,United States
+2019-03-01 18:23:46,Arrowroot,25.48,jcb,Rodie,Rizzardini,65 Prairieview Circle,VA,United States
+2019-10-10 17:55:11,Grenadine,39.28,jcb,Cecilia,Spellar,9011 Waubesa Street,CA,United States
+2020-01-02 10:36:03,Pie Shell - 5,71.2,jcb,Cale,Derycot,49380 Grover Park,PA,United States
+2019-05-31 19:10:52,Brandy Cherry - Mcguinness,64.65,diners-club-enroute,Louisa,Scarrott,67 Pankratz Court,FL,United States
+2019-06-20 18:52:26,Wine - Chenin Blanc K.w.v.,59.97,jcb,Caleb,Wharmby,19848 Calypso Pass,IL,United States
+2019-10-05 06:47:51,Wine - Tribal Sauvignon,81.5,jcb,Chick,Ashley,09973 Oriole Crossing,CA,United States
+2019-03-08 01:02:10,Energy Drink,59.1,jcb,Ailey,Chatin,8 Forest Run Alley,CA,United States
+2019-09-25 10:38:54,Beer - Corona,55.33,jcb,Esme,Sackes,818 Ryan Road,CA,United States
+2019-07-24 19:18:16,Lid - High Heat Super Clear,59.52,jcb,Alix,Pethybridge,64792 Loeprich Street,NC,United States
+2019-05-25 06:09:17,Energy Drink,73.35,jcb,Rafa,Jerschke,93 Cody Lane,KY,United States
+2019-11-25 02:03:48,Quail - Whole Bone - In,75.9,maestro,Michel,Bussons,0920 Main Point,CA,United States
+2019-12-10 02:40:22,Lettuce - Baby Salad Greens,99.78,maestro,Katuscha,Lardez,76981 Delaware Parkway,AZ,United States
+2020-01-01 16:31:59,Grapefruit - White,21.24,jcb,Ashton,Thorbon,30410 Huxley Drive,HI,United States
+2019-09-13 08:53:08,Icecream - Dstk Cml And Fdg,71.98,jcb,Celene,Pass,1 Manley Way,NY,United States
+2019-05-02 13:08:28,Compound - Rum,63.31,jcb,Giovanna,Somes,40661 Stoughton Center,WA,United States
+2019-05-21 13:46:32,Wine - Barbera Alba Doc 2001,38.46,diners-club-us-ca,Costanza,Blockwell,369 Spohn Avenue,OH,United States
+2019-08-30 03:16:01,Wine - Two Oceans Sauvignon,61.32,jcb,Rebecka,Massingham,8 Sheridan Court,CO,United States
+2019-08-29 11:47:09,Stainless Steel Cleaner Vision,42.6,diners-club-international,Zack,Risso,7 Corben Alley,CA,United States
+2019-10-08 09:08:25,Milk - Condensed,30.96,jcb,Alys,Harriss,6513 Barby Center,WI,United States
+2019-07-27 03:50:21,Food Colouring - Orange,60.62,maestro,Mirabelle,Stileman,56179 Grayhawk Place,NV,United States
+2019-09-14 12:22:45,Sun - Dried Tomatoes,95.7,jcb,Quinta,Duester,1 Sugar Drive,GA,United States
+2019-07-28 14:53:56,Thyme - Lemon Fresh,87.37,jcb,Annnora,Bunton,3304 Debra Plaza,WY,United States
+2019-09-02 21:33:45,Cherries - Maraschinojar,73.95,visa,Benita,Ferras,8 Valley Edge Way,TX,United States
+2019-08-28 17:32:50,Garam Masala Powder,80.92,jcb,Jaclyn,Cabel,423 3rd Court,MN,United States
+2019-05-07 23:53:28,Lettuce - Treviso,59.79,switch,Suellen,Jane,3067 Sommers Court,CA,United States
+2020-01-09 11:42:22,Clam Nectar,78.91,instapayment,Rosalinda,Midner,896 Pepper Wood Center,PA,United States
+2020-01-19 02:43:47,Oil - Grapeseed Oil,73.62,americanexpress,Gilbert,Gianni,46 Killdeer Terrace,MD,United States
+2019-05-13 22:01:41,Pie Filling - Pumpkin,93.74,jcb,Cicily,Skryne,803 6th Parkway,NE,United States
+2019-07-14 19:01:56,White Fish - Filets,40.3,jcb,Elwira,Linkin,598 Oak Valley Place,FL,United States
+2019-11-17 04:41:29,Juice - Orange 1.89l,97.35,visa-electron,Mikel,Di Filippo,0 La Follette Parkway,TX,United States
+2019-11-02 07:43:23,Beef - Rib Eye Aaa,86.32,maestro,Windham,Sarten,855 Blaine Pass,MN,United States
+2019-11-08 22:33:22,Wine - Magnotta - Pinot Gris Sr,46.19,diners-club-carte-blanche,Ike,Keeri,289 Sheridan Circle,CA,United States
+2019-11-18 12:44:32,Oil - Sunflower,85.23,maestro,Elvin,Daughtry,7468 Thierer Place,FL,United States
+2019-03-30 05:17:27,Coconut - Shredded Unsweet,22.99,diners-club-carte-blanche,Ely,Burtwhistle,9 Banding Way,IL,United States
+2019-06-26 03:17:37,Steamers White,25.68,diners-club-us-ca,Nehemiah,Ritter,94217 Meadow Ridge Pass,FL,United States
+2020-01-09 08:32:50,Cake - Mini Potato Pancake,94.35,jcb,Vance,Grierson,5418 Loomis Terrace,IL,United States
+2019-04-30 00:50:17,Plastic Wrap,78.29,jcb,Emmaline,Cirlos,34 Schlimgen Way,IA,United States
+2019-05-02 19:05:53,Bread Base - Gold Formel,43.99,laser,Vassili,Helks,1 Fieldstone Hill,DC,United States
+2019-07-04 21:33:46,Lettuce - Frisee,22.33,americanexpress,Hulda,Goncalo,58 Westend Park,KS,United States
+2019-08-28 01:47:18,Syrup - Pancake,73.79,maestro,Harlen,Stephen,215 Summit Way,IN,United States
+2019-12-23 01:07:31,Corn Kernels - Frozen,52.04,mastercard,Moe,Duerden,97148 Upham Hill,FL,United States
+2019-10-25 01:58:59,Bread - Raisin Walnut Oval,30.38,laser,Troy,Kunzel,17 Eagan Crossing,TX,United States
+2019-08-25 03:28:29,Bread - Wheat Baguette,61.76,visa-electron,Agnesse,Branigan,0 Nancy Hill,CA,United States
+2019-02-04 22:59:14,Red Snapper - Fillet Skin On,67.44,jcb,Win,Rau,45 Stoughton Road,NE,United States
+2019-04-13 08:28:54,General Purpose Trigger,55.18,jcb,Carver,Broke,79544 Bunting Hill,FL,United States
+2019-11-03 00:54:49,Egg - Salad Premix,38.81,mastercard,Umeko,Coppin,0 Columbus Pass,AZ,United States
+2019-02-22 10:33:52,Ice Cream Bar - Rolo Cone,64.98,diners-club-us-ca,Bonnee,Robelow,552 Kinsman Court,NC,United States
+2019-06-08 03:34:50,Alize Red Passion,37.59,jcb,Shelden,Bramwell,6282 Lighthouse Bay Hill,FL,United States
+2019-10-16 10:36:14,Potatoes - Idaho 100 Count,27.24,maestro,Eddie,Stubbert,349 Burning Wood Plaza,IN,United States
+2019-12-19 10:13:11,Tea - Camomele,78.2,jcb,Thayne,Ormond,716 8th Way,TX,United States
+2019-06-14 12:35:31,Cheese - Briedanish,60.37,visa-electron,Ethyl,Damant,12 Calypso Court,FL,United States
+2019-03-26 10:48:59,Parsley Italian - Fresh,57.89,jcb,Lynelle,Ducham,46306 Kensington Lane,CO,United States
+2019-11-14 07:19:30,Longos - Chicken Curried,27.3,china-unionpay,Merola,Langabeer,7747 Pawling Terrace,AZ,United States
+2019-05-06 07:36:31,Tea Peppermint,89.18,jcb,Joleen,Pickersgill,8116 Towne Park,CO,United States
+2019-10-07 02:59:17,Phyllo Dough,78.45,visa-electron,Doti,Dorrell,485 Manley Avenue,NY,United States
+2019-07-14 01:42:44,Nut - Chestnuts Whole,77.68,jcb,Vale,Tadgell,3 Upham Parkway,NY,United States
+2020-01-06 19:37:12,Potatoes - Yukon Gold 80 Ct,33.35,jcb,Conchita,Rodmell,78692 David Park,IN,United States
+2019-09-28 01:57:26,Wine - Magnotta - Cab Sauv,78.76,jcb,Brooks,Kupis,0940 Dottie Avenue,NV,United States
+2019-04-03 04:43:55,Wine - Chateauneuf Du Pape,34.21,diners-club-carte-blanche,Titus,Dyke,66 Golden Leaf Street,NY,United States
+2019-10-03 02:42:46,Compound - Passion Fruit,63.93,china-unionpay,Taylor,Ivanishev,70 Hallows Parkway,AL,United States
+2019-02-08 17:31:45,Ecolab - Hobart Washarm End Cap,53.74,laser,Evyn,Chanson,616 Havey Hill,NM,United States
+2019-06-20 07:38:22,Cheese - Cheddar Mild,98.02,maestro,Benn,Fitzsymonds,30 Dottie Drive,FL,United States
+2019-09-14 00:04:33,Pork - Tenderloin Fresh,37.35,visa-electron,Melesa,Ruffles,30784 Dexter Alley,CA,United States
+2019-07-04 02:47:41,Cherries - Bing Canned,72.23,mastercard,Eleanora,Yarrell,20263 Monterey Plaza,WA,United States
+2019-08-09 14:31:45,Milk 2% 500 Ml,39.9,china-unionpay,Ron,Bartels-Ellis,234 Canary Avenue,TX,United States
+2019-07-29 20:31:32,Peas Snow,47.44,maestro,Agathe,Keene,3 Alpine Plaza,TN,United States
+2019-08-06 10:30:30,Table Cloth 62x120 White,89.65,visa,Gwenette,Martin,967 Moland Parkway,CO,United States
+2019-06-18 16:00:39,Tortillas - Flour 12,39.9,bankcard,Kit,Marco,79377 Hanson Terrace,FL,United States
+2019-04-19 16:46:57,Smoked Paprika,71.85,switch,Basile,Lothean,233 Spaight Hill,TX,United States
+2019-09-24 16:31:43,Oil - Canola,32.75,jcb,Elli,Minall,7287 Oxford Junction,FL,United States
+2019-03-26 12:50:54,Lamb - Loin Trimmed Boneless,20.79,jcb,Shandy,Yanele,1 Prairie Rose Junction,HI,United States
+2019-06-03 09:17:40,Oil - Olive,33.58,jcb,Currie,Moggach,27 Northport Park,LA,United States
+2020-01-25 14:17:36,Napkin White - Starched,32.83,mastercard,Samson,Savage,92 Eagle Crest Hill,DC,United States
+2019-04-02 06:12:21,Chilli Paste Hot Sambal Oelek,46.69,switch,Cathryn,Byrth,3 Dakota Lane,GA,United States
+2019-03-14 09:12:07,Wine - Chablis 2003 Champs,56.47,jcb,Nealy,Edds,0569 Upham Terrace,TX,United States
+2020-01-21 20:39:22,Ecolab - Mikroklene 4/4 L,83.81,jcb,Rod,Iannelli,766 Lerdahl Alley,CA,United States
+2019-11-20 15:20:55,Wine - Port Late Bottled Vintage,29.9,china-unionpay,Henry,Dibbs,01 Prairie Rose Park,MI,United States
+2019-06-15 07:56:12,Flower - Carnations,27.3,jcb,Shaylyn,McSporon,10813 Buell Parkway,CA,United States
+2019-12-11 23:03:27,Mushroom - Portebello,41.95,jcb,Woodie,Newham,0 Becker Avenue,DC,United States
+2019-09-05 08:47:14,Quail - Jumbo,46.74,diners-club-us-ca,Alecia,Verrico,9315 Spenser Terrace,AZ,United States
+2020-01-08 10:04:14,Baking Powder,59.44,jcb,Ranna,Lavigne,1797 Tennyson Way,OH,United States
+2019-10-15 23:23:03,Nantucket Orange Juice,75.33,jcb,Jory,Brauner,7697 Lakewood Gardens Plaza,OK,United States
+2019-01-31 14:40:19,Pie Box - Cello Window 2.5,74.12,visa,Addie,Digweed,4 Badeau Point,IN,United States
+2019-12-08 16:05:45,Plaintain,86.22,americanexpress,Ozzie,Duddy,8748 Rockefeller Way,MI,United States
+2019-10-19 16:48:12,Pastry - Chocolate Chip Muffin,40.04,switch,Abey,Doerr,5855 Hoffman Park,IL,United States
+2020-01-19 01:01:11,Table Cloth 54x54 Colour,37.54,jcb,Kamila,Sambrook,0952 Portage Circle,MI,United States
+2020-01-17 16:32:04,Longos - Lasagna Beef,95.37,jcb,Mariele,Hacket,573 Bayside Alley,CT,United States
+2019-03-15 03:24:55,Tray - 12in Rnd Blk,34.04,china-unionpay,Scarface,Hens,776 South Crossing,AL,United States
+2019-02-03 17:43:44,Wine - Tio Pepe Sherry Fino,68.89,americanexpress,Moises,Simeonov,33 Oxford Plaza,WY,United States
+2020-01-26 00:57:54,Wine - Chateau Timberlay,88.21,mastercard,Noll,Brosetti,8 Fairfield Plaza,TX,United States
+2019-07-17 18:15:56,Soup - Campbells Classic Chix,38.2,instapayment,Emmery,Philpotts,637 Warbler Parkway,CO,United States
+2019-12-17 14:36:19,Coffee Caramel Biscotti,36.31,visa,Toni,Duding,3640 International Parkway,TX,United States
+2019-03-13 04:08:01,Okra,34.21,mastercard,Lorelle,Persence,79 Sloan Hill,OH,United States
+2019-10-05 11:46:12,Appetizer - Escargot Puff,22.95,maestro,Rowland,Abbett,7 West Alley,NV,United States
+2019-06-06 08:27:38,Nougat - Paste / Cream,26.34,jcb,Bonnibelle,Grishanin,90330 Main Crossing,CT,United States
+2019-11-20 18:16:30,Wine - Baron De Rothschild,93.4,jcb,Colman,Roebottom,4 3rd Parkway,NY,United States
+2019-05-22 11:35:05,Pasta - Lasagna Dry,92.34,solo,Micki,Vallender,16791 American Way,CA,United States
+2019-05-11 18:31:19,Iced Tea - Lemon 340ml,38.81,instapayment,Ricky,Simonot,9418 Thompson Lane,ID,United States
+2019-08-05 17:52:44,Container Clear 8 Oz,42.99,switch,Anna-maria,Hayesman,5 Iowa Plaza,MI,United States
+2019-08-16 20:40:52,Lid - Translucent 3.5 And 6 Oz,53.8,jcb,Thomasine,Capstick,67 Karstens Avenue,NY,United States
+2019-10-21 03:06:35,Triple Sec - Mcguinness,56.38,mastercard,Noella,Caron,2 Arapahoe Court,WI,United States
+2019-03-21 10:20:59,Arizona - Plum Green Tea,83.38,jcb,Mathew,Scurfield,9731 Burning Wood Crossing,NV,United States
+2019-06-14 10:03:22,Bols Melon Liqueur,84.54,bankcard,Donaugh,Stirtle,6108 Ridgeview Center,CA,United States
+2019-10-15 01:16:59,Container - Clear 16 Oz,22.63,diners-club-carte-blanche,Ali,Yeld,88477 Luster Street,TN,United States
+2019-03-04 16:37:24,Shrimp - 16/20 Iqf Shell On,21.1,bankcard,Wiley,Mathwin,060 Arapahoe Park,AL,United States
+2019-12-05 15:31:24,Brownies - Two Bite Chocolate,21.46,bankcard,Horst,Kondratowicz,469 Oakridge Alley,IA,United States
+2019-12-03 15:43:47,Piping Jelly - All Colours,79.64,jcb,Dante,Clausen-Thue,89704 Nevada Crossing,DC,United States
+2019-06-28 23:51:14,Chicken - Wings Tip Off,69.24,americanexpress,Terrel,Menier,37355 Dwight Street,MO,United States
+2019-02-21 06:35:56,Capers - Pickled,55.47,americanexpress,Rustie,Heap,35352 Victoria Avenue,AL,United States
+2019-03-05 13:36:02,Juice - Apple 500 Ml,42.5,jcb,Meir,Abramovitch,2834 Meadow Ridge Point,MN,United States
+2019-07-18 17:53:09,Pork - Smoked Kassler,93.3,americanexpress,Dev,Bradford,95932 Northwestern Road,DC,United States
+2019-03-14 03:44:55,Wine - Trimbach Pinot Blanc,57.67,jcb,Micky,Tradewell,80820 Eagan Terrace,PA,United States
+2019-11-13 10:04:39,Piping Jelly - All Colours,54.7,diners-club-carte-blanche,Gualterio,McVee,2 Rigney Alley,CA,United States
+2020-01-23 19:19:44,Bagel - Plain,94.45,visa,Arron,Orwell,3582 Havey Terrace,FL,United States
+2019-07-28 17:52:56,C - Plus Orange,41.85,solo,Adina,Champerlen,53 Packers Way,TX,United States
+2019-08-28 15:33:26,Carbonated Water - Orange,84.84,jcb,Doris,Grigoli,8360 Talisman Trail,WA,United States
+2019-12-28 18:02:52,Vodka - Hot Lnferno,77.79,jcb,Alicia,Tift,506 Green Drive,CO,United States
+2019-03-04 02:13:56,Cookies - Fortune,99.18,jcb,Hersch,Tidbold,77177 Prairieview Drive,MN,United States
+2020-01-01 15:37:46,Oil - Canola,25.1,china-unionpay,Trisha,La Rosa,9301 Everett Junction,CO,United States
+2020-01-17 14:50:48,Tea - Black Currant,57.23,jcb,Aggy,Venney,22 Blaine Parkway,NJ,United States
+2019-05-21 01:21:53,Wine - Harrow Estates Vidal,63.68,jcb,Danna,Skahill,7 Forster Place,TX,United States
+2019-07-22 04:07:57,Tomatoes - Heirloom,48.12,jcb,Charo,Pinxton,4 Darwin Center,PA,United States
+2019-07-14 15:40:07,Ham Black Forest,40.66,diners-club-carte-blanche,Andy,Woollard,1416 Blue Bill Park Avenue,GA,United States
+2019-03-20 02:49:48,Glass - Juice Clear 5oz 55005,60.77,visa,Kyla,Keese,8728 Kim Avenue,IL,United States
+2019-11-01 09:33:57,Soup - Campbells Classic Chix,44.65,mastercard,Ronnie,Ziehm,52758 La Follette Hill,AZ,United States
+2019-09-20 16:10:43,Doilies - 7 Paper,33.74,china-unionpay,Rowen,Hawse,71799 Hazelcrest Drive,FL,United States
+2019-08-07 04:15:23,Wine - Cave Springs Dry Riesling,28.92,jcb,Stormy,Bristowe,29847 Southridge Plaza,OR,United States
+2019-04-18 13:32:42,Wine - Charddonnay Errazuriz,25.81,jcb,Bobbee,Triplet,98855 Shasta Plaza,CA,United States
+2019-05-06 00:45:39,Muffin Mix - Raisin Bran,92.41,visa-electron,Iolanthe,Ramelot,78 Dunning Point,TX,United States
+2019-09-22 03:59:47,Chicken - Base,99.89,visa,Averil,Rotherham,67241 Anhalt Street,CA,United States
+2019-04-03 17:29:13,Bar - Sweet And Salty Chocolate,25.02,visa-electron,Logan,Laurenson,7 Mallard Parkway,OH,United States
+2019-11-10 20:36:41,Muffin - Carrot Individual Wrap,98.78,diners-club-enroute,Glenna,Hurst,520 Forest Run Road,TX,United States
+2019-07-27 13:14:11,Chickhen - Chicken Phyllo,88.4,jcb,Evvie,Zimek,337 Welch Junction,LA,United States
+2019-06-07 01:57:56,Petit Baguette,95.57,jcb,Julietta,Pottery,76 Grasskamp Place,OH,United States
+2019-02-13 02:47:06,Lemonade - Black Cherry 591 Ml,93.9,china-unionpay,Burty,Hansbury,33280 Old Gate Plaza,KS,United States
+2019-05-20 12:33:10,Sauce - Apple Unsweetened,57.89,diners-club-enroute,Mercedes,Beste,7106 Fairview Park,MO,United States
+2019-05-14 03:23:11,Soup - Cream Of Broccoli Dry,28.43,maestro,Carolee,Kuhne,458 Cody Street,FL,United States
+2019-06-07 05:09:33,Carbonated Water - Blackcherry,87.29,china-unionpay,Leigha,Shotton,103 Dixon Parkway,CA,United States
+2019-10-08 03:26:43,Dc - Frozen Momji,32.65,mastercard,Fifine,Howlett,0 Roxbury Plaza,IN,United States
+2019-01-31 11:14:13,Jagermeister,95.56,bankcard,Ainslee,Cutmore,7824 Eastwood Trail,LA,United States
+2019-03-23 07:30:47,Sprouts - Baby Pea Tendrils,31.25,maestro,Luis,Gowrich,7 Red Cloud Point,NY,United States
+2019-03-27 00:08:53,Pork - Tenderloin Frozen,66.1,bankcard,Lyndy,McQuorkel,56 Debs Plaza,DC,United States
+2019-03-11 19:26:40,Strawberries,45.4,diners-club-enroute,Derk,Topaz,16 Surrey Trail,TX,United States
+2019-03-03 14:36:19,Island Oasis - Mango Daiquiri,35.79,visa,Libbi,Menco,1 Hazelcrest Way,CA,United States
+2019-11-12 15:42:40,Chicken - White Meat No Tender,21.85,jcb,Emmy,Springthorp,330 Bobwhite Point,ID,United States
+2019-10-20 11:08:07,Ice Cream Bar - Rolo Cone,35.36,diners-club-enroute,Bradley,MacAless,9062 Annamark Alley,MS,United States
+2019-11-08 09:22:24,Oil - Olive Extra Virgin,69.23,mastercard,Alica,Laste,50228 Vidon Center,AZ,United States
+2019-02-19 17:32:51,Crackers - Graham,70.36,laser,Hayden,Troughton,9 Amoth Plaza,MN,United States
+2019-03-11 20:47:09,Figs,92.3,jcb,Annetta,Petre,990 Magdeline Plaza,DC,United States
+2019-08-02 08:02:06,Chocolate - Dark,55.63,switch,Christiane,Walshe,757 Fairfield Drive,NJ,United States
+2019-08-25 07:25:55,Scallops - 20/30,70.86,mastercard,Amos,De Giorgi,9611 Loftsgordon Terrace,GA,United States
+2019-10-27 05:08:54,Cardamon Ground,35.03,jcb,Frasquito,Dabling,0 Di Loreto Drive,FL,United States
+2019-02-05 16:52:21,Bar Energy Chocchip,62.41,mastercard,Clio,Carter,6 Ridge Oak Trail,OK,United States
+2019-07-18 11:11:51,Tobasco Sauce,81.81,diners-club-enroute,Morna,Glassford,8665 Kinsman Pass,MD,United States
+2019-11-28 04:00:50,Flour - Teff,91.07,jcb,Hans,Wedlake,68 Evergreen Circle,TX,United States
+2019-06-11 12:36:22,Pail For Lid 1537,95.59,maestro,Heda,Beville,9 Comanche Trail,DC,United States
+2019-10-03 16:10:24,Wine - Winzer Krems Gruner,36.86,solo,Heath,Faulo,980 Leroy Hill,MN,United States
+2019-07-24 22:03:13,Mountain Dew,55.7,china-unionpay,Bucky,Syseland,97 Sherman Place,MD,United States
+2019-03-23 13:02:54,Ice Cream Bar - Oreo Sandwich,72.04,mastercard,Jarred,Slee,54513 Farwell Drive,IL,United States
+2019-03-14 20:32:13,Cake - Sheet Strawberry,43.48,jcb,Griswold,Paybody,52058 Vera Street,TN,United States
+2019-11-04 06:37:28,Wine - Magnotta - Cab Sauv,31.37,jcb,Amory,Asquith,10 Fair Oaks Avenue,GA,United States
+2019-07-01 14:37:46,Bagelers - Cinn / Brown Sugar,82.09,jcb,Hinda,Scolding,699 Shelley Avenue,WV,United States
+2019-08-11 02:15:22,Broom Handle,80.47,jcb,Skye,Pleace,7 Dawn Trail,KY,United States
+2019-05-08 16:23:46,Wine - Rioja Campo Viejo,36.21,laser,Harland,Champkin,03416 Lawn Drive,PA,United States
+2019-06-03 10:02:58,Strawberries - California,27.71,jcb,Lyn,Cockrill,30710 Marcy Plaza,AL,United States
+2020-01-04 05:24:45,Beef - Cow Feet Split,27.24,diners-club-us-ca,Berthe,Thon,2640 Hudson Pass,OH,United States
+2019-03-31 05:47:42,Onions - Spanish,70.75,maestro,Dorie,Ambrosini,3661 Bluejay Plaza,IN,United States
+2019-10-13 03:20:04,Dill Weed - Dry,53.23,diners-club-us-ca,Marc,Mold,369 Saint Paul Junction,PA,United States
+2019-12-11 09:09:33,Beans - French,83.1,diners-club-enroute,Imogen,Winser,24 Hoffman Road,NC,United States
+2020-01-06 02:27:39,Artichokes - Knobless White,43.9,visa,Augustine,Giddons,346 Forest Dale Way,DC,United States
+2019-12-18 09:02:51,Mushroom - Chanterelle Frozen,28.87,jcb,Glyn,Riddiford,48061 Corry Center,CA,United States
+2019-04-21 23:36:32,Pepper - Red Bell,21.19,diners-club-carte-blanche,Alla,Boustred,9449 Kennedy Avenue,FL,United States
+2019-12-21 00:28:40,Sugar - Cubes,54.63,visa,Bat,Cotgrove,53353 Dawn Junction,TX,United States
+2019-09-09 08:12:47,Wine - White Cab Sauv.on,25.08,mastercard,Gage,Bails,44 Lunder Parkway,CA,United States
+2019-12-09 22:13:37,Wine - Soave Folonari,66.86,americanexpress,Loise,Maudsley,17323 Becker Court,FL,United States
+2019-12-04 18:22:22,Pecan Raisin - Tarts,22.41,jcb,Emmye,Abramsky,9957 Kings Circle,MN,United States
+2020-01-20 10:02:01,Godiva White Chocolate,60.74,americanexpress,Ina,Bulbeck,03071 Spenser Junction,VA,United States
+2019-10-13 17:58:34,Cheese - Cottage Cheese,68.83,maestro,Lorrin,Pinwell,5835 Buena Vista Street,PA,United States
+2019-09-20 13:45:20,Pasta - Ravioli,24.83,visa-electron,Eugenius,Castillou,39071 Dayton Avenue,FL,United States
+2020-01-26 00:10:36,Mushroom - Porcini Frozen,73.35,visa-electron,Belia,Jupp,8726 Tennessee Park,OH,United States
+2019-06-02 00:42:07,Pickerel - Fillets,56.3,diners-club-international,Waly,Shead,289 Farragut Way,SC,United States
+2019-03-22 05:15:54,Container - Clear 32 Oz,94.61,visa,Rosalynd,Riseborough,9053 Talisman Court,MO,United States
+2019-09-22 11:25:41,Cookies - Amaretto,88.24,jcb,Diana,Tallman,6 Dayton Road,KY,United States
+2019-03-02 06:44:44,Hot Chocolate - Individual,41.91,jcb,Diane-marie,Methringham,8 Duke Place,TX,United States
+2019-09-16 22:47:44,Coffee Guatemala Dark,92.54,jcb,Ellyn,De Biasio,30626 Farmco Crossing,PA,United States
+2019-09-22 10:51:27,Juice - Lemon,70.74,mastercard,Huntlee,Hart,188 Merry Terrace,TX,United States
+2019-11-14 16:30:02,Cheese - Mozzarella Buffalo,21.6,jcb,Julissa,Teece,3933 Gale Way,TX,United States
+2019-08-26 22:37:36,Corn Shoots,99.09,diners-club-carte-blanche,Mara,Jahan,2341 Badeau Junction,OH,United States
+2019-12-15 17:47:56,Wine - Savigny - Les - Beaune,42.53,solo,Justinn,Gladdin,5 Brentwood Pass,NC,United States
+2019-08-06 18:06:35,Butter - Salted,94.12,maestro,Vivia,Gisburn,6 Vera Trail,AZ,United States
+2019-10-10 01:25:27,Sprouts - Brussel,52.76,jcb,Chiarra,Anyene,45 Huxley Avenue,TX,United States
+2019-11-03 15:05:33,Orange Roughy 4/6 Oz,36.33,jcb,Tarah,Glentworth,8615 North Terrace,TX,United States
+2019-08-13 19:29:58,Chicken - Wings Tip Off,70.0,jcb,Petey,Dyble,2 Katie Lane,CA,United States
+2020-01-18 11:43:41,Plastic Arrow Stir Stick,95.4,china-unionpay,Pascale,Culbert,1451 Washington Center,IL,United States
+2019-09-05 21:18:54,V8 Pet,50.27,jcb,Petey,Winson,43 Oneill Way,TX,United States
+2019-10-26 05:23:54,Food Colouring - Red,75.73,instapayment,Jodie,Comello,8 Maywood Alley,TX,United States
+2019-09-06 08:38:41,Cake - Lemon Chiffon,27.05,switch,Velma,Writer,615 Del Mar Hill,TX,United States
+2019-08-30 21:24:18,Beef - Sushi Flat Iron Steak,97.76,mastercard,Maurice,Dalgety,9488 Westerfield Way,DE,United States
+2019-09-28 04:06:49,Bread - French Stick,66.05,jcb,Keriann,Ancell,16436 Mccormick Circle,TX,United States
+2019-12-13 09:08:29,Vinegar - Cider,58.47,bankcard,Kory,Momery,32 Cordelia Place,UT,United States
+2019-03-19 08:08:34,Beans - Green,26.37,diners-club-international,Jethro,Haggerston,3 Scofield Place,NC,United States
+2020-01-27 12:10:55,Beef - Kindney Whole,63.15,jcb,Lissie,Lemmon,67 Talisman Plaza,NV,United States
+2019-07-05 03:39:50,Cheese - Cottage Cheese,21.84,jcb,Ellerey,Hoggan,6623 Morningstar Way,FL,United States
+2019-12-22 15:03:19,Chocolate - Dark Callets,40.8,jcb,Kevin,Boick,2193 Hanover Point,TX,United States
+2019-07-15 20:10:30,Bay Leaf,45.88,mastercard,Jasen,Yeld,3 Fuller Junction,IL,United States
+2020-01-23 00:40:21,Nori Sea Weed - Gold Label,53.89,jcb,Jennifer,Nicol,84027 Elmside Terrace,PA,United States
+2019-02-01 13:37:56,Salt And Pepper Mix - Black,21.12,jcb,Ringo,Karran,8116 Harbort Alley,UT,United States
+2020-01-02 13:33:21,Arrowroot,57.27,jcb,Dalia,Jzak,4 Acker Plaza,KS,United States
+2019-08-17 01:13:15,Venison - Denver Leg Boneless,57.41,jcb,Marquita,Joy,0 Kenwood Crossing,SC,United States
+2019-09-15 07:23:43,Cream Of Tartar,83.72,maestro,Ebba,Ladbrook,6405 Riverside Court,NY,United States
+2019-07-15 21:38:28,Broom And Broom Rack White,43.86,diners-club-international,Lotta,Rosberg,5 Warrior Way,PA,United States
+2019-07-26 04:56:32,Chicken - Bones,26.86,jcb,Lanae,Frewer,92113 Welch Court,CT,United States
+2019-12-27 19:51:00,Icecream - Dstk Cml And Fdg,96.17,diners-club-enroute,Dixie,Gorgler,6639 Loomis Point,HI,United States
+2019-07-02 06:13:57,Sage - Ground,62.34,maestro,Berkie,Bollum,2093 Esch Pass,NC,United States
+2019-02-09 00:38:53,Fish - Base Bouillion,62.34,jcb,Carlen,Klimas,2515 Bowman Place,NM,United States
+2019-02-28 23:21:29,Wine - Ruffino Chianti,44.89,bankcard,Suzann,Crim,3369 Pond Point,CA,United States
+2019-09-23 21:54:00,Veal - Inside,20.77,visa-electron,Bevon,Dugmore,8 Hazelcrest Parkway,NC,United States
+2019-10-18 00:49:26,Beans - Butter Lrg Lima,39.1,visa,Devinne,Kinavan,77457 Warrior Trail,FL,United States
+2019-03-26 16:21:09,Pail With Metal Handle 16l White,36.88,diners-club-enroute,Ara,Hallen,59984 Parkside Court,CA,United States
+2019-11-18 12:31:54,Veal - Osso Bucco,73.58,jcb,Skelly,Kisbee,37962 Marcy Place,MI,United States
+2019-11-20 00:27:21,Pork Casing,88.15,diners-club-enroute,Phyllis,Baylay,9994 Buena Vista Place,NC,United States
+2019-11-19 03:29:55,Chestnuts - Wholecanned,63.79,jcb,Cal,Riddlesden,97 Pierstorff Alley,NM,United States
+2019-03-16 00:47:05,Turnip - Wax,32.01,jcb,Gwenora,Lashford,1873 Golf View Terrace,NY,United States
+2019-02-17 21:13:39,Tart Shells - Sweet 2,96.35,jcb,Randell,Vaszoly,1336 Dottie Court,KS,United States
+2019-04-12 02:50:18,Venison - Liver,57.31,jcb,Danya,Mallard,86402 Fairview Center,TX,United States
+2019-04-07 07:09:03,Pail - 4l White With Handle,95.37,jcb,Clarie,Salvage,59 Sauthoff Place,CA,United States
+2020-01-05 16:55:19,Devonshire Cream,91.89,jcb,Florinda,Dempster,31 Fremont Drive,ID,United States
+2019-02-23 17:36:55,Chicken - Base Ultimate,59.9,jcb,Tadeas,Pappi,83 Twin Pines Lane,NY,United States
+2019-08-01 22:06:13,Cheese - Cheddar Medium,33.04,instapayment,Eamon,Schwandner,665 Redwing Park,MS,United States
+2019-09-19 13:56:19,Cardamon Seed / Pod,64.06,mastercard,Carilyn,Pool,5 Aberg Circle,NC,United States
+2019-06-05 20:50:15,Peach - Halves,50.4,china-unionpay,Rochette,Keeton,7318 Myrtle Circle,TX,United States
+2019-03-06 12:12:14,Salt - Sea,36.7,jcb,Dewey,Menloe,4814 Duke Trail,CA,United States
+2019-11-07 14:35:18,Gherkin - Sour,34.29,maestro,Doreen,Dowber,99 Jackson Road,ND,United States
+2019-10-23 03:50:24,Tea - Herbal Sweet Dreams,21.9,mastercard,Jerrilee,D'Andrea,7 Talisman Street,CA,United States
+2019-03-27 14:06:23,Yucca,78.65,diners-club-carte-blanche,Germain,Islip,517 Blue Bill Park Junction,WA,United States
+2019-05-15 22:44:50,Mudslide,49.8,mastercard,Dame,Degli Abbati,3230 Menomonie Center,NY,United States
+2019-04-05 19:11:24,Spice - Pepper Portions,97.49,visa-electron,Grantham,Mullis,37 Haas Drive,MI,United States
+2019-03-17 18:40:57,Pail - 4l White With Handle,68.35,china-unionpay,Mahalia,Jirus,27 Donald Place,CA,United States
+2019-02-14 05:16:38,Veal - Brisket Provimi Bone - In,53.32,maestro,Malena,Orrocks,619 Russell Way,CA,United States
+2019-12-30 21:21:14,Sugar - Monocystal / Rock,51.95,jcb,Stoddard,McGiff,690 Arkansas Place,LA,United States
+2019-06-13 10:51:22,Sprouts - Baby Pea Tendrils,75.56,laser,Dania,Boog,81395 Talmadge Crossing,NC,United States
+2020-01-23 07:41:56,Nut - Hazelnut Ground Natural,98.35,laser,Nero,Jobson,01 Forest Dale Park,AR,United States
+2019-02-05 02:39:59,Lamb - Racks Frenched,80.57,jcb,Rivalee,Giacopelo,47 Hudson Terrace,MD,United States
+2019-03-05 14:14:42,Stock - Beef Brown,32.89,maestro,Louisette,Bartaletti,97 Merrick Hill,FL,United States
+2019-03-19 01:19:18,Cheese - Romano Grated,91.7,diners-club-international,Tomaso,Beadnall,8326 Kinsman Circle,NC,United States
+2019-04-15 15:25:35,Cake - Sheet Strawberry,48.28,jcb,Wilden,Hughes,670 Melby Alley,VA,United States
+2019-02-23 16:33:32,Jameson Irish Whiskey,46.24,jcb,Jone,Brigg,29 Chinook Lane,TX,United States
+2020-01-04 02:52:22,Piping Jelly - All Colours,26.73,jcb,Randa,Alliberton,9 8th Terrace,AL,United States
+2019-04-29 06:42:52,Salsify Organic,46.64,maestro,Ruddy,Harker,385 Claremont Alley,TX,United States
+2019-09-19 06:55:30,Nantucket Orange Juice,67.61,jcb,Cassondra,Podbury,810 Comanche Junction,OK,United States
+2019-06-19 03:57:58,Pickerel - Fillets,96.78,maestro,Sheridan,Erie,02 Village Green Junction,FL,United States
+2019-10-30 01:22:01,Mousse - Mango,92.89,jcb,Josephina,Thorneley,07296 Elgar Plaza,TX,United States
+2019-03-06 04:24:20,Flavouring Vanilla Artificial,33.69,switch,Doralia,Popham,482 Arizona Way,NY,United States
+2019-07-21 03:27:27,Longos - Lasagna Veg,63.89,visa-electron,Reta,Lomax,88441 La Follette Pass,MA,United States
+2019-05-27 10:38:43,Pastry - Mini French Pastries,53.45,visa-electron,Donavon,Marciskewski,20 Tomscot Point,CA,United States
+2020-01-09 02:35:51,Wine - Red Pinot Noir Chateau,21.35,instapayment,Seka,Coult,681 Kropf Circle,CA,United States
+2019-11-05 18:33:24,Cookie Dough - Chunky,74.39,jcb,Herta,Simnel,691 Kinsman Street,NY,United States
+2020-01-11 05:56:16,Beef - Prime Rib Aaa,26.76,jcb,Luz,Lawday,3 East Street,NJ,United States
+2019-08-10 10:51:02,Pomegranates,72.69,laser,Nelle,Reggiani,527 Red Cloud Lane,PA,United States
+2019-01-30 12:21:36,Apricots - Halves,70.46,mastercard,Belicia,Muldrew,44690 Troy Hill,TX,United States
+2020-01-11 12:26:56,Cookies - Englishbay Wht,31.9,americanexpress,Cirilo,Sargerson,40363 Charing Cross Alley,WA,United States
+2019-06-22 14:15:19,Bread - Pita,89.28,jcb,Linda,Sore,0 Autumn Leaf Alley,VA,United States
+2019-09-20 04:59:04,Cheese - Gorgonzola,55.54,mastercard,Gwenni,Loos,783 Sutherland Junction,AZ,United States
+2019-06-20 18:42:35,French Pastries,92.78,jcb,Sebastiano,Cant,3 Pearson Place,NY,United States
+2019-07-09 15:54:52,Mushroom - Chanterelle Frozen,48.99,diners-club-carte-blanche,Kym,Hearnaman,99392 Lighthouse Bay Pass,MO,United States
+2019-03-09 03:06:21,Sauce - Mint,75.06,jcb,Leoline,Demougeot,70 Prairieview Crossing,FL,United States
+2019-08-25 21:05:24,Mushroom - Lg - Cello,66.97,diners-club-carte-blanche,Maryjo,Whitehorn,2 Anhalt Plaza,NY,United States
+2019-06-25 14:26:58,Cherries - Frozen,44.83,bankcard,Rubina,Pala,9 Fremont Trail,MD,United States
+2019-06-13 08:54:44,Sobe - Berry Energy,38.33,visa-electron,Therine,Dunkinson,62 Talisman Drive,CA,United States
+2019-04-27 22:41:07,Chocolate - Sugar Free Semi Choc,54.15,jcb,Nelle,Bridgman,6 Dayton Terrace,KY,United States
+2019-08-28 09:08:12,Chocolate - Unsweetened,40.8,jcb,Currie,Emlin,88660 Spohn Avenue,UT,United States
+2019-04-18 06:35:24,Vinegar - Sherry,97.85,china-unionpay,Quintana,Giberd,61636 Bluejay Alley,LA,United States
+2019-08-31 23:21:27,Ham - Cooked Bayonne Tinned,40.33,bankcard,Joya,Kobpa,627 Bunting Court,MI,United States
+2019-05-08 14:40:08,Tendrils - Baby Pea Organic,67.12,diners-club-enroute,Beatriz,Spoor,47986 Old Shore Alley,PA,United States
+2019-02-07 19:35:54,Pan Grease,64.87,bankcard,Udell,Yandell,9 Vermont Plaza,WA,United States
+2019-08-14 02:33:32,Ecolab Silver Fusion,52.08,jcb,Annabella,Easterby,52933 Sugar Point,FL,United States
+2019-04-23 01:35:30,Lamb Leg - Bone - In Nz,62.79,jcb,Ophelia,Lawful,59 Butterfield Way,OH,United States
+2019-08-24 14:16:08,Snapple Raspberry Tea,55.62,diners-club-enroute,Konstance,Giovanni,0927 Manitowish Road,TX,United States
+2019-07-16 07:20:28,Cumin - Whole,22.75,visa-electron,Robbie,Vasilischev,9 Johnson Terrace,TX,United States
+2019-04-09 00:00:47,Rhubarb,94.17,jcb,Thorndike,Sire,05 Banding Place,CT,United States
+2019-02-18 06:30:36,Mushroom - Chanterelle Dry,69.17,americanexpress,Alan,Pelcheur,2675 Banding Crossing,WI,United States
+2019-10-22 10:25:24,Shiro Miso,83.79,china-unionpay,Tymon,Thackeray,7 Kennedy Pass,OH,United States
+2019-03-10 02:30:14,Muffin Batt - Ban Dream Zero,38.82,solo,Aldric,Saywell,0492 Roth Plaza,CA,United States
+2019-04-08 14:55:51,Salt - Table,83.79,diners-club-enroute,Binnie,Luesley,83700 Rieder Way,CA,United States
+2019-02-01 10:56:18,Cookies - Englishbay Oatmeal,86.61,jcb,Alvera,Hubane,182 Summerview Street,FL,United States
+2019-03-28 09:52:18,Olives - Morracan Dired,76.74,jcb,Eloise,Brandassi,76 High Crossing Plaza,VA,United States
+2019-10-02 15:51:41,Anisette - Mcguiness,71.22,jcb,Valentin,Semrad,961 Holmberg Parkway,FL,United States
+2019-08-26 12:53:40,Pastry - Baked Cinnamon Stick,75.17,jcb,Nikoletta,Dunlea,15 David Trail,PA,United States
+2019-10-22 21:00:58,The Pop Shoppe - Cream Soda,43.78,maestro,Brnaba,Eayres,9302 Acker Court,IA,United States
+2019-06-03 07:47:43,Rolled Oats,91.32,jcb,Edee,Sneller,2 Crescent Oaks Hill,MI,United States
+2019-03-24 21:12:40,Nut - Peanut Roasted,71.48,maestro,Cynthia,Dissman,7 Pierstorff Parkway,TX,United States
+2019-07-04 11:07:15,Wine - Barossa Valley Estate,24.21,maestro,George,Camin,603 Elmside Drive,OK,United States
+2019-12-18 18:15:50,Olives - Morracan Dired,98.74,visa,Bee,Willment,57985 Waxwing Way,MS,United States
+2019-01-29 21:11:13,Yeast - Fresh Fleischman,66.67,laser,Marguerite,Jahncke,824 Tennessee Junction,NY,United States
+2019-05-07 21:28:38,Crackers - Graham,75.95,diners-club-carte-blanche,Diannne,Boutton,42 Maple Trail,FL,United States
+2019-03-10 07:01:50,Pasta - Canelloni Single Serve,33.78,visa,Blanca,Havoc,7852 Moland Trail,NY,United States
+2019-11-10 21:12:53,Vodka - Moskovskaya,64.77,jcb,Karine,Eddis,12 Old Shore Point,KY,United States
+2019-11-06 00:10:22,Ecolab - Power Fusion,39.51,jcb,Sherrie,Igoe,6 7th Way,VA,United States
+2019-06-19 15:14:41,Cheese - Augre Des Champs,59.35,jcb,Gill,Palle,6 Thompson Road,CT,United States
+2019-06-29 04:07:02,Celery,42.6,diners-club-enroute,Ellene,Pringley,9802 Del Mar Crossing,NJ,United States
+2019-06-19 13:15:28,Wine - Fume Blanc Fetzer,98.94,jcb,Gussie,Myles,237 Marcy Pass,MI,United States
+2019-11-18 15:52:25,Cleaner - Comet,66.37,mastercard,Mallorie,Coop,4726 Boyd Hill,TX,United States
+2020-01-19 18:51:31,Pepper - Sorrano,34.12,maestro,Nev,Hovee,11 Continental Hill,MN,United States
+2019-08-28 16:36:53,Pasta - Fusili Tri - Coloured,54.34,diners-club-carte-blanche,Sheilah,Giacometti,25000 Riverside Court,TX,United States
+2019-04-04 20:06:29,Rice - Wild,97.28,visa,Sybyl,Onions,35 Reindahl Alley,TX,United States
+2019-02-03 13:37:01,Bread - Pumpernickle Rounds,26.47,diners-club-international,Fanechka,McKeown,44 Main Road,FL,United States
+2019-06-15 20:14:39,Tuna - Sushi Grade,60.05,diners-club-carte-blanche,Penrod,Latchmore,024 Hauk Lane,MD,United States
+2019-06-16 08:49:50,Crackers - Soda / Saltins,30.29,bankcard,Den,Cluney,3657 Boyd Pass,TX,United States
+2019-03-22 06:16:42,Schnappes - Peach Walkers,36.92,jcb,Clint,Readman,102 Veith Pass,PA,United States
+2019-11-11 23:38:37,Lobster - Live,57.66,jcb,Giorgia,Cuell,3722 Portage Center,IL,United States
+2019-04-02 00:46:38,Isomalt,70.64,instapayment,Dannie,Abramzon,1 Cardinal Point,CA,United States

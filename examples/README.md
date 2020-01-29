@@ -160,6 +160,10 @@ samples using the Core API.
 - [JMS Topic Source and Sink](jms/src/main/java/com/hazelcast/jet/examples/jms/JmsTopicSample.java)
 - [TCP/IP Socket Source](sockets/src/main/java/com/hazelcast/jet/examples/sockets/StreamTextSocket.java)
 - [TCP/IP Socket Sink](sockets/src/main/java/com/hazelcast/jet/examples/sockets/WriteTextSocket.java)
+- [CSV Batch Source](files/src/main/java/com/hazelcast/jet/examples/files/SalesCsvAnalyzer.java)
+  - use Jet to analyze sales transactions from CSV file 
+- [JSON Batch Source](files/src/main/java/com/hazelcast/jet/examples/files/SalesJsonAnalyzer.java)
+  - use Jet to analyze sales transactions from JSON file 
 - [File Batch Source](files/src/main/java/com/hazelcast/jet/examples/files/AccessLogAnalyzer.java)
   - use Jet to analyze an HTTP access log file
   - variant with [Avro serialization](files/src/main/java/com/hazelcast/jet/examples/files/avro/AvroSource.java)
