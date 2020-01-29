@@ -23,6 +23,7 @@ import com.hazelcast.log.impl.operations.ClearOperation;
 import com.hazelcast.log.impl.operations.ClearOperationFactory;
 import com.hazelcast.log.impl.operations.CountOperation;
 import com.hazelcast.log.impl.operations.CountOperationFactory;
+import com.hazelcast.log.impl.operations.PutBackupOperation;
 import com.hazelcast.log.impl.operations.PutOperation;
 import com.hazelcast.log.impl.operations.ReduceOperation;
 import com.hazelcast.log.impl.operations.SupplyOperation;
@@ -49,6 +50,8 @@ public class LogDataSerializerHook implements DataSerializerHook {
     public static final int COUNT_FACTORY = 8;
     public static final int CLEAR = 9;
     public static final int CLEAR_FACTORY = 10;
+    public static final int PUT_BACKUP = 11;
+    public static final int USAGE_INFO = 12;
 
     @Override
     public int getFactoryId() {
@@ -81,6 +84,10 @@ public class LogDataSerializerHook implements DataSerializerHook {
                     return new ClearOperation();
                 case CLEAR_FACTORY:
                     return new ClearOperationFactory();
+                case PUT_BACKUP:
+                    return new PutBackupOperation();
+                case USAGE_INFO:
+                    return new UsageInfo();
                 default:
                     throw new IllegalArgumentException();
             }

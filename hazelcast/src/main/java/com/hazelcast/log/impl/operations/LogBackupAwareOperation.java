@@ -14,11 +14,26 @@
  * limitations under the License.
  */
 
-package com.hazelcast.log;
+package com.hazelcast.log.impl.operations;
 
-import java.util.Iterator;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 
-public interface CloseableIterator<E> extends Iterator<E>  {
+public abstract class LogBackupAwareOperation extends LogOperation implements BackupAwareOperation {
 
-    void close();
+    public LogBackupAwareOperation() {
+    }
+
+    public LogBackupAwareOperation(String name) {
+        super(name);
+    }
+
+    @Override
+    public int getSyncBackupCount() {
+        return getContainer().getLogConfig().getBackupCount();
+    }
+
+    @Override
+    public int getAsyncBackupCount() {
+        return getContainer().getLogConfig().getAsyncBackupCount();
+    }
 }

@@ -32,7 +32,7 @@ public class LogTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance();
 
         Log<Long> log = hz.getLog("foo");
-        Long item = 20l;
+        Long item = 20L;
         long sequence = log.put(1, item);
         Long found = log.get(1, sequence);
         assertEquals(item, found);
@@ -49,7 +49,7 @@ public class LogTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance(config);
 
         Log<Long> log = hz.getLog(logConfig.getName());
-        Long item = 20l;
+        Long item = 20L;
         long sequence = log.put(1, item);
         Long found = log.get(1, sequence);
         assertEquals(item, found);

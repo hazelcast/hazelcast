@@ -24,7 +24,7 @@ import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 public class IntEncoder implements Encoder<Integer> {
 
     public static final IntEncoder INSTANCE = new IntEncoder();
-    private final static Unsafe UNSAFE = UnsafeUtil.UNSAFE;
+    private static final Unsafe UNSAFE = UnsafeUtil.UNSAFE;
 
     @Override
     public int encode(long address, int available, Integer l) {

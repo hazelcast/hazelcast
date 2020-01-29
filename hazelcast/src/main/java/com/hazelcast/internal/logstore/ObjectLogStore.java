@@ -37,9 +37,9 @@ public class ObjectLogStore<E> extends LogStore<E> {
         if (written < 0) {
             int required = -written;
             if (required > segmentSize) {
-                throw new IllegalStateException("Can't write object:" + o + ", object can't span multiple segments " +
-                        "it encodes to " + required + "" +
-                        "but the maximum segment size is: " + segmentSize);
+                throw new IllegalStateException("Can't write object:" + o + ", object can't span multiple segments "
+                        + "it encodes to " + required
+                        + "" + "but the maximum segment size is: " + segmentSize);
             }
             ensureCapacity(required);
 

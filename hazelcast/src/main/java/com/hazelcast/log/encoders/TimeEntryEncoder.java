@@ -24,7 +24,7 @@ import static com.hazelcast.internal.nio.Bits.DOUBLE_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.LONG_SIZE_IN_BYTES;
 
 public class TimeEntryEncoder implements Encoder<TimeSeriesEntry> {
-    private final static Unsafe UNSAFE = UnsafeUtil.UNSAFE;
+    private static final Unsafe UNSAFE = UnsafeUtil.UNSAFE;
 
     @Override
     public int encode(long address, int available, TimeSeriesEntry entry) {

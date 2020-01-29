@@ -16,22 +16,78 @@
 
 package com.hazelcast.log.impl;
 
-import java.io.Serializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-public class UsageInfo implements Serializable {
+import java.io.IOException;
 
-    public int segments;
-    public long bytesInUse;
-    public long bytesAllocated;
-    public long count;
+public class UsageInfo implements IdentifiedDataSerializable {
+
+    private int segments;
+    private long bytesInUse;
+    private long bytesAllocated;
+    private long count;
+
+    public UsageInfo() {
+    }
+
+    public UsageInfo(int segments, long bytesInUse, long bytesAllocated, long count) {
+        this.segments = segments;
+        this.bytesInUse = bytesInUse;
+        this.bytesAllocated = bytesAllocated;
+        this.count = count;
+    }
+
+    public int getSegments() {
+        return segments;
+    }
+
+    public long getBytesInUse() {
+        return bytesInUse;
+    }
+
+    public long getBytesAllocated() {
+        return bytesAllocated;
+    }
+
+    public long getCount() {
+        return count;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return LogDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return LogDataSerializerHook.USAGE_INFO;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeInt(segments);
+        out.writeLong(bytesInUse);
+        out.writeLong(bytesAllocated);
+        out.writeLong(count);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        this.segments = in.readInt();
+        this.bytesInUse = in.readLong();
+        this.bytesAllocated = in.readChar();
+        this.count = in.readLong();
+    }
 
     @Override
     public String toString() {
-        return "UsageInfo{" +
-                "count=" + count +
-                ", segments=" + segments +
-                ", bytesInUse=" + bytesInUse +
-                ", bytesAllocated=" + bytesAllocated +
-                '}';
+        return "UsageInfo{"
+                + "count=" + count
+                + ", segments=" + segments
+                + ", bytesInUse=" + bytesInUse
+                + ", bytesAllocated=" + bytesAllocated
+                + '}';
     }
 }

@@ -25,7 +25,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 public abstract class AbstractLogStoreTest extends HazelcastTestSupport {
-    public final static Unsafe UNSAFE = UnsafeUtil.UNSAFE;
+    public static final Unsafe UNSAFE = UnsafeUtil.UNSAFE;
 
     private List<LogStore> stores = new LinkedList<>();
 

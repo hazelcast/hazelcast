@@ -59,17 +59,14 @@ public class LogService implements ManagedService, MigrationAwareService, Remote
 
     @Override
     public void beforeMigration(PartitionMigrationEvent event) {
-
     }
 
     @Override
     public void commitMigration(PartitionMigrationEvent event) {
-
     }
 
     @Override
     public void rollbackMigration(PartitionMigrationEvent event) {
-
     }
 
     @Override
@@ -80,12 +77,10 @@ public class LogService implements ManagedService, MigrationAwareService, Remote
 
     @Override
     public void reset() {
-
     }
 
     @Override
     public void shutdown(boolean terminate) {
-
     }
 
     @Override
@@ -110,43 +105,43 @@ public class LogService implements ManagedService, MigrationAwareService, Remote
 
         public LogContainer getOrCreate(String name) {
             LogContainer container = containers.get(name);
-            if (container == null) {
-                LogConfig config = nodeEngine.getConfig().findLogConfig(name);
-                Class<?> type = null;
-                try {
-                    String typeName = config.getType();
-                    if (typeName != null) {
-                        if ("long".equals(typeName)) {
-                            type = Long.TYPE;
-                        } else if ("int".equals(typeName)) {
-                            type = Integer.TYPE;
-                        } else if ("byte".equals(typeName)) {
-                            type = Byte.TYPE;
-                        } else if ("double".equals(typeName)) {
-                            type = Double.TYPE;
-                        } else {
-                            type = LogServicePartition.class.getClassLoader().loadClass(typeName);
-                        }
-                    }
-                } catch (ClassNotFoundException e) {
-                    throw new RuntimeException(e);
-                }
-
-                // System.out.println("type:"+type);
-
-                LogStoreConfig storageEngineConfig = new LogStoreConfig()
-                        .setSegmentSize(config.getSegmentSize())
-                        .setMaxSegmentCount(config.getMaxSegmentCount())
-                        .setType(type)
-                        .setTenuringAgeMillis(config.getTenuringAgeMillis())
-                        .setRetentionMillis(config.getRetentionMillis())
-                        .setEncoder(config.getEncoder());
-
-                LogStore engine = LogStore.create(storageEngineConfig);
-                container = new LogContainer(name, partition, engine, nodeEngine.getSerializationService());
-                containers.put(name, container);
+            if (container != null) {
+                return container;
             }
+            LogConfig logConfig = nodeEngine.getConfig().findLogConfig(name);
+            Class<?> type = loadType(logConfig);
+            LogStoreConfig storageEngineConfig = new LogStoreConfig()
+                    .setSegmentSize(logConfig.getSegmentSize())
+                    .setMaxSegmentCount(logConfig.getMaxSegmentCount())
+                    .setType(type)
+                    .setTenuringAgeMillis(logConfig.getTenuringAgeMillis())
+                    .setRetentionMillis(logConfig.getRetentionMillis())
+                    .setEncoder(logConfig.getEncoder());
+
+            LogStore<?> engine = LogStore.create(storageEngineConfig);
+            container = new LogContainer(name, partition, engine, nodeEngine.getSerializationService(), logConfig);
+            containers.put(name, container);
             return container;
+        }
+
+        private Class<?> loadType(LogConfig logConfig) {
+            String typeName = logConfig.getType();
+            try {
+                if ("long".equals(typeName)) {
+                    return Long.TYPE;
+                } else if ("int".equals(typeName)) {
+                    return Integer.TYPE;
+                } else if ("byte".equals(typeName)) {
+                    return Byte.TYPE;
+                } else if ("double".equals(typeName)) {
+                    return Double.TYPE;
+                } else {
+                    // todo:not sure if the right classloader is being used here.
+                    return LogServicePartition.class.getClassLoader().loadClass(typeName);
+                }
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 }

@@ -1428,7 +1428,7 @@ public class Config {
         return this;
     }
 
-    public Map<String,LogConfig> getLogConfigs(){
+    public Map<String, LogConfig> getLogConfigs() {
         return logConfigs;
     }
 

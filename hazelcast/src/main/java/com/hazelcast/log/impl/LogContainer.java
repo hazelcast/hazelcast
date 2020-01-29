@@ -16,27 +16,33 @@
 
 package com.hazelcast.log.impl;
 
+import com.hazelcast.config.LogConfig;
 import com.hazelcast.internal.logstore.LogStore;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.log.CloseableIterator;
 import com.hazelcast.log.encoders.HeapDataEncoder;
 
-import java.io.IOException;
 import java.util.function.BinaryOperator;
 import java.util.function.Supplier;
 
 public class LogContainer {
     private final SerializationService serializationService;
+    private final LogConfig logConfig;
     private String name;
     private int partition;
     private LogStore logStorage;
 
-    public LogContainer(String name, int partition, LogStore logStorage, SerializationService ss) {
+    public LogContainer(String name, int partition, LogStore logStorage, SerializationService ss, LogConfig logConfig) {
         this.name = name;
         this.partition = partition;
         this.logStorage = logStorage;
         this.serializationService = ss;
+        this.logConfig = logConfig;
+    }
+
+    public LogConfig getLogConfig() {
+        return logConfig;
     }
 
     public Object get(long sequence) {
@@ -72,12 +78,11 @@ public class LogContainer {
     }
 
     public UsageInfo usage() {
-        UsageInfo usageInfo = new UsageInfo();
-        usageInfo.segments = logStorage.segmentCount();
-        usageInfo.bytesInUse = logStorage.bytesInUse();
-        usageInfo.bytesAllocated = logStorage.bytesAllocated();
-        usageInfo.count = logStorage.count();
-        return usageInfo;
+        return new UsageInfo(
+                logStorage.segmentCount(),
+                logStorage.bytesInUse(),
+                logStorage.bytesAllocated(),
+                logStorage.count());
     }
 
     public int segmentCount() {
@@ -97,7 +102,7 @@ public class LogContainer {
     }
 
     public CloseableIterator iterator() {
-       return logStorage.iterator();
+        return logStorage.iterator();
     }
 
 

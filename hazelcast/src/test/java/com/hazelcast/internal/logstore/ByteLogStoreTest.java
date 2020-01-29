@@ -25,7 +25,6 @@ import static org.junit.Assert.assertNotEquals;
 
 public class ByteLogStoreTest extends AbstractLogStoreTest {
 
-
     @Test
     public void testWriteByte() {
         ByteLogStore store = createByteLogStore(new LogStoreConfig());

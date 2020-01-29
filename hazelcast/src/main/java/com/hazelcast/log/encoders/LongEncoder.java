@@ -24,7 +24,7 @@ import static com.hazelcast.internal.nio.Bits.LONG_SIZE_IN_BYTES;
 public class LongEncoder implements Encoder<Long> {
 
     public static final LongEncoder INSTANCE = new LongEncoder();
-    private final static Unsafe UNSAFE = UnsafeUtil.UNSAFE;
+    private static final Unsafe UNSAFE = UnsafeUtil.UNSAFE;
 
     @Override
     public int encode(long address, int available, Long l) {

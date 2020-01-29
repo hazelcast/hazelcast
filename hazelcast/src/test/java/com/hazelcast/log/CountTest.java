@@ -31,7 +31,7 @@ public class CountTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance();
 
         Log<String> log = hz.getLog("foo");
-        assertEquals(0l, log.count());
+        assertEquals(0L, log.count());
     }
 
     @Test

@@ -26,7 +26,7 @@ public class DoubleEncoder implements Encoder<Double> {
 
     public static final DoubleEncoder INSTANCE = new DoubleEncoder();
 
-    private final static Unsafe UNSAFE = UnsafeUtil.UNSAFE;
+    private static final Unsafe UNSAFE = UnsafeUtil.UNSAFE;
 
     @Override
     public int encode(long address, int available, Double l) {

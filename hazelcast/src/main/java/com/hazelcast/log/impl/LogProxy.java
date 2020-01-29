@@ -22,7 +22,6 @@ import com.hazelcast.log.CloseableIterator;
 import com.hazelcast.log.Log;
 import com.hazelcast.log.impl.operations.ClearOperation;
 import com.hazelcast.log.impl.operations.ClearOperationFactory;
-import com.hazelcast.log.impl.operations.CountOperation;
 import com.hazelcast.log.impl.operations.CountOperationFactory;
 import com.hazelcast.log.impl.operations.GetOperation;
 import com.hazelcast.log.impl.operations.PutOperation;
@@ -170,15 +169,19 @@ public class LogProxy<E> extends AbstractDistributedObject<LogService> implement
         try {
             Map<Integer, Object> results = getOperationService()
                     .invokeOnAllPartitions(LogService.SERVICE_NAME, new UsageOperationFactory(name));
-            UsageInfo usageInfo = new UsageInfo();
+            int segments = 0;
+            long bytesInUse = 0;
+            long bytesAllocated = 0;
+            long count = 0;
+
             for (Object o : results.values()) {
                 UsageInfo t = (UsageInfo) o;
-                usageInfo.count += t.count;
-                usageInfo.bytesInUse += t.bytesInUse;
-                usageInfo.bytesAllocated += t.bytesAllocated;
-                usageInfo.segments += t.segments;
+                count += t.getCount();
+                bytesInUse += t.getBytesInUse();
+                bytesAllocated += t.getBytesAllocated();
+                segments += t.getSegments();
             }
-            return usageInfo;
+            return new UsageInfo(segments, bytesInUse, bytesAllocated, count);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -221,7 +224,7 @@ public class LogProxy<E> extends AbstractDistributedObject<LogService> implement
     @Override
     public CloseableIterator<E> localIterator(final int partitionId) {
         checkPartitionId(partitionId);
-        
+
         OperationService operationService = getOperationService();
         final AtomicReference ref = new AtomicReference();
         operationService.execute(new PartitionSpecificRunnable() {

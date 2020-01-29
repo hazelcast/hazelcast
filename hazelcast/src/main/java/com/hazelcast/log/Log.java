@@ -19,14 +19,12 @@ package com.hazelcast.log;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.log.impl.UsageInfo;
 
-import java.util.Iterator;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BinaryOperator;
 import java.util.function.Supplier;
 
 /**
- *
  * https://engineering.linkedin.com/distributed-systems/log-what-every-software-engineer-should-know-about-real-time-datas-unifying
  *
  * @param <E>

@@ -24,8 +24,8 @@ import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 public class ByteArrayEncoder implements Encoder<byte[]> {
     public static final ByteArrayEncoder INSTANCE = new ByteArrayEncoder();
 
-    private final static Unsafe UNSAFE = UnsafeUtil.UNSAFE;
-    private final static long BASE_OFFSET = UNSAFE.arrayBaseOffset(byte[].class);
+    private static final Unsafe UNSAFE = UnsafeUtil.UNSAFE;
+    private static final long BASE_OFFSET = UNSAFE.arrayBaseOffset(byte[].class);
 
     @Override
     public int encode(long address, int available, byte[] b) {

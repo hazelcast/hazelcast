@@ -24,7 +24,7 @@ import java.util.UUID;
 import static com.hazelcast.internal.nio.Bits.LONG_SIZE_IN_BYTES;
 
 public class UUIDEncoder implements Encoder<UUID> {
-    private final static Unsafe UNSAFE = UnsafeUtil.UNSAFE;
+    private static final Unsafe UNSAFE = UnsafeUtil.UNSAFE;
 
     @Override
     public int encode(long address, int available, UUID uuid) {

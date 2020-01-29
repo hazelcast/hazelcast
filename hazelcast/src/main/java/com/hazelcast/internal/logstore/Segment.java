@@ -30,13 +30,12 @@ import static java.util.concurrent.atomic.AtomicIntegerFieldUpdater.newUpdater;
  */
 class Segment {
 
-    private final static AtomicIntegerFieldUpdater<Segment> OWNERS = newUpdater(Segment.class, "owners");
-    private final static Unsafe UNSAFE = UnsafeUtil.UNSAFE;
+    private static final AtomicIntegerFieldUpdater<Segment> OWNERS = newUpdater(Segment.class, "owners");
+    private static final Unsafe UNSAFE = UnsafeUtil.UNSAFE;
 
     volatile Segment next;
     volatile Segment prev;
     volatile int owners = 1;
-
 
     final long address;
     final int limit;
@@ -90,7 +89,7 @@ class Segment {
     public void release() {
         for (; ; ) {
             int oldOwners = owners;
-            if(oldOwners == 0){
+            if (oldOwners == 0) {
                 throw new IllegalStateException();
             }
 
@@ -106,6 +105,4 @@ class Segment {
             }
         }
     }
-
-
 }

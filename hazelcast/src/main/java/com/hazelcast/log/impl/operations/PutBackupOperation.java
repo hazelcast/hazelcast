@@ -21,22 +21,20 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.log.impl.LogContainer;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
-import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.BackupOperation;
 
 import java.io.IOException;
 
-import static com.hazelcast.log.impl.LogDataSerializerHook.PUT;
+import static com.hazelcast.log.impl.LogDataSerializerHook.PUT_BACKUP;
 
-public class PutOperation extends LogBackupAwareOperation implements BackupAwareOperation {
+public class PutBackupOperation extends LogOperation implements BackupOperation {
 
     private Data data;
-    private long result;
 
-    public PutOperation() {
+    public PutBackupOperation() {
     }
 
-    public PutOperation(String name, Data data) {
+    public PutBackupOperation(String name, Data data) {
         super(name);
         this.data = data;
     }
@@ -44,39 +42,25 @@ public class PutOperation extends LogBackupAwareOperation implements BackupAware
     @Override
     public void run() throws Exception {
         LogContainer container = getContainer();
-        result = container.put(data);
-    }
-
-    @Override
-    public boolean shouldBackup() {
-        return true;
-    }
-
-
-    @Override
-    public Operation getBackupOperation() {
-        return new PutBackupOperation(getName(), data);
-    }
-
-    @Override
-    public Long getResponse() {
-        return result;
+        container.put(data);
     }
 
     @Override
     public int getClassId() {
-        return PUT;
+        return PUT_BACKUP;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
+
         IOUtil.writeData(out, data);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
+
         data = IOUtil.readData(in);
     }
 }

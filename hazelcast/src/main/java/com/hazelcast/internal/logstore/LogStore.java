@@ -30,22 +30,8 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public abstract class LogStore<E> {
 
-    public static LogStore create(LogStoreConfig config) {
-        Class type = config.getType();
-        if (Byte.TYPE.equals(type)) {
-            return new ByteLogStore(config);
-        } else if (Integer.TYPE.equals(type)) {
-            return new IntLogStore(config);
-        } else if (Long.TYPE.equals(type)) {
-            return new LongLogStore(config);
-        } else if (Double.TYPE.equals(type)) {
-            return new DoubleLogStore(config);
-        } else {
-            return new ObjectLogStore(config);
-        }
-    }
+    protected static final Unsafe UNSAFE = UnsafeUtil.UNSAFE;
 
-    protected final static Unsafe UNSAFE = UnsafeUtil.UNSAFE;
     protected final LogStoreConfig config;
     protected final Eden eden;
     protected final MemoryAllocator allocator;
@@ -74,6 +60,21 @@ public abstract class LogStore<E> {
                 ? Long.MAX_VALUE
                 : MILLISECONDS.toNanos(config.getRetentionMillis());
 
+    }
+
+    public static LogStore create(LogStoreConfig config) {
+        Class type = config.getType();
+        if (Byte.TYPE.equals(type)) {
+            return new ByteLogStore(config);
+        } else if (Integer.TYPE.equals(type)) {
+            return new IntLogStore(config);
+        } else if (Long.TYPE.equals(type)) {
+            return new LongLogStore(config);
+        } else if (Double.TYPE.equals(type)) {
+            return new DoubleLogStore(config);
+        } else {
+            return new ObjectLogStore(config);
+        }
     }
 
     protected void updateEdenTime() {
