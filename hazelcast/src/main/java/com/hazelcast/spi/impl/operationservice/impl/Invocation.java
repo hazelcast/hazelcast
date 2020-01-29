@@ -17,6 +17,7 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.client.impl.ClientBackupAwareResponse;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
@@ -34,7 +35,6 @@ import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.internal.util.executor.ManagedExecutorService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.exception.ResponseAlreadySentException;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.RetryableIOException;
@@ -593,11 +593,20 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
 
     private void doInvokeRemote() {
         assert endpointManager != null : "Endpoint manager was null";
+
         Connection connection = endpointManager.getOrConnect(targetAddress);
         this.connection = connection;
         if (!context.outboundOperationHandler.send(op, connection)) {
-            notifyError(new RetryableIOException("Packet not sent to -> " + targetAddress + " over " + connection));
+            notifyError(new RetryableIOException(getPacketNotSentMessage(connection)));
         }
+    }
+
+    private String getPacketNotSentMessage(Connection connection) {
+        if (connection == null) {
+            return "Packet not sent to -> " + targetAddress + ", there is no available connection";
+        }
+
+        return "Packet not sent to -> " + targetAddress + " over " + connection;
     }
 
     private EndpointManager getEndpointManager(EndpointManager endpointManager) {
