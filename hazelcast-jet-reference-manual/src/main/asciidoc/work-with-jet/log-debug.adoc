@@ -164,11 +164,11 @@ N is the number of the cooperative thread.
 [[job-metrics]]
 === Jet Job metrics ===
 
-All job specific metrics have their `{jet-javadoc}/core/metrics/MetricTags.html#JOB[job=<jobId>]`,
-`{jet-javadoc}/core/metrics/MetricTags.html#EXECUTION[exec=<executionId>]` and
-`{jet-javadoc}/core/metrics/MetricTags.html#VERTEX[vertex=<vertexName>]` tags set. This means
-that all these metrics will have at least one instance for each vertex of each current job
-execution.
+All job specific metrics have their `{jet-javadoc}/core/metrics/MetricTags.html#JOB[job=<jobId>]` and
+`{jet-javadoc}/core/metrics/MetricTags.html#EXECUTION[exec=<executionId>]` tags set and most also
+have the `{jet-javadoc}/core/metrics/MetricTags.html#VERTEX[vertex=<vertexName>]` tag set (with
+very few exceptions). This means that most of these metrics will have at least one instance for each
+vertex of each current job execution.
 
 Additionally, if the vertex sourcing them is a data source or data sink, then the
 `{jet-javadoc}/core/metrics/MetricTags.html#SOURCE[source]` or
@@ -178,9 +178,16 @@ Additionally, if the vertex sourcing them is a data source or data sink, then th
 |===
 |Names|Extra tags
 
+|**executionStartTime**: Start time of the current execution of the job. +
+**executionCompletionTime**: Completion time of the current execution of the job. +
+
+Both contain epoch time in milliseconds.
+|** no extra tags, they are even missing `vertex`** +
+There will be a single instance of these metrics for each job execution.
+
 |**snapshotBytes**: Total number of bytes written out in the last snapshot. +
 **snapshotKeys**: Total number of keys written out in the last snapshot.
-|**none** +
+|**no extra tags** +
 There will be a single instance of these metrics for each vertex.
 
 |**distributedBytesIn**: Total number of bytes received from remote

@@ -39,7 +39,8 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import javax.annotation.Nonnull;
-import java.util.Collections;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Function;
@@ -129,7 +130,8 @@ public class JobMetrics_MiscTest extends TestInClusterSupport {
             assertContains(e.toString(), expected.toString());
         }
 
-        assertEquals(Collections.singleton(MetricNames.EXECUTION_COMPLETION_TIME), job.getMetrics().metrics());
+        assertEquals(new HashSet<>(Arrays.asList(MetricNames.EXECUTION_START_TIME, MetricNames.EXECUTION_COMPLETION_TIME)),
+                        job.getMetrics().metrics());
     }
 
     @Test

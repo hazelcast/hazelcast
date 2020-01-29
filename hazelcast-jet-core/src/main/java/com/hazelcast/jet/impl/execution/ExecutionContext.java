@@ -71,8 +71,8 @@ public class ExecutionContext implements DynamicMetricsProvider {
     private final Set<Address> participants;
     private final Object executionLock = new Object();
     private final ILogger logger;
-    private final Counter startTime = MwCounter.newMwCounter();
-    private final Counter completionTime = MwCounter.newMwCounter();
+    private final Counter startTime = MwCounter.newMwCounter(-1);
+    private final Counter completionTime = MwCounter.newMwCounter(-1);
 
     // key: resource identifier
     // we use ConcurrentHashMap because ConcurrentMap doesn't guarantee that computeIfAbsent
@@ -320,15 +320,8 @@ public class ExecutionContext implements DynamicMetricsProvider {
         descriptor = descriptor.withTag(MetricTags.JOB, idToString(jobId))
                                .withTag(MetricTags.EXECUTION, idToString(executionId));
 
-        long executionStartTime = startTime.get();
-        if (executionStartTime > 0) {
-            context.collect(descriptor, EXECUTION_START_TIME, ProbeLevel.INFO, ProbeUnit.MS, executionStartTime);
-        }
-
-        long executionCompletionTime = completionTime.get();
-        if (executionCompletionTime > 0) {
-            context.collect(descriptor, EXECUTION_COMPLETION_TIME, ProbeLevel.INFO, ProbeUnit.MS, executionCompletionTime);
-        }
+        context.collect(descriptor, EXECUTION_START_TIME, ProbeLevel.INFO, ProbeUnit.MS, startTime.get());
+        context.collect(descriptor, EXECUTION_COMPLETION_TIME, ProbeLevel.INFO, ProbeUnit.MS, completionTime.get());
 
         for (Tasklet tasklet : tasklets) {
             tasklet.provideDynamicMetrics(descriptor.copy(), context);
