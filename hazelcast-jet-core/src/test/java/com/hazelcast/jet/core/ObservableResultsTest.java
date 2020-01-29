@@ -564,6 +564,26 @@ public class ObservableResultsTest extends TestInClusterSupport {
         assertTrue(activeObservables.containsAll(Arrays.asList("a", "c")));
     }
 
+    @Test
+    public void createAndDestroyObservableRepeatedly() {
+        Pipeline pipeline = Pipeline.create();
+        pipeline.readFrom(TestSources.items(0L, 1L, 2L, 3L, 4L))
+                .writeTo(Sinks.observable("repeatedObservable"));
+
+        for (int i = 0; i < 20; i++) {
+            TestObserver repeatedTestObserver = new TestObserver();
+            Observable<Long> repeatedObservable = getObservable("repeatedObservable");
+            repeatedObservable.addObserver(repeatedTestObserver);
+            //when
+            jet().newJob(pipeline).join();
+            //then
+            assertSortedValues(repeatedTestObserver, 0L, 1L, 2L, 3L, 4L);
+            assertError(repeatedTestObserver, null);
+            assertCompletions(repeatedTestObserver, 1);
+            repeatedObservable.destroy();
+        }
+    }
+
     private void assertExecutionStarted(Job job) {
         assertTrueEventually(() -> assertTrue(JobStatus.RUNNING.equals(job.getStatus())
                 || JobStatus.COMPLETED.equals(job.getStatus())));
