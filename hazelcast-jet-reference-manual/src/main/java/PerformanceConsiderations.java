@@ -15,7 +15,6 @@
  */
 
 import com.hazelcast.config.SerializerConfig;
-import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.EdgeConfig;
@@ -106,8 +105,8 @@ public class PerformanceConsiderations {
         Pipeline p = Pipeline.create();
         BatchStage<Long> src = p.readFrom(Sources.list("input"));
         ServiceFactory<?, DateTimeFormatter> serviceFactory = nonSharedService( // <1>
-                () -> DateTimeFormatter.ofPattern("HH:mm:ss.SSS")
-                                      .withZone(ZoneId.systemDefault()), ConsumerEx.noop());
+                pctx -> DateTimeFormatter.ofPattern("HH:mm:ss.SSS")
+                                      .withZone(ZoneId.systemDefault()));
         src.mapUsingService(serviceFactory, // <2>
                 (formatter, tstamp) -> formatter.format(Instant.ofEpochMilli(tstamp))); // <3>
         //end::s8[]

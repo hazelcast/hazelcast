@@ -17,7 +17,7 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.function.ConsumerEx;
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JetConfig;
@@ -75,18 +75,18 @@ public class ManagedContextTest extends JetTestSupport {
 
     @Test
     public void when_managedContextSet_then_serviceContextInitialized() {
-        testServices(TestServiceContext::new);
+        testServices(pctx -> new TestServiceContext());
     }
 
     @Test
     public void when_managedContextSet_then_differentServiceContextReturnedFromContext() {
-        testServices(AnotherTestServiceContext::new);
+        testServices(pctx -> new AnotherTestServiceContext());
     }
 
-    private void testServices(SupplierEx<? extends AnotherTestServiceContext> serviceSupplier) {
+    private void testServices(FunctionEx<ProcessorSupplier.Context, ? extends AnotherTestServiceContext> serviceSupplier) {
         // Given
         ServiceFactory<?, ? extends AnotherTestServiceContext> serviceFactory =
-                ServiceFactories.sharedService(serviceSupplier, ConsumerEx.noop());
+                ServiceFactories.sharedService(serviceSupplier);
         Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items("item"))
          .mapUsingService(serviceFactory, (c, item) -> item + c.injectedValue)

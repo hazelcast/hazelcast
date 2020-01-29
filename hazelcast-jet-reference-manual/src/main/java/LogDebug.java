@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
@@ -104,7 +103,7 @@ public class LogDebug {
         p.readFrom(TestSources.items(0, 1, 2, 3))
             //tag::s6[]
             .filterUsingServiceAsync(
-                nonSharedService(() -> 0L, ConsumerEx.noop()),
+                nonSharedService(pctx -> 0L),
                 (ctx, l) -> CompletableFuture.supplyAsync(
                     () -> {
                         boolean pass = l % 2L == ctx;
@@ -124,7 +123,7 @@ public class LogDebug {
         p.readFrom(TestSources.items(0, 1, 2, 3))
             //tag::s7[]
             .filterUsingServiceAsync(
-                nonSharedService(() -> "foo", ConsumerEx.noop()),
+                nonSharedService(pctx -> "foo"),
                 (ctx, item) -> {
                     // need to use thread-safe metric since it will be mutated for another thread
                     Metric dropped = Metrics.threadSafeMetric("dropped", Unit.COUNT);

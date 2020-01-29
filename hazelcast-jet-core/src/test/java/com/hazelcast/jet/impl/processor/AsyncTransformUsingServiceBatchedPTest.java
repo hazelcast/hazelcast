@@ -17,7 +17,6 @@
 package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.function.BiFunctionEx;
-import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.Traverser;
@@ -54,7 +53,7 @@ public class AsyncTransformUsingServiceBatchedPTest extends SimpleTestInClusterS
     private ProcessorSupplier getSupplier(BiFunctionEx<? super String, ? super List<String>,
                             CompletableFuture<Traverser<String>>> mapFn
     ) {
-        ServiceFactory<?, String> serviceFactory = ServiceFactories.nonSharedService(() -> "foo", ConsumerEx.noop());
+        ServiceFactory<?, String> serviceFactory = ServiceFactories.nonSharedService(pctx -> "foo");
         return flatMapUsingServiceAsyncBatchedP(serviceFactory, 128, mapFn);
     }
 

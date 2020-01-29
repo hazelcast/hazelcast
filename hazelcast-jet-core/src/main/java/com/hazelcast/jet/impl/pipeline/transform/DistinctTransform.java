@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.impl.pipeline.transform;
 
-import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
@@ -51,7 +50,7 @@ public class DistinctTransform<T, K> extends AbstractTransform {
 
     @SuppressWarnings("unchecked")
     private static <T, K> ProcessorSupplier distinctP(FunctionEx<? super T, ? extends K> keyFn) {
-        return filterUsingServiceP(nonSharedService(HashSet::new, ConsumerEx.noop()),
+        return filterUsingServiceP(nonSharedService(pctx -> new HashSet<>()),
                 (seenItems, item) -> seenItems.add(keyFn.apply((T) item)));
     }
 }

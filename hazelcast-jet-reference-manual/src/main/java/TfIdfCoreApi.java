@@ -15,7 +15,6 @@
  */
 
 import com.hazelcast.function.BiFunctionEx;
-import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Util;
@@ -86,7 +85,7 @@ public class TfIdfCoreApi {
 
         //tag::s5[]
         Vertex docLines = dag.newVertex("doc-lines", flatMapUsingServiceP(
-                ServiceFactories.nonSharedService(() -> null, ConsumerEx.noop()).toNonCooperative(),
+                ServiceFactories.nonSharedService(pctx -> null).toNonCooperative(),
                 (Object ctx, Entry<Long, String> e) ->
                 traverseStream(docLines("books/" + e.getValue())
                     .map(line -> entry(e.getKey(), line)))));

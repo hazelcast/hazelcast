@@ -17,7 +17,6 @@
 package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.function.BiFunctionEx;
-import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
@@ -80,7 +79,7 @@ public class AsyncTransformUsingServicePTest extends SimpleTestInClusterSupport 
             BiFunctionEx<? super String, ? super String, CompletableFuture<Traverser<String>>> mapFn
     ) {
         ServiceFactory<?, String> serviceFactory = ServiceFactories
-                .nonSharedService(() -> "foo", ConsumerEx.noop())
+                .nonSharedService(pctx -> "foo")
                 .withMaxPendingCallsPerProcessor(maxPendingCalls);
         if (!ordered) {
             serviceFactory = serviceFactory.withUnorderedAsyncResponses();

@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.core.metrics;
 
-import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.JetInstance;
@@ -194,7 +193,7 @@ public class MetricsTest extends JetTestSupport {
         pipeline.readFrom(TestSources.items(inputs))
                 .addTimestamps(i -> i, 0L)
                 .filterUsingServiceAsync(
-                        nonSharedService(() -> 0L, ConsumerEx.noop()),
+                        nonSharedService(pctx -> 0L),
                         (ctx, l) -> {
                             Metric dropped = Metrics.threadSafeMetric("dropped");
                             Metric total = Metrics.threadSafeMetric("total");

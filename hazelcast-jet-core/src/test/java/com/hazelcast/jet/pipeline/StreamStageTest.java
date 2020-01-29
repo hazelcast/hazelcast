@@ -17,7 +17,6 @@
 package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.function.BiFunctionEx;
-import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
 import com.hazelcast.jet.Traversers;
@@ -371,7 +370,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
 
         // When
         StreamStage<String> mapped = streamStageFromList(input).mapUsingService(
-                sharedService(() -> suffix, ConsumerEx.noop()),
+                sharedService(pctx -> suffix),
                 formatFn
         );
 
@@ -386,7 +385,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
     @Test
     public void mapUsingServiceAsync() {
         ServiceFactory<?, ScheduledExecutorService> serviceFactory = sharedService(
-                () -> Executors.newScheduledThreadPool(8), ExecutorService::shutdown
+                pctx -> Executors.newScheduledThreadPool(8), ExecutorService::shutdown
         );
 
         // Given
@@ -416,7 +415,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
     @Test
     public void mapUsingServiceAsyncBatched() {
         ServiceFactory<?, ScheduledExecutorService> serviceFactory = sharedService(
-                () -> Executors.newScheduledThreadPool(8), ExecutorService::shutdown
+                pctx -> Executors.newScheduledThreadPool(8), ExecutorService::shutdown
         );
 
         // Given
@@ -457,7 +456,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         StreamStage<String> mapped = streamStageFromList(input)
                 .groupingKey(i -> i)
                 .mapUsingService(
-                        sharedService(() -> suffix, ConsumerEx.noop()),
+                        sharedService(pctx -> suffix),
                         (suff, k, i) -> formatFn.apply(suff, i)
                 );
 
@@ -479,7 +478,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         // When
         StreamStage<Integer> mapped = streamStageFromList(input)
                 .filterUsingService(
-                        ServiceFactories.sharedService(() -> acceptedRemainder, ConsumerEx.noop()),
+                        ServiceFactories.sharedService(pctx -> acceptedRemainder),
                         (rem, i) -> i % 2 == rem
                 );
 
@@ -502,7 +501,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         StreamStage<Integer> mapped = streamStageFromList(input)
                 .groupingKey(i -> i)
                 .filterUsingService(
-                        ServiceFactories.sharedService(() -> acceptedRemainder, ConsumerEx.noop()),
+                        ServiceFactories.sharedService(pctx -> acceptedRemainder),
                         (rem, k, i) -> i % 2 == rem
                 );
 
@@ -524,7 +523,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         // When
         StreamStage<String> flatMapped = streamStageFromList(input)
                 .flatMapUsingService(
-                        ServiceFactories.sharedService(() -> flatMapFn, ConsumerEx.noop()),
+                        ServiceFactories.sharedService(pctx -> flatMapFn),
                         (fn, i) -> traverseStream(fn.apply(i))
                 );
 
@@ -547,7 +546,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         StreamStage<String> flatMapped = streamStageFromList(input)
                 .groupingKey(i -> i)
                 .flatMapUsingService(
-                        ServiceFactories.sharedService(() -> flatMapFn, ConsumerEx.noop()),
+                        ServiceFactories.sharedService(pctx -> flatMapFn),
                         (fn, k, i) -> traverseStream(fn.apply(i))
                 );
 
@@ -1194,7 +1193,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         StreamStage<Object> custom = streamStageFromList(input)
                 .groupingKey(extractKeyFn)
                 .customTransform("map", Processors.mapUsingServiceP(
-                        nonSharedService(HashSet::new, ConsumerEx.noop()),
+                        nonSharedService(pctx -> new HashSet<>()),
                         (Set<Integer> seen, JetEvent<Integer> jetEvent) -> {
                             Integer key = extractKeyFn.apply(jetEvent.payload());
                             return seen.add(key) ? jetEvent(jetEvent.timestamp(), key) : null;

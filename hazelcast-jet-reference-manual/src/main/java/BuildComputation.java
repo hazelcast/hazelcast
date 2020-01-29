@@ -449,14 +449,14 @@ class BuildComputation {
     static void s16a() {
         //tag::s16a[]
         ServiceFactory<?, IMap<String, StockInfo>> ctxFac = ServiceFactories.sharedService(
-                () -> {
+                pctx -> {
                     ClientConfig cc = new ClientConfig();
                     cc.getNearCacheConfigMap().put("stock-info",
                             new NearCacheConfig());
                     HazelcastInstance client = newHazelcastClient(cc);
                     IMap<String, StockInfo> map = client.getMap("stock-info");
                     return map;
-                }, ConsumerEx.noop());
+                });
         StreamSource<Trade> tradesSource = Sources.mapJournal("trades",
                 START_FROM_CURRENT, mapEventNewValue(), mapPutEvents());
 

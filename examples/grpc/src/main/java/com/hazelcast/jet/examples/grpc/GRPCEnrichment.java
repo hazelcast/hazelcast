@@ -109,12 +109,12 @@ public final class GRPCEnrichment {
                 .map(entryValue());
 
         ServiceFactory<?, ProductServiceFutureStub> productService = sharedService(
-                () -> ProductServiceGrpc.newFutureStub(getLocalChannel()),
+                pctx -> ProductServiceGrpc.newFutureStub(getLocalChannel()),
                 stub -> shutdownClient(stub)
         );
 
         ServiceFactory<?, BrokerServiceFutureStub> brokerService = sharedService(
-                () -> BrokerServiceGrpc.newFutureStub(getLocalChannel()),
+                pctx -> BrokerServiceGrpc.newFutureStub(getLocalChannel()),
                 stub -> shutdownClient(stub)
         );
 

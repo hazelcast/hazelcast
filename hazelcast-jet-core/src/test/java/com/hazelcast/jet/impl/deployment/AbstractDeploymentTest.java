@@ -25,6 +25,7 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.impl.deployment.LoadResource.LoadResourceMetaSupplier;
 import com.hazelcast.jet.pipeline.Pipeline;
+import com.hazelcast.jet.pipeline.ServiceFactories;
 import com.hazelcast.jet.pipeline.ServiceFactory;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.test.TestSources;
@@ -161,9 +162,7 @@ public abstract class AbstractDeploymentTest extends SimpleTestInClusterSupport 
         String dirToAttach = Paths.get(this.getClass().getResource("/deployment").toURI()).toString();
 
         pipeline.readFrom(TestSources.items(1))
-                .flatMapUsingService(ServiceFactory.withCreateContextFn(context ->
-                                context.attachedDirectory(dirToAttach))
-                                                   .withCreateServiceFn((context, file) -> file),
+                .flatMapUsingService(ServiceFactories.sharedService(context -> context.attachedDirectory(dirToAttach)),
                         (file, integer) -> Traversers.traverseStream(Files.list(file.toPath()).map(Path::toString)))
                 .apply(assertCollected(c -> {
                     c.forEach(s -> assertTrue(new File(s).exists()));

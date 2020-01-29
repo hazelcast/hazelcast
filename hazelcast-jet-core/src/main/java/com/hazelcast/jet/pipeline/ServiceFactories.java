@@ -19,7 +19,8 @@ package com.hazelcast.jet.pipeline;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.function.SupplierEx;
+import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.map.IMap;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 
@@ -64,8 +65,7 @@ public final class ServiceFactories {
      */
     @Nonnull
     public static <K, V> ServiceFactory<?, ReplicatedMap<K, V>> replicatedMapService(@Nonnull String mapName) {
-        return ServiceFactory.withCreateContextFn(ctx -> ctx.jetInstance().<K, V>getReplicatedMap(mapName))
-                             .withCreateServiceFn((ctx, map) -> map);
+        return ServiceFactories.sharedService(ctx -> ctx.jetInstance().getReplicatedMap(mapName));
     }
 
     /**
@@ -91,8 +91,21 @@ public final class ServiceFactories {
      */
     @Nonnull
     public static <K, V> ServiceFactory<?, IMap<K, V>> iMapService(@Nonnull String mapName) {
-        return ServiceFactory.withCreateContextFn(ctx -> ctx.jetInstance().<K, V>getMap(mapName))
-                             .withCreateServiceFn((ctx, map) -> map);
+        return ServiceFactories.sharedService(ctx -> ctx.jetInstance().getMap(mapName));
+    }
+
+    /**
+     * A variant of {@link #sharedService(FunctionEx, ConsumerEx)
+     * sharedService(createFn, destroyFn)} with a no-op {@code
+     * destroyFn}.
+     *
+     * @since 4.0
+     */
+    @Nonnull
+    public static <S> ServiceFactory<?, S> sharedService(
+            @Nonnull FunctionEx<? super ProcessorSupplier.Context, S> createServiceFn
+    ) {
+        return sharedService(createServiceFn, ConsumerEx.noop());
     }
 
     /**
@@ -109,15 +122,29 @@ public final class ServiceFactories {
      *                         service.
      * @param <S> type of the service object
      *
-     * @see #nonSharedService(SupplierEx, ConsumerEx)
+     * @see #nonSharedService(FunctionEx, ConsumerEx)
      */
     public static <S> ServiceFactory<?, S> sharedService(
-            @Nonnull SupplierEx<S> createServiceFn,
+            @Nonnull FunctionEx<? super ProcessorSupplier.Context, S> createServiceFn,
             @Nonnull ConsumerEx<S> destroyServiceFn
     ) {
-        return ServiceFactory.withCreateContextFn(c -> createServiceFn.get())
+        return ServiceFactory.withCreateContextFn(c -> createServiceFn.apply(c))
                              .withCreateServiceFn((ctx, c) -> c)
                              .withDestroyContextFn(destroyServiceFn);
+    }
+
+    /**
+     * A variant of {@link #nonSharedService(FunctionEx, ConsumerEx)
+     * nonSharedService(createFn, destroyFn)} with a no-op {@code
+     * destroyFn}.
+     *
+     * @since 4.0
+     */
+    @Nonnull
+    public static <S> ServiceFactory<?, S> nonSharedService(
+            @Nonnull FunctionEx<? super Processor.Context, ? extends S> createServiceFn
+    ) {
+        return nonSharedService(createServiceFn, ConsumerEx.noop());
     }
 
     /**
@@ -135,15 +162,14 @@ public final class ServiceFactories {
      *
      * @param <S> type of the service object
      *
-     * @see #sharedService(SupplierEx, ConsumerEx)
+     * @see #sharedService(FunctionEx, ConsumerEx)
      */
     public static <S> ServiceFactory<?, S> nonSharedService(
-            @Nonnull SupplierEx<? extends S> createServiceFn,
+            @Nonnull FunctionEx<? super Processor.Context, ? extends S> createServiceFn,
             @Nonnull ConsumerEx<? super S> destroyServiceFn
     ) {
         return ServiceFactory.<Void>withCreateContextFn(c -> null)
-                .<S>withCreateServiceFn((ctx, c) -> createServiceFn.get())
-                .withDestroyServiceFn(destroyServiceFn)
-                .withDestroyContextFn(ConsumerEx.noop());
+                .<S>withCreateServiceFn((ctx, c) -> createServiceFn.apply(ctx))
+                .withDestroyServiceFn(destroyServiceFn);
     }
 }
