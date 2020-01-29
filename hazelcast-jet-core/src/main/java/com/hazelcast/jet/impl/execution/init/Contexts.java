@@ -40,7 +40,7 @@ import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.impl.JobRepository.fileKeyName;
 import static com.hazelcast.jet.impl.JobRepository.jobResourcesMapName;
 import static com.hazelcast.jet.impl.util.IOUtil.unzip;
-import static java.lang.Math.*;
+import static java.lang.Math.min;
 
 public final class Contexts {
 
@@ -197,6 +197,7 @@ public final class Contexts {
             }
         }
 
+        @SuppressWarnings("checkstyle:magicnumber")
         private static String tempDirPrefix(String jetInstanceName, String jobId, String resourceId) {
             return "jet-" + jetInstanceName
                     + "-" + jobId

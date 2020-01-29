@@ -62,7 +62,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
@@ -212,8 +211,8 @@ public class JobRepository {
                         }
                         break;
                     case FILE:
-                        Path fnamePath = Paths.get(Objects.requireNonNull(rc.getUrl().getPath())).getFileName();
-                        assert fnamePath != null; // needed to silence SpotBugs
+                        Path fnamePath = Paths.get(rc.getUrl().getPath()).getFileName();
+                        assert fnamePath != null : "Resource URL has no path part: " + rc.getUrl().toExternalForm();
                         try (InputStream in = rc.getUrl().openStream();
                              IMapOutputStream os = new IMapOutputStream(jobFileStorage.get(), fileKeyName(rc.getId()))
                         ) {

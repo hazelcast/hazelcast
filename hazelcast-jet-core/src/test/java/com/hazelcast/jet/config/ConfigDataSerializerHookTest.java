@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.config;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import org.junit.Test;
@@ -28,6 +28,8 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.Collection;
 
@@ -42,12 +44,12 @@ public class ConfigDataSerializerHookTest {
     public Object instance;
 
     @Parameters
-    public static Collection<Object> data() {
+    public static Collection<Object> data() throws MalformedURLException {
         return Arrays.asList(
                 new JobConfig()
                         .setName("test")
                         .setAutoScaling(true)
-                        .addJar("test.jar")
+                        .addJar(new URL("http://site/test.jar"))
                         .setInitialSnapshotName("init-snapshot-name")
                         .setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE)
                         .setSplitBrainProtection(false)

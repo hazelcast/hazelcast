@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.core;
 
-import com.hazelcast.cache.ICache;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.collection.IList;
@@ -48,12 +47,9 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
-import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Util.idToString;
 import static org.junit.Assert.assertEquals;
@@ -119,15 +115,6 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
 
     protected static <K, V> IMap<K, V> getMap(JetInstance instance) {
         return instance.getMap(randomName());
-    }
-
-    protected static <K, V> ICache<K, V> getCache(JetInstance instance) {
-        return instance.getCacheManager().getCache(randomName());
-    }
-
-    protected static void fillMapWithInts(IMap<Integer, Integer> map, int count) {
-        Map<Integer, Integer> vals = IntStream.range(0, count).boxed().collect(Collectors.toMap(m -> m, m -> m));
-        map.putAll(vals);
     }
 
     protected static void fillListWithInts(IList<Integer> list, int count) {

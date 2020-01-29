@@ -53,9 +53,12 @@ public class JetClassLoader extends ClassLoader {
 
     private volatile boolean isShutdown;
 
-    public JetClassLoader(@Nonnull NodeEngine nodeEngine,
-                          @Nullable ClassLoader parent, @Nullable String jobName,
-                          long jobId, @Nonnull JobRepository jobRepository
+    public JetClassLoader(
+            @Nonnull NodeEngine nodeEngine,
+            @Nullable ClassLoader parent,
+            @Nullable String jobName,
+            long jobId,
+            @Nonnull JobRepository jobRepository
     ) {
         super(parent == null ? JetClassLoader.class.getClassLoader() : parent);
         this.jobName = jobName;
@@ -81,19 +84,15 @@ public class JetClassLoader extends ClassLoader {
 
     @Override
     protected URL findResource(String name) {
-        if (!checkShutdown(name)) {
-            if (isEmpty(name) || !resourcesSupplier.get().containsKey(classKeyName(name))) {
-                return null;
-            }
-
-            try {
-                return new URL(JOB_URL_PROTOCOL, null, -1, name, jobResourceURLStreamHandler);
-            } catch (MalformedURLException e) {
-                // this should never happen with custom URLStreamHandler
-                throw new RuntimeException(e);
-            }
+        if (checkShutdown(name) || isEmpty(name) || !resourcesSupplier.get().containsKey(classKeyName(name))) {
+            return null;
         }
-        return null;
+        try {
+            return new URL(JOB_URL_PROTOCOL, null, -1, name, jobResourceURLStreamHandler);
+        } catch (MalformedURLException e) {
+            // this should never happen with custom URLStreamHandler
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -109,32 +108,31 @@ public class JetClassLoader extends ClassLoader {
         return isShutdown;
     }
 
-    @SuppressWarnings("unchecked")
     private InputStream resourceStream(String name) {
-        if (!checkShutdown(name)) {
-            byte[] classData = resourcesSupplier.get().get(classKeyName(name));
-            if (classData == null) {
-                return null;
-            }
-            return new InflaterInputStream(new ByteArrayInputStream(classData));
+        if (checkShutdown(name)) {
+            return null;
         }
-        return null;
+        byte[] classData = resourcesSupplier.get().get(classKeyName(name));
+        if (classData == null) {
+            return null;
+        }
+        return new InflaterInputStream(new ByteArrayInputStream(classData));
     }
 
     private boolean checkShutdown(String resource) {
-        if (isShutdown) {
-            // This class loader is used as the thread context CL in several places. It's possible
-            // that another thread inherits this classloader since a Thread inherits the parent's
-            // context CL by default (see for example: https://bugs.java.com/bugdatabase/view_bug.do?bug_id=JDK-8172726)
-            // In these scenarios the thread might essentially hold a reference to an obsolete classloader.
-            // Rather than throwing an unexpected exception we instead print a warning.
-            String jobName = this.jobName == null ? idToString(jobId) : "'" + this.jobName + "'";
-            logger.warning("Classloader for job " + jobName + " tried to load '" + resource
-                    + "' after the job was completed. The classloader used for jobs is disposed after " +
-                    "job is completed");
-            return true;
+        if (!isShutdown) {
+            return false;
         }
-        return false;
+        // This class loader is used as the thread context CL in several places. It's possible
+        // that another thread inherits this classloader since a Thread inherits the parent's
+        // context CL by default (see for example: https://bugs.java.com/bugdatabase/view_bug.do?bug_id=JDK-8172726)
+        // In these scenarios the thread might essentially hold a reference to an obsolete classloader.
+        // Rather than throwing an unexpected exception we instead print a warning.
+        String jobName = this.jobName == null ? idToString(jobId) : "'" + this.jobName + "'";
+        logger.warning("Classloader for job " + jobName + " tried to load '" + resource
+                + "' after the job was completed. The classloader used for jobs is disposed after " +
+                "job is completed");
+        return true;
     }
 
     private static boolean isEmpty(String className) {

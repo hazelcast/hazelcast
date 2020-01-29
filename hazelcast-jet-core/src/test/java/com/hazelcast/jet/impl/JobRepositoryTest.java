@@ -38,6 +38,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.io.File;
+import java.net.URL;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Properties;
@@ -123,36 +125,45 @@ public class JobRepositoryTest extends JetTestSupport {
     }
 
     @Test
-    public void when_jobJarUploadFails_then_jobResourcesCleanedUp() {
-        jobConfig.addJar("invalid path");
+    public void when_jobJarUploadFails_then_jobResourcesCleanedUp() throws Exception {
+        jobConfig.addJar(new URL("http://site/nonexistent"));
         testResourceCleanup();
     }
 
     @Test
-    public void when_jobZipUploadFails_then_jobResourcesCleanedUp() {
-        jobConfig.addJarsInZip("invalid path");
+    public void when_jobZipUploadFails_then_jobResourcesCleanedUp() throws Exception {
+        jobConfig.addJarsInZip(new URL("http://site/nonexistent"));
         testResourceCleanup();
     }
 
     @Test
-    public void when_jobClasspathResourceUploadFails_then_jobResourcesCleanedUp() {
-        jobConfig.addClasspathResource("invalid path");
+    public void when_jobClasspathResourceUploadFails_then_jobResourcesCleanedUp() throws Exception {
+        jobConfig.addClasspathResource(new URL("http://site/nonexistent"));
         testResourceCleanup();
     }
 
     @Test
-    public void when_jobFileUploadFails_then_jobResourcesCleanedUp() {
-        jobConfig.attachFile("invalid path");
+    public void when_jobFileUploadFails_then_jobResourcesCleanedUp() throws Exception {
+        jobConfig.attachFile(new URL("http://site/nonexistent"));
         testResourceCleanup();
     }
 
     @Test
-    public void when_jobDirectoryUploadFails_then_jobResourcesCleanedUp() {
-        jobConfig.attachDirectory("invalid path");
+    public void when_jobDirectoryUploadFails_then_jobResourcesCleanedUp() throws Exception {
+        // Given
+        File baseDir = createTempDirectory();
+
+        try {
+            jobConfig.attachDirectory(baseDir);
+        } finally { // Ensure dir deleted even if attachDirectory fails
+            // When
+            delete(baseDir);
+        }
+        // Then
         testResourceCleanup();
     }
 
-    public void testResourceCleanup() {
+    private void testResourceCleanup() {
         try {
             jobRepository.uploadJobResources(jobConfig);
             fail();
@@ -162,6 +173,9 @@ public class JobRepositoryTest extends JetTestSupport {
         }
     }
 
+    private void delete(File file) {
+        assertTrue("Couldn't delete " + file, file.delete());
+    }
 
     @Test
     public void test_getJobRecordFromClient() {

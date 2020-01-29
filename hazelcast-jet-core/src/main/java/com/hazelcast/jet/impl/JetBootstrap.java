@@ -25,6 +25,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetCacheManager;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.Observable;
@@ -41,6 +42,7 @@ import com.hazelcast.topic.ITopic;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -228,7 +230,11 @@ public final class JetBootstrap {
 
         private JobConfig updateJobConfig(@Nonnull JobConfig config) {
             if (jar != null) {
-                config.addJar(jar);
+                try {
+                    config.addJar(jar);
+                } catch (FileNotFoundException e) {
+                    throw new JetException("Job JAR not found: " + jar);
+                }
             }
             if (snapshotName != null) {
                 config.setInitialSnapshotName(snapshotName);

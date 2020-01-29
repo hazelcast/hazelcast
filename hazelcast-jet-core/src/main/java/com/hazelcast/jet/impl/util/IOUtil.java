@@ -86,9 +86,9 @@ public final class IOUtil {
      */
     @SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE",
             justification = "it's a false positive since java 11: https://github.com/spotbugs/spotbugs/issues/756")
-    public static void packStreamIntoZip(@Nonnull InputStream source, @Nonnull OutputStream destination,
-                                         @Nonnull String fileName)
-            throws IOException {
+    public static void packStreamIntoZip(
+            @Nonnull InputStream source, @Nonnull OutputStream destination, @Nonnull String fileName
+    ) throws IOException {
         try (
                 ZipOutputStream dstZipStream = new ZipOutputStream(destination)
         ) {
