@@ -20,6 +20,7 @@ import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.AbstractIndex;
 import com.hazelcast.query.impl.Comparables;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
@@ -90,6 +91,11 @@ public class InPredicate extends AbstractIndexAwarePredicate implements Visitabl
             set = createHashSet(values.length);
             for (Comparable value : values) {
                 Comparable converted = convert(attributeValue, value);
+                if (isNull(converted)) {
+                    // Convert all kind of nulls to plain Java null, so we can
+                    // match all of them using set.contains(...).
+                    converted = null;
+                }
                 set.add(Comparables.canonicalizeForHashLookup(converted));
             }
             convertedInValues = set;
