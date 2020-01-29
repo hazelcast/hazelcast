@@ -35,6 +35,7 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Scanner;
 
@@ -69,7 +70,7 @@ final class RestClient {
         return this;
     }
 
-    RestClient withCaCertificate(String caCertificate) {
+    RestClient withCaCertificates(String caCertificate) {
         this.caCertificate = caCertificate;
         return this;
     }
@@ -175,7 +176,12 @@ final class RestClient {
         try {
             KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
             keyStore.load(null, null);
-            keyStore.setCertificateEntry("ca", generateCertificate());
+
+            int i = 0;
+            for (Certificate certificate : generateCertificates()) {
+                String alias = String.format("ca-%d", i++);
+                keyStore.setCertificateEntry(alias, certificate);
+            }
 
             TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
             tmf.init(keyStore);
@@ -192,13 +198,13 @@ final class RestClient {
     /**
      * Generates CA Certificate from the default CA Cert file or from the externally provided "ca-certificate" property.
      */
-    private Certificate generateCertificate()
+    private Collection<? extends Certificate> generateCertificates()
             throws IOException, CertificateException {
         InputStream caInput = null;
         try {
             CertificateFactory cf = CertificateFactory.getInstance("X.509");
             caInput = new ByteArrayInputStream(caCertificate.getBytes("UTF-8"));
-            return cf.generateCertificate(caInput);
+            return cf.generateCertificates(caInput);
         } finally {
             IOUtil.closeResource(caInput);
         }

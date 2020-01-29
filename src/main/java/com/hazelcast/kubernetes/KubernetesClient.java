@@ -491,7 +491,7 @@ class KubernetesClient {
             public JsonObject call() {
                 return Json
                         .parse(RestClient.create(urlString).withHeader("Authorization", String.format("Bearer %s", apiToken))
-                                         .withCaCertificate(caCertificate)
+                                         .withCaCertificates(caCertificate)
                                          .get())
                         .asObject();
             }
