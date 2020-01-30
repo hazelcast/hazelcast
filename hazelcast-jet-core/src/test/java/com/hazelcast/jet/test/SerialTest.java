@@ -18,6 +18,9 @@ package com.hazelcast.jet.test;
 
 /**
  * Category marker for the tests which are executed in series within a single JVM
+ * <p>
+ * These typically need to create a real Hazelcast or Jet instance which can
+ * conflict with other such instances created in other tests
  */
 public interface SerialTest {
 }
