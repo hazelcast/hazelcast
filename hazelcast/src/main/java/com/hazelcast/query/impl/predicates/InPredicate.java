@@ -44,6 +44,7 @@ public class InPredicate extends AbstractIndexAwarePredicate implements Visitabl
 
     Comparable[] values;
     private transient volatile Set<Comparable> convertedInValues;
+    private transient volatile Boolean valuesContainNull;
 
     public InPredicate() {
     }
@@ -72,16 +73,23 @@ public class InPredicate extends AbstractIndexAwarePredicate implements Visitabl
         Set<Comparable> set = convertedInValues;
 
         if (attributeValue == null && set == null) {
+            Boolean valuesContainNull = this.valuesContainNull;
+            if (valuesContainNull != null) {
+                return valuesContainNull;
+            }
+
             // Conversion of the values given to the predicate is possible only
             // if the passed attribute value is non-null, otherwise we are
             // unable to infer a proper converter. Postpone the conversion and
-            // do a brute-force comparison.
+            // detect the presence of nulls.
 
             for (Comparable value : values) {
                 if (isNull(value)) {
+                    this.valuesContainNull = true;
                     return true;
                 }
             }
+            this.valuesContainNull = false;
             return false;
         }
 
