@@ -29,17 +29,13 @@
     <version>4.0-SNAPSHOT</version>
 
     <modules>
+        <module>examples</module>
+        <module>extensions</module>
         <module>hazelcast-jet-all</module>
         <module>hazelcast-jet-distribution</module>
         <module>hazelcast-jet-core</module>
-        <module>hazelcast-jet-kafka</module>
-        <module>hazelcast-jet-hadoop</module>
-        <module>hazelcast-jet-reference-manual</module>
         <module>hazelcast-jet-spring</module>
-        <module>hazelcast-jet-avro</module>
-        <module>hazelcast-jet-s3</module>
-        <module>examples</module>
-        <module>hazelcast-jet-python</module>
+        <module>reference-manual</module>
     </modules>
 
     <repositories>
@@ -97,6 +93,7 @@
         <maven.surefire.plugin.version>3.0.0-M3</maven.surefire.plugin.version>
         <maven.spotbugs.plugin.version>3.1.12.2</maven.spotbugs.plugin.version>
         <maven.checkstyle.plugin.version>3.0.0</maven.checkstyle.plugin.version>
+        <checkstyle.headerLocation>${maven.multiModuleProjectDirectory}/checkstyle/ClassHeader.txt</checkstyle.headerLocation>
         <maven.sonar.plugin.version>3.3.0.603</maven.sonar.plugin.version>
         <maven.jacoco.plugin.version>0.7.9</maven.jacoco.plugin.version>
 
@@ -412,7 +409,7 @@
                 <configuration>
                     <configLocation>${maven.multiModuleProjectDirectory}/checkstyle/checkstyle.xml</configLocation>
                     <suppressionsLocation>${maven.multiModuleProjectDirectory}/checkstyle/suppressions.xml</suppressionsLocation>
-                    <headerLocation>${maven.multiModuleProjectDirectory}/checkstyle/ClassHeader.txt</headerLocation>
+                    <headerLocation>${checkstyle.headerLocation}</headerLocation>
                     <enableRSS>false</enableRSS>
                     <linkXRef>true</linkXRef>
                     <consoleOutput>true</consoleOutput>
