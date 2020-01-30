@@ -320,7 +320,7 @@ public final class Jet {
 
         if (jetConfig.getInstanceConfig().isLosslessRestartEnabled() &&
             !hzConfig.getHotRestartPersistenceConfig().isEnabled()) {
-            LOGGER.warning("Lossless recovery is enabled but Hot Restart is disabled. Auto-enabling Hot Restart. " +
+            LOGGER.warning("Lossless Restart is enabled but Hot Restart is disabled. Auto-enabling Hot Restart. " +
                     "The following path will be used: " + hzConfig.getHotRestartPersistenceConfig().getBaseDir());
             hzConfig.getHotRestartPersistenceConfig().setEnabled(true);
         }

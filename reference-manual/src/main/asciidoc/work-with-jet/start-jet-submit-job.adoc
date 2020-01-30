@@ -334,7 +334,7 @@ The new pipeline has to be compatible with the old one, for more details
 about what you can change in the pipeline, see
 <<update-a-dag-without-losing-the-state>>.
 
-Job Upgrades use the snapshots. The Job state is exported to 
+Job Upgrade use the snapshots. The Job state is exported to 
 the snapshot and the new job version starts from from the snapshot.
 
 If you want to preserve the state of the cancelled job, use
@@ -362,7 +362,7 @@ use the state in the snapshot as its initial state:
 include::{javasource}/ManageJob.java[tag=s10]
 ----
 
-The exported snapshots used for Job Upgrades differ from the 
+The exported snapshots used for Job Upgrade differ from the 
 snapshots used for the <<fault-tolerance, Fault Tolerance>>. 
 Exported snapshots aren't deleted automatically by Jet. Therefore you can
 also use the exported snapshot as a point of recovery.

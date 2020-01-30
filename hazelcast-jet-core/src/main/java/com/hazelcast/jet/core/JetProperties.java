@@ -79,7 +79,7 @@ public final class JetProperties {
             = new HazelcastProperty("jet.job.results.max.size", 1_000);
 
     /**
-     * Root of Jet installation. Used as default location for the lossless recovery
+     * Root of Jet installation. Used as default location for the lossless restart
      * store. By default it will be automatically set to the start of the Jet
      * installation path.
      *

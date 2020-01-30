@@ -71,8 +71,8 @@ built on top of Hazelcast Jet open source and extends it with the
 following features:
 
 * <<security, Security Suite>>
-* Lossless Restart (in Jet 3.0)
-* Job Upgrades (in Jet 3.0)
+* Lossless Cluster Restart
+* Job Upgrade
 * Enterprise PaaS Deployment Environment (Pivotal Cloud Foundry,
    Openshift Container Platform (Jet 3.0))
 

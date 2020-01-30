@@ -69,9 +69,9 @@ Job state is only compatible across the same MINOR version and only
 backwards-compatible i.e. a newer PATCH version is be able to understand
 the job state from a previous PATCH version.
 
-This means that if you have a running job, using the job upgrades
-and lossless recovery features you are able to upgrade the cluster to a
-newer PATCH version without losing the state of a running job.
+This means that if you have a running job, using the Job Upgrade
+and Lossless Cluster Restart features you are able to upgrade the cluster 
+to a newer PATCH version without losing the state of a running job.
 
 == Command Line Tools and Configuration Files
 
@@ -136,9 +136,9 @@ results will be automatically deleted after this size is reached.
 |`jet.home`
 |_Jet installation path_
 |string
-|Root of Jet installation. Used as default location for the lossless
-recovery store. By default it will be automatically set to the start of
-the Jet installation path.
+|Root of Jet installation. Used as default location for the Lossless
+Cluster Restart store. By default it will be automatically set to the 
+start of the Jet installation path.
 
 |`jet.idle.cooperative.min.microseconds`
 |25

@@ -43,8 +43,8 @@ the cluster. It has no effect on jobs with auto scaling disabled. The
 default value is `10000` milliseconds.
 
 |`setLosslessRestartEnabled`
-|Specifies whether the lossless job restart feature is enabled. With this
-feature you can restart the whole cluster without losing the jobs and
+|Specifies whether the Lossless Cluster Restart feature is enabled. With this
+feature, you can restart the whole cluster without losing the jobs and
 their state. It is implemented on top of Hazelcast IMDG's Hot Restart
 Persistence feature, which persists the data to disk. You need to have
 the Hazelcast Jet Enterprise edition and configure Hazelcast IMDG's Hot
