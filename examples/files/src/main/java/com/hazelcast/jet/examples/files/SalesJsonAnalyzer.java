@@ -74,6 +74,12 @@ public class SalesJsonAnalyzer {
         Gson gson = new Gson();
         JsonReader reader = new JsonReader(Files.newBufferedReader(filePath, UTF_8));
         reader.beginArray();
+
+        // in java9+ you can use this simpler code
+//        return Stream.generate((SupplierEx<T>) () -> reader.hasNext() ? gson.fromJson(reader, type) : null)
+//                .takeWhile(Objects::nonNull)
+//                .onClose((RunnableEx) reader::close);
+
         Iterator<T> iterator = new Iterator<T>() {
             @Override
             public boolean hasNext() {

@@ -336,7 +336,7 @@ public final class SourceProcessors {
             boolean sharedFileSystem,
             @Nonnull FunctionEx<? super Path, ? extends Stream<I>> readFileFn
     ) {
-        return ReadFilesP.metaSupplier(directory, glob, sharedFileSystem, readFileFn, (f, l) -> l);
+        return ReadFilesP.metaSupplier(directory, glob, sharedFileSystem, readFileFn);
     }
 
     /**

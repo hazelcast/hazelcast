@@ -62,10 +62,11 @@ public final class AvroProcessors {
         return ReadFilesP.metaSupplier(directory, glob, sharedFileSystem,
                 path -> {
                     DataFileReader<D> reader = new DataFileReader<>(path.toFile(), datumReaderSupplier.get());
+                    String fileName = path.getFileName().toString();
                     return StreamSupport.stream(reader.spliterator(), false)
+                                        .map(item -> mapOutputFn.apply(fileName, item))
                                         .onClose(() -> uncheckRun(reader::close));
-                },
-                mapOutputFn);
+                });
     }
 
     /**

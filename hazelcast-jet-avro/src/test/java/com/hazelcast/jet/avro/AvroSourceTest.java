@@ -18,13 +18,12 @@ package com.hazelcast.jet.avro;
 
 import com.hazelcast.collection.IList;
 import com.hazelcast.internal.nio.IOUtil;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.avro.generated.SpecificUser;
 import com.hazelcast.jet.avro.model.User;
-import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.apache.avro.Schema;
 import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.generic.GenericData;
@@ -36,6 +35,7 @@ import org.apache.avro.reflect.ReflectDatumWriter;
 import org.apache.avro.specific.SpecificDatumWriter;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -45,22 +45,24 @@ import java.util.function.Function;
 
 import static org.junit.Assert.assertEquals;
 
-@RunWith(HazelcastParallelClassRunner.class)
-public class AvroSourceTest extends JetTestSupport {
+@RunWith(HazelcastSerialClassRunner.class)
+public class AvroSourceTest extends SimpleTestInClusterSupport {
 
     private static final int TOTAL_RECORD_COUNT = 20;
 
     private File directory;
-
-    private JetInstance jet;
     private IList<? extends User> list;
+
+    @BeforeClass
+    public static void beforeClass() {
+        initialize(1, null);
+    }
 
     @Before
     public void createDirectory() throws Exception {
         directory = createTempDirectory();
 
-        jet = createJetMember();
-        list = jet.getList("writer");
+        list = instance().getList(randomName());
     }
 
     @After
@@ -76,7 +78,7 @@ public class AvroSourceTest extends JetTestSupport {
         p.readFrom(AvroSources.files(directory.getPath(), User.class))
          .writeTo(Sinks.list(list.getName()));
 
-        jet.newJob(p).join();
+        instance().newJob(p).join();
 
         assertEquals(TOTAL_RECORD_COUNT, list.size());
     }
@@ -90,7 +92,7 @@ public class AvroSourceTest extends JetTestSupport {
         p.readFrom(AvroSources.files(directory.getPath(), SpecificUser.class))
          .writeTo(Sinks.list(list.getName()));
 
-        jet.newJob(p).join();
+        instance().newJob(p).join();
 
         assertEquals(TOTAL_RECORD_COUNT, list.size());
     }
@@ -103,7 +105,7 @@ public class AvroSourceTest extends JetTestSupport {
         p.readFrom(AvroSources.files(directory.getPath(), (file, record) -> toUser(record)))
          .writeTo(Sinks.list(list.getName()));
 
-        jet.newJob(p).join();
+        instance().newJob(p).join();
 
         assertEquals(TOTAL_RECORD_COUNT, list.size());
     }
