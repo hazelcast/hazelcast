@@ -24,7 +24,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 /**
- * Code adapted from Apache Flink.
+ * Code adapted from Apache Flink in the
+ * org.apache.flink.streaming.connectors.kafka.internal.FlinkKafkaInternalProducer
+ * class.
  */
 final class ResumeTransactionUtil {
 
