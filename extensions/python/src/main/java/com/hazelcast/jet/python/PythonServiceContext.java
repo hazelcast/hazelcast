@@ -20,6 +20,7 @@ import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.logging.ILogger;
 
+import javax.annotation.Nonnull;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -36,12 +37,14 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 
 import static com.hazelcast.jet.impl.util.IOUtil.copyStream;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
 import static java.nio.file.attribute.PosixFilePermission.GROUP_WRITE;
 import static java.nio.file.attribute.PosixFilePermission.OTHERS_WRITE;
+import static java.nio.file.attribute.PosixFilePermission.OWNER_EXECUTE;
 import static java.nio.file.attribute.PosixFilePermission.OWNER_WRITE;
 import static java.util.Arrays.asList;
 
@@ -102,6 +105,7 @@ class PythonServiceContext {
     void destroy() {
         File runtimeBaseDirF = runtimeBaseDir.toFile();
         try {
+            makeFilesWritable(runtimeBaseDir);
             Path cleanupScriptPath = runtimeBaseDir.resolve(USER_CLEANUP_SHELL_SCRIPT);
             if (Files.exists(cleanupScriptPath)) {
                 Process cleanupProcess = new ProcessBuilder("/bin/sh", "-c", "./" + CLEANUP_SHELL_SCRIPT)
@@ -177,7 +181,7 @@ class PythonServiceContext {
         }
     }
 
-    private static void createParamsScript(Path paramsFile, String... namesAndVals) throws IOException {
+    private static void createParamsScript(@Nonnull Path paramsFile, String... namesAndVals) throws IOException {
         try (PrintWriter out = new PrintWriter(Files.newBufferedWriter(paramsFile))) {
             String jetToPython = JET_TO_PYTHON_PREFIX.toUpperCase();
             for (int i = 0; i < namesAndVals.length; i += 2) {
@@ -190,32 +194,48 @@ class PythonServiceContext {
         }
     }
 
-    private static void makeExecutable(Path path) throws IOException {
+    private static void makeExecutable(@Nonnull Path path) throws IOException {
+        editPermissions(path, perms -> perms.add(OWNER_EXECUTE));
+    }
+
+    private void makeFilesReadOnly(@Nonnull Path basePath) throws IOException {
+        editPermissionsRecursively(basePath, "-w", perms -> perms.removeAll(WRITE_PERMISSIONS));
+    }
+
+    private void makeFilesWritable(@Nonnull Path basePath) throws IOException {
+        editPermissionsRecursively(basePath, "u+w", perms -> perms.add(OWNER_WRITE));
+    }
+
+    /**
+     * Return value of {@code editFn} tells whether it actually changed the
+     * supplied permission set. If it returns {@code false}, the file's
+     * permissions won't be changed.
+     */
+    private static void editPermissions(
+            @Nonnull Path path, @Nonnull Predicate<? super Set<PosixFilePermission>> editFn
+    ) throws IOException {
         Set<PosixFilePermission> perms = Files.getPosixFilePermissions(path, NOFOLLOW_LINKS);
-        if (perms.add(PosixFilePermission.OWNER_EXECUTE)) {
+        if (editFn.test(perms)) {
             Files.setPosixFilePermissions(path, perms);
         }
     }
 
-    private static void makeReadOnly(Path path) throws IOException {
-        Set<PosixFilePermission> perms = Files.getPosixFilePermissions(path, NOFOLLOW_LINKS);
-        if (perms.removeAll(WRITE_PERMISSIONS)) {
-            Files.setPosixFilePermissions(path, perms);
-        }
-    }
-
-    private void makeFilesReadOnly(Path basePath) throws IOException {
+    private void editPermissionsRecursively(
+            @Nonnull Path basePath,
+            @Nonnull String chmodOp,
+            @Nonnull Predicate<? super Set<PosixFilePermission>> editFn
+    ) throws IOException {
         List<String> filesNotMarked = new ArrayList<>();
         Files.walk(basePath).forEach(path -> {
             try {
-                makeReadOnly(path);
+                editPermissions(path, editFn);
             } catch (Exception e) {
                 filesNotMarked.add(basePath.relativize(path).toString());
             }
 
         });
         if (!filesNotMarked.isEmpty()) {
-            logger.info("Couldn't mark these files as read-only: " + filesNotMarked);
+            logger.info("Couldn't 'chmod " + chmodOp + "' these files: " + filesNotMarked);
         }
     }
 }
