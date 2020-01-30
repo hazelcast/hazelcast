@@ -22,7 +22,7 @@ import com.hazelcast.cache.impl.CacheSyncListenerCompleter;
 import com.hazelcast.cache.impl.ICacheInternal;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.client.cache.impl.ClientCacheProxySupportUtil.EmptyCompletionListener;
-import com.hazelcast.client.cache.impl.nearcache.NearCachingHook;
+import com.hazelcast.internal.nearcache.impl.NearCachingHook;
 import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
