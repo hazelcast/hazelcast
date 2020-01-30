@@ -18,6 +18,7 @@ package com.hazelcast.jet.config;
 
 import com.hazelcast.config.MetricsConfig;
 import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.ProcessorSupplier;
@@ -30,7 +31,6 @@ import com.hazelcast.spi.annotation.PrivateApi;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
@@ -269,7 +269,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      * @return {@code this} instance for fluent API
      */
     @Nonnull
-    public JobConfig addJar(@Nonnull File file) throws FileNotFoundException {
+    public JobConfig addJar(@Nonnull File file) {
         ensureIsFile(file);
         return addJar(fileToUrl(file));
     }
@@ -287,7 +287,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      * @return {@code this} instance for fluent API
      */
     @Nonnull
-    public JobConfig addJar(@Nonnull String path) throws FileNotFoundException {
+    public JobConfig addJar(@Nonnull String path) {
         return addJar(new File(path));
     }
 
@@ -328,7 +328,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      * @since 4.0
      */
     @Nonnull
-    public JobConfig addJarsInZip(@Nonnull File file) throws FileNotFoundException {
+    public JobConfig addJarsInZip(@Nonnull File file) {
         ensureIsFile(file);
         return addJarsInZip(fileToUrl(file));
     }
@@ -349,7 +349,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      * @since 4.0
      */
     @Nonnull
-    public JobConfig addJarsInZip(@Nonnull String path) throws FileNotFoundException {
+    public JobConfig addJarsInZip(@Nonnull String path) {
         return addJarsInZip(new File(path));
     }
 
@@ -393,7 +393,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      * @return {@code this} instance for fluent API
      */
     @Nonnull
-    public JobConfig addClasspathResource(@Nonnull File file) throws FileNotFoundException {
+    public JobConfig addClasspathResource(@Nonnull File file) {
         ensureIsFile(file);
         return addClasspathResource(fileToUrl(file), file.getName());
     }
@@ -407,7 +407,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      * @return {@code this} instance for fluent API
      */
     @Nonnull
-    public JobConfig addClasspathResource(@Nonnull File file, @Nonnull String id) throws FileNotFoundException {
+    public JobConfig addClasspathResource(@Nonnull File file, @Nonnull String id) {
         ensureIsFile(file);
         return add(fileToUrl(file), id, ResourceType.CLASSPATH_RESOURCE);
     }
@@ -422,7 +422,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      * @return {@code this} instance for fluent API
      */
     @Nonnull
-    public JobConfig addClasspathResource(@Nonnull String path) throws FileNotFoundException {
+    public JobConfig addClasspathResource(@Nonnull String path) {
         return addClasspathResource(new File(path));
     }
 
@@ -435,7 +435,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      * @return {@code this} instance for fluent API
      */
     @Nonnull
-    public JobConfig addClasspathResource(@Nonnull String path, @Nonnull String id) throws FileNotFoundException {
+    public JobConfig addClasspathResource(@Nonnull String path, @Nonnull String id) {
         return addClasspathResource(new File(path), id);
     }
 
@@ -497,7 +497,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      * @since 4.0
      */
     @Nonnull
-    public JobConfig attachFile(@Nonnull File file) throws FileNotFoundException {
+    public JobConfig attachFile(@Nonnull File file) {
         return attachFile(file, file.getName());
     }
 
@@ -517,7 +517,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      * @since 4.0
      */
     @Nonnull
-    public JobConfig attachFile(@Nonnull File file, @Nonnull String id) throws FileNotFoundException {
+    public JobConfig attachFile(@Nonnull File file, @Nonnull String id) {
         ensureIsFile(file);
         return attachFile(fileToUrl(file), id);
     }
@@ -539,7 +539,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      * @since 4.0
      */
     @Nonnull
-    public JobConfig attachFile(@Nonnull String path) throws FileNotFoundException {
+    public JobConfig attachFile(@Nonnull String path) {
         return attachFile(new File(path));
     }
 
@@ -559,7 +559,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      * @since 4.0
      */
     @Nonnull
-    public JobConfig attachFile(@Nonnull String path, @Nonnull String id) throws FileNotFoundException {
+    public JobConfig attachFile(@Nonnull String path, @Nonnull String id) {
         return attachFile(new File(path), id);
     }
 
@@ -580,7 +580,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      * @since 4.0
      */
     @Nonnull
-    public JobConfig attachDirectory(@Nonnull URL url) throws FileNotFoundException {
+    public JobConfig attachDirectory(@Nonnull URL url) {
         return attachDirectory(url, urlToFile(url).getName());
     }
 
@@ -600,7 +600,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      * @since 4.0
      */
     @Nonnull
-    public JobConfig attachDirectory(@Nonnull URL url, @Nonnull String id) throws FileNotFoundException {
+    public JobConfig attachDirectory(@Nonnull URL url, @Nonnull String id) {
         ensureHasPath(url);
         ensureIsDirectory(urlToFile(url));
         return add(url, id, ResourceType.DIRECTORY);
@@ -623,7 +623,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      * @since 4.0
      */
     @Nonnull
-    public JobConfig attachDirectory(@Nonnull String path) throws FileNotFoundException {
+    public JobConfig attachDirectory(@Nonnull String path) {
         return attachDirectory(new File(path));
     }
 
@@ -643,7 +643,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      * @since 4.0
      */
     @Nonnull
-    public JobConfig attachDirectory(@Nonnull String path, @Nonnull String id) throws FileNotFoundException {
+    public JobConfig attachDirectory(@Nonnull String path, @Nonnull String id) {
         return attachDirectory(new File(path), id);
     }
 
@@ -664,7 +664,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      * @since 4.0
      */
     @Nonnull
-    public JobConfig attachDirectory(@Nonnull File file) throws FileNotFoundException {
+    public JobConfig attachDirectory(@Nonnull File file) {
         return attachDirectory(file, file.getName());
     }
 
@@ -684,7 +684,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      * @since 4.0
      */
     @Nonnull
-    public JobConfig attachDirectory(@Nonnull File file, @Nonnull String id) throws FileNotFoundException {
+    public JobConfig attachDirectory(@Nonnull File file, @Nonnull String id) {
         return attachDirectory(fileToUrl(file), id);
     }
 
@@ -701,15 +701,15 @@ public class JobConfig implements IdentifiedDataSerializable {
         }
     }
 
-    private static void ensureIsFile(@Nonnull File file) throws FileNotFoundException {
+    private static void ensureIsFile(@Nonnull File file) {
         if (!file.isFile() || !file.canRead()) {
-            throw new FileNotFoundException("Not an existing, readable file: " + file);
+            throw new JetException("Not an existing, readable file: " + file);
         }
     }
 
-    private static void ensureIsDirectory(@Nonnull File path) throws FileNotFoundException {
+    private static void ensureIsDirectory(@Nonnull File path) {
         if (!path.isDirectory() || !path.canRead()) {
-            throw new FileNotFoundException("Not an existing, readable directory: " + path);
+            throw new JetException("Not an existing, readable directory: " + path);
         }
     }
 

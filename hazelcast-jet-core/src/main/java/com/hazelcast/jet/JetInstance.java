@@ -44,7 +44,6 @@ import com.hazelcast.topic.ITopic;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map.Entry;
@@ -143,22 +142,18 @@ public interface JetInstance {
     @Nonnull
     default Job newJob(@Nonnull Pipeline pipeline, @Nonnull JobConfig config) {
         PipelineImpl impl = (PipelineImpl) pipeline;
-        try {
-            for (Entry<String, File> e : impl.attachedFiles().entrySet()) {
-                File file = e.getValue();
-                if (!file.canRead()) {
-                    throw new JetException("Not readable: " + file);
-                }
-                if (file.isDirectory()) {
-                    config.attachDirectory(file, e.getKey());
-                } else if (file.isFile()) {
-                    config.attachFile(file, e.getKey());
-                } else {
-                    throw new JetException("Neither a regular file nor a directory: " + file);
-                }
+        for (Entry<String, File> e : impl.attachedFiles().entrySet()) {
+            File file = e.getValue();
+            if (!file.canRead()) {
+                throw new JetException("Not readable: " + file);
             }
-        } catch (FileNotFoundException e) {
-            throw new JetException("A file/directory attached to the pipeline is missing", e);
+            if (file.isDirectory()) {
+                config.attachDirectory(file, e.getKey());
+            } else if (file.isFile()) {
+                config.attachFile(file, e.getKey());
+            } else {
+                throw new JetException("Neither a regular file nor a directory: " + file);
+            }
         }
         return newJob(pipeline.toDag(), config);
     }
