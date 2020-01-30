@@ -123,29 +123,23 @@ public abstract class AbstractDeploymentTest extends SimpleTestInClusterSupport 
     }
 
     @Test
-    public void testDeployment_whenFileAddedAsResource_thenFilesAvailableOnMembers() throws Throwable {
+    public void testDeployment_whenAttachFile_thenFileAvailableOnMembers() throws Throwable {
         Pipeline pipeline = Pipeline.create();
         String fileToAttach = Paths.get(getClass().getResource("/deployment/resource.txt").toURI()).toString();
 
         pipeline.readFrom(TestSources.items(1))
                 .mapUsingService(ServiceFactory.withCreateContextFn(context -> context.attachedFile(fileToAttach))
-                                               .withCreateServiceFn((context, file) -> {
-                                                   context.attachedFile(fileToAttach);
-                                                   return file;
-                                               }),
+                                               .withCreateServiceFn((context, file) -> file),
                         (file, integer) -> {
-                            if (!file.exists()) {
-                                throw new AssertionError("File does not exist");
-                            } else {
-                                assertEquals("resource.txt", file.getName());
-                                boolean containsData = Files.readAllLines(file.toPath())
-                                                            .stream()
-                                                            .findFirst()
-                                                            .orElseThrow(() -> new AssertionError("File does not exist"))
-                                                            .startsWith("AAAP");
-                                assertTrue(containsData);
-                                return file;
-                            }
+                            assertTrue("File does not exist", file.exists());
+                            assertEquals("resource.txt", file.getName());
+                            boolean containsData = Files.readAllLines(file.toPath())
+                                                        .stream()
+                                                        .findFirst()
+                                                        .orElseThrow(() -> new AssertionError("File is empty"))
+                                                        .startsWith("AAAP");
+                            assertTrue(containsData);
+                            return file;
                         })
                 .writeTo(Sinks.logger());
 
@@ -157,12 +151,13 @@ public abstract class AbstractDeploymentTest extends SimpleTestInClusterSupport 
     }
 
     @Test
-    public void testDeployment_whenDirectoryAddedAsResource_thenFilesAvailableOnMembers() throws Throwable {
+    public void testDeployment_whenAttachDirectory_thenFilesAvailableOnMembers() throws Throwable {
         Pipeline pipeline = Pipeline.create();
         String dirToAttach = Paths.get(this.getClass().getResource("/deployment").toURI()).toString();
 
         pipeline.readFrom(TestSources.items(1))
-                .flatMapUsingService(ServiceFactories.sharedService(context -> context.attachedDirectory(dirToAttach)),
+                .flatMapUsingService(
+                        ServiceFactories.sharedService(context -> context.attachedDirectory(dirToAttach)),
                         (file, integer) -> Traversers.traverseStream(Files.list(file.toPath()).map(Path::toString)))
                 .apply(assertCollected(c -> {
                     c.forEach(s -> assertTrue(new File(s).exists()));
