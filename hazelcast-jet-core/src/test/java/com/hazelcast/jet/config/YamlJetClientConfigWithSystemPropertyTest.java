@@ -21,8 +21,10 @@ import com.hazelcast.client.config.YamlClientConfigBuilder;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.jet.impl.config.YamlJetClientConfigLocator;
 import com.hazelcast.jet.impl.util.IOUtil;
+import com.hazelcast.jet.test.SerialTest;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.File;
@@ -35,6 +37,7 @@ import static com.hazelcast.internal.config.DeclarativeConfigUtil.SYSPROP_CLIENT
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
+@Category({SerialTest.class})
 public class YamlJetClientConfigWithSystemPropertyTest extends AbstractJetConfigWithSystemPropertyTest {
 
     private static final String JET_CLIENT_YAML = "hazelcast-client-test.yaml";

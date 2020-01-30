@@ -19,11 +19,13 @@ package com.hazelcast.jet.config;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.jet.impl.config.YamlJetConfigBuilder;
 import com.hazelcast.jet.test.JetDeclarativeConfigFileHelper;
+import com.hazelcast.jet.test.SerialTest;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
@@ -34,6 +36,7 @@ import static com.hazelcast.jet.impl.config.JetDeclarativeConfigUtil.SYSPROP_JET
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
+@Category({SerialTest.class})
 public class YamlJetConfigResolutionTest {
 
     @Rule

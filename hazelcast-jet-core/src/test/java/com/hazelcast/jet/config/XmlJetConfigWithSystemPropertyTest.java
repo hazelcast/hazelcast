@@ -20,8 +20,10 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.jet.impl.config.ConfigProvider;
 import com.hazelcast.jet.impl.config.XmlJetConfigBuilder;
 import com.hazelcast.jet.impl.util.IOUtil;
+import com.hazelcast.jet.test.SerialTest;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.File;
@@ -38,6 +40,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
 @RunWith(HazelcastSerialClassRunner.class)
+@Category({SerialTest.class})
 public class XmlJetConfigWithSystemPropertyTest extends AbstractJetMemberConfigWithSystemPropertyTest {
 
     private static final String TEST_XML_1 = "hazelcast-jet-test.xml";
