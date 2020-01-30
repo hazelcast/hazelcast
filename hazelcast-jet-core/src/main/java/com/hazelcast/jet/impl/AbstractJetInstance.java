@@ -47,7 +47,7 @@ import java.util.stream.Collectors;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
-import static java.util.stream.Collectors.toList;
+import static com.hazelcast.jet.impl.util.Util.toList;
 
 public abstract class AbstractJetInstance implements JetInstance {
     private final HazelcastInstance hazelcastInstance;
@@ -107,9 +107,7 @@ public abstract class AbstractJetInstance implements JetInstance {
 
     @Nonnull @Override
     public List<Job> getJobs(@Nonnull String name) {
-        return getJobIdsByName(name).stream()
-                                    .map(this::newJobProxy)
-                                    .collect(toList());
+        return toList(getJobIdsByName(name), this::newJobProxy);
     }
 
     @Nonnull @Override

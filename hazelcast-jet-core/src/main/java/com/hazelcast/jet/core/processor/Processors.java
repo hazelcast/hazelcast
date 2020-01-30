@@ -61,9 +61,9 @@ import java.util.function.Supplier;
 
 import static com.hazelcast.function.FunctionEx.identity;
 import static com.hazelcast.jet.core.TimestampKind.EVENT;
+import static com.hazelcast.jet.impl.util.Util.toList;
 import static java.util.Collections.nCopies;
 import static java.util.Collections.singletonList;
-import static java.util.stream.Collectors.toList;
 
 /**
  * Static utility class with factory methods for Jet processors. These are
@@ -578,9 +578,7 @@ public final class Processors {
     ) {
         return () -> new SlidingWindowP<>(
                 keyFns,
-                timestampFns.stream()
-                            .map(f -> toFrameTimestampFn(f, timestampKind, winPolicy))
-                            .collect(toList()),
+                toList(timestampFns, f -> toFrameTimestampFn(f, timestampKind, winPolicy)),
                 winPolicy,
                 earlyResultsPeriod,
                 aggrOp,

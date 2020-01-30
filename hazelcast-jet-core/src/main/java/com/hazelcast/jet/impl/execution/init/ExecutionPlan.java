@@ -78,6 +78,7 @@ import static com.hazelcast.jet.impl.util.ImdgUtil.writeList;
 import static com.hazelcast.jet.impl.util.Util.getJetInstance;
 import static com.hazelcast.jet.impl.util.Util.memoize;
 import static com.hazelcast.jet.impl.util.Util.sanitizeLoggerNamePart;
+import static com.hazelcast.jet.impl.util.Util.toList;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
@@ -230,7 +231,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     }
 
     public List<ProcessorSupplier> getProcessorSuppliers() {
-        return vertices.stream().map(VertexDef::processorSupplier).collect(toList());
+        return toList(vertices, VertexDef::processorSupplier);
     }
 
     public Map<Integer, Map<Integer, Map<Address, ReceiverTasklet>>> getReceiverMap() {

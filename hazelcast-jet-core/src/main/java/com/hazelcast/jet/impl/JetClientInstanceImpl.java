@@ -39,7 +39,7 @@ import java.util.UUID;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
-import static java.util.stream.Collectors.toList;
+import static com.hazelcast.jet.impl.util.Util.toList;
 
 /**
  * Client-side {@code JetInstance} implementation
@@ -68,7 +68,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
     public List<Job> getJobs() {
         return invokeRequestOnMasterAndDecodeResponse(JetGetJobIdsCodec.encodeRequest(), resp -> {
             List<Long> jobs = JetGetJobIdsCodec.decodeResponse(resp).response;
-            return jobs.stream().map(jobId -> new ClientJobProxy(this, jobId)).collect(toList());
+            return toList(jobs, jobId -> new ClientJobProxy(this, jobId));
         });
     }
 

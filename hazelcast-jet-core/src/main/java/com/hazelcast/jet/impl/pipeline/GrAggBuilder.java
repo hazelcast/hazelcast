@@ -41,7 +41,7 @@ import static com.hazelcast.jet.datamodel.Tag.tag;
 import static com.hazelcast.jet.impl.pipeline.ComputeStageImplBase.ADAPT_TO_JET_EVENT;
 import static com.hazelcast.jet.impl.pipeline.ComputeStageImplBase.ensureJetEvents;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
-import static java.util.stream.Collectors.toList;
+import static com.hazelcast.jet.impl.util.Util.toList;
 
 /**
  * Support class for {@link GroupAggregateBuilder1}
@@ -95,7 +95,7 @@ public class GrAggBuilder<K> {
             @Nonnull BiFunctionEx<? super K, ? super R, OUT> mapToOutputFn
     ) {
         checkSerializable(mapToOutputFn, "mapToOutputFn");
-        List<Transform> upstreamTransforms = upstreamStages.stream().map(s -> s.transform).collect(toList());
+        List<Transform> upstreamTransforms = toList(upstreamStages, s -> s.transform);
         Transform transform = new GroupTransform<>(upstreamTransforms, keyFns, aggrOp, mapToOutputFn);
         pipelineImpl.connect(upstreamTransforms, transform);
         return new BatchStageImpl<>(transform, pipelineImpl);
@@ -103,7 +103,7 @@ public class GrAggBuilder<K> {
 
     @SuppressWarnings("unchecked")
     public <A, R> StreamStage<KeyedWindowResult<K, R>> buildStream(@Nonnull AggregateOperation<A, ? extends R> aggrOp) {
-        List<Transform> upstreamTransforms = upstreamStages.stream().map(s -> s.transform).collect(toList());
+        List<Transform> upstreamTransforms = toList(upstreamStages, s -> s.transform);
         FunctionAdapter fnAdapter = ADAPT_TO_JET_EVENT;
 
         // Avoided Stream API here due to static typing issues

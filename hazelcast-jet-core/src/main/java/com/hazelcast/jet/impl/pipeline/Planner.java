@@ -51,6 +51,7 @@ import java.util.stream.Collectors;
 import static com.hazelcast.jet.core.Edge.from;
 import static com.hazelcast.jet.core.EventTimePolicy.eventTimePolicy;
 import static com.hazelcast.jet.impl.TopologicalSorter.checkTopologicalSort;
+import static com.hazelcast.jet.impl.util.Util.toList;
 import static java.util.stream.Collectors.toList;
 
 @SuppressWarnings("unchecked")
@@ -202,7 +203,7 @@ public class Planner {
         if (chain.isEmpty()) {
             return null;
         }
-        List<FunctionEx> functions = chain.stream().map(t -> ((MapTransform) t).mapFn()).collect(toList());
+        List<FunctionEx> functions = toList(chain, t -> ((MapTransform) t).mapFn());
         return t -> {
             Object result = t;
             for (int i = 0; i < functions.size() && result != null; i++) {

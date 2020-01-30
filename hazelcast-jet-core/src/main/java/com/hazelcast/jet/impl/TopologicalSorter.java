@@ -27,9 +27,9 @@ import java.util.Set;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.impl.util.Util.toList;
 import static java.lang.Math.min;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
 /**
@@ -78,9 +78,7 @@ public final class TopologicalSorter<V> {
         Map<TarjanVertex<V>, List<TarjanVertex<V>>> tarjanAdjacencyMap =
                 adjacencyMap.entrySet().stream()
                             .collect(toMap(e -> tarjanVertices.get(e.getKey()),
-                                           e -> e.getValue().stream()
-                                                 .map(tarjanVertices::get)
-                                                 .collect(toList())));
+                                           e -> toList(e.getValue(), tarjanVertices::get)));
         return new TopologicalSorter<>(tarjanAdjacencyMap, vertexNameFn).go();
     }
 

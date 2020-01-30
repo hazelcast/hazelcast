@@ -67,7 +67,6 @@ import static java.lang.Math.abs;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
 
 public final class Util {
@@ -196,7 +195,7 @@ public final class Util {
     public static <T> Map<Integer, List<T>> distributeObjects(int count, List<T> objects) {
         Map<Integer, List<T>> processorToObjects = range(0, objects.size())
                 .mapToObj(i -> entry(i, objects.get(i)))
-                .collect(groupingBy(e -> e.getKey() % count, mapping(Map.Entry::getValue, toList())));
+                .collect(groupingBy(e -> e.getKey() % count, mapping(Map.Entry::getValue, Collectors.toList())));
 
         for (int i = 0; i < count; i++) {
             processorToObjects.putIfAbsent(i, emptyList());
@@ -419,10 +418,11 @@ public final class Util {
     }
 
     /**
-     * Maps a collection using the provided {@code mapFn}. Doesn't map
-     * in-place, returns a new List.
+     * Returns elements of the given {@code coll} in a new {@code List}, mapped
+     * using the given {@code mapFn}.
      */
-    public static <T, R> List<R> mapList(Collection<T> coll, Function<T, R> mapFn) {
+    @Nonnull
+    public static <T, R> List<R> toList(@Nonnull Collection<T> coll, Function<? super T, ? extends R> mapFn) {
         return coll.stream().map(mapFn).collect(Collectors.toList());
     }
 }

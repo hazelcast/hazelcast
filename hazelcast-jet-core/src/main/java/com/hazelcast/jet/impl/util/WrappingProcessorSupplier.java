@@ -23,7 +23,7 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import javax.annotation.Nonnull;
 import java.util.Collection;
 
-import static java.util.stream.Collectors.toList;
+import static com.hazelcast.jet.impl.util.Util.toList;
 
 /**
  * A {@link ProcessorSupplier} which wraps another {@code ProcessorSupplier}
@@ -44,9 +44,7 @@ public final class WrappingProcessorSupplier implements ProcessorSupplier {
     @Override
     public Collection<? extends Processor> get(int count) {
         Collection<? extends Processor> processors = wrapped.get(count);
-        return processors.stream()
-                         .map(wrapperSupplier)
-                         .collect(toList());
+        return toList(processors, wrapperSupplier);
     }
 
     @Override

@@ -44,7 +44,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.jet.impl.JetEvent.jetEvent;
-import static com.hazelcast.jet.impl.util.Util.mapList;
+import static com.hazelcast.jet.impl.util.Util.toList;
 
 public class FunctionAdapter {
 
@@ -365,7 +365,7 @@ class JetEventFunctionAdapter extends FunctionAdapter {
     ) {
         BiFunctionEx<S, List<JetEvent<T>>, CompletableFuture<List<Traverser<?>>>> fn =
                 (S s, List<JetEvent<T>> input) -> flatMapAsyncBatchedFn
-                        .apply(s, mapList(input, JetEvent::payload))
+                        .apply(s, toList(input, JetEvent::payload))
                         .thenApply(travList -> {
                             List<Traverser<?>> output = (List) travList;
                             requireSizeMatch(output, input);
