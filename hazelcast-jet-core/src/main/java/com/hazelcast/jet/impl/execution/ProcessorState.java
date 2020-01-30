@@ -64,7 +64,7 @@ enum ProcessorState {
      * Making calls to {@link Processor#snapshotCommitPrepare()} until it
      * returns {@code true}.
      */
-    SNAPSHOT_PREPARE_COMMIT,
+    SNAPSHOT_COMMIT_PREPARE,
 
     /**
      * Waiting for the outbox to accept the {@link SnapshotBarrier}.
@@ -73,23 +73,32 @@ enum ProcessorState {
 
     /**
      * Making calls to {@link Processor#snapshotCommitFinish(boolean)} until it
-     * returns {@code true}.
+     * returns {@code true} and then return to {@link #PROCESS_INBOX}. Used
+     * when phase-2 was initiated while in {@link #PROCESS_INBOX}.
      */
-    ON_SNAPSHOT_COMPLETED,
+    SNAPSHOT_COMMIT_FINISH__PROCESS,
+
+    /**
+     * Making calls to {@link Processor#snapshotCommitFinish(boolean)} until it
+     * returns {@code true} and then return to {@link #COMPLETE}. Used when
+     * phase-2 was initiated while in {@link #COMPLETE}.
+     */
+    SNAPSHOT_COMMIT_FINISH__COMPLETE,
+
+    /**
+     * Making calls to {@link Processor#snapshotCommitFinish(boolean)} until it
+     * returns {@code true} and then proceed to {@link #EMIT_DONE_ITEM}. Used
+     * when phase-2 was initiated after {@code Processor.complete()} returned
+     * true.
+     */
+    SNAPSHOT_COMMIT_FINISH__FINAL,
 
     /**
      * Processor completed after a phase 1 of a snapshot and is not doing
      * anything, but it cannot be done until a phase 2 is done - this state is
-     * waiting for a phase 2.
+     * waiting for a snapshot phase 2.
      */
     WAITING_FOR_SNAPSHOT_COMPLETED,
-
-    /**
-     * Same as {@link #ON_SNAPSHOT_COMPLETED}, but after the processor
-     * completed. It follows after {@link #WAITING_FOR_SNAPSHOT_COMPLETED} and
-     * is followed by {@link #EMIT_DONE_ITEM}.
-     */
-    FINAL_ON_SNAPSHOT_COMPLETED,
 
     /**
      * Waiting for the outbox to accept the {@code DONE_ITEM}.

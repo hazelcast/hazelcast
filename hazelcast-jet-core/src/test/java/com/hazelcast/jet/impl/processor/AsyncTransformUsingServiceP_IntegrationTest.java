@@ -71,7 +71,6 @@ import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
@@ -124,7 +123,7 @@ public class AsyncTransformUsingServiceP_IntegrationTest extends SimpleTestInClu
     }
 
     @Test
-    public void stressTest_withRestart() {
+    public void stressTest_withRestart_graceful() {
         stressTestInt(true);
     }
 
@@ -163,7 +162,6 @@ public class AsyncTransformUsingServiceP_IntegrationTest extends SimpleTestInClu
 
         Job job = instance().newJob(dag, jobConfig);
         for (int i = 0; restart && i < 5; i++) {
-            assertNotNull(job);
             assertTrueEventually(() -> {
                 JobStatus status = job.getStatus();
                 assertTrue("status=" + status, status == RUNNING || status == COMPLETED);
@@ -176,7 +174,7 @@ public class AsyncTransformUsingServiceP_IntegrationTest extends SimpleTestInClu
                 break;
             }
         }
-        assertResult(i -> Stream.of(i + "-1", i + "-2", i + "-3", i + "-4", i + "-5"), numItems);
+        assertResultEventually(i -> Stream.of(i + "-1", i + "-2", i + "-3", i + "-4", i + "-5"), numItems);
     }
 
     @Test
@@ -190,7 +188,7 @@ public class AsyncTransformUsingServiceP_IntegrationTest extends SimpleTestInClu
          .writeTo(Sinks.list(sinkList));
 
         instance().newJob(p, jobConfig);
-        assertResult(i -> Stream.of(i + "-1", i + "-2", i + "-3", i + "-4", i + "-5"), NUM_ITEMS);
+        assertResultEventually(i -> Stream.of(i + "-1", i + "-2", i + "-3", i + "-4", i + "-5"), NUM_ITEMS);
     }
 
     @Test
@@ -204,7 +202,7 @@ public class AsyncTransformUsingServiceP_IntegrationTest extends SimpleTestInClu
          .writeTo(Sinks.list(sinkList));
 
         instance().newJob(p, jobConfig);
-        assertResult(i -> Stream.of(i + "-1"), NUM_ITEMS);
+        assertResultEventually(i -> Stream.of(i + "-1"), NUM_ITEMS);
     }
 
     @Test
@@ -218,7 +216,7 @@ public class AsyncTransformUsingServiceP_IntegrationTest extends SimpleTestInClu
          .writeTo(Sinks.list(sinkList));
 
         instance().newJob(p, jobConfig);
-        assertResult(i -> i % 2 == 0 ? Stream.of(i + "") : Stream.empty(), NUM_ITEMS);
+        assertResultEventually(i -> i % 2 == 0 ? Stream.of(i + "") : Stream.empty(), NUM_ITEMS);
     }
 
     @Test
@@ -233,7 +231,7 @@ public class AsyncTransformUsingServiceP_IntegrationTest extends SimpleTestInClu
          .writeTo(Sinks.list(sinkList));
 
         instance().newJob(p, jobConfig);
-        assertResult(i -> Stream.of(i + "-1", i + "-2", i + "-3", i + "-4", i + "-5"), NUM_ITEMS);
+        assertResultEventually(i -> Stream.of(i + "-1", i + "-2", i + "-3", i + "-4", i + "-5"), NUM_ITEMS);
     }
 
     @Test
@@ -248,7 +246,7 @@ public class AsyncTransformUsingServiceP_IntegrationTest extends SimpleTestInClu
          .writeTo(Sinks.list(sinkList));
 
         instance().newJob(p, jobConfig);
-        assertResult(i -> Stream.of(i + "-1"), NUM_ITEMS);
+        assertResultEventually(i -> Stream.of(i + "-1"), NUM_ITEMS);
     }
 
     @Test
@@ -263,7 +261,7 @@ public class AsyncTransformUsingServiceP_IntegrationTest extends SimpleTestInClu
          .writeTo(Sinks.list(sinkList));
 
         instance().newJob(p, jobConfig);
-        assertResult(i -> i % 2 == 0 ? Stream.of(i + "") : Stream.empty(), NUM_ITEMS);
+        assertResultEventually(i -> i % 2 == 0 ? Stream.of(i + "") : Stream.empty(), NUM_ITEMS);
     }
 
     private <R> BiFunctionEx<ExecutorService, Integer, CompletableFuture<R>> transformNotPartitionedFn(
@@ -295,13 +293,13 @@ public class AsyncTransformUsingServiceP_IntegrationTest extends SimpleTestInClu
         };
     }
 
-    private void assertResult(Function<Integer, Stream<? extends String>> transformFn, int numItems) {
+    private void assertResultEventually(Function<Integer, Stream<? extends String>> transformFn, int numItems) {
         String expected = IntStream.range(0, numItems)
                                    .boxed()
                                    .flatMap(transformFn)
                                    .sorted()
                                    .collect(joining("\n"));
         assertTrueEventually(() -> assertEquals(expected, sinkList.stream().map(Object::toString).sorted()
-                                                                  .collect(joining("\n"))));
+                                                                  .collect(joining("\n"))), 240);
     }
 }

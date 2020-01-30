@@ -71,13 +71,14 @@ import static com.hazelcast.jet.impl.execution.ProcessorState.COMPLETE_EDGE;
 import static com.hazelcast.jet.impl.execution.ProcessorState.EMIT_BARRIER;
 import static com.hazelcast.jet.impl.execution.ProcessorState.EMIT_DONE_ITEM;
 import static com.hazelcast.jet.impl.execution.ProcessorState.END;
-import static com.hazelcast.jet.impl.execution.ProcessorState.FINAL_ON_SNAPSHOT_COMPLETED;
 import static com.hazelcast.jet.impl.execution.ProcessorState.NULLARY_PROCESS;
-import static com.hazelcast.jet.impl.execution.ProcessorState.ON_SNAPSHOT_COMPLETED;
 import static com.hazelcast.jet.impl.execution.ProcessorState.PROCESS_INBOX;
 import static com.hazelcast.jet.impl.execution.ProcessorState.PROCESS_WATERMARK;
 import static com.hazelcast.jet.impl.execution.ProcessorState.SAVE_SNAPSHOT;
-import static com.hazelcast.jet.impl.execution.ProcessorState.SNAPSHOT_PREPARE_COMMIT;
+import static com.hazelcast.jet.impl.execution.ProcessorState.SNAPSHOT_COMMIT_FINISH__COMPLETE;
+import static com.hazelcast.jet.impl.execution.ProcessorState.SNAPSHOT_COMMIT_FINISH__FINAL;
+import static com.hazelcast.jet.impl.execution.ProcessorState.SNAPSHOT_COMMIT_FINISH__PROCESS;
+import static com.hazelcast.jet.impl.execution.ProcessorState.SNAPSHOT_COMMIT_PREPARE;
 import static com.hazelcast.jet.impl.execution.ProcessorState.WAITING_FOR_SNAPSHOT_COMPLETED;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.NO_NEW_WM;
@@ -300,12 +301,12 @@ public class ProcessorTasklet implements Tasklet {
             case SAVE_SNAPSHOT:
                 if (processor.saveToSnapshot()) {
                     progTracker.madeProgress();
-                    state = ssContext.isExportOnly() ? EMIT_BARRIER : SNAPSHOT_PREPARE_COMMIT;
+                    state = ssContext.isExportOnly() ? EMIT_BARRIER : SNAPSHOT_COMMIT_PREPARE;
                     stateMachineStep(); // recursion
                 }
                 return;
 
-            case SNAPSHOT_PREPARE_COMMIT:
+            case SNAPSHOT_COMMIT_PREPARE:
                 if (processor.snapshotCommitPrepare()) {
                     progTracker.madeProgress();
                     state = EMIT_BARRIER;
@@ -328,16 +329,25 @@ public class ProcessorTasklet implements Tasklet {
                 }
                 return;
 
-            case ON_SNAPSHOT_COMPLETED:
-            case FINAL_ON_SNAPSHOT_COMPLETED:
+            case SNAPSHOT_COMMIT_FINISH__PROCESS:
+            case SNAPSHOT_COMMIT_FINISH__COMPLETE:
+            case SNAPSHOT_COMMIT_FINISH__FINAL:
                 if (ssContext.isExportOnly() || processor.snapshotCommitFinish(ssContext.isLastPhase1Successful())) {
                     pendingSnapshotId2++;
                     ssContext.phase2DoneForTasklet();
                     progTracker.madeProgress();
-                    if (state == FINAL_ON_SNAPSHOT_COMPLETED) {
-                        state = EMIT_DONE_ITEM;
-                    } else {
-                        state = processingState();
+                    switch (state) {
+                        case SNAPSHOT_COMMIT_FINISH__PROCESS:
+                            state = PROCESS_INBOX;
+                            break;
+                        case SNAPSHOT_COMMIT_FINISH__COMPLETE:
+                            state = COMPLETE;
+                            break;
+                        case SNAPSHOT_COMMIT_FINISH__FINAL:
+                            state = EMIT_DONE_ITEM;
+                            break;
+                        default:
+                            throw new RuntimeException("unexpected state: " + state);
                     }
                 }
                 return;
@@ -345,7 +355,7 @@ public class ProcessorTasklet implements Tasklet {
             case WAITING_FOR_SNAPSHOT_COMPLETED:
                 long currSnapshotId2 = ssContext.activeSnapshotIdPhase2();
                 if (currSnapshotId2 >= pendingSnapshotId2) {
-                    state = FINAL_ON_SNAPSHOT_COMPLETED;
+                    state = SNAPSHOT_COMMIT_FINISH__FINAL;
                     stateMachineStep(); // recursion
                 }
                 return;
@@ -388,14 +398,9 @@ public class ProcessorTasklet implements Tasklet {
 
     private void processInbox() {
         if (ssContext.activeSnapshotIdPhase2() == pendingSnapshotId2) {
-            if (outbox.hasUnfinishedItem()) {
-                outbox.block();
-            } else {
-                outbox.unblock();
-                state = ON_SNAPSHOT_COMPLETED;
-                progTracker.madeProgress();
-                return;
-            }
+            state = SNAPSHOT_COMMIT_FINISH__PROCESS;
+            progTracker.madeProgress();
+            return;
         }
 
         if (inbox.isEmpty()) {
@@ -451,14 +456,9 @@ public class ProcessorTasklet implements Tasklet {
                     : "Unexpected new phase 2 snapshot id: " + currSnapshotId2 + ", expected was "
                     + (pendingSnapshotId2 - 1) + " or " + pendingSnapshotId2;
             if (currSnapshotId2 == pendingSnapshotId2) {
-                if (outbox.hasUnfinishedItem()) {
-                    outbox.block();
-                } else {
-                    outbox.unblock();
-                    state = ON_SNAPSHOT_COMPLETED;
-                    progTracker.madeProgress();
-                    return;
-                }
+                state = SNAPSHOT_COMMIT_FINISH__COMPLETE;
+                progTracker.madeProgress();
+                return;
             }
         }
         if (processor.complete()) {

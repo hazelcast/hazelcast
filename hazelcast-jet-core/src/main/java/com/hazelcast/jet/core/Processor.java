@@ -323,10 +323,10 @@ public interface Processor {
      * <p>
      * This method can be called even when the {@link #process(int, Inbox)
      * process()} method didn't process the items in the inbox. For this reason
-     * this method should not add any items to the outbox. After all the input
-     * is exhausted, it is also called between {@link #complete()} calls. Once
-     * {@code complete()} returns {@code true}, this method can still be called
-     * to finish the snapshot that was started before this processor completed.
+     * this method must not add any items to the outbox. It is also called
+     * between {@link #complete()} calls. Once {@code complete()} returns
+     * {@code true}, this method can still be called to finish the snapshot
+     * that was started before this processor completed.
      * <p>
      * The processor should do the following:
      *
