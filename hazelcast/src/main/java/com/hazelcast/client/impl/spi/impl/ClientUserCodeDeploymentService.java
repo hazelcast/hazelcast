@@ -54,7 +54,7 @@ public class ClientUserCodeDeploymentService {
     public ClientUserCodeDeploymentService(ClientUserCodeDeploymentConfig clientUserCodeDeploymentConfig,
                                            ClassLoader configClassLoader) {
         this.clientUserCodeDeploymentConfig = clientUserCodeDeploymentConfig;
-        this.configClassLoader = configClassLoader != null ? configClassLoader : ClassLoader.getSystemClassLoader();
+        this.configClassLoader = configClassLoader != null ? configClassLoader : Thread.currentThread().getContextClassLoader();
     }
 
     public void start() throws IOException, ClassNotFoundException {
