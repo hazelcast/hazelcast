@@ -118,6 +118,7 @@ import static com.hazelcast.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.IterableUtil.nullToEmpty;
 import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.util.MapUtil.toIntSize;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.SetUtil.createHashSet;
 import static com.hazelcast.util.ThreadUtil.getThreadId;
@@ -735,12 +736,12 @@ abstract class MapProxySupport<K, V>
             OperationFactory sizeOperationFactory = operationProvider.createMapSizeOperationFactory(name);
             Map<Integer, Object> results = operationService.invokeOnAllPartitions(SERVICE_NAME, sizeOperationFactory);
             incrementOtherOperationsStat();
-            int total = 0;
+            long total = 0;
             for (Object result : results.values()) {
                 Integer size = toObject(result);
                 total += size;
             }
-            return total;
+            return toIntSize(total);
         } catch (Throwable t) {
             throw rethrow(t);
         }

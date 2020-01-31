@@ -42,6 +42,7 @@ import java.util.Set;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
+import static com.hazelcast.util.MapUtil.toIntSize;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.ExceptionUtil.rethrowAllowedTypeFirst;
 import static com.hazelcast.util.MapUtil.createHashMap;
@@ -427,12 +428,11 @@ abstract class AbstractCacheProxy<K, V>
             OperationFactory operationFactory = operationProvider.createSizeOperationFactory();
             Map<Integer, Object> results = getNodeEngine().getOperationService()
                     .invokeOnAllPartitions(getServiceName(), operationFactory);
-            int total = 0;
+            long total = 0;
             for (Object result : results.values()) {
-                //noinspection RedundantCast
                 total += (Integer) getNodeEngine().toObject(result);
             }
-            return total;
+            return toIntSize(total);
         } catch (Throwable t) {
             throw rethrowAllowedTypeFirst(t, CacheException.class);
         }
