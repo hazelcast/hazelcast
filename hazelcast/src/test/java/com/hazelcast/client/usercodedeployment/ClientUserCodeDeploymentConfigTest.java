@@ -27,6 +27,7 @@ import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import usercodedeployment.IncrementingEntryProcessor;
 
 import java.io.File;
@@ -192,5 +193,24 @@ public class ClientUserCodeDeploymentConfigTest extends HazelcastTestSupport {
         assertClassLoaded(list, "usercodedeployment.EntryProcessorWithAnonymousAndInner$Test");
     }
 
+    private static class CustomClassLoader extends ClassLoader {
+    }
+
+    @Test
+    public void testUserCodeDeploymentUsesCurrentThreadContextClassLoader() throws ClassNotFoundException, IOException {
+        ClientUserCodeDeploymentConfig config = new ClientUserCodeDeploymentConfig();
+        CustomClassLoader classLoader = Mockito.spy(new CustomClassLoader());
+
+        config.setEnabled(true);
+        config.addClass(IncrementingEntryProcessor.class);
+
+        Thread.currentThread().setContextClassLoader(classLoader);
+        ClientUserCodeDeploymentService service = new ClientUserCodeDeploymentService(config, null);
+        service.start();
+        List<Map.Entry<String, byte[]>> list = service.getClassDefinitionList();
+        assertClassLoaded(list, IncrementingEntryProcessor.class.getName());
+
+        Mockito.verify(classLoader, Mockito.times(1)).getResourceAsStream(Mockito.any());
+    }
 
 }
