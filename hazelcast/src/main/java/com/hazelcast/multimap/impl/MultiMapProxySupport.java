@@ -42,6 +42,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.internal.util.MapUtil.toIntSize;
+
 public abstract class MultiMapProxySupport extends AbstractDistributedObject<MultiMapService> {
 
     protected final MultiMapConfig config;
@@ -197,7 +199,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
                             MultiMapService.SERVICE_NAME,
                             new MultiMapOperationFactory(name, OperationFactoryType.SIZE)
                     );
-            int size = 0;
+            long size = 0;
             for (Object obj : results.values()) {
                 if (obj == null) {
                     continue;
@@ -205,7 +207,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
                 Integer result = nodeEngine.toObject(obj);
                 size += result;
             }
-            return size;
+            return toIntSize(size);
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrow(throwable);
         }

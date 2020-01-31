@@ -66,6 +66,7 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrowAllowedTypeFirst;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.toIntSize;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
 import static java.util.Collections.emptyMap;
@@ -654,12 +655,11 @@ public class CacheProxy<K, V> extends CacheProxySupport<K, V>
             OperationFactory operationFactory = operationProvider.createSizeOperationFactory();
             Map<Integer, Object> results = getNodeEngine().getOperationService()
                                                           .invokeOnAllPartitions(getServiceName(), operationFactory);
-            int total = 0;
+            long total = 0;
             for (Object result : results.values()) {
-                //noinspection RedundantCast
                 total += (Integer) getNodeEngine().toObject(result);
             }
-            return total;
+            return toIntSize(total);
         } catch (Throwable t) {
             throw rethrowAllowedTypeFirst(t, CacheException.class);
         }

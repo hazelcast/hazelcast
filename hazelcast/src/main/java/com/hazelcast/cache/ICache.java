@@ -894,7 +894,8 @@ public interface ICache<K, V>
     V getAndReplace(K key, V value, ExpiryPolicy expiryPolicy);
 
     /**
-     * Total entry count.
+     * Total entry count. If the cache contains more than
+     * <code>Integer.MAX_VALUE</code> elements, returns <code>Integer.MAX_VALUE</code>.
      *
      * @return total entry count
      */
