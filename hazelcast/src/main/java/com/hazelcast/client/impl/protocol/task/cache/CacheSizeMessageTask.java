@@ -30,6 +30,8 @@ import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import java.security.Permission;
 import java.util.Map;
 
+import static com.hazelcast.internal.util.MapUtil.toIntSize;
+
 /**
  * This client request specifically calls {@link CacheSizeOperationFactory} on the server side.
  *
@@ -50,13 +52,13 @@ public class CacheSizeMessageTask
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
-        int total = 0;
+        long total = 0;
         CacheService service = getService(getServiceName());
         for (Object result : map.values()) {
             Integer size = (Integer) service.toObject(result);
             total += size;
         }
-        return total;
+        return toIntSize(total);
     }
 
     @Override
