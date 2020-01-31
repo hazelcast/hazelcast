@@ -337,6 +337,7 @@ public interface GeneralStage<T> extends Stage {
     /**
      * Batched version of {@link #mapUsingService}: {@code mapAsyncFn} takes
      * a list of input items and returns a {@code CompletableFuture<List<R>>}.
+     * The size of the input list is limited by the given {@code maxBatchSize}.
      * <p>
      * As opposed to the non-batched variant, this transform cannot perform
      * filtering. The output list's items must match one-to-one with the input
@@ -346,10 +347,12 @@ public interface GeneralStage<T> extends Stage {
      * output.
      * <p>
      * This sample takes a stream of stock items and sets the {@code detail}
-     * field on them by performing batched lookups from a registry:
+     * field on them by performing batched lookups from a registry. The max
+     * size of the items to lookup is specified as {@code 100}:
      * <pre>{@code
-     * stage.mapUsingServiceAsync(
+     * stage.mapUsingServiceAsyncBatched(
      *     ServiceFactory.withCreateFn(jet -> new ItemDetailRegistry(jet)),
+     *     100,
      *     (reg, itemList) -> reg
      *             .fetchDetailsAsync(itemList)
      *             .thenApply(detailList -> {
@@ -370,6 +373,7 @@ public interface GeneralStage<T> extends Stage {
      * duplicate updates.
      *
      * @param serviceFactory the service factory
+     * @param maxBatchSize max size of the input list
      * @param mapAsyncFn a stateless mapping function
      * @param <S> type of service object
      * @param <R> the future result type of the mapping function
