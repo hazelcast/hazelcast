@@ -57,7 +57,7 @@ public class QueryId implements DataSerializable {
     public static QueryId create(UUID memberId) {
         UUID qryId = UuidUtil.newUnsecureUUID();
 
-        return new QueryId(memberId, qryId.getLeastSignificantBits(), qryId.getLeastSignificantBits());
+        return new QueryId(memberId, qryId.getMostSignificantBits(), qryId.getLeastSignificantBits());
     }
 
     private UUID getLocalId() {
