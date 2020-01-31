@@ -38,6 +38,18 @@ public class PartSupp implements Serializable {
         this.ps_comment = ps_comment;
     }
 
+    public int getPs_availqty() {
+        return ps_availqty;
+    }
+
+    public BigDecimal getPs_supplycost() {
+        return ps_supplycost;
+    }
+
+    public String getPs_comment() {
+        return ps_comment;
+    }
+
     public static class Key implements Serializable {
         public long ps_partkey;
         public long ps_suppkey;
@@ -49,6 +61,14 @@ public class PartSupp implements Serializable {
         public Key(long ps_partkey, long ps_suppkey) {
             this.ps_partkey = ps_partkey;
             this.ps_suppkey = ps_suppkey;
+        }
+
+        public long getPs_partkey() {
+            return ps_partkey;
+        }
+
+        public long getPs_suppkey() {
+            return ps_suppkey;
         }
     }
 }

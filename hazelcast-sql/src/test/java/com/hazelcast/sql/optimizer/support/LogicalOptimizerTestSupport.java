@@ -16,17 +16,18 @@
 
 package com.hazelcast.sql.optimizer.support;
 
-import com.hazelcast.sql.impl.calcite.ExpressionConverterRexVisitor;
-import com.hazelcast.sql.impl.calcite.opt.physical.visitor.PlanCreateVisitor;
+import com.hazelcast.sql.impl.calcite.expression.ExpressionConverterRexVisitor;
 import com.hazelcast.sql.impl.calcite.opt.logical.AggregateLogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.logical.JoinLogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.logical.MapScanLogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.logical.ProjectLogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.logical.RootLogicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.visitor.PlanCreateVisitor;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.aggregate.AggregateExpression;
+import com.hazelcast.sql.support.TestPhysicalNodeSchema;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.AggregateCall;
 import org.apache.calcite.rel.core.JoinRelType;
@@ -64,13 +65,13 @@ public abstract class LogicalOptimizerTestSupport extends OptimizerTestSupport {
         return assertClass(node, RootLogicalRel.class);
     }
 
-    protected ProjectLogicalRel assertProject(RelNode rel, List<Expression> expProjects) {
+    protected ProjectLogicalRel assertProject(RelNode rel, List<Expression<?>> expProjects) {
         ProjectLogicalRel project = assertClass(rel, ProjectLogicalRel.class);
 
-        List<Expression> projects = new ArrayList<>();
+        List<Expression<?>> projects = new ArrayList<>();
 
         for (RexNode projectExpr : project.getProjects()) {
-            projects.add(projectExpr.accept(new ExpressionConverterRexVisitor()));
+            projects.add(projectExpr.accept(expressionConverter()));
         }
 
         expProjects = expProjects != null ? new ArrayList<>(expProjects) : new ArrayList<>();
@@ -80,25 +81,26 @@ public abstract class LogicalOptimizerTestSupport extends OptimizerTestSupport {
         return project;
     }
 
-    protected JoinLogicalRel assertJoin(RelNode rel, JoinRelType expType, Expression expFilter) {
+    protected JoinLogicalRel assertJoin(RelNode rel, JoinRelType expType, Expression<?> expFilter) {
         JoinLogicalRel join = assertClass(rel, JoinLogicalRel.class);
 
         assertEquals(expType, join.getJoinType());
 
-        Expression filter = join.getCondition() != null ? join.getCondition().accept(new ExpressionConverterRexVisitor()) : null;
+        Expression<?> filter = join.getCondition() != null ? join.getCondition().accept(expressionConverter()) : null;
+
         assertEquals(expFilter, filter);
 
         return join;
     }
 
-    protected AggregateLogicalRel assertAggregate(RelNode rel, List<Integer> expGroup, List<AggregateExpression> expAggExps) {
+    protected AggregateLogicalRel assertAggregate(RelNode rel, List<Integer> expGroup, List<AggregateExpression<?>> expAggExps) {
         AggregateLogicalRel agg = assertClass(rel, AggregateLogicalRel.class);
 
         assertEquals(expGroup, agg.getGroupSet().toList());
 
-        List<AggregateExpression> aggExps = new ArrayList<>(agg.getAggCallList().size());
+        List<AggregateExpression<?>> aggExps = new ArrayList<>(agg.getAggCallList().size());
         for (AggregateCall aggCall : agg.getAggCallList()) {
-            aggExps.add(PlanCreateVisitor.convertAggregateCall(aggCall));
+            aggExps.add(PlanCreateVisitor.convertAggregateCall(aggCall, TestPhysicalNodeSchema.INSTANCE));
         }
         assertEquals(expAggExps, aggExps);
 
@@ -109,7 +111,7 @@ public abstract class LogicalOptimizerTestSupport extends OptimizerTestSupport {
         RelNode node,
         List<String> expFields,
         List<Integer> expProjects,
-        Expression expFilter
+        Expression<?> expFilter
     ) {
         assertScan(node, null, expFields, expProjects, expFilter);
     }
@@ -119,7 +121,7 @@ public abstract class LogicalOptimizerTestSupport extends OptimizerTestSupport {
         String expMapName,
         List<String> expFields,
         List<Integer> expProjects,
-        Expression expFilter
+        Expression<?> expFilter
     ) {
         MapScanLogicalRel scan = assertClass(node, MapScanLogicalRel.class);
 
@@ -130,7 +132,7 @@ public abstract class LogicalOptimizerTestSupport extends OptimizerTestSupport {
         assertFieldNames(expFields, scan.getTable().getRowType().getFieldNames());
         assertFieldIndexes(expProjects, scan.getProjects());
 
-        Expression filter = scan.getFilter() != null ? scan.getFilter().accept(new ExpressionConverterRexVisitor()) : null;
+        Expression<?> filter = scan.getFilter() != null ? scan.getFilter().accept(expressionConverter()) : null;
 
         assertEquals(expFilter, filter);
     }
@@ -140,5 +142,9 @@ public abstract class LogicalOptimizerTestSupport extends OptimizerTestSupport {
         assertEquals(expClass, rel.getClass());
 
         return (T) rel;
+    }
+
+    private static ExpressionConverterRexVisitor expressionConverter() {
+        return new ExpressionConverterRexVisitor(TestPhysicalNodeSchema.INSTANCE, 0);
     }
 }

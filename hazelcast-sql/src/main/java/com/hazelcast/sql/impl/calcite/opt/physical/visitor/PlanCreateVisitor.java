@@ -19,16 +19,16 @@ package com.hazelcast.sql.impl.calcite.opt.physical.visitor;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.OptimizerStatistics;
 import com.hazelcast.sql.impl.QueryExplain;
 import com.hazelcast.sql.impl.QueryFragment;
 import com.hazelcast.sql.impl.QueryFragmentMapping;
 import com.hazelcast.sql.impl.QueryPlan;
 import com.hazelcast.sql.impl.calcite.EdgeCollectorPhysicalNodeVisitor;
-import com.hazelcast.sql.impl.calcite.ExpressionConverterRexVisitor;
-import com.hazelcast.sql.impl.OptimizerStatistics;
+import com.hazelcast.sql.impl.calcite.expression.ExpressionConverterRexVisitor;
 import com.hazelcast.sql.impl.calcite.operators.HazelcastSqlOperatorTable;
+import com.hazelcast.sql.impl.calcite.opt.AbstractScanRel;
 import com.hazelcast.sql.impl.calcite.opt.ExplainCreator;
-import com.hazelcast.sql.impl.calcite.opt.physical.agg.AggregatePhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.FilterPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.MapIndexScanPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.MapScanPhysicalRel;
@@ -39,11 +39,13 @@ import com.hazelcast.sql.impl.calcite.opt.physical.ReplicatedMapScanPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.ReplicatedToDistributedPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.RootPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.SortPhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.agg.AggregatePhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.BroadcastExchangePhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.SingletonSortMergeExchangePhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.UnicastExchangePhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.join.HashJoinPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.join.NestedLoopJoinPhysicalRel;
+import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.CountRowExpression;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -51,7 +53,8 @@ import com.hazelcast.sql.impl.expression.aggregate.AggregateExpression;
 import com.hazelcast.sql.impl.expression.aggregate.AverageAggregateExpression;
 import com.hazelcast.sql.impl.expression.aggregate.CountAggregateExpression;
 import com.hazelcast.sql.impl.expression.aggregate.DistributedAverageAggregateExpression;
-import com.hazelcast.sql.impl.expression.aggregate.MinMaxAggregateExpression;
+import com.hazelcast.sql.impl.expression.aggregate.MaxAggregateExpression;
+import com.hazelcast.sql.impl.expression.aggregate.MinAggregateExpression;
 import com.hazelcast.sql.impl.expression.aggregate.SingleValueAggregateExpression;
 import com.hazelcast.sql.impl.expression.aggregate.SumAggregateExpression;
 import com.hazelcast.sql.impl.physical.AggregatePhysicalNode;
@@ -60,6 +63,7 @@ import com.hazelcast.sql.impl.physical.MapIndexScanPhysicalNode;
 import com.hazelcast.sql.impl.physical.MapScanPhysicalNode;
 import com.hazelcast.sql.impl.physical.MaterializedInputPhysicalNode;
 import com.hazelcast.sql.impl.physical.PhysicalNode;
+import com.hazelcast.sql.impl.physical.PhysicalNodeSchema;
 import com.hazelcast.sql.impl.physical.ProjectPhysicalNode;
 import com.hazelcast.sql.impl.physical.ReplicatedMapScanPhysicalNode;
 import com.hazelcast.sql.impl.physical.ReplicatedToPartitionedPhysicalNode;
@@ -73,6 +77,7 @@ import com.hazelcast.sql.impl.physical.io.ReceiveSortMergePhysicalNode;
 import com.hazelcast.sql.impl.physical.io.UnicastSendPhysicalNode;
 import com.hazelcast.sql.impl.physical.join.HashJoinPhysicalNode;
 import com.hazelcast.sql.impl.physical.join.NestedLoopJoinPhysicalNode;
+import com.hazelcast.sql.impl.type.DataType;
 import org.apache.calcite.rel.RelFieldCollation;
 import org.apache.calcite.rel.core.AggregateCall;
 import org.apache.calcite.rex.RexNode;
@@ -90,7 +95,7 @@ import java.util.UUID;
  /**
  * Visitor which produces executable query plan.
  */
-@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:classfanoutcomplexity"})
+@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:classfanoutcomplexity", "rawtypes"})
 public class PlanCreateVisitor implements PhysicalRelVisitor {
     /** Partition mapping. */
     private final Map<UUID, PartitionIdSet> partMap;
@@ -107,6 +112,9 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     /** Original SQL. */
     private final String sql;
 
+    /** Parameters. */
+    private final List<Object> params;
+
     /** Whether physical rel should be saved in the plan. */
     private final boolean savePhysicalRel;
 
@@ -118,9 +126,6 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
     /** Upstream nodes. Normally it is a one node, except of multi-source operations (e.g. joins, sets, subqueries). */
     private final Deque<PhysicalNode> upstreamNodes = new ArrayDeque<>();
-
-    /** Expression converter visitor. */
-    private final ExpressionConverterRexVisitor expressionConverter = new ExpressionConverterRexVisitor();
 
     /** ID of current edge. */
     private int nextEdgeGenerator;
@@ -134,6 +139,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         List<Address> dataMemberAddresses,
         Map<PhysicalRel, List<Integer>> relIdMap,
         String sql,
+        List<Object> params,
         boolean savePhysicalRel,
         OptimizerStatistics stats
     ) {
@@ -142,6 +148,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         this.dataMemberAddresses = dataMemberAddresses;
         this.relIdMap = relIdMap;
         this.sql = sql;
+        this.params = params;
         this.savePhysicalRel = savePhysicalRel;
         this.stats = stats;
     }
@@ -177,7 +184,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             fragments,
             outboundEdgeMap,
             inboundEdgeMap,
-            expressionConverter.getParameterCount(),
+            params.size(),
             explain,
             stats,
             savePhysicalRel ? Collections.singleton(rootPhysicalRel) : null
@@ -200,40 +207,61 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
     @Override
     public void onMapScan(MapScanPhysicalRel rel) {
+        List<String> fieldPaths = getScanFieldPaths(rel);
+
+        PhysicalNodeSchema schemaBefore = getScanSchemaBeforeProject(rel);
+        PhysicalNodeSchema schemaAfter = getScanSchemaAfterProject(rel, schemaBefore);
+
         MapScanPhysicalNode scanNode = new MapScanPhysicalNode(
             pollId(rel),
             rel.getTableUnwrapped().getName(),
-            rel.getTable().getRowType().getFieldNames(),
+            fieldPaths,
+            schemaBefore.getTypes(),
             rel.getProjects(),
-            convertFilter(rel.getFilter())
+            convertFilter(schemaBefore, rel.getFilter()),
+            schemaAfter
         );
 
         pushUpstream(scanNode);
     }
 
-     @Override
-     public void onMapIndexScan(MapIndexScanPhysicalRel rel) {
-         MapIndexScanPhysicalNode scanNode = new MapIndexScanPhysicalNode(
-             pollId(rel),
-             rel.getTableUnwrapped().getName(),
-             rel.getTable().getRowType().getFieldNames(),
-             rel.getProjects(),
-             rel.getIndex().getName(),
-             rel.getIndexFilter(),
-             convertFilter(rel.getRemainderFilter())
-         );
+    @Override
+    public void onMapIndexScan(MapIndexScanPhysicalRel rel) {
+        List<String> fieldPaths = getScanFieldPaths(rel);
 
-         pushUpstream(scanNode);
-     }
+        PhysicalNodeSchema schemaBefore = getScanSchemaBeforeProject(rel);
+        PhysicalNodeSchema schemaAfter = getScanSchemaAfterProject(rel, schemaBefore);
+
+        MapIndexScanPhysicalNode scanNode = new MapIndexScanPhysicalNode(
+            pollId(rel),
+            rel.getTableUnwrapped().getName(),
+            fieldPaths,
+            schemaBefore.getTypes(),
+            rel.getProjects(),
+            rel.getIndex().getName(),
+            rel.getIndexFilter(),
+            convertFilter(schemaBefore, rel.getRemainderFilter()),
+            schemaAfter
+        );
+
+        pushUpstream(scanNode);
+    }
 
     @Override
     public void onReplicatedMapScan(ReplicatedMapScanPhysicalRel rel) {
+        List<String> fieldPaths = getScanFieldPaths(rel);
+
+        PhysicalNodeSchema schemaBefore = getScanSchemaBeforeProject(rel);
+        PhysicalNodeSchema schemaAfter = getScanSchemaAfterProject(rel, schemaBefore);
+
         ReplicatedMapScanPhysicalNode scanNode = new ReplicatedMapScanPhysicalNode(
             pollId(rel),
             rel.getTableUnwrapped().getName(),
-            rel.getTable().getRowType().getFieldNames(),
+            fieldPaths,
+            schemaBefore.getTypes(),
             rel.getProjects(),
-            convertFilter(rel.getFilter())
+            convertFilter(schemaBefore, rel.getFilter()),
+            schemaAfter
         );
 
         pushUpstream(scanNode);
@@ -242,6 +270,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     @Override
     public void onSort(SortPhysicalRel rel) {
         PhysicalNode upstreamNode = pollSingleUpstream();
+        PhysicalNodeSchema upstreamNodeSchema = upstreamNode.getSchema();
 
         List<RelFieldCollation> collations = rel.getCollation().getFieldCollations();
 
@@ -252,7 +281,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             RelFieldCollation.Direction direction = collation.getDirection();
             int idx = collation.getFieldIndex();
 
-            expressions.add(new ColumnExpression(idx));
+            expressions.add(ColumnExpression.create(idx, upstreamNodeSchema.getType(idx)));
             ascs.add(!direction.isDescending());
         }
 
@@ -288,7 +317,8 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         // Create receiver.
         ReceivePhysicalNode receiveNode = new ReceivePhysicalNode(
             id,
-            edge
+            edge,
+            sendNode.getSchema()
         );
 
         pushUpstream(receiveNode);
@@ -315,7 +345,8 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         // Create receiver.
         ReceivePhysicalNode receiveNode = new ReceivePhysicalNode(
             id,
-            edge
+            edge,
+            sendNode.getSchema()
         );
 
         pushUpstream(receiveNode);
@@ -349,7 +380,8 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             id,
             edge,
             sortNode.getExpressions(),
-            sortNode.getAscs()
+            sortNode.getAscs(),
+            sendNode.getSchema()
         );
 
         pushUpstream(receiveNode);
@@ -376,7 +408,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         List<Expression> convertedProjects = new ArrayList<>(projects.size());
 
         for (RexNode project : projects) {
-            Expression convertedProject = project.accept(expressionConverter);
+            Expression convertedProject = convertExpression(upstreamNode.getSchema(), project);
 
             convertedProjects.add(convertedProject);
         }
@@ -394,7 +426,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     public void onFilter(FilterPhysicalRel rel) {
         PhysicalNode upstreamNode = pollSingleUpstream();
 
-        Expression<Boolean> filter = convertFilter(rel.getCondition());
+        Expression<Boolean> filter = convertFilter(upstreamNode.getSchema(), rel.getCondition());
 
         FilterPhysicalNode filterNode = new FilterPhysicalNode(
             pollId(rel),
@@ -417,7 +449,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         List<AggregateExpression> aggAccumulators = new ArrayList<>();
 
         for (AggregateCall aggCall : aggCalls) {
-            AggregateExpression aggAccumulator = convertAggregateCall(aggCall);
+            AggregateExpression aggAccumulator = convertAggregateCall(aggCall, upstreamNode.getSchema());
 
             aggAccumulators.add(aggAccumulator);
         }
@@ -439,8 +471,10 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
          PhysicalNode leftInput = pollSingleUpstream();
          PhysicalNode rightInput = pollSingleUpstream();
 
+         PhysicalNodeSchema schema = PhysicalNodeSchema.combine(leftInput.getSchema(), rightInput.getSchema());
+
          RexNode condition = rel.getCondition();
-         Expression convertedCondition = condition.accept(expressionConverter);
+         Expression convertedCondition = convertExpression(schema, condition);
 
          NestedLoopJoinPhysicalNode joinNode = new NestedLoopJoinPhysicalNode(
              pollId(rel),
@@ -461,8 +495,10 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
          PhysicalNode leftInput = pollSingleUpstream();
          PhysicalNode rightInput = pollSingleUpstream();
 
+         PhysicalNodeSchema schema = PhysicalNodeSchema.combine(leftInput.getSchema(), rightInput.getSchema());
+
          RexNode condition = rel.getCondition();
-         Expression convertedCondition = condition.accept(expressionConverter);
+         Expression convertedCondition = convertExpression(schema, condition);
 
          HashJoinPhysicalNode joinNode = new HashJoinPhysicalNode(
              pollId(rel),
@@ -491,7 +527,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
          pushUpstream(node);
      }
 
-     public static AggregateExpression convertAggregateCall(AggregateCall aggCall) {
+     public static AggregateExpression convertAggregateCall(AggregateCall aggCall, PhysicalNodeSchema upstreamSchema) {
         SqlAggFunction aggFunc = aggCall.getAggregation();
         List<Integer> argList = aggCall.getArgList();
 
@@ -499,7 +535,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
         switch (aggFunc.getKind()) {
             case SUM:
-                return new SumAggregateExpression(distinct, new ColumnExpression<>(argList.get(0)));
+                return SumAggregateExpression.create(aggregateColumn(argList, 0, upstreamSchema), distinct);
 
             case COUNT:
                 Expression operand;
@@ -509,39 +545,46 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
                 } else {
                     assert argList.size() == 1;
 
-                    operand = new ColumnExpression(argList.get(0));
+                    operand = aggregateColumn(argList, 0, upstreamSchema);
                 }
 
-                return new CountAggregateExpression(distinct, operand);
+                return CountAggregateExpression.create(operand, distinct);
 
             case MIN:
-                return new MinMaxAggregateExpression(true, distinct, new ColumnExpression<>(argList.get(0)));
+                return MinAggregateExpression.create(aggregateColumn(argList, 0, upstreamSchema), distinct);
 
             case MAX:
-                return new MinMaxAggregateExpression(false, distinct, new ColumnExpression<>(argList.get(0)));
+                return MaxAggregateExpression.create(aggregateColumn(argList, 0, upstreamSchema), distinct);
 
             case AVG:
-                return new AverageAggregateExpression(distinct, new ColumnExpression<>(argList.get(0)));
+                return AverageAggregateExpression.create(aggregateColumn(argList, 0, upstreamSchema), distinct);
 
             case SINGLE_VALUE:
                 assert argList.size() == 1;
 
                 // TODO: Make sure to eliminate the whole aggregate whose goal is to deduplicate rows if we can prove
                 //  that the input is unique (e.g. __key is present, or unique index is used, etc.)
-                return new SingleValueAggregateExpression(distinct, new ColumnExpression<>(argList.get(0)));
+                return SingleValueAggregateExpression.create(aggregateColumn(argList, 0, upstreamSchema), distinct);
 
             case OTHER_FUNCTION:
                 assert aggFunc == HazelcastSqlOperatorTable.DISTRIBUTED_AVG;
 
-                return new DistributedAverageAggregateExpression(
-                    new ColumnExpression(argList.get(0)),
-                    new ColumnExpression(argList.get(1))
+                return DistributedAverageAggregateExpression.create(
+                    aggregateColumn(argList, 0, upstreamSchema),
+                    aggregateColumn(argList, 1, upstreamSchema)
                 );
 
             default:
                 throw new HazelcastSqlException(-1, "Unsupported aggregate call: " + aggFunc.getName());
         }
     }
+
+     private static ColumnExpression<?> aggregateColumn(List<Integer> argList, int index, PhysicalNodeSchema upstreamSchema) {
+         Integer columnIndex = argList.get(index);
+         DataType columnType = upstreamSchema.getType(columnIndex);
+
+         return ColumnExpression.create(columnIndex, columnType);
+     }
 
     /**
      * Push node to upstream stack.
@@ -599,13 +642,53 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     }
 
     @SuppressWarnings("unchecked")
-    private Expression<Boolean> convertFilter(RexNode expression) {
+    private Expression<Boolean> convertFilter(PhysicalNodeSchema schema, RexNode expression) {
         if (expression == null) {
             return null;
         }
 
-        Expression convertedExpression = expression.accept(expressionConverter);
+        Expression convertedExpression = convertExpression(schema, expression);
 
         return (Expression<Boolean>) convertedExpression;
     }
+
+    private Expression convertExpression(PhysicalNodeSchema schema, RexNode expression) {
+        ExpressionConverterRexVisitor converter = new ExpressionConverterRexVisitor(schema, params.size());
+
+        return expression.accept(converter);
+    }
+
+     private static PhysicalNodeSchema getScanSchemaAfterProject(AbstractScanRel rel, PhysicalNodeSchema schemaBeforeProject) {
+         List<DataType> types = new ArrayList<>(rel.getProjects().size());
+
+         for (int project : rel.getProjects()) {
+             types.add(schemaBeforeProject.getType(project));
+         }
+
+         return new PhysicalNodeSchema(types);
+     }
+
+     private static PhysicalNodeSchema getScanSchemaBeforeProject(AbstractScanRel rel) {
+         HazelcastTable table = rel.getTableUnwrapped();
+
+         List<DataType> types = new ArrayList<>();
+
+         for (String fieldName : rel.getTable().getRowType().getFieldNames()) {
+             types.add(table.getFieldType(fieldName));
+         }
+
+         return new PhysicalNodeSchema(types);
+     }
+
+     private static List<String> getScanFieldPaths(AbstractScanRel rel) {
+         HazelcastTable table = rel.getTableUnwrapped();
+
+         List<String> paths = new ArrayList<>();
+
+         for (String fieldName : rel.getTable().getRowType().getFieldNames()) {
+             paths.add(table.getFieldPath(fieldName));
+         }
+
+         return paths;
+     }
 }

@@ -53,4 +53,32 @@ public class Supplier implements Serializable {
         this.s_acctbal = s_acctbal;
         this.s_comment = s_comment;
     }
+
+    public long getS_suppkey() {
+        return s_suppkey;
+    }
+
+    public String getS_name() {
+        return s_name;
+    }
+
+    public String getS_address() {
+        return s_address;
+    }
+
+    public long getS_nationkey() {
+        return s_nationkey;
+    }
+
+    public String getS_phone() {
+        return s_phone;
+    }
+
+    public BigDecimal getS_acctbal() {
+        return s_acctbal;
+    }
+
+    public String getS_comment() {
+        return s_comment;
+    }
 }

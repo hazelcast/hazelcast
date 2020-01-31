@@ -36,7 +36,7 @@ public final class LocalDateConverter extends Converter {
     }
 
     @Override
-    public Class getClazz() {
+    public Class<?> getValueClass() {
         return LocalDate.class;
     }
 
@@ -63,6 +63,11 @@ public final class LocalDateConverter extends Converter {
     @Override
     public OffsetDateTime asTimestampWithTimezone(Object val) {
         return ZonedDateTime.of(asTimestamp(val), ZoneId.systemDefault()).toOffsetDateTime();
+    }
+
+    @Override
+    public Object convertToSelf(Converter valConverter, Object val) {
+        return valConverter.asDate(val);
     }
 
     private LocalDate cast(Object val) {

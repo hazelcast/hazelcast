@@ -19,11 +19,14 @@ package com.hazelcast.sql.impl.expression.math;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.impl.expression.CallOperator;
+import com.hazelcast.sql.SqlErrorCode;
+import com.hazelcast.sql.impl.expression.CastExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.UniCallExpressionWithType;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.DataTypeUtils;
+import com.hazelcast.sql.impl.type.GenericType;
 import com.hazelcast.sql.impl.type.accessor.Converter;
 
 import java.io.IOException;
@@ -33,79 +36,86 @@ import java.math.RoundingMode;
 /**
  * Implementation of FLOOR/CEIL functions.
  */
-public class FloorCeilFunction<T> extends UniCallExpressionWithType<T> {
+public abstract class FloorCeilFunction<T> extends UniCallExpressionWithType<T> {
     /** If this is the CEIL call. */
     private boolean ceil;
 
-    /** Operand type. */
-    private transient DataType operandType;
-
-    public FloorCeilFunction() {
+    protected FloorCeilFunction() {
         // No-op.
     }
 
-    public FloorCeilFunction(Expression operand, boolean ceil) {
-        super(operand);
+    protected FloorCeilFunction(Expression<?> operand, DataType resultType) {
+        super(operand, resultType);
+    }
 
-        this.ceil = ceil;
+    public static Expression<?> create(Expression<?> operand, boolean ceil) {
+        DataType operandType = operand.getType();
+
+        switch (operandType.getType()) {
+            case BIT:
+                // Bit alway remain the same, just coerce it.
+                return CastExpression.coerce(operand, DataType.TINYINT);
+
+            case TINYINT:
+            case SMALLINT:
+            case INT:
+            case BIGINT:
+                // Integer types are always unchanged.
+                return operand;
+
+            default:
+                break;
+        }
+
+        DataType resultType = inferResultType(operandType);
+
+        return ceil ? new CeilFunction<>(operand, resultType) : new FloorFunction<>(operand, resultType);
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public T eval(Row row) {
-        Object operandValue = operand.eval(row);
+        Object value = operand.eval(row);
 
-        if (operandValue == null) {
+        if (value == null) {
             return null;
         }
 
-        if (resType == null) {
-            DataType type = operand.getType();
-
-            if (!type.isCanConvertToNumeric()) {
-                throw new HazelcastSqlException(-1, "Operand is not numeric: " + type);
-            }
-
-            switch (type.getType()) {
-                case BIT:
-                    resType = DataType.TINYINT;
-
-                    break;
-
-                case REAL:
-                    resType = DataType.DOUBLE;
-
-                    break;
-
-                default:
-                    resType = type;
-            }
-
-            operandType = type;
-        }
-
-        return (T) floorCeil(operandValue, operandType, resType, ceil);
+        return (T) floorCeil(value, operand.getType(), resultType, isCeil());
     }
 
+    protected abstract boolean isCeil();
+
     @SuppressWarnings("checkstyle:AvoidNestedBlocks")
-    private static Object floorCeil(Object operand, DataType operandType, DataType resType, boolean ceil) {
+    private static Object floorCeil(Object operandValue, DataType operandType, DataType resultType, boolean ceil) {
+        if (resultType.getType() == GenericType.LATE) {
+            // Special handling for late binding.
+            operandType = DataTypeUtils.resolveType(operandValue);
+
+            switch (operandType.getType()) {
+                case BIT:
+                    // Bit alway remain the same, just coerce it.
+                    return CastExpression.coerce(operandValue, operandType, DataType.TINYINT);
+
+                case TINYINT:
+                case SMALLINT:
+                case INT:
+                case BIGINT:
+                    // Integer types are always unchanged.
+                    return operandValue;
+
+                default:
+                    break;
+            }
+
+            resultType = inferResultType(operandType);
+        }
+
         Converter operandConverter = operandType.getConverter();
 
-        switch (resType.getType()) {
-            case TINYINT:
-                return operandConverter.asTinyInt(operand);
-
-            case SMALLINT:
-                return operandConverter.asSmallInt(operand);
-
-            case INT:
-                return operandConverter.asInt(operand);
-
-            case BIGINT:
-                return operandConverter.asBigInt(operand);
-
+        switch (resultType.getType()) {
             case DECIMAL: {
-                BigDecimal operand0 = operandConverter.asDecimal(operand);
+                BigDecimal operand0 = operandConverter.asDecimal(operandValue);
 
                 RoundingMode roundingMode = ceil ? RoundingMode.CEILING : RoundingMode.FLOOR;
 
@@ -113,19 +123,14 @@ public class FloorCeilFunction<T> extends UniCallExpressionWithType<T> {
             }
 
             case DOUBLE: {
-                double operand0 = operandConverter.asDouble(operand);
+                double operand0 = operandConverter.asDouble(operandValue);
 
                 return ceil ? Math.ceil(operand0) : Math.floor(operand0);
             }
 
             default:
-                throw new HazelcastSqlException(-1, "Unexpected type: " + resType);
+                throw new HazelcastSqlException(-1, "Unexpected type: " + resultType);
         }
-    }
-
-    @Override
-    public int operator() {
-        return ceil ? CallOperator.CEIL : CallOperator.FLOOR;
     }
 
     @Override
@@ -140,5 +145,35 @@ public class FloorCeilFunction<T> extends UniCallExpressionWithType<T> {
         super.readData(in);
 
         ceil = in.readBoolean();
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{operand=" + operand + ", resultType=" + resultType + '}';
+    }
+
+    /**
+     * Infer result type.
+     *
+     * @param operandType Operand type.
+     * @return Result type.
+     */
+    private static DataType inferResultType(DataType operandType) {
+        if (!operandType.isNumeric()) {
+            throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Operand is not numeric: " + operandType);
+        }
+
+        switch (operandType.getType()) {
+            case REAL:
+                return DataType.DOUBLE;
+
+            case VARCHAR:
+                return DataType.DECIMAL;
+
+            default:
+                break;
+        }
+
+        return operandType;
     }
 }

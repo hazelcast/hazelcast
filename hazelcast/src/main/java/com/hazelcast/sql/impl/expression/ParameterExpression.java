@@ -21,6 +21,8 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.QueryContext;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.accessor.Converter;
+import com.hazelcast.sql.impl.type.accessor.Converters;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -32,8 +34,8 @@ public class ParameterExpression<T> implements Expression<T> {
     /** Index. */
     private int index;
 
-    /** Type of the argument. */
-    private transient DataType type;
+    /** Cached value. */
+    private transient volatile T cachedValue;
 
     public ParameterExpression() {
         // No-op.
@@ -46,18 +48,29 @@ public class ParameterExpression<T> implements Expression<T> {
     @SuppressWarnings("unchecked")
     @Override
     public T eval(Row row) {
-        Object value = QueryContext.getCurrentContext().getArgument(index);
-
-        if (value != null) {
-            type = DataType.resolveType(value);
+        if (cachedValue != null) {
+            return cachedValue;
         }
 
-        return (T) value;
+        T value = (T) QueryContext.getCurrentContext().getArgument(index);
+
+        if (value == null) {
+            return null;
+        } else {
+            // Normalize and save to cache.
+            Converter converter = Converters.getConverter(value.getClass());
+
+            value = (T) converter.convertToSelf(converter, value);
+
+            cachedValue = value;
+
+            return value;
+        }
     }
 
     @Override
     public DataType getType() {
-        return DataType.notNullOrLate(type);
+        return DataType.LATE;
     }
 
     @Override

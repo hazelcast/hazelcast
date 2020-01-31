@@ -16,14 +16,12 @@
 
 package com.hazelcast.sql.tpch;
 
-import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.partition.strategy.DeclarativePartitioningStrategy;
-import com.hazelcast.query.QueryConstants;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.QueryPlan;
 import com.hazelcast.sql.impl.SqlCursorImpl;
@@ -41,7 +39,6 @@ import org.junit.Test;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -89,71 +86,25 @@ public class TpcHTest extends SqlTestSupport {
         config.addReplicatedMapConfig(new ReplicatedMapConfig("region"));
 
         // Customer-order
-        config.addMapConfig(
-            new MapConfig("customer")
-                .setAttributeConfigs(aliases(
-                    keyAlias("c_custkey")
-                ))
-        );
-
-        config.addMapConfig(
-            new MapConfig("orders")
-                .setAttributeConfigs(aliases(
-                    keyFieldAlias("o_orderkey"), keyFieldAlias("o_custkey")
-                ))
-                .setPartitioningStrategyConfig(partitioning("o_custkey"))
-        );
+        config.addMapConfig(new MapConfig("customer"));
+        config.addMapConfig(new MapConfig("orders").setPartitioningStrategyConfig(partitioning("o_custkey")));
 
         // Part-supplier
         config.addReplicatedMapConfig(new ReplicatedMapConfig("supplier"));
-
-        config.addMapConfig(new MapConfig("part")
-            .setAttributeConfigs(aliases(
-                keyAlias("p_partkey")
-            ))
-        );
-
-        config.addMapConfig(new MapConfig("partsupp")
-            .setAttributeConfigs(aliases(
-                keyFieldAlias("ps_partkey"), keyFieldAlias("ps_suppkey")
-            ))
-            .setPartitioningStrategyConfig(partitioning("ps_partkey"))
-        );
+        config.addMapConfig(new MapConfig("part"));
+        config.addMapConfig(new MapConfig("partsupp").setPartitioningStrategyConfig(partitioning("ps_partkey")));
 
         // Line item
-        config.addMapConfig(new MapConfig("lineitem")
-            .setAttributeConfigs(aliases(
-                keyFieldAlias("l_orderkey"), keyFieldAlias("l_partkey"), keyFieldAlias("l_linenumber")
-            ))
-            .setPartitioningStrategyConfig(partitioning("l_partkey"))
-        );
+        config.addMapConfig(new MapConfig("lineitem").setPartitioningStrategyConfig(partitioning("l_partkey")));
 
         return config;
     }
 
+    @SuppressWarnings("rawtypes")
     private static PartitioningStrategyConfig partitioning(String fieldName) {
         DeclarativePartitioningStrategy strategy = new DeclarativePartitioningStrategy().setField(fieldName);
 
         return new PartitioningStrategyConfig().setPartitioningStrategy(strategy);
-    }
-
-    private static AttributeConfig keyAlias(String fieldName) {
-        return new AttributeConfig().setName(fieldName).setPath(QueryConstants.KEY_ATTRIBUTE_NAME.value());
-    }
-
-    private static AttributeConfig keyFieldAlias(String fieldName) {
-        return new AttributeConfig().setName(fieldName).setPath(QueryConstants.KEY_ATTRIBUTE_NAME.value() + "." + fieldName);
-    }
-
-    private static List<AttributeConfig> aliases(AttributeConfig... attributes) {
-        if (attributes == null || attributes.length == 0) {
-            return Collections.emptyList();
-        }
-
-        List<AttributeConfig> configs = new ArrayList<>(attributes.length);
-        Collections.addAll(configs, attributes);
-
-        return configs;
     }
 
     @AfterClass
@@ -203,7 +154,7 @@ public class TpcHTest extends SqlTestSupport {
                 "    s.s_acctbal,\n" +
                 "    s.s_name,\n" +
                 "    n.n_name,\n" +
-                "    p.p_partkey,\n" +
+                "    p.__key,\n" +
                 "    p.p_mfgr,\n" +
                 "    s.s_address,\n" +
                 "    s.s_phone,\n" +
@@ -215,7 +166,7 @@ public class TpcHTest extends SqlTestSupport {
                 "    nation n,\n" +
                 "    region r\n" +
                 "where\n" +
-                "    p.p_partkey = ps.ps_partkey\n" +
+                "    p.__key = ps.ps_partkey\n" +
                 "    and s.s_suppkey = ps.ps_suppkey\n" +
                 "    and p.p_size = ?\n" +
                 "    and p.p_type like ?\n" +
@@ -229,7 +180,7 @@ public class TpcHTest extends SqlTestSupport {
                 "            partsupp ps2, supplier s2,\n" +
                 "            nation n2, region r2\n" +
                 "        where\n" +
-                "            p.p_partkey = ps2.ps_partkey\n" +
+                "            p.__key = ps2.ps_partkey\n" +
                 "            and s2.s_suppkey = ps2.ps_suppkey\n" +
                 "            and s2.s_nationkey = n2.n_nationkey\n" +
                 "            and n2.n_regionkey = r2.r_regionkey\n" +
@@ -239,7 +190,7 @@ public class TpcHTest extends SqlTestSupport {
                 "    s.s_acctbal desc,\n" +
                 "    n.n_name,\n" +
                 "    s.s_name,\n" +
-                "    p.p_partkey"
+                "    p.__key"
         , 100, size, type, region, region);
     }
 
@@ -260,7 +211,7 @@ public class TpcHTest extends SqlTestSupport {
                 "    lineitem l\n" +
                 "where\n" +
                 "    c.c_mktsegment = ?\n" +
-                "    and c.c_custkey = o.o_custkey\n" +
+                "    and c.__key = o.o_custkey\n" +
                 "    and l.l_orderkey = o.o_orderkey\n" +
                 "    and o.o_orderdate < ?\n" +
                 "    and l.l_shipdate > ?\n" +
@@ -320,7 +271,7 @@ public class TpcHTest extends SqlTestSupport {
                 "    nation n,\n" +
                 "    region r\n" +
                 "where\n" +
-                "    c.c_custkey = o.o_custkey\n" +
+                "    c.__key = o.o_custkey\n" +
                 "    and l.l_orderkey = o.o_orderkey\n" +
                 "    and l.l_suppkey = s.s_suppkey\n" +
                 "    and c.c_nationkey = s.s_nationkey\n" +
@@ -381,7 +332,7 @@ public class TpcHTest extends SqlTestSupport {
                 "    where\n" +
                 "        s.s_suppkey = l.l_suppkey\n" +
                 "        and o.o_orderkey = l.l_orderkey\n" +
-                "        and c.c_custkey = o.o_custkey\n" +
+                "        and c.__key = o.o_custkey\n" +
                 "        and s.s_nationkey = n1.n_nationkey\n" +
                 "        and c.c_nationkey = n2.n_nationkey\n" +
                 "        and (\n" +
@@ -429,10 +380,10 @@ public class TpcHTest extends SqlTestSupport {
                 "        nation n2,\n" +
                 "        region r\n" +
                 "    where\n" +
-                "        p.p_partkey = l.l_partkey\n" +
+                "        p.__key = l.l_partkey\n" +
                 "        and s.s_suppkey = l.l_suppkey\n" +
                 "        and l.l_orderkey = o.o_orderkey\n" +
-                "        and o.o_custkey = c.c_custkey\n" +
+                "        and o.o_custkey = c.__key\n" +
                 "        and c.c_nationkey = n1.n_nationkey\n" +
                 "        and n1.n_regionkey = r.r_regionkey\n" +
                 "        and r.r_name = ?\n" +
@@ -472,7 +423,7 @@ public class TpcHTest extends SqlTestSupport {
                 "        s.s_suppkey = l.l_suppkey\n" +
                 "        and ps.ps_suppkey = l.l_suppkey\n" +
                 "        and ps.ps_partkey = l.l_partkey\n" +
-                "        and p.p_partkey = l.l_partkey\n" +
+                "        and p.__key = l.l_partkey\n" +
                 "        and o.o_orderkey = l.l_orderkey\n" +
                 "        and s.s_nationkey = n.n_nationkey\n" +
                 "        and p.p_name like ?\n" +
@@ -492,7 +443,7 @@ public class TpcHTest extends SqlTestSupport {
 
         List<SqlRow> rows = execute(
             "select\n" +
-                "    c.c_custkey,\n" +
+                "    c.__key,\n" +
                 "    c.c_name,\n" +
                 "    sum(l.l_extendedprice * (1 - l.l_discount)) as revenue,\n" +
                 "    c.c_acctbal,\n" +
@@ -506,14 +457,14 @@ public class TpcHTest extends SqlTestSupport {
                 "    lineitem l,\n" +
                 "    nation n\n" +
                 "where\n" +
-                "    c.c_custkey = o.o_custkey\n" +
+                "    c.__key = o.o_custkey\n" +
                 "    and l.l_orderkey = o.o_orderkey\n" +
                 "    and o.o_orderdate >= ?\n" +
                 "    and o.o_orderdate < ?\n" +
                 "    and l.l_returnflag = 'R'\n" +
                 "    and c.c_nationkey = n.n_nationkey\n" +
                 "group by\n" +
-                "    c.c_custkey,\n" +
+                "    c.__key,\n" +
                 "    c.c_name,\n" +
                 "    c.c_acctbal,\n" +
                 "    c.c_phone,\n" +
@@ -606,15 +557,15 @@ public class TpcHTest extends SqlTestSupport {
                 "    c_count, count(*) as custdist\n" +
                 "from (\n" +
                 "    select\n" +
-                "        c.c_custkey,\n" +
+                "        c.__key,\n" +
                 "        count(o.o_orderkey)\n" +
                 "    from\n" +
                 "        customer c left outer join orders o on\n" +
-                "            c.c_custkey = o.o_custkey\n" +
+                "            c.__key = o.o_custkey\n" +
                 "            and o.o_comment not like ?\n" +
                 "    group by\n" +
-                "        c.c_custkey\n" +
-                "    )as c_orders (c_custkey, c_count)\n" +
+                "        c.__key\n" +
+                "    )as c_orders (__key, c_count)\n" +
                 "group by\n" +
                 "    c_count\n" +
                 "order by\n" +
@@ -638,7 +589,7 @@ public class TpcHTest extends SqlTestSupport {
                 "    lineitem l,\n" +
                 "    part p\n" +
                 "where\n" +
-                "    l.l_partkey = p.p_partkey\n" +
+                "    l.l_partkey = p.__key\n" +
                 "    and l.l_shipdate >= ?\n" +
                 "    and l.l_shipdate < ?"
         , -1, date, date.plusMonths(1));
@@ -668,7 +619,7 @@ public class TpcHTest extends SqlTestSupport {
                 "    lineitem l,\n" +
                 "    part p\n" +
                 "where\n" +
-                "    p.p_partkey = l.l_partkey\n" +
+                "    p.__key = l.l_partkey\n" +
                 "    and p.p_brand = ?\n" +
                 "    and p.p_container = ?\n" +
                 "    and l.l_quantity < (\n" +
@@ -677,7 +628,7 @@ public class TpcHTest extends SqlTestSupport {
                 "        from\n" +
                 "            lineitem l2\n" +
                 "        where\n" +
-                "            l2.l_partkey = p.p_partkey\n" +
+                "            l2.l_partkey = p.__key\n" +
                 ")"
         , -1, brand, container);
     }
@@ -689,7 +640,7 @@ public class TpcHTest extends SqlTestSupport {
         List<SqlRow> rows = execute(
             "select\n" +
                 "    c.c_name,\n" +
-                "    c.c_custkey,\n" +
+                "    c.__key,\n" +
                 "    o.o_orderkey,\n" +
                 "    o.o_orderdate,\n" +
                 "    o.o_totalprice,\n" +
@@ -708,11 +659,11 @@ public class TpcHTest extends SqlTestSupport {
                 "            l2.l_orderkey having\n" +
                 "                sum(l2.l_quantity) > ?\n" +
                 "    )\n" +
-                "    and c.c_custkey = o.o_custkey\n" +
+                "    and c.__key = o.o_custkey\n" +
                 "    and o.o_orderkey = l.l_orderkey\n" +
                 "group by\n" +
                 "    c.c_name,\n" +
-                "    c.c_custkey,\n" +
+                "    c.__key,\n" +
                 "    o.o_orderkey,\n" +
                 "    o.o_orderdate,\n" +
                 "    o.o_totalprice\n" +
@@ -742,7 +693,7 @@ public class TpcHTest extends SqlTestSupport {
                 "    part p\n" +
                 "where\n" +
                 "    (\n" +
-                "        p.p_partkey = l.l_partkey\n" +
+                "        p.__key = l.l_partkey\n" +
                 "        and p.p_brand = ?\n" +
                 "        and p.p_container in ( 'SM CASE', 'SM BOX', 'SM PACK', 'SM PKG')\n" +
                 "        and l.l_quantity >= ? and l.l_quantity <= ? + 10\n" +
@@ -752,7 +703,7 @@ public class TpcHTest extends SqlTestSupport {
                 "    )\n" +
                 "    or\n" +
                 "    (\n" +
-                "        p.p_partkey = l.l_partkey\n" +
+                "        p.__key = l.l_partkey\n" +
                 "        and p.p_brand = ?\n" +
                 "        and p.p_container in ('MED BAG', 'MED BOX', 'MED PKG', 'MED PACK')\n" +
                 "        and l.l_quantity >= ? and l.l_quantity <= ? + 10\n" +
@@ -762,7 +713,7 @@ public class TpcHTest extends SqlTestSupport {
                 "    )\n" +
                 "    or\n" +
                 "    (\n" +
-                "        p.p_partkey = l.l_partkey\n" +
+                "        p.__key = l.l_partkey\n" +
                 "        and p.p_brand = ?\n" +
                 "        and p.p_container in ( 'LG CASE', 'LG BOX', 'LG PACK', 'LG PKG')\n" +
                 "        and l.l_quantity >= ? and l.l_quantity <= ? + 10\n" +
@@ -795,7 +746,7 @@ public class TpcHTest extends SqlTestSupport {
                 "        where\n" +
                 "            ps.ps_partkey in (\n" +
                 "                select\n" +
-                "                    p.p_partkey\n" +
+                "                    p.__key\n" +
                 "                from\n" +
                 "                    part p\n" +
                 "                where\n" +
@@ -905,7 +856,7 @@ public class TpcHTest extends SqlTestSupport {
                 "            from\n" +
                 "                orders o\n" +
                 "            where\n" +
-                "                o.o_custkey = c.c_custkey\n" +
+                "                o.o_custkey = c.__key\n" +
                 "        )\n" +
                 "    ) as custsale\n" +
                 "group by\n" +

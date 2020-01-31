@@ -17,33 +17,28 @@
 package com.hazelcast.sql.impl.type;
 
 public enum GenericType {
-    BIT(true, false),
-    TINYINT(true, false),
-    SMALLINT(true, false),
-    INT(true, false),
-    BIGINT(true, false),
-    DECIMAL(true, false),
-    REAL(true, false),
-    DOUBLE(true, false),
-    VARCHAR(true, false),
-    DATE(false, true),
-    TIME(false, true),
-    TIMESTAMP(false, true),
-    TIMESTAMP_WITH_TIMEZONE(false, true),
-    INTERVAL_YEAR_MONTH(false, false),
-    INTERVAL_DAY_SECOND(false, false),
-    OBJECT(false, false);
+    BIT(false),
+    TINYINT(false),
+    SMALLINT(false),
+    INT(false),
+    BIGINT(false),
+    DECIMAL(false),
+    REAL(false),
+    DOUBLE(false),
+    VARCHAR(false),
+    DATE(true),
+    TIME(true),
+    TIMESTAMP(true),
+    TIMESTAMP_WITH_TIMEZONE(true),
+    INTERVAL_YEAR_MONTH(false),
+    INTERVAL_DAY_SECOND(false),
+    OBJECT(false),
+    LATE(true);
 
-    private final boolean convertToNumeric;
     private final boolean temporal;
 
-    GenericType(boolean convertToNumeric, boolean temporal) {
-        this.convertToNumeric = convertToNumeric;
+    GenericType(boolean temporal) {
         this.temporal = temporal;
-    }
-
-    public boolean isConvertToNumeric() {
-        return convertToNumeric;
     }
 
     public boolean isTemporal() {

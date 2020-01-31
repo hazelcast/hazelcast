@@ -18,11 +18,12 @@ package com.hazelcast.sql.impl.expression.math;
 
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlErrorCode;
-import com.hazelcast.sql.impl.expression.CallOperator;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.UniCallExpressionWithType;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.DataTypeUtils;
+import com.hazelcast.sql.impl.type.GenericType;
 import com.hazelcast.sql.impl.type.accessor.Converter;
 
 import java.math.BigDecimal;
@@ -33,33 +34,80 @@ import static com.hazelcast.sql.impl.type.DataType.PRECISION_UNLIMITED;
  * Unary minus operation.
  */
 public class UnaryMinusFunction<T> extends UniCallExpressionWithType<T> {
-    /** Operand type. */
-    private transient DataType operandType;
-
     public UnaryMinusFunction() {
         // No-op.
     }
 
-    public UnaryMinusFunction(Expression operand) {
-        super(operand);
+    private UnaryMinusFunction(Expression<?> operand, DataType resultType) {
+        super(operand, resultType);
+    }
+
+    public static UnaryMinusFunction<?> create(Expression<?> operand) {
+        return new UnaryMinusFunction<>(operand, inferResultType(operand.getType()));
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public T eval(Row row) {
-        Object operandValue = operand.eval(row);
+        Object value = operand.eval(row);
 
-        if (operandValue == null) {
+        if (value == null) {
             return null;
         }
 
-        if (resType == null) {
-            operandType = operand.getType();
+        return (T) doMinus(value, operand.getType(), resultType);
+    }
 
-            resType = inferResultType(operandType);
+    @Override
+    public DataType getType() {
+        return operand.getType();
+    }
+
+    /**
+     * Execute unary minus operation.
+     *
+     * @param operandValue Operand value.
+     * @param operandType Operand type.
+     * @param resultType Result type.
+     * @return Result.
+     */
+    private static Object doMinus(Object operandValue, DataType operandType, DataType resultType) {
+        if (resultType.getType() == GenericType.LATE) {
+            // Special handling for late binding.
+            operandType = DataTypeUtils.resolveType(operandValue);
+
+            resultType = inferResultType(operandType);
         }
 
-        return (T) doMinus(operandValue, operandType, resType);
+        Converter operandConverter = operandType.getConverter();
+
+        switch (resultType.getType()) {
+            case TINYINT:
+                return (byte) (-operandConverter.asTinyint(operandValue));
+
+            case SMALLINT:
+                return (short) (-operandConverter.asSmallint(operandValue));
+
+            case INT:
+                return -operandConverter.asInt(operandValue);
+
+            case BIGINT:
+                return -operandConverter.asBigint(operandValue);
+
+            case DECIMAL:
+                BigDecimal opDecimal = operandConverter.asDecimal(operandValue);
+
+                return opDecimal.negate();
+
+            case REAL:
+                return -operandConverter.asReal(operandValue);
+
+            case DOUBLE:
+                return -operandConverter.asDouble(operandValue);
+
+            default:
+                throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Invalid type: " + resultType);
+        }
     }
 
     /**
@@ -68,13 +116,23 @@ public class UnaryMinusFunction<T> extends UniCallExpressionWithType<T> {
      * @param operandType Operand type.
      * @return Result type.
      */
-    private DataType inferResultType(DataType operandType) {
-        if (!operandType.isCanConvertToNumeric()) {
-            throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Operand 1 is not numeric.");
+    private static DataType inferResultType(DataType operandType) {
+        if (!operandType.isNumeric()) {
+            throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Operand is not numeric: " + operandType);
         }
 
-        if (operandType == DataType.VARCHAR) {
-            operandType = DataType.DECIMAL;
+        switch (operandType.getType()) {
+            case BIT:
+                return DataType.TINYINT;
+
+            case VARCHAR:
+                return DataType.DECIMAL;
+
+            case LATE:
+                return DataType.LATE;
+
+            default:
+                break;
         }
 
         if (operandType.getScale() == 0) {
@@ -90,51 +148,5 @@ public class UnaryMinusFunction<T> extends UniCallExpressionWithType<T> {
             // DECIMAL, REAL or DOUBLE. REAL is expanded to DOUBLE. DECIMAL and DOUBLE are already the widest.
             return operandType == DataType.REAL ? DataType.DOUBLE : operandType;
         }
-    }
-
-    /**
-     * Execute unary minus operation.
-     *
-     * @param operandValue Operand value.
-     * @param operandType Operand type.
-     * @param resType Result type.
-     * @return Result.
-     */
-    @SuppressWarnings("unchecked")
-    private static Object doMinus(Object operandValue, DataType operandType, DataType resType) {
-        Converter operandConverter = operandType.getConverter();
-
-        switch (resType.getType()) {
-            case TINYINT:
-                return (byte) (-operandConverter.asTinyInt(operandValue));
-
-            case SMALLINT:
-                return (short) (-operandConverter.asSmallInt(operandValue));
-
-            case INT:
-                return -operandConverter.asInt(operandValue);
-
-            case BIGINT:
-                return -operandConverter.asBigInt(operandValue);
-
-            case DECIMAL:
-                BigDecimal opDecimal = operandConverter.asDecimal(operandValue);
-
-                return opDecimal.negate();
-
-            case REAL:
-                return -operandConverter.asReal(operandValue);
-
-            case DOUBLE:
-                return -operandConverter.asDouble(operandValue);
-
-            default:
-                throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Invalid type: " + resType);
-        }
-    }
-
-    @Override
-    public int operator() {
-        return CallOperator.UNARY_MINUS;
     }
 }

@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.physical.io;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.physical.PhysicalNodeSchema;
 import com.hazelcast.sql.impl.physical.visitor.PhysicalNodeVisitor;
 import com.hazelcast.sql.impl.physical.ZeroInputPhysicalNode;
 
@@ -29,6 +30,7 @@ import java.util.Objects;
 /**
  * Physical node which receives from remote stripes and performs sort-merge.
  */
+@SuppressWarnings("rawtypes")
 public class ReceiveSortMergePhysicalNode extends ZeroInputPhysicalNode implements EdgeAwarePhysicalNode {
     /** Edge iD. */
     private int edgeId;
@@ -39,16 +41,25 @@ public class ReceiveSortMergePhysicalNode extends ZeroInputPhysicalNode implemen
     /** Sort directions. */
     private List<Boolean> ascs;
 
+    private transient PhysicalNodeSchema schema;
+
     public ReceiveSortMergePhysicalNode() {
         // No-op.
     }
 
-    public ReceiveSortMergePhysicalNode(int id, int edgeId, List<Expression> expressions, List<Boolean> ascs) {
+    public ReceiveSortMergePhysicalNode(
+        int id,
+        int edgeId,
+        List<Expression> expressions,
+        List<Boolean> ascs,
+        PhysicalNodeSchema schema
+    ) {
         super(id);
 
         this.edgeId = edgeId;
         this.expressions = expressions;
         this.ascs = ascs;
+        this.schema = schema;
     }
 
     public List<Expression> getExpressions() {
@@ -72,6 +83,11 @@ public class ReceiveSortMergePhysicalNode extends ZeroInputPhysicalNode implemen
     @Override
     public void visit(PhysicalNodeVisitor visitor) {
         visitor.onReceiveSortMergeNode(this);
+    }
+
+    @Override
+    public PhysicalNodeSchema getSchema() {
+        return schema;
     }
 
     @Override

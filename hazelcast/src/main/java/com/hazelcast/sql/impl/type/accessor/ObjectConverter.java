@@ -30,7 +30,7 @@ public final class ObjectConverter extends Converter {
     }
 
     @Override
-    public Class getClazz() {
+    public Class<?> getValueClass() {
         return Object.class;
     }
 
@@ -42,5 +42,15 @@ public final class ObjectConverter extends Converter {
     @Override
     public String asVarchar(Object val) {
         return val != null ? val.toString() : "null";
+    }
+
+    @Override
+    public Object convertToSelf(Converter valConverter, Object val) {
+        return valConverter.asObject(val);
+    }
+
+    @Override
+    public Object asObject(Object val) {
+        return val;
     }
 }

@@ -18,13 +18,16 @@ package com.hazelcast.sql.impl.physical;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.physical.visitor.PhysicalNodeVisitor;
+import com.hazelcast.sql.impl.type.GenericType;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 
+@SuppressWarnings("rawtypes")
 public class SortPhysicalNode extends UniInputPhysicalNode {
     /** Expressions. */
     private List<Expression> expressions;
@@ -38,6 +41,12 @@ public class SortPhysicalNode extends UniInputPhysicalNode {
 
     public SortPhysicalNode(int id, PhysicalNode upstream, List<Expression> expressions, List<Boolean> ascs) {
         super(id, upstream);
+
+        for (Expression<?> expression : expressions) {
+            if (expression.getType().getType() == GenericType.LATE) {
+                throw new HazelcastSqlException(-1, "Expression type cannot be resolved: " + expression);
+            }
+        }
 
         this.expressions = expressions;
         this.ascs = ascs;
@@ -54,6 +63,11 @@ public class SortPhysicalNode extends UniInputPhysicalNode {
     @Override
     public void visit0(PhysicalNodeVisitor visitor) {
         visitor.onSortNode(this);
+    }
+
+    @Override
+    public PhysicalNodeSchema getSchema() {
+        return upstream.getSchema();
     }
 
     @Override

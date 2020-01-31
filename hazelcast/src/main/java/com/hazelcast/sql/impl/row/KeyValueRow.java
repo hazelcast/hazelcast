@@ -32,7 +32,7 @@ public class KeyValueRow implements Row {
     private final KeyValueRowExtractor extractor;
 
     /** Field expressions. */
-    private final List<KeyValueExtractorExpression> fieldExpressions;
+    private final List<KeyValueExtractorExpression<?>> fieldExpressions;
 
     /** Cached objects. */
     private final Object[] cache;
@@ -43,7 +43,7 @@ public class KeyValueRow implements Row {
     /** Value. */
     private Object val;
 
-    public KeyValueRow(KeyValueRowExtractor extractor, List<KeyValueExtractorExpression> fieldExpressions) {
+    public KeyValueRow(KeyValueRowExtractor extractor, List<KeyValueExtractorExpression<?>> fieldExpressions) {
         this.extractor = extractor;
         this.fieldExpressions = fieldExpressions;
 
@@ -63,7 +63,7 @@ public class KeyValueRow implements Row {
         Object res = cache[idx];
 
         if (res == null) {
-            KeyValueExtractorExpression fieldExpression = fieldExpressions.get(idx);
+            KeyValueExtractorExpression<?> fieldExpression = fieldExpressions.get(idx);
 
             res = fieldExpression.eval(this);
 

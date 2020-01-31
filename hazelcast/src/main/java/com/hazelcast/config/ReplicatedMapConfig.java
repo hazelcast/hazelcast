@@ -53,6 +53,7 @@ public class ReplicatedMapConfig implements IdentifiedDataSerializable, NamedCon
     private List<ListenerConfig> listenerConfigs;
     private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
     private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
+    private List<AttributeConfig> attributeConfigs;
 
     public ReplicatedMapConfig() {
     }
@@ -75,6 +76,7 @@ public class ReplicatedMapConfig implements IdentifiedDataSerializable, NamedCon
         this.statisticsEnabled = replicatedMapConfig.statisticsEnabled;
         this.mergePolicyConfig = replicatedMapConfig.mergePolicyConfig;
         this.splitBrainProtectionName = replicatedMapConfig.splitBrainProtectionName;
+        this.attributeConfigs = new ArrayList<>(replicatedMapConfig.getAttributeConfigs());
     }
 
     /**
@@ -235,6 +237,23 @@ public class ReplicatedMapConfig implements IdentifiedDataSerializable, NamedCon
         return this;
     }
 
+    public ReplicatedMapConfig addAttributeConfig(AttributeConfig attributeConfig) {
+        getAttributeConfigs().add(attributeConfig);
+        return this;
+    }
+
+    public List<AttributeConfig> getAttributeConfigs() {
+        if (attributeConfigs == null) {
+            attributeConfigs = new ArrayList<>();
+        }
+        return attributeConfigs;
+    }
+
+    public ReplicatedMapConfig setAttributeConfigs(List<AttributeConfig> attributeConfigs) {
+        this.attributeConfigs = attributeConfigs;
+        return this;
+    }
+
     @Override
     public String toString() {
         return "ReplicatedMapConfig{"
@@ -244,6 +263,7 @@ public class ReplicatedMapConfig implements IdentifiedDataSerializable, NamedCon
                 + ", statisticsEnabled=" + statisticsEnabled
                 + ", splitBrainProtectionName='" + splitBrainProtectionName + '\''
                 + ", mergePolicyConfig='" + mergePolicyConfig + '\''
+                + ", attributeConfigs=" + attributeConfigs
                 + '}';
     }
 
@@ -266,6 +286,7 @@ public class ReplicatedMapConfig implements IdentifiedDataSerializable, NamedCon
         writeNullableList(listenerConfigs, out);
         out.writeUTF(splitBrainProtectionName);
         out.writeObject(mergePolicyConfig);
+        writeNullableList(attributeConfigs, out);
     }
 
     @Override
@@ -277,6 +298,7 @@ public class ReplicatedMapConfig implements IdentifiedDataSerializable, NamedCon
         listenerConfigs = readNullableList(in);
         splitBrainProtectionName = in.readUTF();
         mergePolicyConfig = in.readObject();
+        attributeConfigs = readNullableList(in);
     }
 
     @Override
@@ -308,7 +330,10 @@ public class ReplicatedMapConfig implements IdentifiedDataSerializable, NamedCon
         if (!Objects.equals(mergePolicyConfig, that.mergePolicyConfig)) {
             return false;
         }
-        return Objects.equals(listenerConfigs, that.listenerConfigs);
+        if (!Objects.equals(listenerConfigs, that.listenerConfigs)) {
+            return false;
+        }
+        return getAttributeConfigs().equals(that.getAttributeConfigs());
     }
 
     @Override
@@ -321,6 +346,7 @@ public class ReplicatedMapConfig implements IdentifiedDataSerializable, NamedCon
         result = 31 * result + (listenerConfigs != null ? listenerConfigs.hashCode() : 0);
         result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
         result = 31 * result + (mergePolicyConfig != null ? mergePolicyConfig.hashCode() : 0);
+        result = 31 * result + getAttributeConfigs().hashCode();
         return result;
     }
 }

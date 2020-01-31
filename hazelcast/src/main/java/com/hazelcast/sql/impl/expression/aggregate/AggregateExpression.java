@@ -24,6 +24,7 @@ import com.hazelcast.sql.impl.exec.agg.AggregateCollector;
 import com.hazelcast.sql.impl.exec.agg.AggregateExec;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.GenericType;
 
 import java.io.IOException;
 
@@ -31,11 +32,11 @@ import java.io.IOException;
  * Common parent for all aggregate accumulators.
  */
 public abstract class AggregateExpression<T> implements DataSerializable {
+    /** Result type. */
+    protected DataType resType;
+
     /** Distinct flag. */
     protected boolean distinct;
-
-    /** Result type. */
-    protected transient DataType resType;
 
     /** Parent executor. */
     protected transient AggregateExec parent;
@@ -44,7 +45,10 @@ public abstract class AggregateExpression<T> implements DataSerializable {
         // No-op.
     }
 
-    protected AggregateExpression(boolean distinct) {
+    protected AggregateExpression(DataType resType, boolean distinct) {
+        assert resType.getType() != GenericType.LATE;
+
+        this.resType = resType;
         this.distinct = distinct;
     }
 
@@ -72,16 +76,18 @@ public abstract class AggregateExpression<T> implements DataSerializable {
      * @return Return type of the expression.
      */
     public DataType getType() {
-        return DataType.notNullOrLate(resType);
+        return resType;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeObject(resType);
         out.writeBoolean(distinct);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
+        resType = in.readObject();
         distinct = in.readBoolean();
     }
 }

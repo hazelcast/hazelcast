@@ -16,10 +16,12 @@
 
 package com.hazelcast.sql.impl.expression.aggregate;
 
+import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.QueryContext;
 import com.hazelcast.sql.impl.exec.agg.AggregateCollector;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.GenericType;
 
 /**
  * Counting accumulator.
@@ -29,8 +31,18 @@ public class CountAggregateExpression extends AbstractSingleOperandAggregateExpr
         // No-op.
     }
 
-    public CountAggregateExpression(boolean distinct, Expression operand) {
-        super(distinct, operand);
+    private CountAggregateExpression(Expression<?> operand, DataType resType, boolean distinct) {
+        super(operand, resType, distinct);
+    }
+
+    public static CountAggregateExpression create(Expression<?> operand, boolean distinct) {
+        DataType operandType = operand.getType();
+
+        if (operandType.getType() == GenericType.LATE) {
+            throw new HazelcastSqlException(-1, "Operand type cannot be resolved: " + operandType);
+        }
+
+        return new CountAggregateExpression(operand, DataType.BIGINT, distinct);
     }
 
     @Override
@@ -41,11 +53,5 @@ public class CountAggregateExpression extends AbstractSingleOperandAggregateExpr
     @Override
     protected boolean isIgnoreNull() {
         return true;
-    }
-
-    // TODO: Do we really need that kind of aggressive type expansion?
-    @Override
-    protected DataType resolveReturnType(DataType operandType) {
-        return DataType.BIGINT;
     }
 }

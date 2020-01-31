@@ -135,7 +135,7 @@ public class AggregateSqlTest extends SqlTestSupport {
         Map<String, PersonSalaryCollector> collectors = new HashMap<>();
 
         for (Person person : personMap.values()) {
-            String deptTitle = person.getDepartmentTitle();
+            String deptTitle = person.getDeptTitle();
             long salary = person.getSalary();
 
             collectors.computeIfAbsent(deptTitle, (k) -> new PersonSalaryCollector()).add(salary);

@@ -39,10 +39,12 @@ public class PhysicalOptimizerIndexScanTest extends PhysicalOptimizerTestSupport
         Map<String, Table> tableMap = new HashMap<>();
 
         HazelcastTable pTable = new HazelcastTable(
+            null,
             "p",
             true,
             null,
             Collections.singletonList(new HazelcastTableIndex("idx1", IndexType.SORTED, list("f1"))),
+            null,
             null,
             new TableStatistics(100)
         );

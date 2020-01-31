@@ -32,7 +32,7 @@ public final class BigDecimalConverter extends Converter {
     }
 
     @Override
-    public Class getClazz() {
+    public Class<?> getValueClass() {
         return BigDecimal.class;
     }
 
@@ -47,12 +47,12 @@ public final class BigDecimalConverter extends Converter {
     }
 
     @Override
-    public byte asTinyInt(Object val) {
+    public byte asTinyint(Object val) {
         return cast(val).byteValue();
     }
 
     @Override
-    public short asSmallInt(Object val) {
+    public short asSmallint(Object val) {
         return cast(val).shortValue();
     }
 
@@ -62,7 +62,7 @@ public final class BigDecimalConverter extends Converter {
     }
 
     @Override
-    public long asBigInt(Object val) {
+    public long asBigint(Object val) {
         return cast(val).longValue();
     }
 
@@ -84,6 +84,11 @@ public final class BigDecimalConverter extends Converter {
     @Override
     public String asVarchar(Object val) {
         return cast(val).toString();
+    }
+
+    @Override
+    public Object convertToSelf(Converter valConverter, Object val) {
+        return valConverter.asDecimal(val);
     }
 
     private BigDecimal cast(Object val) {

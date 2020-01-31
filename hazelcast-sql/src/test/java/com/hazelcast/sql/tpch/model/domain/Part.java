@@ -56,4 +56,36 @@ public class Part implements Serializable {
         this.p_retailprice = p_retailprice;
         this.p_comment = p_comment;
     }
+
+    public String getP_name() {
+        return p_name;
+    }
+
+    public String getP_mfgr() {
+        return p_mfgr;
+    }
+
+    public String getP_brand() {
+        return p_brand;
+    }
+
+    public String getP_type() {
+        return p_type;
+    }
+
+    public int getP_size() {
+        return p_size;
+    }
+
+    public String getP_container() {
+        return p_container;
+    }
+
+    public BigDecimal getP_retailprice() {
+        return p_retailprice;
+    }
+
+    public String getP_comment() {
+        return p_comment;
+    }
 }

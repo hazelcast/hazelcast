@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.calcite;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -33,6 +34,10 @@ import com.hazelcast.sql.impl.calcite.opt.physical.visitor.NodeIdVisitor;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.PlanCreateVisitor;
 import com.hazelcast.sql.impl.calcite.statistics.DefaultStatisticProvider;
 import com.hazelcast.sql.impl.calcite.statistics.StatisticProvider;
+import com.hazelcast.sql.impl.schema.ChainedSqlSchemaResolver;
+import com.hazelcast.sql.impl.schema.PartitionedMapSqlSchemaResolver;
+import com.hazelcast.sql.impl.schema.ReplicatedMapSqlSchemaResolver;
+import com.hazelcast.sql.impl.schema.SqlSchemaResolver;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.sql.SqlNode;
 
@@ -54,16 +59,24 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     /** Statistics provider. */
     private final StatisticProvider statisticProvider;
 
+    /** Schema resolver. */
+    private final SqlSchemaResolver schemaResolver;
+
     public CalciteSqlOptimizer(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
 
         statisticProvider = new DefaultStatisticProvider();
+
+        schemaResolver = new ChainedSqlSchemaResolver(
+            new PartitionedMapSqlSchemaResolver((InternalSerializationService) nodeEngine.getSerializationService()),
+            new ReplicatedMapSqlSchemaResolver((InternalSerializationService) nodeEngine.getSerializationService())
+        );
     }
 
     @Override
-    public QueryPlan prepare(String sql) {
+    public QueryPlan prepare(String sql, List<Object> params) {
         // 1. Prepare context.
-        OptimizerContext context = OptimizerContext.create(nodeEngine, statisticProvider);
+        OptimizerContext context = OptimizerContext.create(nodeEngine, statisticProvider, schemaResolver);
 
         // 2. Parse SQL string and validate it.
         SqlNode node = context.parse(sql);
@@ -87,7 +100,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
         OptimizerStatistics stats = statsEnabled ? new OptimizerStatistics(dur, physicalRuleCallTracker) : null;
 
-        return doCreatePlan(sql, context, physicalRel, stats);
+        return doCreatePlan(sql, params, context, physicalRel, stats);
     }
 
     /**
@@ -96,7 +109,13 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
      * @param rel Rel.
      * @return Plan.
      */
-    private QueryPlan doCreatePlan(String sql, OptimizerContext context, PhysicalRel rel, OptimizerStatistics stats) {
+    private QueryPlan doCreatePlan(
+        String sql,
+        List<Object> params,
+        OptimizerContext context,
+        PhysicalRel rel,
+        OptimizerStatistics stats
+    ) {
         // Get partition mapping.
         Collection<Partition> parts = nodeEngine.getHazelcastInstance().getPartitionService().getPartitions();
 
@@ -138,6 +157,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             dataMemberAddresses,
             relIdMap,
             sql,
+            params,
             context.getConfig().isSavePhysicalRel(),
             stats
         );

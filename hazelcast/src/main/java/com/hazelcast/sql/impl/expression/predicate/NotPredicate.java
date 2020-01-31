@@ -16,83 +16,36 @@
 
 package com.hazelcast.sql.impl.expression.predicate;
 
-import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.impl.expression.CallOperator;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.UniCallExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
 
-import java.util.Objects;
-
 /**
  * Not predicate.
  */
 public class NotPredicate extends UniCallExpression<Boolean> {
-    /** Whether the operand is checked. */
-    private transient boolean operandChecked;
-
     public NotPredicate() {
         // No-op.
     }
 
-    public NotPredicate(Expression operand) {
+    public NotPredicate(Expression<?> operand) {
         super(operand);
     }
 
-    @Override
-    public int operator() {
-        return CallOperator.NOT;
+    public static NotPredicate create(Expression<?> operand) {
+        operand.ensureCanConvertToBit();
+
+        return new NotPredicate(operand);
     }
 
     @Override
     public Boolean eval(Row row) {
-        Object operandValue = operand.eval(row);
-
-        if (operandValue == null) {
-            return null;
-        }
-
-        if (!operandChecked) {
-            if (operand.getType() != DataType.BIT) {
-                throw new HazelcastSqlException(-1, "Operand is not BIT.");
-            }
-
-            operandChecked = true;
-        }
-
-        Boolean operandValue0 = (Boolean) operandValue;
-
-        return !operandValue0;
+        return PredicateExpressionUtils.not(operand.evalAsBit(row));
     }
 
     @Override
     public DataType getType() {
-        return null;
-    }
-
-    @Override
-    public int hashCode() {
-        return operand.hashCode();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        NotPredicate that = (NotPredicate) o;
-
-        return Objects.equals(operand, that.operand);
-    }
-
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + "{operand=" + operand + '}';
+        return DataType.BIT;
     }
 }

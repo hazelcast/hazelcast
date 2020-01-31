@@ -16,23 +16,75 @@
 
 package com.hazelcast.sql.impl.expression;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.type.DataType;
+
+import java.io.IOException;
+import java.util.Objects;
 
 public abstract class BiCallExpressionWithType<T> extends BiCallExpression<T> {
     /** Result type. */
-    protected transient DataType resType;
+    protected DataType resultType;
 
     protected BiCallExpressionWithType() {
         // No-op.
     }
 
-    protected BiCallExpressionWithType(Expression operand1, Expression operand2) {
+    // TODO: Remove this after refactoring.
+    protected BiCallExpressionWithType(Expression<?> operand1, Expression<?> operand2) {
         this.operand1 = operand1;
         this.operand2 = operand2;
     }
 
+    protected BiCallExpressionWithType(Expression<?> operand1, Expression<?> operand2, DataType resultType) {
+        this.operand1 = operand1;
+        this.operand2 = operand2;
+        this.resultType = resultType;
+    }
+
     @Override
     public DataType getType() {
-        return DataType.notNullOrLate(resType);
+        return resultType;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        super.writeData(out);
+
+        out.writeObject(resultType);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        super.readData(in);
+
+        resultType = in.readObject();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(operand1, operand2, resultType);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        BiCallExpressionWithType<?> that = (BiCallExpressionWithType<?>) o;
+
+        return Objects.equals(operand1, that.operand1) && Objects.equals(operand2, that.operand2)
+                   && Objects.equals(resultType, that.resultType);
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{operand1=" + operand1 + ", operand2=" + operand2 + ", resType=" + resultType + '}';
     }
 }

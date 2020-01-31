@@ -22,11 +22,8 @@ import com.hazelcast.sql.impl.calcite.opt.logical.ProjectLogicalRel;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.statistics.TableStatistics;
-import com.hazelcast.sql.impl.expression.CallOperator;
-import com.hazelcast.sql.impl.expression.ColumnExpression;
-import com.hazelcast.sql.impl.expression.ConstantExpression;
-import com.hazelcast.sql.impl.expression.predicate.ComparisonPredicate;
-import com.hazelcast.sql.impl.expression.predicate.IsPredicate;
+import com.hazelcast.sql.impl.expression.predicate.ComparisonMode;
+import com.hazelcast.sql.impl.expression.predicate.IsNotNullPredicate;
 import com.hazelcast.sql.optimizer.support.LogicalOptimizerTestSupport;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.rel.RelNode;
@@ -43,8 +40,8 @@ public class LogicalOptimizerSubQueriesTest extends LogicalOptimizerTestSupport 
     protected HazelcastSchema createDefaultSchema() {
         Map<String, Table> tableMap = new HashMap<>();
 
-        tableMap.put("r", new HazelcastTable("r", true, null, null, null, new TableStatistics(100)));
-        tableMap.put("s", new HazelcastTable("s", true, null, null, null, new TableStatistics(100)));
+        tableMap.put("r", new HazelcastTable(null, "r", true, null, null, null, null, new TableStatistics(100)));
+        tableMap.put("s", new HazelcastTable(null, "s", true, null, null, null, null, new TableStatistics(100)));
 
         return new HazelcastSchema(tableMap);
     }
@@ -93,7 +90,7 @@ public class LogicalOptimizerSubQueriesTest extends LogicalOptimizerTestSupport 
             "s",
             list("s2", "s1"),
             list(1, 0),
-            new IsPredicate(column(0), CallOperator.IS_NOT_NULL)
+            IsNotNullPredicate.create(column(0))
         );
     }
 
@@ -108,7 +105,7 @@ public class LogicalOptimizerSubQueriesTest extends LogicalOptimizerTestSupport 
 
         ProjectLogicalRel project = assertProject(
             rootNode,
-            list(new ColumnExpression(1))
+            list(column(1))
         );
 
         JoinLogicalRel join = assertJoin(
@@ -130,7 +127,7 @@ public class LogicalOptimizerSubQueriesTest extends LogicalOptimizerTestSupport 
             "s",
             list("s2", "s1"),
             list(1),
-            new ComparisonPredicate(new ColumnExpression(0), new ConstantExpression<>(50), CallOperator.LESS_THAN)
+            compare(column(0), constant(50), ComparisonMode.LESS_THAN)
         );
 
         System.out.println(RelOptUtil.toString(rootNode));

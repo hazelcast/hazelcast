@@ -24,23 +24,21 @@ import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
 
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * Aggregate accumulator which uses only a single input.
  */
 public abstract class AbstractSingleOperandAggregateExpression<T> extends AggregateExpression<T> {
-    /** Operand type. */
-    protected transient DataType operandType;
-
     /** Operand. */
-    private Expression operand;
+    private Expression<?> operand;
 
-    public AbstractSingleOperandAggregateExpression() {
+    protected AbstractSingleOperandAggregateExpression() {
         // No-op.
     }
 
-    public AbstractSingleOperandAggregateExpression(boolean distinct, Expression operand) {
-        super(distinct);
+    protected AbstractSingleOperandAggregateExpression(Expression<?> operand, DataType resType, boolean distinct) {
+        super(resType, distinct);
 
         this.operand = operand;
     }
@@ -49,33 +47,17 @@ public abstract class AbstractSingleOperandAggregateExpression<T> extends Aggreg
     public void collect(Row row, AggregateCollector collector) {
         Object operandValue = operand.eval(row);
 
-        // Null operands are not processed.
         if (isIgnoreNull() && operandValue == null) {
             return;
         }
 
-        // Resolve types.
-        if (operandValue != null && operandType == null) {
-            operandType = operand.getType();
-
-            resType = resolveReturnType(operandType);
-        }
-
-        collector.collect(operandValue, operandType, resType);
+        collector.collect(operandValue, operand.getType());
     }
 
     /**
      * @return {@code True} if NULL values should be ignored and not passed to the collector, {@code false} otherwise.
      */
     protected abstract boolean isIgnoreNull();
-
-    /**
-     * Resolve return type for the accumulator.
-     *
-     * @param operandType Operand type.
-     * @return Return type.
-     */
-    protected abstract DataType resolveReturnType(DataType operandType);
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
@@ -89,5 +71,30 @@ public abstract class AbstractSingleOperandAggregateExpression<T> extends Aggreg
         super.readData(in);
 
         operand = in.readObject();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        AbstractSingleOperandAggregateExpression<?> that = (AbstractSingleOperandAggregateExpression<?>) o;
+
+        return Objects.equals(operand, that.operand) && Objects.equals(resType, that.resType) && distinct == that.distinct;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(resType, distinct, operand);
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{operand=" + operand + ", distinct=" + distinct + '}';
     }
 }

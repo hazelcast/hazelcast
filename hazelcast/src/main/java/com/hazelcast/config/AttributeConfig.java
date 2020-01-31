@@ -39,7 +39,6 @@ public class AttributeConfig implements IdentifiedDataSerializable {
     private static final Pattern NAME_PATTERN = Pattern.compile("^[a-zA-Z0-9][a-zA-Z0-9_]*$");
 
     private String name;
-    private String path;
     private String extractorClassName;
 
     /**
@@ -66,7 +65,6 @@ public class AttributeConfig implements IdentifiedDataSerializable {
 
     public AttributeConfig(AttributeConfig config) {
         name = config.getName();
-        path = config.getPath();
         extractorClassName = config.getExtractorClassName();
     }
 
@@ -117,16 +115,6 @@ public class AttributeConfig implements IdentifiedDataSerializable {
         }
     }
 
-    public String getPath() {
-        return path;
-    }
-
-    public AttributeConfig setPath(String path) {
-        this.path = path;
-
-        return this;
-    }
-
     /**
      * Gets the full class name of the extractor in a String format, e.g. {@code com.example.car.SpeedExtractor}.
      *
@@ -152,7 +140,6 @@ public class AttributeConfig implements IdentifiedDataSerializable {
     public String toString() {
         return "AttributeConfig{"
                 + "name='" + name + '\''
-                + "path='" + path + '\''
                 + "extractorClassName='" + extractorClassName + '\''
                 + '}';
     }
@@ -170,14 +157,12 @@ public class AttributeConfig implements IdentifiedDataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
-        out.writeUTF(path);
         out.writeUTF(extractorClassName);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
-        path = in.readUTF();
         extractorClassName = in.readUTF();
     }
 
@@ -194,9 +179,6 @@ public class AttributeConfig implements IdentifiedDataSerializable {
         if (name != null ? !name.equals(that.name) : that.name != null) {
             return false;
         }
-        if (path != null ? !path.equals(that.path) : that.path != null) {
-            return false;
-        }
         return extractorClassName != null
             ? extractorClassName.equals(that.extractorClassName) : that.extractorClassName == null;
     }
@@ -204,7 +186,6 @@ public class AttributeConfig implements IdentifiedDataSerializable {
     @Override
     public int hashCode() {
         int result = name != null ? name.hashCode() : 0;
-        result = 31 * result + (path != null ? path.hashCode() : 0);
         result = 31 * result + (extractorClassName != null ? extractorClassName.hashCode() : 0);
         return result;
     }

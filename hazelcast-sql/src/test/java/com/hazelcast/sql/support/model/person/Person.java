@@ -55,7 +55,7 @@ public class Person implements Serializable {
         return cityId;
     }
 
-    public String getDepartmentTitle() {
+    public String getDeptTitle() {
         return deptTitle;
     }
 }

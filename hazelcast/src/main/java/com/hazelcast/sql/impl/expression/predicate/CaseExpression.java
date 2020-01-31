@@ -18,11 +18,11 @@ package com.hazelcast.sql.impl.expression.predicate;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.sql.impl.expression.CallExpression;
-import com.hazelcast.sql.impl.expression.CallOperator;
+import com.hazelcast.sql.impl.expression.CastExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.DataTypeUtils;
 
 import java.io.IOException;
 import java.util.List;
@@ -30,38 +30,56 @@ import java.util.List;
 /**
  * CASE-WHEN expression.
  */
-public class CaseExpression<T> implements CallExpression<T> {
+public class CaseExpression<T> implements Expression<T> {
     /** Conditions. */
-    private Expression[] conditions;
+    private Expression<Boolean>[] conditions;
 
     /** Results. */
-    private Expression[] results;
+    private Expression<?>[] results;
 
     /** Return type. */
-    private DataType resType;
+    private DataType resultType;
 
     public CaseExpression() {
         // No-op.
     }
 
-    public CaseExpression(List<Expression> expressions) {
+    private CaseExpression(Expression<Boolean>[] conditions, Expression<Boolean>[] results, DataType resultType) {
+        this.conditions = conditions;
+        this.results = results;
+        this.resultType = resultType;
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public static CaseExpression<?> create(List<Expression<?>> expressions) {
+        // Split conditions and expressions.
         assert expressions != null;
         assert expressions.size() % 2 == 1;
 
         int conditionCount = expressions.size() / 2;
 
-        conditions = new Expression[conditionCount];
-        results = new Expression[conditionCount + 1];
+        Expression<Boolean>[] conditions = new Expression[conditionCount];
+        Expression<?>[] results = new Expression[conditionCount + 1];
 
         int idx = 0;
 
         for (int i = 0; i < conditionCount; i++) {
-            conditions[i] = expressions.get(idx++);
+            conditions[i] = (Expression<Boolean>) expressions.get(idx++);
             results[i] = expressions.get(idx++);
         }
 
         // Last expression might be null.
         results[results.length - 1] = expressions.size() == idx + 1 ? expressions.get(idx) : null;
+
+        // Determine the result type and perform coercion.
+        DataType resType = DataTypeUtils.compare(results);
+
+        for (int i = 0; i < results.length; i++) {
+            results[i] = CastExpression.coerce(results[i], resType);
+        }
+
+        // Done.
+        return new CaseExpression(conditions, results, resType);
     }
 
     @SuppressWarnings("unchecked")
@@ -70,51 +88,26 @@ public class CaseExpression<T> implements CallExpression<T> {
         for (int i = 0; i < conditions.length; i++) {
             Expression<Boolean> condition = conditions[i];
 
-            Boolean conditionRes = condition.eval(row);
+            Boolean conditionRes = condition.evalAsBit(row);
 
             if (conditionRes != null && conditionRes) {
-                return getResult(results[i], row);
+                return (T) results[i].eval(row);
             }
         }
 
-        return getResult(results[results.length - 1], row);
-    }
+        // Return the last result if none conditions were met.
+        Expression<?> lastResult = results[results.length - 1];
 
-    /**
-     * Get result of matching condition.
-     *
-     * @param operand Result expression.
-     * @param ctx Context.
-     * @param row Row.
-     * @return Result.
-     */
-    @SuppressWarnings("unchecked")
-    private T getResult(Expression operand, Row row) {
-        if (operand == null) {
+        if (lastResult != null) {
+            return (T) lastResult.eval(row);
+        } else {
             return null;
         }
-
-        Object operandValue = operand.eval(row);
-
-        if (operandValue == null) {
-            return null;
-        }
-
-        if (resType == null) {
-            resType = operand.getType();
-        }
-
-        return (T) operandValue;
-    }
-
-    @Override
-    public int operator() {
-        return CallOperator.CASE;
     }
 
     @Override
     public DataType getType() {
-        return DataType.notNullOrLate(resType);
+        return resultType;
     }
 
     @Override
@@ -127,8 +120,11 @@ public class CaseExpression<T> implements CallExpression<T> {
         }
 
         out.writeObject(results[results.length - 1]);
+
+        out.writeObject(resultType);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         int len = in.readInt();
@@ -142,5 +138,7 @@ public class CaseExpression<T> implements CallExpression<T> {
         }
 
         results[len] = in.readObject();
+
+        resultType = in.readObject();
     }
 }

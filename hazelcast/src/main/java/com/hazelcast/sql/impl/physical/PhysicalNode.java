@@ -41,4 +41,6 @@ public interface PhysicalNode extends DataSerializable {
     default PhysicalNode getInput() {
         return getInput(0);
     }
+
+    PhysicalNodeSchema getSchema();
 }

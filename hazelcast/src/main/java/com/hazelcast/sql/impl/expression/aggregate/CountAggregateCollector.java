@@ -31,7 +31,7 @@ public final class CountAggregateCollector extends AggregateCollector {
     }
 
     @Override
-    protected void collect0(Object operandValue, DataType operandType, DataType resType) {
+    protected void collect0(Object operandValue, DataType operandType) {
         collectMany(1);
     }
 

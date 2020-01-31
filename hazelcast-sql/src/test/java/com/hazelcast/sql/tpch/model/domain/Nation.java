@@ -38,4 +38,20 @@ public class Nation implements Serializable {
         this.n_regionkey = n_regionkey;
         this.n_comment = n_comment;
     }
+
+    public long getN_nationkey() {
+        return n_nationkey;
+    }
+
+    public String getN_name() {
+        return n_name;
+    }
+
+    public long getN_regionkey() {
+        return n_regionkey;
+    }
+
+    public String getN_comment() {
+        return n_comment;
+    }
 }

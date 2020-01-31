@@ -37,7 +37,7 @@ public final class MinMaxAggregateCollector extends AggregateCollector {
     }
 
     @Override
-    protected void collect0(Object operandValue, DataType operandType, DataType resType) {
+    protected void collect0(Object operandValue, DataType operandType) {
         if (res == null || (operandValue != null && replace(res, operandValue))) {
             res = operandValue;
         }
@@ -61,9 +61,9 @@ public final class MinMaxAggregateCollector extends AggregateCollector {
         return (min && res < 0) || (!min && res > 0);
     }
 
-    private static Comparable asComparable(Object val) {
+    private static Comparable<?> asComparable(Object val) {
         if (val instanceof Comparable) {
-            return (Comparable) val;
+            return (Comparable<?>) val;
         } else {
             throw new HazelcastSqlException(-1, "Value is not comparable: " + val);
         }

@@ -34,10 +34,8 @@ public class SingleValueAggregateCollector extends AggregateCollector {
         super(distinct);
     }
 
-    // TODO: Since we extend an AggregateCollector, we already skip NULL values. Could this possibly break semantics of this
-    //  operation? Looks like we should accept nulls here.
     @Override
-    protected void collect0(Object operandValue, DataType operandType, DataType resType) {
+    protected void collect0(Object operandValue, DataType operandType) {
         if (res == null) {
             res = operandValue != null ? operandValue : NULL;
         } else {

@@ -249,6 +249,7 @@ public final class TypeConverters {
     }
 
     static class BigDecimalConverter extends BaseTypeConverter {
+
         @Override
         Comparable convertInternal(Comparable value) {
             if (value instanceof BigDecimal) {

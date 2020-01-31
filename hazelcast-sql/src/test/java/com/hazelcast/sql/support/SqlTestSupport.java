@@ -19,19 +19,13 @@ package com.hazelcast.sql.support;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.sql.SqlCursor;
 import com.hazelcast.sql.SqlRow;
-import com.hazelcast.sql.impl.QueryFragment;
 import com.hazelcast.sql.impl.QueryPlan;
 import com.hazelcast.sql.impl.SqlCursorImpl;
 import com.hazelcast.sql.impl.SqlServiceImpl;
-import com.hazelcast.sql.impl.expression.ColumnExpression;
-import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.expression.KeyValueExtractorExpression;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * Common infrastructure for SQL tests.
@@ -40,15 +34,7 @@ public class SqlTestSupport {
     protected QueryPlan getPlan(HazelcastInstance target, String sql) {
         SqlServiceImpl sqlService = (SqlServiceImpl) target.getSqlService();
 
-        return sqlService.getPlan(sql);
-    }
-
-    protected QueryFragment getSingleFragmentFromPlan(HazelcastInstance target, String sql) {
-        QueryPlan plan = getPlan(target, sql);
-
-        assertEquals(1, plan.getFragments().size());
-
-        return plan.getFragments().get(0);
+        return sqlService.getPlan(sql, Collections.emptyList());
     }
 
     protected SqlCursor executeQuery(HazelcastInstance target, String sql) {
@@ -75,21 +61,5 @@ public class SqlTestSupport {
         } catch (Exception e) {
             throw new RuntimeException("Failed to execute query and get result set rows: " + sql, e);
         }
-    }
-
-    protected Expression keyValueExtractorExpression(String path) {
-        return new KeyValueExtractorExpression(path);
-    }
-
-    protected Expression columnExpression(int idx) {
-        return new ColumnExpression(idx);
-    }
-
-    protected List<Expression> expressions(Expression... expressions) {
-        return new ArrayList<>(Arrays.asList(expressions));
-    }
-
-    protected static <T> List<T> asList(T... vals) {
-        return Arrays.asList(vals);
     }
 }

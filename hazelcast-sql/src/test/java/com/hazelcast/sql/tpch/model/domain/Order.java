@@ -55,6 +55,34 @@ public class Order implements Serializable {
         this.o_comment = o_comment;
     }
 
+    public String getO_orderstatus() {
+        return o_orderstatus;
+    }
+
+    public BigDecimal getO_totalprice() {
+        return o_totalprice;
+    }
+
+    public LocalDate getO_orderdate() {
+        return o_orderdate;
+    }
+
+    public String getO_orderpriority() {
+        return o_orderpriority;
+    }
+
+    public String getO_clerk() {
+        return o_clerk;
+    }
+
+    public int getO_shippriority() {
+        return o_shippriority;
+    }
+
+    public String getO_comment() {
+        return o_comment;
+    }
+
     public static class Key implements Serializable {
         public long o_orderkey;
         public long o_custkey;
@@ -66,6 +94,14 @@ public class Order implements Serializable {
         public Key(long o_orderkey, long o_custkey) {
             this.o_orderkey = o_orderkey;
             this.o_custkey = o_custkey;
+        }
+
+        public long getO_orderkey() {
+            return o_orderkey;
+        }
+
+        public long getO_custkey() {
+            return o_custkey;
         }
     }
 }

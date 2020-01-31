@@ -37,7 +37,7 @@ public final class StringConverter extends Converter {
     }
 
     @Override
-    public Class getClazz() {
+    public Class<?> getValueClass() {
         return String.class;
     }
 
@@ -52,7 +52,7 @@ public final class StringConverter extends Converter {
     }
 
     @Override
-    public byte asTinyInt(Object val) {
+    public byte asTinyint(Object val) {
         try {
             return Byte.parseByte(cast(val));
         } catch (NumberFormatException e) {
@@ -61,7 +61,7 @@ public final class StringConverter extends Converter {
     }
 
     @Override
-    public short asSmallInt(Object val) {
+    public short asSmallint(Object val) {
         try {
             return Short.parseShort(cast(val));
         } catch (NumberFormatException e) {
@@ -79,7 +79,7 @@ public final class StringConverter extends Converter {
     }
 
     @Override
-    public long asBigInt(Object val) {
+    public long asBigint(Object val) {
         try {
             return Long.parseLong(cast(val));
         } catch (NumberFormatException e) {
@@ -153,6 +153,11 @@ public final class StringConverter extends Converter {
         } catch (DateTimeParseException e) {
             throw cannotConvertImplicit(val);
         }
+    }
+
+    @Override
+    public Object convertToSelf(Converter valConverter, Object val) {
+        return valConverter.asVarchar(val);
     }
 
     private String cast(Object val) {

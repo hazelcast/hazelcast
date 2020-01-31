@@ -27,17 +27,22 @@ import java.math.BigDecimal;
  * Summing collector.
  */
 public final class SumAggregateCollector extends AggregateCollector {
+    /** Result type. */
+    private final DataType resType;
+
     /** Result. */
     private Object res;
 
-    public SumAggregateCollector(boolean distinct) {
+    public SumAggregateCollector(DataType resType, boolean distinct) {
         super(distinct);
+
+        this.resType = resType;
     }
 
     @Override
-    protected void collect0(Object operandValue, DataType operandType, DataType resType) {
+    protected void collect0(Object operandValue, DataType operandType) {
         if (res == null) {
-            initialize(resType);
+            initialize();
         }
 
         Converter converter = operandType.getConverter();
@@ -49,7 +54,7 @@ public final class SumAggregateCollector extends AggregateCollector {
                 break;
 
             case BIGINT:
-                res = (long) res + converter.asBigInt(operandValue);
+                res = (long) res + converter.asBigint(operandValue);
 
                 break;
 
@@ -70,7 +75,7 @@ public final class SumAggregateCollector extends AggregateCollector {
         return res;
     }
 
-    private void initialize(DataType resType) {
+    private void initialize() {
         switch (resType.getType()) {
             case INT:
                 res = 0;

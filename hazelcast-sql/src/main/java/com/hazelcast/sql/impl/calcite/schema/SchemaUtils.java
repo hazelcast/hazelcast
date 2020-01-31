@@ -25,8 +25,12 @@ import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.partition.strategy.DeclarativePartitioningStrategy;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.sql.impl.calcite.statistics.TableStatistics;
 import com.hazelcast.sql.impl.calcite.statistics.StatisticProvider;
+import com.hazelcast.sql.impl.calcite.statistics.TableStatistics;
+import com.hazelcast.sql.impl.schema.SqlSchemaResolver;
+import com.hazelcast.sql.impl.schema.SqlTableField;
+import com.hazelcast.sql.impl.schema.SqlTableSchema;
+import com.hazelcast.sql.impl.type.DataType;
 import org.apache.calcite.schema.Schema;
 import org.apache.calcite.schema.Table;
 
@@ -37,16 +41,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static com.hazelcast.sql.impl.schema.SqlSchemaResolver.SCHEMA_NAME_PARTITIONED;
+import static com.hazelcast.sql.impl.schema.SqlSchemaResolver.SCHEMA_NAME_REPLICATED;
+
 /**
  * Utility classes for schema creation.
  */
 public final class SchemaUtils {
-    /** Name of partitioned schema. */
-    public static final String SCHEMA_NAME_PARTITIONED = "partitioned";
-
-    /** Name of replicated schema. */
-    public static final String SCHEMA_NAME_REPLICATED = "replicated";
-
     private SchemaUtils() {
         // No-op.
     }
@@ -57,31 +58,50 @@ public final class SchemaUtils {
      * @param nodeEngine Node engine.
      * @return Root schema.
      */
-    public static HazelcastSchema createRootSchema(NodeEngine nodeEngine, StatisticProvider statisticProvider) {
+    public static HazelcastSchema createRootSchema(
+        NodeEngine nodeEngine,
+        StatisticProvider statisticProvider,
+        SqlSchemaResolver schemaResolver
+    ) {
         // Create partitioned and replicated schemas.
-        Map<String, Table> partitionedTables = prepareSchemaTables(nodeEngine, statisticProvider, true);
-        Map<String, Table> replicatedTables = prepareSchemaTables(nodeEngine, statisticProvider, false);
-
-        HazelcastSchema partitionedSchema = new HazelcastSchema(partitionedTables);
-        HazelcastSchema replicatedSchema = new HazelcastSchema(replicatedTables);
+        List<HazelcastTable> partitionedTables = prepareSchemaTables(nodeEngine, statisticProvider, schemaResolver, true);
+        List<HazelcastTable> replicatedTables = prepareSchemaTables(nodeEngine, statisticProvider, schemaResolver, false);
 
         // Create root schema.
-        Map<String, Schema> subSchemaMap = new HashMap<>();
+        Map<String, Schema> schemaMap = new HashMap<>();
+        Map<String, Table> topTableMap = new HashMap<>();
 
-        subSchemaMap.put(SCHEMA_NAME_PARTITIONED, partitionedSchema);
-        subSchemaMap.put(SCHEMA_NAME_REPLICATED, replicatedSchema);
+        processTables(schemaMap, topTableMap, partitionedTables);
+        processTables(schemaMap, topTableMap, replicatedTables);
 
-        Map<String, Table> tableMap = new HashMap<>();
+        return new HazelcastSchema(schemaMap, topTableMap);
+    }
 
-        for (Map.Entry<String, Table> table : replicatedSchema.getTableMap().entrySet()) {
-            tableMap.put(table.getKey(), table.getValue());
+    private static void processTables(
+        Map<String, Schema> schemaMap,
+        Map<String, Table> topTableMap,
+        List<HazelcastTable> tables
+    ) {
+        for (HazelcastTable table : tables) {
+            String schemaName = table.getSchemaName();
+
+            HazelcastSchema schema = (HazelcastSchema) schemaMap.get(schemaName);
+
+            if (schema == null) {
+                // TODO: Ugly, refactor it.
+                schema = new HazelcastSchema(new HashMap<>());
+
+                schemaMap.put(schemaName, schema);
+            }
+
+            // TODO: What to do in case the table with this name is already registered? Print a warning?
+            schema.getTableMap().putIfAbsent(table.getName(), table);
+
+            if (schemaName.equals(SCHEMA_NAME_PARTITIONED) || schemaName.equals(SCHEMA_NAME_REPLICATED)) {
+                // TODO: What to do in case the table with this name is already registered? Print a warning?
+                topTableMap.putIfAbsent(table.getName(), table);
+            }
         }
-
-        for (Map.Entry<String, Table> table : partitionedSchema.getTableMap().entrySet()) {
-            tableMap.put(table.getKey(), table.getValue());
-        }
-
-        return new HazelcastSchema(subSchemaMap, tableMap);
     }
 
     /**
@@ -92,16 +112,18 @@ public final class SchemaUtils {
      *     if replicated tables.
      * @return List of tables.
      */
-    private static Map<String, Table> prepareSchemaTables(
+    @SuppressWarnings("rawtypes")
+    private static List<HazelcastTable> prepareSchemaTables(
         NodeEngine nodeEngine,
         StatisticProvider statisticProvider,
+        SqlSchemaResolver schemaResolver,
         boolean partitioned
     ) {
         String serviceName = partitioned ? MapService.SERVICE_NAME : ReplicatedMapService.SERVICE_NAME;
 
         Collection<String> mapNames = nodeEngine.getProxyService().getDistributedObjectNames(serviceName);
 
-        HashMap<String, Table> res = new HashMap<>();
+        List<HazelcastTable> res = new ArrayList<>();
 
         for (String mapName : mapNames) {
             DistributedObject map = nodeEngine.getProxyService().getDistributedObject(
@@ -110,15 +132,20 @@ public final class SchemaUtils {
                 nodeEngine.getLocalMember().getUuid()
             );
 
+            SqlTableSchema tableSchema = schemaResolver.resolve(map);
+
+            if (tableSchema == null) {
+                // Skip empty maps.
+                continue;
+            }
+
             long rowCount = statisticProvider.getRowCount(map);
 
             String distributionField;
-            Map<String, String> aliases;
             List<HazelcastTableIndex> indexes;
 
             if (partitioned) {
-                MapProxyImpl map0 = (MapProxyImpl) map;
-
+                MapProxyImpl<?, ?> map0 = (MapProxyImpl) map;
                 PartitioningStrategy strategy = map0.getPartitionStrategy();
 
                 if (strategy instanceof DeclarativePartitioningStrategy) {
@@ -127,24 +154,48 @@ public final class SchemaUtils {
                     distributionField = null;
                 }
 
-                aliases = map0.getAttributeAliases();
 
                 indexes = getIndexes(map0);
             } else {
                 distributionField = null;
-                aliases = null;
                 indexes = null;
             }
 
+            Map<String, DataType> fieldTypes = prepareFieldTypes(tableSchema);
+            Map<String, String> fieldPaths = prepareFieldPaths(tableSchema);
+
             HazelcastTable table = new HazelcastTable(
+                tableSchema.getSchema(),
                 mapName,
                 partitioned,
                 distributionField,
-                indexes, aliases,
+                indexes,
+                fieldTypes,
+                fieldPaths,
                 new TableStatistics(rowCount)
             );
 
-            res.put(mapName, table);
+            res.add(table);
+        }
+
+        return res;
+    }
+
+    private static Map<String, DataType> prepareFieldTypes(SqlTableSchema tableSchema) {
+        Map<String, DataType> res = new HashMap<>();
+
+        for (SqlTableField field : tableSchema.getFields()) {
+            res.put(field.getName(), field.getType());
+        }
+
+        return res;
+    }
+
+    private static Map<String, String> prepareFieldPaths(SqlTableSchema tableSchema) {
+        Map<String, String> res = new HashMap<>();
+
+        for (SqlTableField field : tableSchema.getFields()) {
+            res.put(field.getName(), field.getPath());
         }
 
         return res;
@@ -156,7 +207,8 @@ public final class SchemaUtils {
      * @param map Map.
      * @return Indexes.
      */
-    private static List<HazelcastTableIndex> getIndexes(MapProxyImpl map) {
+    // TODO: Move this to schema resolver
+    private static List<HazelcastTableIndex> getIndexes(MapProxyImpl<?, ?> map) {
         MapContainer mapContainer = map.getMapServiceContext().getMapContainer(map.getName());
 
         Collection<IndexConfig> indexConfigs = mapContainer.getIndexDefinitions().values();

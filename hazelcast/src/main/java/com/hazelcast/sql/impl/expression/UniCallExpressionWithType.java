@@ -16,25 +16,75 @@
 
 package com.hazelcast.sql.impl.expression;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.type.DataType;
+
+import java.io.IOException;
+import java.util.Objects;
 
 /**
  * Expression with result type field.
  */
 public abstract class UniCallExpressionWithType<T> extends UniCallExpression<T> {
     /** Result type. */
-    protected transient DataType resType;
+    protected DataType resultType;
 
     protected UniCallExpressionWithType() {
         // No-op.
     }
 
-    protected UniCallExpressionWithType(Expression operand) {
+    protected UniCallExpressionWithType(Expression<?> operand, DataType resultType) {
         this.operand = operand;
+        this.resultType = resultType;
     }
 
     @Override
     public DataType getType() {
-        return DataType.notNullOrLate(resType);
+        return resultType;
+    }
+
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        super.writeData(out);
+
+        out.writeObject(resultType);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        super.readData(in);
+
+        resultType = in.readObject();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), resultType);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        if (!super.equals(o)) {
+            return false;
+        }
+
+        UniCallExpressionWithType<?> that = (UniCallExpressionWithType<?>) o;
+
+        return resultType.equals(that.resultType);
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{operand=" + operand + ", resultType=" + resultType + '}';
     }
 }

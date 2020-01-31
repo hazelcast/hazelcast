@@ -31,7 +31,7 @@ import java.util.Map;
 @SuppressWarnings("checkstyle:ExecutableStatementCount")
 public final class Converters {
     /** Map from input class to converter. */
-    private static final Map<Class, Converter> CLASS_TO_CONVERTER;
+    private static final Map<Class<?>, Converter> CLASS_TO_CONVERTER;
 
     static {
         List<Converter> converters = new ArrayList<>();
@@ -72,13 +72,23 @@ public final class Converters {
         CLASS_TO_CONVERTER = new HashMap<>();
 
         for (Converter converter : converters) {
-            Converter prevConverter = CLASS_TO_CONVERTER.put(converter.getClazz(), converter);
+            Class<?> valueClass = converter.getValueClass();
 
-            if (prevConverter != null) {
-                throw new HazelcastException("Duplicate converter for class {class=" + converter.getClazz()
-                    + ", oldConverter=" + prevConverter.getClazz().getName()
-                    + ", newConverter=" + converter.getClazz().getName()
-                    + '}');
+            if (valueClass != null) {
+                Converter prevConverter = CLASS_TO_CONVERTER.put(valueClass, converter);
+
+                if (prevConverter != null) {
+                    throw new HazelcastException("Duplicate converter for class {class=" + valueClass
+                        + ", oldConverter=" + prevConverter.getValueClass().getName()
+                        + ", newConverter=" + valueClass.getName()
+                        + '}');
+                }
+
+                Class<?> primitiveValueClass = getPrimitiveClass(valueClass);
+
+                if (primitiveValueClass != null) {
+                    CLASS_TO_CONVERTER.put(primitiveValueClass, converter);
+                }
             }
         }
     }
@@ -88,22 +98,20 @@ public final class Converters {
     }
 
     /**
-     * Get converter for the given value.
+     * Get converter for the given class.
      *
-     * @param val Value (not null).
+     * @param clazz Class.
      * @return Converter or exception if no matching converters found.
      */
-    public static Converter getConverter(Object val) {
-        assert val != null;
-
-        Converter res = CLASS_TO_CONVERTER.get(val.getClass());
+    public static Converter getConverter(Class<?> clazz) {
+        Converter res = CLASS_TO_CONVERTER.get(clazz);
 
         if (res == null) {
-            res = getConverterInexact(val);
+            res = getConverterInexact(clazz);
         }
 
         if (res == null) {
-            throw new HazelcastSqlException(-1, "Class is not supported by Hazelcast SQL: " + val.getClass().getName());
+            throw new HazelcastSqlException(-1, "Class is not supported by Hazelcast SQL: " + clazz.getName());
         }
 
         return res;
@@ -112,14 +120,51 @@ public final class Converters {
     /**
      * Try to get inexact converter in case there is a type hierarchy.
      *
-     * @param val Value.
+     * @param clazz Class.
      * @return Converter or {@code null}.
      */
-    private static Converter getConverterInexact(Object val) {
-        if (val instanceof Calendar) {
+    private static Converter getConverterInexact(Class<?> clazz) {
+        if (Calendar.class.isAssignableFrom(clazz)) {
             return CalendarConverter.INSTANCE;
         }
 
         return ObjectConverter.INSTANCE;
+    }
+
+    @SuppressWarnings({"checkstyle:NPathComplexity", "checkstyle:ReturnCount"})
+    private static Class<?> getPrimitiveClass(Class<?> targetClass) {
+        if (targetClass == Boolean.class) {
+            return boolean.class;
+        }
+
+        if (targetClass == Byte.class) {
+            return byte.class;
+        }
+
+        if (targetClass == Short.class) {
+            return short.class;
+        }
+
+        if (targetClass == Character.class) {
+            return char.class;
+        }
+
+        if (targetClass == Integer.class) {
+            return int.class;
+        }
+
+        if (targetClass == Long.class) {
+            return long.class;
+        }
+
+        if (targetClass == Float.class) {
+            return float.class;
+        }
+
+        if (targetClass == Double.class) {
+            return double.class;
+        }
+
+        return null;
     }
 }

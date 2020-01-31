@@ -16,8 +16,6 @@
 
 package com.hazelcast.sql.impl.expression.string;
 
-import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.impl.expression.CallOperator;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.TriCallExpression;
 import com.hazelcast.sql.impl.row.Row;
@@ -27,79 +25,29 @@ import com.hazelcast.sql.impl.type.DataType;
  * REPLACE string function.
  */
 public class ReplaceFunction extends TriCallExpression<String> {
-    /** Source type. */
-    private transient DataType sourceType;
-
-    /** Search type. */
-    private transient DataType searchType;
-
-    /** Replacement type. */
-    private transient DataType replacementType;
-
     public ReplaceFunction() {
         // No-op.
     }
 
-    public ReplaceFunction(Expression operand1, Expression operand2, Expression operand3) {
-        super(operand1, operand2, operand3);
+    private ReplaceFunction(Expression<?> source, Expression<?> search, Expression<?> replacement) {
+        super(source, search, replacement);
+    }
+
+    public static ReplaceFunction create(Expression<?> source, Expression<?> search, Expression<?> replacement) {
+        source.ensureCanConvertToVarchar();
+        search.ensureCanConvertToVarchar();
+        replacement.ensureCanConvertToVarchar();
+
+        return new ReplaceFunction(source, search, replacement);
     }
 
     @Override
     public String eval(Row row) {
-        String source;
-        String search;
-        String replacement;
+        String source = operand1.evalAsVarchar(row);
+        String search = operand2.evalAsVarchar(row);
+        String replacement = operand3.evalAsVarchar(row);
 
-        // Get source operand.
-        Object sourceValue = operand1.eval(row);
-
-        if (sourceValue == null) {
-            return null;
-        }
-
-        if (sourceType == null) {
-            sourceType = operand1.getType();
-        }
-
-        source = sourceType.getConverter().asVarchar(sourceValue);
-
-        // Get search operand.
-        Object searchValue = operand2.eval(row);
-
-        if (searchValue == null) {
-            return null;
-        }
-
-        if (searchType == null) {
-            searchType = operand2.getType();
-        }
-
-        search = searchType.getConverter().asVarchar(searchValue);
-
-        if (search.isEmpty()) {
-            throw new HazelcastSqlException(-1, "Invalid operand: search cannot be empty.");
-        }
-
-        // Get replacement operand.
-        Object replacementValue = operand3.eval(row);
-
-        if (replacementValue == null) {
-            return null;
-        }
-
-        if (replacementType == null) {
-            replacementType = operand3.getType();
-        }
-
-        replacement = replacementType.getConverter().asVarchar(replacementValue);
-
-        // Process.
-        return source.replace(search, replacement);
-    }
-
-    @Override
-    public int operator() {
-        return CallOperator.REPLACE;
+        return StringExpressionUtils.replace(source, search, replacement);
     }
 
     @Override

@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.support;
 
-import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
@@ -60,11 +59,9 @@ public class ModelGenerator {
 
         personCfg.setPartitioningStrategyConfig(
             new PartitioningStrategyConfig().setPartitioningStrategy(
-                new DeclarativePartitioningStrategy().setField("deptId")
+                new DeclarativePartitioningStrategy<>().setField("deptId")
             )
         );
-
-        personCfg.addAttributeConfig(new AttributeConfig().setName("deptId").setPath("__key.deptId"));
 
         member.getConfig().addReplicatedMapConfig(cityCfg);
         member.getConfig().addMapConfig(departmentCfg);

@@ -30,6 +30,7 @@ public class SortKeyComparator implements Comparator<SortKey> {
         this.ascs = ascs;
     }
 
+    @SuppressWarnings("rawtypes")
     @Override
     public int compare(SortKey o1, SortKey o2) {
         int res;

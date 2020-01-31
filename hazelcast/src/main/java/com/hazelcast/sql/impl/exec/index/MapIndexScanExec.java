@@ -16,22 +16,22 @@
 
 package com.hazelcast.sql.impl.exec.index;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.impl.Comparison;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
-import com.hazelcast.sql.impl.SqlUtils;
 import com.hazelcast.sql.impl.exec.AbstractMapScanExec;
 import com.hazelcast.sql.impl.exec.IterationResult;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
+import com.hazelcast.sql.impl.type.DataType;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -71,12 +71,13 @@ public class MapIndexScanExec extends AbstractMapScanExec {
         MapProxyImpl map,
         PartitionIdSet parts,
         List<String> fieldNames,
+        List<DataType> fieldTypes,
         List<Integer> projects,
         Expression<Boolean> filter,
         String indexName,
         IndexFilter indexFilter
     ) {
-        super(id, map.getName(), fieldNames, projects, filter);
+        super(id, map.getName(), fieldNames, fieldTypes, projects, filter);
 
         this.map = map;
         this.parts = parts;
@@ -178,11 +179,6 @@ public class MapIndexScanExec extends AbstractMapScanExec {
     @Override
     protected Extractors createExtractors() {
         return map.getMapServiceContext().getExtractors(mapName);
-    }
-
-    @Override
-    protected String normalizePath(String path) {
-        return SqlUtils.normalizeAttributePath(path, map.getAttributeAliases());
     }
 
     @Override

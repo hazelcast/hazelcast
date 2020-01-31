@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.physical;
 
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.physical.visitor.PhysicalNodeVisitor;
+import com.hazelcast.sql.impl.type.DataType;
 
 import java.util.List;
 import java.util.Objects;
@@ -34,10 +35,12 @@ public class ReplicatedMapScanPhysicalNode extends AbstractMapScanPhysicalNode {
         int id,
         String mapName,
         List<String> fieldNames,
+        List<DataType> fieldTypes,
         List<Integer> projects,
-        Expression<Boolean> filter
+        Expression<Boolean> filter,
+        PhysicalNodeSchema schema
     ) {
-        super(id, mapName, fieldNames, projects, filter);
+        super(id, mapName, fieldNames, fieldTypes, projects, filter, schema);
     }
 
     @Override

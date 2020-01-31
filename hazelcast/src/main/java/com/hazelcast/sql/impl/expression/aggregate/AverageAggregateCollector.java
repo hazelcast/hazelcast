@@ -18,37 +18,37 @@ package com.hazelcast.sql.impl.expression.aggregate;
 
 import com.hazelcast.sql.impl.exec.agg.AggregateCollector;
 import com.hazelcast.sql.impl.type.DataType;
-import com.hazelcast.sql.impl.type.accessor.Converter;
 import com.hazelcast.sql.impl.type.accessor.LongConverter;
 
 /**
  * Collector for AVG.
  */
 public class AverageAggregateCollector extends AggregateCollector {
+    /** Result type. */
+    private final DataType resType;
+
     /** Sum. */
-    private final SumAggregateCollector sum = new SumAggregateCollector(false);
+    private final SumAggregateCollector sum;
 
     /** Average. */
-    private final CountAggregateCollector count = new CountAggregateCollector(false);
+    private final CountAggregateCollector count;
 
-    /** Result type. */
-    private DataType resType;
-
-    public AverageAggregateCollector(boolean distinct) {
+    public AverageAggregateCollector(DataType resType, boolean distinct) {
         super(distinct);
+
+        sum = new SumAggregateCollector(resType, false);
+        count = new CountAggregateCollector(false);
+
+        this.resType = resType;
     }
 
     @Override
-    protected void collect0(Object operandValue, DataType operandType, DataType resType) {
-        collectMany(operandValue, operandType, resType, 1);
+    protected void collect0(Object operandValue, DataType operandType) {
+        collectMany(operandValue, operandType, 1);
     }
 
-    public void collectMany(Object operandValue, DataType operandType, DataType resType, long cnt) {
-        if (this.resType == null) {
-            this.resType = resType;
-        }
-
-        sum.collect(operandValue, operandType, resType);
+    public void collectMany(Object operandValue, DataType operandType, long cnt) {
+        sum.collect(operandValue, operandType);
         count.collectMany(cnt);
     }
 
@@ -58,9 +58,7 @@ public class AverageAggregateCollector extends AggregateCollector {
             return 0.0d;
         }
 
-        Converter converter = resType.getConverter();
-
-        double sum0 = converter.asDouble(sum.reduce());
+        double sum0 = resType.getConverter().asDouble(sum.reduce());
         double count0 = LongConverter.INSTANCE.asDouble(count.reduce());
 
         return sum0 / count0;

@@ -20,6 +20,9 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.DataTypeUtils;
+import com.hazelcast.sql.impl.type.accessor.Converter;
+import com.hazelcast.sql.impl.type.accessor.Converters;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -33,29 +36,35 @@ public class ConstantExpression<T> implements Expression<T> {
     /** Value. */
     private T val;
 
-    /** Return type. */
-    private transient DataType type;
-
     public ConstantExpression() {
         // No-op.
     }
 
-    public ConstantExpression(T val) {
+    private ConstantExpression(T val) {
         this.val = val;
+    }
+
+    public static ConstantExpression<?> create(Object val) {
+        // Normalize the constant to well-known type.
+        if (val != null) {
+            Converter converter = Converters.getConverter(val.getClass());
+
+            val = converter.convertToSelf(converter, val);
+        }
+
+        return new ConstantExpression<>(val);
     }
 
     @Override
     public T eval(Row row) {
-        if (val != null && type == null) {
-            type = DataType.resolveType(val);
-        }
-
         return val;
     }
 
     @Override
     public DataType getType() {
-        return DataType.notNullOrLate(type);
+        // TODO: We may have a problem with NULL here, because it is resolved to LATE.
+        //  Probably we should introduce another type for NULL, which could be converted to any other type?
+        return DataTypeUtils.resolveType(val);
     }
 
     public T getValue() {

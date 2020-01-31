@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.schema;
 
+import com.hazelcast.sql.impl.type.DataType;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeField;
@@ -30,6 +31,9 @@ import java.util.Map;
  * Hazelcast table which can register fields dynamically.
  */
 public class HazelcastTable extends AbstractTable {
+    /** Schema name. */
+    private final String schemaName;
+
     /** Name. */
     private final String name;
 
@@ -39,31 +43,60 @@ public class HazelcastTable extends AbstractTable {
     /** Distribution field name. */
     private final String distributionField;
 
-    /** Field aliases. */
-    private final Map<String, String> aliases;
-
     /** Indxes. */
     private final List<HazelcastTableIndex> indexes;
 
     /** Table statistic. */
     private final Statistic statistic;
 
+    /** Field types. */
+    private final Map<String, DataType> fieldTypes;
+
+    /** Field paths. */
+    private final Map<String, String> fieldPaths;
+
     /** Fields. */
+    // TODO: We used this object for dynamic type resolution. With static schema we do not need it anymore. Refactor.
     private final HazelcastTableFields fields = new HazelcastTableFields();
 
     public HazelcastTable(
+        String schemaName,
         String name,
         boolean partitioned,
         String distributionField,
-        List<HazelcastTableIndex> indexes, Map<String, String> aliases,
+        List<HazelcastTableIndex> indexes,
+        Map<String, DataType> fieldTypes,
+        Map<String, String> fieldPaths,
         Statistic statistic
     ) {
+        this.schemaName = schemaName;
         this.name = name;
         this.partitioned = partitioned;
         this.distributionField = distributionField;
-        this.aliases = aliases != null ? aliases : Collections.emptyMap();
+        this.fieldTypes = fieldTypes != null ? fieldTypes : Collections.emptyMap();
+        this.fieldPaths = fieldPaths != null ? fieldPaths : Collections.emptyMap();
         this.indexes = indexes != null ? indexes : Collections.emptyList();
         this.statistic = statistic;
+    }
+
+    public DataType getFieldType(String fieldName) {
+        DataType fieldType = fieldTypes.get(fieldName);
+
+        if (fieldType == null) {
+            fieldType = DataType.LATE;
+        }
+
+        return fieldType;
+    }
+
+    public String getFieldPath(String fieldName) {
+        String path = fieldPaths.get(fieldName);
+
+        return path != null ? path : fieldName;
+    }
+
+    public String getSchemaName() {
+        return schemaName;
     }
 
     public String getName() {
@@ -80,10 +113,6 @@ public class HazelcastTable extends AbstractTable {
 
     public String getDistributionField() {
         return distributionField;
-    }
-
-    public Map<String, String> getAliases() {
-        return aliases;
     }
 
     public List<HazelcastTableIndex> getIndexes() {
@@ -107,6 +136,6 @@ public class HazelcastTable extends AbstractTable {
     @Override
     public String toString() {
         return getClass().getSimpleName() + "{name=" + name + ", partitioned=" + partitioned
-            + ", distributionField=" + distributionField + ", indexes=" + indexes + ", aliases=" + aliases + '}';
+            + ", distributionField=" + distributionField + ", indexes=" + indexes + '}';
     }
 }

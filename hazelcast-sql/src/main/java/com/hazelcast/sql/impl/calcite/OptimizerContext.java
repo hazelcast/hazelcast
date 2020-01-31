@@ -42,6 +42,7 @@ import com.hazelcast.sql.impl.calcite.opt.physical.join.JoinPhysicalRule;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.sql.impl.calcite.schema.SchemaUtils;
 import com.hazelcast.sql.impl.calcite.statistics.StatisticProvider;
+import com.hazelcast.sql.impl.schema.SqlSchemaResolver;
 import org.apache.calcite.adapter.java.JavaTypeFactory;
 import org.apache.calcite.avatica.util.Casing;
 import org.apache.calcite.config.CalciteConnectionConfig;
@@ -138,8 +139,12 @@ public final class OptimizerContext {
      * @param nodeEngine Node engine.
      * @return Context.
      */
-    public static OptimizerContext create(NodeEngine nodeEngine, StatisticProvider statisticProvider) {
-        HazelcastSchema rootSchema = SchemaUtils.createRootSchema(nodeEngine, statisticProvider);
+    public static OptimizerContext create(
+        NodeEngine nodeEngine,
+        StatisticProvider statisticProvider,
+        SqlSchemaResolver schemaResolver
+    ) {
+        HazelcastSchema rootSchema = SchemaUtils.createRootSchema(nodeEngine, statisticProvider, schemaResolver);
 
         int memberCount = nodeEngine.getClusterService().getSize(MemberSelectors.DATA_MEMBER_SELECTOR);
 

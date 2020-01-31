@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.physical.visitor;
 
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.replicatedmap.impl.ReplicatedMapProxy;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryFragmentDescriptor;
 import com.hazelcast.sql.impl.exec.EmptyScanExec;
@@ -274,6 +275,7 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
                 map,
                 localParts,
                 node.getFieldNames(),
+                node.getFieldTypes(),
                 node.getProjects(),
                 node.getFilter()
             );
@@ -291,13 +293,14 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
          } else {
              String mapName = node.getMapName();
 
-             MapProxyImpl map = (MapProxyImpl) nodeEngine.getHazelcastInstance().getMap(mapName);
+             MapProxyImpl<?, ?> map = (MapProxyImpl<?, ?>) nodeEngine.getHazelcastInstance().getMap(mapName);
 
              res = new MapIndexScanExec(
                  node.getId(),
                  map,
                  localParts,
                  node.getFieldNames(),
+                 node.getFieldTypes(),
                  node.getProjects(),
                  node.getFilter(),
                  node.getIndexName(),
@@ -310,10 +313,16 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
 
      @Override
     public void onReplicatedMapScanNode(ReplicatedMapScanPhysicalNode node) {
+        String mapName = node.getMapName();
+
+        ReplicatedMapProxy<?, ?> map = (ReplicatedMapProxy<?, ?>) nodeEngine.getHazelcastInstance().getReplicatedMap(mapName);
+
         Exec res = new ReplicatedMapScanExec(
             node.getId(),
+            map,
             node.getMapName(),
             node.getFieldNames(),
+            node.getFieldTypes(),
             node.getProjects(),
             node.getFilter()
         );
@@ -435,11 +444,7 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
     }
 
     private Exec pop() {
-        try {
-            return stack.remove(stack.size() - 1);
-        } catch (ArrayIndexOutOfBoundsException e) {
-            throw e;
-        }
+        return stack.remove(stack.size() - 1);
     }
 
     private void push(Exec exec) {

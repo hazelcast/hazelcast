@@ -32,15 +32,15 @@ public abstract class AggregateCollector {
         this.distinctSet = distinct ? new HashSet<>() : null;
     }
 
-    public final void collect(Object operandValue, DataType operandType, DataType resType) {
+    public final void collect(Object operandValue, DataType operandType) {
         if (distinctSet != null && !distinctSet.add(operandValue)) {
             return;
         }
 
-        collect0(operandValue, operandType, resType);
+        collect0(operandValue, operandType);
     }
 
-    protected abstract void collect0(Object operandValue, DataType operandType, DataType resType);
+    protected abstract void collect0(Object operandValue, DataType operandType);
 
     public abstract Object reduce();
 }

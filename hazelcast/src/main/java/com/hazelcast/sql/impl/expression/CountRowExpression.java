@@ -62,6 +62,6 @@ public class CountRowExpression implements Expression<Row> {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName();
+        return getClass().getSimpleName() + "{}";
     }
 }

@@ -523,7 +523,7 @@ public final class MapScanPhysicalRule extends AbstractPhysicalRule {
         int index = 0;
 
         for (RelDataTypeField field : hazelcastTable.getFieldList()) {
-            String path = SqlUtils.normalizeAttributePath(field.getName(), hazelcastTable.getAliases());
+            String path = hazelcastTable.getFieldPath(field.getName());
 
             if (path.equals(QueryConstants.KEY_ATTRIBUTE_NAME.value())) {
                 // If there is no distribution field, use the whole key.

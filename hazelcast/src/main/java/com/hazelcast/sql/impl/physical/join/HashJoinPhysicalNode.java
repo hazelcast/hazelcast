@@ -19,9 +19,11 @@ package com.hazelcast.sql.impl.physical.join;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.physical.PhysicalNode;
 import com.hazelcast.sql.impl.physical.visitor.PhysicalNodeVisitor;
+import com.hazelcast.sql.impl.type.GenericType;
 
 import java.io.IOException;
 import java.util.List;
@@ -53,6 +55,19 @@ public class HashJoinPhysicalNode extends AbstractJoinPhysicalNode {
         int rightRowColumnCount
     ) {
         super(id, left, right, condition, outer, semi, rightRowColumnCount);
+
+        // TODO: Fail only if both sides have unresolved types. Otherwise perform coercion during join.
+        for (Integer leftHashKey : leftHashKeys) {
+            if (left.getSchema().getType(leftHashKey).getType() == GenericType.LATE) {
+                throw new HazelcastSqlException(-1, "Column type cannot be resolved: " + leftHashKey);
+            }
+        }
+
+        for (Integer rightHashKey : rightHashKeys) {
+            if (right.getSchema().getType(rightHashKey).getType() == GenericType.LATE) {
+                throw new HazelcastSqlException(-1, "Column type cannot be resolved: " + (leftHashKeys.size() + rightHashKey));
+            }
+        }
 
         this.leftHashKeys = leftHashKeys;
         this.rightHashKeys = rightHashKeys;

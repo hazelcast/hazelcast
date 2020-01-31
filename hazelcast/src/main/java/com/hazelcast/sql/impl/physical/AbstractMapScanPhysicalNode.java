@@ -20,6 +20,7 @@ import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.type.DataType;
 
 import java.io.IOException;
 import java.util.List;
@@ -34,11 +35,17 @@ public abstract class AbstractMapScanPhysicalNode extends ZeroInputPhysicalNode 
     /** Field names. */
     protected List<String> fieldNames;
 
+    /** Field types. */
+    protected List<DataType> fieldTypes;
+
     /** Projects. */
     protected List<Integer> projects;
 
     /** Filter. */
     protected Expression<Boolean> filter;
+
+    /** Physical node schema. */
+    protected transient PhysicalNodeSchema schema;
 
     protected AbstractMapScanPhysicalNode() {
         // No-op.
@@ -48,15 +55,19 @@ public abstract class AbstractMapScanPhysicalNode extends ZeroInputPhysicalNode 
         int id,
         String mapName,
         List<String> fieldNames,
+        List<DataType> fieldTypes,
         List<Integer> projects,
-        Expression<Boolean> filter
+        Expression<Boolean> filter,
+        PhysicalNodeSchema schema
     ) {
         super(id);
 
         this.mapName = mapName;
         this.fieldNames = fieldNames;
+        this.fieldTypes = fieldTypes;
         this.projects = projects;
         this.filter = filter;
+        this.schema = schema;
     }
 
     public String getMapName() {
@@ -65,6 +76,10 @@ public abstract class AbstractMapScanPhysicalNode extends ZeroInputPhysicalNode 
 
     public List<String> getFieldNames() {
         return fieldNames;
+    }
+
+    public List<DataType> getFieldTypes() {
+        return fieldTypes;
     }
 
     public List<Integer> getProjects() {
@@ -76,9 +91,15 @@ public abstract class AbstractMapScanPhysicalNode extends ZeroInputPhysicalNode 
     }
 
     @Override
+    public PhysicalNodeSchema getSchema() {
+        return schema;
+    }
+
+    @Override
     protected void writeData0(ObjectDataOutput out) throws IOException {
         out.writeUTF(mapName);
         SerializationUtil.writeList(fieldNames, out);
+        SerializationUtil.writeList(fieldTypes, out);
         SerializationUtil.writeList(projects, out);
         out.writeObject(filter);
     }
@@ -87,6 +108,7 @@ public abstract class AbstractMapScanPhysicalNode extends ZeroInputPhysicalNode 
     protected void readData0(ObjectDataInput in) throws IOException {
         mapName = in.readUTF();
         fieldNames = SerializationUtil.readList(in);
+        fieldTypes = SerializationUtil.readList(in);
         projects = SerializationUtil.readList(in);
         filter = in.readObject();
     }

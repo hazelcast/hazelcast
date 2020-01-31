@@ -23,11 +23,13 @@ import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRel;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.statistics.TableStatistics;
-import com.hazelcast.sql.impl.expression.CallOperator;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.expression.predicate.AndOrPredicate;
+import com.hazelcast.sql.impl.expression.predicate.AndPredicate;
 import com.hazelcast.sql.impl.expression.predicate.ComparisonPredicate;
+import com.hazelcast.sql.impl.expression.predicate.ComparisonMode;
+import com.hazelcast.sql.impl.type.DataType;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.schema.Table;
 import org.apache.calcite.sql.SqlNode;
@@ -112,7 +114,16 @@ public abstract class OptimizerTestSupport {
      */
     protected HazelcastSchema createDefaultSchema() {
         Map<String, Table> tableMap = new HashMap<>();
-        tableMap.put("p", new HazelcastTable("p", true, null, null, null, new TableStatistics(100)));
+        tableMap.put("p", new HazelcastTable(
+            null,
+            "p",
+            true,
+            null,
+            null,
+            null,
+            null,
+            new TableStatistics(100))
+        );
 
         return new HazelcastSchema(tableMap);
     }
@@ -146,20 +157,24 @@ public abstract class OptimizerTestSupport {
         assertEquals(expProjects, projects);
     }
 
-    protected static Expression compareColumnsEquals(int col1, int col2) {
-        return new ComparisonPredicate(column(col1), column(col2), CallOperator.EQUALS);
+    protected static Expression<?> constant(Object val) {
+        return ConstantExpression.create(val);
     }
 
-    protected static Expression compareColumnsLessThan(int col1, int col2) {
-        return new ComparisonPredicate(column(col1), column(col2), CallOperator.LESS_THAN);
+    protected static Expression<?> compare(Expression<?> first, Expression<?> second, ComparisonMode type) {
+        return ComparisonPredicate.create(first, second, type);
     }
 
-    protected static Expression and(Expression left, Expression right) {
-        return new AndOrPredicate(left, right, false);
+    protected static Expression<?> compareColumnsEquals(int col1, int col2) {
+        return compare(column(col1), column(col2), ComparisonMode.EQUALS);
     }
 
-    protected static Expression column(int col) {
-        return new ColumnExpression(col);
+    protected static Expression<?> and(Expression<?> left, Expression<?> right) {
+        return AndPredicate.create(left, right);
+    }
+
+    protected static Expression<?> column(int col) {
+        return ColumnExpression.create(col, DataType.VARCHAR);
     }
 
     /**

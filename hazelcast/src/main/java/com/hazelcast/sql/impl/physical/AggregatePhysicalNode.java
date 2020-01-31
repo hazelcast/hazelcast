@@ -21,8 +21,10 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.expression.aggregate.AggregateExpression;
 import com.hazelcast.sql.impl.physical.visitor.PhysicalNodeVisitor;
+import com.hazelcast.sql.impl.type.DataType;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -76,6 +78,24 @@ public class AggregatePhysicalNode extends UniInputPhysicalNode {
     @Override
     public void visit0(PhysicalNodeVisitor visitor) {
         visitor.onAggregateNode(this);
+    }
+
+    @SuppressWarnings("rawtypes")
+    @Override
+    public PhysicalNodeSchema getSchema() {
+        List<DataType> types = new ArrayList<>(groupKey.size() + expressions.size());
+
+        PhysicalNodeSchema upstreamSchema = upstream.getSchema();
+
+        for (int groupKeyItem : groupKey) {
+            types.add(upstreamSchema.getType(groupKeyItem));
+        }
+
+        for (AggregateExpression expression : expressions) {
+            types.add(expression.getType());
+        }
+
+        return new PhysicalNodeSchema(types);
     }
 
     @Override

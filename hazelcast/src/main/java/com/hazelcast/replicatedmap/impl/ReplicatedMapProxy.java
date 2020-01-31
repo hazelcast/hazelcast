@@ -16,16 +16,19 @@
 
 package com.hazelcast.replicatedmap.impl;
 
+import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.internal.monitor.impl.EmptyLocalReplicatedMapStats;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.internal.util.ResultSet;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.replicatedmap.LocalReplicatedMapStats;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.replicatedmap.impl.operation.ClearOperationFactory;
@@ -51,6 +54,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -74,7 +78,7 @@ import static java.lang.Thread.currentThread;
  * @param <K> key type
  * @param <V> value type
  */
-@SuppressWarnings("checkstyle:methodcount")
+@SuppressWarnings({"checkstyle:methodcount", "checkstyle:ClassFanOutComplexity"})
 public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<ReplicatedMapService>
         implements ReplicatedMap<K, V>, InitializingObject {
 
@@ -98,6 +102,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
     private final SerializationService serializationService;
     private final InternalPartitionServiceImpl partitionService;
     private final ReplicatedMapConfig config;
+    private final Extractors extractors;
 
     private int retryCount;
 
@@ -110,6 +115,11 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
         this.serializationService = nodeEngine.getSerializationService();
         this.partitionService = (InternalPartitionServiceImpl) nodeEngine.getPartitionService();
         this.config = config;
+
+        extractors = Extractors.newBuilder((InternalSerializationService) serializationService)
+            .setAttributeConfigs(config.getAttributeConfigs())
+            .setClassLoader(nodeEngine.getConfigClassLoader())
+            .build();
     }
 
     @Override
@@ -157,6 +167,14 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
                 .createInvocationBuilder(SERVICE_NAME, requestMapDataOperation, partitionId)
                 .setTryCount(ReplicatedMapService.INVOCATION_TRY_COUNT)
                 .invoke();
+    }
+
+    public Extractors getExtractors() {
+        return extractors;
+    }
+
+    public List<AttributeConfig> getAttributeConfigs() {
+        return Collections.unmodifiableList(config.getAttributeConfigs());
     }
 
     @Override

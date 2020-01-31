@@ -21,6 +21,8 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.row.KeyValueRow;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.accessor.Converter;
+import com.hazelcast.sql.impl.type.accessor.Converters;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -33,19 +35,19 @@ import java.util.Objects;
 // TODO: This classshould not be an Expression. It should be inlined into KeyValueRow instead.
 public class KeyValueExtractorExpression<T> implements Expression<T> {
     /** Path for extractor. */
-    private String path;
+    private final String path;
 
     /** Type of the returned object. */
-    private transient DataType type;
+    private final DataType type;
 
-    public KeyValueExtractorExpression() {
-        // No-op.
-    }
+    private transient Class<?> lastValClass;
+    private transient Converter lastValConverter;
 
-    public KeyValueExtractorExpression(String path) {
+    public KeyValueExtractorExpression(String path, DataType type) {
         assert path != null;
 
         this.path = path;
+        this.type = type;
     }
 
     @SuppressWarnings("unchecked")
@@ -55,28 +57,37 @@ public class KeyValueExtractorExpression<T> implements Expression<T> {
 
         KeyValueRow row0 = (KeyValueRow) row;
 
-        T res = (T) row0.extract(path);
+        T val = (T) row0.extract(path);
 
-        if (res != null && type == null) {
-            type = DataType.resolveType(res);
+        // TODO: This duplicates ColumnExpression!
+        if (val == null) {
+            return null;
         }
 
-        return res;
+        // TODO: This piece of code may cause severe slowdown. Need to investigate the reason.
+        Class<?> valClass = val.getClass();
+
+        if (lastValClass != valClass) {
+            lastValConverter = Converters.getConverter(valClass);
+            lastValClass = valClass;
+        }
+
+        return (T) type.getConverter().convertToSelf(lastValConverter, val);
     }
 
     @Override
     public DataType getType() {
-        return DataType.notNullOrLate(type);
+        return type;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(path);
+        throw new UnsupportedOperationException("Should not be called.");
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        path = in.readUTF();
+        throw new UnsupportedOperationException("Should not be called.");
     }
 
     @Override

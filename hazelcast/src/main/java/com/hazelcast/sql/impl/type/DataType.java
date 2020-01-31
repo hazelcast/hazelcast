@@ -16,19 +16,20 @@
 
 package com.hazelcast.sql.impl.type;
 
-import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.SqlErrorCode;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.sql.impl.type.accessor.BigDecimalConverter;
 import com.hazelcast.sql.impl.type.accessor.BigIntegerConverter;
 import com.hazelcast.sql.impl.type.accessor.BooleanConverter;
 import com.hazelcast.sql.impl.type.accessor.ByteConverter;
 import com.hazelcast.sql.impl.type.accessor.CalendarConverter;
 import com.hazelcast.sql.impl.type.accessor.Converter;
-import com.hazelcast.sql.impl.type.accessor.Converters;
 import com.hazelcast.sql.impl.type.accessor.DateConverter;
 import com.hazelcast.sql.impl.type.accessor.DoubleConverter;
 import com.hazelcast.sql.impl.type.accessor.FloatConverter;
 import com.hazelcast.sql.impl.type.accessor.IntegerConverter;
+import com.hazelcast.sql.impl.type.accessor.LateConverter;
 import com.hazelcast.sql.impl.type.accessor.LocalDateConverter;
 import com.hazelcast.sql.impl.type.accessor.LocalDateTimeConverter;
 import com.hazelcast.sql.impl.type.accessor.LocalTimeConverter;
@@ -40,10 +41,13 @@ import com.hazelcast.sql.impl.type.accessor.SqlDaySecondIntervalConverter;
 import com.hazelcast.sql.impl.type.accessor.SqlYearMonthIntervalConverter;
 import com.hazelcast.sql.impl.type.accessor.StringConverter;
 
+import java.io.IOException;
+import java.util.Objects;
+
 /**
  * Data type represents a type of concrete expression which is based on some basic data type.
  */
-public class DataType {
+public class DataType implements DataSerializable, Comparable<DataType> {
     /** Constant: unlimited precision. */
     public static final int PRECISION_UNLIMITED = -1;
 
@@ -91,8 +95,8 @@ public class DataType {
 
     /** LATE (unresolved) data type. */
     public static final DataType LATE = new DataType(
-        null,
-        null,
+        GenericType.LATE,
+        LateConverter.INSTANCE,
         PRECISION_UNLIMITED,
         SCALE_UNLIMITED,
         PRECEDENCE_LATE
@@ -282,19 +286,19 @@ public class DataType {
     private static final DataType[] INTEGER_TYPES = new DataType[PRECISION_BIGINT];
 
     /** Underlying generic type. */
-    private final GenericType type;
+    private GenericType type;
 
     /** Converter. */
-    private final Converter converter;
+    private Converter converter;
 
     /** Precision. */
-    private final int precision;
+    private int precision;
 
     /** Scale. */
-    private final int scale;
+    private int scale;
 
     /** Precedence */
-    private final int precedence;
+    private int precedence;
 
     static {
         for (int i = 1; i < PRECISION_BIGINT; i++) {
@@ -346,98 +350,16 @@ public class DataType {
         }
     }
 
+    public DataType() {
+        // No-op.
+    }
+
     public DataType(GenericType type, Converter converter, int precision, int scale, int precedence) {
         this.type = type;
         this.converter = converter;
         this.precision = precision;
         this.scale = scale;
         this.precedence = precedence;
-    }
-
-    /**
-     * Get type of the given object.
-     *
-     * @param obj Object.
-     * @return Object's type.
-     */
-    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:ReturnCount"})
-    public static DataType resolveType(Object obj) {
-        if (obj == null) {
-            return LATE;
-        }
-
-        Converter converter = Converters.getConverter(obj);
-
-        GenericType type = converter.getGenericType();
-
-        switch (type) {
-            case BIT:
-                return DataType.BIT;
-
-            case TINYINT:
-                return DataType.TINYINT;
-
-            case SMALLINT:
-                return DataType.SMALLINT;
-
-            case INT:
-                return DataType.INT;
-
-            case BIGINT:
-                return DataType.BIGINT;
-
-            case DECIMAL:
-                if (converter == BigDecimalConverter.INSTANCE) {
-                    return DataType.DECIMAL;
-                } else if (converter == BigIntegerConverter.INSTANCE) {
-                    return DataType.DECIMAL_SCALE_0_BIG_INTEGER;
-                }
-
-                break;
-
-            case REAL:
-                return DataType.REAL;
-
-            case DOUBLE:
-                return DataType.DOUBLE;
-
-            case VARCHAR:
-                return DataType.VARCHAR;
-
-            case DATE:
-                return DataType.DATE;
-
-            case TIME:
-                return DataType.TIME;
-
-            case TIMESTAMP:
-                return DataType.TIMESTAMP;
-
-            case TIMESTAMP_WITH_TIMEZONE:
-                if (converter == DateConverter.INSTANCE) {
-                    return DataType.TIMESTAMP_WITH_TIMEZONE_DATE;
-                } else if (converter == CalendarConverter.INSTANCE) {
-                    return DataType.TIMESTAMP_WITH_TIMEZONE_CALENDAR;
-                } else if (converter == OffsetDateTimeConverter.INSTANCE) {
-                    return DataType.TIMESTAMP_WITH_TIMEZONE_OFFSET_DATE_TIME;
-                }
-
-                break;
-
-            case INTERVAL_YEAR_MONTH:
-                return DataType.INTERVAL_YEAR_MONTH;
-
-            case INTERVAL_DAY_SECOND:
-                return DataType.INTERVAL_DAY_SECOND;
-
-            case OBJECT:
-                return DataType.OBJECT;
-
-            default:
-                break;
-        }
-
-        throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Unsupported class: " + obj.getClass().getName());
     }
 
     /**
@@ -456,16 +378,6 @@ public class DataType {
         } else {
             return DECIMAL_SCALE_0_BIG_DECIMAL;
         }
-    }
-
-    /**
-     * Return passed data type or {@link DataType#LATE} if the argument is {@code null}.
-     *
-     * @param type Type.
-     * @return Same type or {@link DataType#LATE}.
-     */
-    public static DataType notNullOrLate(DataType type) {
-        return type != null ? type : DataType.LATE;
     }
 
     public GenericType getType() {
@@ -488,27 +400,88 @@ public class DataType {
         return scale;
     }
 
-    public void ensureSame(Object val) {
-        if (val != null) {
-            DataType other = resolveType(val);
-
-            if (converter != other.converter) {
-                throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Type mismatch {expected=" + this
-                    + ", actual=" + other + '}');
-            }
-        }
-    }
-
-    public boolean isCanConvertToNumeric() {
-        return type.isConvertToNumeric();
+    public boolean isNumeric() {
+        return converter.isNumeric();
     }
 
     public boolean isTemporal() {
-        return type.isTemporal();
+        return converter.isTemporal();
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeObject(type);
+
+        // TODO: Converters should be moved out of this class? If no, then serialize them properly.
+        if (converter == null) {
+            out.writeBoolean(false);
+        } else {
+            out.writeBoolean(true);
+            out.writeUTF(converter.getClass().getName());
+        }
+
+        out.writeInt(precision);
+        out.writeInt(scale);
+        out.writeInt(precedence);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        try {
+            type = in.readObject();
+
+            // TODO: Converters should be moved out of this class? If no, then serialize them properly.
+            converter = in.readBoolean()
+                ? (Converter) Class.forName(in.readUTF()).getDeclaredField("INSTANCE").get(null) : null;
+
+            precision = in.readInt();
+            scale = in.readInt();
+            precedence = in.readInt();
+        } catch (ReflectiveOperationException e) {
+            throw new IOException("Failed to get converted instance.");
+        }
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(type, converter, precision, scale, precedence);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        DataType dataType = (DataType) o;
+
+        return precision == dataType.precision && scale == dataType.scale && precedence == dataType.precedence
+            && type == dataType.type && Objects.equals(converter, dataType.converter);
+    }
+
+    @Override
+    public int compareTo(DataType other) {
+        int res = Integer.compare(precedence, other.precedence);
+
+        if (res == 0) {
+            res = Integer.compare(scale, other.scale);
+
+            if (res == 0) {
+                res = Integer.compare(precision, other.precision);
+            }
+        }
+
+        assert res != 0 || this.equals(other);
+
+        return res;
     }
 
     @Override
     public String toString() {
-        return "DataType{base=" + type.name() + ", precision=" + precision + ", scale=" + scale + "}";
+        return "DataType{base=" + type + ", precision=" + precision + ", scale=" + scale + "}";
     }
 }

@@ -116,6 +116,7 @@ import static com.hazelcast.internal.util.CollectionUtil.asIntegerList;
 import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
+import static com.hazelcast.internal.util.IterableUtil.map;
 import static com.hazelcast.internal.util.IterableUtil.nullToEmpty;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -204,7 +205,6 @@ abstract class MapProxySupport<K, V>
     protected final SerializationService serializationService;
     protected final boolean statisticsEnabled;
     protected final MapConfig mapConfig;
-    protected final Map<String, String> aliases;
 
     // not final for testing purposes
     protected MapOperationProvider operationProvider;
@@ -235,20 +235,6 @@ abstract class MapProxySupport<K, V>
 
         this.putAllBatchSize = properties.getInteger(MAP_PUT_ALL_BATCH_SIZE);
         this.putAllInitialSizeFactor = properties.getFloat(MAP_PUT_ALL_INITIAL_SIZE_FACTOR);
-
-        List<AttributeConfig> attributeConfigs = mapConfig.getAttributeConfigs();
-
-        if (attributeConfigs != null && !attributeConfigs.isEmpty()) {
-            aliases = new HashMap<>();
-
-            for (AttributeConfig attributeConfig : attributeConfigs) {
-                if (attributeConfig.getPath() != null) {
-                    aliases.put(attributeConfig.getName(), attributeConfig.getPath());
-                }
-            }
-        } else {
-            aliases = Collections.emptyMap();
-        }
     }
 
     @Override
@@ -1393,8 +1379,8 @@ abstract class MapProxySupport<K, V>
         return mapServiceContext;
     }
 
-    public Map<String, String> getAttributeAliases() {
-        return aliases;
+    public List<AttributeConfig> getAttributeConfigs() {
+        return Collections.unmodifiableList(mapConfig.getAttributeConfigs());
     }
 
     private class IncrementStatsExecutionCallback<T> implements BiConsumer<T, Throwable> {

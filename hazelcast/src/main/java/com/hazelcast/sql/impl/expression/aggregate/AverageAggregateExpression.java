@@ -30,13 +30,19 @@ public class AverageAggregateExpression<T> extends AbstractSingleOperandAggregat
         // No-op.
     }
 
-    public AverageAggregateExpression(boolean distinct, Expression operand) {
-        super(distinct, operand);
+    private AverageAggregateExpression(Expression<?> operand, DataType resultType, boolean distinct) {
+        super(operand, resultType, distinct);
+    }
+
+    public static AverageAggregateExpression<?> create(Expression<?> operand, boolean distinct) {
+        DataType resType = inferResultType(operand.getType());
+
+        return new AverageAggregateExpression<>(operand, resType, distinct);
     }
 
     @Override
     public AggregateCollector newCollector(QueryContext ctx) {
-        return new AverageAggregateCollector(distinct);
+        return new AverageAggregateCollector(resType, distinct);
     }
 
     @Override
@@ -44,13 +50,8 @@ public class AverageAggregateExpression<T> extends AbstractSingleOperandAggregat
         return true;
     }
 
-    @Override
-    protected DataType resolveReturnType(DataType operandType) {
-        return returnType(operandType);
-    }
-
-    // TODO: Read ANSI standard on how to infer return types here.
-    public static DataType returnType(DataType operandType) {
+    public static DataType inferResultType(DataType operandType) {
+        // TODO: Read ANSI standard on how to infer return types here.
         switch (operandType.getType()) {
             case BIT:
             case TINYINT:

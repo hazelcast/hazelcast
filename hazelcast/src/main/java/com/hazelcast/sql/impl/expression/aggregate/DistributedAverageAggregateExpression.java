@@ -25,52 +25,47 @@ import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
 
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * Distributed average.
  */
 public class DistributedAverageAggregateExpression<T> extends AggregateExpression<T> {
-    /** SUM operand type. */
-    protected transient DataType sumOperandType;
-
     /** SUM operand. */
-    private Expression sumOperand;
+    private Expression<?> sumOperand;
 
     /** COUNT operand. */
-    private Expression countOperand;
+    private Expression<?> countOperand;
 
     public DistributedAverageAggregateExpression() {
+        // No-op.
     }
 
-    public DistributedAverageAggregateExpression(Expression sumOperand, Expression countOperand) {
-        super(false);
+    private DistributedAverageAggregateExpression(Expression<?> sumOperand, Expression<?> countOperand) {
+        super(DataType.DOUBLE, false);
 
         this.sumOperand = sumOperand;
         this.countOperand = countOperand;
     }
 
+    public static DistributedAverageAggregateExpression<?> create(Expression<?> sumOperand, Expression<?> countOperand) {
+        return new DistributedAverageAggregateExpression<>(sumOperand, countOperand);
+    }
+
     @Override
     public void collect(Row row, AggregateCollector collector) {
-        Object sumOperandValue = sumOperand.eval(row);
-        Object countOperandValue = countOperand.eval(row);
+        Object sum = sumOperand.eval(row);
+        Long count = countOperand.evalAsBigint(row);
 
-        assert sumOperandValue != null;
-        assert countOperandValue != null;
+        assert sum != null;
+        assert count != null;
 
-        long count = countOperand.getType().getConverter().asBigInt(countOperandValue);
-
-        if (sumOperandType == null) {
-            sumOperandType = sumOperand.getType();
-
-            resType = AverageAggregateExpression.returnType(sumOperandType);
-        }
-
-        ((AverageAggregateCollector) collector).collectMany(sumOperandValue, sumOperandType, resType, count);
+        ((AverageAggregateCollector) collector).collectMany(sum, sumOperand.getType(), count);
     }
 
     @Override
     public AggregateCollector newCollector(QueryContext ctx) {
-        return new AverageAggregateCollector(false);
+        return new AverageAggregateCollector(resType, false);
     }
 
     @Override
@@ -87,5 +82,30 @@ public class DistributedAverageAggregateExpression<T> extends AggregateExpressio
 
         sumOperand = in.readObject();
         countOperand = in.readObject();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(sumOperand, countOperand);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        DistributedAverageAggregateExpression<?> that = (DistributedAverageAggregateExpression<?>) o;
+
+        return sumOperand.equals(that.sumOperand) && countOperand.equals(that.countOperand);
+    }
+
+    @Override
+    public String toString() {
+        return "DistributedAverageAggregateExpression{sumOperand=" + sumOperand + ", countOperand=" + countOperand + '}';
     }
 }

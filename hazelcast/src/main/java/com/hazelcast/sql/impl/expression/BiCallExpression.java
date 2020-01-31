@@ -20,22 +20,23 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * Expression with two operands.
  */
-public abstract class BiCallExpression<T> implements CallExpression<T> {
+public abstract class BiCallExpression<T> implements Expression<T> {
     /** First operand. */
-    protected Expression operand1;
+    protected Expression<?> operand1;
 
     /** Second operand. */
-    protected Expression operand2;
+    protected Expression<?> operand2;
 
     protected BiCallExpression() {
         // No-op.
     }
 
-    protected BiCallExpression(Expression operand1, Expression operand2) {
+    protected BiCallExpression(Expression<?> operand1, Expression<?> operand2) {
         this.operand1 = operand1;
         this.operand2 = operand2;
     }
@@ -51,4 +52,30 @@ public abstract class BiCallExpression<T> implements CallExpression<T> {
         operand1 = in.readObject();
         operand2 = in.readObject();
     }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(operand1, operand2);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        BiCallExpression<?> that = (BiCallExpression<?>) o;
+
+        return Objects.equals(operand1, that.operand1) && Objects.equals(operand2, that.operand2);
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{operand1=" + operand1 + ", operand2=" + operand2 + '}';
+    }
+
 }

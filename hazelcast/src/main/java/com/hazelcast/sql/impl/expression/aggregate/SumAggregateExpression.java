@@ -30,13 +30,19 @@ public class SumAggregateExpression<T> extends AbstractSingleOperandAggregateExp
         // No-op.
     }
 
-    public SumAggregateExpression(boolean distinct, Expression operand) {
-        super(distinct, operand);
+    private SumAggregateExpression(Expression<?> operand, DataType resType, boolean distinct) {
+        super(operand, resType, distinct);
+    }
+
+    public static SumAggregateExpression<?> create(Expression<?> operand, boolean distinct) {
+        DataType resType = inferResultType(operand.getType());
+
+        return new SumAggregateExpression<>(operand, resType, distinct);
     }
 
     @Override
     public AggregateCollector newCollector(QueryContext ctx) {
-        return new SumAggregateCollector(distinct);
+        return new SumAggregateCollector(resType, distinct);
     }
 
     @Override
@@ -44,15 +50,14 @@ public class SumAggregateExpression<T> extends AbstractSingleOperandAggregateExp
         return true;
     }
 
-    @Override
-    protected DataType resolveReturnType(DataType operandType) {
+    private static DataType inferResultType(DataType operandType) {
         switch (operandType.getType()) {
             case BIT:
             case TINYINT:
             case SMALLINT:
-            case INT:
                 return DataType.INT;
 
+            case INT:
             case BIGINT:
                 return DataType.BIGINT;
 

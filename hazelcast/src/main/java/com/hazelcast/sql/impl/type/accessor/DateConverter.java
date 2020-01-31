@@ -38,7 +38,7 @@ public final class DateConverter extends Converter {
     }
 
     @Override
-    public Class getClazz() {
+    public Class<?> getValueClass() {
         return Date.class;
     }
 
@@ -74,6 +74,11 @@ public final class DateConverter extends Converter {
         Instant instant = cast(val).toInstant();
 
         return OffsetDateTime.ofInstant(instant, ZoneOffset.UTC);
+    }
+
+    @Override
+    public Object convertToSelf(Converter valConverter, Object val) {
+        return valConverter.asTimestampWithTimezone(val);
     }
 
     private Date cast(Object val) {

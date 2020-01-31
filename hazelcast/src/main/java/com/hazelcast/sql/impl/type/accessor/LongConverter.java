@@ -32,7 +32,7 @@ public final class LongConverter extends Converter {
     }
 
     @Override
-    public Class getClazz() {
+    public Class<?> getValueClass() {
         return Long.class;
     }
 
@@ -47,12 +47,12 @@ public final class LongConverter extends Converter {
     }
 
     @Override
-    public byte asTinyInt(Object val) {
+    public byte asTinyint(Object val) {
         return (byte) cast(val);
     }
 
     @Override
-    public short asSmallInt(Object val) {
+    public short asSmallint(Object val) {
         return (short) cast(val);
     }
 
@@ -62,7 +62,7 @@ public final class LongConverter extends Converter {
     }
 
     @Override
-    public long asBigInt(Object val) {
+    public long asBigint(Object val) {
         return cast(val);
     }
 
@@ -84,6 +84,11 @@ public final class LongConverter extends Converter {
     @Override
     public String asVarchar(Object val) {
         return Long.toString(cast(val));
+    }
+
+    @Override
+    public Object convertToSelf(Converter valConverter, Object val) {
+        return valConverter.asBigint(val);
     }
 
     private long cast(Object val) {

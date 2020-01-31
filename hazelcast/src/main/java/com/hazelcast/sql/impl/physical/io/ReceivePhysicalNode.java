@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.physical.io;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.sql.impl.physical.PhysicalNodeSchema;
 import com.hazelcast.sql.impl.physical.visitor.PhysicalNodeVisitor;
 import com.hazelcast.sql.impl.physical.ZeroInputPhysicalNode;
 
@@ -31,14 +32,18 @@ public class ReceivePhysicalNode extends ZeroInputPhysicalNode implements EdgeAw
     /** Edge ID. */
     private int edgeId;
 
+    /** Schema. */
+    private transient PhysicalNodeSchema schema;
+
     public ReceivePhysicalNode() {
         // No-op.
     }
 
-    public ReceivePhysicalNode(int id, int edgeId) {
+    public ReceivePhysicalNode(int id, int edgeId, PhysicalNodeSchema schema) {
         super(id);
 
         this.edgeId = edgeId;
+        this.schema = schema;
     }
 
     @Override
@@ -54,6 +59,11 @@ public class ReceivePhysicalNode extends ZeroInputPhysicalNode implements EdgeAw
     @Override
     public void visit(PhysicalNodeVisitor visitor) {
         visitor.onReceiveNode(this);
+    }
+
+    @Override
+    public PhysicalNodeSchema getSchema() {
+        return schema;
     }
 
     @Override

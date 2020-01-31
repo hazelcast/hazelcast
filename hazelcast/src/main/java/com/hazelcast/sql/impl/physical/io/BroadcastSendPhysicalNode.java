@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.physical.io;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.physical.PhysicalNode;
+import com.hazelcast.sql.impl.physical.PhysicalNodeSchema;
 import com.hazelcast.sql.impl.physical.visitor.PhysicalNodeVisitor;
 import com.hazelcast.sql.impl.physical.UniInputPhysicalNode;
 
@@ -55,6 +56,11 @@ public class BroadcastSendPhysicalNode extends UniInputPhysicalNode implements E
     @Override
     public void visit0(PhysicalNodeVisitor visitor) {
         visitor.onBroadcastSendNode(this);
+    }
+
+    @Override
+    public PhysicalNodeSchema getSchema() {
+        return upstream.getSchema();
     }
 
     @Override

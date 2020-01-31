@@ -36,4 +36,16 @@ public class Region implements Serializable {
         this.r_name = r_name;
         this.r_comment = r_comment;
     }
+
+    public long getR_regionkey() {
+        return r_regionkey;
+    }
+
+    public String getR_name() {
+        return r_name;
+    }
+
+    public String getR_comment() {
+        return r_comment;
+    }
 }

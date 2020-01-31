@@ -203,9 +203,6 @@ public final class CallOperator {
     /** LIKE function. */
     public static final int LIKE = 318;
 
-    /** Item operator. */
-    public static final int ITEM = 401;
-
     /** Aggregate: SUM. */
     public static final int AGG_SUM = 501;
 

@@ -21,10 +21,7 @@ import com.hazelcast.sql.impl.calcite.opt.logical.ProjectLogicalRel;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.statistics.TableStatistics;
-import com.hazelcast.sql.impl.expression.CallOperator;
-import com.hazelcast.sql.impl.expression.ColumnExpression;
-import com.hazelcast.sql.impl.expression.ConstantExpression;
-import com.hazelcast.sql.impl.expression.predicate.ComparisonPredicate;
+import com.hazelcast.sql.impl.expression.predicate.ComparisonMode;
 import com.hazelcast.sql.optimizer.support.LogicalOptimizerTestSupport;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -49,8 +46,8 @@ public class LogicalOptimizerJoinFilterTest extends LogicalOptimizerTestSupport 
     @Override
     protected HazelcastSchema createDefaultSchema() {
         Map<String, Table> tableMap = new HashMap<>();
-        tableMap.put("r", new HazelcastTable("r", true, null, null, null, new TableStatistics(100)));
-        tableMap.put("s", new HazelcastTable("s", true, null, null, null, new TableStatistics(100)));
+        tableMap.put("r", new HazelcastTable(null, "r", true, null, null, null, null, new TableStatistics(100)));
+        tableMap.put("s", new HazelcastTable(null, "s", true, null, null, null, null, new TableStatistics(100)));
 
         return new HazelcastSchema(tableMap);
     }
@@ -89,15 +86,15 @@ public class LogicalOptimizerJoinFilterTest extends LogicalOptimizerTestSupport 
         ProjectLogicalRel project = assertProject(
             rootInput,
             list(
-                new ColumnExpression(1),
-                new ColumnExpression(3)
+                column(1),
+                column(3)
             )
         );
 
         JoinLogicalRel join = assertJoin(
             project.getInput(),
             JoinRelType.INNER,
-            new ComparisonPredicate(new ColumnExpression(0), new ColumnExpression(2), CallOperator.EQUALS)
+            compare(column(0), column(2), ComparisonMode.EQUALS)
         );
 
         assertScan(
@@ -105,7 +102,7 @@ public class LogicalOptimizerJoinFilterTest extends LogicalOptimizerTestSupport 
             "r",
             list("r_f2", "r_f3", "r_f1"),
             list(0, 2),
-            new ComparisonPredicate(new ColumnExpression(1), new ConstantExpression<>(1), CallOperator.EQUALS)
+            compare(column(1), constant(1), ComparisonMode.EQUALS)
         );
 
         assertScan(
@@ -113,7 +110,7 @@ public class LogicalOptimizerJoinFilterTest extends LogicalOptimizerTestSupport 
             "s",
             list("s_f2", "s_f3", "s_f1"),
             list(0, 2),
-            new ComparisonPredicate(new ColumnExpression(1), new ConstantExpression<>(2), CallOperator.EQUALS)
+            compare(column(1), constant(2), ComparisonMode.EQUALS)
         );
     }
 }

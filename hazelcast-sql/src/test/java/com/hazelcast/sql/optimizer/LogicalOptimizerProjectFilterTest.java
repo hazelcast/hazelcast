@@ -17,12 +17,9 @@
 package com.hazelcast.sql.optimizer;
 
 import com.hazelcast.sql.impl.calcite.opt.logical.ProjectLogicalRel;
-import com.hazelcast.sql.impl.expression.CallOperator;
-import com.hazelcast.sql.impl.expression.ColumnExpression;
-import com.hazelcast.sql.impl.expression.ConstantExpression;
-import com.hazelcast.sql.impl.expression.math.PlusMinusFunction;
-import com.hazelcast.sql.impl.expression.predicate.AndOrPredicate;
-import com.hazelcast.sql.impl.expression.predicate.ComparisonPredicate;
+import com.hazelcast.sql.impl.expression.math.PlusFunction;
+import com.hazelcast.sql.impl.expression.predicate.AndPredicate;
+import com.hazelcast.sql.impl.expression.predicate.ComparisonMode;
 import com.hazelcast.sql.optimizer.support.LogicalOptimizerTestSupport;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -60,8 +57,8 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
         ProjectLogicalRel project = assertProject(
             rootInput,
             list(
-                new PlusMinusFunction(new ColumnExpression(0), new ColumnExpression(1), false),
-                new ColumnExpression(2)
+                PlusFunction.create(column(0), column(1)),
+                column(2)
             )
         );
 
@@ -80,10 +77,10 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
             rootInput,
             list("f3", "f1", "f2"),
             list(1, 2),
-            new ComparisonPredicate(
-                new ColumnExpression(0),
-                new ConstantExpression<>(1),
-                CallOperator.GREATER_THAN
+            compare(
+                column(0),
+                constant(1),
+                ComparisonMode.GREATER_THAN
             )
         );
     }
@@ -99,8 +96,8 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
         ProjectLogicalRel project = assertProject(
             rootInput,
             list(
-                new PlusMinusFunction(new ColumnExpression(0), new ColumnExpression(1), false),
-                new ColumnExpression(2)
+                PlusFunction.create(column(0), column(1)),
+                column(2)
             )
         );
 
@@ -108,7 +105,7 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
             project.getInput(),
             list("f4", "f1", "f2", "f3"),
             list(1, 2, 3),
-            new ComparisonPredicate(new ColumnExpression(0), new ConstantExpression<>(1), CallOperator.GREATER_THAN)
+            compare(column(0), constant(1), ComparisonMode.GREATER_THAN)
         );
     }
 
@@ -134,8 +131,8 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
         ProjectLogicalRel project = assertProject(
             rootInput,
             list(
-                new PlusMinusFunction(new ColumnExpression(0), new ColumnExpression(1), false),
-                new ColumnExpression(2)
+                PlusFunction.create(column(0), column(1)),
+                column(2)
             )
         );
 
@@ -153,8 +150,8 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
         ProjectLogicalRel project = assertProject(
             rootInput,
             list(
-                new PlusMinusFunction(new ColumnExpression(0), new ColumnExpression(1), false),
-                new ColumnExpression(2)
+                PlusFunction.create(column(0), column(1)),
+                column(2)
             )
         );
 
@@ -172,10 +169,9 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
         ProjectLogicalRel project = assertProject(
             rootInput,
             list(
-                new PlusMinusFunction(
-                    new PlusMinusFunction(new ColumnExpression(0), new ColumnExpression(1), false),
-                    new ColumnExpression(2),
-                    false
+                PlusFunction.create(
+                    PlusFunction.create(column(0), column(1)),
+                    column(2)
                 )
             )
         );
@@ -195,7 +191,7 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
             rootInput,
             list("f3", "f1", "f2"),
             list(1),
-            new ComparisonPredicate(new ColumnExpression(0), new ConstantExpression<>(1), CallOperator.GREATER_THAN)
+            compare(column(0), constant(1), ComparisonMode.GREATER_THAN)
         );
     }
 
@@ -210,8 +206,8 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
         ProjectLogicalRel project = assertProject(
             rootInput,
             list(
-                new PlusMinusFunction(new ColumnExpression(0), new ColumnExpression(1), false),
-                new ColumnExpression(2)
+                PlusFunction.create(column(0), column(1)),
+                column(2)
             )
         );
 
@@ -219,7 +215,7 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
             project.getInput(),
             list("f5", "f1", "f2", "f3", "f4"),
             list(1, 2, 3),
-            new ComparisonPredicate(new ColumnExpression(0), new ConstantExpression<>(1), CallOperator.GREATER_THAN)
+            compare(column(0), constant(1), ComparisonMode.GREATER_THAN)
         );
     }
 
@@ -234,7 +230,7 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
         ProjectLogicalRel project = assertProject(
             rootInput,
             list(
-                new PlusMinusFunction(new ColumnExpression(0), new ColumnExpression(1), false)
+                PlusFunction.create(column(0), column(1))
             )
         );
 
@@ -242,7 +238,7 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
             project.getInput(),
             list("f3", "f1", "f2", "f4"),
             list(1, 2),
-            new ComparisonPredicate(new ColumnExpression(0), new ConstantExpression<>(1), CallOperator.GREATER_THAN)
+            compare(column(0), constant(1), ComparisonMode.GREATER_THAN)
         );
     }
 
@@ -257,10 +253,9 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
         ProjectLogicalRel project = assertProject(
             rootInput,
             list(
-                new PlusMinusFunction(
-                    new PlusMinusFunction(new ColumnExpression(0), new ColumnExpression(1), false),
-                    new ColumnExpression(2),
-                    false
+                PlusFunction.create(
+                    PlusFunction.create(column(0), column(1)),
+                    column(2)
                 )
             )
         );
@@ -269,7 +264,7 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
             project.getInput(),
             list("f5", "f1", "f2", "f3", "f4"),
             list(1, 2, 3),
-            new ComparisonPredicate(new ColumnExpression(0), new ConstantExpression<>(1), CallOperator.GREATER_THAN)
+            compare(column(0), constant(1), ComparisonMode.GREATER_THAN)
         );
     }
 
@@ -284,7 +279,7 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
         assertScan(
             rootInput,
             list("f1", "f2", "f3"), list(0),
-            new ComparisonPredicate(new ColumnExpression(1), new ConstantExpression<>(1), CallOperator.GREATER_THAN)
+            compare(column(1), constant(1), ComparisonMode.GREATER_THAN)
         );
     }
 
@@ -301,24 +296,24 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
         ProjectLogicalRel topProject = assertProject(
             rootInput,
             list(
-                new ColumnExpression(0),
-                new ColumnExpression(1)
+                column(0),
+                column(1)
             )
         );
 
         ProjectLogicalRel bottomProject = assertProject(
             topProject.getInput(),
             list(
-                new PlusMinusFunction(new ColumnExpression(0), new ColumnExpression(1), false),
-                new ColumnExpression(2),
-                new ColumnExpression(3)
+                PlusFunction.create(column(0), column(1)),
+                column(2),
+                column(3)
             )
         );
 
         assertScan(
             bottomProject.getInput(),
             list("f1", "f2", "f3", "f4", "f5"), list(0, 1, 2, 3),
-            new ComparisonPredicate(new ColumnExpression(3), new ConstantExpression<>(1), CallOperator.GREATER_THAN)
+            compare(column(3), constant(1), ComparisonMode.GREATER_THAN)
         );
     }
 
@@ -334,14 +329,14 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
         ProjectLogicalRel project = assertProject(
             rootInput,
             list(
-                new PlusMinusFunction(new ColumnExpression(0), new ColumnExpression(1), false)
+                PlusFunction.create(column(0), column(1))
             )
         );
 
         assertScan(
             project.getInput(),
             list("f1", "f2", "f3", "f4"), list(0, 1),
-            new ComparisonPredicate(new ColumnExpression(2), new ConstantExpression<>(1), CallOperator.GREATER_THAN)
+            compare(column(2), constant(1), ComparisonMode.GREATER_THAN)
         );
     }
 
@@ -358,16 +353,16 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
         ProjectLogicalRel topProject = assertProject(
             rootInput,
             list(
-                new PlusMinusFunction(new ColumnExpression(0), new ColumnExpression(1), false)
+                PlusFunction.create(column(0), column(1))
             )
         );
 
         ProjectLogicalRel bottomProject = assertProject(
             topProject.getInput(),
             list(
-                new PlusMinusFunction(new ColumnExpression(0), new ColumnExpression(1), false),
-                new ColumnExpression(2),
-                new ColumnExpression(3)
+                PlusFunction.create(column(0), column(1)),
+                column(2),
+                column(3)
             )
         );
 
@@ -375,7 +370,7 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
             bottomProject.getInput(),
             list("f1", "f2", "f3", "f4", "f5"),
             list(0, 1, 2, 3),
-            new ComparisonPredicate(new ColumnExpression(3), new ConstantExpression<>(1), CallOperator.GREATER_THAN)
+            compare(column(3), constant(1), ComparisonMode.GREATER_THAN)
         );
     }
 
@@ -391,10 +386,9 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
             rootInput,
             list("f4", "f1", "f2", "f3"),
             list(1),
-            new AndOrPredicate(
-                new ComparisonPredicate(new ColumnExpression(0), new ConstantExpression<>(1), CallOperator.GREATER_THAN),
-                new ComparisonPredicate(new ColumnExpression(2), new ConstantExpression<>(1), CallOperator.GREATER_THAN),
-                false
+            AndPredicate.create(
+                compare(column(0), constant(1), ComparisonMode.GREATER_THAN),
+                compare(column(2), constant(1), ComparisonMode.GREATER_THAN)
             )
         );
     }
@@ -410,8 +404,8 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
         ProjectLogicalRel project = assertProject(
             rootInput,
             list(
-                new PlusMinusFunction(new ColumnExpression(0), new ColumnExpression(1), false),
-                new ColumnExpression(2)
+                PlusFunction.create(column(0), column(1)),
+                column(2)
             )
         );
 
@@ -419,10 +413,9 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
             project.getInput(),
             list("f4", "f1", "f2", "f3", "f5"),
             list(1, 2, 3),
-            new AndOrPredicate(
-                new ComparisonPredicate(new ColumnExpression(0), new ConstantExpression<>(1), CallOperator.GREATER_THAN),
-                new ComparisonPredicate(new ColumnExpression(3), new ConstantExpression<>(2), CallOperator.GREATER_THAN),
-                false
+            AndPredicate.create(
+                compare(column(0), constant(1), ComparisonMode.GREATER_THAN),
+                compare(column(3), constant(2), ComparisonMode.GREATER_THAN)
             )
         );
     }
@@ -438,7 +431,7 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
         ProjectLogicalRel project = assertProject(
             rootInput,
             list(
-                new PlusMinusFunction(new ColumnExpression(0), new ColumnExpression(1), false)
+                PlusFunction.create(column(0), column(1))
             )
         );
 
@@ -446,10 +439,9 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
             project.getInput(),
             list("f4", "f1", "f2", "f3"),
             list(1, 2),
-            new AndOrPredicate(
-                new ComparisonPredicate(new ColumnExpression(0), new ConstantExpression<>(1), CallOperator.GREATER_THAN),
-                new ComparisonPredicate(new ColumnExpression(3), new ConstantExpression<>(1), CallOperator.GREATER_THAN),
-                false
+            AndPredicate.create(
+                compare(column(0), constant(1), ComparisonMode.GREATER_THAN),
+                compare(column(3), constant(1), ComparisonMode.GREATER_THAN)
             )
         );
     }
@@ -466,15 +458,15 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
         ProjectLogicalRel topProject = assertProject(
             rootInput,
             list(
-                new PlusMinusFunction(new ColumnExpression(0), new ColumnExpression(1), false)
+                PlusFunction.create(column(0), column(1))
             )
         );
 
         ProjectLogicalRel bottomProject = assertProject(
             topProject.getInput(),
             list(
-                new PlusMinusFunction(new ColumnExpression(0), new ColumnExpression(1), false),
-                new ColumnExpression(2)
+                PlusFunction.create(column(0), column(1)),
+                column(2)
             )
         );
 
@@ -482,10 +474,9 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
             bottomProject.getInput(),
             list("f4", "f1", "f2", "f3", "f5"),
             list(1, 2, 3),
-            new AndOrPredicate(
-                new ComparisonPredicate(new ColumnExpression(0), new ConstantExpression<>(1), CallOperator.GREATER_THAN),
-                new ComparisonPredicate(new ColumnExpression(3), new ConstantExpression<>(2), CallOperator.GREATER_THAN),
-                false
+            AndPredicate.create(
+                compare(column(0), constant(1), ComparisonMode.GREATER_THAN),
+                compare(column(3), constant(2), ComparisonMode.GREATER_THAN)
             )
         );
     }

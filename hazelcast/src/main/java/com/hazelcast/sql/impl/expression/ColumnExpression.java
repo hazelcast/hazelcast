@@ -32,44 +32,45 @@ public class ColumnExpression<T> implements Expression<T> {
     private int index;
 
     /** Type of the returned value. */
-    private transient DataType type;
+    private DataType type;
 
     public ColumnExpression() {
         // No-op.
     }
 
-    public ColumnExpression(int index) {
+    public ColumnExpression(int index, DataType type) {
         this.index = index;
+        this.type = type;
+    }
+
+    public static ColumnExpression<?> create(int index, DataType type) {
+        return new ColumnExpression<>(index, type);
     }
 
     @SuppressWarnings("unchecked")
     @Override public T eval(Row row) {
-        Object res = row.getColumn(index);
-
-        if (res != null) {
-            if (type == null) {
-                type = DataType.resolveType(res);
-            } else {
-                type.ensureSame(res);
-            }
-        }
-
-        return (T) res;
+        // TODO: VO: We need to double-check that all values which could be returned here are already normalized.
+        //  Most like this is already so, because normalization must happen on all leaf nodes (KeyValueExtractorExpression,
+        //  ParameterExpression, ConstantExpression), and ColumnExpression is not a leaf node! So the task is to ensure
+        //  that all leaf always return normalized values.
+        return (T) row.getColumn(index);
     }
 
     @Override
     public DataType getType() {
-        return DataType.notNullOrLate(type);
+        return type;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(index);
+        out.writeObject(type);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         index = in.readInt();
+        type = in.readObject();
     }
 
     @Override

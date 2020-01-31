@@ -37,7 +37,7 @@ public final class OffsetDateTimeConverter extends Converter {
     }
 
     @Override
-    public Class getClazz() {
+    public Class<?> getValueClass() {
         return OffsetDateTime.class;
     }
 
@@ -71,6 +71,11 @@ public final class OffsetDateTimeConverter extends Converter {
     @Override
     public OffsetDateTime asTimestampWithTimezone(Object val) {
         return cast(val);
+    }
+
+    @Override
+    public Object convertToSelf(Converter valConverter, Object val) {
+        return valConverter.asTimestampWithTimezone(val);
     }
 
     private OffsetDateTime cast(Object val) {

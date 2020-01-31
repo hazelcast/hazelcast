@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.exec;
 
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.impl.getters.Extractors;
+import com.hazelcast.replicatedmap.impl.ReplicatedMapProxy;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
@@ -25,6 +26,7 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
+import com.hazelcast.sql.impl.type.DataType;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -34,7 +36,11 @@ import java.util.List;
 /**
  * Executor for map scan.
  */
+@SuppressWarnings("rawtypes")
 public class ReplicatedMapScanExec extends AbstractMapScanExec {
+    /** Map. */
+    private final ReplicatedMapProxy map;
+
     /** All rows fetched on first access. */
     private Collection<Row> rows;
 
@@ -46,12 +52,16 @@ public class ReplicatedMapScanExec extends AbstractMapScanExec {
 
     public ReplicatedMapScanExec(
         int id,
+        ReplicatedMapProxy map,
         String mapName,
         List<String> fieldNames,
+        List<DataType> fieldTypes,
         List<Integer> projects,
         Expression<Boolean> filter
     ) {
-        super(id, mapName, fieldNames, projects, filter);
+        super(id, mapName, fieldNames, fieldTypes, projects, filter);
+
+        this.map = map;
     }
 
     @SuppressWarnings("rawtypes")
@@ -112,12 +122,7 @@ public class ReplicatedMapScanExec extends AbstractMapScanExec {
 
     @Override
     protected Extractors createExtractors() {
-        return ctx.getExtractors();
-    }
-
-    @Override
-    protected String normalizePath(String path) {
-        return path;
+        return map.getExtractors();
     }
 
     @Override

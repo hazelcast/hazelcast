@@ -38,6 +38,11 @@ public class MaterializedInputPhysicalNode extends UniInputPhysicalNode {
     }
 
     @Override
+    public PhysicalNodeSchema getSchema() {
+        return upstream.getSchema();
+    }
+
+    @Override
     public int hashCode() {
         return Objects.hash(id, upstream);
     }

@@ -74,6 +74,58 @@ public class LineItem implements Serializable {
         this.l_comment = l_comment;
     }
 
+    public long getL_suppkey() {
+        return l_suppkey;
+    }
+
+    public BigDecimal getL_quantity() {
+        return l_quantity;
+    }
+
+    public BigDecimal getL_extendedprice() {
+        return l_extendedprice;
+    }
+
+    public BigDecimal getL_discount() {
+        return l_discount;
+    }
+
+    public BigDecimal getL_tax() {
+        return l_tax;
+    }
+
+    public String getL_returnflag() {
+        return l_returnflag;
+    }
+
+    public String getL_linestatus() {
+        return l_linestatus;
+    }
+
+    public LocalDate getL_shipdate() {
+        return l_shipdate;
+    }
+
+    public LocalDate getL_commitdate() {
+        return l_commitdate;
+    }
+
+    public LocalDate getL_receiptdate() {
+        return l_receiptdate;
+    }
+
+    public String getL_shipinstruct() {
+        return l_shipinstruct;
+    }
+
+    public String getL_shipmode() {
+        return l_shipmode;
+    }
+
+    public String getL_comment() {
+        return l_comment;
+    }
+
     public static final class Key implements Serializable {
         public long l_orderkey;
         public long l_partkey;
@@ -87,6 +139,18 @@ public class LineItem implements Serializable {
             this.l_orderkey = l_orderkey;
             this.l_partkey = l_partkey;
             this.l_linenumber = l_linenumber;
+        }
+
+        public long getL_orderkey() {
+            return l_orderkey;
+        }
+
+        public long getL_partkey() {
+            return l_partkey;
+        }
+
+        public long getL_linenumber() {
+            return l_linenumber;
         }
     }
 }

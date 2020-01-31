@@ -17,54 +17,45 @@
 package com.hazelcast.sql.impl.expression.math;
 
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.impl.expression.CallOperator;
+import com.hazelcast.sql.impl.expression.CastExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.UniCallExpressionWithType;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.DataTypeUtils;
+import com.hazelcast.sql.impl.type.GenericType;
 import com.hazelcast.sql.impl.type.accessor.Converter;
 
-public class AbsFunction extends UniCallExpressionWithType<Number> {
-    /** Operand type. */
-    private transient DataType operandType;
-
+public class AbsFunction<T> extends UniCallExpressionWithType<T> {
     public AbsFunction() {
         // No-op.
     }
 
-    public AbsFunction(Expression operand) {
-        super(operand);
+    private AbsFunction(Expression<?> operand, DataType resultType) {
+        super(operand, resultType);
     }
 
+    public static Expression<?> create(Expression<?> operand) {
+        DataType operandType = operand.getType();
+
+        if (operandType.getType() == GenericType.BIT) {
+            // Bit alway remain the same, just coerce it.
+            return CastExpression.coerce(operand, DataType.TINYINT);
+        }
+
+        return new AbsFunction<>(operand, inferResultType(operand.getType()));
+    }
+
+    @SuppressWarnings("unchecked")
     @Override
-    public Number eval(Row row) {
+    public T eval(Row row) {
         Object operandValue = operand.eval(row);
 
         if (operandValue == null) {
             return null;
         }
 
-        if (resType == null) {
-            DataType type = operand.getType();
-
-            if (!type.isCanConvertToNumeric()) {
-                throw new HazelcastSqlException(-1, "Operand is not numeric: " + operandValue);
-            }
-
-            if (type == DataType.BIT) {
-                resType = DataType.TINYINT;
-            } else if (type == DataType.DECIMAL_SCALE_0_BIG_INTEGER) {
-                resType = DataType.DECIMAL_SCALE_0_BIG_DECIMAL;
-            } else if (type == DataType.VARCHAR) {
-                resType = DataType.DECIMAL;
-            } else {
-                resType = type;
-            }
-
-            operandType = type;
-        }
-
-        return abs(operandValue, operandType, resType);
+        return (T) abs(operandValue, operand.getType(), resultType);
     }
 
     /**
@@ -72,24 +63,36 @@ public class AbsFunction extends UniCallExpressionWithType<Number> {
      *
      * @param operand Value.
      * @param operandType Type of the operand.
-     * @param resType Result type.
+     * @param resultType Result type.
      * @return Absolute value of the target.
      */
-    private Number abs(Object operand, DataType operandType, DataType resType) {
+    private static Object abs(Object operand, DataType operandType, DataType resultType) {
+        if (operandType.getType() == GenericType.LATE) {
+            // Special handling for late binding.
+            operandType = DataTypeUtils.resolveType(operand);
+
+            if (operandType.getType() == GenericType.BIT) {
+                // Bit alway remain the same, just coerce it.
+                return CastExpression.coerce(operand, operandType, DataType.TINYINT);
+            }
+
+            resultType = inferResultType(operandType);
+        }
+
         Converter operandConverter = operandType.getConverter();
 
-        switch (resType.getType()) {
+        switch (resultType.getType()) {
             case TINYINT:
-                return (byte) Math.abs(operandConverter.asTinyInt(operand));
+                return (byte) Math.abs(operandConverter.asTinyint(operand));
 
             case SMALLINT:
-                return (short) Math.abs(operandConverter.asSmallInt(operand));
+                return (short) Math.abs(operandConverter.asSmallint(operand));
 
             case INT:
                 return Math.abs(operandConverter.asInt(operand));
 
             case BIGINT:
-                return Math.abs(operandConverter.asBigInt(operand));
+                return Math.abs(operandConverter.asBigint(operand));
 
             case DECIMAL:
                 return operandConverter.asDecimal(operand).abs();
@@ -101,12 +104,25 @@ public class AbsFunction extends UniCallExpressionWithType<Number> {
                 return Math.abs(operandConverter.asDouble(operand));
 
             default:
-                throw new HazelcastSqlException(-1, "Unexpected result type: " + resType);
+                throw new HazelcastSqlException(-1, "Unexpected result type: " + resultType);
         }
     }
 
-    @Override
-    public int operator() {
-        return CallOperator.ABS;
+    /**
+     * Infer result type.
+     *
+     * @param operandType Operand type.
+     * @return Result type.
+     */
+    private static DataType inferResultType(DataType operandType) {
+        if (!operandType.isNumeric()) {
+            throw new HazelcastSqlException(-1, "Operand is not numeric: " + operandType);
+        }
+
+        if (operandType.getType() == GenericType.VARCHAR) {
+            return DataType.DECIMAL;
+        }
+
+        return operandType;
     }
 }

@@ -16,8 +16,6 @@
 
 package com.hazelcast.sql.impl;
 
-import java.util.Map;
-
 import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
 
 /**
@@ -38,22 +36,5 @@ public final class SqlUtils {
         String prefix = KEY_ATTRIBUTE_NAME.value() + ".";
 
         return path.startsWith(prefix) ? path.substring(prefix.length()) : null;
-    }
-
-    /**
-     * Normalize attribute name by replacing it with it's extractor path.
-     *
-     * @param name Attribute name.
-     * @param aliases Aliases.
-     * @return Extractor path for the given attribute name.
-     */
-    public static String normalizeAttributePath(String name, Map<String, String> aliases) {
-        String res = aliases.get(name);
-
-        if (res == null) {
-            res = name;
-        }
-
-        return res;
     }
 }

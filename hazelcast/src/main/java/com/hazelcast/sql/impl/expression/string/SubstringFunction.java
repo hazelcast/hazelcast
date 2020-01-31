@@ -16,8 +16,6 @@
 
 package com.hazelcast.sql.impl.expression.string;
 
-import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.impl.expression.CallOperator;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.TriCallExpression;
 import com.hazelcast.sql.impl.row.Row;
@@ -27,99 +25,29 @@ import com.hazelcast.sql.impl.type.DataType;
  * SUBSTRING string function.
  */
 public class SubstringFunction extends TriCallExpression<String> {
-    /** Source type. */
-    private transient DataType sourceType;
-
-    /** Start type. */
-    private transient DataType startType;
-
-    /** Length type. */
-    private transient DataType lengthType;
-
     public SubstringFunction() {
         // No-op.
     }
 
-    public SubstringFunction(Expression operand1, Expression operand2, Expression operand3) {
-        super(operand1, operand2, operand3);
+    private SubstringFunction(Expression<?> source, Expression<?> start, Expression<?> length) {
+        super(source, start, length);
+    }
+
+    public static SubstringFunction create(Expression<?> source, Expression<?> start, Expression<?> length) {
+        source.ensureCanConvertToVarchar();
+        start.ensureCanConvertToVarchar();
+        length.ensureCanConvertToInt();
+
+        return new SubstringFunction(source, start, length);
     }
 
     @Override
     public String eval(Row row) {
-        String source;
-        int start;
-        int length;
+        String source = operand1.evalAsVarchar(row);
+        Integer start = operand2.evalAsInt(row);
+        Integer length = operand3.evalAsInt(row);
 
-        // Get source operand.
-        Object sourceValue = operand1.eval(row);
-
-        if (sourceValue == null) {
-            return null;
-        }
-
-        if (sourceType == null) {
-            sourceType = operand1.getType();
-        }
-
-        source = sourceType.getConverter().asVarchar(sourceValue);
-
-        // Get search operand.
-        Object startValue = operand2.eval(row);
-
-        if (startValue == null) {
-            return null;
-        }
-
-        if (startType == null) {
-            startType = operand2.getType();
-        }
-
-        start = startType.getConverter().asInt(startValue);
-
-        // Get replacement operand.
-        Object lengthValue = operand3.eval(row);
-
-        if (lengthValue == null) {
-            return null;
-        }
-
-        if (lengthType == null) {
-            lengthType = operand3.getType();
-        }
-
-        length = lengthType.getConverter().asInt(lengthValue);
-
-        // Process.
-        return substring(source, start, length);
-    }
-
-    // TODO: Validate the implementation against ANSI.
-    private static String substring(String source, int startPos, int length) {
-        int sourceLength = source.length();
-
-        if (startPos < 0) {
-            startPos += sourceLength + 1;
-        }
-
-        int endPos = startPos + length;
-
-        if (endPos < startPos) {
-            throw new HazelcastSqlException(-1, "End position is less than start position.");
-        }
-
-        if (startPos > sourceLength || endPos < 1) {
-            return "";
-        }
-
-        int startPos0 = Math.max(startPos, 1);
-        int endPos0 = Math.min(endPos, sourceLength + 1);
-
-        return source.substring(startPos0 - 1, endPos0 - 1);
-    }
-
-    @Override
-    public int operator() {
-        return CallOperator.SUBSTRING;
+        return StringExpressionUtils.substring(source, start, length);
     }
 
     @Override

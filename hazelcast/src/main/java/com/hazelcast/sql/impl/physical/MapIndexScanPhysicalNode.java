@@ -21,6 +21,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.exec.index.IndexFilter;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.physical.visitor.PhysicalNodeVisitor;
+import com.hazelcast.sql.impl.type.DataType;
 
 import java.io.IOException;
 import java.util.List;
@@ -44,12 +45,14 @@ public class MapIndexScanPhysicalNode extends AbstractMapScanPhysicalNode {
         int id,
         String mapName,
         List<String> fieldNames,
+        List<DataType> fieldTypes,
         List<Integer> projects,
         String indexName,
         IndexFilter indexFilter,
-        Expression<Boolean> remainderFilter
+        Expression<Boolean> remainderFilter,
+        PhysicalNodeSchema schema
     ) {
-        super(id, mapName, fieldNames, projects, remainderFilter);
+        super(id, mapName, fieldNames, fieldTypes, projects, remainderFilter, schema);
 
         this.indexName = indexName;
         this.indexFilter = indexFilter;

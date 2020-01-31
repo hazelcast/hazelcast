@@ -21,6 +21,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.physical.BiInputPhysicalNode;
 import com.hazelcast.sql.impl.physical.PhysicalNode;
+import com.hazelcast.sql.impl.physical.PhysicalNodeSchema;
 
 import java.io.IOException;
 
@@ -75,6 +76,11 @@ public abstract class AbstractJoinPhysicalNode extends BiInputPhysicalNode {
 
     public int getRightRowColumnCount() {
         return rightRowColumnCount;
+    }
+
+    @Override
+    public PhysicalNodeSchema getSchema() {
+        return PhysicalNodeSchema.combine(left.getSchema(), right.getSchema());
     }
 
     @Override

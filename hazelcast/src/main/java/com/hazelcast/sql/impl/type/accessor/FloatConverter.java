@@ -32,7 +32,7 @@ public final class FloatConverter extends Converter {
     }
 
     @Override
-    public Class getClazz() {
+    public Class<?> getValueClass() {
         return Float.class;
     }
 
@@ -47,12 +47,12 @@ public final class FloatConverter extends Converter {
     }
 
     @Override
-    public byte asTinyInt(Object val) {
+    public byte asTinyint(Object val) {
         return (byte) cast(val);
     }
 
     @Override
-    public short asSmallInt(Object val) {
+    public short asSmallint(Object val) {
         return (short) cast(val);
     }
 
@@ -62,13 +62,13 @@ public final class FloatConverter extends Converter {
     }
 
     @Override
-    public long asBigInt(Object val) {
+    public long asBigint(Object val) {
         return (long) cast(val);
     }
 
     @Override
     public BigDecimal asDecimal(Object val) {
-        return new BigDecimal(cast(val));
+        return BigDecimal.valueOf(cast(val));
     }
 
     @Override
@@ -84,6 +84,11 @@ public final class FloatConverter extends Converter {
     @Override
     public String asVarchar(Object val) {
         return Float.toString(cast(val));
+    }
+
+    @Override
+    public Object convertToSelf(Converter valConverter, Object val) {
+        return valConverter.asReal(val);
     }
 
     private float cast(Object val) {

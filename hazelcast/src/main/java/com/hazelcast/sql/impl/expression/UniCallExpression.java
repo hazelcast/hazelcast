@@ -20,28 +20,24 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * Expression with two operands.
  */
-public abstract class UniCallExpression<T> implements CallExpression<T> {
+public abstract class UniCallExpression<T> implements Expression<T> {
     /** Operand. */
-    protected Expression operand;
+    protected Expression<?> operand;
 
     protected UniCallExpression() {
         // No-op.
     }
 
-    protected UniCallExpression(Expression operand) {
+    protected UniCallExpression(Expression<?> operand) {
         this.operand = operand;
     }
 
-    /**
-     * @return Operator.
-     */
-    public abstract int operator();
-
-    public Expression getOperand() {
+    public Expression<?> getOperand() {
         return operand;
     }
 
@@ -53,5 +49,30 @@ public abstract class UniCallExpression<T> implements CallExpression<T> {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         operand = in.readObject();
+    }
+
+    @Override
+    public int hashCode() {
+        return operand != null ? operand.hashCode() : 0;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        UniCallExpression<?> that = (UniCallExpression<?>) o;
+
+        return Objects.equals(operand, that.operand);
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{operand=" + operand + '}';
     }
 }

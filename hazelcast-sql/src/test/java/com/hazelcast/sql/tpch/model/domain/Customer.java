@@ -53,4 +53,32 @@ public class Customer implements Serializable {
         this.c_mktsegment = c_mktsegment;
         this.c_comment = c_comment;
     }
+
+    public String getC_name() {
+        return c_name;
+    }
+
+    public String getC_address() {
+        return c_address;
+    }
+
+    public long getC_nationkey() {
+        return c_nationkey;
+    }
+
+    public String getC_phone() {
+        return c_phone;
+    }
+
+    public BigDecimal getC_acctbal() {
+        return c_acctbal;
+    }
+
+    public String getC_mktsegment() {
+        return c_mktsegment;
+    }
+
+    public String getC_comment() {
+        return c_comment;
+    }
 }

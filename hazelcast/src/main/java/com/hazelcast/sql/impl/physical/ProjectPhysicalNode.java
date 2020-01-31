@@ -21,14 +21,17 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.physical.visitor.PhysicalNodeVisitor;
+import com.hazelcast.sql.impl.type.DataType;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 /**
  * Projection.
  */
+@SuppressWarnings("rawtypes")
 public class ProjectPhysicalNode extends UniInputPhysicalNode {
     /** Projections. */
     private List<Expression> projects;
@@ -50,6 +53,17 @@ public class ProjectPhysicalNode extends UniInputPhysicalNode {
     @Override
     public void visit0(PhysicalNodeVisitor visitor) {
         visitor.onProjectNode(this);
+    }
+
+    @Override
+    public PhysicalNodeSchema getSchema() {
+        List<DataType> types = new ArrayList<>(projects.size());
+
+        for (Expression project : projects) {
+            types.add(project.getType());
+        }
+
+        return new PhysicalNodeSchema(types);
     }
 
     @Override

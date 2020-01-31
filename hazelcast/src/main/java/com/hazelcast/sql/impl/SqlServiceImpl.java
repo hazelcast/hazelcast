@@ -108,12 +108,12 @@ public class SqlServiceImpl implements SqlService, ManagedService, ClientAwareSe
                 throw new HazelcastException("SQL to be explained cannot be empty.");
             }
 
-            QueryPlan plan = getPlan(unwrappedSql);
+            QueryPlan plan = getPlan(unwrappedSql, query.getParameters());
 
             return plan.getExplain().asCursor();
         }
 
-        QueryPlan plan = getPlan(sql);
+        QueryPlan plan = getPlan(sql, query.getParameters());
 
         List<Object> args0;
 
@@ -128,8 +128,8 @@ public class SqlServiceImpl implements SqlService, ManagedService, ClientAwareSe
         return new SqlCursorImpl(handle);
     }
 
-    public QueryPlan getPlan(String sql) {
-        return optimizer.prepare(sql);
+    public QueryPlan getPlan(String sql, List<Object> params) {
+        return optimizer.prepare(sql, params);
     }
 
     /**
