@@ -86,7 +86,7 @@ public class TransactionLog {
     }
 
     public List<Future> commit(NodeEngine nodeEngine) {
-        List<Future> futures = new ArrayList<Future>(size());
+        List<Future> futures = new ArrayList<>(size());
         for (TransactionLogRecord record : recordMap.values()) {
             Future future = invoke(nodeEngine, record, record.newCommitOperation());
             futures.add(future);
@@ -94,8 +94,20 @@ public class TransactionLog {
         return futures;
     }
 
+    public void onCommitSuccess() {
+        for (TransactionLogRecord record : recordMap.values()) {
+            record.onCommitSuccess();
+        }
+    }
+
+    public void onCommitFailure() {
+        for (TransactionLogRecord record : recordMap.values()) {
+            record.onCommitFailure();
+        }
+    }
+
     public List<Future> prepare(NodeEngine nodeEngine) {
-        List<Future> futures = new ArrayList<Future>(size());
+        List<Future> futures = new ArrayList<>(size());
         for (TransactionLogRecord record : recordMap.values()) {
             Future future = invoke(nodeEngine, record, record.newPrepareOperation());
             futures.add(future);
@@ -104,7 +116,7 @@ public class TransactionLog {
     }
 
     public List<Future> rollback(NodeEngine nodeEngine) {
-        List<Future> futures = new ArrayList<Future>(size());
+        List<Future> futures = new ArrayList<>(size());
         for (TransactionLogRecord record : recordMap.values()) {
             Future future = invoke(nodeEngine, record, record.newRollbackOperation());
             futures.add(future);
@@ -143,7 +155,7 @@ public class TransactionLog {
             operationService.invokeOnTarget(op.getServiceName(), op, target);
         } else {
             operationService.invokeOnPartitionAsync(op.getServiceName(), op, op.getPartitionId())
-                            .whenCompleteAsync(callback);
+                    .whenCompleteAsync(callback);
         }
     }
 }

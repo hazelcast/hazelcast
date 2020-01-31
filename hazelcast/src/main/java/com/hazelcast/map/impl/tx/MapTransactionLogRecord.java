@@ -16,17 +16,19 @@
 
 package com.hazelcast.map.impl.tx;
 
+import com.hazelcast.internal.nearcache.impl.NearCachingHook;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.ThreadUtil;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapRecordKey;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.transaction.impl.TransactionLogRecord;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.UUID;
 
@@ -43,11 +45,14 @@ public class MapTransactionLogRecord implements TransactionLogRecord {
     private UUID ownerUuid;
     private Operation op;
 
+    private transient NearCachingHook nearCachingHook = NearCachingHook.EMPTY_HOOK;
+
     public MapTransactionLogRecord() {
     }
 
     public MapTransactionLogRecord(String name, Data key, int partitionId,
-                                   Operation op, UUID ownerUuid, UUID transactionId) {
+                                   Operation op, UUID ownerUuid, UUID transactionId,
+                                   @Nonnull NearCachingHook nearCachingHook) {
         this.name = name;
         this.key = key;
         if (!(op instanceof MapTxnOperation)) {
@@ -57,6 +62,7 @@ public class MapTransactionLogRecord implements TransactionLogRecord {
         this.ownerUuid = ownerUuid;
         this.partitionId = partitionId;
         this.transactionId = transactionId;
+        this.nearCachingHook = nearCachingHook;
     }
 
     @Override
@@ -74,6 +80,16 @@ public class MapTransactionLogRecord implements TransactionLogRecord {
         operation.setTransactionId(transactionId);
         op.setPartitionId(partitionId);
         return op;
+    }
+
+    @Override
+    public void onCommitSuccess() {
+        nearCachingHook.onRemoteCallSuccess();
+    }
+
+    @Override
+    public void onCommitFailure() {
+        nearCachingHook.onRemoteCallFailure();
     }
 
     @Override
