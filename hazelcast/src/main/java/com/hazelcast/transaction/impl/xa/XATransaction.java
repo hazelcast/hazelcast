@@ -175,16 +175,39 @@ public final class XATransaction implements Transaction {
         }
     }
 
-    public void commitAsync(ExecutionCallback callback) {
+    public void commitAsync(final ExecutionCallback callback) {
         if (state != PREPARED) {
             throw new IllegalStateException("Transaction is not prepared");
         }
         checkTimeout();
         state = COMMITTING;
-        transactionLog.commitAsync(nodeEngine, callback);
+
+        transactionLog.commitAsync(nodeEngine, wrapExecutionCallback(callback));
         // We should rethrow exception if transaction is not TWO_PHASE
 
         state = COMMITTED;
+    }
+
+    private ExecutionCallback wrapExecutionCallback(final ExecutionCallback callback) {
+        return new ExecutionCallback() {
+            @Override
+            public void onResponse(Object response) {
+                try {
+                    callback.onResponse(response);
+                } finally {
+                    transactionLog.onCommitSuccess();
+                }
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                try {
+                    callback.onFailure(t);
+                } finally {
+                    transactionLog.onCommitFailure();
+                }
+            }
+        };
     }
 
     @Override
