@@ -55,6 +55,7 @@
                 <xs:element name="topic" type="topic" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="reliable-topic" type="reliable-topic" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="ringbuffer" type="ringbuffer" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="log" type="log" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="listeners" type="listeners" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="serialization" type="serialization" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="native-memory" type="native-memory" minOccurs="0" maxOccurs="1"/>
@@ -1195,6 +1196,50 @@
             <xs:annotation>
                 <xs:documentation>
                     The name of the ringbuffer. Required.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:string"/>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="log">
+        <xs:all>
+            <xs:element name="backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Number of synchronous backups. For example, if 1 is set as the backup-count,
+                        then the items in the log are copied to one other JVM for
+                        fail-safety. Valid numbers are 0 (no backup), 1, 2 ... 6.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="async-backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Number of asynchronous backups. For example, if 1 is set as the backup-count,
+                        then the items in the log are copied to one other JVM for
+                        fail-safety. Valid numbers are 0 (no backup), 1, 2 ... 6.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="segment-size" type="xs:unsignedInt" minOccurs="0" maxOccurs="1">
+            </xs:element>
+            <xs:element name="max-segment-count" type="xs:unsignedInt" minOccurs="0" maxOccurs="1">
+            </xs:element>
+            <xs:element name="retention-millis" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="1">
+            </xs:element>
+            <xs:element name="tenuring-age-millis" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0">
+            </xs:element>
+            <xs:element name="type" type="xs:string" minOccurs="0" maxOccurs="1" default="java.lang.Object">
+            </xs:element>
+            <xs:element name="encoder" type="xs:string" minOccurs="0" maxOccurs="1">
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="name" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The name of the log. Required.
                 </xs:documentation>
             </xs:annotation>
             <xs:simpleType>

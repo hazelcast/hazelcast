@@ -45,7 +45,7 @@ public class StorageEfficiencyTest extends HazelcastTestSupport {
             longLog.put(0, k);
         }
 
-        assertEquals(8 * count, longLog.usage(0).bytesInUse);
-        assertEquals(20 * count, objectLog.usage(0).bytesInUse);
+        assertEquals(8 * count, longLog.usage(0).getBytesInUse());
+        assertEquals(20 * count, objectLog.usage(0).getBytesInUse());
     }
 }

@@ -2448,10 +2448,10 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 long tenuringAgeMillis = getLongValue("tenuring-age-millis", value);
                 logConfig.setTenuringAgeMillis(tenuringAgeMillis);
             } else if ("encoder".equals(nodeName)) {
-                String encoder = getTextContent(node);
+                String encoder = value;
                 logConfig.setEncoder(encoder);
             } else if ("type".equals(nodeName)) {
-                String type = getTextContent(node);
+                String type = value;
                 logConfig.setType(type);
             }
         }

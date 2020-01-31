@@ -43,8 +43,8 @@ public class ClearTest extends HazelcastTestSupport {
 
         assertEquals(0, log.count());
         UsageInfo info = log.usage();
-        assertEquals(0, info.count);
-        assertEquals(0, info.segments);
-        assertEquals(0, info.bytesInUse);
+        assertEquals(0, info.getCount());
+        assertEquals(0, info.getSegments());
+        assertEquals(0, info.getBytesAllocated());
     }
 }
