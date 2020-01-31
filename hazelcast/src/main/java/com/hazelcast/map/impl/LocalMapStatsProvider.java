@@ -17,6 +17,8 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.monitor.LocalRecordStoreStats;
 import com.hazelcast.internal.monitor.impl.IndexesStats;
@@ -32,12 +34,12 @@ import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.proxyservice.ProxyService;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -143,15 +145,21 @@ public class LocalMapStatsProvider {
     }
 
     /**
-     * Some maps may have a proxy but no data has been put yet. Think of one created a proxy but not put any data in it.
-     * By calling this method we are returning an empty stats object for those maps. This is helpful to monitor those kind
-     * of maps.
+     * Some maps may have a proxy but no data has been put yet.
+     * Think of one created a proxy but not put any data in it. By
+     * calling this method we are returning an empty stats object for
+     * those maps. This is helpful to monitor those kind of maps.
      */
     private void addStatsOfNoDataIncludedMaps(Map statsPerMap) {
-        ProxyService proxyService = nodeEngine.getProxyService();
-        Collection<String> mapNames = proxyService.getDistributedObjectNames(SERVICE_NAME);
-        for (String mapName : mapNames) {
-            if (!statsPerMap.containsKey(mapName) && mapServiceContext.getMapContainer(mapName).mapConfig.isStatisticsEnabled()) {
+        Collection<DistributedObject> distributedObjects = nodeEngine.getProxyService()
+                .getDistributedObjects(SERVICE_NAME);
+
+        for (DistributedObject distributedObject : distributedObjects) {
+            MapProxyImpl mapProxy = (MapProxyImpl) distributedObject;
+            MapConfig mapConfig = mapProxy.getMapConfig();
+            String mapName = mapProxy.getName();
+
+            if (mapConfig.isStatisticsEnabled() && !statsPerMap.containsKey(mapName)) {
                 statsPerMap.put(mapName, EMPTY_LOCAL_MAP_STATS);
             }
         }

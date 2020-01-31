@@ -33,6 +33,7 @@ import com.hazelcast.client.impl.protocol.task.dynamicconfig.QueueStoreConfigHol
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.RingbufferStoreConfigHolder;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.AttributeConfig;
+import com.hazelcast.config.BitmapIndexOptions;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
@@ -629,6 +630,8 @@ public class ReferenceObjects {
             = Collections.singletonList(new AbstractMap.SimpleEntry<>(anInt, anInt));
     public static List<Map.Entry<UUID, Long>> aListOfUuidToLong
             = Collections.singletonList(new AbstractMap.SimpleEntry<>(aUUID, aLong));
+    public static List<Map.Entry<UUID, UUID>> aListOfUUIDToUUID
+            = Collections.singletonList(new AbstractMap.SimpleEntry<>(aUUID, aUUID));
     public static List<Integer> aListOfIntegers = Collections.singletonList(anInt);
     public static List<Long> aListOfLongs = Collections.singletonList(aLong);
     public static List<UUID> aListOfUUIDs = Collections.singletonList(aUUID);
@@ -714,7 +717,14 @@ public class ReferenceObjects {
 
     public static ListenerConfigHolder aListenerConfigHolder = new ListenerConfigHolder(anInt, aData, aString, aBoolean, aBoolean);
     public static AttributeConfig anAttributeConfig = new AttributeConfig(aString, aString);
-    public static IndexConfig anIndexConfig = CustomTypeFactory.createIndexConfig(aString, anEnum, aListOfStrings);
+    public static BitmapIndexOptions aBitmapIndexOptions;
+
+    static {
+        aBitmapIndexOptions = new BitmapIndexOptions();
+        aBitmapIndexOptions.setUniqueKey(aString);
+        aBitmapIndexOptions.setUniqueKeyTransformation(BitmapIndexOptions.UniqueKeyTransformation.LONG);
+    }
+    public static IndexConfig anIndexConfig = CustomTypeFactory.createIndexConfig(aString, anEnum, aListOfStrings, aBitmapIndexOptions);
     public static MapStoreConfigHolder aMapStoreConfigHolder = new MapStoreConfigHolder(aBoolean, aBoolean, anInt, anInt, aString, aData, aString, aData, aMapOfStringToString, aString);
 
     public static MerkleTreeConfig aMerkleTreeConfig;

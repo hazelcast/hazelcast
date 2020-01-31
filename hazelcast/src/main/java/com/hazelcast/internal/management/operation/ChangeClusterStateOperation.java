@@ -22,6 +22,7 @@ import com.hazelcast.internal.management.ManagementDataSerializerHook;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 
 import java.io.IOException;
@@ -34,7 +35,7 @@ import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 /**
  * Operation to change a cluster's state via Management Center.
  */
-public class ChangeClusterStateOperation extends AbstractManagementOperation {
+public class ChangeClusterStateOperation extends AbstractManagementOperation implements AllowedDuringPassiveState {
     private ClusterState newState;
 
     public ChangeClusterStateOperation() {

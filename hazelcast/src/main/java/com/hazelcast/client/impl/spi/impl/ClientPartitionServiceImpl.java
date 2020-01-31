@@ -22,19 +22,15 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientTriggerPartitionAssignmentCodec;
 import com.hazelcast.client.impl.spi.ClientPartitionService;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.HashUtil;
 import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.partition.Partition;
-import com.hazelcast.partition.PartitionLostListener;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
-import java.util.EventListener;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -55,27 +51,6 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
     public ClientPartitionServiceImpl(HazelcastClientInstanceImpl client) {
         this.client = client;
         this.logger = client.getLoggingService().getLogger(ClientPartitionService.class);
-    }
-
-    public void start() {
-        ClassLoader classLoader = client.getClientConfig().getClassLoader();
-        final List<ListenerConfig> listenerConfigs = client.getClientConfig().getListenerConfigs();
-        if (listenerConfigs != null && !listenerConfigs.isEmpty()) {
-            for (ListenerConfig listenerConfig : listenerConfigs) {
-                EventListener implementation = listenerConfig.getImplementation();
-                if (implementation == null) {
-                    try {
-                        implementation = ClassLoaderUtil.newInstance(classLoader, listenerConfig.getClassName());
-                    } catch (Exception e) {
-                        logger.severe(e);
-                    }
-                }
-
-                if (implementation instanceof PartitionLostListener) {
-                    client.getPartitionService().addPartitionLostListener((PartitionLostListener) implementation);
-                }
-            }
-        }
     }
 
     private static class PartitionTable {

@@ -28,10 +28,12 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionTableView;
+import com.hazelcast.internal.util.EmptyStatement;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 
+import java.nio.channels.CancelledKeyException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -87,7 +89,17 @@ public class ClusterViewListenerService {
             ClientMessage message = clientMessage.copyWithNewCorrelationId(correlationId);
             ClientEndpoint clientEndpoint = entry.getKey();
             Connection connection = clientEndpoint.getConnection();
+            write(message, connection);
+        }
+    }
+
+    private void write(ClientMessage message, Connection connection) {
+        try {
             connection.write(message);
+        } catch (CancelledKeyException ignored) {
+            //if connection closes, while writing we can get CancelledKeyException.
+            // In that case, we can safely ignore the exception
+            EmptyStatement.ignore(ignored);
         }
     }
 
@@ -99,12 +111,12 @@ public class ClusterViewListenerService {
 
         ClientMessage memberListViewMessage = getMemberListViewMessage();
         memberListViewMessage.setCorrelationId(correlationId);
-        clientEndpoint.getConnection().write(memberListViewMessage);
+        write(memberListViewMessage, clientEndpoint.getConnection());
 
         ClientMessage partitionViewMessage = getPartitionViewMessageOrNull();
         if (partitionViewMessage != null) {
             partitionViewMessage.setCorrelationId(correlationId);
-            clientEndpoint.getConnection().write(partitionViewMessage);
+            write(partitionViewMessage, clientEndpoint.getConnection());
         }
     }
 

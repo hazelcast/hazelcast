@@ -25,7 +25,10 @@ import com.hazelcast.query.PredicateBuilder.EntryObject;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleTestObjects.Employee;
 import com.hazelcast.query.SampleTestObjects.Value;
+import com.hazelcast.query.impl.QueryContext.IndexMatchHint;
 import com.hazelcast.query.impl.getters.Extractors;
+import com.hazelcast.query.impl.predicates.EqualPredicate;
+import com.hazelcast.query.impl.predicates.GreaterLessPredicate;
 import com.hazelcast.query.impl.predicates.SqlPredicate;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -204,4 +207,34 @@ public class IndexesTest {
         assertNotNull(index);
         assertSame(index, indexes.addOrGetIndex(config2, null));
     }
+
+    @Test
+    public void testEvaluateOnlyIndexesMatching() {
+        Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior).build();
+
+        Index hashIndex = indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "a"), null);
+        Index matched = indexes.matchIndex("a", IndexMatchHint.NONE, SKIP_PARTITIONS_COUNT_CHECK);
+        assertSame(hashIndex, matched);
+        matched = indexes.matchIndex("a", EqualPredicate.class, IndexMatchHint.NONE, SKIP_PARTITIONS_COUNT_CHECK);
+        assertNull(matched);
+
+        Index bitmapIndex = indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.BITMAP, "a"), null);
+        matched = indexes.matchIndex("a", IndexMatchHint.NONE, SKIP_PARTITIONS_COUNT_CHECK);
+        assertSame(hashIndex, matched);
+        matched = indexes.matchIndex("a", EqualPredicate.class, IndexMatchHint.NONE, SKIP_PARTITIONS_COUNT_CHECK);
+        assertSame(bitmapIndex, matched);
+
+        matched = indexes.matchIndex(hashIndex.getName(), IndexMatchHint.EXACT_NAME, SKIP_PARTITIONS_COUNT_CHECK);
+        assertSame(hashIndex, matched);
+        matched = indexes.matchIndex(bitmapIndex.getName(), IndexMatchHint.EXACT_NAME, SKIP_PARTITIONS_COUNT_CHECK);
+        assertSame(bitmapIndex, matched);
+
+        matched = indexes.matchIndex(bitmapIndex.getName(), EqualPredicate.class, IndexMatchHint.EXACT_NAME,
+                SKIP_PARTITIONS_COUNT_CHECK);
+        assertSame(bitmapIndex, matched);
+        matched = indexes.matchIndex(bitmapIndex.getName(), GreaterLessPredicate.class, IndexMatchHint.EXACT_NAME,
+                SKIP_PARTITIONS_COUNT_CHECK);
+        assertNull(matched);
+    }
+
 }

@@ -51,7 +51,6 @@ import com.hazelcast.client.impl.spi.impl.listener.LazyDistributedObjectEvent;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
-import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectEvent;
 import com.hazelcast.core.DistributedObjectListener;
@@ -97,7 +96,7 @@ import static com.hazelcast.internal.util.ServiceLoader.classIterator;
  */
 @SuppressWarnings({"checkstyle:classfanoutcomplexity",
         "checkstyle:classdataabstractioncoupling", "checkstyle:methodcount"})
-public final class ProxyManager implements DistributedObjectListener {
+public final class ProxyManager {
 
     private static final String PROVIDER_ID = ClientProxyDescriptorProvider.class.getCanonicalName();
     private static final Class[] LEGACY_CONSTRUCTOR_ARGUMENT_TYPES = new Class[]{String.class, String.class};
@@ -116,17 +115,6 @@ public final class ProxyManager implements DistributedObjectListener {
 
     @SuppressWarnings("checkstyle:methodlength")
     public void init(ClientConfig config, ClientContext clientContext) {
-        addDistributeObjectListenerInternal(this, true);
-
-        List<ListenerConfig> listenerConfigs = client.getClientConfig().getListenerConfigs();
-        if (listenerConfigs != null && !listenerConfigs.isEmpty()) {
-            for (ListenerConfig listenerConfig : listenerConfigs) {
-                if (listenerConfig.getImplementation() instanceof DistributedObjectListener) {
-                    addDistributedObjectListener((DistributedObjectListener) listenerConfig.getImplementation());
-                }
-            }
-        }
-
         context = clientContext;
         // register defaults
         register(MapService.SERVICE_NAME, createServiceProxyFactory(MapService.class));
@@ -361,7 +349,8 @@ public final class ProxyManager implements DistributedObjectListener {
     }
 
     public UUID addDistributedObjectListener(@Nonnull DistributedObjectListener listener) {
-        return addDistributeObjectListenerInternal(listener, false);
+        final EventHandler<ClientMessage> eventHandler = new DistributedObjectEventHandler(listener, this);
+        return client.getListenerService().registerListener(new DistributeObjectListenerMessageCodec(), eventHandler);
     }
 
     public void createDistributedObjectsOnCluster() {
@@ -384,28 +373,6 @@ public final class ProxyManager implements DistributedObjectListener {
         if (proxyFactory != null) {
             proxyFactory.recreateCachesOnCluster();
         }
-    }
-
-    @Override
-    public void distributedObjectCreated(DistributedObjectEvent event) {
-        // no-op
-    }
-
-    @Override
-    public void distributedObjectDestroyed(DistributedObjectEvent event) {
-        /**
-         * TODO: This is a best effort solution. There are cases where a newly created object may still be destroyed.
-         * e.g. client restarts with a new UUID and creates the object and event is delivered later on.
-         * Only aims to fix the issue https://github.com/hazelcast/hazelcast/issues/12470 partially.
-         */
-
-        if (event.getSource().equals(client.getConnectionManager().getClientUuid())) {
-            // ignore destroy events which were originally initiated from this client
-            return;
-        }
-
-        // destroy local proxy
-        destroyProxyLocally(event.getServiceName(), (String) event.getObjectName());
     }
 
     private final class DistributedObjectEventHandler extends ClientAddDistributedObjectListenerCodec.AbstractEventHandler
@@ -440,21 +407,13 @@ public final class ProxyManager implements DistributedObjectListener {
         return client.getListenerService().deregisterListener(id);
     }
 
-    private UUID addDistributeObjectListenerInternal(@Nonnull DistributedObjectListener listener, boolean isInternal) {
-        final EventHandler<ClientMessage> eventHandler = new DistributedObjectEventHandler(listener, this);
-        return client.getListenerService().registerListener(new DistributeObjectListenerMessageCodec(isInternal), eventHandler);
-    }
-
     private static final class DistributeObjectListenerMessageCodec implements ListenerMessageCodec {
-        private final boolean isInternal;
-
-        private DistributeObjectListenerMessageCodec(boolean isInternal) {
-            this.isInternal = isInternal;
+        private DistributeObjectListenerMessageCodec() {
         }
 
         @Override
         public ClientMessage encodeAddRequest(boolean localOnly) {
-            return ClientAddDistributedObjectListenerCodec.encodeRequest(localOnly, isInternal);
+            return ClientAddDistributedObjectListenerCodec.encodeRequest(localOnly);
         }
 
         @Override

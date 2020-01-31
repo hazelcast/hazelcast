@@ -235,7 +235,6 @@ public class MemberCompatibilityTest_2_0 {
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         ClientAddDistributedObjectListenerCodec.RequestParameters parameters = ClientAddDistributedObjectListenerCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aBoolean, parameters.localOnly));
-        assertTrue(isEqual(aBoolean, parameters.internal));
     }
 
     @Test
@@ -7307,7 +7306,7 @@ public class MemberCompatibilityTest_2_0 {
     @Test
     public void test_MCGetCPMembersCodec_encodeResponse() {
         int fileClientMessageIndex = 808;
-        ClientMessage encoded = MCGetCPMembersCodec.encodeResponse(aListOfUUIDs);
+        ClientMessage encoded = MCGetCPMembersCodec.encodeResponse(aListOfUUIDToUUID);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

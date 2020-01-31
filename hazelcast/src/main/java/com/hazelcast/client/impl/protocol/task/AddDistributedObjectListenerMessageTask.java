@@ -74,10 +74,6 @@ public class AddDistributedObjectListenerMessageTask
 
     @Override
     public String getMethodName() {
-        if (parameters.internal) {
-            return null;
-        }
-
         return "addDistributedObjectListener";
     }
 

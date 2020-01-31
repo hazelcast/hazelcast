@@ -88,11 +88,11 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
     @Before
     public void setUp() {
         factory = new TestHazelcastFactory(NODE_COUNT);
-        hazelcastInstances[0] = factory.newHazelcastInstance(getConfig());
+        Config configWithScriptingEnabled = getConfig();
+        configWithScriptingEnabled.getManagementCenterConfig().setScriptingEnabled(true);
+        hazelcastInstances[0] = factory.newHazelcastInstance(configWithScriptingEnabled);
         hazelcastInstances[1] = factory.newHazelcastInstance(getConfig().setLiteMember(true));
-        Config config = getConfig();
-        config.getManagementCenterConfig().setScriptingEnabled(false);
-        hazelcastInstances[2] = factory.newHazelcastInstance(config);
+        hazelcastInstances[2] = factory.newHazelcastInstance(getConfig());
 
         members = stream(hazelcastInstances)
                 .map(instance -> instance.getCluster().getLocalMember())
@@ -116,6 +116,17 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
         resolve(managementCenterService.changeClusterState(PASSIVE));
 
         assertClusterState(PASSIVE, hazelcastInstances);
+    }
+
+    @Test
+    public void changeClusterState_whenPassiveState() throws Exception {
+        waitClusterForSafeState(hazelcastInstances[0]);
+        hazelcastInstances[0].getCluster().changeClusterState(PASSIVE);
+        assertClusterState(PASSIVE, hazelcastInstances);
+
+        resolve(managementCenterService.changeClusterState(ACTIVE));
+
+        assertClusterState(ACTIVE, hazelcastInstances);
     }
 
     @Test(expected = IllegalArgumentException.class)

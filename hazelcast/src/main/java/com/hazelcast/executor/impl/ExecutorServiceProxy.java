@@ -702,7 +702,7 @@ public class ExecutorServiceProxy
         try {
             return InternalCompletableFuture.newCompletedFuture(future.get(), serializationService);
         } catch (ExecutionException e) {
-            return InternalCompletableFuture.completedExceptionally(e.getCause());
+            return InternalCompletableFuture.completedExceptionally(e.getCause() == null ? e : e.getCause());
         } catch (CancellationException e) {
             InternalCompletableFuture cancelledFuture = new InternalCompletableFuture();
             future.cancel(true);

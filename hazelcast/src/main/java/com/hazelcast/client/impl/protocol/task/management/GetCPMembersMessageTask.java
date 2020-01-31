@@ -23,30 +23,35 @@ import com.hazelcast.client.impl.protocol.task.AbstractAsyncMessageTask;
 import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.CPSubsystemManagementService;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.nio.Connection;
 
 import java.security.Permission;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-public class GetCPMembersMessageTask extends AbstractAsyncMessageTask<RequestParameters, List<UUID>> {
+public class GetCPMembersMessageTask extends AbstractAsyncMessageTask<RequestParameters, List<SimpleEntry<UUID, UUID>>> {
 
     public GetCPMembersMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected CompletableFuture<List<UUID>> processInternal() {
+    protected CompletableFuture<List<SimpleEntry<UUID, UUID>>> processInternal() {
         CPSubsystemManagementService cpService =
                 nodeEngine.getHazelcastInstance().getCPSubsystem().getCPSubsystemManagementService();
+        ClusterService clusterService = nodeEngine.getClusterService();
         return cpService.getCPMembers().toCompletableFuture()
                 .thenApply(cpMembers -> {
-                    List<UUID> result = new ArrayList<>(cpMembers.size());
+                    List<SimpleEntry<UUID, UUID>> result = new ArrayList<>(cpMembers.size());
                     for (CPMember cpMember : cpMembers) {
-                        result.add(cpMember.getUuid());
+                        UUID apUuid = clusterService.getMember(cpMember.getAddress()).getUuid();
+                        result.add(new SimpleEntry<>(cpMember.getUuid(), apUuid));
                     }
                     return result;
                 });
@@ -59,7 +64,7 @@ public class GetCPMembersMessageTask extends AbstractAsyncMessageTask<RequestPar
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MCGetCPMembersCodec.encodeResponse((List<UUID>) response);
+        return MCGetCPMembersCodec.encodeResponse((List<Map.Entry<UUID, UUID>>) response);
     }
 
     @Override

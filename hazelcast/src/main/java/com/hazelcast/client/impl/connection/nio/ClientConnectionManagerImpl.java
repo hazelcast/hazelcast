@@ -44,7 +44,6 @@ import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.impl.spi.impl.ClientPartitionServiceImpl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.instance.BuildInfoProvider;
@@ -79,7 +78,6 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.nio.channels.SocketChannel;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -97,7 +95,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.OFF;
 import static com.hazelcast.client.impl.management.ManagementCenterService.MC_CLIENT_MODE_PROP;
@@ -111,6 +108,7 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.CLIENT_CHANGED_CL
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Implementation of {@link ClientConnectionManager}.
@@ -308,7 +306,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
         for (Member member : client.getClientClusterService().getMemberList()) {
             try {
-                getOrConnect(member);
+                getOrConnect(member.getAddress());
             } catch (Exception e) {
                 EmptyStatement.ignore(e);
             }
@@ -419,18 +417,18 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         return false;
     }
 
-    private Connection connect(Member member) {
+    private Connection connect(Address address) {
         try {
-            logger.info("Trying to connect to " + member);
-            return getOrConnect(member);
+            logger.info("Trying to connect to " + address);
+            return getOrConnect(address);
         } catch (InvalidConfigurationException e) {
-            logger.warning("Exception during initial connection to " + member + ": " + e);
+            logger.warning("Exception during initial connection to " + address + ": " + e);
             throw rethrow(e);
         } catch (ClientNotAllowedInClusterException e) {
-            logger.warning("Exception during initial connection to " + member + ": " + e);
+            logger.warning("Exception during initial connection to " + address + ": " + e);
             throw e;
         } catch (Exception e) {
-            logger.warning("Exception during initial connection to " + member + ": " + e);
+            logger.warning("Exception during initial connection to " + address + ": " + e);
             return null;
         }
     }
@@ -441,16 +439,16 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     private boolean doConnectToCandidateCluster(CandidateClusterContext context) {
-        Set<Member> triedMembers = new HashSet<>();
+        Set<Address> triedAddresses = new HashSet<>();
         try {
             waitStrategy.reset();
             do {
-                Collection<Member> members = getPossibleMemberAddresses(context.getAddressProvider());
-                for (Member member : members) {
+                Collection<Address> addresses = getPossibleMemberAddresses(context.getAddressProvider());
+                for (Address address : addresses) {
                     checkClientActive();
-                    triedMembers.add(member);
+                    triedAddresses.add(address);
 
-                    Connection connection = connect(member);
+                    Connection connection = connect(address);
                     if (connection != null) {
                         return true;
                     }
@@ -466,7 +464,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         }
 
         logger.info("Unable to connect to any address from the cluster with name: " + context.getClusterName()
-                + ". The following addresses were tried: " + triedMembers);
+                + ". The following addresses were tried: " + triedAddresses);
         return false;
     }
 
@@ -490,13 +488,17 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         }
     }
 
-    Collection<Member> getPossibleMemberAddresses(AddressProvider addressProvider) {
-        List<Member> memberAddresses = new ArrayList<>(client.getClientClusterService().getMemberList());
+    Collection<Address> getPossibleMemberAddresses(AddressProvider addressProvider) {
+        List<Address> memberAddresses = client.getClientClusterService()
+                .getMemberList()
+                .stream()
+                .map(Member::getAddress)
+                .collect(toList());
         if (shuffleMemberList) {
             Collections.shuffle(memberAddresses);
         }
 
-        Collection<Member> addresses = new LinkedHashSet<>(memberAddresses);
+        Collection<Address> addresses = new LinkedHashSet<>(memberAddresses);
 
         try {
             Addresses result = addressProvider.loadAddresses();
@@ -509,14 +511,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 Collections.shuffle(result.secondary());
             }
 
-            addresses.addAll(result.primary().stream()
-                    .filter(address -> addresses.stream().noneMatch(member -> address.equals(member.getAddress())))
-                    .map(address -> new MemberImpl(address, null, false))
-                    .collect(Collectors.toList()));
-            addresses.addAll(result.secondary().stream()
-                    .filter(address -> addresses.stream().noneMatch(member -> address.equals(member.getAddress())))
-                    .map(address -> new MemberImpl(address, null, false))
-                    .collect(Collectors.toList()));
+            addresses.addAll(result.primary());
+            addresses.addAll(result.secondary());
         } catch (NullPointerException e) {
             throw e;
         } catch (Exception e) {
@@ -556,24 +552,18 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         return activeConnections.get(uuid);
     }
 
-    private ClientConnection getConnection(@Nonnull Member member) {
-        UUID uuid = member.getUuid();
-        if (uuid != null) {
-            return activeConnections.get(uuid);
-        }
-
+    private ClientConnection getConnection(@Nonnull Address address) {
         for (ClientConnection connection : activeConnections.values()) {
-            if (connection.getEndPoint().equals(member.getAddress())) {
+            if (connection.getEndPoint().equals(address)) {
                 return connection;
             }
         }
         return null;
     }
 
-    Connection getOrConnect(@Nonnull Member member) {
+    Connection getOrConnect(@Nonnull Address address) {
         checkClientActive();
-        Address address = member.getAddress();
-        ClientConnection connection = getConnection(member);
+        ClientConnection connection = getConnection(address);
         if (connection != null) {
             return connection;
         }
@@ -581,7 +571,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         synchronized (resolveAddress(address)) {
             // this critical section is used for making a single connection
             // attempt to the given address at a time.
-            connection = getConnection(member);
+            connection = getConnection(address);
             if (connection != null) {
                 return connection;
             }
@@ -983,35 +973,33 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     private class ConnectToAllClusterMembersTask implements Runnable {
 
-        private Set<UUID> connectingMembers = Collections.newSetFromMap(new ConcurrentHashMap<>());
+        private Set<Address> connectingAddresses = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
         @Override
         public void run() {
+            if (!client.getLifecycleService().isRunning()) {
+                return;
+            }
+
             for (Member member : client.getClientClusterService().getMemberList()) {
-                UUID memberUuid = member.getUuid();
+                Address address = member.getAddress();
 
-                if (!client.getLifecycleService().isRunning()) {
-                    return;
-                }
-
-                if (getConnection(memberUuid) != null) {
-                    continue;
-                }
-
-                if (connectingMembers.add(memberUuid)) {
+                if (client.getLifecycleService().isRunning() && getConnection(address) == null
+                        && connectingAddresses.add(address)) {
                     // submit a task for this address only if there is no
                     // another connection attempt for it
                     executor.submit(() -> {
                         try {
-                            if (client.getLifecycleService().isRunning()) {
-                                getOrConnect(member);
+                            if (!client.getLifecycleService().isRunning()) {
+                                return;
+                            }
+                            if (getConnection(member.getUuid()) == null) {
+                                getOrConnect(address);
                             }
                         } catch (Exception e) {
-                            if (logger.isFinestEnabled()) {
-                                logger.finest("Exception occurred while trying to connect to " + member, e);
-                            }
+                            EmptyStatement.ignore(e);
                         } finally {
-                            connectingMembers.remove(memberUuid);
+                            connectingAddresses.remove(address);
                         }
                     });
                 }
