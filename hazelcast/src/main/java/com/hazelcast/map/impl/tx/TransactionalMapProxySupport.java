@@ -18,6 +18,9 @@ package com.hazelcast.map.impl.tx;
 
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.nearcache.NearCache;
+import com.hazelcast.internal.nearcache.impl.NearCachingHook;
+import com.hazelcast.internal.partition.IPartitionService;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.ThreadUtil;
 import com.hazelcast.internal.util.comparators.ValueComparator;
@@ -27,13 +30,11 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.TransactionalDistributedObject;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions.TransactionType;
 import com.hazelcast.transaction.TransactionTimedOutException;
@@ -213,18 +214,15 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
         }
     }
 
-    Data putInternal(Data key, Data value, long ttl, TimeUnit timeUnit) {
+    Data putInternal(Data key, Data value, long ttl, TimeUnit timeUnit, NearCachingHook hook) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
         long timeInMillis = getTimeInMillis(ttl, timeUnit);
-        MapOperation operation
-                = operationProvider.createTxnSetOperation(name, key, value,
-                versionedValue.version, timeInMillis);
-        tx.add(new MapTransactionLogRecord(name, key, getPartitionId(key), operation,
-                tx.getOwnerUuid(), tx.getTxnId()));
+        MapOperation op = operationProvider.createTxnSetOperation(name, key, value, versionedValue.version, timeInMillis);
+        tx.add(new MapTransactionLogRecord(name, key, getPartitionId(key), op, tx.getOwnerUuid(), tx.getTxnId(), hook));
         return versionedValue.value;
     }
 
-    Data putIfAbsentInternal(Data key, Data value) {
+    Data putIfAbsentInternal(Data key, Data value, NearCachingHook hook) {
         boolean unlockImmediately = !valueMap.containsKey(key);
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
         if (versionedValue.value != null) {
@@ -239,11 +237,11 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
         MapOperation operation = operationProvider.createTxnSetOperation(name, key, value,
                 versionedValue.version, UNSET);
         tx.add(new MapTransactionLogRecord(name, key, getPartitionId(key),
-                operation, tx.getOwnerUuid(), tx.getTxnId()));
+                operation, tx.getOwnerUuid(), tx.getTxnId(), hook));
         return versionedValue.value;
     }
 
-    Data replaceInternal(Data key, Data value) {
+    Data replaceInternal(Data key, Data value, NearCachingHook hook) {
         boolean unlockImmediately = !valueMap.containsKey(key);
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
         if (versionedValue.value == null) {
@@ -257,11 +255,12 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
         MapOperation operation = operationProvider.createTxnSetOperation(name, key, value,
                 versionedValue.version, UNSET);
         tx.add(new MapTransactionLogRecord(name, key, getPartitionId(key), operation,
-                tx.getOwnerUuid(), tx.getTxnId()));
+                tx.getOwnerUuid(), tx.getTxnId(), hook));
         return versionedValue.value;
     }
 
-    boolean replaceIfSameInternal(Data key, Object oldValue, Data newValue) {
+    boolean replaceIfSameInternal(Data key, Object oldValue,
+                                  Data newValue, NearCachingHook hook) {
         boolean unlockImmediately = !valueMap.containsKey(key);
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
         if (!isEquals(oldValue, versionedValue.value)) {
@@ -272,22 +271,23 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
             addUnlockTransactionRecord(key, versionedValue.version);
             return false;
         }
+
         MapOperation operation = operationProvider.createTxnSetOperation(name, key, newValue,
                 versionedValue.version, UNSET);
         tx.add(new MapTransactionLogRecord(name, key, getPartitionId(key), operation,
-                tx.getOwnerUuid(), tx.getTxnId()));
+                tx.getOwnerUuid(), tx.getTxnId(), hook));
         return true;
     }
 
-    Data removeInternal(Data key) {
+    Data removeInternal(Data key, NearCachingHook hook) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
         tx.add(new MapTransactionLogRecord(name, key, getPartitionId(key),
                 operationProvider.createTxnDeleteOperation(name, key, versionedValue.version),
-                tx.getOwnerUuid(), tx.getTxnId()));
+                tx.getOwnerUuid(), tx.getTxnId(), hook));
         return versionedValue.value;
     }
 
-    boolean removeIfSameInternal(Data key, Object value) {
+    boolean removeIfSameInternal(Data key, Object value, NearCachingHook hook) {
         boolean unlockImmediately = !valueMap.containsKey(key);
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
         if (!isEquals(versionedValue.value, value)) {
@@ -298,9 +298,10 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
             addUnlockTransactionRecord(key, versionedValue.version);
             return false;
         }
+
         tx.add(new MapTransactionLogRecord(name, key, getPartitionId(key),
                 operationProvider.createTxnDeleteOperation(name, key, versionedValue.version),
-                tx.getOwnerUuid(), tx.getTxnId()));
+                tx.getOwnerUuid(), tx.getTxnId(), hook));
         return true;
     }
 
@@ -322,7 +323,7 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
     private void addUnlockTransactionRecord(Data key, long version) {
         TxnUnlockOperation operation = new TxnUnlockOperation(name, key, version);
         tx.add(new MapTransactionLogRecord(name, key, getPartitionId(key),
-                operation, tx.getOwnerUuid(), tx.getTxnId()));
+                operation, tx.getOwnerUuid(), tx.getTxnId(), NearCachingHook.EMPTY_HOOK));
     }
 
     /**
@@ -362,5 +363,29 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
 
     private static long getTimeInMillis(long time, TimeUnit timeunit) {
         return timeunit != null ? timeunit.toMillis(time) : time;
+    }
+
+    protected NearCachingHook newNearCachingHook() {
+        return nearCacheEnabled ? new InvalidationHook() : NearCachingHook.EMPTY_HOOK;
+    }
+
+    private class InvalidationHook implements NearCachingHook {
+
+        private Object nearCacheKey;
+
+        @Override
+        public void beforeRemoteCall(Object key, Data keyData, Object value, Data valueData) {
+            nearCacheKey = serializeKeys ? keyData : key;
+        }
+
+        @Override
+        public void onRemoteCallSuccess() {
+            invalidateNearCache(nearCacheKey);
+        }
+
+        @Override
+        public void onRemoteCallFailure() {
+            invalidateNearCache(nearCacheKey);
+        }
     }
 }
