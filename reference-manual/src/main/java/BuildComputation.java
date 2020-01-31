@@ -19,7 +19,6 @@ import com.hazelcast.collection.IList;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.ComparatorEx;
-import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Observable;
@@ -448,7 +447,7 @@ class BuildComputation {
 
     static void s16a() {
         //tag::s16a[]
-        ServiceFactory<?, IMap<String, StockInfo>> ctxFac = ServiceFactories.sharedService(
+        ServiceFactory<?, IMap<String, StockInfo>> svcFac = ServiceFactories.sharedService(
                 pctx -> {
                     ClientConfig cc = new ClientConfig();
                     cc.getNearCacheConfigMap().put("stock-info",
@@ -464,7 +463,7 @@ class BuildComputation {
         p.readFrom(tradesSource)
          .withoutTimestamps()
          .groupingKey(Trade::ticker)
-         .mapUsingServiceAsync(ctxFac,
+         .mapUsingServiceAsync(svcFac,
                  (map, key, trade) -> map.getAsync(key).toCompletableFuture()
                          .thenApply(trade::setStockInfo))
          .writeTo(Sinks.list("result"));

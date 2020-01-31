@@ -67,7 +67,7 @@ You can access most of these via the
 {jet-javadoc}/pipeline/Sources.html[`Sources`] and
 {jet-javadoc}/pipeline/Sinks.html[`Sinks`] utility classes.
 {jet-javadoc}/kafka/KafkaSources.html[Kafka],
-{jet-javadoc}/hadoop/HdfsSources.html[HDFS],
+{jet-javadoc}/hadoop/HadoopSources.html[HDFS],
 {jet-javadoc}/s3/S3Sources.html[S3] and
 {jet-javadoc}/avro/AvroSources.html[Avro] connectors are in their
 separate modules. The
@@ -386,7 +386,7 @@ the Jet cluster on which the job runs.
 Hazelcast Jet exposes the facility to look up from an external system.
 In this case you must define a factory object that creates a client
 instance and through which you will fetch the data from the remote
-system. Jet will use the factory to create a context object for each
+system. Jet will use the factory to create a service object for each
 `Processor` in the cluster that executes your transforming step.
 
 The feature is available in two variants:
@@ -397,7 +397,7 @@ requests without blocking a thread
 
 - synchronous: the functions return the result directly. Use it if your
 external service doesn't provide an async API. It's also useful if the
-context is, for example, a pre-loaded machine learning model which is
+service is, for example, a pre-loaded machine learning model which is
 only CPU-bound and doesn't do any IO.
 
 You can also specify a function that extracts a key from your items
@@ -405,7 +405,7 @@ using
 {jet-javadoc}/pipeline/GeneralStage.html#groupingKey-com.hazelcast.function.FunctionEx-[`groupingKey()`].
 Even though Jet won't do any lookup or grouping by that key, it will set
 up the job so that all the items with the same key get paired with the
-same context object.
+same service object.
 
 For example, you may be fetching data from a remote Hazelcast cluster.
 To optimize performance, you can enable the near-cache on the client and

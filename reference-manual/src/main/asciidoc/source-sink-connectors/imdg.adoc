@@ -21,7 +21,7 @@ include::{javasource}/integration/ImdgConnectors.java[tag=s1]
 include::{javasource}/integration/ImdgConnectors.java[tag=s2]
 ----
 
-In these snippets we draw from and drain to the same kind of structure,
+In these snippets we read from and write to the same kind of structure,
 but you can use any combination.
 
 [[connector-imdg-external]]
@@ -29,8 +29,8 @@ but you can use any combination.
 
 To access a Hazelcast IMDG cluster separate from the Jet cluster, you
 have to provide Hazelcast client configuration for the connection. In
-this simple example we use programmatic configuration to draw from and
-drain to remote `IMap` and `ICache`. Just for variety, we funnel the
+this simple example we use programmatic configuration to read from and
+write to remote `IMap` and `ICache`. Just for variety, we funnel the
 data from `IMap` to `ICache` and vice versa:
 
 [source]

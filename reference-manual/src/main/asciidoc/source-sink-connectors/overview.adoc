@@ -206,9 +206,9 @@ Sink image:cross-mark.png[X,16,16]
 |image:cross-mark.png[X,16,16]
 
 |<<hdfs>>
-|{jet-javadoc}/hadoop/HdfsSources.html[Source]
+|{jet-javadoc}/hadoop/HadoopSources.html[Source]
 
-{jet-javadoc}/hadoop/HdfsSinks.html[Sink]
+{jet-javadoc}/hadoop/HadoopSinks.html[Sink]
 |{jet-examples}/hadoop/src/main/java/com/hazelcast/jet/examples/hadoop/HadoopWordCount.java[Sample]
 |image:cross-mark.png[X,16,16]
 |image:check-mark.png[X,16,16]
