@@ -7,7 +7,10 @@ You can use it in your project deployed on Kubernetes in order to make the embed
 ## Requirements and Recommendations
 
 * Your Java Runtime Environment must support TLS 1.2 (which is the case for most modern JREs).
-* Versions compatibility: hazelcast-kubernetes 1.3+ is compatible with hazelcast 3.11+; for older hazelcast versions you need to use hazelcast-kubernetes 1.2.x.
+* Versions compatibility:
+  * hazelcast-kubernetes 2.0+ is compatible with hazelcast 4+
+  * hazelcast-kubernetes 1.3+ is compatible with hazelcast 3.11.x, 3.12.x
+  * for older hazelcast versions you need to use hazelcast-kubernetes 1.2.x.
 * The recommendation is to use StatefulSet for managing Hazelcast PODs; in case of using Deployment (or ReplicationController), the Hazelcast cluster may start with Split Brain (which will anyway re-form to one consistent cluster in a few minutes).
 
 ## Embedded mode
