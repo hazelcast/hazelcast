@@ -107,7 +107,6 @@
         <sonar.verbose>true</sonar.verbose>
 
         <checkstyle.version>8.19</checkstyle.version>
-        <checkstyle.headerLocation>${main.basedir}/checkstyle/ClassHeaderApache.txt</checkstyle.headerLocation>
 
         <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
 
@@ -823,7 +822,7 @@
                         <configuration>
                             <configLocation>${main.basedir}/checkstyle/checkstyle.xml</configLocation>
                             <suppressionsLocation>${main.basedir}/checkstyle/suppressions.xml</suppressionsLocation>
-                            <headerLocation>${checkstyle.headerLocation}</headerLocation>
+                            <headerLocation>${main.basedir}/checkstyle/ClassHeader.txt</headerLocation>
                             <enableRSS>false</enableRSS>
                             <linkXRef>true</linkXRef>
                             <consoleOutput>true</consoleOutput>
