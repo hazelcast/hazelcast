@@ -19,14 +19,12 @@ package com.hazelcast.sql.impl;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlErrorCode;
 
-import java.util.List;
-
 /**
  * No-op optimizer.
  */
 public class NoopSqlOptimizer implements SqlOptimizer {
     @Override
-    public QueryPlan prepare(String sql, List<Object> params) {
+    public QueryPlan prepare(String sql, int paramsCount) {
         throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Cannot execute SQL query because "
             + "\"hazelcast-sql\" module is not in the classpath.");
     }

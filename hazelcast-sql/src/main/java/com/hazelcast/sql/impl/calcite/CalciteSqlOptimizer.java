@@ -74,7 +74,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     }
 
     @Override
-    public QueryPlan prepare(String sql, List<Object> params) {
+    public QueryPlan prepare(String sql, int paramsCount) {
         // 1. Prepare context.
         OptimizerContext context = OptimizerContext.create(nodeEngine, statisticProvider, schemaResolver);
 
@@ -100,7 +100,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
         OptimizerStatistics stats = statsEnabled ? new OptimizerStatistics(dur, physicalRuleCallTracker) : null;
 
-        return doCreatePlan(sql, params, context, physicalRel, stats);
+        return doCreatePlan(sql, paramsCount, context, physicalRel, stats);
     }
 
     /**
@@ -111,7 +111,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
      */
     private QueryPlan doCreatePlan(
         String sql,
-        List<Object> params,
+        int paramsCount,
         OptimizerContext context,
         PhysicalRel rel,
         OptimizerStatistics stats
@@ -157,7 +157,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             dataMemberAddresses,
             relIdMap,
             sql,
-            params,
+            paramsCount,
             context.getConfig().isSavePhysicalRel(),
             stats
         );

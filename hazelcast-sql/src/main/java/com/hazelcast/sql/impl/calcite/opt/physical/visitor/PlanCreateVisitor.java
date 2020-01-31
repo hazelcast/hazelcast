@@ -112,8 +112,8 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     /** Original SQL. */
     private final String sql;
 
-    /** Parameters. */
-    private final List<Object> params;
+    /** Number of parameters. */
+    private final int paramsCount;
 
     /** Whether physical rel should be saved in the plan. */
     private final boolean savePhysicalRel;
@@ -139,7 +139,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         List<Address> dataMemberAddresses,
         Map<PhysicalRel, List<Integer>> relIdMap,
         String sql,
-        List<Object> params,
+        int paramsCount,
         boolean savePhysicalRel,
         OptimizerStatistics stats
     ) {
@@ -148,7 +148,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         this.dataMemberAddresses = dataMemberAddresses;
         this.relIdMap = relIdMap;
         this.sql = sql;
-        this.params = params;
+        this.paramsCount = paramsCount;
         this.savePhysicalRel = savePhysicalRel;
         this.stats = stats;
     }
@@ -184,7 +184,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             fragments,
             outboundEdgeMap,
             inboundEdgeMap,
-            params.size(),
+            paramsCount,
             explain,
             stats,
             savePhysicalRel ? Collections.singleton(rootPhysicalRel) : null
@@ -653,7 +653,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     }
 
     private Expression convertExpression(PhysicalNodeSchema schema, RexNode expression) {
-        ExpressionConverterRexVisitor converter = new ExpressionConverterRexVisitor(schema, params.size());
+        ExpressionConverterRexVisitor converter = new ExpressionConverterRexVisitor(schema, paramsCount);
 
         return expression.accept(converter);
     }

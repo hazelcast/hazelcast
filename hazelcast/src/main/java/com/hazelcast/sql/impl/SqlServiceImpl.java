@@ -129,7 +129,7 @@ public class SqlServiceImpl implements SqlService, ManagedService, ClientAwareSe
     }
 
     public QueryPlan getPlan(String sql, List<Object> params) {
-        return optimizer.prepare(sql, params);
+        return optimizer.prepare(sql, params.size());
     }
 
     /**
