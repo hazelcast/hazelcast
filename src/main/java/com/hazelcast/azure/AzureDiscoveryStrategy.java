@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.azure;
 
 
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
@@ -25,21 +26,24 @@ import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
 import com.hazelcast.spi.partitiongroup.PartitionGroupMetaData;
-import com.microsoft.azure.CloudException;
-import com.microsoft.azure.PagedList;
-import com.microsoft.azure.management.compute.PowerState;
-import com.microsoft.azure.management.compute.VirtualMachine;
-import com.microsoft.azure.management.compute.implementation.ComputeManager;
-import com.microsoft.azure.management.network.NetworkInterface;
-import com.microsoft.azure.management.network.NicIPConfiguration;
-import com.microsoft.azure.management.network.PublicIPAddress;
 
-import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Enumeration;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+
+import static com.hazelcast.azure.AzureProperties.CLIENT;
+import static com.hazelcast.azure.AzureProperties.CLIENT_ID;
+import static com.hazelcast.azure.AzureProperties.CLIENT_SECRET;
+import static com.hazelcast.azure.AzureProperties.PORT;
+import static com.hazelcast.azure.AzureProperties.RESOURCE_GROUP;
+import static com.hazelcast.azure.AzureProperties.SCALE_SET;
+import static com.hazelcast.azure.AzureProperties.SUBSCRIPTION_ID;
+import static com.hazelcast.azure.AzureProperties.TAG;
+import static com.hazelcast.azure.AzureProperties.TENANT_ID;
 
 
 /**
@@ -49,156 +53,99 @@ public class AzureDiscoveryStrategy extends AbstractDiscoveryStrategy {
 
     private static final ILogger LOGGER = Logger.getLogger(AzureDiscoveryStrategy.class);
 
-    private final Map<String, Comparable> properties;
-    private final Map<String, Object> memberMetaData = new HashMap<String, Object>();
+    private final AzureClient azureClient;
+    private final PortRange portRange;
+    private final Map<String, Object> memberMetadata = new HashMap<String, Object>();
 
-    private ComputeManager computeManager;
-
-    /**
-     * Instantiates a new AzureDiscoveryStrategy
-     *
-     * @param properties the discovery strategy properties
-     */
-    public AzureDiscoveryStrategy(Map<String, Comparable> properties) {
+    AzureDiscoveryStrategy(Map<String, Comparable> properties) {
         super(LOGGER, properties);
-        this.properties = properties;
+        try {
+            AzureConfig azureConfig = createAzureConfig();
+            AzureMetadataApi azureMetadataApi = new AzureMetadataApi();
+            AzureComputeApi azureComputeApi = new AzureComputeApi();
+            AzureAuthenticator azureAuthenticator = new AzureAuthenticator();
+            this.azureClient = new AzureClient(azureMetadataApi, azureComputeApi, azureAuthenticator, azureConfig);
+            this.portRange = azureConfig.getHzPort();
+        } catch (IllegalArgumentException e) {
+            throw new InvalidConfigurationException("Invalid Azure Discovery Strategy configuration", e);
+        }
     }
 
-    @Override
-    public void start() {
-        try {
-            computeManager = ComputeManagerHelper.getComputeManager(properties);
-        } catch (CloudException e) {
-            LOGGER.severe("Failed to start Azure SPI", e);
+    /**
+     * For test purposes only.
+     */
+    AzureDiscoveryStrategy(Map<String, Comparable> properties, AzureClient azureClient) {
+        super(LOGGER, properties);
+        this.azureClient = azureClient;
+        this.portRange = createAzureConfig().getHzPort();
+    }
+
+    private static DiscoveryNode createDiscoveryNode(AzureAddress azureAddress, int port)
+            throws UnknownHostException {
+        Address privateAddress = new Address(azureAddress.getPrivateAddress(), port);
+        Address publicAddress = new Address(azureAddress.getPublicAddress(), port);
+        return new SimpleDiscoveryNode(privateAddress, publicAddress);
+    }
+
+    private static void logAzureAddresses(Collection<AzureAddress> azureAddresses) {
+        if (LOGGER.isFinestEnabled()) {
+            StringBuilder stringBuilder = new StringBuilder("Found the following Azure instances: ");
+            for (AzureAddress azureAddress : azureAddresses) {
+                stringBuilder.append(String.format("%s, ", azureAddress));
+            }
+            LOGGER.finest(stringBuilder.toString());
         }
+    }
+
+    private AzureConfig createAzureConfig() {
+        return AzureConfig.builder()
+                .setClient((Boolean) getOrDefault(CLIENT.getDefinition(), CLIENT.getDefaultValue()))
+                .setTenantId(getOrNull(TENANT_ID))
+                .setClientId(getOrNull(CLIENT_ID))
+                .setClientSecret(getOrNull(CLIENT_SECRET))
+                .setSubscriptionId(getOrNull(SUBSCRIPTION_ID))
+                .setResourceGroup(getOrNull(RESOURCE_GROUP))
+                .setScaleSet(getOrNull(SCALE_SET))
+                .setTag(tagOrNull(TAG))
+                .setHzPort(new PortRange((String) getOrDefault(PORT.getDefinition(), PORT.getDefaultValue())))
+                .build();
+    }
+
+    private Tag tagOrNull(AzureProperties azureProperties) {
+        String tagString = getOrNull(azureProperties);
+        if (tagString != null) {
+            return new Tag(tagString);
+        }
+        return null;
+    }
+
+    private String getOrNull(AzureProperties azureProperties) {
+        return getOrNull(azureProperties.getDefinition());
     }
 
     @Override
     public Map<String, Object> discoverLocalMetadata() {
-        if (memberMetaData.size() == 0) {
-            discoverNodes();
+        if (memberMetadata.isEmpty()) {
+            memberMetadata.put(PartitionGroupMetaData.PARTITION_GROUP_ZONE, azureClient.getAvailabilityZone());
         }
-        return memberMetaData;
+        return memberMetadata;
     }
 
     @Override
     public Iterable<DiscoveryNode> discoverNodes() {
         try {
-            String resourceGroup = AzureProperties.getOrNull(AzureProperties.GROUP_NAME, properties);
-            String clusterId = AzureProperties.getOrNull(AzureProperties.CLUSTER_ID, properties);
-
-            PagedList<VirtualMachine> virtualMachines = computeManager.virtualMachines().listByResourceGroup(resourceGroup);
-
-            ArrayList<DiscoveryNode> nodes = new ArrayList<DiscoveryNode>();
-
-            for (VirtualMachine vm : virtualMachines) {
-                Map<String, String> tags = vm.tags();
-                // a tag is required with the hazelcast clusterid
-                // and the value should be the port number
-                if (tags.get(clusterId) == null) {
-                    continue;
-                }
-
-                // skip any deallocated vms
-                if (!PowerState.RUNNING.equals(vm.powerState())) {
-                    continue;
-                }
-
-                Integer faultDomainId = vm.instanceView().platformFaultDomain();
-                if (faultDomainId != null) {
-                    memberMetaData.put(PartitionGroupMetaData.PARTITION_GROUP_ZONE, faultDomainId.toString());
-                }
-                int port = Integer.parseInt(tags.get(clusterId));
-                DiscoveryNode node = buildDiscoveredNode(faultDomainId, vm, port);
-
-                if (node != null) {
-                    nodes.add(node);
+            Collection<AzureAddress> azureAddresses = azureClient.getAddresses();
+            logAzureAddresses(azureAddresses);
+            List<DiscoveryNode> result = new ArrayList<DiscoveryNode>();
+            for (AzureAddress azureAddress : azureAddresses) {
+                for (int port = portRange.getFromPort(); port <= portRange.getToPort(); port++) {
+                    result.add(createDiscoveryNode(azureAddress, port));
                 }
             }
-            LOGGER.info("Azure Discovery SPI Discovered " + nodes.size() + " nodes");
-            return nodes;
+            return result;
         } catch (Exception e) {
-            LOGGER.finest("Failed to discover nodes with Azure SPI", e);
-            return null;
-        }
-
-    }
-
-    @Override
-    public void destroy() {
-        // no native resources were allocated so nothing to do here
-    }
-
-    /**
-     * Builds a discovery node
-     *
-     * @param faultDomainId
-     * @param vm
-     * @param port
-     * @return DiscoveryNode the Hazelcast DiscoveryNode
-     */
-    private DiscoveryNode buildDiscoveredNode(Integer faultDomainId, VirtualMachine vm, int port)
-            throws UnknownHostException {
-        NetworkInterface networkInterface = vm.getPrimaryNetworkInterface();
-        for (NicIPConfiguration ipConfiguration : networkInterface.ipConfigurations().values()) {
-            PublicIPAddress publicIPAddress = ipConfiguration.getPublicIPAddress();
-            String privateIP = ipConfiguration.privateIPAddress();
-            Address privateAddress = new Address(privateIP, port);
-            String localHostAddress = getLocalHostAddress();
-            if (publicIPAddress != null) {
-                String publicIP = publicIPAddress.ipAddress();
-                Address publicAddress = new Address(publicIP, port);
-
-                if (localHostAddress != null && publicIP.equals(localHostAddress)) {
-                    updateVirtualMachineMetaData(faultDomainId);
-                }
-                return new SimpleDiscoveryNode(privateAddress, publicAddress);
-            }
-            if (localHostAddress != null && privateIP.equals(localHostAddress)) {
-                //In private address there is no host name so we are passing null.
-                updateVirtualMachineMetaData(faultDomainId);
-            }
-            return new SimpleDiscoveryNode(privateAddress);
-        }
-
-        // no node found;
-        return null;
-    }
-
-    private void updateVirtualMachineMetaData(Integer faultDomain) {
-        if (faultDomain != null) {
-            memberMetaData.put(PartitionGroupMetaData.PARTITION_GROUP_ZONE, faultDomain.toString());
-        }
-    }
-
-    public String getLocalHostAddress() {
-        try {
-            InetAddress candidateAddress = null;
-            // Iterate all NICs (network interface cards)...
-            for (Enumeration ifaces = java.net.NetworkInterface.getNetworkInterfaces(); ifaces.hasMoreElements(); ) {
-                java.net.NetworkInterface iface = (java.net.NetworkInterface) ifaces.nextElement();
-                for (Enumeration inetAddrs = iface.getInetAddresses(); inetAddrs.hasMoreElements(); ) {
-                    InetAddress inetAddr = (InetAddress) inetAddrs.nextElement();
-                    if (!inetAddr.isLoopbackAddress()) {
-                        if (inetAddr.isSiteLocalAddress()) {
-                            return inetAddr.getHostAddress();
-                        } else if (candidateAddress == null) {
-                            candidateAddress = inetAddr;
-                        }
-                    }
-                }
-            }
-            if (candidateAddress != null) {
-                return candidateAddress.getHostAddress();
-            }
-            InetAddress jdkSuppliedAddress = InetAddress.getLocalHost();
-            if (jdkSuppliedAddress == null) {
-                throw new UnknownHostException("The JDK InetAddress.getLocalHost() method unexpectedly returned null.");
-            }
-            return jdkSuppliedAddress.getHostAddress();
-        } catch (Exception e) {
-            LOGGER.warning("Failed to determine Host address: " + e);
-            return null;
+            LOGGER.warning("Cannot discover nodes, returning empty list", e);
+            return Collections.emptyList();
         }
     }
 }

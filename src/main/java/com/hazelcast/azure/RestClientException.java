@@ -13,3 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+package com.hazelcast.azure;
+
+/**
+ * Exception to indicate any issues while executing a REST call.
+ */
+class RestClientException extends RuntimeException {
+    RestClientException(String message) {
+        super(message);
+    }
+
+    RestClientException(String message, Throwable cause) {
+        super(message, cause);
+    }
+}

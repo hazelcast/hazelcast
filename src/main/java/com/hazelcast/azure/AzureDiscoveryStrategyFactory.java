@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import com.hazelcast.spi.discovery.DiscoveryStrategyFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -33,43 +32,23 @@ import java.util.Map;
  */
 public class AzureDiscoveryStrategyFactory implements DiscoveryStrategyFactory {
 
-    private static final Collection<PropertyDefinition> PROPERTY_DEFINITIONS;
-
-    static {
-        List<PropertyDefinition> propertyDefinitions = new ArrayList<PropertyDefinition>();
-        propertyDefinitions.add(AzureProperties.CLIENT_ID);
-        propertyDefinitions.add(AzureProperties.CLIENT_SECRET);
-        propertyDefinitions.add(AzureProperties.SUBSCRIPTION_ID);
-        propertyDefinitions.add(AzureProperties.TENANT_ID);
-        propertyDefinitions.add(AzureProperties.GROUP_NAME);
-        propertyDefinitions.add(AzureProperties.CLUSTER_ID);
-        PROPERTY_DEFINITIONS = Collections.unmodifiableCollection(propertyDefinitions);
-    }
-
     @Override
     public Class<? extends DiscoveryStrategy> getDiscoveryStrategyType() {
         return AzureDiscoveryStrategy.class;
     }
 
     @Override
-    public DiscoveryStrategy newDiscoveryStrategy(DiscoveryNode node, ILogger logger, Map<String, Comparable> properties) {
-
-        // validate configuration
-        for (PropertyDefinition prop : PROPERTY_DEFINITIONS) {
-            if (AzureProperties.getOrNull(prop, properties) == null) {
-                throw new IllegalArgumentException("Property, " + prop.key() + " cannot be null");
-            }
-        }
-
+    public DiscoveryStrategy newDiscoveryStrategy(DiscoveryNode node, ILogger logger,
+                                                  Map<String, Comparable> properties) {
         return new AzureDiscoveryStrategy(properties);
     }
 
-    /**
-     * Gets the configuration property definitions
-     *
-     * @return {@code Collection<PropertyDefinition>} the property defitions for the AzureDiscoveryStrategy
-     */
+    @Override
     public Collection<PropertyDefinition> getConfigurationProperties() {
-        return PROPERTY_DEFINITIONS;
+        List<PropertyDefinition> result = new ArrayList<PropertyDefinition>();
+        for (AzureProperties property : AzureProperties.values()) {
+            result.add(property.getDefinition());
+        }
+        return result;
     }
 }
