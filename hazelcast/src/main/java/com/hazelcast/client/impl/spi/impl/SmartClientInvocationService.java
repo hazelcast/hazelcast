@@ -22,7 +22,6 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientLocalBackupListenerCodec;
 import com.hazelcast.client.impl.spi.ClientListenerService;
 import com.hazelcast.client.impl.spi.EventHandler;
-import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.nio.Connection;
 
 import java.io.IOException;
@@ -107,24 +106,15 @@ public class SmartClientInvocationService extends AbstractClientInvocationServic
     @Override
     public void invokeOnTarget(ClientInvocation invocation, UUID uuid) throws IOException {
         assert (uuid != null);
-        Member member = client.getClientClusterService().getMember(uuid);
-        if (member == null) {
+        Connection connection = connectionManager.getConnection(uuid);
+        if (connection == null) {
             if (invocationLogger.isFinestEnabled()) {
-                invocationLogger.finest("Target : " + uuid + " is not in the member list, Retrying on random target");
+                invocationLogger.finest("Client is not connected to target : " + uuid + ", Retrying on random target");
             }
             invokeOnRandomTarget(invocation);
             return;
         }
-        Connection connection = getConnection(member.getUuid());
         invokeOnConnection(invocation, (ClientConnection) connection);
-    }
-
-    private Connection getConnection(UUID target) throws IOException {
-        Connection connection = connectionManager.getConnection(target);
-        if (connection == null) {
-            throw new IOException("No available connection to member " + target);
-        }
-        return connection;
     }
 
     @Override
