@@ -29,7 +29,6 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
-import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.executionservice.TaskScheduler;
 import com.hazelcast.spi.impl.operationservice.impl.BaseInvocation;
 import com.hazelcast.spi.impl.sequence.CallIdSequence;
@@ -237,11 +236,6 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
             return;
         }
 
-        if (isNotAllowedToRetryOnSelection(exception)) {
-            completeExceptionally(exception);
-            return;
-        }
-
         if (!shouldRetry(exception)) {
             completeExceptionally(exception);
             return;
@@ -295,23 +289,6 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
         }
     }
 
-    private boolean isNotAllowedToRetryOnSelection(Throwable exception) {
-        if (isBindToSingleConnection()
-                && (exception instanceof IOException || exception instanceof TargetDisconnectedException)) {
-            return true;
-        }
-
-        if (uuid != null
-                && exception instanceof TargetNotMemberException
-                && clientClusterService.getMember(uuid) == null) {
-            //when invocation send over address
-            //if exception is target not member and
-            //address is not available in member list , don't retry
-            return true;
-        }
-        return false;
-    }
-
     private boolean isBindToSingleConnection() {
         return connection != null;
     }
@@ -340,8 +317,11 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
     }
 
     private boolean shouldRetry(Throwable t) {
-        if (t instanceof IOException || t instanceof HazelcastInstanceNotActiveException
-                || t instanceof RetryableException) {
+        if (isBindToSingleConnection() && (t instanceof IOException || t instanceof TargetDisconnectedException)) {
+            return false;
+        }
+
+        if (t instanceof IOException || t instanceof HazelcastInstanceNotActiveException || t instanceof RetryableException) {
             return true;
         }
         if (t instanceof TargetDisconnectedException) {
