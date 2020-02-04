@@ -23,6 +23,7 @@ import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ListConfig;
+import com.hazelcast.config.LogConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.PNCounterConfig;
@@ -185,6 +186,10 @@ public interface ConfigurationService {
      */
     FlakeIdGeneratorConfig findFlakeIdGeneratorConfig(String name);
 
+    LogConfig findLogConfig(String name);
+
+    Map<String,LogConfig> getLogConfigs();
+
     /**
      * Returns all registered map configurations.
      *
@@ -296,4 +301,5 @@ public interface ConfigurationService {
      * @return registered FlakeIdGenerator configurations
      */
     Map<String, FlakeIdGeneratorConfig> getFlakeIdGeneratorConfigs();
+
 }

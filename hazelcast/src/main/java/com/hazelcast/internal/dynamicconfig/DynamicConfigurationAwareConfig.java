@@ -30,6 +30,7 @@ import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.LogConfig;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MemberAttributeConfig;
@@ -47,6 +48,7 @@ import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.WanReplicationConfig;
+import com.hazelcast.internal.config.LogConfigReadonly;
 import com.hazelcast.internal.config.ServicesConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.SplitBrainProtectionConfig;
@@ -567,6 +569,23 @@ public class DynamicConfigurationAwareConfig extends Config {
             configurationService.broadcastConfig(topicConfig);
         }
         return this;
+    }
+
+    @Override
+    public LogConfig findLogConfig(String name) {
+        return new LogConfigReadonly(getLogConfigInternal(name, "default"));
+    }
+
+    private LogConfig getLogConfigInternal(String name, String fallbackName) {
+        return (LogConfig) configSearcher.getConfig(name, fallbackName, supplierFor(LogConfig.class));
+    }
+
+    @Override
+    public Map<String, LogConfig> getLogConfigs() {
+        return staticConfig.getLogConfigs();
+//        Map<String, LogConfig> staticConfigs = staticConfig.getLogConfigs();
+//        Map<String, LogConfig> dynamicConfigs = configurationService.getLogConfigs();
+//        return aggregate(staticConfigs, dynamicConfigs);
     }
 
     @Override

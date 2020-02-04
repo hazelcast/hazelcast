@@ -44,6 +44,7 @@ import com.hazelcast.internal.services.ConfigurableService;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.internal.util.ServiceLoader;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.log.impl.LogService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
@@ -145,6 +146,7 @@ public final class ServiceManagerImpl implements ServiceManager {
         logger.finest("Registering default services...");
         registerService(MapService.SERVICE_NAME, createService(MapService.class));
         registerService(LockSupportService.SERVICE_NAME, new LockSupportServiceImpl(nodeEngine));
+        registerService(LogService.SERVICE_NAME, new LogService(nodeEngine));
         registerService(QueueService.SERVICE_NAME, new QueueService(nodeEngine));
         registerService(TopicService.SERVICE_NAME, new TopicService());
         registerService(ReliableTopicService.SERVICE_NAME, new ReliableTopicService(nodeEngine));

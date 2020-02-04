@@ -50,6 +50,8 @@ import com.hazelcast.internal.memory.MemoryStats;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
+import com.hazelcast.log.Log;
+import com.hazelcast.log.impl.LogService;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.multimap.MultiMap;
@@ -163,6 +165,13 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
     @Override
     public String getName() {
         return name;
+    }
+
+    @Nonnull
+    @Override
+    public <E> Log<E> getLog(@Nonnull String name) {
+        checkNotNull(name, "Retrieving a log instance with a null name is not allowed!");
+        return getDistributedObject(LogService.SERVICE_NAME, name);
     }
 
     @Nonnull

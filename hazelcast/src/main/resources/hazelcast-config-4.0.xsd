@@ -3947,7 +3947,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            
+
             <xs:element name="node-id-offset" type="xs:long" minOccurs="0" default="0">
                 <xs:annotation>
                     <xs:documentation>
@@ -3958,7 +3958,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            
+
             <xs:element name="bits-sequence" minOccurs="0" default="6">
                 <xs:annotation>
                     <xs:documentation>
@@ -4133,8 +4133,8 @@
                 Controls access to Hazelcast HTTP REST API.
                 The methods available through REST API are grouped to several REST endpoint groups.
                 There are 2 levels of configuration:
-                 - a global switch which enables/disables access to the REST API;
-                 - REST endpoint group level switch. It is used to check which groups are allowed once the global switch is enabled.
+                - a global switch which enables/disables access to the REST API;
+                - REST endpoint group level switch. It is used to check which groups are allowed once the global switch is enabled.
             </xs:documentation>
         </xs:annotation>
         <xs:choice minOccurs="0" maxOccurs="unbounded">
