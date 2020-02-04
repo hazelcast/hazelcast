@@ -330,7 +330,7 @@ Using Kubernetes API requires granting certain permissions. Therefore,
 you need to create Role Based Access Control definition, (`rbac.yaml`),
 with the following content. You can check out the
 https://github.com/hazelcast/hazelcast-kubernetes[Hazelcast Kubernetes]
-plugin for more details on this manner.
+plugin for more details on this matter.
 
 Here is the content of `rbac.yaml`:
 
