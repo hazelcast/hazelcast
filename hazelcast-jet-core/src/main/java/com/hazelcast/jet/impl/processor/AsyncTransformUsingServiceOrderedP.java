@@ -48,7 +48,7 @@ import static com.hazelcast.jet.impl.processor.ProcessorSupplierWithService.supp
  * @param <T> received item type
  * @param <R> emitted item type
  */
-public class AsyncTransformUsingServiceOrderedP<C, S, T, R> extends AbstractTransformUsingServiceP<C, S> {
+public class AsyncTransformUsingServiceOrderedP<C, S, T, R> extends AbstractAsyncTransformUsingServiceP<C, S> {
 
     private final BiFunctionEx<? super S, ? super T, ? extends CompletableFuture<Traverser<R>>> callAsyncFn;
 
@@ -58,7 +58,6 @@ public class AsyncTransformUsingServiceOrderedP<C, S, T, R> extends AbstractTran
     private int queuedWmCount;
 
     private Traverser<?> currentTraverser = Traversers.empty();
-    private int maxAsyncOps;
     private ResettableSingletonTraverser<Watermark> watermarkTraverser = new ResettableSingletonTraverser<>();
 
     @Probe(name = "numInFlightOps")
@@ -70,18 +69,18 @@ public class AsyncTransformUsingServiceOrderedP<C, S, T, R> extends AbstractTran
     AsyncTransformUsingServiceOrderedP(
             @Nonnull ServiceFactory<C, S> serviceFactory,
             @Nonnull C serviceContext,
+            int maxConcurrentOps,
             @Nonnull BiFunctionEx<? super S, ? super T, ? extends CompletableFuture<Traverser<R>>> callAsyncFn
     ) {
-        super(serviceFactory, serviceContext);
+        super(serviceFactory, serviceContext, maxConcurrentOps, true);
         this.callAsyncFn = callAsyncFn;
     }
 
     @Override
     protected void init(@Nonnull Context context) throws Exception {
         super.init(context);
-        maxAsyncOps = serviceFactory.maxPendingCallsPerProcessor();
         // Size for the worst case: interleaved output items an WMs
-        queue = new ArrayDeque<>(maxAsyncOps * 2);
+        queue = new ArrayDeque<>(maxConcurrentOps * 2);
     }
 
     @Override
@@ -99,7 +98,7 @@ public class AsyncTransformUsingServiceOrderedP<C, S, T, R> extends AbstractTran
     }
 
     boolean isQueueFull() {
-        return queue.size() - queuedWmCount == maxAsyncOps;
+        return queue.size() - queuedWmCount == maxConcurrentOps;
     }
 
     @Override
@@ -189,10 +188,10 @@ public class AsyncTransformUsingServiceOrderedP<C, S, T, R> extends AbstractTran
      */
     public static <C, S, T, R> ProcessorSupplier supplier(
             @Nonnull ServiceFactory<C, S> serviceFactory,
+            int maxConcurrentOps,
             @Nonnull BiFunctionEx<? super S, ? super T, ? extends CompletableFuture<Traverser<R>>> callAsyncFn
     ) {
-        return supplierWithService(serviceFactory,
-                (serviceFn, context) -> new AsyncTransformUsingServiceOrderedP<>(serviceFn, context, callAsyncFn)
-        );
+        return supplierWithService(serviceFactory, (serviceFn, context) ->
+                new AsyncTransformUsingServiceOrderedP<>(serviceFn, context, maxConcurrentOps, callAsyncFn));
     }
 }

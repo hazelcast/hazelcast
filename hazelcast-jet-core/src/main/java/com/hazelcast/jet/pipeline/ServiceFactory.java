@@ -19,7 +19,6 @@ package com.hazelcast.jet.pipeline;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
@@ -32,7 +31,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static java.util.Collections.emptyMap;
 
@@ -64,9 +62,9 @@ import static java.util.Collections.emptyMap;
  *      Finally, Jet calls {@link #destroyContextFn()} with the context object.
  * </ol>
  * If you don't need the member-wide context object, you can call the simpler
- * methods {@link ServiceFactories#nonSharedService(SupplierEx, ConsumerEx)
+ * methods {@link ServiceFactories#nonSharedService(FunctionEx, ConsumerEx)}
  * ServiceFactories.processorLocalService} or {@link
- * ServiceFactories#sharedService(SupplierEx, ConsumerEx)
+ * ServiceFactories#sharedService(FunctionEx, ConsumerEx)}
  * ServiceFactories.memberLocalService}.
  * <p>
  * Here's a list of pipeline transforms that require a {@code ServiceFactory}:
@@ -75,15 +73,11 @@ import static java.util.Collections.emptyMap;
  *     <li>{@link GeneralStage#filterUsingService}
  *     <li>{@link GeneralStage#flatMapUsingService}
  *     <li>{@link GeneralStage#mapUsingServiceAsync}
- *     <li>{@link GeneralStage#filterUsingServiceAsync}
- *     <li>{@link GeneralStage#flatMapUsingServiceAsync}
  *     <li>{@link GeneralStage#mapUsingServiceAsyncBatched}
  *     <li>{@link GeneralStageWithKey#mapUsingService}
  *     <li>{@link GeneralStageWithKey#filterUsingService}
  *     <li>{@link GeneralStageWithKey#flatMapUsingService}
  *     <li>{@link GeneralStageWithKey#mapUsingServiceAsync}
- *     <li>{@link GeneralStageWithKey#filterUsingServiceAsync}
- *     <li>{@link GeneralStageWithKey#flatMapUsingServiceAsync}
  * </ul>
  *
  * @param <C> type of the shared context object
@@ -94,25 +88,11 @@ import static java.util.Collections.emptyMap;
 public final class ServiceFactory<C, S> implements Serializable, Cloneable {
 
     /**
-     * Default value for {@link #maxPendingCallsPerProcessor}.
-     */
-    public static final int MAX_PENDING_CALLS_DEFAULT = 256;
-
-    /**
      * Default value for {@link #isCooperative}.
      */
     public static final boolean COOPERATIVE_DEFAULT = true;
 
-    /**
-     * Default value for {@link #hasOrderedAsyncResponses}.
-     */
-    public static final boolean ORDERED_ASYNC_RESPONSES_DEFAULT = true;
-
     private boolean isCooperative = COOPERATIVE_DEFAULT;
-
-    // options for async
-    private int maxPendingCallsPerProcessor = MAX_PENDING_CALLS_DEFAULT;
-    private boolean orderedAsyncResponses = ORDERED_ASYNC_RESPONSES_DEFAULT;
 
     @Nonnull
     private FunctionEx<? super Context, ? extends C> createContextFn;
@@ -248,75 +228,6 @@ public final class ServiceFactory<C, S> implements Serializable, Cloneable {
     }
 
     /**
-     * Returns a copy of this {@link ServiceFactory} with the {@code
-     * maxPendingCallsPerProcessor} property set to the given value. Jet
-     * will execute at most this many concurrent async operations per processor
-     * and will apply backpressure to the upstream to enforce it.
-     * <p>
-     * If you use the same service factory on multiple pipeline stages, each
-     * stage will count the pending calls independently.
-     * <p>
-     * This value is ignored when the {@code ServiceFactory} is used in a
-     * synchronous transformation because synchronous operations are by nature
-     * performed one at a time.
-     * <p>
-     * Default value is {@value #MAX_PENDING_CALLS_DEFAULT}.
-     *
-     * @return a copy of this factory with the {@code maxPendingCallsPerProcessor}
-     *         property set
-     */
-    @Nonnull
-    public ServiceFactory<C, S> withMaxPendingCallsPerProcessor(int maxPendingCallsPerProcessor) {
-        checkPositive(maxPendingCallsPerProcessor, "maxPendingCallsPerProcessor must be >= 1");
-        ServiceFactory<C, S> copy = clone();
-        copy.maxPendingCallsPerProcessor = maxPendingCallsPerProcessor;
-        return copy;
-
-    }
-
-    /**
-     * Returns a copy of this {@link ServiceFactory} with the {@code
-     * unorderedAsyncResponses} flag set to true.
-     * <p>
-     * Jet can process asynchronous responses in two modes:
-     * <ol><li>
-     *     <b>Ordered:</b> results of the async calls are emitted in the submission
-     *     order. This is the default.
-     * <li>
-     *     <b>Unordered:</b> results of the async calls are emitted as they
-     *     arrive. This mode is enabled by this method.
-     * </ol>
-     * The unordered mode can be faster:
-     * <ul><li>
-     *     in the ordered mode, one stalling call will block all subsequent items,
-     *     even though responses for them were already received
-     * <li>
-     *     to preserve the order after a restart, the ordered implementation when
-     *     saving the state to the snapshot waits for all async calls to complete.
-     *     This creates a hiccup depending on the async call latency. The unordered
-     *     one saves in-flight items to the state snapshot.
-     * </ul>
-     * The order of watermarks is preserved even in the unordered mode. Jet
-     * forwards the watermark after having emitted all the results of the items
-     * that came before it. One stalling response will prevent a windowed
-     * operation downstream from finishing, but if the operation is configured
-     * to emit early results, they will be more correct with the unordered
-     * approach.
-     * <p>
-     * This value is ignored when the {@code ServiceFactory} is used in a
-     * synchronous transformation: the output is always ordered in this case.
-     *
-     * @return a copy of this factory with the {@code unorderedAsyncResponses} flag set.
-     */
-    @Nonnull
-    public ServiceFactory<C, S> withUnorderedAsyncResponses() {
-        ServiceFactory<C, S> copy = clone();
-        copy.orderedAsyncResponses = false;
-        return copy;
-
-    }
-
-    /**
      * Attaches a file to this service factory under the given ID. It will
      * become a part of the Jet job and available to {@link #createContextFn()}
      * as {@link ProcessorSupplier.Context#attachedFile
@@ -424,22 +335,6 @@ public final class ServiceFactory<C, S> implements Serializable, Cloneable {
      */
     public boolean isCooperative() {
         return isCooperative;
-    }
-
-    /**
-     * Returns the maximum pending calls per processor, see {@link
-     * #withMaxPendingCallsPerProcessor(int)}.
-     */
-    public int maxPendingCallsPerProcessor() {
-        return maxPendingCallsPerProcessor;
-    }
-
-    /**
-     * Tells whether the async responses are ordered, see {@link
-     * #withUnorderedAsyncResponses()}.
-     */
-    public boolean hasOrderedAsyncResponses() {
-        return orderedAsyncResponses;
     }
 
     /**

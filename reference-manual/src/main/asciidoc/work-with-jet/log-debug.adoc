@@ -250,10 +250,10 @@ the ordinal of the edge or has the value _snapshot_ for output items
 written to state snapshot.
 
 |**numInFlightOps**: The number of pending (in flight) operations when using
-asynchronous flat-mapping processors. +
+asynchronous mapping processors. +
 See
-`{jet-javadoc}/core/processor/Processors.html#flatMapUsingServiceAsyncP-com.hazelcast.jet.pipeline.ServiceFactory-com.hazelcast.jet.function.FunctionEx-com.hazelcast.jet.function.BiFunctionEx-[
-Processors.flatMapUsingServiceAsyncP]`.
+`{jet-javadoc}/core/processor/Processors.html#mapUsingServiceAsyncP-com.hazelcast.jet.pipeline.ServiceFactory-com.hazelcast.function.FunctionEx-com.hazelcast.function.BiFunctionEx-[
+Processors.mapUsingServiceAsyncP]`.
 
 ** totalKeys **: The number of active keys being tracked by a session window
 processor. +

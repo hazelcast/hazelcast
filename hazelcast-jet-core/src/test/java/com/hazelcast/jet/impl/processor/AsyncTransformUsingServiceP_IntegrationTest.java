@@ -21,11 +21,13 @@ import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
+import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JobStatus;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.WatermarkPolicy;
 import com.hazelcast.jet.core.processor.SinkProcessors;
@@ -63,8 +65,8 @@ import static com.hazelcast.jet.core.EventTimePolicy.eventTimePolicy;
 import static com.hazelcast.jet.core.JobStatus.COMPLETED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.TestUtil.throttle;
-import static com.hazelcast.jet.core.processor.Processors.flatMapUsingServiceAsyncP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.streamMapP;
+import static com.hazelcast.jet.impl.processor.AbstractAsyncTransformUsingServiceP.MAX_CONCURRENT_OPS;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
 import static com.hazelcast.jet.pipeline.ServiceFactories.sharedService;
 import static java.util.Arrays.asList;
@@ -112,9 +114,6 @@ public class AsyncTransformUsingServiceP_IntegrationTest extends SimpleTestInClu
         jobConfig = new JobConfig().setProcessingGuarantee(EXACTLY_ONCE).setSnapshotIntervalMillis(0);
 
         serviceFactory = sharedService(pctx -> Executors.newFixedThreadPool(8), ExecutorService::shutdown);
-        if (!ordered) {
-            serviceFactory = serviceFactory.withUnorderedAsyncResponses();
-        }
     }
 
     @Test
@@ -145,10 +144,14 @@ public class AsyncTransformUsingServiceP_IntegrationTest extends SimpleTestInClu
                         WatermarkPolicy.limitingLag(10),
                         10, 0, 0
                 )), 5000));
-        Vertex map = dag.newVertex("map",
-                flatMapUsingServiceAsyncP(serviceFactory, identity(), transformNotPartitionedFn(
-                        item -> traverseItems(item + "-1", item + "-2", item + "-3", item + "-4", item + "-5"))))
-                        .localParallelism(2);
+        BiFunctionEx<ExecutorService, Integer, CompletableFuture<Traverser<String>>> flatMapAsyncFn =
+                transformNotPartitionedFn(i -> traverseItems(i + "-1", i + "-2", i + "-3", i + "-4", i + "-5"));
+        ProcessorSupplier processorSupplier = ordered
+                ? AsyncTransformUsingServiceOrderedP.supplier(
+                        serviceFactory, MAX_CONCURRENT_OPS, flatMapAsyncFn)
+                : AsyncTransformUsingServiceUnorderedP.supplier(
+                        serviceFactory, MAX_CONCURRENT_OPS, flatMapAsyncFn, identity());
+        Vertex map = dag.newVertex("map", processorSupplier).localParallelism(2);
         Vertex sink = dag.newVertex("sink", SinkProcessors.writeListP(sinkList.getName()));
 
         // Use a shorter queue to not block the barrier from the source for too long due to
@@ -178,20 +181,6 @@ public class AsyncTransformUsingServiceP_IntegrationTest extends SimpleTestInClu
     }
 
     @Test
-    public void test_pipelineApi_flatMapNotPartitioned() {
-        Pipeline p = Pipeline.create();
-        p.readFrom(Sources.mapJournal(journaledMap, START_FROM_OLDEST, EventJournalMapEvent::getNewValue, alwaysTrue()))
-         .withoutTimestamps()
-         .flatMapUsingServiceAsync(serviceFactory,
-                 transformNotPartitionedFn(i -> traverseItems(i + "-1", i + "-2", i + "-3", i + "-4", i + "-5")))
-         .setLocalParallelism(2)
-         .writeTo(Sinks.list(sinkList));
-
-        instance().newJob(p, jobConfig);
-        assertResultEventually(i -> Stream.of(i + "-1", i + "-2", i + "-3", i + "-4", i + "-5"), NUM_ITEMS);
-    }
-
-    @Test
     public void test_pipelineApi_mapNotPartitioned() {
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.mapJournal(journaledMap, START_FROM_OLDEST, EventJournalMapEvent::getNewValue, alwaysTrue()))
@@ -203,35 +192,6 @@ public class AsyncTransformUsingServiceP_IntegrationTest extends SimpleTestInClu
 
         instance().newJob(p, jobConfig);
         assertResultEventually(i -> Stream.of(i + "-1"), NUM_ITEMS);
-    }
-
-    @Test
-    public void test_pipelineApi_filterNotPartitioned() {
-        Pipeline p = Pipeline.create();
-        p.readFrom(Sources.mapJournal(journaledMap, START_FROM_OLDEST, EventJournalMapEvent::getNewValue, alwaysTrue()))
-         .withoutTimestamps()
-         .filterUsingServiceAsync(serviceFactory,
-                 transformNotPartitionedFn(i -> i % 2 == 0))
-         .setLocalParallelism(2)
-         .writeTo(Sinks.list(sinkList));
-
-        instance().newJob(p, jobConfig);
-        assertResultEventually(i -> i % 2 == 0 ? Stream.of(i + "") : Stream.empty(), NUM_ITEMS);
-    }
-
-    @Test
-    public void test_pipelineApi_flatMapPartitioned() {
-        Pipeline p = Pipeline.create();
-        p.readFrom(Sources.mapJournal(journaledMap, START_FROM_OLDEST, EventJournalMapEvent::getNewValue, alwaysTrue()))
-         .withoutTimestamps()
-         .groupingKey(i -> i % 10)
-         .flatMapUsingServiceAsync(serviceFactory,
-                 transformPartitionedFn(i -> traverseItems(i + "-1", i + "-2", i + "-3", i + "-4", i + "-5")))
-         .setLocalParallelism(2)
-         .writeTo(Sinks.list(sinkList));
-
-        instance().newJob(p, jobConfig);
-        assertResultEventually(i -> Stream.of(i + "-1", i + "-2", i + "-3", i + "-4", i + "-5"), NUM_ITEMS);
     }
 
     @Test
@@ -247,21 +207,6 @@ public class AsyncTransformUsingServiceP_IntegrationTest extends SimpleTestInClu
 
         instance().newJob(p, jobConfig);
         assertResultEventually(i -> Stream.of(i + "-1"), NUM_ITEMS);
-    }
-
-    @Test
-    public void test_pipelineApi_filterPartitioned() {
-        Pipeline p = Pipeline.create();
-        p.readFrom(Sources.mapJournal(journaledMap, START_FROM_OLDEST, EventJournalMapEvent::getNewValue, alwaysTrue()))
-         .withoutTimestamps()
-         .groupingKey(i -> i % 10)
-         .filterUsingServiceAsync(serviceFactory,
-                 transformPartitionedFn(i -> i % 2 == 0))
-         .setLocalParallelism(2)
-         .writeTo(Sinks.list(sinkList));
-
-        instance().newJob(p, jobConfig);
-        assertResultEventually(i -> i % 2 == 0 ? Stream.of(i + "") : Stream.empty(), NUM_ITEMS);
     }
 
     private <R> BiFunctionEx<ExecutorService, Integer, CompletableFuture<R>> transformNotPartitionedFn(

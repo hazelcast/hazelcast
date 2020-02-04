@@ -72,7 +72,7 @@ import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
  * @param <K> extracted key type
  * @param <R> emitted item type
  */
-public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends AbstractTransformUsingServiceP<C, S> {
+public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends AbstractAsyncTransformUsingServiceP<C, S> {
 
     private final BiFunctionEx<? super S, ? super T, ? extends CompletableFuture<Traverser<R>>> callAsyncFn;
     private final Function<? super T, ? extends K> extractKeyFn;
@@ -88,7 +88,6 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
     private Long lastReceivedWm = Long.MIN_VALUE;
     private long lastEmittedWm = Long.MIN_VALUE;
     private long minRestoredWm = Long.MAX_VALUE;
-    private int maxAsyncOps;
     private int asyncOpsCounter;
 
     /** Temporary collection for restored objects during snapshot restore. */
@@ -103,10 +102,11 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
     private AsyncTransformUsingServiceUnorderedP(
             @Nonnull ServiceFactory<C, S> serviceFactory,
             @Nonnull C serviceContext,
+            int maxConcurrentOps,
             @Nonnull BiFunctionEx<? super S, ? super T, ? extends CompletableFuture<Traverser<R>>> callAsyncFn,
             @Nonnull Function<? super T, ? extends K> extractKeyFn
     ) {
-        super(serviceFactory, serviceContext);
+        super(serviceFactory, serviceContext, maxConcurrentOps, false);
         this.callAsyncFn = callAsyncFn;
         this.extractKeyFn = extractKeyFn;
     }
@@ -114,9 +114,7 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
     @Override
     protected void init(@Nonnull Processor.Context context) throws Exception {
         super.init(context);
-
-        maxAsyncOps = serviceFactory.maxPendingCallsPerProcessor();
-        resultQueue = new ManyToOneConcurrentArrayQueue<>(maxAsyncOps);
+        resultQueue = new ManyToOneConcurrentArrayQueue<>(maxConcurrentOps);
     }
 
     @Override
@@ -137,7 +135,7 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
 
     @CheckReturnValue
     private boolean processItem(@Nonnull T item) {
-        if (asyncOpsCounter == maxAsyncOps) {
+        if (asyncOpsCounter == maxConcurrentOps) {
             return false;
         }
         CompletableFuture<Traverser<R>> future = callAsyncFn.apply(service, item);
@@ -306,14 +304,13 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
      */
     public static <C, S, T, K, R> ProcessorSupplier supplier(
             @Nonnull ServiceFactory<C, S> serviceFactory,
+            int maxConcurrentOps,
             @Nonnull BiFunctionEx<? super S, ? super T, ? extends CompletableFuture<Traverser<R>>> callAsyncFn,
             @Nonnull FunctionEx<? super T, ? extends K> extractKeyFn
     ) {
-        return supplierWithService(serviceFactory,
-                (serviceFn, context) -> new AsyncTransformUsingServiceUnorderedP<>(
-                        serviceFn, context, callAsyncFn, extractKeyFn
-                )
-        );
+        return supplierWithService(serviceFactory, (serviceFn, context) ->
+                new AsyncTransformUsingServiceUnorderedP<>(
+                        serviceFn, context, maxConcurrentOps, callAsyncFn, extractKeyFn));
     }
 
     private enum Keys {

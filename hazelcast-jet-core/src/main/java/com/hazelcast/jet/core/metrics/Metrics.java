@@ -65,18 +65,15 @@ public final class Metrics {
      * <pre>
      * {@code
      *  p.readFrom(...)
-     *   .filterUsingServiceAsync(
-     *       ServiceFactory.withCreateFn(i -> "foo"),
+     *   .mapUsingServiceAsync(
+     *       nonSharedService(pctx -> 10L),
      *       (ctx, item) -> {
-     *           Metric dropped = Metrics.threadSafeMetric("dropCount", Unit.COUNT);
+     *           // need to use thread-safe metric since it will be mutated from another thread
+     *           Metric mapped = Metrics.threadSafeMetric("mapped", Unit.COUNT);
      *           return CompletableFuture.supplyAsync(
      *               () -> {
-     *                   // the callback runs on another thread
-     *                   boolean pass = item % 2L == 0;
-     *                   if (!pass) {
-     *                       dropped.increment();
-     *                   }
-     *                   return pass;
+     *                   mapped.increment();
+     *                   return item * ctx;
      *               }
      *           );
      *       }

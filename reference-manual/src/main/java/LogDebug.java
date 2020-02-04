@@ -102,15 +102,12 @@ public class LogDebug {
         Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items(0, 1, 2, 3))
             //tag::s6[]
-            .filterUsingServiceAsync(
-                nonSharedService(pctx -> 0L),
-                (ctx, l) -> CompletableFuture.supplyAsync(
+            .mapUsingServiceAsync(
+                nonSharedService(pctx -> 10L),
+                (ctx, item) -> CompletableFuture.supplyAsync(
                     () -> {
-                        boolean pass = l % 2L == ctx;
-                        if (!pass) {
-                            Metrics.metric("dropped").increment();
-                        }
-                        return pass;
+                        Metrics.metric("mapped").increment();
+                        return item * ctx;
                     }
                 )
             )
@@ -122,18 +119,15 @@ public class LogDebug {
         Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items(0, 1, 2, 3))
             //tag::s7[]
-            .filterUsingServiceAsync(
-                nonSharedService(pctx -> "foo"),
+            .mapUsingServiceAsync(
+                nonSharedService(pctx -> 10L),
                 (ctx, item) -> {
-                    // need to use thread-safe metric since it will be mutated for another thread
-                    Metric dropped = Metrics.threadSafeMetric("dropped", Unit.COUNT);
+                    // need to use thread-safe metric since it will be mutated from another thread
+                    Metric mapped = Metrics.threadSafeMetric("mapped", Unit.COUNT);
                     return CompletableFuture.supplyAsync(
                         () -> {
-                            boolean pass = item % 2L == 0;
-                            if (!pass) {
-                                dropped.increment();
-                            }
-                            return pass;
+                            mapped.increment();
+                            return item * ctx;
                         }
                     );
                 }

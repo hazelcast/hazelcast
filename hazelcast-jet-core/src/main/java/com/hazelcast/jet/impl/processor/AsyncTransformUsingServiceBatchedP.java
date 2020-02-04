@@ -53,10 +53,11 @@ public final class AsyncTransformUsingServiceBatchedP<C, S, T, R>
     private AsyncTransformUsingServiceBatchedP(
             @Nonnull ServiceFactory<C, S> serviceFactory,
             @Nonnull C serviceContext,
+            int maxConcurrentOps,
             int maxBatchSize,
             @Nonnull BiFunctionEx<? super S, ? super List<T>, ? extends CompletableFuture<Traverser<R>>> callAsyncFn
     ) {
-        super(serviceFactory, serviceContext, callAsyncFn);
+        super(serviceFactory, serviceContext, maxConcurrentOps, callAsyncFn);
         this.maxBatchSize = maxBatchSize;
     }
 
@@ -78,10 +79,11 @@ public final class AsyncTransformUsingServiceBatchedP<C, S, T, R>
      */
     public static <C, S, T, R> ProcessorSupplier supplier(
             @Nonnull ServiceFactory<C, S> serviceFactory,
+            int maxConcurrentOps,
             int maxBatchSize,
             @Nonnull BiFunctionEx<? super S, ? super List<T>, ? extends CompletableFuture<Traverser<R>>> callAsyncFn
     ) {
         return supplierWithService(serviceFactory, (factory, context) ->
-                new AsyncTransformUsingServiceBatchedP<>(factory, context, maxBatchSize, callAsyncFn));
+                new AsyncTransformUsingServiceBatchedP<>(factory, context, maxConcurrentOps, maxBatchSize, callAsyncFn));
     }
 }

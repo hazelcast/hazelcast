@@ -44,9 +44,8 @@ import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.jet.Traversers.traverseItems;
-import static com.hazelcast.jet.core.processor.Processors.flatMapUsingServiceAsyncP;
+import static com.hazelcast.jet.impl.processor.AbstractAsyncTransformUsingServiceP.MAX_CONCURRENT_OPS;
 import static com.hazelcast.jet.impl.util.Util.exceptionallyCompletedFuture;
-import static com.hazelcast.jet.pipeline.ServiceFactory.MAX_PENDING_CALLS_DEFAULT;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -71,20 +70,20 @@ public class AsyncTransformUsingServicePTest extends SimpleTestInClusterSupport 
     private ProcessorSupplier getSupplier(
             BiFunctionEx<? super String, ? super String, CompletableFuture<Traverser<String>>> mapFn
     ) {
-        return getSupplier(MAX_PENDING_CALLS_DEFAULT, mapFn);
+        return getSupplier(MAX_CONCURRENT_OPS, mapFn);
     }
 
     private ProcessorSupplier getSupplier(
-            int maxPendingCalls,
+            int maxConcurrentOps,
             BiFunctionEx<? super String, ? super String, CompletableFuture<Traverser<String>>> mapFn
     ) {
         ServiceFactory<?, String> serviceFactory = ServiceFactories
-                .nonSharedService(pctx -> "foo")
-                .withMaxPendingCallsPerProcessor(maxPendingCalls);
-        if (!ordered) {
-            serviceFactory = serviceFactory.withUnorderedAsyncResponses();
-        }
-        return flatMapUsingServiceAsyncP(serviceFactory, FunctionEx.identity(), mapFn);
+                .nonSharedService(pctx -> "foo");
+        return ordered
+                ? AsyncTransformUsingServiceOrderedP.supplier(
+                        serviceFactory, maxConcurrentOps, mapFn)
+                : AsyncTransformUsingServiceUnorderedP.supplier(
+                        serviceFactory, maxConcurrentOps, mapFn, FunctionEx.identity());
     }
 
     @BeforeClass
@@ -166,7 +165,8 @@ public class AsyncTransformUsingServicePTest extends SimpleTestInClusterSupport 
 
     @Test
     public void test_wmNotCountedToParallelOps() throws Exception {
-        Processor processor = getSupplier(2, (ctx, item) -> new CompletableFuture<>()).get(1).iterator().next();
+        Processor processor = getSupplier(
+                2, (ctx, item) -> new CompletableFuture<>()).get(1).iterator().next();
         processor.init(new TestOutbox(128), new TestProcessorContext());
         TestInbox inbox = new TestInbox();
         inbox.add("foo");
@@ -180,7 +180,8 @@ public class AsyncTransformUsingServicePTest extends SimpleTestInClusterSupport 
 
     @Test
     public void test_watermarksConflated() throws Exception {
-        Processor processor = getSupplier(2, (ctx, item) -> new CompletableFuture<>()).get(1).iterator().next();
+        Processor processor = getSupplier(
+                2, (ctx, item) -> new CompletableFuture<>()).get(1).iterator().next();
         processor.init(new TestOutbox(128), new TestProcessorContext());
         TestInbox inbox = new TestInbox();
         // i have to add an item first because otherwise the WMs are forwarded right away

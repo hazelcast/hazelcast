@@ -192,7 +192,7 @@ public class MetricsTest extends JetTestSupport {
 
         pipeline.readFrom(TestSources.items(inputs))
                 .addTimestamps(i -> i, 0L)
-                .filterUsingServiceAsync(
+                .mapUsingServiceAsync(
                         nonSharedService(pctx -> 0L),
                         (ctx, l) -> {
                             Metric dropped = Metrics.threadSafeMetric("dropped");
@@ -204,7 +204,7 @@ public class MetricsTest extends JetTestSupport {
                                             dropped.increment();
                                         }
                                         total.increment();
-                                        return pass;
+                                        return l;
                                     }
                             );
                         }

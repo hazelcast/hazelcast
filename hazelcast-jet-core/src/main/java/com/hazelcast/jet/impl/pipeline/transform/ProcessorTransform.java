@@ -18,10 +18,15 @@ package com.hazelcast.jet.impl.pipeline.transform;
 
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.BiPredicateEx;
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
+import com.hazelcast.jet.impl.processor.AsyncTransformUsingServiceBatchedP;
+import com.hazelcast.jet.impl.processor.AsyncTransformUsingServiceOrderedP;
+import com.hazelcast.jet.impl.processor.AsyncTransformUsingServiceUnorderedP;
 import com.hazelcast.jet.pipeline.ServiceFactory;
 
 import javax.annotation.Nonnull;
@@ -30,8 +35,6 @@ import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.jet.core.Vertex.LOCAL_PARALLELISM_USE_DEFAULT;
 import static com.hazelcast.jet.core.processor.Processors.filterUsingServiceP;
-import static com.hazelcast.jet.core.processor.Processors.flatMapUsingServiceAsyncBatchedP;
-import static com.hazelcast.jet.core.processor.Processors.flatMapUsingServiceAsyncP;
 import static com.hazelcast.jet.core.processor.Processors.flatMapUsingServiceP;
 import static com.hazelcast.jet.core.processor.Processors.mapUsingServiceP;
 
@@ -88,33 +91,60 @@ public class ProcessorTransform extends AbstractTransform {
             @Nonnull Transform upstream,
             @Nonnull String operationName,
             @Nonnull ServiceFactory<?, S> serviceFactory,
+            int maxConcurrentOps,
+            boolean preserveOrder,
             @Nonnull BiFunctionEx<? super S, ? super T, ? extends CompletableFuture<Traverser<R>>> flatMapAsyncFn
     ) {
         // TODO use better key so that snapshots are local. Currently they will
         //      be sent to a random member. We keep it this way for simplicity:
-        //      the number of in-flight items is limited (maxAsyncOps)
-        return new ProcessorTransform(operationName + "UsingServiceAsync", upstream,
-                ProcessorMetaSupplier.of(getPreferredLP(serviceFactory),
-                        flatMapUsingServiceAsyncP(serviceFactory, Object::hashCode, flatMapAsyncFn)));
+        //      the number of in-flight items is limited (maxConcurrentOps)
+        ProcessorSupplier supplier = flatMapUsingServiceAsyncP(
+                serviceFactory, maxConcurrentOps, preserveOrder, Object::hashCode, flatMapAsyncFn);
+        ProcessorMetaSupplier metaSupplier = ProcessorMetaSupplier.of(getPreferredLP(serviceFactory), supplier);
+        return new ProcessorTransform(operationName + "UsingServiceAsync", upstream, metaSupplier);
     }
 
     public static <S, T, R> ProcessorTransform flatMapUsingServiceAsyncBatchedTransform(
             @Nonnull Transform upstream,
             @Nonnull String operationName,
             @Nonnull ServiceFactory<?, S> serviceFactory,
+            int maxConcurrentOps,
             int maxBatchSize,
             @Nonnull BiFunctionEx<? super S, ? super List<T>,
                     ? extends CompletableFuture<Traverser<R>>> flatMapAsyncFn
     ) {
         return new ProcessorTransform(operationName + "UsingServiceAsyncBatched", upstream,
                 ProcessorMetaSupplier.of(getPreferredLP(serviceFactory),
-                        flatMapUsingServiceAsyncBatchedP(serviceFactory, maxBatchSize, flatMapAsyncFn)));
+                        flatMapUsingServiceAsyncBatchedP(serviceFactory, maxConcurrentOps, maxBatchSize, flatMapAsyncFn)));
     }
 
     static int getPreferredLP(@Nonnull ServiceFactory<?, ?> serviceFactory) {
         return serviceFactory.isCooperative()
                 ? LOCAL_PARALLELISM_USE_DEFAULT
                 : NON_COOPERATIVE_DEFAULT_LOCAL_PARALLELISM;
+    }
+
+    static <C, S, T, K, R> ProcessorSupplier flatMapUsingServiceAsyncP(
+            @Nonnull ServiceFactory<C, S> serviceFactory,
+            int maxConcurrentOps,
+            boolean preserveOrder,
+            @Nonnull FunctionEx<? super T, ? extends K> extractKeyFn,
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends CompletableFuture<Traverser<R>>> flatMapAsyncFn
+    ) {
+        return preserveOrder
+                ? AsyncTransformUsingServiceOrderedP.supplier(
+                        serviceFactory, maxConcurrentOps, flatMapAsyncFn)
+                : AsyncTransformUsingServiceUnorderedP.supplier(
+                        serviceFactory, maxConcurrentOps, flatMapAsyncFn, extractKeyFn);
+    }
+
+    static <C, S, T, R> ProcessorSupplier flatMapUsingServiceAsyncBatchedP(
+            @Nonnull ServiceFactory<C, S> serviceFactory,
+            int maxConcurrentOps,
+            int maxBatchSize,
+            @Nonnull BiFunctionEx<? super S, ? super List<T>, ? extends CompletableFuture<Traverser<R>>> flatMapAsyncFn
+    ) {
+        return AsyncTransformUsingServiceBatchedP.supplier(serviceFactory, maxConcurrentOps, maxBatchSize, flatMapAsyncFn);
     }
 
     @Override

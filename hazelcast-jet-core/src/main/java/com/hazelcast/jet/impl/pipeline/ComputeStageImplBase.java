@@ -34,7 +34,9 @@ import com.hazelcast.jet.impl.pipeline.transform.HashJoinTransform;
 import com.hazelcast.jet.impl.pipeline.transform.MapStatefulTransform;
 import com.hazelcast.jet.impl.pipeline.transform.MapTransform;
 import com.hazelcast.jet.impl.pipeline.transform.MergeTransform;
+import com.hazelcast.jet.impl.pipeline.transform.PartitionedProcessorTransform;
 import com.hazelcast.jet.impl.pipeline.transform.PeekTransform;
+import com.hazelcast.jet.impl.pipeline.transform.ProcessorTransform;
 import com.hazelcast.jet.impl.pipeline.transform.SinkTransform;
 import com.hazelcast.jet.impl.pipeline.transform.TimestampTransform;
 import com.hazelcast.jet.impl.pipeline.transform.Transform;
@@ -78,6 +80,7 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
 
     public static final FunctionAdapter ADAPT_TO_JET_EVENT = new JetEventFunctionAdapter();
     static final FunctionAdapter DO_NOT_ADAPT = new FunctionAdapter();
+    private static final int MAX_CONCURRENT_ASYNC_BATCHES = 2;
 
     @Nonnull
     public FunctionAdapter fnAdapter;
@@ -263,14 +266,16 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
     <S, R, RET> RET attachFlatMapUsingServiceAsync(
             @Nonnull String operationName,
             @Nonnull ServiceFactory<?, S> serviceFactory,
+            int maxConcurrentOps,
+            boolean preserveOrder,
             @Nonnull BiFunctionEx<? super S, ? super T, ? extends CompletableFuture<Traverser<R>>> flatMapAsyncFn
     ) {
         checkSerializable(flatMapAsyncFn, operationName + "AsyncFn");
         serviceFactory = moveAttachedFilesToPipeline(serviceFactory);
         BiFunctionEx adaptedFlatMapFn = fnAdapter.adaptFlatMapUsingServiceAsyncFn(flatMapAsyncFn);
-        return (RET) attach(
-                flatMapUsingServiceAsyncTransform(transform, operationName, serviceFactory, adaptedFlatMapFn),
-                fnAdapter);
+        ProcessorTransform processorTransform = flatMapUsingServiceAsyncTransform(
+                transform, operationName, serviceFactory, maxConcurrentOps, preserveOrder, adaptedFlatMapFn);
+        return (RET) attach(processorTransform, fnAdapter);
     }
 
     @Nonnull
@@ -298,7 +303,7 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
 
         return (RET) attach(
                 flatMapUsingServiceAsyncBatchedTransform(
-                        transform, operationName, serviceFactory, maxBatchSize, flattenedFn),
+                        transform, operationName, serviceFactory, MAX_CONCURRENT_ASYNC_BATCHES, maxBatchSize, flattenedFn),
                 fnAdapter);
     }
 
@@ -360,6 +365,8 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
     <S, K, R, RET> RET attachTransformUsingPartitionedServiceAsync(
             @Nonnull String operationName,
             @Nonnull ServiceFactory<?, S> serviceFactory,
+            int maxConcurrentOps,
+            boolean preserveOrder,
             @Nonnull FunctionEx<? super T, ? extends K> partitionKeyFn,
             @Nonnull BiFunctionEx<? super S, ? super T, CompletableFuture<Traverser<R>>> flatMapAsyncFn
     ) {
@@ -368,10 +375,16 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
         serviceFactory = moveAttachedFilesToPipeline(serviceFactory);
         BiFunctionEx adaptedFlatMapFn = fnAdapter.adaptFlatMapUsingServiceAsyncFn(flatMapAsyncFn);
         FunctionEx adaptedPartitionKeyFn = fnAdapter.adaptKeyFn(partitionKeyFn);
-        return (RET) attach(
-                flatMapUsingServiceAsyncPartitionedTransform(
-                        transform, operationName, serviceFactory, adaptedFlatMapFn, adaptedPartitionKeyFn),
-                fnAdapter);
+        PartitionedProcessorTransform processorTransform = flatMapUsingServiceAsyncPartitionedTransform(
+                transform,
+                operationName,
+                serviceFactory,
+                maxConcurrentOps,
+                preserveOrder,
+                adaptedFlatMapFn,
+                adaptedPartitionKeyFn
+        );
+        return (RET) attach(processorTransform, fnAdapter);
     }
 
     @Nonnull

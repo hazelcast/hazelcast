@@ -85,8 +85,7 @@ final class PythonService {
                 .withCreateContextFn(ctx -> new PythonServiceContext(ctx, cfg))
                 .withDestroyContextFn(PythonServiceContext::destroy)
                 .withCreateServiceFn((procCtx, serviceCtx) -> new PythonService(procCtx, serviceCtx))
-                .withDestroyServiceFn(PythonService::destroy)
-                .withMaxPendingCallsPerProcessor(2);
+                .withDestroyServiceFn(PythonService::destroy);
         if (cfg.baseDir() != null) {
             File baseDir = Objects.requireNonNull(cfg.baseDir());
             return fac.withAttachedDirectory(baseDir.toString(), baseDir);

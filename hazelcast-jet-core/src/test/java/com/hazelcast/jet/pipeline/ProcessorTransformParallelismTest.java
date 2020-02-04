@@ -33,6 +33,8 @@ import java.util.Arrays;
 import java.util.Collection;
 
 import static com.hazelcast.jet.impl.pipeline.transform.ProcessorTransform.NON_COOPERATIVE_DEFAULT_LOCAL_PARALLELISM;
+import static com.hazelcast.jet.impl.processor.AbstractAsyncTransformUsingServiceP.MAX_CONCURRENT_OPS;
+import static com.hazelcast.jet.impl.processor.AbstractAsyncTransformUsingServiceP.PRESERVE_ORDER;
 import static com.hazelcast.jet.pipeline.ServiceFactory.withCreateContextFn;
 import static java.util.concurrent.CompletableFuture.supplyAsync;
 import static org.junit.Assert.assertEquals;
@@ -109,18 +111,18 @@ public class ProcessorTransformParallelismTest {
                 createParamSet(
                         stage -> stage
                                 .groupingKey(i -> i)
-                                .mapUsingServiceAsync(SERVICE_FACTORY, (c, k, t) -> supplyAsync(() -> t))
+                                .mapUsingServiceAsync(SERVICE_FACTORY, MAX_CONCURRENT_OPS, PRESERVE_ORDER, (c, k, t) -> supplyAsync(() -> t))
                                 .setLocalParallelism(LOCAL_PARALLELISM),
                         stage -> stage
                                 .groupingKey(i -> i)
-                                .mapUsingServiceAsync(SERVICE_FACTORY, (c, k, t) -> supplyAsync(() -> t)),
+                                .mapUsingServiceAsync(SERVICE_FACTORY, MAX_CONCURRENT_OPS, PRESERVE_ORDER, (c, k, t) -> supplyAsync(() -> t)),
                         stage -> stage
                                 .groupingKey(i -> i)
-                                .mapUsingServiceAsync(NC_SERVICE_FACTORY, (c, k, t) -> supplyAsync(() -> t))
+                                .mapUsingServiceAsync(NC_SERVICE_FACTORY, MAX_CONCURRENT_OPS, PRESERVE_ORDER, (c, k, t) -> supplyAsync(() -> t))
                                 .setLocalParallelism(LOCAL_PARALLELISM),
                         stage -> stage
                                 .groupingKey(i -> i)
-                                .mapUsingServiceAsync(NC_SERVICE_FACTORY, (c, k, t) -> supplyAsync(() -> t)),
+                                .mapUsingServiceAsync(NC_SERVICE_FACTORY, MAX_CONCURRENT_OPS, PRESERVE_ORDER, (c, k, t) -> supplyAsync(() -> t)),
                         "mapUsingPartitionedServiceAsync"),
                 createParamSet(
                         stage -> stage
@@ -152,34 +154,6 @@ public class ProcessorTransformParallelismTest {
                         "filterUsingPartitionedService"),
                 createParamSet(
                         stage -> stage
-                                .filterUsingServiceAsync(SERVICE_FACTORY, (c, t) -> supplyAsync(() -> false))
-                                .setLocalParallelism(LOCAL_PARALLELISM),
-                        stage -> stage
-                                .filterUsingServiceAsync(SERVICE_FACTORY, (c, t) -> supplyAsync(() -> false)),
-                        stage -> stage
-                                .filterUsingServiceAsync(NC_SERVICE_FACTORY, (c, t) -> supplyAsync(() -> false))
-                                .setLocalParallelism(LOCAL_PARALLELISM),
-                        stage -> stage
-                                .filterUsingServiceAsync(NC_SERVICE_FACTORY, (c, t) -> supplyAsync(() -> false)),
-                        "filterUsingServiceAsync"),
-                createParamSet(
-                        stage -> stage
-                                .groupingKey(i -> i)
-                                .filterUsingServiceAsync(SERVICE_FACTORY, (c, k, t) -> supplyAsync(() -> false))
-                                .setLocalParallelism(LOCAL_PARALLELISM),
-                        stage -> stage
-                                .groupingKey(i -> i)
-                                .filterUsingServiceAsync(SERVICE_FACTORY, (c, k, t) -> supplyAsync(() -> false)),
-                        stage -> stage
-                                .groupingKey(i -> i)
-                                .filterUsingServiceAsync(NC_SERVICE_FACTORY, (c, k, t) -> supplyAsync(() -> false))
-                                .setLocalParallelism(LOCAL_PARALLELISM),
-                        stage -> stage
-                                .groupingKey(i -> i)
-                                .filterUsingServiceAsync(NC_SERVICE_FACTORY, (c, k, t) -> supplyAsync(() -> false)),
-                        "filterUsingPartitionedServiceAsync"),
-                createParamSet(
-                        stage -> stage
                                 .flatMapUsingService(SERVICE_FACTORY, (c, t) -> Traversers.<Integer>empty())
                                 .setLocalParallelism(LOCAL_PARALLELISM),
                         stage -> stage
@@ -205,35 +179,7 @@ public class ProcessorTransformParallelismTest {
                         stage -> stage
                                 .groupingKey(i -> i)
                                 .flatMapUsingService(NC_SERVICE_FACTORY, (c, k, t) -> Traversers.empty()),
-                        "flatMapUsingPartitionedService"),
-                createParamSet(
-                        stage -> stage
-                                .flatMapUsingServiceAsync(SERVICE_FACTORY, (c, t) -> supplyAsync(Traversers::<Integer>empty))
-                                .setLocalParallelism(LOCAL_PARALLELISM),
-                        stage -> stage
-                                .flatMapUsingServiceAsync(SERVICE_FACTORY, (c, t) -> supplyAsync(Traversers::empty)),
-                        stage -> stage
-                                .flatMapUsingServiceAsync(NC_SERVICE_FACTORY, (c, t) -> supplyAsync(Traversers::<Integer>empty))
-                                .setLocalParallelism(LOCAL_PARALLELISM),
-                        stage -> stage
-                                .flatMapUsingServiceAsync(NC_SERVICE_FACTORY, (c, t) -> supplyAsync(Traversers::empty)),
-                        "flatMapUsingServiceAsync"),
-                createParamSet(
-                        stage -> stage
-                                .groupingKey(i -> i)
-                                .flatMapUsingServiceAsync(SERVICE_FACTORY, (c, k, t) -> supplyAsync(Traversers::<Integer>empty))
-                                .setLocalParallelism(LOCAL_PARALLELISM),
-                        stage -> stage
-                                .groupingKey(i -> i)
-                                .flatMapUsingServiceAsync(SERVICE_FACTORY, (c, k, t) -> supplyAsync(Traversers::empty)),
-                        stage -> stage
-                                .groupingKey(i -> i)
-                                .flatMapUsingServiceAsync(NC_SERVICE_FACTORY, (c, k, t) -> supplyAsync(Traversers::<Integer>empty))
-                                .setLocalParallelism(LOCAL_PARALLELISM),
-                        stage -> stage
-                                .groupingKey(i -> i)
-                                .flatMapUsingServiceAsync(NC_SERVICE_FACTORY, (c, k, t) -> supplyAsync(Traversers::empty)),
-                        "flatMapUsingPartitionedServiceAsync")
+                        "flatMapUsingPartitionedService")
         );
     }
 
