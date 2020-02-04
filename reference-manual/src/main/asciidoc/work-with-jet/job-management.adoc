@@ -49,9 +49,10 @@ parameters will be passed to your `main()` method, you can use them to
 configure your pipeline. For example you can pass connection parameters
 (ip port) for your source/sink:
 
-....
-bin/jet submit jetjob.jar 127.0.0.1 5555
-....
+[source]
+----
+$ bin/jet submit jetjob.jar 127.0.0.1 5555
+----
 
 For more details on its usage type `jet --help`.
 

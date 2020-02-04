@@ -576,7 +576,7 @@ maintain over a long term.
 
 ==== Caveats When Changing the Grouping Key
 
-You can change the key-extracting function for a `groupingKey`'s, but
+You can change the key-extracting function for a `groupingKey()`, but
 keep in mind that the snapshotted state has keys extracted with the old
 key extractor. If the new keys aren't equal, they will create new groups.
 

@@ -89,8 +89,8 @@ it knows the whole operation is done and the accumulator won't be
 modified again.
 
 There's another case where a data race can sneak up on you: a
-many-to-many hash-join, where you enrich an item with several items
-matching the same join key. Refer to the <<hash-join, hash-join>>
+many-to-many hash join, where you enrich an item with several items
+matching the same join key. Refer to the <<hash-join>>
 section for more details and an example.
 
 

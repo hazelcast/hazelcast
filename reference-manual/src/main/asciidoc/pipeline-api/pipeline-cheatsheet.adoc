@@ -87,7 +87,7 @@ include::{javasource}/CheatSheet.java[tag=s4]
 
 |Enrich by Map Lookup
 |For each stream item, look up a value from a Hazelcast map and
-transform (enrich) the item using it. Similar to a hash-join with the
+transform (enrich) the item using it. Similar to a hash join with the
 map's entry set, but values don't get stale (at the expense of
 throughput).
 

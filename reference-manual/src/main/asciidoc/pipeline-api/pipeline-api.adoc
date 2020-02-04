@@ -26,7 +26,7 @@ over unbounded streams.
 Your pipeline can consist of multiple sources, each starting its own
 pipeline branch, and you are allowed to mix both kinds of stages in the
 same pipeline. You can merge the branches with joining transforms. For
-example, the <<hash-join, hash-join>> transform can join a stream stage
+example, the <<hash-join, hash join>> transform can join a stream stage
 with batch stages:
 
 [source]
@@ -206,7 +206,7 @@ infinite stream and want to observe updates to the enriching dataset,
 you should use this approach.
 
 [[hash-join]]
-= Hash-Join
+= Hash Join
 
 {jet-javadoc}/pipeline/BatchStage.html#hashJoin-com.hazelcast.jet.pipeline.BatchStage-com.hazelcast.jet.pipeline.JoinClause-com.hazelcast.function.BiFunctionEx-[Hash-join]
 is a kind of join operation optimized for the use case of data
@@ -220,12 +220,12 @@ The stream-to-be-enriched (we'll call it the _primary_ stream for short)
 can be an unbounded data stream. The _enriching streams_ must be bounded
 and Jet will consume them in full before starting to enrich the primary
 stream. It will store their contents in hash tables for fast lookup,
-which is why we call this the "hash-join".
+which is why we call this the "hash join".
 
 For each enriching stream you specify a pair of key-extracting functions:
 one for the enriching item and one for the primary item. This means that
 you can define a different join key for each of the enriching streams.
-The following example shows a three-way hash-join between the primary
+The following example shows a three-way hash join between the primary
 stream of stock trade events and two enriching streams: _products_ and
 _brokers_:
 
@@ -285,9 +285,9 @@ create a new `Trade` object each time.
 In the interest of performance Jet pulls the entire enriching dataset
 into each cluster member. That's why this operation is also known as a
 _replicated_ join. This is something to keep in mind when estimating
-the RAM requirements for a hash-join operation.
+the RAM requirements for a hash join operation.
 
-== Hash-Join With Four or More Streams Using the Builder
+== Hash Join With Four or More Streams Using the Builder
 
 You can hash-join a stream with up to two enriching streams using the
 API we demonstrated above. If you have more than two enriching streams,
@@ -315,7 +315,7 @@ include::{javasource}/BuildComputation.java[tag=s12]
 
 If you're enriching an infinite stream, you most likely need to observe
 the changes that happen to the enriching dataset over the long timespan
-of the Jet job. In this case you can't use the hash-join, which
+of the Jet job. In this case you can't use the hash join, which
 basically takes a snapshot of the enriching dataset at the beginning of
 the job. You may also encounter RAM shortage if your enriching dataset
 is very large.
@@ -332,9 +332,9 @@ can write your own code to join with an arbitrary external dataset.
 
 Hazelcast Jet allows you to enrich your stream directly from a Hazelcast
 `IMap` or `ReplicatedMap`. Since it must look up the data again for each
-item, performance is lower than with a <<hash-join, hash-join>>, but the
+item, performance is lower than with a <<hash-join, hash join>>, but the
 data is kept fresh this way. This matters especially for unbounded
-streaming jobs, where a hash-join would use data frozen in time at the
+streaming jobs, where a hash join would use data frozen in time at the
 beginning of the job.
 
 If you enrich from a Hazelcast map (`IMap` or `ReplicatedMap`) that is

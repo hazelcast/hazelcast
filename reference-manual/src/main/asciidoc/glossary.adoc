@@ -72,11 +72,11 @@ resilience to changes in the topology of the cluster running the
 computation. If a member leaves the cluster, the system adapts to the
 change and resumes the computation without loss.
 
-Hash-Join::
+Hash Join::
 A special-purpose stream join optimized for the use case of data
 enrichment. Each item of the _primary_ stream is joined with one item
 from each of the _enriching_ streams. Items are matched by the join key.
-The name "hash-join" stems from the fact that the contents of the
+The name "hash join" stems from the fact that the contents of the
 enriching streams are held in hashtables for fast lookup. Hashtables are
 replicated on each cluster member, which is why this operation is also
 known as a "`replicated join`".

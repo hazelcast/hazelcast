@@ -215,7 +215,7 @@ the redundancy it creates, this kind of edge isn't appropriate for the
 main data stream. Its purpose is dispatching a small amount of data to
 all the processors of a vertex, typically as a part of setting up before
 processing the data stream. For this reason a broadcast edge is often
-high-priority as well. For example, in a hash-join one vertex creates
+high-priority as well. For example, in a hash join one vertex creates
 the lookup hashtable and sends the same instance to all the processors
 of the next vertex, the one that processes the main data stream.
 
@@ -321,7 +321,7 @@ include::{javasource}/expertzone/Dag.java[tag=s9]
 By default the processor receives items from all inbound edges as they
 arrive. However, there are important cases where an edge must be
 consumed in full to make the processor ready to accept data from other
-edges. A major example is a "`hash join`" which enriches the data stream
+edges. A major example is a hash join which enriches the data stream
 with data from a lookup table. This can be modeled as a join of two data
 streams where the _enriching_ stream contains the data for the lookup
 table and must be consumed in full before consuming the stream to be
