@@ -104,24 +104,19 @@ public class ClientHeartbeatTest extends ClientTestSupport {
     }
 
     @Test
-    public void testInvocation_whenHeartbeatStopped() throws InterruptedException {
-        hazelcastFactory.newHazelcastInstance();
-        final HazelcastInstance client = hazelcastFactory.newHazelcastClient(getClientConfig());
-        final HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
+    public void testInvocation_whenHeartbeatStopped() {
+        HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(getClientConfig());
 
-        // make sure client is connected to instance2
-        String keyOwnedByInstance2 = generateKeyOwnedBy(instance2);
+        warmUpPartitions(instance, client);
 
-        // Verify that the client received partition update for instance2
-        waitClientPartitionUpdateForKeyOwner(client, instance2, keyOwnedByInstance2);
+        IMap<String, String> map = client.getMap("test");
+        map.put("foo", "bar");
 
-        IMap<String, String> map = client.getMap(randomString());
-        map.put(keyOwnedByInstance2, randomString());
-
-        blockMessagesFromInstance(instance2, client);
+        blockMessagesFromInstance(instance, client);
 
         expectedException.expect(TargetDisconnectedException.class);
-        map.put(keyOwnedByInstance2, randomString());
+        map.put("for", "bar2");
     }
 
     @Test
