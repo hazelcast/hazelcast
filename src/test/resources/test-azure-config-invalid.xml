@@ -31,7 +31,7 @@
             <discovery-strategies>
                 <discovery-strategy enabled="true" class="com.hazelcast.azure.AzureDiscoveryStrategy">
                     <properties>
-                        <property name="client-id">CLIENT_ID</property>
+                        <property name="invalid-property">INVALID</property>
                         <property name="client-secret">CLIENT_SECRET</property>
                         <property name="tenant-id">TENANT_ID</property>
                         <property name="subscription-id">SUB_ID</property>

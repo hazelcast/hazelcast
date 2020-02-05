@@ -19,7 +19,6 @@ package com.hazelcast.azure;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,10 +28,10 @@ import java.util.Map;
  * @see <a href="https://docs.microsoft.com/en-us/azure/virtual-machines/windows/instance-metadata-service">
  * Azure Instance Metadata Service</a>
  */
-final class AzureMetadataApi {
+class AzureMetadataApi {
+    static final String API_VERSION = "2018-02-01";
+    static final String RESOURCE = "https://management.azure.com";
     private static final String METADATA_ENDPOINT = "http://169.254.169.254";
-    private static final String API_VERSION = "2018-02-01";
-    private static final String RESOURCE = "https://management.azure.com";
 
     private final String endpoint;
     private final Map<String, String> metadata;
@@ -47,7 +46,7 @@ final class AzureMetadataApi {
      */
     AzureMetadataApi(String endpoint, Map<String, String> metadata) {
         this.endpoint = endpoint;
-        this.metadata = Collections.unmodifiableMap(metadata);
+        this.metadata = metadata;
     }
 
     private void fillMetadata() {
@@ -56,7 +55,9 @@ final class AzureMetadataApi {
             String response = callGet(urlString);
             JsonObject jsonObject = Json.parse(response).asObject();
             for (String property : jsonObject.names()) {
-                metadata.put(property, jsonObject.get(property).asString());
+                if (jsonObject.get(property).isString()) {
+                    metadata.put(property, jsonObject.get(property).asString());
+                }
             }
         }
     }

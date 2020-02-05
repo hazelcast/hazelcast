@@ -30,7 +30,7 @@ import static com.hazelcast.azure.Utils.isBlank;
 /**
  * Responsible for fetching the discovery information from Azure APIs.
  */
-final class AzureClient {
+class AzureClient {
     private static final Logger LOGGER = Logger.getLogger(AzureDiscoveryStrategy.class.getSimpleName());
 
     private static final int RETRIES = 2;
@@ -69,8 +69,8 @@ final class AzureClient {
         boolean hasSMIRight = isAllBlank(tenantId, clientId, clientSecret);
         if (!hasSMIRight && !isAllNotBlank(tenantId, clientId, clientSecret)) {
             //All 3 property must be defined & not empty
-            throw new InvalidConfigurationException("Invalid Azure Discovery config: " +
-                    "All of tenantId, clientId & clientSecret must defined or none");
+            throw new InvalidConfigurationException("Invalid Azure Discovery config: "
+                    + "All of tenantId, clientId & clientSecret must defined or none");
         }
         return hasSMIRight;
     }

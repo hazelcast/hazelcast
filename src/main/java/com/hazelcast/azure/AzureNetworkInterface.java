@@ -27,7 +27,7 @@ final class AzureNetworkInterface {
     private final String publicIpId;
     private final Set<Tag> tags;
 
-    public AzureNetworkInterface (String id, String privateIp, String publicIpId, Set<Tag> tags) {
+    public AzureNetworkInterface(String id, String privateIp, String publicIpId, Set<Tag> tags) {
         this.id = id;
         this.privateIp = privateIp;
         this.publicIpId = publicIpId;

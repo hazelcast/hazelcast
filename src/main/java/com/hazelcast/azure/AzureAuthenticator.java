@@ -25,7 +25,7 @@ import com.hazelcast.internal.json.Json;
  * @see <a href="https://docs.microsoft.com/en-us/azure/azure-resource-manager/resource-manager-api-authentication">
  * Using OAuth 2.0</a>
  */
-final class AzureAuthenticator {
+class AzureAuthenticator {
     private static final String AZURE_AUTH_ENDPOINT = "https://login.microsoftonline.com";
     private static final String RESOURCE = "https://management.azure.com";
     private static final String GRANT_TYPE = "client_credentials";

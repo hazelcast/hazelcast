@@ -35,10 +35,10 @@ import static com.hazelcast.azure.Utils.isBlank;
  *
  * @see <a href="https://docs.microsoft.com/en-us/rest/api/compute/">Azure Compute API</a>
  */
-final class AzureComputeApi {
+class AzureComputeApi {
+    static final String API_VERSION = "2018-08-01";
+    static final String API_VERSION_SCALE_SET = "2018-06-01";
     private static final String AZURE_API_ENDPOINT = "https://management.azure.com";
-    private static final String API_VERSION = "2018-08-01";
-    private static final String API_VERSION_SCALE_SET = "2018-06-01";
 
     private final String endpoint;
 

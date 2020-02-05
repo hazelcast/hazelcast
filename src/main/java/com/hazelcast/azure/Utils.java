@@ -46,7 +46,9 @@ final class Utils {
     }
 
     static boolean isAllNotBlank(final String... values) {
-        if (values == null) return false;
+        if (values == null) {
+            return false;
+        }
         for (final String val : values) {
             if (isBlank(val)) {
                 return false;
