@@ -22,7 +22,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 
@@ -44,21 +43,8 @@ public class PartitionWideEntryWithPredicateOperation extends PartitionWideEntry
     }
 
     @Override
-    @SuppressFBWarnings(
-            value = {"RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE"},
-            justification = "backupProcessor can indeed be null so check is not redundant")
-    public Operation getBackupOperation() {
-        EntryProcessor backupProcessor = entryProcessor.getBackupProcessor();
-        if (backupProcessor == null) {
-            return null;
-        }
-        if (keysFromIndex != null) {
-            // if we used index we leverage it for the backup too
-            return new MultipleEntryBackupOperation(name, keysFromIndex, backupProcessor);
-        } else {
-            // if no index used we will do a full partition-scan on backup too
-            return new PartitionWideEntryWithPredicateBackupOperation(name, backupProcessor, getPredicate());
-        }
+    protected Operation getPartitionWideEntryBackupOperation(EntryProcessor backupProcessor) {
+        return new PartitionWideEntryWithPredicateBackupOperation(name, backupProcessor, getPredicate());
     }
 
     @Override

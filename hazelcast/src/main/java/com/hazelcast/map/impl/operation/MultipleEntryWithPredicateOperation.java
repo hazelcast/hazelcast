@@ -16,13 +16,12 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
 import java.util.Set;
@@ -48,8 +47,7 @@ public class MultipleEntryWithPredicateOperation extends MultipleEntryOperation 
     }
 
     @Override
-    public Operation getBackupOperation() {
-        EntryProcessor backupProcessor = entryProcessor.getBackupProcessor();
+    protected MultipleEntryBackupOperation getMultipleEntryBackupOperation(EntryProcessor backupProcessor) {
         return new MultipleEntryWithPredicateBackupOperation(name, keys, backupProcessor, predicate);
     }
 

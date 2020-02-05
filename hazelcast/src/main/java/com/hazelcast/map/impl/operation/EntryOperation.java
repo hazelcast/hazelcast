@@ -16,18 +16,22 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.Offloadable;
 import com.hazelcast.core.ReadOnly;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.cluster.Address;
+import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
@@ -39,22 +43,20 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationAccessor;
 import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.util.Clock;
-import com.hazelcast.internal.util.UuidUtil;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.UUID;
 
 import static com.hazelcast.core.Offloadable.NO_OFFLOADING;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 import static com.hazelcast.map.impl.operation.EntryOperator.operator;
+import static com.hazelcast.map.listener.EntryProcessorUtil.directBackupProcessor;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.OFFLOADABLE_EXECUTOR;
 import static com.hazelcast.spi.impl.operationservice.CallStatus.RESPONSE;
 import static com.hazelcast.spi.impl.operationservice.CallStatus.WAIT;
 import static com.hazelcast.spi.impl.operationservice.InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS;
-import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -145,12 +147,15 @@ public class EntryOperation extends LockAwareOperation
     private transient boolean offload;
 
     // EntryOperation
-    private transient Object response;
+    private transient Data response;
 
     // EntryOffloadableOperation
     private transient boolean readOnly;
     private transient int setUnlockRetryCount;
     private transient long begin;
+
+    private transient Record backupRecord;
+    private transient Data backupValue;
 
     public EntryOperation() {
     }
@@ -184,10 +189,15 @@ public class EntryOperation extends LockAwareOperation
         if (offload) {
             return new EntryOperationOffload(getCallerAddress());
         } else {
-            response = operator(this, entryProcessor)
+            EntryOperator operator = operator(this, entryProcessor);
+            response = operator
                     .operateOnKey(dataKey)
                     .doPostOperateOps()
                     .getResult();
+            if (shouldUseDirectBackup()) {
+                backupRecord = recordStore.getRecord(dataKey);
+                backupValue = operator.getValueData();
+            }
             return RESPONSE;
         }
     }
@@ -270,6 +280,10 @@ public class EntryOperation extends LockAwareOperation
             return null;
         }
         EntryProcessor backupProcessor = entryProcessor.getBackupProcessor();
+        if (backupProcessor == directBackupProcessor()) {
+            return backupRecord == null ? new RemoveBackupOperation(name, dataKey, false) : new PutBackupOperation(name, dataKey,
+                    backupRecord, backupValue);
+        }
         return backupProcessor != null ? new EntryBackupOperation(name, dataKey, backupProcessor) : null;
     }
 
@@ -279,6 +293,14 @@ public class EntryOperation extends LockAwareOperation
             return false;
         }
         return mapContainer.getTotalBackupCount() > 0 && entryProcessor.getBackupProcessor() != null;
+    }
+
+    private boolean shouldUseDirectBackup() {
+        if (offload) {
+            return false;
+        }
+        return mapContainer.getTotalBackupCount() > 0
+                && entryProcessor.getBackupProcessor() == directBackupProcessor();
     }
 
     @Override

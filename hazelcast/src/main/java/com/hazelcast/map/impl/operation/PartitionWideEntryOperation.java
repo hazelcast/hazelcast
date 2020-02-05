@@ -24,6 +24,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapEntries;
+import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.Predicate;
@@ -34,21 +35,23 @@ import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 import java.util.Set;
 
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 import static com.hazelcast.map.impl.operation.EntryOperator.operator;
+import static com.hazelcast.map.listener.EntryProcessorUtil.directBackupProcessor;
 
 /**
  * GOTCHA: This operation does NOT load missing keys from map-store for now.
  */
-
 public class PartitionWideEntryOperation extends MapOperation
         implements MutatingOperation, PartitionAwareOperation, BackupAwareOperation {
 
@@ -58,6 +61,9 @@ public class PartitionWideEntryOperation extends MapOperation
     protected transient EntryOperator operator;
     protected transient Set<Data> keysFromIndex;
     protected transient QueryOptimizer queryOptimizer;
+
+    protected transient List<Data> backupPairs;
+    protected transient Set<Data> deletions;
 
     public PartitionWideEntryOperation() {
     }
@@ -77,6 +83,9 @@ public class PartitionWideEntryOperation extends MapOperation
 
         keysFromIndex = null;
         queryOptimizer = mapServiceContext.getQueryOptimizer();
+
+        backupPairs = null;
+        deletions = null;
     }
 
     protected Predicate getPredicate() {
@@ -122,26 +131,40 @@ public class PartitionWideEntryOperation extends MapOperation
         // when NATIVE we can pass null as predicate since it's all
         // happening on partition thread so no data-changes may occur
         operator = operator(this, entryProcessor, null);
-        keysFromIndex = new HashSet<>(entries.size());
+        if (shouldUseDirectBackup()) {
+            backupPairs = new ArrayList<>(entries.size());
+            deletions = new HashSet<>();
+        } else {
+            keysFromIndex = new HashSet<>(entries.size());
+        }
         for (QueryableEntry entry : entries) {
-            keysFromIndex.add(entry.getKeyData());
             Data response = operator.operateOnKey(entry.getKeyData()).doPostOperateOps().getResult();
             if (response != null) {
                 responses.add(entry.getKeyData(), response);
             }
+            if (keysFromIndex != null) {
+                keysFromIndex.add(entry.getKeyData());
+            }
+            addDirectBackup(operator.getEventType(), entry.getKeyData(), operator.getValueData());
         }
 
         return true;
     }
 
     private void runWithPartitionScan() {
-        responses = new MapEntries(recordStore.size());
+        int totalEntryCount = recordStore.size();
+        responses = new MapEntries(totalEntryCount);
+        if (shouldUseDirectBackup()) {
+            backupPairs = new ArrayList<>(totalEntryCount);
+            deletions = new HashSet<>();
+        }
         operator = operator(this, entryProcessor, getPredicate());
         recordStore.forEach((dataKey, record) -> {
             Data response = operator.operateOnKey(dataKey).doPostOperateOps().getResult();
             if (response != null) {
                 responses.add(dataKey, response);
             }
+            addDirectBackup(operator.getEventType(), dataKey, mapServiceContext.toData(record.getValue()));
         }, false);
     }
 
@@ -150,6 +173,10 @@ public class PartitionWideEntryOperation extends MapOperation
         // if we reach here, it means we didn't manage to leverage index and we fall-back to full-partition scan
         int totalEntryCount = recordStore.size();
         responses = new MapEntries(totalEntryCount);
+        if (shouldUseDirectBackup()) {
+            backupPairs = new ArrayList<>(totalEntryCount);
+            deletions = new HashSet<>();
+        }
         Queue<Object> outComes = new LinkedList<>();
         operator = operator(this, entryProcessor, getPredicate());
 
@@ -184,6 +211,18 @@ public class PartitionWideEntryOperation extends MapOperation
 
             operator.init(dataKey, oldValue, newValue, null, eventType, null)
                     .doPostOperateOps();
+            addDirectBackup(eventType, dataKey, mapServiceContext.toData(newValue));
+        }
+    }
+
+    private void addDirectBackup(EntryEventType eventType, Data dataKey, Data valueData) {
+        if (backupPairs != null) {
+            if (eventType == EntryEventType.REMOVED) {
+                deletions.add(dataKey);
+            } else {
+                backupPairs.add(dataKey);
+                backupPairs.add(valueData);
+            }
         }
     }
 
@@ -197,6 +236,11 @@ public class PartitionWideEntryOperation extends MapOperation
         return mapContainer.getTotalBackupCount() > 0 && entryProcessor.getBackupProcessor() != null;
     }
 
+    private boolean shouldUseDirectBackup() {
+        return entryProcessor.getBackupProcessor() == directBackupProcessor()
+                && mapContainer.getTotalBackupCount() > 0;
+    }
+
     @Override
     public int getSyncBackupCount() {
         return 0;
@@ -208,21 +252,43 @@ public class PartitionWideEntryOperation extends MapOperation
     }
 
     @Override
-    @SuppressFBWarnings(
-            value = {"RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE"},
-            justification = "backupProcessor can indeed be null so check is not redundant")
     public Operation getBackupOperation() {
         EntryProcessor backupProcessor = entryProcessor.getBackupProcessor();
-        if (backupProcessor == null) {
-            return null;
+        Operation backupOperation = null;
+        if (backupProcessor == directBackupProcessor()) {
+            // direct copy backup
+            backupOperation = getDirectBackupOperation();
+        } else if (backupProcessor != null) {
+            if (keysFromIndex != null) {
+                // if we used index we leverage it for the backup too
+                backupOperation = new MultipleEntryBackupOperation(name, keysFromIndex, backupProcessor);
+            } else {
+                // if no index used we will do a full partition-scan on backup too
+                backupOperation = getPartitionWideEntryBackupOperation(backupProcessor);
+            }
         }
-        if (keysFromIndex != null) {
-            // if we used index we leverage it for the backup too
-            return new MultipleEntryBackupOperation(name, keysFromIndex, backupProcessor);
-        } else {
-            // if no index used we will do a full partition-scan on backup too
-            return new PartitionWideEntryBackupOperation(name, backupProcessor);
+        return backupOperation;
+    }
+
+    protected Operation getPartitionWideEntryBackupOperation(EntryProcessor backupProcessor) {
+        return new PartitionWideEntryBackupOperation(name, backupProcessor);
+    }
+
+    @Nonnull
+    private Operation getDirectBackupOperation() {
+        List<Object> toBackupList = new ArrayList<>(backupPairs.size());
+        for (int i = 0; i < backupPairs.size(); i += 2) {
+            Data dataKey = backupPairs.get(i);
+            Record record = recordStore.getRecord(dataKey);
+            if (record == null) {
+                deletions.add(dataKey);
+            } else {
+                toBackupList.add(dataKey);
+                toBackupList.add(backupPairs.get(i + 1));
+                toBackupList.add(record);
+            }
         }
+        return new PutAllDeleteAllBackupOperation(name, toBackupList, deletions, false);
     }
 
     @Override

@@ -19,13 +19,14 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.internal.locksupport.LockWaitNotifyKey;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.Notifier;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -35,6 +36,7 @@ import java.io.IOException;
 import java.util.UUID;
 
 import static com.hazelcast.map.impl.operation.EntryOperator.operator;
+import static com.hazelcast.map.listener.EntryProcessorUtil.directBackupProcessor;
 
 /**
  * Set &amp; Unlock processing for the EntryOperation
@@ -50,6 +52,9 @@ public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
     protected long begin;
     protected EntryEventType modificationType;
     protected EntryProcessor entryBackupProcessor;
+
+    private transient Record backupRecord;
+    private transient Data backupValue;
 
     public EntryOffloadableSetUnlockOperation() {
     }
@@ -71,8 +76,13 @@ public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
     protected void runInternal() {
         verifyLock();
         try {
-            operator(this).init(dataKey, oldValue, newValue, null, modificationType, null)
+            EntryOperator operator = operator(this);
+            operator.init(dataKey, oldValue, newValue, null, modificationType, null)
                     .doPostOperateOps();
+            if (shouldUseDirectBackup()) {
+                backupRecord = recordStore.getRecord(dataKey);
+                backupValue = operator.getValueData();
+            }
         } finally {
             unlockKey();
         }
@@ -80,7 +90,7 @@ public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
 
     private void verifyLock() {
         if (!recordStore.isLockedBy(dataKey, caller, threadId)) {
-            // we can't send a RetryableHazelcastException explicitly since it would retry this opertation and we want to retry
+            // we can't send a RetryableHazelcastException explicitly since it would retry this operation and we want to retry
             // the preceding EntryOperation that this operation is part of.
             throw new EntryOffloadableLockMismatchException(
                     String.format("The key is not locked by the caller=%s and threadId=%d", caller, threadId));
@@ -104,12 +114,20 @@ public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
 
     @Override
     public Operation getBackupOperation() {
+        if (entryBackupProcessor == directBackupProcessor()) {
+            return backupRecord == null ? new RemoveBackupOperation(name, dataKey, false) : new PutBackupOperation(name, dataKey,
+                    backupRecord, backupValue);
+        }
         return entryBackupProcessor != null ? new EntryBackupOperation(name, dataKey, entryBackupProcessor) : null;
     }
 
     @Override
     public boolean shouldBackup() {
         return mapContainer.getTotalBackupCount() > 0 && entryBackupProcessor != null;
+    }
+
+    private boolean shouldUseDirectBackup() {
+        return mapContainer.getTotalBackupCount() > 0 && entryBackupProcessor == directBackupProcessor();
     }
 
     @Override

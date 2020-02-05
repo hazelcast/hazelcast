@@ -16,27 +16,33 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapEntries;
+import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
 import static com.hazelcast.map.impl.operation.EntryOperator.operator;
-
+import static com.hazelcast.map.listener.EntryProcessorUtil.directBackupProcessor;
 
 public class MultipleEntryOperation extends MapOperation
         implements MutatingOperation, PartitionAwareOperation, BackupAwareOperation {
@@ -44,6 +50,9 @@ public class MultipleEntryOperation extends MapOperation
     protected Set<Data> keys;
     protected MapEntries responses;
     protected EntryProcessor entryProcessor;
+
+    private transient List<Data> backupPairs;
+    private transient Set<Data> deletions;
 
     public MultipleEntryOperation() {
     }
@@ -61,6 +70,10 @@ public class MultipleEntryOperation extends MapOperation
         final SerializationService serializationService = getNodeEngine().getSerializationService();
         final ManagedContext managedContext = serializationService.getManagedContext();
         managedContext.initialize(entryProcessor);
+        if (shouldUseDirectBackup()) {
+            backupPairs = new ArrayList<>(2 * keys.size());
+            deletions = new HashSet<>();
+        }
     }
 
     @Override
@@ -76,6 +89,17 @@ public class MultipleEntryOperation extends MapOperation
             Data response = operator.operateOnKey(key).doPostOperateOps().getResult();
             if (response != null) {
                 responses.add(key, response);
+            }
+            if (backupPairs != null && getNodeEngine().getPartitionService().getPartitionId(key) == getPartitionId()) {
+                if (operator.getEventType() == EntryEventType.REMOVED) {
+                    deletions.add(key);
+                } else {
+                    Record record = recordStore.getRecord(key);
+                    if (record != null) {
+                        backupPairs.add(key);
+                        backupPairs.add(mapServiceContext.toData(record.getValue()));
+                    }
+                }
             }
         }
     }
@@ -94,6 +118,11 @@ public class MultipleEntryOperation extends MapOperation
         return mapContainer.getTotalBackupCount() > 0 && entryProcessor.getBackupProcessor() != null;
     }
 
+    private boolean shouldUseDirectBackup() {
+        return entryProcessor.getBackupProcessor() == directBackupProcessor()
+                && mapContainer.getTotalBackupCount() > 0;
+    }
+
     @Override
     public int getSyncBackupCount() {
         return 0;
@@ -107,11 +136,34 @@ public class MultipleEntryOperation extends MapOperation
     @Override
     public Operation getBackupOperation() {
         EntryProcessor backupProcessor = entryProcessor.getBackupProcessor();
-        MultipleEntryBackupOperation backupOperation = null;
-        if (backupProcessor != null) {
-            backupOperation = new MultipleEntryBackupOperation(name, keys, backupProcessor);
+        Operation backupOperation = null;
+        if (backupProcessor == directBackupProcessor()) {
+            backupOperation = getDirectBackupOperation();
+        } else if (backupProcessor != null) {
+            backupOperation = getMultipleEntryBackupOperation(backupProcessor);
         }
         return backupOperation;
+    }
+
+    protected MultipleEntryBackupOperation getMultipleEntryBackupOperation(EntryProcessor backupProcessor) {
+        return new MultipleEntryBackupOperation(name, keys, backupProcessor);
+    }
+
+    @Nonnull
+    private Operation getDirectBackupOperation() {
+        List<Object> toBackupList = new ArrayList<>(backupPairs.size());
+        for (int i = 0; i < backupPairs.size(); i += 2) {
+            Data dataKey = backupPairs.get(i);
+            Record record = recordStore.getRecord(dataKey);
+            if (record == null) {
+                deletions.add(dataKey);
+            } else {
+                toBackupList.add(dataKey);
+                toBackupList.add(backupPairs.get(i + 1));
+                toBackupList.add(record);
+            }
+        }
+        return new PutAllDeleteAllBackupOperation(name, toBackupList, deletions, false);
     }
 
     @Override
@@ -124,7 +176,6 @@ public class MultipleEntryOperation extends MapOperation
             Data key = IOUtil.readData(in);
             keys.add(key);
         }
-
     }
 
     @Override

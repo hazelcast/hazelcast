@@ -26,6 +26,7 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.HazelcastJsonValue;
+import com.hazelcast.core.Offloadable;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.internal.serialization.Data;
@@ -67,10 +68,12 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -87,6 +90,7 @@ import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.map.EntryProcessorTest.ApplyCountAwareIndexedTestPredicate.PREDICATE_APPLY_COUNT;
+import static com.hazelcast.map.EntryProcessorUtil.directBackupProcessor;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
@@ -129,7 +133,6 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         HazelcastInstance instance = createHazelcastInstance(getConfig());
         IMap<String, String> map = instance.getMap(MAP_NAME);
         map.put("key", "value");
-
 
         final CountDownLatch latch = new CountDownLatch(1);
         map.addEntryListener((EntryUpdatedListener<String, String>) event -> {
@@ -1647,6 +1650,291 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             assertEquals("Expiration time should be the same", evStart.getExpirationTime(), evEnd.getExpirationTime());
         }
 
+    }
+
+    @Test
+    public void testDirectBackupEntryProcessor_executeOnEntries() {
+        testDirectBackupEntryProcessor_executeOnMultiple(true, null, false);
+    }
+
+    @Test
+    public void testDirectBackupEntryProcessor_executeOnEntries_withPredicate() {
+        TestPredicate predicate = new TestPredicate("a");
+        testDirectBackupEntryProcessor_executeOnMultiple(true, predicate, false);
+        assertFalse(predicate.isFilteredAndApplied(2));
+        assertEquals(2, predicate.getApplied());
+    }
+
+    @Test
+    public void testDirectBackupEntryProcessor_executeOnEntries_withPredicate_indexed() {
+        TestPredicate predicate = new TestPredicate("a");
+        testDirectBackupEntryProcessor_executeOnMultiple(true, predicate, true);
+        // for native memory EP with index query the predicate won't be applied since everything happens on partition-threads
+        // so there is no chance of data being modified after the index has been queried.
+        int predicateApplied = inMemoryFormat == NATIVE ? 0 : 2;
+        assertTrue(predicate.isFilteredAndApplied(predicateApplied));
+    }
+
+    @Test
+    public void testDirectBackupEntryProcessor_executeOnKeys() {
+        testDirectBackupEntryProcessor_executeOnMultiple(false, null, false);
+    }
+
+    private void testDirectBackupEntryProcessor_executeOnMultiple(boolean onEntries, Predicate predicate, boolean indexed) {
+        Config cfg = getConfig();
+        MapConfig mapCfg = cfg.getMapConfig(MAP_NAME).setBackupCount(1);
+        if (indexed) {
+            mapCfg.addIndexConfig(new IndexConfig(IndexType.HASH, "attr1"));
+        }
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+
+        IMap<String, TestData> map = instance1.getMap(MAP_NAME);
+        String key1 = generateKeyOwnedBy(instance1);
+        String key2 = generateKeyOwnedBy(instance1);
+        map.put(key1, new TestData("a", "foo"));
+        map.put(key2, new TestData("a", "bar"));
+        TestDirectBackupEntryProcessor entryProcessor = new TestDirectBackupEntryProcessor();
+        if (onEntries) {
+            map.executeOnEntries(entryProcessor, predicate);
+        } else {
+            map.executeOnKeys(map.keySet(), entryProcessor);
+        }
+        assertEquals(2, map.size());
+        assertTestData("foofoo", map.get(key1));
+        assertTestData("barbar", map.get(key2));
+
+        // terminate to prevent repartitioning and propagation of updated partitions to instance2
+        // (to make really sure the updates are propagated by the entity processor logic)
+        instance1.getLifecycleService().terminate();
+
+        IMap<String, TestData> map2 = instance2.getMap(MAP_NAME);
+        assertEquals(2, map2.size());
+        assertTestData("foofoo", map2.get(key1));
+        assertTestData("barbar", map2.get(key2));
+    }
+
+    @Test
+    public void testDirectBackupEntryProcessor_executeOnEntries_remove() {
+        testDirectBackupEntryProcessor_executeOnMultiple_remove(true, null, false);
+    }
+
+    @Test
+    public void testDirectBackupEntryProcessor_executeOnEntries_remove_withPredicate() {
+        TestPredicate predicate = new TestPredicate("a");
+        testDirectBackupEntryProcessor_executeOnMultiple_remove(true, predicate, false);
+        assertFalse(predicate.isFilteredAndApplied(2));
+        assertEquals(2, predicate.getApplied());
+    }
+
+    @Test
+    public void testDirectBackupEntryProcessor_executeOnEntries_remove_withPredicate_indexed() {
+        TestPredicate predicate = new TestPredicate("a");
+        testDirectBackupEntryProcessor_executeOnMultiple_remove(true, predicate, true);
+        // for native memory EP with index query the predicate won't be applied since everything happens on partition-threads
+        // so there is no chance of data being modified after the index has been queried.
+        int predicateApplied = inMemoryFormat == NATIVE ? 0 : 2;
+        assertTrue(predicate.isFilteredAndApplied(predicateApplied));
+    }
+
+    @Test
+    public void testDirectBackupEntryProcessor_executeOnKeys_remove() {
+        testDirectBackupEntryProcessor_executeOnMultiple_remove(true, null, false);
+    }
+
+    private void testDirectBackupEntryProcessor_executeOnMultiple_remove(boolean onEntries, Predicate predicate, boolean indexed) {
+        Config cfg = getConfig();
+        MapConfig mapCfg = cfg.getMapConfig(MAP_NAME).setBackupCount(1);
+        if (indexed) {
+            mapCfg.addIndexConfig(new IndexConfig(IndexType.HASH, "attr1"));
+        }
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+
+        IMap<String, TestData> map = instance1.getMap(MAP_NAME);
+        String key1 = generateKeyOwnedBy(instance1);
+        String key2 = generateKeyOwnedBy(instance1);
+        map.put(key1, new TestData("a", "removeme"));
+        map.put(key2, new TestData("a", "bar"));
+        TestDirectBackupEntryProcessor entryProcessor = new TestDirectBackupEntryProcessor();
+        if (onEntries) {
+            map.executeOnEntries(entryProcessor, predicate);
+        } else {
+            map.executeOnKeys(map.keySet(), entryProcessor);
+        }
+        assertEquals(1, map.size());
+        assertTestData("barbar", map.get(key2));
+
+        // terminate to prevent repartitioning and propagation of updated partitions to instance2
+        // (to make really sure the updates are propagated by the entity processor logic)
+        instance1.getLifecycleService().terminate();
+
+        IMap<String, TestData> map2 = instance2.getMap(MAP_NAME);
+        assertEquals(1, map2.size());
+        assertTestData("barbar", map2.get(key2));
+    }
+
+    @Test
+    public void testDirectBackupEntryProcessor_executeOnKeys_create() {
+        Config cfg = getConfig();
+        cfg.getMapConfig(MAP_NAME).setBackupCount(1);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+
+        IMap<String, TestData> map = instance1.getMap(MAP_NAME);
+        String key = generateKeyOwnedBy(instance1);
+        map.executeOnKeys(Collections.singleton(key), new TestDirectBackupEntryProcessor());
+        assertEquals(1, map.size());
+        assertTestData("created", map.get(key));
+
+        // terminate to prevent repartitioning and propagation of updated partitions to instance2
+        // (to make really sure the updates are propagated by the entity processor logic)
+        instance1.getLifecycleService().terminate();
+
+        IMap<String, TestData> map2 = instance2.getMap(MAP_NAME);
+        assertEquals(1, map2.size());
+        assertTestData("created", map2.get(key));
+    }
+
+    @Test
+    public void testDirectBackupEntryProcessor_executeOnKey() {
+        testDirectBackupEntryProcessor_executeOnKey(false);
+    }
+
+    @Test
+    public void testDirectBackupEntryProcessorOffloadable_executeOnKey() {
+        testDirectBackupEntryProcessor_executeOnKey(true);
+    }
+
+    private void testDirectBackupEntryProcessor_executeOnKey(boolean offloadable) {
+        Config cfg = getConfig();
+        cfg.getMapConfig(MAP_NAME).setBackupCount(1);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+
+        IMap<String, TestData> map = instance1.getMap(MAP_NAME);
+        String key = generateKeyOwnedBy(instance1);
+        map.put(key, new TestData("a", "foo"));
+        map.put("other", new TestData("b", "bar"));
+        map.executeOnKey(key, offloadable ? new TestDirectBackupEntryProcessorOffloadable() : new TestDirectBackupEntryProcessor());
+        assertEquals(2, map.size());
+        assertTestData("foofoo", map.get(key));
+        assertTestData("bar", map.get("other"));
+
+        // terminate to prevent repartitioning and propagation of updated partitions to instance2
+        // (to make really sure the updates are propagated by the entity processor logic)
+        instance1.getLifecycleService().terminate();
+
+        IMap<String, TestData> map2 = instance2.getMap(MAP_NAME);
+        assertEquals(2, map2.size());
+        assertTestData("foofoo", map2.get(key));
+        assertTestData("bar", map2.get("other"));
+    }
+
+    @Test
+    public void testDirectBackupEntryProcessor_executeOnKey_remove() {
+        testDirectBackupEntryProcessor_executeOnKey_remove(false);
+    }
+
+    @Test
+    public void testDirectBackupEntryProcessorOffloadable_executeOnKey_remove() {
+        testDirectBackupEntryProcessor_executeOnKey_remove(true);
+    }
+
+    private void testDirectBackupEntryProcessor_executeOnKey_remove(boolean offloadable) {
+        Config cfg = getConfig();
+        cfg.getMapConfig(MAP_NAME).setBackupCount(1);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+
+        IMap<String, TestData> map = instance1.getMap(MAP_NAME);
+        String key = generateKeyOwnedBy(instance1);
+        map.put(key, new TestData("a", "removeme"));
+        map.put("other", new TestData("b", "bar"));
+        map.executeOnKey(key, offloadable ? new TestDirectBackupEntryProcessorOffloadable() : new TestDirectBackupEntryProcessor());
+        assertEquals(1, map.size());
+        assertTestData("bar", map.get("other"));
+
+        // terminate to prevent repartitioning and propagation of updated partitions to instance2
+        // (to make really sure the updates are propagated by the entity processor logic)
+        instance1.getLifecycleService().terminate();
+
+        IMap<String, TestData> map2 = instance2.getMap(MAP_NAME);
+        assertEquals(1, map2.size());
+        assertTestData("bar", map2.get("other"));
+    }
+
+    @Test
+    public void testDirectBackupEntryProcessor_executeOnKey_create() {
+        testDirectBackupEntryProcessor_executeOnKey_create(false);
+    }
+
+    @Test
+    public void testDirectBackupEntryProcessorOffloadable_executeOnKey_create() {
+        testDirectBackupEntryProcessor_executeOnKey_create(true);
+    }
+
+    private void testDirectBackupEntryProcessor_executeOnKey_create(boolean offloadable) {
+        Config cfg = getConfig();
+        cfg.getMapConfig(MAP_NAME).setBackupCount(1);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+
+        IMap<String, TestData> map = instance1.getMap(MAP_NAME);
+        String key = generateKeyOwnedBy(instance1);
+        map.executeOnKey(key, offloadable ? new TestDirectBackupEntryProcessorOffloadable() : new TestDirectBackupEntryProcessor());
+        assertEquals(1, map.size());
+        assertTestData("created", map.get(key));
+
+        // terminate to prevent repartitioning and propagation of updated partitions to instance2
+        // (to make really sure the updates are propagated by the entity processor logic)
+        instance1.getLifecycleService().terminate();
+
+        IMap<String, TestData> map2 = instance2.getMap(MAP_NAME);
+        assertEquals(1, map2.size());
+        assertTestData("created", map2.get(key));
+    }
+
+    private static void assertTestData(String expectedAttr2, TestData actual) {
+        assertNotNull(actual);
+        assertEquals(expectedAttr2, actual.getAttr2());
+    }
+
+    private static class TestDirectBackupEntryProcessor implements EntryProcessor<String, TestData, Object> {
+        @Override
+        public String process(Entry<String, TestData> entry) {
+            TestData oldValue = entry.getValue();
+
+            if (oldValue == null) {
+                entry.setValue(new TestData("x", "created"));
+            } else if ("removeme".equals(oldValue.getAttr2())) {
+                entry.setValue(null);
+            } else {
+                oldValue.setAttr2(oldValue.getAttr2() + oldValue.getAttr2());
+                entry.setValue(oldValue);
+            }
+            return null;
+        }
+
+        @Nullable
+        @Override
+        public EntryProcessor<String, TestData, Object> getBackupProcessor() {
+            return directBackupProcessor();
+        }
+    }
+
+    private static class TestDirectBackupEntryProcessorOffloadable extends TestDirectBackupEntryProcessor implements Offloadable {
+
+        @Override
+        public String getExecutorName() {
+            return OFFLOADABLE_EXECUTOR;
+        }
     }
 
     private static class MyData implements Serializable {
