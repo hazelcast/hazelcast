@@ -110,6 +110,8 @@
         <avro.version>1.8.2</avro.version>
         <scala.version>2.12</scala.version>
         <kafka.version>2.2.0</kafka.version>
+        <grpc.version>1.26.0</grpc.version>
+        <protobuf.version>3.11.3</protobuf.version>
 
         <!-- test dependencies -->
         <activemq.version>5.15.11</activemq.version>
@@ -260,6 +262,8 @@
                 <filtering>true</filtering>
                 <includes>
                     <include>**/*.properties</include>
+                    <include>**/*.sh</include>
+                    <include>**/*.bat</include>
                 </includes>
             </resource>
         </resources>
