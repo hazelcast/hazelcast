@@ -31,6 +31,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -65,8 +66,36 @@ public class ClientUserCodeDeploymentService {
         loadClasses();
     }
 
+    public static List<Class> sortByInheritance(List<Class<?>> classList) {
+        List<Class> sortedList = new LinkedList<>();
+        for (Class aClass : classList) {
+            boolean isInserted = false;
+
+            int index = 0;
+            for (Class sortedClass : sortedList) {
+                if (aClass.isAssignableFrom(sortedClass)) {
+                    sortedList.add(index, aClass);
+                    isInserted = true;
+                    break;
+                }
+                index++;
+            }
+            if (!isInserted) {
+                sortedList.add(aClass);
+            }
+        }
+        return sortedList;
+    }
+
     private void loadClasses() throws ClassNotFoundException {
-        for (String className : clientUserCodeDeploymentConfig.getClassNames()) {
+        List<String> classNames = clientUserCodeDeploymentConfig.getClassNames();
+        List<Class<?>> classes = new ArrayList<>(classNames.size());
+        for (String className : classNames) {
+            classes.add(configClassLoader.loadClass(className));
+        }
+        List<Class> sortedClasses = sortByInheritance(classes);
+        for (Class clazz : sortedClasses) {
+            String className = clazz.getName();
             String resource = className.replace('.', '/').concat(".class");
             InputStream is = null;
             try {
