@@ -37,8 +37,10 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 import usercodedeployment.CapitalizatingFirstnameExtractor;
+import usercodedeployment.ChildClass;
 import usercodedeployment.EntryProcessorWithAnonymousAndInner;
 import usercodedeployment.IncrementingEntryProcessor;
+import usercodedeployment.ParentClass;
 import usercodedeployment.Person;
 
 import java.util.Collection;
@@ -215,6 +217,29 @@ public class ClientUserCodeDeploymentTest extends ClientTestSupport {
         assertEquals("ada", results.iterator().next().getValue().getName());
     }
 
+    @Test
+    public void testWithParentAndChildClassesWorksIndependentOfOrder_childFirst() {
+        ClientConfig clientConfig = new ClientConfig();
+        ClientUserCodeDeploymentConfig clientUserCodeDeploymentConfig = new ClientUserCodeDeploymentConfig();
+        clientUserCodeDeploymentConfig.addClass(ChildClass.class);
+        clientUserCodeDeploymentConfig.addClass(ParentClass.class);
+        clientConfig.setUserCodeDeploymentConfig(clientUserCodeDeploymentConfig.setEnabled(true));
+
+        factory.newHazelcastInstance(createNodeConfig());
+        factory.newHazelcastClient(clientConfig);
+    }
+
+    @Test
+    public void testWithParentAndChildClassesWorksIndependentOfOrder_parentFirst() {
+        ClientConfig clientConfig = new ClientConfig();
+        ClientUserCodeDeploymentConfig clientUserCodeDeploymentConfig = new ClientUserCodeDeploymentConfig();
+        clientUserCodeDeploymentConfig.addClass(ParentClass.class);
+        clientUserCodeDeploymentConfig.addClass(ChildClass.class);
+        clientConfig.setUserCodeDeploymentConfig(clientUserCodeDeploymentConfig.setEnabled(true));
+
+        factory.newHazelcastInstance(createNodeConfig());
+        factory.newHazelcastClient(clientConfig);
+    }
 
 
 }
