@@ -358,6 +358,16 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
         }
 
         @Override
+        public void onCommitSuccess() {
+            // NOP
+        }
+
+        @Override
+        public void onCommitFailure() {
+            // NOP
+        }
+
+        @Override
         public Operation newRollbackOperation() {
             return newEmptyOperation();
         }

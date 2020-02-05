@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.tx;
 
+import com.hazelcast.internal.nearcache.NearCachingHook;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapRecordKey;
 import com.hazelcast.nio.ObjectDataInput;
@@ -39,10 +40,15 @@ public class MapTransactionLogRecord implements TransactionLogRecord {
     private String ownerUuid;
     private Operation op;
 
+    private transient NearCachingHook nearCachingHook = NearCachingHook.EMPTY_HOOK;
+
     public MapTransactionLogRecord() {
     }
 
-    public MapTransactionLogRecord(String name, Data key, int partitionId, Operation op, long version, String ownerUuid) {
+    public MapTransactionLogRecord(String name, Data key, int partitionId,
+                                   Operation op, String ownerUuid, NearCachingHook nearCachingHook) {
+        assert nearCachingHook != null;
+
         this.name = name;
         this.key = key;
         if (!(op instanceof MapTxnOperation)) {
@@ -51,6 +57,7 @@ public class MapTransactionLogRecord implements TransactionLogRecord {
         this.op = op;
         this.ownerUuid = ownerUuid;
         this.partitionId = partitionId;
+        this.nearCachingHook = nearCachingHook;
     }
 
     @Override
@@ -67,6 +74,20 @@ public class MapTransactionLogRecord implements TransactionLogRecord {
         operation.setOwnerUuid(ownerUuid);
         op.setPartitionId(partitionId);
         return op;
+    }
+
+    @Override
+    public void onCommitSuccess() {
+        assert nearCachingHook != null;
+
+        nearCachingHook.onRemoteCallSuccess();
+    }
+
+    @Override
+    public void onCommitFailure() {
+        assert nearCachingHook != null;
+
+        nearCachingHook.onRemoteCallFailure();
     }
 
     @Override
