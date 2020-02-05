@@ -288,9 +288,11 @@ public class TransactionImpl implements Transaction {
                 List<Future> futures = transactionLog.commit(nodeEngine);
                 waitWithDeadline(futures, Long.MAX_VALUE, MILLISECONDS, RETHROW_TRANSACTION_EXCEPTION);
                 state = COMMITTED;
+                transactionLog.onCommitSuccess();
                 transactionManagerService.commitCount.inc();
             } catch (Throwable e) {
                 state = COMMIT_FAILED;
+                transactionLog.onCommitFailure();
                 throw rethrow(e, TransactionException.class);
             } finally {
                 purgeBackupLogs();
