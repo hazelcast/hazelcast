@@ -136,9 +136,11 @@ public class MultiValueBitmapIndexTest extends HazelcastTestSupport {
     @Before
     public void before() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        HazelcastInstance instance = factory.newHazelcastInstance(getConfig());
-        persons = instance.getMap("persons");
-        factory.newHazelcastInstance(getConfig());
+        HazelcastInstance instanceA = factory.newHazelcastInstance(getConfig());
+        HazelcastInstance instanceB = factory.newHazelcastInstance(getConfig());
+        waitAllForSafeState(instanceA, instanceB);
+
+        persons = instanceA.getMap("persons");
     }
 
     @Test
