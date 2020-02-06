@@ -39,7 +39,7 @@ import java.util.function.Function;
 import static com.hazelcast.jet.Util.entry;
 
 /**
- * An intermediate step while constructing a pieline transform that
+ * An intermediate step while constructing a pipeline transform that
  * involves a grouping key, such as windowed group-and-aggregate. Some
  * transforms use the grouping key only to partition the stream (such as
  * {@link #mapUsingIMap}).
@@ -316,11 +316,11 @@ public interface StreamStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
     );
 
     @Nonnull @Override
-    default <S, R> GeneralStage<R> mapUsingServiceAsync(
+    default <S, R> StreamStage<R> mapUsingServiceAsync(
             @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull TriFunction<? super S, ? super K, ? super T, CompletableFuture<R>> mapAsyncFn
     ) {
-        return (GeneralStage<R>) GeneralStageWithKey.super.mapUsingServiceAsync(serviceFactory, mapAsyncFn);
+        return (StreamStage<R>) GeneralStageWithKey.super.mapUsingServiceAsync(serviceFactory, mapAsyncFn);
     }
 
     @Nonnull @Override
