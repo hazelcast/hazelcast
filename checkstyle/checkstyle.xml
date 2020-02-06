@@ -101,6 +101,13 @@
         <property name="fileExtensions" value="java"/>
     </module>
 
+    <!-- Checks for Size Violations.                    -->
+    <!-- See http://checkstyle.sf.net/config_sizes.html -->
+    <module name="LineLength">
+        <property name="max" value="123"/>
+        <property name="ignorePattern" value="(package|import) .*"/>
+    </module>
+
     <module name="TreeWalker">
         <!-- Needed for SuppressWarningsFilter to work -->
         <module name="SuppressWarningsHolder"/>
@@ -112,7 +119,7 @@
             <property name="scope" value="public"/>
             <property name="allowMissingParamTags" value="true"/>
             <property name="allowMissingReturnTag" value="true"/>
-            <property name="allowMissingThrowsTags" value="true"/>
+            <property name="validateThrows" value="false"/>
         </module>
         <module name="JavadocType">
             <property name="scope" value="public"/>
@@ -148,13 +155,6 @@
         <module name="RedundantImport"/>
         <module name="UnusedImports">
             <property name="processJavadoc" value="true"/>
-        </module>
-
-        <!-- Checks for Size Violations.                    -->
-        <!-- See http://checkstyle.sf.net/config_sizes.html -->
-        <module name="LineLength">
-            <property name="max" value="123"/>
-            <property name="ignorePattern" value="(package|import) .*"/>
         </module>
         <module name="MethodLength">
             <property name="tokens" value="METHOD_DEF"/>
