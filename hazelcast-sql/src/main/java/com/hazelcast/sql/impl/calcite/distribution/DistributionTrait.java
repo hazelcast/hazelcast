@@ -90,6 +90,7 @@ public class DistributionTrait implements RelTrait {
         return DistributionTraitDef.INSTANCE;
     }
 
+    @SuppressWarnings("checkstyle:NPathComplexity")
     @Override
     public boolean satisfies(RelTrait targetTrait) {
         if (!(targetTrait instanceof DistributionTrait)) {
