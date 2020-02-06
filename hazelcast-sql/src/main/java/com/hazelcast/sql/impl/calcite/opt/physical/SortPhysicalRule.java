@@ -22,6 +22,7 @@ import com.hazelcast.sql.impl.calcite.distribution.DistributionType;
 import com.hazelcast.sql.impl.calcite.opt.OptUtils;
 import com.hazelcast.sql.impl.calcite.opt.logical.SortLogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.SingletonSortMergeExchangePhysicalRel;
+import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelTraitSet;
@@ -81,6 +82,8 @@ public final class SortPhysicalRule extends AbstractPhysicalRule {
     private Collection<RelNode> getTransforms(SortLogicalRel logicalSort, RelNode convertedInput) {
         List<RelNode> res = new ArrayList<>(1);
 
+        boolean singleMember = HazelcastRelOptCluster.isSingleMember();
+
         for (RelNode physicalInput : OptUtils.getPhysicalRelsFromSubset(convertedInput)) {
             DistributionTrait physicalInputDist = OptUtils.getDistribution(physicalInput);
 
@@ -89,7 +92,7 @@ public final class SortPhysicalRule extends AbstractPhysicalRule {
 
             RelNode rel;
 
-            if (requiresDistributedPhase) {
+            if (requiresDistributedPhase && !singleMember) {
                 RelNode relInput;
 
                 if (requiresLocalPhase) {
@@ -118,15 +121,17 @@ public final class SortPhysicalRule extends AbstractPhysicalRule {
         if (res.isEmpty()) {
             boolean requiresLocalPhase = requiresLocalPhase(logicalSort.getCollation(), convertedInput);
 
-            RelNode relInput;
+            RelNode rel;
 
             if (requiresLocalPhase) {
-                relInput = createLocalSort(logicalSort, convertedInput);
+                rel = createLocalSort(logicalSort, convertedInput);
             } else {
-                relInput = convertedInput;
+                rel = convertedInput;
             }
 
-            SingletonSortMergeExchangePhysicalRel rel = createDistributedSort(logicalSort, relInput);
+            if (!singleMember) {
+                rel = createDistributedSort(logicalSort, rel);
+            }
 
             res.add(rel);
         }

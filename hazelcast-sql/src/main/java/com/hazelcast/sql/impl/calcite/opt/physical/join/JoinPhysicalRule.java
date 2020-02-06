@@ -227,8 +227,8 @@ public final class JoinPhysicalRule extends AbstractPhysicalRule {
             //     the wrong plan. E.g. the plan A might be refused due to additional costs of materialization, and the plan
             //     B is chosen. But if we had a chance to remove the materialization from A beforehand, it would have won.
             //     How to deal with it?
-            //  3) One possible solution is to set resettability flag when a PhysicalRel is created based on the
-            //     resettability of it's inputs.
+            //  3) One possible solution is to set resetability flag when a PhysicalRel is created based on the
+            //     resetability of it's inputs.
             return new MaterializedInputPhysicalRel(input.getCluster(), input.getTraitSet(), input);
         } else {
             // Only BROADCAST actions are expected for non-equi joins.

@@ -21,6 +21,7 @@ import com.hazelcast.sql.impl.calcite.distribution.DistributionField;
 import com.hazelcast.sql.impl.calcite.distribution.DistributionTrait;
 import com.hazelcast.sql.impl.calcite.distribution.DistributionType;
 import com.hazelcast.sql.impl.calcite.opt.logical.AggregateLogicalRel;
+import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.util.ImmutableBitSet;
 
@@ -128,7 +129,7 @@ public final class AggregateDistribution {
     }
 
     public boolean isCollocated() {
-        return collocated;
+        return collocated || HazelcastRelOptCluster.isSingleMember();
     }
 
     public DistributionTrait getDistribution() {

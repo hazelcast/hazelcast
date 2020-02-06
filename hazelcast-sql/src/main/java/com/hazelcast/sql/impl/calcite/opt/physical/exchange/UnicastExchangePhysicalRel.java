@@ -22,14 +22,13 @@ import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelWriter;
-import org.apache.calcite.rel.SingleRel;
 
 import java.util.List;
 
 /**
  * Unicast exchange: tuple is set to exactly one member.
  */
-public class UnicastExchangePhysicalRel extends SingleRel implements PhysicalRel {
+public class UnicastExchangePhysicalRel extends AbstractExchangePhysicalRel {
     /** Fields which should be used for hashing. */
     private final List<Integer> hashFields;
 

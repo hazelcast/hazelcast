@@ -29,6 +29,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Extended RelOptCluster with Hazelcast-specific data.
  */
 public final class HazelcastRelOptCluster extends RelOptCluster {
+    /** Current cluster. */
+    private static final ThreadLocal<HazelcastRelOptCluster> CURRENT = new ThreadLocal<>();
+
     /** Number of members. */
     private final int memberCount;
 
@@ -59,6 +62,14 @@ public final class HazelcastRelOptCluster extends RelOptCluster {
         );
     }
 
+    public static HazelcastRelOptCluster tryCast(RelOptCluster cluster) {
+        if (cluster instanceof HazelcastRelOptCluster) {
+            return cast(cluster);
+        } else {
+            return null;
+        }
+    }
+
     public static HazelcastRelOptCluster cast(RelOptCluster cluster) {
         assert cluster instanceof HazelcastRelOptCluster;
 
@@ -73,8 +84,24 @@ public final class HazelcastRelOptCluster extends RelOptCluster {
         return ruleCallTracker;
     }
 
-    public void setRuleCallTracker(RuleCallTracker ruleCallTracker) {
+    public void startPhysicalOptimization(RuleCallTracker ruleCallTracker) {
+        assert CURRENT.get() == null;
+        CURRENT.set(this);
+
         this.ruleCallTracker = ruleCallTracker;
+    }
+
+    public void finishPhysicalOptimization() {
+        assert CURRENT.get() == this;
+        CURRENT.set(null);
+
+        this.ruleCallTracker = null;
+    }
+
+    public static boolean isSingleMember() {
+        HazelcastRelOptCluster current = CURRENT.get();
+
+        return current != null && current.getMemberCount() == 1;
     }
 
     @Override

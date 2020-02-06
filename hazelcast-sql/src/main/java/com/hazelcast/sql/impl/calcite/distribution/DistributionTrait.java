@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.calcite.distribution;
 
 import com.hazelcast.sql.impl.calcite.opt.physical.RootPhysicalRel;
+import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelTrait;
 import org.apache.calcite.plan.RelTraitDef;
@@ -93,6 +94,11 @@ public class DistributionTrait implements RelTrait {
     public boolean satisfies(RelTrait targetTrait) {
         if (!(targetTrait instanceof DistributionTrait)) {
             return false;
+        }
+
+        // For single-member deployments all distributions satisfy each other.
+        if (HazelcastRelOptCluster.isSingleMember()) {
+            return true;
         }
 
         DistributionTrait targetTrait0 = (DistributionTrait) targetTrait;

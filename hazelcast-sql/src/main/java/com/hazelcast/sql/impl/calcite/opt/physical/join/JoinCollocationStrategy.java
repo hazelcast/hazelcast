@@ -16,7 +16,10 @@
 
 package com.hazelcast.sql.impl.calcite.opt.physical.join;
 
+import org.apache.calcite.plan.HazelcastRelOptCluster;
+
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -192,6 +195,10 @@ public final class JoinCollocationStrategy {
         JoinDistribution leftDistribution,
         JoinDistribution rightDistribution
     ) {
+        if (HazelcastRelOptCluster.isSingleMember()) {
+            return Collections.singletonList(new JoinCollocationStrategy(NONE, NONE, leftDistribution));
+        }
+
         Key key = Key.of(type, conditionType, leftDistribution, rightDistribution);
 
         List<JoinCollocationStrategy> res = MAP.get(key);

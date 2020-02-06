@@ -23,7 +23,6 @@ import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelCollation;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelWriter;
-import org.apache.calcite.rel.SingleRel;
 
 import java.util.List;
 
@@ -36,7 +35,7 @@ import java.util.List;
  *     <li><b>Distribution</b>: SINGLETON</li>
  * </ul>
  */
-public class SingletonSortMergeExchangePhysicalRel extends SingleRel implements PhysicalRel {
+public class SingletonSortMergeExchangePhysicalRel extends AbstractExchangePhysicalRel {
     /** Collation. */
     private final RelCollation collation;
 

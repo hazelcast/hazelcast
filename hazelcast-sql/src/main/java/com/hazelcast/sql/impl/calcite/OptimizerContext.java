@@ -290,7 +290,7 @@ public final class OptimizerContext {
         Program program = Programs.of(rules);
 
         try {
-            cluster.setRuleCallTracker(ruleCallTracker);
+            cluster.startPhysicalOptimization(ruleCallTracker);
 
             if (ruleCallTracker != null) {
                 ruleCallTracker.onStart();
@@ -310,7 +310,7 @@ public final class OptimizerContext {
 
             return (PhysicalRel) res;
         } finally {
-            cluster.setRuleCallTracker(null);
+            cluster.finishPhysicalOptimization();
         }
     }
 

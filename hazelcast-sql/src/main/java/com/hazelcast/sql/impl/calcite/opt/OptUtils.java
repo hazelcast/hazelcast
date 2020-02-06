@@ -265,7 +265,11 @@ public final class OptUtils {
      * @return Physical distribution.
      */
     public static DistributionTrait getDistribution(RelNode rel) {
-        return rel.getTraitSet().getTrait(DistributionTraitDef.INSTANCE);
+        return getDistribution(rel.getTraitSet());
+    }
+
+    public static DistributionTrait getDistribution(RelTraitSet traitSet) {
+        return traitSet.getTrait(DistributionTraitDef.INSTANCE);
     }
 
     /**

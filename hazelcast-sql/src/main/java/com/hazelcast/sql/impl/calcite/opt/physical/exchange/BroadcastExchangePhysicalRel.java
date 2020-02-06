@@ -22,14 +22,13 @@ import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelWriter;
-import org.apache.calcite.rel.SingleRel;
 
 import java.util.List;
 
 /**
  * Broadcast exchange operator which spreads tuple content to all other nodes.
  */
-public class BroadcastExchangePhysicalRel extends SingleRel implements PhysicalRel {
+public class BroadcastExchangePhysicalRel extends AbstractExchangePhysicalRel {
     public BroadcastExchangePhysicalRel(RelOptCluster cluster, RelTraitSet traits, RelNode input) {
         super(cluster, traits, input);
     }
