@@ -158,6 +158,7 @@ samples using the Core API.
 - [JDBC Sink](jdbc/src/main/java/com/hazelcast/jet/examples/jdbc/JdbcSink.java)
 - [JMS Queue Source and Sink](jms/src/main/java/com/hazelcast/jet/examples/jms/JmsQueueSample.java)
 - [JMS Topic Source and Sink](jms/src/main/java/com/hazelcast/jet/examples/jms/JmsTopicSample.java)
+- [Python Mapping Function](python/src/main/java/com/hazelcast/jet/examples/python/Python.java)
 - [TCP/IP Socket Source](sockets/src/main/java/com/hazelcast/jet/examples/sockets/StreamTextSocket.java)
 - [TCP/IP Socket Sink](sockets/src/main/java/com/hazelcast/jet/examples/sockets/WriteTextSocket.java)
 - [CSV Batch Source](files/src/main/java/com/hazelcast/jet/examples/files/SalesCsvAnalyzer.java)

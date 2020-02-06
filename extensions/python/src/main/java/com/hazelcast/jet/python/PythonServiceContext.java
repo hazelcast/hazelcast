@@ -77,7 +77,8 @@ class PythonServiceContext {
     private Path runtimeBaseDir;
 
     PythonServiceContext(ProcessorSupplier.Context context, PythonServiceConfig cfg) {
-        logger = context.logger();
+        logger = context.jetInstance().getHazelcastInstance().getLoggingService()
+                        .getLogger(getClass().getPackage().getName());
         try {
             long start = System.nanoTime();
             runtimeBaseDir = cfg.baseDir() != null
@@ -120,6 +121,10 @@ class PythonServiceContext {
         } finally {
             IOUtil.delete(runtimeBaseDir);
         }
+    }
+
+    ILogger logger() {
+        return logger;
     }
 
     Path runtimeBaseDir() {

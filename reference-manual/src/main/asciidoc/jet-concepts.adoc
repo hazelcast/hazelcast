@@ -197,8 +197,8 @@ On the other hand, network traffic scales with the total data size so
 the more material we process, the more we save on network traffic.
 
 Jet distinguishes between _local_ and _distributed_ edges, so we'll use
-a _local partitioned_ edge for `tokenize`->`accumulate` and a
-_distributed partitioned_ edge for `accumulate`->`combine`. With this
+a _local partitioned_ edge for `tokenize`-> `accumulate` and a
+_distributed partitioned_ edge for `accumulate`-> `combine`. With this
 move we've finalized our DAG design, which can be illustrated by the
 following diagram:
 

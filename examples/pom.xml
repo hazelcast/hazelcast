@@ -49,6 +49,7 @@
         <module>job-management</module>
         <module>kafka</module>
         <module>pattern-matching</module>
+        <module>python</module>
         <module>return-results</module>
         <module>rolling-aggregation</module>
         <module>session-windows</module>

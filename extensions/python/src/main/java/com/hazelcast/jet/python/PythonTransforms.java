@@ -38,6 +38,7 @@ public final class PythonTransforms {
     /**
      * A stage-transforming method that adds a "map using Python" pipeline stage.
      * Use it with {@code stage.apply(PythonService.mapUsingPython(pyConfig))}.
+     * See {@link com.hazelcast.jet.python.PythonServiceConfig} for more details.
      */
     @Nonnull
     public static FunctionEx<StreamStage<String>, StreamStage<String>> mapUsingPython(
@@ -51,6 +52,7 @@ public final class PythonTransforms {
     /**
      * A stage-transforming method that adds a "map using Python" pipeline stage.
      * Use it with {@code stage.apply(PythonService.mapUsingPythonBatch(pyConfig))}.
+     * See {@link com.hazelcast.jet.python.PythonServiceConfig} for more details.
      */
     @Nonnull
     public static FunctionEx<BatchStage<String>, BatchStage<String>> mapUsingPythonBatch(

@@ -13,8 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 /**
- * Declares a {@linkplain com.hazelcast.jet.pipeline.ServiceFactory service
- * factory} that calls a Python function.
+ * Contributes a {@link com.hazelcast.jet.python.PythonTransforms#mapUsingPython}
+ * transform that allows you to transform Jet pipeline data using a Python
+ * function. See {@link com.hazelcast.jet.python.PythonServiceConfig} for
+ * more details.
  */
 package com.hazelcast.jet.python;
