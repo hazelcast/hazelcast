@@ -385,7 +385,7 @@ public interface GeneralStage<T> extends Stage {
     );
 
     /**
-     * Batched version of {@link #mapUsingService}: {@code mapAsyncFn} takes
+     * Batched version of {@link #mapUsingServiceAsync}: {@code mapAsyncFn} takes
      * a list of input items and returns a {@code CompletableFuture<List<R>>}.
      * The size of the input list is limited by the given {@code maxBatchSize}.
      * <p>

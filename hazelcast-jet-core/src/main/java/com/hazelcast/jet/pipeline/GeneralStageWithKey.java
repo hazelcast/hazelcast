@@ -31,6 +31,7 @@ import com.hazelcast.jet.function.TriPredicate;
 import com.hazelcast.map.IMap;
 
 import javax.annotation.Nonnull;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
@@ -222,7 +223,7 @@ public interface GeneralStageWithKey<T, K> {
      * <pre>{@code
      * items.groupingKey(Item::getDetailId)
      *      .mapUsingService(
-     *          ServiceFactory.withCreateFn(jet -> new ItemDetailRegistry()),
+     *          ServiceFactories.sharedService(ctx -> new ItemDetailRegistry()),
      *          (reg, key, item) -> item.setDetail(reg.fetchDetail(key))
      *      );
      * }</pre>
@@ -258,9 +259,8 @@ public interface GeneralStageWithKey<T, K> {
      * <pre>{@code
      * items.groupingKey(Item::getDetailId)
      *      .mapUsingServiceAsync(
-     *          ServiceFactory.withCreateFn(jet -> new ItemDetailRegistry()),
-     *          (reg, key, item) -> reg.fetchDetailAsync(key)
-     *                                 .thenApply(detail -> item.setDetail(detail))
+     *          ServiceFactories.sharedService(ctx -> new ItemDetailRegistry()),
+     *          (reg, key, item) -> reg.fetchDetailAsync(key).thenApply(item::setDetail)
      *      );
      * }</pre>
      * The latency of the async call will add to the total latency of the
@@ -292,9 +292,10 @@ public interface GeneralStageWithKey<T, K> {
      * <pre>{@code
      * items.groupingKey(Item::getDetailId)
      *      .mapUsingServiceAsync(
-     *          ServiceFactory.withCreateFn(jet -> new ItemDetailRegistry()),
-     *          (reg, key, item) -> reg.fetchDetailAsync(key)
-     *                                 .thenApply(detail -> item.setDetail(detail))
+     *          ServiceFactories.sharedService(ctx -> new ItemDetailRegistry()),
+     *          16,
+     *          true,
+     *          (reg, key, item) -> reg.fetchDetailAsync(key).thenApply(item::setDetail)
      *      );
      * }</pre>
      * The latency of the async call will add to the total latency of the
@@ -318,6 +319,101 @@ public interface GeneralStageWithKey<T, K> {
     );
 
     /**
+     * Batched version of {@link #mapUsingServiceAsync}: {@code mapAsyncFn} takes
+     * a list of input items and returns a {@code CompletableFuture<List<R>>}.
+     * The size of list is limited by the given {@code maxBatchSize}.
+     * <p>
+     * As opposed to the non-batched variant, this transform cannot perform
+     * filtering. The output list's items must match one-to-one with the input
+     * lists'.
+     * <p>
+     * The latency of the async call will add to the total latency of the
+     * output.
+     * <p>
+     * This sample takes a stream of stock items and sets the {@code detail}
+     * field on them by performing batched lookups from a registry. The max
+     * size of the items to lookup is specified as {@code 100}:
+     * <pre>{@code
+     * items.groupingKey(Item::getDetailId)
+     *      .mapUsingServiceAsyncBatched(
+     *          ServiceFactories.sharedService(ctx -> new ItemDetailRegistry()),
+     *          100,
+     *          (reg, itemList) -> reg
+     *              .fetchDetailsAsync(itemList.stream().map(Item::getDetailId).collect(Collectors.toList()))
+     *              .thenApply(details -> {
+     *                  for (int i = 0; i < itemList.size(); i++) {
+     *                      itemList.get(i).setDetail(details.get(i));
+     *                  }
+     *                  return itemList;
+     *              })
+     *      );
+     * }</pre>
+     *
+     * @param serviceFactory the service factory
+     * @param maxBatchSize max size of the input list
+     * @param mapAsyncFn a stateless mapping function
+     * @param <S> type of service object
+     * @param <R> the future result type of the mapping function
+     * @return the newly attached stage
+     * @since 4.0
+     */
+    @Nonnull
+    <S, R> GeneralStage<R> mapUsingServiceAsyncBatched(
+            @Nonnull ServiceFactory<?, S> serviceFactory,
+            int maxBatchSize,
+            @Nonnull BiFunctionEx<? super S, ? super List<T>, ? extends CompletableFuture<List<R>>> mapAsyncFn
+    );
+
+    /**
+     * Batched version of {@link #mapUsingServiceAsync}: {@code mapAsyncFn} takes
+     * a list of input items (and a list of their corresponding keys) and
+     * returns a {@code CompletableFuture<List<R>>}.
+     * The sizes of the input lists are identical and are limited by the given
+     * {@code maxBatchSize}. The key at index N corresponds to the input item
+     * at index N.
+     * <p>
+     * As opposed to the non-batched variant, this transform cannot perform
+     * filtering. The output list's items must match one-to-one with the input
+     * lists'.
+     * <p>
+     * The latency of the async call will add to the total latency of the
+     * output.
+     * <p>
+     * This sample takes a stream of stock items and sets the {@code detail}
+     * field on them by performing batched lookups from a registry. The max
+     * size of the items to lookup is specified as {@code 100}:
+     * <p>
+     * <pre>{@code
+     * items.groupingKey(Item::getDetailId)
+     *      .mapUsingServiceAsyncBatched(
+     *          ServiceFactories.sharedService(ctx -> new ItemDetailRegistry()),
+     *          100,
+     *          (reg, keyList, itemList) -> reg.fetchDetailsAsync(keyList).thenApply(details -> {
+     *              for (int i = 0; i < itemList.size(); i++) {
+     *                  itemList.get(i).setDetail(details.get(i));
+     *              }
+     *              return itemList;
+     *          })
+     *      );
+     * }</pre>
+     *
+     * @param serviceFactory the service factory
+     * @param maxBatchSize max size of the input list
+     * @param mapAsyncFn a stateless mapping function
+     * @param <S> type of service object
+     * @param <R> the future result type of the mapping function
+     * @return the newly attached stage
+     * @since 4.0
+     */
+    @Nonnull
+    <S, R> GeneralStage<R> mapUsingServiceAsyncBatched(
+            @Nonnull ServiceFactory<?, S> serviceFactory,
+            int maxBatchSize,
+            @Nonnull TriFunction<? super S, ? super List<K>, ? super List<T>,
+                    ? extends CompletableFuture<List<R>>> mapAsyncFn
+    );
+
+    /**
      * Attaches a filtering stage which applies the provided predicate function
      * to each input item to decide whether to pass the item to the output or
      * to discard it. The predicate function receives another parameter, the
@@ -335,7 +431,7 @@ public interface GeneralStageWithKey<T, K> {
      * <pre>{@code
      * items.groupingKey(Item::getDetailId)
      *      .filterUsingService(
-     *          ServiceFactory.withCreateFn(jet -> new ItemDetailRegistry()),
+     *          ServiceFactories.sharedService(ctx -> new ItemDetailRegistry()),
      *          (reg, key, item) -> reg.fetchDetail(key).contains("blade")
      *      );
      * }</pre>
@@ -379,7 +475,7 @@ public interface GeneralStageWithKey<T, K> {
      * StreamStage<Part> parts = products
      *     .groupingKey(Product::getId)
      *     .flatMapUsingService(
-     *         ServiceFactory.withCreateFn(jet -> new PartRegistry()),
+     *         ServiceFactories.sharedService(ctx -> new PartRegistry()),
      *         (registry, productId, product) -> Traversers.traverseIterable(
      *                 registry.fetchParts(productId))
      *     );

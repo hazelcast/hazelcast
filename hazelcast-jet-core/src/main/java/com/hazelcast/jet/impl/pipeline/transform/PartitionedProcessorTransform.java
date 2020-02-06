@@ -28,6 +28,7 @@ import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
 import com.hazelcast.jet.pipeline.ServiceFactory;
 
 import javax.annotation.Nonnull;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.jet.core.processor.Processors.filterUsingServiceP;
@@ -101,6 +102,22 @@ public final class PartitionedProcessorTransform<T, K> extends ProcessorTransfor
         String name = operationName + "UsingPartitionedServiceAsync";
         ProcessorSupplier supplier = flatMapUsingServiceAsyncP(
                 serviceFactory, maxConcurrentOps, preserveOrder, partitionKeyFn, flatMapAsyncFn);
+        ProcessorMetaSupplier metaSupplier = ProcessorMetaSupplier.of(getPreferredLP(serviceFactory), supplier);
+        return new PartitionedProcessorTransform<>(name, upstream, metaSupplier, partitionKeyFn);
+    }
+
+    public static <S, T, K, R> PartitionedProcessorTransform<T, K> flatMapUsingServiceAsyncBatchedPartitionedTransform(
+            @Nonnull Transform upstream,
+            @Nonnull String operationName,
+            @Nonnull ServiceFactory<?, S> serviceFactory,
+            int maxConcurrentOps,
+            int maxBatchSize,
+            @Nonnull BiFunctionEx<? super S, ? super List<T>, ? extends CompletableFuture<Traverser<R>>> flatMapAsyncFn,
+            @Nonnull FunctionEx<? super T, ? extends K> partitionKeyFn
+    ) {
+        String name = operationName + "UsingPartitionedServiceAsync";
+        ProcessorSupplier supplier = flatMapUsingServiceAsyncBatchedP(
+                serviceFactory, maxConcurrentOps, maxBatchSize, flatMapAsyncFn);
         ProcessorMetaSupplier metaSupplier = ProcessorMetaSupplier.of(getPreferredLP(serviceFactory), supplier);
         return new PartitionedProcessorTransform<>(name, upstream, metaSupplier, partitionKeyFn);
     }

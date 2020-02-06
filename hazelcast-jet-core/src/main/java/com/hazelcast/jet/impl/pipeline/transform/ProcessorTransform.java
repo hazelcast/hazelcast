@@ -110,12 +110,13 @@ public class ProcessorTransform extends AbstractTransform {
             @Nonnull ServiceFactory<?, S> serviceFactory,
             int maxConcurrentOps,
             int maxBatchSize,
-            @Nonnull BiFunctionEx<? super S, ? super List<T>,
-                    ? extends CompletableFuture<Traverser<R>>> flatMapAsyncFn
+            @Nonnull BiFunctionEx<? super S, ? super List<T>, ? extends CompletableFuture<Traverser<R>>> flatMapAsyncFn
     ) {
-        return new ProcessorTransform(operationName + "UsingServiceAsyncBatched", upstream,
-                ProcessorMetaSupplier.of(getPreferredLP(serviceFactory),
-                        flatMapUsingServiceAsyncBatchedP(serviceFactory, maxConcurrentOps, maxBatchSize, flatMapAsyncFn)));
+        String name = operationName + "UsingServiceAsyncBatched";
+        ProcessorSupplier supplier = flatMapUsingServiceAsyncBatchedP(
+                serviceFactory, maxConcurrentOps, maxBatchSize, flatMapAsyncFn);
+        ProcessorMetaSupplier metaSupplier = ProcessorMetaSupplier.of(getPreferredLP(serviceFactory), supplier);
+        return new ProcessorTransform(name, upstream, metaSupplier);
     }
 
     static int getPreferredLP(@Nonnull ServiceFactory<?, ?> serviceFactory) {

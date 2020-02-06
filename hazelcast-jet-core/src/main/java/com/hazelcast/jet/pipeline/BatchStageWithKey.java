@@ -33,6 +33,7 @@ import com.hazelcast.jet.function.TriPredicate;
 import com.hazelcast.map.IMap;
 
 import javax.annotation.Nonnull;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
 
@@ -125,6 +126,21 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
             int maxConcurrentOps,
             boolean preserveOrder,
             @Nonnull TriFunction<? super S, ? super K, ? super T, CompletableFuture<R>> mapAsyncFn
+    );
+
+    @Nonnull @Override
+    <S, R> BatchStage<R> mapUsingServiceAsyncBatched(
+            @Nonnull ServiceFactory<?, S> serviceFactory,
+            int maxBatchSize,
+            @Nonnull BiFunctionEx<? super S, ? super List<T>, ? extends CompletableFuture<List<R>>> mapAsyncFn
+    );
+
+    @Nonnull @Override
+    <S, R> BatchStage<R> mapUsingServiceAsyncBatched(
+            @Nonnull ServiceFactory<?, S> serviceFactory,
+            int maxBatchSize,
+            @Nonnull TriFunction<? super S, ? super List<K>, ? super List<T>,
+                    ? extends CompletableFuture<List<R>>> mapAsyncFn
     );
 
     @Nonnull @Override
