@@ -133,7 +133,7 @@ make_request () {
     if [[ ${curl_exit_code} = 7 ]]; then
         echo "Unable to connect to the host. Is the server running?"
         exit ${curl_exit_code}
-    elif [[ ${curl_exit_code} = 52 ]] || ${curl_exit_code} = 55 ]] || [[ ${curl_exit_code} = 56 ]]; then
+    elif [[ ${curl_exit_code} = 52 ]] || [[ ${curl_exit_code} = 55 ]] || [[ ${curl_exit_code} = 56 ]]; then
         echo "Unable to send or receive data from the server. Is REST API enabled on the server?"
         exit ${curl_exit_code}
     elif [[ ${curl_exit_code} != 0 ]]; then
