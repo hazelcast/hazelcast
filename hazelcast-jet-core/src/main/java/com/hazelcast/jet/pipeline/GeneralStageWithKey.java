@@ -28,6 +28,8 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.function.TriPredicate;
+import com.hazelcast.jet.impl.pipeline.ComputeStageImplBase;
+import com.hazelcast.jet.impl.processor.AbstractAsyncTransformUsingServiceP;
 import com.hazelcast.map.IMap;
 
 import javax.annotation.Nonnull;
@@ -38,8 +40,8 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.impl.processor.AbstractAsyncTransformUsingServiceP.MAX_CONCURRENT_OPS;
-import static com.hazelcast.jet.impl.processor.AbstractAsyncTransformUsingServiceP.PRESERVE_ORDER;
+import static com.hazelcast.jet.impl.processor.AbstractAsyncTransformUsingServiceP.DEFAULT_MAX_CONCURRENT_OPS;
+import static com.hazelcast.jet.impl.processor.AbstractAsyncTransformUsingServiceP.DEFAULT_PRESERVE_ORDER;
 
 /**
  * An intermediate step when constructing a group-and-aggregate pipeline
@@ -252,6 +254,12 @@ public interface GeneralStageWithKey<T, K> {
      * Asynchronous version of {@link #mapUsingService}: the {@code mapAsyncFn}
      * returns a {@code CompletableFuture<R>} instead of just {@code R}.
      * <p>
+     * Uses default values for some extra parameters, so the maximum number
+     * of concurrent async operations per processor will be limited to
+     * {@value AbstractAsyncTransformUsingServiceP#DEFAULT_MAX_CONCURRENT_OPS} and
+     * whether or not the order of input items should be preserved will be
+     * {@value AbstractAsyncTransformUsingServiceP#DEFAULT_PRESERVE_ORDER}.
+     * <p>
      * The function can return a null future or the future can return a null
      * result: in both cases it will act just like a filter.
      * <p>
@@ -278,7 +286,7 @@ public interface GeneralStageWithKey<T, K> {
             @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull TriFunction<? super S, ? super K, ? super T, CompletableFuture<R>> mapAsyncFn
     ) {
-        return mapUsingServiceAsync(serviceFactory, MAX_CONCURRENT_OPS, PRESERVE_ORDER, mapAsyncFn);
+        return mapUsingServiceAsync(serviceFactory, DEFAULT_MAX_CONCURRENT_OPS, DEFAULT_PRESERVE_ORDER, mapAsyncFn);
     }
 
     /**
@@ -372,6 +380,10 @@ public interface GeneralStageWithKey<T, K> {
      * {@code maxBatchSize}. The key at index N corresponds to the input item
      * at index N.
      * <p>
+     * The number of in-flight batches being completed asynchronously is
+     * limited to {@value ComputeStageImplBase#MAX_CONCURRENT_ASYNC_BATCHES}
+     * and this mapping operation always preserves the order of input elements.
+     * <p>
      * As opposed to the non-batched variant, this transform cannot perform
      * filtering. The output list's items must match one-to-one with the input
      * lists'.
@@ -419,6 +431,10 @@ public interface GeneralStageWithKey<T, K> {
      * to discard it. The predicate function receives another parameter, the
      * service object, which Jet will create using the supplied {@code
      * serviceFactory}.
+     * <p>
+     * The number of in-flight batches being completed asynchronously is
+     * limited to {@value ComputeStageImplBase#MAX_CONCURRENT_ASYNC_BATCHES}
+     * and this mapping operation always preserves the order of input elements.
      * <p>
      * Jet uses the {@linkplain #keyFn() key-extracting function} specified on
      * this stage for partitioning: all the items with the same key will see
@@ -544,7 +560,8 @@ public interface GeneralStageWithKey<T, K> {
             @Nonnull String mapName,
             @Nonnull BiFunctionEx<? super T, ? super V, ? extends R> mapFn
     ) {
-        return mapUsingServiceAsync(ServiceFactories.<K, V>iMapService(mapName), MAX_CONCURRENT_OPS, PRESERVE_ORDER,
+        return mapUsingServiceAsync(ServiceFactories.<K, V>iMapService(mapName),
+                DEFAULT_MAX_CONCURRENT_OPS, DEFAULT_PRESERVE_ORDER,
                 (map, key, item) -> map.getAsync(key).toCompletableFuture()
                                        .thenApply(value -> mapFn.apply(item, value)));
     }

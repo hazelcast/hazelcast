@@ -80,8 +80,8 @@ import static java.util.Collections.singletonList;
 public abstract class ComputeStageImplBase<T> extends AbstractStage {
 
     public static final FunctionAdapter ADAPT_TO_JET_EVENT = new JetEventFunctionAdapter();
+    public static final int MAX_CONCURRENT_ASYNC_BATCHES = 2;
     static final FunctionAdapter DO_NOT_ADAPT = new FunctionAdapter();
-    private static final int MAX_CONCURRENT_ASYNC_BATCHES = 2;
 
     @Nonnull
     public FunctionAdapter fnAdapter;

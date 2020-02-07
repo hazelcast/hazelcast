@@ -25,17 +25,17 @@ public abstract class AbstractAsyncTransformUsingServiceP<C, S> extends Abstract
     /**
      * Default value for {@link #maxConcurrentOps}.
      */
-    public static final int MAX_CONCURRENT_OPS = 256;
+    public static final int DEFAULT_MAX_CONCURRENT_OPS = 256;
     /**
      * Default value for {@link #preserveOrder}.
      */
-    public static final boolean PRESERVE_ORDER = true;
+    public static final boolean DEFAULT_PRESERVE_ORDER = true;
 
     /**
      * Jet will execute at most this many concurrent async operations per processor
      * and will apply backpressure to the upstream to enforce it.
      * <p>
-     * Default value is {@value #MAX_CONCURRENT_OPS}.
+     * Default value is {@value #DEFAULT_MAX_CONCURRENT_OPS}.
      */
     protected final int maxConcurrentOps;
 

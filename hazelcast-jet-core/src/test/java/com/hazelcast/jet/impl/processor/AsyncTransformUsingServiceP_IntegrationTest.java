@@ -66,7 +66,7 @@ import static com.hazelcast.jet.core.JobStatus.COMPLETED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.TestUtil.throttle;
 import static com.hazelcast.jet.core.processor.SourceProcessors.streamMapP;
-import static com.hazelcast.jet.impl.processor.AbstractAsyncTransformUsingServiceP.MAX_CONCURRENT_OPS;
+import static com.hazelcast.jet.impl.processor.AbstractAsyncTransformUsingServiceP.DEFAULT_MAX_CONCURRENT_OPS;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
 import static com.hazelcast.jet.pipeline.ServiceFactories.sharedService;
 import static java.util.Arrays.asList;
@@ -148,9 +148,9 @@ public class AsyncTransformUsingServiceP_IntegrationTest extends SimpleTestInClu
                 transformNotPartitionedFn(i -> traverseItems(i + "-1", i + "-2", i + "-3", i + "-4", i + "-5"));
         ProcessorSupplier processorSupplier = ordered
                 ? AsyncTransformUsingServiceOrderedP.supplier(
-                        serviceFactory, MAX_CONCURRENT_OPS, flatMapAsyncFn)
+                        serviceFactory, DEFAULT_MAX_CONCURRENT_OPS, flatMapAsyncFn)
                 : AsyncTransformUsingServiceUnorderedP.supplier(
-                        serviceFactory, MAX_CONCURRENT_OPS, flatMapAsyncFn, identity());
+                        serviceFactory, DEFAULT_MAX_CONCURRENT_OPS, flatMapAsyncFn, identity());
         Vertex map = dag.newVertex("map", processorSupplier).localParallelism(2);
         Vertex sink = dag.newVertex("sink", SinkProcessors.writeListP(sinkList.getName()));
 
