@@ -25,6 +25,7 @@ import com.hazelcast.function.PredicateEx;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.map.impl.journal.MapEventJournalFunctions;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -188,6 +189,8 @@ public final class Util {
      * @return a {@code Path} pointing to the created temporary directory
      * @since 4.0
      */
+    @SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE", justification =
+                        "False positive on try-with-resources as of JDK11")
     public static Path copyClasspathDirectory(String classpathPrefix) throws IOException {
         Path destPathBase = Files.createTempDirectory("hazelcast-jet-");
         ClassLoader cl = Util.class.getClassLoader();
