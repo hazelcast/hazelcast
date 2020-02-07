@@ -401,9 +401,8 @@ public interface GeneralStage<T> extends Stage {
      * limited to {@value ComputeStageImplBase#MAX_CONCURRENT_ASYNC_BATCHES}
      * and this mapping operation always preserves the order of input elements.
      * <p>
-     * As opposed to the non-batched variant, this transform cannot perform
-     * filtering. The output list's items must match one-to-one with the input
-     * list's.
+     * This transform can perform filtering by putting {@code null} elements into
+     * the output list.
      * <p>
      * The latency of the async call will add to the total latency of the
      * output.

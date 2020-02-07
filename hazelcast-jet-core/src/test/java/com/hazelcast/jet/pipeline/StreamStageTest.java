@@ -40,6 +40,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -446,6 +447,43 @@ public class StreamStageTest extends PipelineStreamTestSupport {
     }
 
     @Test
+    public void mapUsingServiceAsyncBatched_withFiltering() {
+        ServiceFactory<?, ScheduledExecutorService> serviceFactory = sharedService(
+                pctx -> Executors.newScheduledThreadPool(8), ExecutorService::shutdown
+        );
+
+        // Given
+        List<Integer> input = sequence(itemCount);
+        BiFunctionEx<String, Integer, String> formatFn = (suffix, i) -> String.format("%04d%s", i, suffix);
+        String suffix = "-context";
+
+        // When
+        int batchSize = 4;
+        StreamStage<String> mapped = streamStageFromList(input).mapUsingServiceAsyncBatched(serviceFactory, batchSize,
+                (executor, list) -> {
+                    CompletableFuture<List<String>> f = new CompletableFuture<>();
+                    assertTrue("list size", list.size() <= batchSize && list.size() > 0);
+                    executor.schedule(() -> {
+                        List<String> result = list.stream()
+                                .map(i -> i % 13 == 0 ? null : formatFn.apply(suffix, i))
+                                .collect(toList());
+                        f.complete(result);
+                    }, 10, TimeUnit.MILLISECONDS);
+                    return f;
+                }
+        );
+
+        // Then
+        mapped.writeTo(sink);
+        execute();
+        assertEquals(
+                streamToString(input.stream()
+                        .filter(i -> i % 13 != 0)
+                        .map(i -> formatFn.apply(suffix, i)), identity()),
+                streamToString(sinkList.stream(), Object::toString));
+    }
+
+    @Test
     public void mapUsingService_keyed() {
         // Given
         List<Integer> input = sequence(itemCount);
@@ -577,6 +615,51 @@ public class StreamStageTest extends PipelineStreamTestSupport {
         assertEquals(
                 streamToString(input.stream().map(i -> formatFn.apply(suffix, i)), identity()),
                 streamToString(sinkList.stream(), Object::toString));
+    }
+
+    @Test
+    public void mapUsingServiceAsyncBatched_keyed_withFiltering() {
+        ServiceFactory<?, ScheduledExecutorService> serviceFactory = sharedService(
+                pctx -> Executors.newScheduledThreadPool(8), ExecutorService::shutdown
+        );
+
+        // Given
+        List<Integer> input = sequence(itemCount);
+        BiFunctionEx<String, Integer, String> formatFn = (suffix, i) -> String.format("%04d%s", i, suffix);
+        String suffix = "-context";
+
+        // When
+        int batchSize = 32;
+        StreamStage<String> mapped = streamStageFromList(input)
+                .groupingKey(i -> i % 23)
+                .mapUsingServiceAsyncBatched(
+                        serviceFactory,
+                        batchSize,
+                        (executor, keys, items) -> {
+                            CompletableFuture<List<String>> f = new CompletableFuture<>();
+                            assertTrue("list size", items.size() <= batchSize && items.size() > 0);
+                            assertEquals("lists size equality", items.size(), keys.size());
+                            executor.schedule(() -> {
+                                List<String> results = items.isEmpty() ? Collections.emptyList() : new ArrayList<>();
+                                for (int i = 0; i < items.size(); i++) {
+                                    Integer item = items.get(i);
+                                    Integer key = keys.get(i);
+                                    results.add(item % 13 == 0 || key == 0 ? null : formatFn.apply(suffix, item));
+                                }
+                                f.complete(results);
+                            }, 10, TimeUnit.MILLISECONDS);
+                            return f;
+                        }
+                );
+
+        // Then
+        mapped.writeTo(sink);
+        execute();
+        assertEquals(
+                streamToString(input.stream()
+                        .filter(i -> i % 13 != 0 && i % 23 != 0)
+                        .map(i -> formatFn.apply(suffix, i)), identity()),
+                streamToString(sinkStreamOf(String.class), identity()));
     }
 
     @Test

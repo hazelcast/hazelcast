@@ -331,9 +331,8 @@ public interface GeneralStageWithKey<T, K> {
      * a list of input items and returns a {@code CompletableFuture<List<R>>}.
      * The size of list is limited by the given {@code maxBatchSize}.
      * <p>
-     * As opposed to the non-batched variant, this transform cannot perform
-     * filtering. The output list's items must match one-to-one with the input
-     * lists'.
+     * This transform can perform filtering by putting {@code null} elements into
+     * the output list.
      * <p>
      * The latency of the async call will add to the total latency of the
      * output.
@@ -384,9 +383,8 @@ public interface GeneralStageWithKey<T, K> {
      * limited to {@value ComputeStageImplBase#MAX_CONCURRENT_ASYNC_BATCHES}
      * and this mapping operation always preserves the order of input elements.
      * <p>
-     * As opposed to the non-batched variant, this transform cannot perform
-     * filtering. The output list's items must match one-to-one with the input
-     * lists'.
+     * This transform can perform filtering by putting {@code null} elements into
+     * the output list.
      * <p>
      * The latency of the async call will add to the total latency of the
      * output.
