@@ -88,15 +88,15 @@ You will need to setup [Azure Active Directory Service Principal credentials](ht
 - `subscription-id` - *(Optional)* The Azure subscription ID.
 - `resource-group` - *(Optional)* The Azure [resource group](https://azure.microsoft.com/en-us/documentation/articles/resource-group-portal/) name of the cluster. You can find this in the Azure [portal](https://portal.azure.com) or [CLI](https://npmjs.org/azure-cli).
 - `scale-set` - *(Optional)* The Azure [VM scale set](https://docs.microsoft.com/en-us/azure/virtual-machine-scale-sets/overview) name of the cluster. If this setting is configured, the plugin will search for instances over the resources only within this scale set.
-- `tag` - *(Optional)* The key-value pair of the tag on the Hazelcast vm resources.
+- `tag` - *(Optional)* The key-value pair of the tag on the Hazelcast vm resources. The format should be as `key=value`.
 
 **Notes**
 
-* If you *do not* configure all of the `client-id`, `client-secret`, and `tenant-id` settings, the plugin will try to retrieve the Azure REST API access token from the [instance metadata service](https://docs.microsoft.com/en-us/azure/virtual-machines/windows/instance-metadata-service). 
+* If you *do not* configure all of the `client-id`, `client-secret`, and `tenant-id` settings, the plugin will try to retrieve the Azure REST API access token from the [instance metadata service](https://docs.microsoft.com/en-us/azure/virtual-machines/windows/instance-metadata-service).   
 * If you *do not* configure any of the `subscription-id`, `resource-group`, or `scale-set` settings, again the plugin will try to retrieve these settings' current values using instance metadata service.
 * If you *do not* configure `tag` setting, the plugin will search for instances over all available resources. 
 
-The only requirement is that every VM can access each other either by private or public IP address.
+The only requirement is that every VM can access each other either by private or public IP address. Also, the resources should have the identity with correct access roles in order to use instance metadata service. 
 
 # Using Azure With ZONE_AWARE Partition Group
 
