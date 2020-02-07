@@ -28,6 +28,7 @@ import com.hazelcast.internal.nearcache.impl.invalidation.Invalidation;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -49,7 +50,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static java.lang.String.format;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -112,11 +112,11 @@ public class CacheDestroyTest extends CacheTestSupport {
         CacheManager cacheManager = cachingProvider.getCacheManager();
         cacheManager.createCache(CACHE_NAME, new CacheConfig());
 
-        NodeEngineImpl nodeEngine1 = getNode(getHazelcastInstance()).getNodeEngine();
+        NodeEngineImpl nodeEngine1 = Accessors.getNode(getHazelcastInstance()).getNodeEngine();
         final ICacheService cacheService1 = nodeEngine1.getService(ICacheService.SERVICE_NAME);
         OperationServiceImpl operationService1 = nodeEngine1.getOperationService();
 
-        NodeEngineImpl nodeEngine2 = getNode(hazelcastInstances[1]).getNodeEngine();
+        NodeEngineImpl nodeEngine2 = Accessors.getNode(hazelcastInstances[1]).getNodeEngine();
         final ICacheService cacheService2 = nodeEngine2.getService(ICacheService.SERVICE_NAME);
 
         assertNotNull(cacheService1.getCacheConfig(FULL_CACHE_NAME));

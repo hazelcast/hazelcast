@@ -26,6 +26,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -201,7 +202,7 @@ public class PartitionPredicateTest extends HazelcastTestSupport {
 
     @Test
     public void testSerialization() {
-        SerializationService serializationService = getSerializationService(local);
+        SerializationService serializationService = Accessors.getSerializationService(local);
         Data serialized = serializationService.toData(predicate);
         PartitionPredicate deserialized = serializationService.toObject(serialized);
 

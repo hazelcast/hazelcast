@@ -17,6 +17,7 @@
 package com.hazelcast.topic.impl.reliable;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
@@ -82,7 +83,7 @@ public class ReliableTopicDestroyTest extends HazelcastTestSupport {
         topic.publish("foo");
         topic.destroy();
         final RingbufferService ringbufferService
-                = getNodeEngineImpl(getMember()).getService(RingbufferService.SERVICE_NAME);
+                = Accessors.getNodeEngineImpl(getMember()).getService(RingbufferService.SERVICE_NAME);
 
         assertTrueEventually(new AssertTask() {
             @Override

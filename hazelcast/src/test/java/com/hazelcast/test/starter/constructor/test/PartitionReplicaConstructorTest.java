@@ -21,6 +21,7 @@ import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.impl.InternalPartitionImpl;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -41,7 +42,7 @@ public class PartitionReplicaConstructorTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance();
         warmUpPartitions(hz);
 
-        InternalPartitionService partitionService = getNode(hz).getPartitionService();
+        InternalPartitionService partitionService = Accessors.getNode(hz).getPartitionService();
         InternalPartition[] partitions = partitionService.getInternalPartitions();
         InternalPartitionImpl partition = (InternalPartitionImpl) partitions[0];
         PartitionReplica replica = partition.getReplica(0);

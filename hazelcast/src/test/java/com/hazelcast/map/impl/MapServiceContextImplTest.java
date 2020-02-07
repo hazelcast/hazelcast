@@ -18,6 +18,7 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.RequireAssertEnabled;
@@ -39,7 +40,7 @@ public class MapServiceContextImplTest extends HazelcastTestSupport {
     @Before
     public void setUp() {
         HazelcastInstance instance = createHazelcastInstance();
-        MapService service = getNodeEngineImpl(instance).getService(MapService.SERVICE_NAME);
+        MapService service = Accessors.getNodeEngineImpl(instance).getService(MapService.SERVICE_NAME);
         mapServiceContext = service.getMapServiceContext();
     }
 

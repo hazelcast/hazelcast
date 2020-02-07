@@ -28,6 +28,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -112,7 +113,7 @@ public class OperationServiceImpl_timeoutTest extends HazelcastTestSupport {
         warmUpPartitions(instances);
 
         final HazelcastInstance hz = instances[memberCount - 1];
-        NodeEngine nodeEngine = getNodeEngineImpl(hz);
+        NodeEngine nodeEngine = Accessors.getNodeEngineImpl(hz);
         OperationService operationService = nodeEngine.getOperationService();
         int partitionId = (int) (Math.random() * nodeEngine.getPartitionService().getPartitionCount());
 
@@ -187,8 +188,8 @@ public class OperationServiceImpl_timeoutTest extends HazelcastTestSupport {
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);
 
         // invoke on the "local" member
-        Address localAddress = getNode(hz1).getThisAddress();
-        OperationService operationService = getNode(hz1).getNodeEngine().getOperationService();
+        Address localAddress = Accessors.getNode(hz1).getThisAddress();
+        OperationService operationService = Accessors.getNode(hz1).getNodeEngine().getOperationService();
         InternalCompletableFuture<Boolean> future = operationService
                 .invokeOnTarget(null, new SleepingOperation(callTimeoutMillis * 5), localAddress);
 

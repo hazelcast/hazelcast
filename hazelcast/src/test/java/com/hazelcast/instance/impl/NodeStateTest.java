@@ -22,6 +22,7 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -51,14 +52,14 @@ public class NodeStateTest extends HazelcastTestSupport {
     public void nodeState_isActive_whenInstanceStarted() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance hz = factory.newHazelcastInstance();
-        assertEquals(NodeState.ACTIVE, getNode(hz).getState());
+        assertEquals(NodeState.ACTIVE, Accessors.getNode(hz).getState());
     }
 
     @Test
     public void nodeState_isShutdown_whenInstanceShutdown() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance hz = factory.newHazelcastInstance();
-        Node node = getNode(hz);
+        Node node = Accessors.getNode(hz);
         hz.shutdown();
         assertEquals(NodeState.SHUT_DOWN, node.getState());
     }
@@ -67,7 +68,7 @@ public class NodeStateTest extends HazelcastTestSupport {
     public void nodeState_isShutdown_whenInstanceTerminated() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance hz = factory.newHazelcastInstance();
-        Node node = getNode(hz);
+        Node node = Accessors.getNode(hz);
         hz.shutdown();
         assertEquals(NodeState.SHUT_DOWN, node.getState());
     }
@@ -76,7 +77,7 @@ public class NodeStateTest extends HazelcastTestSupport {
     public void multipleShutdowns_Allowed() throws InterruptedException {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance hz = factory.newHazelcastInstance();
-        Node node = getNode(hz);
+        Node node = Accessors.getNode(hz);
 
         for (int i = 0; i < 3; i++) {
             node.shutdown(false);
@@ -87,7 +88,7 @@ public class NodeStateTest extends HazelcastTestSupport {
     public void concurrentShutdowns_Allowed() throws InterruptedException {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance hz = factory.newHazelcastInstance();
-        final Node node = getNode(hz);
+        final Node node = Accessors.getNode(hz);
 
         Thread[] shutdownThreads = new Thread[3];
         for (int i = 0; i < shutdownThreads.length; i++) {
@@ -194,14 +195,14 @@ public class NodeStateTest extends HazelcastTestSupport {
     private void testInvocation_whilePassive(InvocationTask invocationTask) throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         final HazelcastInstance hz = factory.newHazelcastInstance();
-        final Node node = getNode(hz);
+        final Node node = Accessors.getNode(hz);
 
         changeClusterStateEventually(hz, ClusterState.PASSIVE);
 
         assertEquals(NodeState.PASSIVE, node.getState());
 
         try {
-            invocationTask.invoke(getNodeEngineImpl(hz));
+            invocationTask.invoke(Accessors.getNodeEngineImpl(hz));
         } catch (Throwable e) {
             // countdown-latch on failure
             latch.countDown();

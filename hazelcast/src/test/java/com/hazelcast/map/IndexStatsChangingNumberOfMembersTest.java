@@ -25,6 +25,7 @@ import com.hazelcast.query.LocalIndexStats;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -385,7 +386,7 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
     protected double calculateOverallSelectivity(long initialHits, double initialTotalSelectivityCount, IMap... maps) {
         List<Indexes> allIndexes = new ArrayList<>();
         for (IMap map : maps) {
-            allIndexes.addAll(getAllIndexes(map));
+            allIndexes.addAll(Accessors.getAllIndexes(map));
         }
 
         long totalHitCount = 0;

@@ -37,6 +37,7 @@ import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataContainer;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataGenerator;
 import com.hazelcast.internal.nearcache.impl.invalidation.StaleReadDetector;
 import com.hazelcast.internal.nearcache.impl.store.AbstractNearCacheRecordStore;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -205,7 +206,7 @@ public class ClientCacheInvalidationMemberAddRemoveTest extends ClientNearCacheT
 
             @SuppressWarnings("unchecked")
             private String createFailureMessage(int i) {
-                int partitionId = getPartitionService(serverInstance).getPartitionId(i);
+                int partitionId = Accessors.getPartitionService(serverInstance).getPartitionId(i);
 
                 NearCacheRecordStore nearCacheRecordStore = getNearCacheRecordStore();
                 NearCacheRecord record = nearCacheRecordStore.getRecord(i);
@@ -230,7 +231,7 @@ public class ClientCacheInvalidationMemberAddRemoveTest extends ClientNearCacheT
             }
 
             private MetaDataGenerator getMetaDataGenerator(HazelcastInstance node) {
-                CacheService service = getNodeEngineImpl(node).getService(CacheService.SERVICE_NAME);
+                CacheService service = Accessors.getNodeEngineImpl(node).getService(CacheService.SERVICE_NAME);
                 CacheEventHandler cacheEventHandler = service.getCacheEventHandler();
                 return cacheEventHandler.getMetaDataGenerator();
             }

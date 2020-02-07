@@ -26,6 +26,7 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.eviction.MapClearExpiredRecordsTask;
 import com.hazelcast.map.listener.EntryExpiredListener;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -182,7 +183,7 @@ public class MapExpirationManagerTest extends AbstractExpirationManagerTest {
     }
 
     private boolean hasClearExpiredRecordsTaskStarted(HazelcastInstance node) {
-        MapService service = getNodeEngineImpl(node).getService(MapService.SERVICE_NAME);
+        MapService service = Accessors.getNodeEngineImpl(node).getService(MapService.SERVICE_NAME);
         return service.getMapServiceContext().getExpirationManager().isScheduled();
     }
 
@@ -197,8 +198,8 @@ public class MapExpirationManagerTest extends AbstractExpirationManagerTest {
     }
 
     private PartitionContainer[] getPartitionContainers(HazelcastInstance instance) {
-        return ((MapService) getNodeEngineImpl(instance)
-                .getService(SERVICE_NAME))
+        return ((MapService) Accessors.getNodeEngineImpl(instance)
+                                      .getService(SERVICE_NAME))
                 .getMapServiceContext()
                 .getPartitionContainers();
     }
@@ -314,6 +315,6 @@ public class MapExpirationManagerTest extends AbstractExpirationManagerTest {
 
     protected ExpirationManager newExpirationManager(HazelcastInstance node) {
         return new ExpirationManager(new MapClearExpiredRecordsTask(getPartitionContainers(node),
-                getNodeEngineImpl(node)), getNodeEngineImpl(node));
+                Accessors.getNodeEngineImpl(node)), Accessors.getNodeEngineImpl(node));
     }
 }

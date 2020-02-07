@@ -29,6 +29,7 @@ import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -64,7 +65,7 @@ public class Invocation_RetryTest extends HazelcastTestSupport {
         HazelcastInstance remote = factory.newHazelcastInstance();
         warmUpPartitions(local, remote);
 
-        OperationService service = getOperationService(local);
+        OperationService service = Accessors.getOperationService(local);
         Operation op = new PartitionTargetOperation();
         Future future = service.createInvocationBuilder(null, op, getPartitionId(remote))
                 .setCallTimeout(30000)
@@ -85,7 +86,7 @@ public class Invocation_RetryTest extends HazelcastTestSupport {
         HazelcastInstance remote = factory.newHazelcastInstance();
         warmUpPartitions(local, remote);
 
-        OperationService service = getOperationService(local);
+        OperationService service = Accessors.getOperationService(local);
         Operation op = new TargetOperation();
         Address address = new Address(remote.getCluster().getLocalMember().getSocketAddress());
         Future future = service.createInvocationBuilder(null, op, address).invoke();
@@ -106,8 +107,8 @@ public class Invocation_RetryTest extends HazelcastTestSupport {
         HazelcastInstance remote = factory.newHazelcastInstance(config);
         warmUpPartitions(local, remote);
 
-        NodeEngineImpl localNodeEngine = getNodeEngineImpl(local);
-        NodeEngineImpl remoteNodeEngine = getNodeEngineImpl(remote);
+        NodeEngineImpl localNodeEngine = Accessors.getNodeEngineImpl(local);
+        NodeEngineImpl remoteNodeEngine = Accessors.getNodeEngineImpl(remote);
         final OperationServiceImpl operationService = (OperationServiceImpl) localNodeEngine.getOperationService();
 
         NonResponsiveOperation op = new NonResponsiveOperation();
@@ -141,7 +142,7 @@ public class Invocation_RetryTest extends HazelcastTestSupport {
         HazelcastInstance hz3 = factory.newHazelcastInstance();
         waitAllForSafeState(hz1, hz2, hz3);
 
-        OperationServiceImpl operationService = getNodeEngineImpl(hz1).getOperationService();
+        OperationServiceImpl operationService = Accessors.getNodeEngineImpl(hz1).getOperationService();
 
         Future[] futures = new Future[NUMBER_OF_INVOCATIONS];
         for (int i = 0; i < NUMBER_OF_INVOCATIONS; i++) {
@@ -171,7 +172,7 @@ public class Invocation_RetryTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance hz = factory.newHazelcastInstance();
 
-        NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);
+        NodeEngineImpl nodeEngine = Accessors.getNodeEngineImpl(hz);
         OperationServiceImpl operationService = nodeEngine.getOperationService();
 
         operationService.invokeOnPartition(new SleepingOperation(Long.MAX_VALUE).setPartitionId(0));
@@ -200,7 +201,7 @@ public class Invocation_RetryTest extends HazelcastTestSupport {
     private static int getRandomPartitionId(HazelcastInstance hz) {
         warmUpPartitions(hz);
 
-        InternalPartitionService partitionService = getPartitionService(hz);
+        InternalPartitionService partitionService = Accessors.getPartitionService(hz);
         IPartition[] partitions = partitionService.getPartitions();
         Collections.shuffle(Arrays.asList(partitions));
 

@@ -31,6 +31,7 @@ import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.impl.Invocation;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationRegistry;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -129,7 +130,7 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
         op.setCallerUuid(getMember(hz2).getUuid());
 
         InternalCompletableFuture<MembersView> future =
-                getOperationService(hz2).invokeOnTarget(ClusterServiceImpl.SERVICE_NAME, op, getAddress(hz3));
+                Accessors.getOperationService(hz2).invokeOnTarget(ClusterServiceImpl.SERVICE_NAME, op, Accessors.getAddress(hz3));
         exception.expect(CompletionException.class);
         exception.expect(new RootCauseMatcher(IllegalStateException.class));
         future.join();
@@ -146,7 +147,7 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
         op.setCallerUuid(getMember(hz2).getUuid());
 
         InternalCompletableFuture<MembersView> future =
-                getOperationService(hz2).invokeOnTarget(ClusterServiceImpl.SERVICE_NAME, op, getAddress(hz1));
+                Accessors.getOperationService(hz2).invokeOnTarget(ClusterServiceImpl.SERVICE_NAME, op, Accessors.getAddress(hz1));
         future.join();
     }
 
@@ -161,7 +162,7 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
         op.setCallerUuid(UuidUtil.newUnsecureUUID());
 
         InternalCompletableFuture<MembersView> future =
-                getOperationService(hz2).invokeOnTarget(ClusterServiceImpl.SERVICE_NAME, op, getAddress(hz1));
+                Accessors.getOperationService(hz2).invokeOnTarget(ClusterServiceImpl.SERVICE_NAME, op, Accessors.getAddress(hz1));
         exception.expect(CompletionException.class);
         exception.expect(new RootCauseMatcher(IllegalStateException.class));
         future.join();
@@ -250,7 +251,7 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
         HazelcastInstance hz2 = factory.newHazelcastInstance(new Config().setLiteMember(true));
 
         // artificially set mastership claim flag
-        ClusterServiceImpl clusterService = getNode(hz1).getClusterService();
+        ClusterServiceImpl clusterService = Accessors.getNode(hz1).getClusterService();
         clusterService.getClusterJoinManager().setMastershipClaimInProgress();
 
         Cluster cluster = hz2.getCluster();
@@ -315,10 +316,10 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
 
         assertPromotionInvocationStarted(hz3);
 
-        suspectMember(getNode(hz3), getNode(hz1));
-        suspectMember(getNode(hz2), getNode(hz1));
+        suspectMember(Accessors.getNode(hz3), Accessors.getNode(hz1));
+        suspectMember(Accessors.getNode(hz2), Accessors.getNode(hz1));
 
-        assertMasterAddressEventually(getAddress(hz2), hz3);
+        assertMasterAddressEventually(Accessors.getAddress(hz2), hz3);
 
         dropOperationsBetween(hz3, hz1, F_ID, singletonList(EXPLICIT_SUSPICION));
         try {
@@ -331,7 +332,7 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
 
     private void assertPromotionInvocationStarted(HazelcastInstance instance) {
         final OperationServiceImpl operationService =
-                (OperationServiceImpl) getNode(instance).getNodeEngine().getOperationService();
+                (OperationServiceImpl) Accessors.getNode(instance).getNodeEngine().getOperationService();
         final InvocationRegistry invocationRegistry = operationService.getInvocationRegistry();
 
         assertTrueEventually(new AssertTask() {
@@ -357,8 +358,8 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
     }
 
     private static void assertPartitionsAssigned(HazelcastInstance instance) {
-        Address address = getAddress(instance);
-        InternalPartition[] partitions = getPartitionService(instance).getInternalPartitions();
+        Address address = Accessors.getAddress(instance);
+        InternalPartition[] partitions = Accessors.getPartitionService(instance).getInternalPartitions();
 
         int k = 0;
         for (InternalPartition partition : partitions) {
@@ -370,8 +371,8 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
     }
 
     private static void assertNoPartitionsAssigned(HazelcastInstance instance) {
-        Address address = getAddress(instance);
-        InternalPartition[] partitions = getPartitionService(instance).getInternalPartitions();
+        Address address = Accessors.getAddress(instance);
+        InternalPartition[] partitions = Accessors.getPartitionService(instance).getInternalPartitions();
         for (InternalPartition partition : partitions) {
             for (int i = 0; i < InternalPartition.MAX_REPLICA_COUNT; i++) {
                 assertNotEquals(address, partition.getReplicaAddress(i));

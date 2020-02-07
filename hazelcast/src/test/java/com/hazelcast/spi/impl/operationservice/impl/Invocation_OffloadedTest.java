@@ -23,6 +23,7 @@ import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.Offload;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -52,7 +53,7 @@ public class Invocation_OffloadedTest extends HazelcastTestSupport {
 
         HazelcastInstance[] cluster = instanceFactory.newInstances(config, 1);
 
-        localOperationService = getOperationServiceImpl(cluster[0]);
+        localOperationService = Accessors.getOperationServiceImpl(cluster[0]);
     }
 
     @Test(expected = ExpectedRuntimeException.class)

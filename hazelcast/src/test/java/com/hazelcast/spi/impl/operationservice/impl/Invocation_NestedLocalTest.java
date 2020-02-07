@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -44,7 +45,7 @@ public class Invocation_NestedLocalTest extends Invocation_NestedAbstractTest {
     @Test
     public void invokeOnPartition_outerGeneric_innerGeneric_forbidden() {
         HazelcastInstance local = createHazelcastInstance();
-        OperationService operationService = getOperationService(local);
+        OperationService operationService = Accessors.getOperationService(local);
 
         InnerOperation innerOperation = new InnerOperation(RESPONSE, GENERIC_OPERATION);
         OuterOperation outerOperation = new OuterOperation(innerOperation, GENERIC_OPERATION);
@@ -58,7 +59,7 @@ public class Invocation_NestedLocalTest extends Invocation_NestedAbstractTest {
     @Test
     public void invokeOnPartition_outerLocal_innerGeneric() {
         HazelcastInstance local = createHazelcastInstance();
-        OperationService operationService = getOperationService(local);
+        OperationService operationService = Accessors.getOperationService(local);
 
         int partitionId = getPartitionId(local);
         InnerOperation innerOperation = new InnerOperation(RESPONSE, GENERIC_OPERATION);
@@ -71,7 +72,7 @@ public class Invocation_NestedLocalTest extends Invocation_NestedAbstractTest {
     @Test
     public void invokeOnPartition_outerLocal_innerSameInstance_samePartition() {
         HazelcastInstance local = createHazelcastInstance();
-        OperationService operationService = getOperationService(local);
+        OperationService operationService = Accessors.getOperationService(local);
 
         int partitionId = getPartitionId(local);
         InnerOperation innerOperation = new InnerOperation(RESPONSE, partitionId);
@@ -84,7 +85,7 @@ public class Invocation_NestedLocalTest extends Invocation_NestedAbstractTest {
     @Test
     public void invokeOnPartition_outerLocal_innerSameInstance_callsDifferentPartition() {
         HazelcastInstance local = createHazelcastInstance();
-        OperationService operationService = getOperationService(local);
+        OperationService operationService = Accessors.getOperationService(local);
 
         int outerPartitionId = getPartitionId(local);
         int innerPartitionId = randomPartitionIdNotMappedToSameThreadAsGivenPartitionIdOnInstance(local, outerPartitionId);
@@ -103,7 +104,7 @@ public class Invocation_NestedLocalTest extends Invocation_NestedAbstractTest {
         config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "2");
         config.setProperty(ClusterProperty.PARTITION_OPERATION_THREAD_COUNT.getName(), "1");
         HazelcastInstance local = createHazelcastInstance(config);
-        final OperationService operationService = getOperationService(local);
+        final OperationService operationService = Accessors.getOperationService(local);
 
         int outerPartitionId = 1;
         int innerPartitionId = 0;
@@ -120,11 +121,11 @@ public class Invocation_NestedLocalTest extends Invocation_NestedAbstractTest {
     @Test
     public void invokeOnTarget_outerGeneric_innerGeneric() {
         HazelcastInstance local = createHazelcastInstance();
-        OperationService operationService = getOperationService(local);
+        OperationService operationService = Accessors.getOperationService(local);
 
         InnerOperation innerOperation = new InnerOperation(RESPONSE, GENERIC_OPERATION);
         OuterOperation outerOperation = new OuterOperation(innerOperation, GENERIC_OPERATION);
-        InternalCompletableFuture future = operationService.invokeOnTarget(null, outerOperation, getAddress(local));
+        InternalCompletableFuture future = operationService.invokeOnTarget(null, outerOperation, Accessors.getAddress(local));
 
         assertEquals(RESPONSE, future.join());
     }
@@ -132,12 +133,12 @@ public class Invocation_NestedLocalTest extends Invocation_NestedAbstractTest {
     @Test
     public void invokeOnTarget_outerGeneric_innerSameInstance() {
         HazelcastInstance local = createHazelcastInstance();
-        OperationService operationService = getOperationService(local);
+        OperationService operationService = Accessors.getOperationService(local);
 
         int innerPartitionId = getPartitionId(local);
         InnerOperation innerOperation = new InnerOperation(RESPONSE, innerPartitionId);
         OuterOperation outerOperation = new OuterOperation(innerOperation, GENERIC_OPERATION);
-        InternalCompletableFuture future = operationService.invokeOnTarget(null, outerOperation, getAddress(local));
+        InternalCompletableFuture future = operationService.invokeOnTarget(null, outerOperation, Accessors.getAddress(local));
 
         assertEquals(RESPONSE, future.join());
     }

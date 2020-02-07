@@ -22,6 +22,7 @@ import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.HazelcastRaftTestSupport;
 import com.hazelcast.cp.lock.FencedLock;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -112,12 +113,12 @@ public class FencedLockLongAwaitTest extends HazelcastRaftTestSupport {
         });
 
         assertTrueEventually(() -> {
-            LockService service = getNodeEngineImpl(instance).getService(LockService.SERVICE_NAME);
+            LockService service = Accessors.getNodeEngineImpl(instance).getService(LockService.SERVICE_NAME);
             assertEquals(2, service.getLiveOperations(groupId).size());
         }, 30);
 
         assertTrueAllTheTime(() -> {
-            LockService service = getNodeEngineImpl(instance).getService(LockService.SERVICE_NAME);
+            LockService service = Accessors.getNodeEngineImpl(instance).getService(LockService.SERVICE_NAME);
             assertEquals(2, service.getLiveOperations(groupId).size());
         }, callTimeoutSeconds + 5);
 
@@ -142,7 +143,7 @@ public class FencedLockLongAwaitTest extends HazelcastRaftTestSupport {
         HazelcastInstance leader = getLeaderInstance(instances, groupId);
 
         assertTrueEventually(() -> {
-            LockService service = getNodeEngineImpl(leader).getService(LockService.SERVICE_NAME);
+            LockService service = Accessors.getNodeEngineImpl(leader).getService(LockService.SERVICE_NAME);
             assertEquals(1, service.getLiveOperations(groupId).size());
         });
 

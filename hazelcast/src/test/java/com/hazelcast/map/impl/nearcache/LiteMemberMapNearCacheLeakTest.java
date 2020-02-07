@@ -29,6 +29,7 @@ import com.hazelcast.internal.nearcache.impl.NearCacheTestContextBuilder;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.IMap;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -132,7 +133,7 @@ public class LiteMemberMapNearCacheLeakTest extends AbstractNearCacheLeakTest<Da
 
         RepairingTask repairingTask = ((MapNearCacheManager) nearCacheManager).getRepairingTask();
 
-        return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, getSerializationService(liteMember))
+        return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, Accessors.getSerializationService(liteMember))
                 .setNearCacheInstance(liteMember)
                 .setNearCacheAdapter(new IMapDataStructureAdapter<K, V>(liteMemberMap))
                 .setNearCache(nearCache)

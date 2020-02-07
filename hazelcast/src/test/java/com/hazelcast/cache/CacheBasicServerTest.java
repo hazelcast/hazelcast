@@ -17,6 +17,7 @@
 package com.hazelcast.cache;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -42,6 +43,6 @@ public class CacheBasicServerTest extends CacheBasicAbstractTest {
     @Override
     protected HazelcastInstance getHazelcastInstance() {
         HazelcastInstance instance = factory.newHazelcastInstance(createConfig());
-        return getHazelcastInstanceImpl(instance);
+        return Accessors.getHazelcastInstanceImpl(instance);
     }
 }

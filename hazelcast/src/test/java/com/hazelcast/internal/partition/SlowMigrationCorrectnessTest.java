@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.TestUtil;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.internal.util.RandomPicker;
@@ -78,7 +79,7 @@ public class SlowMigrationCorrectnessTest extends AbstractMigrationCorrectnessTe
 
         Address[] restartingAddresses = new Address[backupCount];
         for (int i = 0; i < backupCount; i++) {
-            restartingAddresses[i] = getAddress(instances[i]);
+            restartingAddresses[i] = Accessors.getAddress(instances[i]);
         }
 
         for (int i = 0; i < 5; i++) {

@@ -24,6 +24,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -94,7 +95,7 @@ public class EventRegistrationTest extends HazelcastTestSupport {
             @Override
             public void run() {
                 for (HazelcastInstance instance : instances) {
-                    Collection<EventRegistration> regs = getNodeEngineImpl(instance).getEventService().getRegistrations(
+                    Collection<EventRegistration> regs = Accessors.getNodeEngineImpl(instance).getEventService().getRegistrations(
                             ProxyServiceImpl.SERVICE_NAME, ProxyServiceImpl.SERVICE_NAME);
                     assertEquals(instance + ": " + regs, expected, regs.size());
                 }

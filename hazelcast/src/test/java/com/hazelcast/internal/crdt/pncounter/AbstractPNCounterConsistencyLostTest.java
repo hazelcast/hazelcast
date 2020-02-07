@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.instance.impl.TestUtil;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;
 
@@ -56,7 +57,7 @@ public abstract class AbstractPNCounterConsistencyLostTest extends HazelcastTest
 
     private void terminateMember(Address memberAddress) {
         for (HazelcastInstance member : getMembers()) {
-            if (getNode(member).getThisAddress().equals(memberAddress)) {
+            if (Accessors.getNode(member).getThisAddress().equals(memberAddress)) {
                 TestUtil.terminateInstance(member);
             }
         }

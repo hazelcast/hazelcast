@@ -19,6 +19,7 @@ package com.hazelcast.internal.crdt.pncounter;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.internal.monitor.LocalPNCounterStats;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.internal.util.FutureUtil;
@@ -77,7 +78,7 @@ public abstract class AbstractPNCounterBasicIntegrationTest extends HazelcastTes
         int increments = 0;
         int decrements = 0;
         for (HazelcastInstance member : getMembers()) {
-            final PNCounterService service = getNodeEngineImpl(member).getService(PNCounterService.SERVICE_NAME);
+            final PNCounterService service = Accessors.getNodeEngineImpl(member).getService(PNCounterService.SERVICE_NAME);
             for (LocalPNCounterStats stats : service.getStats().values()) {
                 increments += stats.getTotalIncrementOperationCount();
                 decrements += stats.getTotalDecrementOperationCount();

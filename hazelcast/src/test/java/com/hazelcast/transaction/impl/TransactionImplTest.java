@@ -21,6 +21,7 @@ import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -54,7 +55,7 @@ public class TransactionImplTest extends HazelcastTestSupport {
     @Before
     public void setup() {
         HazelcastInstance hz = createHazelcastInstance();
-        operationService = getOperationService(hz);
+        operationService = Accessors.getOperationService(hz);
         logger = mock(ILogger.class);
 
         txManagerService = mock(TransactionManagerServiceImpl.class);

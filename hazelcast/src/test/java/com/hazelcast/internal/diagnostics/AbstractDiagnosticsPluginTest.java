@@ -18,6 +18,7 @@ package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Before;
 
@@ -57,7 +58,7 @@ public class AbstractDiagnosticsPluginTest extends HazelcastTestSupport {
     }
 
     static Diagnostics getDiagnostics(HazelcastInstance hazelcastInstance) {
-        NodeEngineImpl nodeEngine = getNodeEngineImpl(hazelcastInstance);
+        NodeEngineImpl nodeEngine = Accessors.getNodeEngineImpl(hazelcastInstance);
         try {
             Field field = NodeEngineImpl.class.getDeclaredField("diagnostics");
             field.setAccessible(true);

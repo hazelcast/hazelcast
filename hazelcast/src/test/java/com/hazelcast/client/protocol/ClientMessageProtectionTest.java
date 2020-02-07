@@ -53,7 +53,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.SIZE_OF_FRAME_LEN
 import static com.hazelcast.internal.nio.IOUtil.readFully;
 import static com.hazelcast.internal.nio.Protocols.CLIENT_BINARY;
 import static com.hazelcast.internal.util.StringUtil.UTF8_CHARSET;
-import static com.hazelcast.test.HazelcastTestSupport.getNode;
+import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static java.util.Collections.emptyList;
 import static org.hamcrest.CoreMatchers.anyOf;

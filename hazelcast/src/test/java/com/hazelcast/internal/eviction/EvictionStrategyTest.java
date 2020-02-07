@@ -27,6 +27,7 @@ import com.hazelcast.internal.eviction.impl.strategy.sampling.SampleableEvictabl
 import com.hazelcast.internal.eviction.impl.strategy.sampling.SamplingEvictionStrategy;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -107,7 +108,7 @@ public class EvictionStrategyTest<K, V extends Evictable, S extends SampleableEv
         final int recordCount = 100;
         final int expectedEvictedRecordValue = recordCount / 2;
 
-        Node node = getNode(instance);
+        Node node = Accessors.getNode(instance);
 
         SerializationService serializationService = node.getSerializationService();
         ICacheService cacheService = node.getNodeEngine().getService(ICacheService.SERVICE_NAME);

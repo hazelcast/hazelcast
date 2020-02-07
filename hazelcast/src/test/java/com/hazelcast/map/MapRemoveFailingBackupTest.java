@@ -29,6 +29,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -64,7 +65,7 @@ public class MapRemoveFailingBackupTest extends HazelcastTestSupport {
         config.getMapConfig(mapName).setReadBackupData(true);
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);
         HazelcastInstance hz2 = factory.newHazelcastInstance(config);
-        final NodeEngine nodeEngine = getNodeEngineImpl(hz1);
+        final NodeEngine nodeEngine = Accessors.getNodeEngineImpl(hz1);
         final IMap<Object, Object> map1 = hz1.getMap(mapName);
         final IMap<Object, Object> map2 = hz2.getMap(mapName);
         MapProxyImpl<Object, Object> mock1 = (MapProxyImpl<Object, Object>) spy(map1);

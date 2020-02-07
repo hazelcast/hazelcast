@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.internal.HazelcastRaftTestSupport;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -56,7 +57,7 @@ public class UnsafeSessionMigrationTest extends HazelcastRaftTestSupport {
     }
 
     private ProxySessionManagerService getSessionManager(HazelcastInstance instance) {
-        return getNodeEngineImpl(instance).getService(ProxySessionManagerService.SERVICE_NAME);
+        return Accessors.getNodeEngineImpl(instance).getService(ProxySessionManagerService.SERVICE_NAME);
     }
 
     private String generateName(HazelcastInstance instance, int partitionId) {

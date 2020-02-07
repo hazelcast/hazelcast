@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -117,7 +118,7 @@ public class ReplicatedMapLiteMemberTest extends HazelcastTestSupport {
     }
 
     private ReplicatedMapService getReplicatedMapService(HazelcastInstance instance) {
-        NodeEngineImpl nodeEngine = getNodeEngineImpl(instance);
+        NodeEngineImpl nodeEngine = Accessors.getNodeEngineImpl(instance);
         return nodeEngine.getService(SERVICE_NAME);
     }
 

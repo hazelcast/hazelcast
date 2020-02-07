@@ -38,6 +38,7 @@ import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.replicatedmap.ReplicatedMap;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -95,7 +96,7 @@ public class ListenerLeakTest extends ClientTestSupport {
         Collection<Node> nodes = new ArrayList<Node>(3);
         for (int i = 0; i < NODE_COUNT; i++) {
             HazelcastInstance hazelcast = hazelcastFactory.newHazelcastInstance();
-            nodes.add(getNode(hazelcast));
+            nodes.add(Accessors.getNode(hazelcast));
         }
         return nodes;
     }
@@ -260,7 +261,7 @@ public class ListenerLeakTest extends ClientTestSupport {
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         client.shutdown();
-        Map<UUID, Consumer<Long>> backupListeners = ((ClientEngineImpl) getNode(hazelcast).clientEngine).getBackupListeners();
+        Map<UUID, Consumer<Long>> backupListeners = ((ClientEngineImpl) Accessors.getNode(hazelcast).clientEngine).getBackupListeners();
         assertTrueEventually(() -> assertEquals(0, backupListeners.size()));
     }
 

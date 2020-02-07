@@ -22,6 +22,7 @@ import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.internal.operation.GetLeadedGroupsOp;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -100,7 +101,7 @@ public class CPGroupRebalanceTest extends HazelcastRaftTestSupport {
     }
 
     private Map<CPMember, Collection<CPGroupId>> getLeadershipsMap(HazelcastInstance instance, Collection<CPMember> members) {
-        OperationServiceImpl operationService = getOperationService(instance);
+        OperationServiceImpl operationService = Accessors.getOperationService(instance);
         Map<CPMember, Collection<CPGroupId>> leaderships = new HashMap<>();
 
         for (CPMember member : members) {

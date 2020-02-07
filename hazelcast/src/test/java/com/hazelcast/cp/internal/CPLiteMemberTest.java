@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.CPMember;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -81,7 +82,7 @@ public class CPLiteMemberTest extends HazelcastRaftTestSupport {
 
     private void assertNotCpMember(HazelcastInstance hz, Collection<CPMember> cpMembers) {
         for (CPMember member : cpMembers) {
-            assertNotEquals(getAddress(hz), member.getAddress());
+            assertNotEquals(Accessors.getAddress(hz), member.getAddress());
         }
     }
 
@@ -136,7 +137,7 @@ public class CPLiteMemberTest extends HazelcastRaftTestSupport {
         assertEquals(4, cpMembers.size());
 
         Set<Address> cpAddresses = cpMembers.stream().map(CPMember::getAddress).collect(Collectors.toSet());
-        assertThat(cpAddresses, hasItem(getAddress(hz_lite)));
+        assertThat(cpAddresses, hasItem(Accessors.getAddress(hz_lite)));
     }
 
 

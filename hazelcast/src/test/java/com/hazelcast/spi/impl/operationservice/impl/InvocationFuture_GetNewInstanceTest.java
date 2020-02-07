@@ -25,6 +25,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -65,12 +66,12 @@ public class InvocationFuture_GetNewInstanceTest extends HazelcastTestSupport {
 
     @Test
     public void invocationToLocalMember() throws ExecutionException, InterruptedException {
-        Node localNode = getNode(local);
+        Node localNode = Accessors.getNode(local);
 
         Data response = localNode.nodeEngine.toData(new DummyObject());
         Operation op = new OperationWithResponse(response);
 
-        OperationService service = getOperationService(local);
+        OperationService service = Accessors.getOperationService(local);
         Future future = service.createInvocationBuilder(null, op, localNode.address).invoke();
         Object instance1 = future.get();
         Object instance2 = future.get();
@@ -86,14 +87,14 @@ public class InvocationFuture_GetNewInstanceTest extends HazelcastTestSupport {
 
     @Test
     public void invocationToRemoteMember() throws ExecutionException, InterruptedException {
-        Node localNode = getNode(local);
+        Node localNode = Accessors.getNode(local);
 
         Data response = localNode.nodeEngine.toData(new DummyObject());
         Operation op = new OperationWithResponse(response);
 
-        Address remoteAddress = getAddress(remote);
+        Address remoteAddress = Accessors.getAddress(remote);
 
-        OperationService operationService = getOperationService(local);
+        OperationService operationService = Accessors.getOperationService(local);
         Future future = operationService.createInvocationBuilder(null, op, remoteAddress).invoke();
         Object instance1 = future.get();
         Object instance2 = future.get();

@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -57,7 +58,7 @@ public class InboundResponseHandler_NotifyTest extends HazelcastTestSupport {
         HazelcastInstance local = createHazelcastInstance(config);
         warmUpPartitions(local);
 
-        operationService = getOperationServiceImpl(local);
+        operationService = Accessors.getOperationServiceImpl(local);
         invocationRegistry = operationService.invocationRegistry;
         inboundResponseHandler = operationService.getBackupHandler();
     }

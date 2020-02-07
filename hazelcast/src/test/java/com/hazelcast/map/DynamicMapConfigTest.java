@@ -33,6 +33,7 @@ import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -122,8 +123,8 @@ public class DynamicMapConfigTest extends HazelcastTestSupport {
     }
 
     private void executeOperation(HazelcastInstance node, Operation op) {
-        OperationServiceImpl operationService = getOperationService(node);
-        Address address = getAddress(node);
+        OperationServiceImpl operationService = Accessors.getOperationService(node);
+        Address address = Accessors.getAddress(node);
         operationService.invokeOnTarget(MapService.SERVICE_NAME, op, address).join();
     }
 }

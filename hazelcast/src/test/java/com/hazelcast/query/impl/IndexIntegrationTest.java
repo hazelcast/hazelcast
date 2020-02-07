@@ -38,6 +38,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder.EntryObject;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -218,7 +219,7 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
     }
 
     private static List<Index> getIndexOfAttributeForMap(HazelcastInstance instance, String mapName, String attribute) {
-        Node node = getNode(instance);
+        Node node = Accessors.getNode(instance);
         MapService service = node.nodeEngine.getService(MapService.SERVICE_NAME);
         MapServiceContext mapServiceContext = service.getMapServiceContext();
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);

@@ -17,6 +17,7 @@
 package com.hazelcast.spi.merge;
 
 import com.hazelcast.config.InvalidConfigurationException;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -47,7 +48,7 @@ public class SplitBrainMergePolicyProviderTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
-        mergePolicyProvider = new SplitBrainMergePolicyProvider(getNode(createHazelcastInstance()).getNodeEngine());
+        mergePolicyProvider = new SplitBrainMergePolicyProvider(Accessors.getNode(createHazelcastInstance()).getNodeEngine());
     }
 
     @Test

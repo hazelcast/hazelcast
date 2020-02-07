@@ -29,6 +29,7 @@ import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -214,7 +215,7 @@ public class JoinStressTest extends HazelcastTestSupport {
     }
 
     private void logEvaluatedMember(HazelcastInstance hz) {
-        ClusterServiceImpl instanceClusterService = getNode(hz).getClusterService();
+        ClusterServiceImpl instanceClusterService = Accessors.getNode(hz).getClusterService();
         logger.info("Evaluating member: " + hz + " " + hz.getLocalEndpoint().getSocketAddress() + " with memberList "
                 + instanceClusterService.getMemberListString());
     }

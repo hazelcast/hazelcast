@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -65,7 +66,7 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
         HazelcastInstance remote = factory.newHazelcastInstance(config);
         warmUpPartitions(local, remote);
 
-        OperationService opService = getOperationService(local);
+        OperationService opService = Accessors.getOperationService(local);
         Future future = opService.invokeOnPartition(
                 null,
                 new SlowOperation(SECONDS.toMillis(10), RESPONSE),
@@ -90,7 +91,7 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
         HazelcastInstance remote = factory.newHazelcastInstance(config);
         warmUpPartitions(local, remote);
 
-        OperationService opService = getOperationService(local);
+        OperationService opService = Accessors.getOperationService(local);
         final Future future = opService.invokeOnPartition(
                 null,
                 new SlowOperation(callTimeout * 3, RESPONSE),
@@ -122,7 +123,7 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
         HazelcastInstance remote = factory.newHazelcastInstance(config);
         warmUpPartitions(local, remote);
 
-        OperationService opService = getOperationService(local);
+        OperationService opService = Accessors.getOperationService(local);
 
         Future future = opService.invokeOnPartition(
                 null,
@@ -142,7 +143,7 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
         HazelcastInstance remote = factory.newHazelcastInstance(config);
         warmUpPartitions(local, remote);
 
-        OperationService opService = getOperationService(local);
+        OperationService opService = Accessors.getOperationService(local);
         InternalCompletableFuture<Object> future = opService.invokeOnPartition(
                 null,
                 new SlowOperation(6 * callTimeout, RESPONSE),
@@ -171,7 +172,7 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
         HazelcastInstance remote = factory.newHazelcastInstance(config);
         warmUpPartitions(local, remote);
 
-        OperationService opService = getOperationService(local);
+        OperationService opService = Accessors.getOperationService(local);
 
         Future future = opService.invokeOnPartition(
                 null,
@@ -197,7 +198,7 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
         HazelcastInstance remote = factory.newHazelcastInstance(config);
         warmUpPartitions(local, remote);
 
-        OperationService opService = getOperationService(local);
+        OperationService opService = Accessors.getOperationService(local);
 
         InternalCompletableFuture<Object> future = opService.invokeOnPartition(
                 null,
@@ -227,7 +228,7 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
         HazelcastInstance remote = factory.newHazelcastInstance(config);
         warmUpPartitions(local, remote);
 
-        OperationService opService = getOperationService(local);
+        OperationService opService = Accessors.getOperationService(local);
 
         Future future = opService.invokeOnPartition(
                 null,
@@ -253,7 +254,7 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
         HazelcastInstance remote = factory.newHazelcastInstance(config);
         warmUpPartitions(local, remote);
 
-        OperationService opService = getOperationService(local);
+        OperationService opService = Accessors.getOperationService(local);
 
         InternalCompletableFuture<Object> future = opService.invokeOnPartition(
                 null,
@@ -280,7 +281,7 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
         HazelcastInstance remote = factory.newHazelcastInstance(config);
         warmUpPartitions(local, remote);
 
-        OperationService opService = getOperationService(local);
+        OperationService opService = Accessors.getOperationService(local);
 
         int partitionId = getPartitionId(remote);
         long slowOperationDurationMs = (long) (callTimeoutMs * 1.1);
@@ -307,7 +308,7 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
         HazelcastInstance remote = factory.newHazelcastInstance(config);
         warmUpPartitions(local, remote);
 
-        OperationService opService = getOperationService(local);
+        OperationService opService = Accessors.getOperationService(local);
 
         int partitionId = getPartitionId(remote);
         long slowOperationDurationMs = (long) (callTimeoutMs * 1.1);

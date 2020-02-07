@@ -24,6 +24,7 @@ import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
@@ -295,7 +296,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
     private void preloadNearCache(File preloaderFile, int keyCount, KeyType keyType) {
         copyStoreFile(preloaderFile.getAbsoluteFile(), getStoreFile());
         NearCacheTestContext<Object, String, NK, NV> context = createContext(false);
-        assumeConfiguredByteOrder(getSerializationService(context.dataInstance), ByteOrder.BIG_ENDIAN);
+        assumeConfiguredByteOrder(Accessors.getSerializationService(context.dataInstance), ByteOrder.BIG_ENDIAN);
 
         // populate the member side data structure, so we have the values to populate the client side Near Cache
         populateDataAdapter(context, keyCount, keyType);

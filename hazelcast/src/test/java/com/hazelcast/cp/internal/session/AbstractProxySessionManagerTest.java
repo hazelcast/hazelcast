@@ -23,6 +23,7 @@ import com.hazelcast.cp.internal.HazelcastRaftTestSupport;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.RaftInvocationManager;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.ChangeLoggingRule;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -203,7 +204,7 @@ public abstract class AbstractProxySessionManagerTest extends HazelcastRaftTestS
 
     private SessionAccessor getSessionAccessor() {
         HazelcastInstance leaderInstance = getLeaderInstance(members, groupId);
-        return getNodeEngineImpl(leaderInstance).getService(RaftSessionService.SERVICE_NAME);
+        return Accessors.getNodeEngineImpl(leaderInstance).getService(RaftSessionService.SERVICE_NAME);
     }
 
     @Override

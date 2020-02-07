@@ -23,6 +23,7 @@ import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.cp.internal.HazelcastRaftTestSupport;
 import com.hazelcast.cp.internal.datastructures.semaphore.proxy.SessionAwareSemaphoreProxy;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -86,12 +87,12 @@ public class SemaphoreLongAwaitTest extends HazelcastRaftTestSupport {
         });
 
         assertTrueEventually(() -> {
-            SemaphoreService service = getNodeEngineImpl(instance).getService(SemaphoreService.SERVICE_NAME);
+            SemaphoreService service = Accessors.getNodeEngineImpl(instance).getService(SemaphoreService.SERVICE_NAME);
             assertEquals(2, service.getLiveOperations(groupId).size());
         });
 
         assertTrueAllTheTime(() -> {
-            SemaphoreService service = getNodeEngineImpl(instance).getService(SemaphoreService.SERVICE_NAME);
+            SemaphoreService service = Accessors.getNodeEngineImpl(instance).getService(SemaphoreService.SERVICE_NAME);
             assertEquals(2, service.getLiveOperations(groupId).size());
         }, callTimeoutSeconds + 5);
 

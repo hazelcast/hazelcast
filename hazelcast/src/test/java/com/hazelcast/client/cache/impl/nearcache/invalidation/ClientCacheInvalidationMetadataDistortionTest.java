@@ -31,6 +31,7 @@ import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataGenerator;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -191,7 +192,7 @@ public class ClientCacheInvalidationMetadataDistortionTest extends ClientNearCac
     }
 
     private void distortRandomPartitionSequence(String mapName, HazelcastInstance member) {
-        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(member);
+        NodeEngineImpl nodeEngineImpl = Accessors.getNodeEngineImpl(member);
         CacheService service = nodeEngineImpl.getService(CacheService.SERVICE_NAME);
         CacheEventHandler cacheEventHandler = service.getCacheEventHandler();
         MetaDataGenerator metaDataGenerator = cacheEventHandler.getMetaDataGenerator();
@@ -204,7 +205,7 @@ public class ClientCacheInvalidationMetadataDistortionTest extends ClientNearCac
     }
 
     private void distortRandomPartitionUuid(HazelcastInstance member) {
-        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(member);
+        NodeEngineImpl nodeEngineImpl = Accessors.getNodeEngineImpl(member);
         int partitionCount = nodeEngineImpl.getPartitionService().getPartitionCount();
         CacheService service = nodeEngineImpl.getService(CacheService.SERVICE_NAME);
         CacheEventHandler cacheEventHandler = service.getCacheEventHandler();

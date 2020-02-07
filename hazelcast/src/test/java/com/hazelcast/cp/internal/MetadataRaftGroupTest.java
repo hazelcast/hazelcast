@@ -36,6 +36,7 @@ import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.RandomPicker;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -90,12 +91,12 @@ public class MetadataRaftGroupTest extends HazelcastRaftTestSupport {
 
         List<Address> raftAddresses = new ArrayList<>();
         for (int i = 0; i < cpNodeCount; i++) {
-            raftAddresses.add(getAddress(instances[i]));
+            raftAddresses.add(Accessors.getAddress(instances[i]));
         }
 
         assertTrueEventually(() -> {
             for (HazelcastInstance instance : instances) {
-                if (raftAddresses.contains(getAddress(instance))) {
+                if (raftAddresses.contains(Accessors.getAddress(instance))) {
                     assertNotNull(getRaftNode(instance, getMetadataGroupId(instance)));
                 }
             }
@@ -103,7 +104,7 @@ public class MetadataRaftGroupTest extends HazelcastRaftTestSupport {
 
         assertTrueAllTheTime(() -> {
             for (HazelcastInstance instance : instances) {
-                if (!raftAddresses.contains(getAddress(instance))) {
+                if (!raftAddresses.contains(Accessors.getAddress(instance))) {
                     assertNull(getRaftNode(instance, getMetadataGroupId(instance)));
                 }
             }
@@ -534,7 +535,7 @@ public class MetadataRaftGroupTest extends HazelcastRaftTestSupport {
         RaftInvocationManager invocationService = null;
         HazelcastInstance aliveInstance = null;
         for (HazelcastInstance instance : instances) {
-            if (!getAddress(instance).equals(endpoint.getAddress())) {
+            if (!Accessors.getAddress(instance).equals(endpoint.getAddress())) {
                 aliveInstance = instance;
                 invocationService = getRaftInvocationManager(instance);
                 break;
@@ -625,7 +626,7 @@ public class MetadataRaftGroupTest extends HazelcastRaftTestSupport {
         Node[] nodes = new Node[startedNodeCount];
         for (int i = 0; i < startedNodeCount; i++) {
             instances[i] = factory.newHazelcastInstance(config);
-            nodes[i] = getNode(instances[i]);
+            nodes[i] = Accessors.getNode(instances[i]);
         }
 
         // wait for the cp discovery process to start
@@ -664,8 +665,8 @@ public class MetadataRaftGroupTest extends HazelcastRaftTestSupport {
         long seed = System.currentTimeMillis();
         for (HazelcastInstance instance : Arrays.copyOf(instances, nodeCount - 1)) {
             Address address = instance.getCluster().getLocalMember().getAddress();
-            getNodeEngineImpl(instance).getOperationService()
-                                       .invokeOnTarget(RaftService.SERVICE_NAME, new ResetCPMemberOp(seed), address).get();
+            Accessors.getNodeEngineImpl(instance).getOperationService()
+                     .invokeOnTarget(RaftService.SERVICE_NAME, new ResetCPMemberOp(seed), address).get();
         }
 
         // wait for the cp discovery process to start

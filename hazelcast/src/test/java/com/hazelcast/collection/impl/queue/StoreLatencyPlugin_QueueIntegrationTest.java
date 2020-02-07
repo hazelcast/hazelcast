@@ -22,6 +22,7 @@ import com.hazelcast.config.QueueStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.collection.QueueStore;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -67,7 +68,7 @@ public class StoreLatencyPlugin_QueueIntegrationTest extends HazelcastTestSuppor
 
     @After
     public void after() {
-        File file = getNodeEngineImpl(hz).getDiagnostics().currentFile();
+        File file = Accessors.getNodeEngineImpl(hz).getDiagnostics().currentFile();
         deleteQuietly(file);
     }
 
@@ -80,7 +81,7 @@ public class StoreLatencyPlugin_QueueIntegrationTest extends HazelcastTestSuppor
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                File file = getNodeEngineImpl(hz).getDiagnostics().currentFile();
+                File file = Accessors.getNodeEngineImpl(hz).getDiagnostics().currentFile();
                 String content = fileAsText(file);
                 assertContains(content, QUEUE_NAME);
             }

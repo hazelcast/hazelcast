@@ -23,6 +23,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -48,8 +49,8 @@ public class RingbufferContainerTest extends HazelcastTestSupport {
     @Before
     public void setup() {
         HazelcastInstance hz = createHazelcastInstance();
-        nodeEngine = getNodeEngineImpl(hz);
-        serializationService = getSerializationService(hz);
+        nodeEngine = Accessors.getNodeEngineImpl(hz);
+        serializationService = Accessors.getSerializationService(hz);
     }
 
     private Data toData(Object item) {

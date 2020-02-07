@@ -30,7 +30,7 @@ import com.hazelcast.collection.IQueue;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.Accessors;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -40,9 +40,9 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
-import static com.hazelcast.test.HazelcastTestSupport.getFirstBackupInstance;
-import static com.hazelcast.test.HazelcastTestSupport.getNodeEngineImpl;
-import static com.hazelcast.test.HazelcastTestSupport.getPartitionIdViaReflection;
+import static com.hazelcast.test.Accessors.getFirstBackupInstance;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
+import static com.hazelcast.test.Accessors.getPartitionIdViaReflection;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 
@@ -70,7 +70,7 @@ public final class CollectionTestUtil {
      * Returns all backup items of an {@link IList} by a given list name.
      * <p>
      * Note: You have to provide the {@link HazelcastInstance} you want to retrieve the backups from.
-     * Use {@link HazelcastTestSupport#getBackupInstance} to retrieve the backup instance for a given replica index.
+     * Use {@link Accessors#getBackupInstance} to retrieve the backup instance for a given replica index.
      *
      * @param backupInstance the {@link HazelcastInstance} to retrieve the backups from
      * @param listName       the list name
@@ -114,7 +114,7 @@ public final class CollectionTestUtil {
      * Returns all backup items of an {@link IQueue} by a given queue name.
      * <p>
      * Note: You have to provide the {@link HazelcastInstance} you want to retrieve the backups from.
-     * Use {@link HazelcastTestSupport#getBackupInstance} to retrieve the backup instance for a given replica index.
+     * Use {@link Accessors#getBackupInstance} to retrieve the backup instance for a given replica index.
      *
      * @param backupInstance the {@link HazelcastInstance} to retrieve the backups from
      * @param queueName      the queue name
@@ -154,7 +154,7 @@ public final class CollectionTestUtil {
      * Returns all backup items of an {@link ISet} by a given set name.
      * <p>
      * Note: You have to provide the {@link HazelcastInstance} you want to retrieve the backups from.
-     * Use {@link HazelcastTestSupport#getBackupInstance} to retrieve the backup instance for a given replica index.
+     * Use {@link Accessors#getBackupInstance} to retrieve the backup instance for a given replica index.
      *
      * @param backupInstance the {@link HazelcastInstance} to retrieve the backups from
      * @param setName        the set name

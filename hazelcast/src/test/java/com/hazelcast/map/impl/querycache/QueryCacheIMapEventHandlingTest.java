@@ -34,6 +34,7 @@ import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -100,10 +101,10 @@ public class QueryCacheIMapEventHandlingTest extends HazelcastTestSupport {
     }
 
     private void executeMergeOperation(HazelcastInstance member, String mapName, int key, int mergedValue) throws Exception {
-        Node node = getNode(member);
+        Node node = Accessors.getNode(member);
         NodeEngineImpl nodeEngine = node.nodeEngine;
         OperationServiceImpl operationService = nodeEngine.getOperationService();
-        SerializationService serializationService = getSerializationService(member);
+        SerializationService serializationService = Accessors.getSerializationService(member);
 
         Data keyData = serializationService.toData(key);
         Data valueData = serializationService.toData(mergedValue);

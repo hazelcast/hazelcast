@@ -38,6 +38,7 @@ import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceSegment;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -314,7 +315,7 @@ public class QueryCacheMemoryLeakTest extends HazelcastTestSupport {
     }
 
     private static void assertNoListenerLeftOnEventService(HazelcastInstance node) {
-        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(node);
+        NodeEngineImpl nodeEngineImpl = Accessors.getNodeEngineImpl(node);
         EventServiceImpl eventService = ((EventServiceImpl) nodeEngineImpl.getEventService());
         EventServiceSegment segment = eventService.getSegment(MapService.SERVICE_NAME, false);
         ConcurrentMap registrationIdMap = segment.getRegistrationIdMap();
@@ -328,21 +329,21 @@ public class QueryCacheMemoryLeakTest extends HazelcastTestSupport {
     }
 
     private static SubscriberContext getSubscriberContext(HazelcastInstance node) {
-        MapService mapService = getNodeEngineImpl(node).getService(MapService.SERVICE_NAME);
+        MapService mapService = Accessors.getNodeEngineImpl(node).getService(MapService.SERVICE_NAME);
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         QueryCacheContext queryCacheContext = mapServiceContext.getQueryCacheContext();
         return queryCacheContext.getSubscriberContext();
     }
 
     private static PublisherContext getPublisherContext(HazelcastInstance node) {
-        MapService mapService = getNodeEngineImpl(node).getService(MapService.SERVICE_NAME);
+        MapService mapService = Accessors.getNodeEngineImpl(node).getService(MapService.SERVICE_NAME);
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         QueryCacheContext queryCacheContext = mapServiceContext.getQueryCacheContext();
         return queryCacheContext.getPublisherContext();
     }
 
     private static void assertNoUserListenerLeft(HazelcastInstance node) {
-        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(node);
+        NodeEngineImpl nodeEngineImpl = Accessors.getNodeEngineImpl(node);
         EventServiceImpl eventServiceImpl = (EventServiceImpl) nodeEngineImpl.getEventService();
         EventServiceSegment segment = eventServiceImpl.getSegment(MapService.SERVICE_NAME, false);
         ConcurrentMap registrations = segment.getRegistrations();

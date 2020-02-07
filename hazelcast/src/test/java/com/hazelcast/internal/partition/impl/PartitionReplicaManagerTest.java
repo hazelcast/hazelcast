@@ -21,6 +21,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -54,8 +55,8 @@ public class PartitionReplicaManagerTest extends HazelcastTestSupport {
         factory = createHazelcastInstanceFactory(1);
         hazelcastInstance = factory.newHazelcastInstance();
 
-        Node node = getNode(hazelcastInstance);
-        NodeEngineImpl nodeEngine = getNodeEngineImpl(hazelcastInstance);
+        Node node = Accessors.getNode(hazelcastInstance);
+        NodeEngineImpl nodeEngine = Accessors.getNodeEngineImpl(hazelcastInstance);
         InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) nodeEngine.getPartitionService();
 
         manager = new PartitionReplicaManager(node, partitionService);

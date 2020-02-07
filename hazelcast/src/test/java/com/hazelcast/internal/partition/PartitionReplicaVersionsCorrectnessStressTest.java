@@ -22,6 +22,7 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.partition.AbstractPartitionLostListenerTest;
 import com.hazelcast.internal.services.DistributedObjectNamespace;
 import com.hazelcast.internal.services.ServiceNamespace;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.SlowTest;
 import org.hamcrest.Matchers;
@@ -113,7 +114,7 @@ public class PartitionReplicaVersionsCorrectnessStressTest extends AbstractParti
                                          Map<Integer, Integer> minSurvivingReplicaIndexByPartitionId)
             throws InterruptedException {
         for (HazelcastInstance instance : survivingInstances) {
-            Node node = getNode(instance);
+            Node node = Accessors.getNode(instance);
             Address address = node.getThisAddress();
 
             InternalPartitionService partitionService = node.getPartitionService();
@@ -123,7 +124,7 @@ public class PartitionReplicaVersionsCorrectnessStressTest extends AbstractParti
                     PartitionReplicaVersionsView initialReplicaVersions = replicaVersionsByPartitionId.get(partitionId);
                     int minSurvivingReplicaIndex = minSurvivingReplicaIndexByPartitionId.get(partitionId);
                     PartitionReplicaVersionsView
-                            replicaVersions = getPartitionReplicaVersionsView(getNode(instance), partitionId);
+                            replicaVersions = getPartitionReplicaVersionsView(Accessors.getNode(instance), partitionId);
                     List<Address> addresses = getReplicaAddresses(instance, partitionId);
 
                     String message = log + " PartitionId: " + partitionId

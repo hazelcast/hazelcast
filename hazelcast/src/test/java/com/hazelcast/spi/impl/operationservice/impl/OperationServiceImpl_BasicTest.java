@@ -32,6 +32,7 @@ import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -60,7 +61,7 @@ public class OperationServiceImpl_BasicTest extends HazelcastTestSupport {
         Config config = new Config();
         config.setProperty(PARTITION_OPERATION_THREAD_COUNT.getName(), "5");
         HazelcastInstance hz = createHazelcastInstance(config);
-        OperationServiceImpl operationService = getOperationServiceImpl(hz);
+        OperationServiceImpl operationService = Accessors.getOperationServiceImpl(hz);
 
         assertEquals(5, operationService.getPartitionThreadCount());
     }
@@ -71,7 +72,7 @@ public class OperationServiceImpl_BasicTest extends HazelcastTestSupport {
         config.setProperty(GENERIC_OPERATION_THREAD_COUNT.getName(), "5");
         config.setProperty(PRIORITY_GENERIC_OPERATION_THREAD_COUNT.getName(), "1");
         HazelcastInstance hz = createHazelcastInstance(config);
-        OperationServiceImpl operationService = getOperationServiceImpl(hz);
+        OperationServiceImpl operationService = Accessors.getOperationServiceImpl(hz);
 
         assertEquals(6, operationService.getGenericThreadCount());
     }
@@ -182,7 +183,7 @@ public class OperationServiceImpl_BasicTest extends HazelcastTestSupport {
     }
 
     public static void assertNoLitterInOpService(HazelcastInstance hz) {
-        final OperationServiceImpl operationService = (OperationServiceImpl) getNode(hz).nodeEngine.getOperationService();
+        final OperationServiceImpl operationService = (OperationServiceImpl) Accessors.getNode(hz).nodeEngine.getOperationService();
 
         // we need to do this with an assertTrueEventually because it can happen that system calls are being send
         // and this leads to the maps not being empty. But eventually they will be empty at some moment in time.
@@ -200,8 +201,8 @@ public class OperationServiceImpl_BasicTest extends HazelcastTestSupport {
         HazelcastInstance hz1 = factory.newHazelcastInstance();
         HazelcastInstance hz2 = factory.newHazelcastInstance();
 
-        OperationServiceImpl operationService = HazelcastTestSupport.getOperationService(hz1);
-        Address target = HazelcastTestSupport.getAddress(hz2);
+        OperationServiceImpl operationService = Accessors.getOperationService(hz1);
+        Address target = Accessors.getAddress(hz2);
 
         InternalCompletableFuture<Object> future = operationService
                 .invokeOnTarget(null, new NonSerializableResponseOperation(), target);
@@ -215,8 +216,8 @@ public class OperationServiceImpl_BasicTest extends HazelcastTestSupport {
         HazelcastInstance hz1 = factory.newHazelcastInstance();
         HazelcastInstance hz2 = factory.newHazelcastInstance();
 
-        OperationServiceImpl operationService = HazelcastTestSupport.getOperationService(hz1);
-        Address target = HazelcastTestSupport.getAddress(hz2);
+        OperationServiceImpl operationService = Accessors.getOperationService(hz1);
+        Address target = Accessors.getAddress(hz2);
 
 
         InternalCompletableFuture<Object> future = operationService

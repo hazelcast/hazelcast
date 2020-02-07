@@ -49,6 +49,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.eventservice.impl.LocalEventDispatcher;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -110,7 +111,7 @@ public class EventQueuePluginTest extends AbstractDiagnosticsPluginTest {
 
         hz = createHazelcastInstance(config);
 
-        NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);
+        NodeEngineImpl nodeEngine = Accessors.getNodeEngineImpl(hz);
         EventServiceImpl eventService = (EventServiceImpl) nodeEngine.getEventService();
 
         plugin = new EventQueuePlugin(nodeEngine, eventService.getEventExecutor());

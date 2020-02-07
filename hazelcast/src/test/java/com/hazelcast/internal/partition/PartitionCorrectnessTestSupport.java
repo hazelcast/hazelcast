@@ -35,6 +35,7 @@ import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -83,7 +84,7 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
     }
 
     void fillData(HazelcastInstance hz) {
-        NodeEngine nodeEngine = getNode(hz).nodeEngine;
+        NodeEngine nodeEngine = Accessors.getNode(hz).nodeEngine;
         OperationService operationService = nodeEngine.getOperationService();
         for (int i = 0; i < partitionCount; i++) {
             operationService.invokeOnPartition(null, new TestIncrementOperation(), i);
@@ -140,7 +141,7 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
 
         if (count == 1) {
             HazelcastInstance hz = instances.get(0);
-            Address address = getNode(hz).getThisAddress();
+            Address address = Accessors.getNode(hz).getThisAddress();
             TestUtil.terminateInstance(hz);
             return Collections.singleton(address);
         } else {
@@ -150,7 +151,7 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
 
             for (int i = 0; i < count; i++) {
                 final HazelcastInstance hz = instances.get(i);
-                addresses.add(getNode(hz).getThisAddress());
+                addresses.add(Accessors.getNode(hz).getThisAddress());
 
                 new Thread() {
                     public void run() {
@@ -181,7 +182,7 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
         final int replicaCount = Math.min(instances.size(), InternalPartition.MAX_REPLICA_COUNT);
 
         for (HazelcastInstance hz : instances) {
-            Node node = getNode(hz);
+            Node node = Accessors.getNode(hz);
             InternalPartitionService partitionService = node.getPartitionService();
             InternalPartition[] partitions = partitionService.getInternalPartitions();
             ClusterService clusterService = node.getClusterService();
@@ -229,7 +230,7 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
                 fragmentTotals[i] += fragmentedService.size(NAMESPACES[i]);
             }
 
-            Node node = getNode(hz);
+            Node node = Accessors.getNode(hz);
             InternalPartitionService partitionService = node.getPartitionService();
             InternalPartition[] partitions = partitionService.getInternalPartitions();
             PartitionReplica localReplica = PartitionReplica.from(node.getLocalMember());
@@ -301,7 +302,7 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
                     HazelcastInstance backupInstance = factory.getInstance(address);
                     assertNotNull("Instance for " + address + " is not found! -> " + partition, backupInstance);
 
-                    Node backupNode = getNode(backupInstance);
+                    Node backupNode = Accessors.getNode(backupInstance);
                     assertNotNull(backupNode);
 
                     PartitionReplicaVersionsView backupReplicaVersionsView
@@ -356,7 +357,7 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
     }
 
     private <S extends TestAbstractMigrationAwareService> S getService(HazelcastInstance hz, String serviceName) {
-        Node node = getNode(hz);
+        Node node = Accessors.getNode(hz);
         return node.nodeEngine.getService(serviceName);
     }
 

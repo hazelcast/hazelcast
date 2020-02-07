@@ -32,6 +32,7 @@ import com.hazelcast.cp.internal.session.operation.CreateSessionOp;
 import com.hazelcast.cp.internal.session.operation.HeartbeatSessionOp;
 import com.hazelcast.cp.session.CPSession;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -88,7 +89,7 @@ public class RaftSessionServiceTest extends HazelcastRaftTestSupport {
         SessionResponse response = invocationManager.<SessionResponse>invoke(groupId, newCreateSessionOp()).get();
         assertTrueEventually(() -> {
             for (HazelcastInstance instance : instances) {
-                RaftSessionService service = getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
+                RaftSessionService service = Accessors.getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
                 RaftSessionRegistry registry = service.getSessionRegistryOrNull(groupId);
                 assertNotNull(registry);
 
@@ -107,7 +108,7 @@ public class RaftSessionServiceTest extends HazelcastRaftTestSupport {
         CPSessionInfo[] sessions = new CPSessionInfo[instances.length];
         assertTrueEventually(() -> {
             for (int i = 0; i < instances.length; i++) {
-                RaftSessionService service = getNodeEngineImpl(instances[i]).getService(RaftSessionService.SERVICE_NAME);
+                RaftSessionService service = Accessors.getNodeEngineImpl(instances[i]).getService(RaftSessionService.SERVICE_NAME);
                 RaftSessionRegistry registry = service.getSessionRegistryOrNull(groupId);
                 assertNotNull(registry);
                 CPSessionInfo session = registry.getSession(response.getSessionId());
@@ -120,7 +121,7 @@ public class RaftSessionServiceTest extends HazelcastRaftTestSupport {
 
         assertTrueEventually(() -> {
             for (int i = 0; i < instances.length; i++) {
-                RaftSessionService service = getNodeEngineImpl(instances[i]).getService(RaftSessionService.SERVICE_NAME);
+                RaftSessionService service = Accessors.getNodeEngineImpl(instances[i]).getService(RaftSessionService.SERVICE_NAME);
                 RaftSessionRegistry registry = service.getSessionRegistryOrNull(groupId);
                 assertNotNull(registry);
                 CPSessionInfo session = registry.getSession(response.getSessionId());
@@ -135,7 +136,7 @@ public class RaftSessionServiceTest extends HazelcastRaftTestSupport {
         SessionResponse response = invocationManager.<SessionResponse>invoke(groupId, newCreateSessionOp()).get();
         assertTrueEventually(() -> {
             for (HazelcastInstance instance : instances) {
-                RaftSessionService service = getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
+                RaftSessionService service = Accessors.getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
                 RaftSessionRegistry registry = service.getSessionRegistryOrNull(groupId);
                 assertNotNull(registry);
                 assertNotNull(registry.getSession(response.getSessionId()));
@@ -146,7 +147,7 @@ public class RaftSessionServiceTest extends HazelcastRaftTestSupport {
 
         assertTrueEventually(() -> {
             for (HazelcastInstance instance : instances) {
-                RaftSessionService service = getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
+                RaftSessionService service = Accessors.getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
                 RaftSessionRegistry registry = service.getSessionRegistryOrNull(groupId);
                 assertNotNull(registry);
                 assertNull(registry.getSession(response.getSessionId()));
@@ -160,7 +161,7 @@ public class RaftSessionServiceTest extends HazelcastRaftTestSupport {
         SessionResponse response = invocationManager.<SessionResponse>invoke(groupId, newCreateSessionOp()).get();
         assertTrueEventually(() -> {
             for (HazelcastInstance instance : instances) {
-                RaftSessionService service = getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
+                RaftSessionService service = Accessors.getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
                 RaftSessionRegistry registry = service.getSessionRegistryOrNull(groupId);
                 assertNotNull(registry);
                 assertNotNull(registry.getSession(response.getSessionId()));
@@ -180,7 +181,7 @@ public class RaftSessionServiceTest extends HazelcastRaftTestSupport {
         CPSessionInfo[] sessions = new CPSessionInfo[instances.length];
         assertTrueEventually(() -> {
             for (int i = 0; i < instances.length; i++) {
-                RaftSessionService service = getNodeEngineImpl(instances[i]).getService(RaftSessionService.SERVICE_NAME);
+                RaftSessionService service = Accessors.getNodeEngineImpl(instances[i]).getService(RaftSessionService.SERVICE_NAME);
                 RaftSessionRegistry registry = service.getSessionRegistryOrNull(groupId);
                 assertNotNull(registry);
                 CPSessionInfo session = registry.getSession(response.getSessionId());
@@ -197,7 +198,7 @@ public class RaftSessionServiceTest extends HazelcastRaftTestSupport {
             for (int i = 0; i < instances.length; i++) {
                 Node node;
                 try {
-                     node = getNode(instances[i]);
+                     node = Accessors.getNode(instances[i]);
                 } catch (IllegalArgumentException ignored) {
                     continue;
                 }
@@ -217,7 +218,7 @@ public class RaftSessionServiceTest extends HazelcastRaftTestSupport {
         SessionResponse response = invocationManager.<SessionResponse>invoke(groupId, newCreateSessionOp()).get();
         assertTrueEventually(() -> {
             for (HazelcastInstance instance : instances) {
-                RaftSessionService service = getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
+                RaftSessionService service = Accessors.getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
                 RaftSessionRegistry registry = service.getSessionRegistryOrNull(groupId);
                 assertNotNull(registry);
                 CPSessionInfo session = registry.getSession(response.getSessionId());
@@ -227,7 +228,7 @@ public class RaftSessionServiceTest extends HazelcastRaftTestSupport {
 
         assertTrueEventually(() -> {
             for (HazelcastInstance instance : instances) {
-                RaftSessionService service = getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
+                RaftSessionService service = Accessors.getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
                 RaftSessionRegistry registry = service.getSessionRegistryOrNull(groupId);
                 assertNotNull(registry);
                 CPSessionInfo session = registry.getSession(response.getSessionId());
@@ -257,8 +258,8 @@ public class RaftSessionServiceTest extends HazelcastRaftTestSupport {
             invocationManager.invoke(groupId, new RaftTestApplyOp("value" + i)).get();
         }
 
-        RaftNodeImpl leaderRaftNode = (RaftNodeImpl) ((RaftService) getNodeEngineImpl(leader).getService(RaftService.SERVICE_NAME)).getRaftNode(groupId);
-        RaftNodeImpl followerRaftNode = (RaftNodeImpl) ((RaftService) getNodeEngineImpl(follower).getService(RaftService.SERVICE_NAME)).getRaftNode(groupId);
+        RaftNodeImpl leaderRaftNode = (RaftNodeImpl) ((RaftService) Accessors.getNodeEngineImpl(leader).getService(RaftService.SERVICE_NAME)).getRaftNode(groupId);
+        RaftNodeImpl followerRaftNode = (RaftNodeImpl) ((RaftService) Accessors.getNodeEngineImpl(follower).getService(RaftService.SERVICE_NAME)).getRaftNode(groupId);
 
         // the leader takes a snapshot
         long[] leaderSnapshotIndex = new long[1];
@@ -277,7 +278,7 @@ public class RaftSessionServiceTest extends HazelcastRaftTestSupport {
         assertTrueEventually(() -> assertTrue(getSnapshotEntry(followerRaftNode).index() > 0));
 
         assertTrueEventually(() -> {
-            RaftSessionService sessionService = getNodeEngineImpl(follower).getService(RaftSessionService.SERVICE_NAME);
+            RaftSessionService sessionService = Accessors.getNodeEngineImpl(follower).getService(RaftSessionService.SERVICE_NAME);
             RaftSessionRegistry registry = sessionService.getSessionRegistryOrNull(groupId);
             assertNotNull(registry.getSession(response.getSessionId()));
         });
@@ -317,7 +318,7 @@ public class RaftSessionServiceTest extends HazelcastRaftTestSupport {
     }
 
     private CPSessionInfo getSession(HazelcastInstance instance, CPGroupId groupId, long sessionId) {
-        RaftSessionService sessionService = getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
+        RaftSessionService sessionService = Accessors.getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
         RaftSessionRegistry registry = sessionService.getSessionRegistryOrNull(groupId);
         if (registry == null) {
             return null;

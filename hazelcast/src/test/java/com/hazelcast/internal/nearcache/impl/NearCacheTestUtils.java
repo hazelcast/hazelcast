@@ -42,6 +42,7 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 
@@ -159,7 +160,7 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
      * @return the {@link MapNearCacheManager}
      */
     public static MapNearCacheManager getMapNearCacheManager(HazelcastInstance instance) {
-        NodeEngineImpl nodeEngine = getNode(instance).nodeEngine;
+        NodeEngineImpl nodeEngine = Accessors.getNode(instance).nodeEngine;
         MapService service = nodeEngine.getService(MapService.SERVICE_NAME);
 
         return service.getMapServiceContext().getMapNearCacheManager();

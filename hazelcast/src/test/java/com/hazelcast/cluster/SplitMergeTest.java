@@ -23,6 +23,7 @@ import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -54,8 +55,8 @@ public class SplitMergeTest extends HazelcastTestSupport {
         HazelcastInstance h1 = factory.newHazelcastInstance(newConfig());
         HazelcastInstance h2 = factory.newHazelcastInstance(newConfig());
 
-        UUID initialUuid_H1 = getNode(h1).getThisUuid();
-        UUID initialUuid_H2 = getNode(h2).getThisUuid();
+        UUID initialUuid_H1 = Accessors.getNode(h1).getThisUuid();
+        UUID initialUuid_H2 = Accessors.getNode(h2).getThisUuid();
 
         // create split
         closeConnectionBetween(h1, h2);
@@ -63,11 +64,11 @@ public class SplitMergeTest extends HazelcastTestSupport {
         assertClusterSizeEventually(1, h2);
 
         // merge back
-        mergeBack(h2, getAddress(h1));
+        mergeBack(h2, Accessors.getAddress(h1));
         assertClusterSizeEventually(2, h1, h2);
 
-        UUID currentUuid_H1 = getNode(h1).getThisUuid();
-        UUID currentUuid_H2 = getNode(h2).getThisUuid();
+        UUID currentUuid_H1 = Accessors.getNode(h1).getThisUuid();
+        UUID currentUuid_H2 = Accessors.getNode(h2).getThisUuid();
 
         // h2 merges to h1.
         // UUID of h1 remains the same.
@@ -75,11 +76,11 @@ public class SplitMergeTest extends HazelcastTestSupport {
         assertEquals(initialUuid_H1, currentUuid_H1);
         assertNotEquals(initialUuid_H2, currentUuid_H2);
 
-        assertNotNull(getClusterService(h1).getMember(currentUuid_H1));
-        assertNotNull(getClusterService(h1).getMember(currentUuid_H2));
+        assertNotNull(Accessors.getClusterService(h1).getMember(currentUuid_H1));
+        assertNotNull(Accessors.getClusterService(h1).getMember(currentUuid_H2));
 
-        assertNotNull(getClusterService(h2).getMember(currentUuid_H1));
-        assertNotNull(getClusterService(h2).getMember(currentUuid_H2));
+        assertNotNull(Accessors.getClusterService(h2).getMember(currentUuid_H1));
+        assertNotNull(Accessors.getClusterService(h2).getMember(currentUuid_H2));
     }
 
     @Test
@@ -96,7 +97,7 @@ public class SplitMergeTest extends HazelcastTestSupport {
         assertClusterSizeEventually(1, h3);
 
         // merge back
-        mergeBack(h3, getAddress(h1));
+        mergeBack(h3, Accessors.getAddress(h1));
         assertClusterSizeEventually(3, h1, h2, h3);
 
         // all partitions are assigned and all migrations & promotions are completed
@@ -117,7 +118,7 @@ public class SplitMergeTest extends HazelcastTestSupport {
         assertClusterSizeEventually(1, h2);
 
         // merge back
-        mergeBack(h2, getAddress(h1));
+        mergeBack(h2, Accessors.getAddress(h1));
         assertClusterSizeEventually(2, h1, h2);
 
         lifecycleListener.assertStates(LifecycleState.MERGING, LifecycleState.MERGED);
@@ -141,7 +142,7 @@ public class SplitMergeTest extends HazelcastTestSupport {
         assertClusterSizeEventually(1, h2);
 
         // try merge back
-        mergeBack(h2, getAddress(h1));
+        mergeBack(h2, Accessors.getAddress(h1));
 
         lifecycleListener.assertStates(LifecycleState.MERGING, LifecycleState.MERGE_FAILED);
     }
@@ -162,7 +163,7 @@ public class SplitMergeTest extends HazelcastTestSupport {
         assertClusterSizeEventually(1, h1, h2);
 
         // merge back
-        mergeBack(h2, getAddress(h1));
+        mergeBack(h2, Accessors.getAddress(h1));
         assertClusterSizeEventually(2, h1, h2);
 
         assertSizeEventually(2, listener1.events);
@@ -177,7 +178,7 @@ public class SplitMergeTest extends HazelcastTestSupport {
     }
 
     private void mergeBack(HazelcastInstance hz, Address to) {
-        getNode(hz).getClusterService().merge(to);
+        Accessors.getNode(hz).getClusterService().merge(to);
     }
 
     private Config newConfig() {

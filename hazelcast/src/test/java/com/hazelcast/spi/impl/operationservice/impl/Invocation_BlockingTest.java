@@ -28,6 +28,7 @@ import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -78,7 +79,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
         HazelcastInstance remote = factory.newHazelcastInstance(config);
         warmUpPartitions(factory.getAllHazelcastInstances());
 
-        NodeEngineImpl nodeEngine = getNodeEngineImpl(local);
+        NodeEngineImpl nodeEngine = Accessors.getNodeEngineImpl(local);
 
         String key = generateKeyOwnedBy(remote);
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
@@ -123,7 +124,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
         HazelcastInstance remote = factory.newHazelcastInstance(config);
         warmUpPartitions(factory.getAllHazelcastInstances());
 
-        NodeEngineImpl nodeEngine = getNodeEngineImpl(local);
+        NodeEngineImpl nodeEngine = Accessors.getNodeEngineImpl(local);
 
         String key = generateKeyOwnedBy(remote);
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
@@ -159,7 +160,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
         HazelcastInstance remote = factory.newHazelcastInstance(config);
         warmUpPartitions(factory.getAllHazelcastInstances());
 
-        NodeEngineImpl nodeEngine = getNodeEngineImpl(local);
+        NodeEngineImpl nodeEngine = Accessors.getNodeEngineImpl(local);
 
         String key = generateKeyOwnedBy(remote);
         ObjectNamespace namespace = new DistributedObjectNamespace(SERVICE_NAME, key);
@@ -200,7 +201,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
         HazelcastInstance remote = factory.newHazelcastInstance(config);
         warmUpPartitions(factory.getAllHazelcastInstances());
 
-        NodeEngineImpl nodeEngine = getNodeEngineImpl(local);
+        NodeEngineImpl nodeEngine = Accessors.getNodeEngineImpl(local);
 
         String key = generateKeyOwnedBy(remote);
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
@@ -237,7 +238,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
         HazelcastInstance remote = factory.newHazelcastInstance(config);
         warmUpPartitions(factory.getAllHazelcastInstances());
 
-        NodeEngineImpl nodeEngine = getNodeEngineImpl(local);
+        NodeEngineImpl nodeEngine = Accessors.getNodeEngineImpl(local);
 
         String key = generateKeyOwnedBy(remote);
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
@@ -286,7 +287,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
         HazelcastInstance local = factory.newHazelcastInstance(config);
         HazelcastInstance remote = factory.newHazelcastInstance(config);
 
-        NodeEngineImpl nodeEngine = getNodeEngineImpl(local);
+        NodeEngineImpl nodeEngine = Accessors.getNodeEngineImpl(local);
 
         String key = generateKeyOwnedBy(remote);
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
@@ -349,7 +350,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
         HazelcastInstance local = factory.newHazelcastInstance(config);
         final HazelcastInstance remote = factory.newHazelcastInstance(config);
 
-        NodeEngineImpl nodeEngine = getNodeEngineImpl(local);
+        NodeEngineImpl nodeEngine = Accessors.getNodeEngineImpl(local);
 
         String key = generateKeyOwnedBy(remote);
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);

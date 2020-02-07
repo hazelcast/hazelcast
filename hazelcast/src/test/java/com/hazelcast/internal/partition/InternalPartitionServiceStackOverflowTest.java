@@ -22,6 +22,7 @@ import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 import com.hazelcast.spi.impl.operationservice.OperationResponseHandlerFactory;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -55,7 +56,7 @@ public class InternalPartitionServiceStackOverflowTest extends HazelcastTestSupp
 
     public void test(int partitionId) {
         HazelcastInstance hz = createHazelcastInstance();
-        OperationService opService = getNode(hz).nodeEngine.getOperationService();
+        OperationService opService = Accessors.getNode(hz).nodeEngine.getOperationService();
 
         int iterations = 2000;
         final CountDownLatch latch = new CountDownLatch(iterations);

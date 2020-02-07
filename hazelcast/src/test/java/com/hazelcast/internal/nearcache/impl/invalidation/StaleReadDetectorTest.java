@@ -26,6 +26,7 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -76,7 +77,7 @@ public class StaleReadDetectorTest extends HazelcastTestSupport {
     }
 
     private static boolean isRepairingHandlerCreatedForMap(HazelcastInstance node, String mapName) {
-        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(node);
+        NodeEngineImpl nodeEngineImpl = Accessors.getNodeEngineImpl(node);
         MapService mapService = nodeEngineImpl.getService(SERVICE_NAME);
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         MapNearCacheManager mapNearCacheManager = mapServiceContext.getMapNearCacheManager();

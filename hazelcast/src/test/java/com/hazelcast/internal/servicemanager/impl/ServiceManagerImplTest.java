@@ -27,6 +27,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import com.hazelcast.spi.impl.servicemanager.impl.ServiceManagerImpl;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -62,7 +63,7 @@ public class ServiceManagerImplTest extends HazelcastTestSupport {
         ConfigAccessor.getServicesConfig(config).addServiceConfig(serviceConfig);
 
         HazelcastInstance hz = createHazelcastInstance(config);
-        NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);
+        NodeEngineImpl nodeEngine = Accessors.getNodeEngineImpl(hz);
         serviceManager = (ServiceManagerImpl) nodeEngine.getServiceManager();
     }
 

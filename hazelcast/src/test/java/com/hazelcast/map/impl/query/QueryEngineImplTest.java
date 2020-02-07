@@ -21,6 +21,7 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -54,7 +55,7 @@ public class QueryEngineImplTest extends HazelcastTestSupport {
     public void before() {
         instance = createHazelcastInstance();
         map = instance.getMap(randomName());
-        MapService mapService = getNodeEngineImpl(instance).getService(MapService.SERVICE_NAME);
+        MapService mapService = Accessors.getNodeEngineImpl(instance).getService(MapService.SERVICE_NAME);
         queryEngine = mapService.getMapServiceContext().getQueryEngine(map.getName());
 
         partitionId = 100;
@@ -128,7 +129,7 @@ public class QueryEngineImplTest extends HazelcastTestSupport {
     }
 
     private Object toObject(Object data) {
-        return getSerializationService(instance).toObject(data);
+        return Accessors.getSerializationService(instance).toObject(data);
     }
 
 }

@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -51,8 +52,8 @@ public class Invocation_CallTimeoutTestMillis extends HazelcastTestSupport {
         config.setProperty(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "" + CALL_TIMEOUT);
 
         hz = createHazelcastInstance(config);
-        opService = getOperationService(hz);
-        thisAddress = getAddress(hz);
+        opService = Accessors.getOperationService(hz);
+        thisAddress = Accessors.getAddress(hz);
     }
 
     @Test

@@ -19,6 +19,7 @@ package com.hazelcast.internal.nio.tcp;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.impl.CapturingCollector;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.OverridePropertyRule;
@@ -48,7 +49,7 @@ public class TcpIpEndpointManagerMetricsTest extends HazelcastTestSupport {
         CapturingCollector collector = new CapturingCollector();
         HazelcastInstance instance = createHazelcastInstance();
 
-        getNodeEngineImpl(instance).getMetricsRegistry().collect(collector);
+        Accessors.getNodeEngineImpl(instance).getMetricsRegistry().collect(collector);
 
         // defined by TcpIpEndpointManager
         verifyCollectedOnce(collector, metricDescriptor(TCP_PREFIX_CONNECTION, "count"));

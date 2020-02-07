@@ -35,6 +35,7 @@ import com.hazelcast.internal.management.dto.ClientBwListEntryDTO;
 import com.hazelcast.internal.management.dto.MCEventDTO;
 import com.hazelcast.internal.management.events.Event;
 import com.hazelcast.internal.management.events.EventMetadata;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -364,7 +365,7 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
     }
 
     private static com.hazelcast.internal.management.ManagementCenterService getMemberMCService(HazelcastInstance instance) {
-        return getNode(instance).getManagementCenterService();
+        return Accessors.getNode(instance).getManagementCenterService();
     }
 
     private static class TestEvent implements Event {

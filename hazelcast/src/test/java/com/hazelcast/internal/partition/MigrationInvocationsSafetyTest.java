@@ -25,6 +25,7 @@ import com.hazelcast.internal.partition.impl.MigrationManager;
 import com.hazelcast.internal.partition.service.TestMigrationAwareService;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -91,11 +92,11 @@ public class MigrationInvocationsSafetyTest extends PartitionCorrectnessTestSupp
 
         ensurePartitionsInitialized(initialMaster, slave2, slave3);
 
-        final int initialPartitionStateVersion = getPartitionService(initialMaster).getPartitionStateVersion();
-        assertEquals(initialPartitionStateVersion, getPartitionService(slave2).getPartitionStateVersion());
-        assertEquals(initialPartitionStateVersion, getPartitionService(slave3).getPartitionStateVersion());
-        assertEquals(0, getPartitionService(nextMaster).getPartitionStateVersion());
-        assertEquals(0, getPartitionService(slave1).getPartitionStateVersion());
+        final int initialPartitionStateVersion = Accessors.getPartitionService(initialMaster).getPartitionStateVersion();
+        assertEquals(initialPartitionStateVersion, Accessors.getPartitionService(slave2).getPartitionStateVersion());
+        assertEquals(initialPartitionStateVersion, Accessors.getPartitionService(slave3).getPartitionStateVersion());
+        assertEquals(0, Accessors.getPartitionService(nextMaster).getPartitionStateVersion());
+        assertEquals(0, Accessors.getPartitionService(slave1).getPartitionStateVersion());
 
         dropOperationsBetween(nextMaster, slave3, F_ID, singletonList(FETCH_PARTITION_STATE));
 
@@ -108,12 +109,12 @@ public class MigrationInvocationsSafetyTest extends PartitionCorrectnessTestSupp
         });
 
         assertTrueEventually(() -> {
-            int nextPartitionStateVersion = getPartitionService(nextMaster).getPartitionStateVersion();
+            int nextPartitionStateVersion = Accessors.getPartitionService(nextMaster).getPartitionStateVersion();
             assertThat(nextPartitionStateVersion, greaterThan(initialPartitionStateVersion));
 
-            assertEquals(nextPartitionStateVersion, getPartitionService(slave1).getPartitionStateVersion());
-            assertEquals(nextPartitionStateVersion, getPartitionService(slave2).getPartitionStateVersion());
-            assertEquals(nextPartitionStateVersion, getPartitionService(slave3).getPartitionStateVersion());
+            assertEquals(nextPartitionStateVersion, Accessors.getPartitionService(slave1).getPartitionStateVersion());
+            assertEquals(nextPartitionStateVersion, Accessors.getPartitionService(slave2).getPartitionStateVersion());
+            assertEquals(nextPartitionStateVersion, Accessors.getPartitionService(slave3).getPartitionStateVersion());
         });
 
     }
@@ -135,11 +136,11 @@ public class MigrationInvocationsSafetyTest extends PartitionCorrectnessTestSupp
 
         ensurePartitionsInitialized(initialMaster, slave2, slave3);
 
-        final int initialPartitionStateVersion = getPartitionService(initialMaster).getPartitionStateVersion();
-        assertEquals(initialPartitionStateVersion, getPartitionService(slave2).getPartitionStateVersion());
-        assertEquals(initialPartitionStateVersion, getPartitionService(slave3).getPartitionStateVersion());
-        assertEquals(0, getPartitionService(nextMaster).getPartitionStateVersion());
-        assertEquals(0, getPartitionService(slave1).getPartitionStateVersion());
+        final int initialPartitionStateVersion = Accessors.getPartitionService(initialMaster).getPartitionStateVersion();
+        assertEquals(initialPartitionStateVersion, Accessors.getPartitionService(slave2).getPartitionStateVersion());
+        assertEquals(initialPartitionStateVersion, Accessors.getPartitionService(slave3).getPartitionStateVersion());
+        assertEquals(0, Accessors.getPartitionService(nextMaster).getPartitionStateVersion());
+        assertEquals(0, Accessors.getPartitionService(slave1).getPartitionStateVersion());
 
         dropOperationsBetween(nextMaster, slave3, F_ID, singletonList(FETCH_PARTITION_STATE));
 
@@ -152,11 +153,11 @@ public class MigrationInvocationsSafetyTest extends PartitionCorrectnessTestSupp
         });
 
         assertTrueEventually(() -> {
-            int nextPartitionStateVersion = getPartitionService(nextMaster).getPartitionStateVersion();
+            int nextPartitionStateVersion = Accessors.getPartitionService(nextMaster).getPartitionStateVersion();
             assertThat(nextPartitionStateVersion, greaterThan(initialPartitionStateVersion));
 
-            assertEquals(nextPartitionStateVersion, getPartitionService(slave1).getPartitionStateVersion());
-            assertEquals(nextPartitionStateVersion, getPartitionService(slave2).getPartitionStateVersion());
+            assertEquals(nextPartitionStateVersion, Accessors.getPartitionService(slave1).getPartitionStateVersion());
+            assertEquals(nextPartitionStateVersion, Accessors.getPartitionService(slave2).getPartitionStateVersion());
         });
 
     }
@@ -185,15 +186,15 @@ public class MigrationInvocationsSafetyTest extends PartitionCorrectnessTestSupp
         assertClusterSizeEventually(2, nextMaster, slave);
 
         assertTrueAllTheTime(() -> {
-            assertFalse(getPartitionService(nextMaster).isMemberStateSafe());
-            assertFalse(getPartitionService(slave).isMemberStateSafe());
+            assertFalse(Accessors.getPartitionService(nextMaster).isMemberStateSafe());
+            assertFalse(Accessors.getPartitionService(slave).isMemberStateSafe());
         }, 5);
 
         resetPacketFiltersFrom(nextMaster);
 
         assertTrueEventually(() -> {
-            assertTrue(getPartitionService(nextMaster).isMemberStateSafe());
-            assertTrue(getPartitionService(slave).isMemberStateSafe());
+            assertTrue(Accessors.getPartitionService(nextMaster).isMemberStateSafe());
+            assertTrue(Accessors.getPartitionService(slave).isMemberStateSafe());
         });
     }
 
@@ -233,11 +234,11 @@ public class MigrationInvocationsSafetyTest extends PartitionCorrectnessTestSupp
 
         waitAllForSafeState(master, slave1, slave2, slave3);
 
-        final PartitionTableView masterPartitionTable = getPartitionService(master).createPartitionTableView();
+        final PartitionTableView masterPartitionTable = Accessors.getPartitionService(master).createPartitionTableView();
         assertTrueEventually(() -> {
-            assertEquals(masterPartitionTable, getPartitionService(slave1).createPartitionTableView());
-            assertEquals(masterPartitionTable, getPartitionService(slave2).createPartitionTableView());
-            assertEquals(masterPartitionTable, getPartitionService(slave3).createPartitionTableView());
+            assertEquals(masterPartitionTable, Accessors.getPartitionService(slave1).createPartitionTableView());
+            assertEquals(masterPartitionTable, Accessors.getPartitionService(slave2).createPartitionTableView());
+            assertEquals(masterPartitionTable, Accessors.getPartitionService(slave3).createPartitionTableView());
         });
 
         assertSizeAndData();
@@ -302,10 +303,10 @@ public class MigrationInvocationsSafetyTest extends PartitionCorrectnessTestSupp
 
         waitAllForSafeState(master, slave1, slave2);
 
-        final PartitionTableView masterPartitionTable = getPartitionService(master).createPartitionTableView();
+        final PartitionTableView masterPartitionTable = Accessors.getPartitionService(master).createPartitionTableView();
         assertTrueEventually(() -> {
-            assertEquals(masterPartitionTable, getPartitionService(slave1).createPartitionTableView());
-            assertEquals(masterPartitionTable, getPartitionService(slave2).createPartitionTableView());
+            assertEquals(masterPartitionTable, Accessors.getPartitionService(slave1).createPartitionTableView());
+            assertEquals(masterPartitionTable, Accessors.getPartitionService(slave2).createPartitionTableView());
         });
 
         assertSizeAndData();
@@ -349,10 +350,10 @@ public class MigrationInvocationsSafetyTest extends PartitionCorrectnessTestSupp
 
         waitAllForSafeState(master, slave1, slave2);
 
-        final PartitionTableView masterPartitionTable = getPartitionService(master).createPartitionTableView();
+        final PartitionTableView masterPartitionTable = Accessors.getPartitionService(master).createPartitionTableView();
         assertTrueEventually(() -> {
-            assertEquals(masterPartitionTable, getPartitionService(slave1).createPartitionTableView());
-            assertEquals(masterPartitionTable, getPartitionService(slave2).createPartitionTableView());
+            assertEquals(masterPartitionTable, Accessors.getPartitionService(slave1).createPartitionTableView());
+            assertEquals(masterPartitionTable, Accessors.getPartitionService(slave2).createPartitionTableView());
         });
 
         assertSizeAndData();
@@ -396,8 +397,8 @@ public class MigrationInvocationsSafetyTest extends PartitionCorrectnessTestSupp
 
         waitAllForSafeState(master, slave1);
 
-        final PartitionTableView masterPartitionTable = getPartitionService(master).createPartitionTableView();
-        assertTrueEventually(() -> assertEquals(masterPartitionTable, getPartitionService(slave1).createPartitionTableView()));
+        final PartitionTableView masterPartitionTable = Accessors.getPartitionService(master).createPartitionTableView();
+        assertTrueEventually(() -> assertEquals(masterPartitionTable, Accessors.getPartitionService(slave1).createPartitionTableView()));
 
         assertSizeAndData();
 
@@ -431,14 +432,14 @@ public class MigrationInvocationsSafetyTest extends PartitionCorrectnessTestSupp
     }
 
     private static void assertNoDuplicateMigrations(HazelcastInstance hz) {
-        TestMigrationAwareService service = getNodeEngineImpl(hz).getService(TestMigrationAwareService.SERVICE_NAME);
+        TestMigrationAwareService service = Accessors.getNodeEngineImpl(hz).getService(TestMigrationAwareService.SERVICE_NAME);
         List<PartitionMigrationEvent> events = service.getBeforeEvents();
         Set<PartitionMigrationEvent> uniqueEvents = new HashSet<>(events);
-        assertEquals("Node: " + getAddress(hz) + ", Events: " + events, uniqueEvents.size(), events.size());
+        assertEquals("Node: " + Accessors.getAddress(hz) + ", Events: " + events, uniqueEvents.size(), events.size());
     }
 
     private static InternalPartitionServiceImpl getPartitionServiceImpl(HazelcastInstance hz) {
-        return getNode(hz).partitionService;
+        return Accessors.getNode(hz).partitionService;
     }
 
     private static void ensurePartitionsInitialized(HazelcastInstance... instances) {
@@ -449,6 +450,6 @@ public class MigrationInvocationsSafetyTest extends PartitionCorrectnessTestSupp
     }
 
     private static void assertPartitionStateVersionInitialized(HazelcastInstance instance) {
-        assertTrueEventually(() -> assertThat(getPartitionService(instance).getPartitionStateVersion(), greaterThan(0)));
+        assertTrueEventually(() -> assertThat(Accessors.getPartitionService(instance).getPartitionStateVersion(), greaterThan(0)));
     }
 }

@@ -21,6 +21,7 @@ import com.hazelcast.cardinality.impl.CardinalityEstimatorService;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -83,9 +84,9 @@ public class CardinalityEstimatorBackupTest extends HazelcastTestSupport {
     }
 
     private long readEstimate(final HazelcastInstance instance) {
-        final OperationServiceImpl operationService = (OperationServiceImpl) getOperationService(instance);
-        final CardinalityEstimatorService cardinalityEstimatorService = getNodeEngineImpl(instance)
-                .getService(CardinalityEstimatorService.SERVICE_NAME);
+        final OperationServiceImpl operationService = (OperationServiceImpl) Accessors.getOperationService(instance);
+        final CardinalityEstimatorService cardinalityEstimatorService = Accessors.getNodeEngineImpl(instance)
+                                                                                 .getService(CardinalityEstimatorService.SERVICE_NAME);
 
         final CardinalityEstimatorBackupTest.GetEstimate task =
                 new CardinalityEstimatorBackupTest.GetEstimate(cardinalityEstimatorService);

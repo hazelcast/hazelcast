@@ -19,6 +19,7 @@ package com.hazelcast.ringbuffer.impl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.internal.partition.PartitionMigrationEvent;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -41,7 +42,7 @@ public class RingbufferServiceTest extends HazelcastTestSupport {
     @Before
     public void setup() {
         hz = createHazelcastInstance();
-        service = getNodeEngineImpl(hz).getService(RingbufferService.SERVICE_NAME);
+        service = Accessors.getNodeEngineImpl(hz).getService(RingbufferService.SERVICE_NAME);
     }
 
     @Test

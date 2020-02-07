@@ -24,6 +24,7 @@ import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -66,8 +67,8 @@ public class RingbufferContainerSerializationTest extends HazelcastTestSupport {
     @Before
     public void setup() {
         HazelcastInstance hz = createHazelcastInstance();
-        this.nodeEngine = getNodeEngineImpl(hz);
-        this.serializationService = getSerializationService(hz);
+        this.nodeEngine = Accessors.getNodeEngineImpl(hz);
+        this.serializationService = Accessors.getSerializationService(hz);
     }
 
     @Test

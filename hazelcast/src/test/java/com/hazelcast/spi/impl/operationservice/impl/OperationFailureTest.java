@@ -22,6 +22,7 @@ import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -49,7 +50,7 @@ public class OperationFailureTest extends HazelcastTestSupport {
     public void onFailure_shouldBeCalled_whenOperationExecutionFails() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance hz = factory.newHazelcastInstance();
-        NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);
+        NodeEngineImpl nodeEngine = Accessors.getNodeEngineImpl(hz);
 
         FailingOperation op = new FailingOperation(new CountDownLatch(1));
         nodeEngine.getOperationService().execute(op);
@@ -62,7 +63,7 @@ public class OperationFailureTest extends HazelcastTestSupport {
     public void onFailure_shouldBeCalled_whenOperationIsRejected() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance hz = factory.newHazelcastInstance();
-        NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);
+        NodeEngineImpl nodeEngine = Accessors.getNodeEngineImpl(hz);
 
         FailingOperation op = new FailingOperation(new CountDownLatch(1));
         op.setPartitionId(1).setReplicaIndex(1);
@@ -79,7 +80,7 @@ public class OperationFailureTest extends HazelcastTestSupport {
         HazelcastInstance hz2 = factory.newHazelcastInstance();
         warmUpPartitions(hz, hz2);
 
-        NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);
+        NodeEngineImpl nodeEngine = Accessors.getNodeEngineImpl(hz);
 
         nodeEngine.getOperationService().invokeOnPartition(null, new EmptyBackupAwareOperation(), 0);
 

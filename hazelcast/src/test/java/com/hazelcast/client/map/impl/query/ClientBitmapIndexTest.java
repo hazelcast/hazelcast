@@ -30,6 +30,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -141,7 +142,7 @@ public class ClientBitmapIndexTest extends HazelcastTestSupport {
 
         // add the index dynamically to verify client protocol support
         persons.addIndex(indexConfig);
-        List<Indexes> allIndexes = getAllIndexes(personsOnMember);
+        List<Indexes> allIndexes = Accessors.getAllIndexes(personsOnMember);
         assertEquals(1, allIndexes.size());
         InternalIndex[] indexes = allIndexes.get(0).getIndexes();
         assertEquals(1, indexes.length);

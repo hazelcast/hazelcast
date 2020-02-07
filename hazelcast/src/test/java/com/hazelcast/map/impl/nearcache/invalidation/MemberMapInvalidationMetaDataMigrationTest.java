@@ -28,6 +28,7 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -220,7 +221,7 @@ public class MemberMapInvalidationMetaDataMigrationTest extends HazelcastTestSup
         Map<Integer, UUID> destination2 = getPartitionToUuidMap(instance2);
         Map<Integer, UUID> destination3 = getPartitionToUuidMap(instance3);
 
-        InternalPartitionService partitionService2 = getNodeEngineImpl(instance2).getPartitionService();
+        InternalPartitionService partitionService2 = Accessors.getNodeEngineImpl(instance2).getPartitionService();
         Map<Integer, UUID> merged = mergeOwnedPartitionUuids(partitionService2, destination2, destination3);
         assertPartitionUUIDsEqual(source, merged);
     }
@@ -260,7 +261,7 @@ public class MemberMapInvalidationMetaDataMigrationTest extends HazelcastTestSup
     }
 
     private static long calculateNumberOfInvalidationsSoFar(String mapName, HazelcastInstance instance) {
-        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(instance);
+        NodeEngineImpl nodeEngineImpl = Accessors.getNodeEngineImpl(instance);
         int partitionCount = nodeEngineImpl.getPartitionService().getPartitionCount();
         MetaDataGenerator metaDataGenerator = getMetaDataGenerator(nodeEngineImpl);
 
@@ -272,7 +273,7 @@ public class MemberMapInvalidationMetaDataMigrationTest extends HazelcastTestSup
     }
 
     private static Map<Integer, Long> getPartitionToSequenceMap(String mapName, HazelcastInstance instance) {
-        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(instance);
+        NodeEngineImpl nodeEngineImpl = Accessors.getNodeEngineImpl(instance);
         int partitionCount = nodeEngineImpl.getPartitionService().getPartitionCount();
         MetaDataGenerator metaDataGenerator = getMetaDataGenerator(nodeEngineImpl);
 
@@ -284,7 +285,7 @@ public class MemberMapInvalidationMetaDataMigrationTest extends HazelcastTestSup
     }
 
     private static Map<Integer, UUID> getPartitionToUuidMap(HazelcastInstance instance) {
-        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(instance);
+        NodeEngineImpl nodeEngineImpl = Accessors.getNodeEngineImpl(instance);
         int partitionCount = nodeEngineImpl.getPartitionService().getPartitionCount();
         MetaDataGenerator metaDataGenerator = getMetaDataGenerator(nodeEngineImpl);
 

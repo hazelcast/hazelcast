@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.transaction.TransactionalMap;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.cluster.Address;
@@ -83,7 +84,7 @@ public class IndeterminateOperationStateExceptionTest extends HazelcastTestSuppo
         dropOperationsBetween(instance1, instance2, F_ID, singletonList(SpiDataSerializerHook.BACKUP));
         int partitionId = getPartitionId(instance1);
 
-        OperationServiceImpl operationService = getNodeEngineImpl(instance1).getOperationService();
+        OperationServiceImpl operationService = Accessors.getNodeEngineImpl(instance1).getOperationService();
         InternalCompletableFuture<Object> future = operationService
                 .createInvocationBuilder(InternalPartitionService.SERVICE_NAME, new PrimaryOperation(), partitionId).invoke();
         try {
@@ -101,7 +102,7 @@ public class IndeterminateOperationStateExceptionTest extends HazelcastTestSuppo
         dropOperationsBetween(instance1, instance2, F_ID, singletonList(SpiDataSerializerHook.BACKUP));
         int partitionId = getPartitionId(instance1);
 
-        OperationServiceImpl operationService = getNodeEngineImpl(instance1).getOperationService();
+        OperationServiceImpl operationService = Accessors.getNodeEngineImpl(instance1).getOperationService();
         InternalCompletableFuture<Object> future = operationService
                 .createInvocationBuilder(InternalPartitionService.SERVICE_NAME, new PrimaryOperation(), partitionId)
                 .setFailOnIndeterminateOperationState(true)
@@ -119,7 +120,7 @@ public class IndeterminateOperationStateExceptionTest extends HazelcastTestSuppo
         setup(true);
 
         int partitionId = getPartitionId(instance2);
-        OperationServiceImpl operationService = getNodeEngineImpl(instance1).getOperationService();
+        OperationServiceImpl operationService = Accessors.getNodeEngineImpl(instance1).getOperationService();
         InternalCompletableFuture<Object> future = operationService
                 .createInvocationBuilder(InternalPartitionService.SERVICE_NAME, new SilentOperation(), partitionId).invoke();
 
@@ -152,7 +153,7 @@ public class IndeterminateOperationStateExceptionTest extends HazelcastTestSuppo
         dropOperationsBetween(instance2, instance1, SpiDataSerializerHook.F_ID, singletonList(SpiDataSerializerHook.NORMAL_RESPONSE));
 
         int partitionId = getPartitionId(instance2);
-        OperationServiceImpl operationService = getNodeEngineImpl(instance1).getOperationService();
+        OperationServiceImpl operationService = Accessors.getNodeEngineImpl(instance1).getOperationService();
         InternalCompletableFuture<Boolean> future = operationService
                 .createInvocationBuilder(InternalPartitionService.SERVICE_NAME, new DummyReadOperation(), partitionId).invoke();
         spawn(new Runnable() {
@@ -163,7 +164,7 @@ public class IndeterminateOperationStateExceptionTest extends HazelcastTestSuppo
         });
         boolean response = future.get(2, TimeUnit.MINUTES);
         assertTrue(response);
-        assertEquals(getAddress(instance1), instance1.getUserContext().get(DummyReadOperation.LAST_INVOCATION_ADDRESS));
+        assertEquals(Accessors.getAddress(instance1), instance1.getUserContext().get(DummyReadOperation.LAST_INVOCATION_ADDRESS));
     }
 
     @Test
@@ -200,8 +201,8 @@ public class IndeterminateOperationStateExceptionTest extends HazelcastTestSuppo
     public void targetInvocation_shouldFailWithMemberLeftException_onTargetMemberLeave() throws Exception {
         setup(true);
 
-        OperationServiceImpl operationService = getNodeEngineImpl(instance1).getOperationService();
-        Address target = getAddress(instance2);
+        OperationServiceImpl operationService = Accessors.getNodeEngineImpl(instance1).getOperationService();
+        Address target = Accessors.getAddress(instance2);
         InternalCompletableFuture<Object> future = operationService
                 .createInvocationBuilder(InternalPartitionService.SERVICE_NAME, new SilentOperation(), target).invoke();
 

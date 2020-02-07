@@ -27,6 +27,7 @@ import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -170,7 +171,7 @@ public class WriteBehindOnBackupsTest extends HazelcastTestSupport {
 
     public static int writeBehindQueueSize(HazelcastInstance node, String mapName) {
         int size = 0;
-        final NodeEngineImpl nodeEngine = getNode(node).getNodeEngine();
+        final NodeEngineImpl nodeEngine = Accessors.getNode(node).getNodeEngine();
         MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         final int partitionCount = nodeEngine.getPartitionService().getPartitionCount();

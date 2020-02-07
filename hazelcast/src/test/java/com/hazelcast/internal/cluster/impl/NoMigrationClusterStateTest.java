@@ -29,6 +29,7 @@ import com.hazelcast.internal.partition.MigrationAwareService;
 import com.hazelcast.internal.partition.PartitionMigrationEvent;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
 import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -69,7 +70,7 @@ public class NoMigrationClusterStateTest extends HazelcastTestSupport {
         final HazelcastInstance hz = factory.newHazelcastInstance(config);
 
         assertTrueAllTheTime(new AssertTask() {
-            final Node node = getNode(hz);
+            final Node node = Accessors.getNode(hz);
             final InternalPartitionService partitionService = node.getPartitionService();
 
             @Override
@@ -169,8 +170,8 @@ public class NoMigrationClusterStateTest extends HazelcastTestSupport {
     }
 
     private static void assertAllPartitionsAreAssigned(HazelcastInstance instance, final int replicaCount) {
-        final ClusterServiceImpl clusterService = getNode(instance).getClusterService();
-        final InternalPartitionService partitionService = getNode(instance).getPartitionService();
+        final ClusterServiceImpl clusterService = Accessors.getNode(instance).getClusterService();
+        final InternalPartitionService partitionService = Accessors.getNode(instance).getPartitionService();
 
         assertTrueEventually(new AssertTask() {
             @Override

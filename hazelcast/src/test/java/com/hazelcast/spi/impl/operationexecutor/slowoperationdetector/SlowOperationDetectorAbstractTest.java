@@ -28,6 +28,7 @@ import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastTestSupport;
 
 import java.lang.reflect.Field;
@@ -66,7 +67,7 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
     }
 
     static void executeOperation(HazelcastInstance instance, Operation operation) {
-        getOperationService(instance).execute(operation);
+        Accessors.getOperationService(instance).execute(operation);
     }
 
     static void executeEntryProcessor(IMap<String, String> map, EntryProcessor<String, String, Object> entryProcessor) {
@@ -77,7 +78,7 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
         if (instance == null) {
             return;
         }
-        OperationServiceImpl operationService = (OperationServiceImpl) getOperationService(instance);
+        OperationServiceImpl operationService = (OperationServiceImpl) Accessors.getOperationService(instance);
         operationService.shutdownInvocations();
         operationService.shutdownOperationExecutor();
     }
@@ -96,7 +97,7 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
     }
 
     static JsonObject getOperationStats(HazelcastInstance instance) {
-        TimedMemberStateFactory timedMemberStateFactory = new TimedMemberStateFactory(getHazelcastInstanceImpl(instance));
+        TimedMemberStateFactory timedMemberStateFactory = new TimedMemberStateFactory(Accessors.getHazelcastInstanceImpl(instance));
         LocalOperationStats operationStats = timedMemberStateFactory.createTimedMemberState()
                                                                     .getMemberState()
                                                                     .getOperationStats();
@@ -113,7 +114,7 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
     }
 
     static Collection<SlowOperationLog> getSlowOperationLogs(HazelcastInstance instance) {
-        OperationServiceImpl operationService = getOperationService(instance);
+        OperationServiceImpl operationService = Accessors.getOperationService(instance);
         SlowOperationDetector slowOperationDetector = getFieldFromObject(operationService, "slowOperationDetector");
         Map<Integer, SlowOperationLog> slowOperationLogs = getFieldFromObject(slowOperationDetector, "slowOperationLogs");
 

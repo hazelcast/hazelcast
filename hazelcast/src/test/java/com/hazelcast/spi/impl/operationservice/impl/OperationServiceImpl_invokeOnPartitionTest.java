@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.ExceptionThrowingCallable;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -47,7 +48,7 @@ public class OperationServiceImpl_invokeOnPartitionTest extends HazelcastTestSup
 
         local = nodes[0];
         remote = nodes[1];
-        operationService = getOperationService(local);
+        operationService = Accessors.getOperationService(local);
     }
 
     @Test

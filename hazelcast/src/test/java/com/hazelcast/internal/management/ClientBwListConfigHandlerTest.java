@@ -26,6 +26,7 @@ import com.hazelcast.internal.management.dto.ClientBwListDTO;
 import com.hazelcast.internal.management.dto.ClientBwListEntryDTO;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionType;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -62,7 +63,7 @@ public class ClientBwListConfigHandlerTest extends HazelcastTestSupport {
     @Before
     public void setUp() {
         instance = createHazelcastInstance();
-        clientEngine = getNode(instance).getClientEngine();
+        clientEngine = Accessors.getNode(instance).getClientEngine();
         handler = new ClientBwListConfigHandler(clientEngine);
     }
 
@@ -185,7 +186,7 @@ public class ClientBwListConfigHandlerTest extends HazelcastTestSupport {
 
         Connection mockConnection = mock(Connection.class);
         when(mockConnection.getConnectionType()).thenReturn(ConnectionType.MC_JAVA_CLIENT);
-        ClientEndpointImpl mcClient = new ClientEndpointImpl(clientEngine, getNodeEngineImpl(instance), mockConnection);
+        ClientEndpointImpl mcClient = new ClientEndpointImpl(clientEngine, Accessors.getNodeEngineImpl(instance), mockConnection);
         assertTrue(clientEngine.isClientAllowed(mcClient));
     }
 

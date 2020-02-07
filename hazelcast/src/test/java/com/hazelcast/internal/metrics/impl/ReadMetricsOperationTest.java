@@ -27,6 +27,7 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -53,7 +54,7 @@ public class ReadMetricsOperationTest extends HazelcastTestSupport {
         IMap<Object, Object> map = hzInstance.getMap("map");
         map.put("key", "value");
 
-        NodeEngineImpl nodeEngine = getNode(hzInstance).getNodeEngine();
+        NodeEngineImpl nodeEngine = Accessors.getNode(hzInstance).getNodeEngine();
         OperationServiceImpl operationService = nodeEngine.getOperationService();
 
         AtomicLong nextSequence = new AtomicLong();

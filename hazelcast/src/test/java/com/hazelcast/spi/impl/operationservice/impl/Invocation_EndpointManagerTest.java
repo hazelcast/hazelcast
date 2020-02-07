@@ -29,6 +29,7 @@ import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -59,13 +60,13 @@ public class Invocation_EndpointManagerTest
         HazelcastInstance hz2 = factory.newHazelcastInstance();
 
         String key = generateKeyOwnedBy(hz2);
-        Data dataKey = getSerializationService(hz1).toData(key);
+        Data dataKey = Accessors.getSerializationService(hz1).toData(key);
         Partition partition = hz1.getPartitionService().getPartition(key);
 
         Operation op = new GetOperation("test", dataKey);
         InvocationBuilder builder
-                = getNodeEngineImpl(hz1).getOperationService()
-                                        .createInvocationBuilder(MapService.SERVICE_NAME, op, partition.getPartitionId());
+                = Accessors.getNodeEngineImpl(hz1).getOperationService()
+                           .createInvocationBuilder(MapService.SERVICE_NAME, op, partition.getPartitionId());
         builder.setEndpointManager(new NoopEndpointManager());
         expected.expect(UnsupportedOperationException.class);
         expected.expectMessage(EXPECTED_MSG);

@@ -22,6 +22,7 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
@@ -60,7 +61,7 @@ public class SlowOperationDetectorBasicTest extends SlowOperationDetectorAbstrac
         instance = createHazelcastInstance(config);
 
         SlowRunnable runnable = new SlowRunnable(5, GENERIC_PARTITION_ID);
-        getOperationService(instance).execute(runnable);
+        Accessors.getOperationService(instance).execute(runnable);
         runnable.await();
 
         getSlowOperationLogsAndAssertNumberOfSlowOperationLogs(instance, 0);
@@ -71,7 +72,7 @@ public class SlowOperationDetectorBasicTest extends SlowOperationDetectorAbstrac
         instance = getSingleNodeCluster(1000);
 
         SlowRunnable runnable = new SlowRunnable(5, GENERIC_PARTITION_ID);
-        getOperationService(instance).execute(runnable);
+        Accessors.getOperationService(instance).execute(runnable);
         runnable.await();
 
         Collection<SlowOperationLog> logs = getSlowOperationLogsAndAssertNumberOfSlowOperationLogs(instance, 1);
@@ -87,7 +88,7 @@ public class SlowOperationDetectorBasicTest extends SlowOperationDetectorAbstrac
         instance = getSingleNodeCluster(1000);
 
         SlowRunnable runnable = new SlowRunnable(5, 1);
-        getOperationService(instance).execute(runnable);
+        Accessors.getOperationService(instance).execute(runnable);
         runnable.await();
 
         Collection<SlowOperationLog> logs = getSlowOperationLogsAndAssertNumberOfSlowOperationLogs(instance, 1);
@@ -179,7 +180,7 @@ public class SlowOperationDetectorBasicTest extends SlowOperationDetectorAbstrac
         instance = createHazelcastInstance(config);
 
         List<SlowRecursiveOperation> operations = new ArrayList<SlowRecursiveOperation>(numberOfOperations);
-        int partitionCount = getPartitionService(instance).getPartitionCount();
+        int partitionCount = Accessors.getPartitionService(instance).getPartitionCount();
 
         int partitionIndex = 1;
         for (int i = 0; i < numberOfOperations; i++) {
@@ -281,7 +282,7 @@ public class SlowOperationDetectorBasicTest extends SlowOperationDetectorAbstrac
 
         @Override
         public void run() throws Exception {
-            getOperationService(instance).execute(operation);
+            Accessors.getOperationService(instance).execute(operation);
         }
 
         public void await() {

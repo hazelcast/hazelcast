@@ -21,6 +21,7 @@ import com.hazelcast.replicatedmap.impl.ReplicatedMapProxy;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.AbstractBaseReplicatedRecordStore;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.SlowTest;
@@ -155,7 +156,7 @@ public class ReplicatedMapTtlTest extends ReplicatedMapAbstractTest {
             map.put(i, i, 100, TimeUnit.DAYS);
         }
 
-        ReplicatedMapService service = getNodeEngineImpl(node).getService(ReplicatedMapService.SERVICE_NAME);
+        ReplicatedMapService service = Accessors.getNodeEngineImpl(node).getService(ReplicatedMapService.SERVICE_NAME);
         service.reset();
 
         assertAllTtlSchedulersEmpty(map);

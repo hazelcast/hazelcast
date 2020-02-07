@@ -37,6 +37,7 @@ import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -98,7 +99,7 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
     }
 
     public NodeEngineImpl getNodeEngine(HazelcastInstance hz) {
-        Node node = getNode(hz);
+        Node node = Accessors.getNode(hz);
         return node.nodeEngine;
     }
 
@@ -190,7 +191,7 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
 
         @Override
         public Boolean call() {
-            NodeEngineImpl nodeEngine = getNode(hz).nodeEngine;
+            NodeEngineImpl nodeEngine = Accessors.getNode(hz).nodeEngine;
             ListService service = nodeEngine.getService(ListService.SERVICE_NAME);
             return service.getContainerMap().containsKey(name);
         }
@@ -239,7 +240,7 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
 
         @Override
         public Boolean call() {
-            NodeEngineImpl nodeEngine = getNode(hz).nodeEngine;
+            NodeEngineImpl nodeEngine = Accessors.getNode(hz).nodeEngine;
             ListService service = nodeEngine.getService(ListService.SERVICE_NAME);
 
             IMap map = hz.getMap("map");

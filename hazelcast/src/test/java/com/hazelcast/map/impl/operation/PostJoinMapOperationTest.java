@@ -27,6 +27,7 @@ import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.predicates.IndexAwarePredicate;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -253,7 +254,7 @@ public class PostJoinMapOperationTest extends HazelcastTestSupport {
         waitAllForSafeState(hz1, hz2);
 
         // then: index & interceptor exist on internal MapContainer on node that joined the cluster
-        MapService mapService = getNodeEngineImpl(hz2).getService(MapService.SERVICE_NAME);
+        MapService mapService = Accessors.getNodeEngineImpl(hz2).getService(MapService.SERVICE_NAME);
         MapContainer mapContainerOnNode2 = mapService.getMapServiceContext().getMapContainer("map");
 
 

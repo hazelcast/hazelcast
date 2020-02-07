@@ -21,6 +21,7 @@ import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.cp.internal.HazelcastRaftTestSupport;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.proxy.CountDownLatchProxy;
+import com.hazelcast.test.Accessors;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -56,7 +57,7 @@ public abstract class AbstractCountDownLatchAdvancedTest extends HazelcastRaftTe
 
         CPGroupId groupId = getGroupId(latch);
         HazelcastInstance leader = leaderInstanceOf(groupId);
-        CountDownLatchService service = getNodeEngineImpl(leader).getService(CountDownLatchService.SERVICE_NAME);
+        CountDownLatchService service = Accessors.getNodeEngineImpl(leader).getService(CountDownLatchService.SERVICE_NAME);
         CountDownLatchRegistry registry = service.getRegistryOrNull(groupId);
 
         CountDownLatch threadLatch = new CountDownLatch(1);
@@ -88,7 +89,7 @@ public abstract class AbstractCountDownLatchAdvancedTest extends HazelcastRaftTe
 
         CPGroupId groupId = getGroupId(latch);
         HazelcastInstance leader = leaderInstanceOf(groupId);
-        CountDownLatchService service = getNodeEngineImpl(leader).getService(CountDownLatchService.SERVICE_NAME);
+        CountDownLatchService service = Accessors.getNodeEngineImpl(leader).getService(CountDownLatchService.SERVICE_NAME);
         CountDownLatchRegistry registry = service.getRegistryOrNull(groupId);
 
         boolean success = latch.await(1, TimeUnit.SECONDS);
@@ -104,7 +105,7 @@ public abstract class AbstractCountDownLatchAdvancedTest extends HazelcastRaftTe
 
         CPGroupId groupId = getGroupId(latch);
         HazelcastInstance leader = leaderInstanceOf(groupId);
-        CountDownLatchService service = getNodeEngineImpl(leader).getService(CountDownLatchService.SERVICE_NAME);
+        CountDownLatchService service = Accessors.getNodeEngineImpl(leader).getService(CountDownLatchService.SERVICE_NAME);
         CountDownLatchRegistry registry = service.getRegistryOrNull(groupId);
 
         spawn(() -> {

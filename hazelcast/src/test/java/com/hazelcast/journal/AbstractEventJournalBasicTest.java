@@ -28,6 +28,7 @@ import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.internal.util.SetUtil;
@@ -640,13 +641,13 @@ public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTe
         final ObjectNamespace namespace = adapter.getNamespace();
         HazelcastInstance partitionOwner = null;
         for (HazelcastInstance instance : instances) {
-            if (getNode(instance).partitionService.getPartition(partitionId).isLocal()) {
+            if (Accessors.getNode(instance).partitionService.getPartition(partitionId).isLocal()) {
                 partitionOwner = instance;
                 break;
             }
         }
 
-        final Node node = getNode(partitionOwner);
+        final Node node = Accessors.getNode(partitionOwner);
         final NodeEngineImpl nodeEngine = node.nodeEngine;
         final RingbufferService rbService = nodeEngine.getService(RingbufferService.SERVICE_NAME);
         final ConcurrentMap<Integer, Map<ObjectNamespace, RingbufferContainer>> containers = rbService.getContainers();

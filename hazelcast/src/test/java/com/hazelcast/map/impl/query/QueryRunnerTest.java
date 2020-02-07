@@ -28,6 +28,7 @@ import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.predicates.EqualPredicate;
 import com.hazelcast.internal.partition.PartitionMigrationEvent;
 import com.hazelcast.internal.partition.MigrationEndpoint;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -150,7 +151,7 @@ public class QueryRunnerTest extends HazelcastTestSupport {
     }
 
     private MapService getMapService() {
-        return getNodeEngineImpl(instance).getService(MapService.SERVICE_NAME);
+        return Accessors.getNodeEngineImpl(instance).getService(MapService.SERVICE_NAME);
     }
 
     private QueryRunner getQueryRunner() {
@@ -158,7 +159,7 @@ public class QueryRunnerTest extends HazelcastTestSupport {
     }
 
     private Object toObject(Data data) {
-        return getSerializationService(instance).toObject(data);
+        return Accessors.getSerializationService(instance).toObject(data);
     }
 
 }

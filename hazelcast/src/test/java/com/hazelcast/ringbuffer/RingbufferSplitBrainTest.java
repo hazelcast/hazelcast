@@ -29,6 +29,7 @@ import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.SplitBrainTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -132,7 +133,7 @@ public class RingbufferSplitBrainTest extends SplitBrainTestSupport {
 
     @Override
     protected void onBeforeSplitBrainCreated(HazelcastInstance[] instances) {
-        serializationService = getSerializationService(instances[0]);
+        serializationService = Accessors.getSerializationService(instances[0]);
     }
 
     @Override

@@ -19,12 +19,12 @@ package com.hazelcast.client.txn;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.transaction.TransactionalQueue;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationparker.impl.OperationParkerImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
@@ -63,7 +63,7 @@ public class ClientTxnDisconnectionTest {
         Config config = new Config();
         config.getQueueConfig(BOUNDED_QUEUE_PREFIX).setMaxSize(1);
         HazelcastInstance instance = hazelcastFactory.newHazelcastInstance(config);
-        NodeEngineImpl nodeEngine = HazelcastTestSupport.getNode(instance).nodeEngine;
+        NodeEngineImpl nodeEngine = Accessors.getNode(instance).nodeEngine;
         waitNotifyService = (OperationParkerImpl) nodeEngine.getOperationParker();
         client = hazelcastFactory.newHazelcastClient();
     }

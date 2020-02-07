@@ -24,6 +24,7 @@ import com.hazelcast.cp.internal.datastructures.spi.blocking.ResourceRegistry;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
 import com.hazelcast.cp.internal.raft.impl.log.LogEntry;
 import com.hazelcast.cp.internal.raftop.snapshot.RestoreSnapshotOp;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -90,7 +91,7 @@ public class FencedLockAdvancedTest extends AbstractFencedLockAdvancedTest {
 
         assertTrueEventually(() -> {
             HazelcastInstance leader = getLeaderInstance(instances, groupId);
-            LockService service = getNodeEngineImpl(leader).getService(LockService.SERVICE_NAME);
+            LockService service = Accessors.getNodeEngineImpl(leader).getService(LockService.SERVICE_NAME);
             ResourceRegistry registry = service.getRegistryOrNull(groupId);
             assertNotNull(registry);
             assertFalse(registry.getWaitTimeouts().isEmpty());
@@ -132,7 +133,7 @@ public class FencedLockAdvancedTest extends AbstractFencedLockAdvancedTest {
             assertNotNull(raftNode);
             assertTrue(getSnapshotEntry(raftNode).index() > 0);
 
-            LockService service = getNodeEngineImpl(newInstance).getService(LockService.SERVICE_NAME);
+            LockService service = Accessors.getNodeEngineImpl(newInstance).getService(LockService.SERVICE_NAME);
             LockRegistry registry = service.getRegistryOrNull(groupId);
             assertNotNull(registry);
             assertFalse(registry.getWaitTimeouts().isEmpty());

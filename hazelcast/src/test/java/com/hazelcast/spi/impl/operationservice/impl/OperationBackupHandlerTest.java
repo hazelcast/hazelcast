@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -68,7 +69,7 @@ public class OperationBackupHandlerTest extends HazelcastTestSupport {
         warmUpPartitions(cluster);
         local = cluster[0];
 
-        operationService = (OperationServiceImpl) getOperationService(local);
+        operationService = (OperationServiceImpl) Accessors.getOperationService(local);
         backupHandler = operationService.backupHandler;
     }
 
@@ -229,7 +230,7 @@ public class OperationBackupHandlerTest extends HazelcastTestSupport {
         operation.syncBackupCount = syncBackupCount;
         operation.asyncBackupCount = asyncBackupCount;
         operation.backupKey = randomUUID().toString();
-        setCallerAddress(operation, getAddress(local));
+        setCallerAddress(operation, Accessors.getAddress(local));
         operation.setPartitionId(getPartitionId(local));
         return operation;
     }

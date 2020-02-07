@@ -30,6 +30,7 @@ import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -129,8 +130,8 @@ public class ClientIndexStatsTest extends LocalIndexStatsTest {
         LocalMapStats stats2 = map2.getLocalMapStats();
 
         List<Indexes> allIndexes = new ArrayList<Indexes>();
-        allIndexes.addAll(getAllIndexes(map1));
-        allIndexes.addAll(getAllIndexes(map2));
+        allIndexes.addAll(Accessors.getAllIndexes(map1));
+        allIndexes.addAll(Accessors.getAllIndexes(map2));
 
         LocalMapStatsImpl combinedStats = new LocalMapStatsImpl();
 

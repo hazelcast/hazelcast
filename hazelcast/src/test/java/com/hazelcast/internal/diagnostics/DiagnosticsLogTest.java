@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeLevel;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -114,7 +115,7 @@ public class DiagnosticsLogTest extends HazelcastTestSupport {
 
         diagnostics = AbstractDiagnosticsPluginTest.getDiagnostics(hz);
         diagnosticsLogFile = diagnostics.diagnosticsLogFile;
-        metricsRegistry = getMetricsRegistry(hz);
+        metricsRegistry = Accessors.getMetricsRegistry(hz);
     }
 
     private static String loadLogfile(File file) {

@@ -26,6 +26,7 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -260,11 +261,11 @@ public class MapNearCacheInvalidationFromClientTest extends HazelcastTestSupport
     private NearCache<Object, Object> getNearCache(HazelcastInstance instance, String mapName) {
         MapServiceContext mapServiceContext = getMapService(instance).getMapServiceContext();
         MapNearCacheManager mapNearCacheManager = mapServiceContext.getMapNearCacheManager();
-        NearCacheConfig nearCacheConfig = getNodeEngineImpl(instance).getConfig().findMapConfig(mapName).getNearCacheConfig();
+        NearCacheConfig nearCacheConfig = Accessors.getNodeEngineImpl(instance).getConfig().findMapConfig(mapName).getNearCacheConfig();
         return mapNearCacheManager.getOrCreateNearCache(mapName, nearCacheConfig);
     }
 
     private MapService getMapService(HazelcastInstance instance) {
-        return getNodeEngineImpl(instance).getService(MapService.SERVICE_NAME);
+        return Accessors.getNodeEngineImpl(instance).getService(MapService.SERVICE_NAME);
     }
 }

@@ -40,6 +40,7 @@ import com.hazelcast.query.Predicates;
 import com.hazelcast.query.QueryConstants;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -537,7 +538,7 @@ public class ListenerTest extends HazelcastTestSupport {
         HazelcastInstance instance = createHazelcastInstance(config);
         instance.getMap(name);
 
-        final EventService eventService = getNode(instance).getNodeEngine().getEventService();
+        final EventService eventService = Accessors.getNode(instance).getNodeEngine().getEventService();
 
         assertTrueEventually(new AssertTask() {
             @Override

@@ -30,6 +30,7 @@ import com.hazelcast.map.impl.querycache.subscriber.TestSubscriberContext;
 import com.hazelcast.map.listener.EventLostListener;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -94,7 +95,7 @@ public class QueryCacheEventLostListenerTest extends HazelcastTestSupport {
     }
 
     private void setTestSequencer(HazelcastInstance instance, int eventCount) {
-        Node node = getNode(instance);
+        Node node = Accessors.getNode(instance);
         MapService service = node.getNodeEngine().getService(MapService.SERVICE_NAME);
         MapServiceContext mapServiceContext = service.getMapServiceContext();
         QueryCacheContext queryCacheContext = mapServiceContext.getQueryCacheContext();

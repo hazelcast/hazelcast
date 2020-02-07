@@ -24,6 +24,7 @@ import com.hazelcast.cp.internal.RaftOp;
 import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.operation.unsafe.UnsafeRaftReplicateOp;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -68,7 +69,7 @@ public class UnsafeSessionAwareSemaphoreBasicTest extends AbstractSessionAwareSe
 
     @Override
     protected <T> InternalCompletableFuture<T> invokeRaftOp(RaftGroupId groupId, RaftOp raftOp) {
-        RaftService service = getNodeEngineImpl(instances[1]).getService(RaftService.SERVICE_NAME);
+        RaftService service = Accessors.getNodeEngineImpl(instances[1]).getService(RaftService.SERVICE_NAME);
         return service.getInvocationManager().invokeOnPartition(new UnsafeRaftReplicateOp(groupId, raftOp));
     }
 
@@ -85,7 +86,7 @@ public class UnsafeSessionAwareSemaphoreBasicTest extends AbstractSessionAwareSe
         });
 
         assertTrueEventually(() -> {
-            SemaphoreService service = getNodeEngineImpl(primaryInstance).getService(SemaphoreService.SERVICE_NAME);
+            SemaphoreService service = Accessors.getNodeEngineImpl(primaryInstance).getService(SemaphoreService.SERVICE_NAME);
             SemaphoreRegistry registry = service.getRegistryOrNull(getGroupId(semaphore));
             assertNotNull(registry);
             assertFalse(registry.getWaitTimeouts().isEmpty());
@@ -97,7 +98,7 @@ public class UnsafeSessionAwareSemaphoreBasicTest extends AbstractSessionAwareSe
         assertOpenEventually(latch);
 
         assertTrueEventually(() -> {
-            SemaphoreService service = getNodeEngineImpl(primaryInstance).getService(SemaphoreService.SERVICE_NAME);
+            SemaphoreService service = Accessors.getNodeEngineImpl(primaryInstance).getService(SemaphoreService.SERVICE_NAME);
             SemaphoreRegistry registry = service.getRegistryOrNull(getGroupId(semaphore));
             assertTrue(registry.getWaitTimeouts().isEmpty());
         });

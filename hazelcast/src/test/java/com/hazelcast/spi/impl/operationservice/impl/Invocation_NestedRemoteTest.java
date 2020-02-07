@@ -20,6 +20,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.RootCauseMatcher;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -47,7 +48,7 @@ public class Invocation_NestedRemoteTest extends Invocation_NestedAbstractTest {
     public void invokeOnPartition_outerGeneric_innerGeneric_forbidden() {
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(1).newInstances();
         HazelcastInstance local = cluster[0];
-        OperationService operationService = getOperationService(local);
+        OperationService operationService = Accessors.getOperationService(local);
 
         InnerOperation innerOperation = new InnerOperation(RESPONSE, GENERIC_OPERATION);
         OuterOperation outerOperation = new OuterOperation(innerOperation, GENERIC_OPERATION);
@@ -63,7 +64,7 @@ public class Invocation_NestedRemoteTest extends Invocation_NestedAbstractTest {
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(2).newInstances();
         HazelcastInstance local = cluster[0];
         HazelcastInstance remote = cluster[1];
-        OperationService operationService = getOperationService(local);
+        OperationService operationService = Accessors.getOperationService(local);
 
         int partitionId = getPartitionId(remote);
         InnerOperation innerOperation = new InnerOperation(RESPONSE, GENERIC_OPERATION);
@@ -78,7 +79,7 @@ public class Invocation_NestedRemoteTest extends Invocation_NestedAbstractTest {
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(2).newInstances();
         HazelcastInstance local = cluster[0];
         HazelcastInstance remote = cluster[1];
-        OperationService operationService = getOperationService(local);
+        OperationService operationService = Accessors.getOperationService(local);
 
         int partitionId = getPartitionId(remote);
         InnerOperation innerOperation = new InnerOperation(RESPONSE, partitionId);
@@ -93,7 +94,7 @@ public class Invocation_NestedRemoteTest extends Invocation_NestedAbstractTest {
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(2).newInstances();
         HazelcastInstance local = cluster[0];
         HazelcastInstance remote = cluster[1];
-        OperationService operationService = getOperationService(local);
+        OperationService operationService = Accessors.getOperationService(local);
 
         int outerPartitionId = getPartitionId(remote);
         int innerPartitionId = randomPartitionIdMappedToSameThreadAsGivenPartitionIdOnInstance(outerPartitionId, remote,
@@ -113,7 +114,7 @@ public class Invocation_NestedRemoteTest extends Invocation_NestedAbstractTest {
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(2).newInstances();
         HazelcastInstance local = cluster[0];
         HazelcastInstance remote = cluster[1];
-        OperationService operationService = getOperationService(local);
+        OperationService operationService = Accessors.getOperationService(local);
 
         int outerPartitionId = getPartitionId(remote);
         int innerPartitionId = getPartitionId(local);
@@ -133,7 +134,7 @@ public class Invocation_NestedRemoteTest extends Invocation_NestedAbstractTest {
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(2).newInstances();
         HazelcastInstance local = cluster[0];
         HazelcastInstance remote = cluster[1];
-        OperationService operationService = getOperationService(local);
+        OperationService operationService = Accessors.getOperationService(local);
 
         int outerPartitionId = getPartitionId(local);
         int innerPartitionId = getPartitionId(remote);
@@ -153,11 +154,11 @@ public class Invocation_NestedRemoteTest extends Invocation_NestedAbstractTest {
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(2).newInstances();
         HazelcastInstance local = cluster[0];
         HazelcastInstance remote = cluster[1];
-        OperationService operationService = getOperationService(local);
+        OperationService operationService = Accessors.getOperationService(local);
 
         InnerOperation innerOperation = new InnerOperation(RESPONSE, GENERIC_OPERATION);
         OuterOperation outerOperation = new OuterOperation(innerOperation, GENERIC_OPERATION);
-        InternalCompletableFuture future = operationService.invokeOnTarget(null, outerOperation, getAddress(remote));
+        InternalCompletableFuture future = operationService.invokeOnTarget(null, outerOperation, Accessors.getAddress(remote));
 
         assertEquals(RESPONSE, future.join());
     }
@@ -167,11 +168,11 @@ public class Invocation_NestedRemoteTest extends Invocation_NestedAbstractTest {
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(2).newInstances();
         HazelcastInstance local = cluster[0];
         HazelcastInstance remote = cluster[1];
-        OperationService operationService = getOperationService(local);
+        OperationService operationService = Accessors.getOperationService(local);
 
         InnerOperation innerOperation = new InnerOperation(RESPONSE, 0);
         OuterOperation outerOperation = new OuterOperation(innerOperation, GENERIC_OPERATION);
-        InternalCompletableFuture future = operationService.invokeOnTarget(null, outerOperation, getAddress(remote));
+        InternalCompletableFuture future = operationService.invokeOnTarget(null, outerOperation, Accessors.getAddress(remote));
 
         assertEquals(RESPONSE, future.join());
     }

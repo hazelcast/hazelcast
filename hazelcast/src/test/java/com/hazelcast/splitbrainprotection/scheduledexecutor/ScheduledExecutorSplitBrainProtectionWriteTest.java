@@ -47,9 +47,8 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.splitbrainprotection.scheduledexecutor.ScheduledExecutorSplitBrainProtectionWriteTest.ExecRunnable.callable;
 import static com.hazelcast.splitbrainprotection.scheduledexecutor.ScheduledExecutorSplitBrainProtectionWriteTest.ExecRunnable.runnable;
-import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static com.hazelcast.test.HazelcastTestSupport.generateKeyOwnedBy;
-import static com.hazelcast.test.HazelcastTestSupport.getNodeEngineImpl;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 

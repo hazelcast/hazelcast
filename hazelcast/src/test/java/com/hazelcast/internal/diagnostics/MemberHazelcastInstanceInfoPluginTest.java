@@ -17,6 +17,7 @@
 package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -36,7 +37,7 @@ public class MemberHazelcastInstanceInfoPluginTest extends AbstractDiagnosticsPl
     @Before
     public void setup() {
         HazelcastInstance hz = createHazelcastInstance();
-        plugin = new MemberHazelcastInstanceInfoPlugin(getNodeEngineImpl(hz));
+        plugin = new MemberHazelcastInstanceInfoPlugin(Accessors.getNodeEngineImpl(hz));
         plugin.onStart();
     }
 

@@ -27,6 +27,7 @@ import com.hazelcast.internal.partition.service.TestPutOperation;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -54,7 +55,7 @@ public class PartitionReplicaStateCheckerTest extends HazelcastTestSupport {
     public void shouldBeSafe_whenNotInitialized() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance hz = factory.newHazelcastInstance();
-        InternalPartitionServiceImpl partitionService = getNode(hz).partitionService;
+        InternalPartitionServiceImpl partitionService = Accessors.getNode(hz).partitionService;
 
         PartitionReplicaStateChecker replicaStateChecker = partitionService.getPartitionReplicaStateChecker();
         PartitionServiceState state = replicaStateChecker.getPartitionServiceState();
@@ -65,7 +66,7 @@ public class PartitionReplicaStateCheckerTest extends HazelcastTestSupport {
     public void shouldBeSafe_whenInitializedOnMaster() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance hz = factory.newHazelcastInstance();
-        InternalPartitionServiceImpl partitionService = getNode(hz).partitionService;
+        InternalPartitionServiceImpl partitionService = Accessors.getNode(hz).partitionService;
         partitionService.firstArrangement();
 
         PartitionReplicaStateChecker replicaStateChecker = partitionService.getPartitionReplicaStateChecker();
@@ -77,7 +78,7 @@ public class PartitionReplicaStateCheckerTest extends HazelcastTestSupport {
     public void shouldNotBeSafe_whenMissingReplicasPresent() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance hz = factory.newHazelcastInstance();
-        InternalPartitionServiceImpl partitionService = getNode(hz).partitionService;
+        InternalPartitionServiceImpl partitionService = Accessors.getNode(hz).partitionService;
         partitionService.firstArrangement();
 
         PartitionStateManager partitionStateManager = partitionService.getPartitionStateManager();
@@ -98,7 +99,7 @@ public class PartitionReplicaStateCheckerTest extends HazelcastTestSupport {
     public void shouldNotBeSafe_whenUnknownReplicaOwnerPresent() throws UnknownHostException {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance hz = factory.newHazelcastInstance();
-        InternalPartitionServiceImpl partitionService = getNode(hz).partitionService;
+        InternalPartitionServiceImpl partitionService = Accessors.getNode(hz).partitionService;
         partitionService.firstArrangement();
 
         PartitionStateManager partitionStateManager = partitionService.getPartitionStateManager();
@@ -125,7 +126,7 @@ public class PartitionReplicaStateCheckerTest extends HazelcastTestSupport {
         HazelcastInstance hz = factory.newHazelcastInstance();
         HazelcastInstance hz2 = factory.newHazelcastInstance();
 
-        InternalPartitionServiceImpl partitionService = getNode(hz).partitionService;
+        InternalPartitionServiceImpl partitionService = Accessors.getNode(hz).partitionService;
         partitionService.firstArrangement();
 
         changeClusterStateEventually(hz2, ClusterState.FROZEN);
@@ -143,7 +144,7 @@ public class PartitionReplicaStateCheckerTest extends HazelcastTestSupport {
         HazelcastInstance hz = factory.newHazelcastInstance();
         HazelcastInstance hz2 = factory.newHazelcastInstance();
 
-        InternalPartitionServiceImpl partitionService = getNode(hz).partitionService;
+        InternalPartitionServiceImpl partitionService = Accessors.getNode(hz).partitionService;
         partitionService.firstArrangement();
 
         changeClusterStateEventually(hz2, ClusterState.FROZEN);
@@ -172,7 +173,7 @@ public class PartitionReplicaStateCheckerTest extends HazelcastTestSupport {
     public void shouldNotBeSafe_whenMigrationTasksScheduled() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance hz = factory.newHazelcastInstance();
-        InternalPartitionServiceImpl partitionService = getNode(hz).partitionService;
+        InternalPartitionServiceImpl partitionService = Accessors.getNode(hz).partitionService;
 
         final CountDownLatch latch = new CountDownLatch(1);
         MigrationManager migrationManager = partitionService.getMigrationManager();
@@ -210,8 +211,8 @@ public class PartitionReplicaStateCheckerTest extends HazelcastTestSupport {
         HazelcastInstance hz = factory.newHazelcastInstance(config);
         HazelcastInstance hz2 = factory.newHazelcastInstance(config);
 
-        InternalPartitionServiceImpl partitionService1 = getNode(hz).partitionService;
-        InternalPartitionServiceImpl partitionService2 = getNode(hz2).partitionService;
+        InternalPartitionServiceImpl partitionService1 = Accessors.getNode(hz).partitionService;
+        InternalPartitionServiceImpl partitionService2 = Accessors.getNode(hz2).partitionService;
         int maxPermits = drainAllReplicaSyncPermits(partitionService1);
         int maxPermits2 = drainAllReplicaSyncPermits(partitionService2);
         assertEquals(maxPermits, maxPermits2);
@@ -221,7 +222,7 @@ public class PartitionReplicaStateCheckerTest extends HazelcastTestSupport {
         setBackupPacketDropFilter(hz, 100);
         setBackupPacketDropFilter(hz2, 100);
 
-        NodeEngine nodeEngine = getNode(hz).nodeEngine;
+        NodeEngine nodeEngine = Accessors.getNode(hz).nodeEngine;
         for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
             Operation op = new TestPutOperationWithAsyncBackup(i);
             nodeEngine.getOperationService().invokeOnPartition(null, op, i).join();

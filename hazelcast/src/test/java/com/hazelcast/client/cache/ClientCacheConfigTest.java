@@ -26,6 +26,7 @@ import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -215,6 +216,6 @@ public class ClientCacheConfigTest extends HazelcastTestSupport {
     }
 
     private static ICacheService getCacheService(HazelcastInstance instance) {
-        return getNodeEngineImpl(instance).getService(ICacheService.SERVICE_NAME);
+        return Accessors.getNodeEngineImpl(instance).getService(ICacheService.SERVICE_NAME);
     }
 }

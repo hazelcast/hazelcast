@@ -31,6 +31,7 @@ import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -78,8 +79,8 @@ public class OperationOutOfOrderBackupTest extends HazelcastTestSupport {
         warmUpPartitions(hz2, hz1);
 
         partitionId = getPartitionId(hz1);
-        nodeEngine1 = getNodeEngineImpl(hz1);
-        nodeEngine2 = getNodeEngineImpl(hz2);
+        nodeEngine1 = Accessors.getNodeEngineImpl(hz1);
+        nodeEngine2 = Accessors.getNodeEngineImpl(hz2);
     }
 
     @Test

@@ -31,6 +31,7 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ICacheManager;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.map.IMap;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -402,7 +403,7 @@ public class CacheThroughHazelcastInstanceTest extends HazelcastTestSupport {
         HazelcastInstance instance1 = instanceFactory.newHazelcastInstance(config);
         HazelcastInstance instance2 = instanceFactory.newHazelcastInstance(config);
 
-        ICacheService cacheServiceOnInstance2 = getNodeEngineImpl(instance2).getService(ICacheService.SERVICE_NAME);
+        ICacheService cacheServiceOnInstance2 = Accessors.getNodeEngineImpl(instance2).getService(ICacheService.SERVICE_NAME);
         retrieveCache(instance1, true);
         assertNotNull("Cache config was not available on other instance after cache proxy was created",
                 cacheServiceOnInstance2.getCacheConfig(

@@ -23,6 +23,7 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.collection.ItemEvent;
 import com.hazelcast.collection.ItemListener;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.transaction.TransactionalQueue;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -588,7 +589,7 @@ public class TransactionQueueTest extends HazelcastTestSupport {
     }
 
     private void assertTransactionMapSize(HazelcastInstance instance, String name, int size) {
-        final QueueService queueService = getNode(instance).nodeEngine.getService(QueueService.SERVICE_NAME);
+        final QueueService queueService = Accessors.getNode(instance).nodeEngine.getService(QueueService.SERVICE_NAME);
         assertEquals(size, queueService.getOrCreateContainer(name, true).txMapSize());
     }
 

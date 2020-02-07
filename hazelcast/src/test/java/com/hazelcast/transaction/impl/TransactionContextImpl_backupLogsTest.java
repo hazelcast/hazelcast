@@ -23,6 +23,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -57,14 +58,14 @@ public class TransactionContextImpl_backupLogsTest extends HazelcastTestSupport 
     public void setup() {
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(2).newInstances();
         localHz = cluster[0];
-        localNodeEngine = getNodeEngineImpl(localHz);
+        localNodeEngine = Accessors.getNodeEngineImpl(localHz);
         localTxManager = getTransactionManagerService(cluster[0]);
         remoteTxManager = getTransactionManagerService(cluster[1]);
         ownerUuid = UuidUtil.newUnsecureUUID();
     }
 
     private TransactionManagerServiceImpl getTransactionManagerService(HazelcastInstance hz) {
-        NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);
+        NodeEngineImpl nodeEngine = Accessors.getNodeEngineImpl(hz);
         return (TransactionManagerServiceImpl) nodeEngine.getTransactionManagerService();
     }
 

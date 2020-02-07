@@ -23,6 +23,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.internal.cluster.impl.MulticastJoiner;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -78,7 +79,7 @@ public class SlowMulticastJoinTest extends AbstractJoinTest {
 
         for (int i = 0; i < clusterSize; i++) {
             instances[i] = Hazelcast.newHazelcastInstance(config);
-            joiners[i] = (MulticastJoiner) getNode(instances[i]).getJoiner();
+            joiners[i] = (MulticastJoiner) Accessors.getNode(instances[i]).getJoiner();
         }
 
         assertClusterSize(clusterSize, instances[0]);
@@ -130,7 +131,7 @@ public class SlowMulticastJoinTest extends AbstractJoinTest {
                     throws Exception {
                 for (int i = 0; i < instances.length; i++) {
                     // a master can have at most (clusterSize-1) split brain join messages
-                    if (getNode(instances[i]).isMaster()) {
+                    if (Accessors.getNode(instances[i]).isMaster()) {
                         assertTrue(joiners[i].getSplitBrainMessagesCount() < clusterSize);
                     } else {
                         // other members should not have any split brain join messages

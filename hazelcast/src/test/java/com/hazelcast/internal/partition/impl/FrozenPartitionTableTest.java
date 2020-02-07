@@ -31,6 +31,7 @@ import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -115,20 +116,20 @@ public class FrozenPartitionTableTest extends HazelcastTestSupport {
         HazelcastInstance hz1 = instances[0];
         HazelcastInstance hz2 = instances[1];
         HazelcastInstance hz3 = instances[2];
-        Address hz3Address = getNode(hz3).getThisAddress();
+        Address hz3Address = Accessors.getNode(hz3).getThisAddress();
         warmUpPartitions(instances);
 
         final PartitionTableView partitionTable = getPartitionTable(hz1);
 
         changeClusterStateEventually(hz2, state);
 
-        final Member member3 = getClusterService(hz3).getLocalMember();
+        final Member member3 = Accessors.getClusterService(hz3).getLocalMember();
 
         terminateInstance(hz2);
         terminateInstance(hz3);
 
         hz3 = factory.newHazelcastInstance(hz3Address);
-        final Member newMember3 = getClusterService(hz3).getLocalMember();
+        final Member newMember3 = Accessors.getClusterService(hz3).getLocalMember();
 
         assertClusterSizeEventually(2, hz1, hz3);
 
@@ -177,7 +178,7 @@ public class FrozenPartitionTableTest extends HazelcastTestSupport {
         List<HazelcastInstance> instancesList = new ArrayList<HazelcastInstance>(asList(instances));
         Collections.shuffle(instancesList);
         final HazelcastInstance instanceToShutdown = instancesList.remove(0);
-        final Address addressToShutdown = getNode(instanceToShutdown).getThisAddress();
+        final Address addressToShutdown = Accessors.getNode(instanceToShutdown).getThisAddress();
         instanceToShutdown.shutdown();
 
         for (HazelcastInstance instance : instancesList) {
@@ -215,7 +216,7 @@ public class FrozenPartitionTableTest extends HazelcastTestSupport {
         changeClusterStateEventually(hz3, ClusterState.FROZEN);
         int member3PartitionId = getPartitionId(hz3);
 
-        MemberImpl member3 = getNode(hz3).getLocalMember();
+        MemberImpl member3 = Accessors.getNode(hz3).getLocalMember();
         hz3.shutdown();
         assertClusterSizeEventually(2, hz1, hz2);
 
@@ -223,7 +224,7 @@ public class FrozenPartitionTableTest extends HazelcastTestSupport {
                 randomName(), new StaticMemberNodeContext(factory, newUnsecureUUID(), member3.getAddress()));
         assertClusterSizeEventually(3, hz1, hz2);
 
-        OperationServiceImpl operationService = getOperationService(hz1);
+        OperationServiceImpl operationService = Accessors.getOperationService(hz1);
         operationService.invokeOnPartition(null, new NonRetryablePartitionOperation(), member3PartitionId).join();
     }
 
@@ -244,8 +245,8 @@ public class FrozenPartitionTableTest extends HazelcastTestSupport {
         int member3PartitionId = getPartitionId(hz3);
         int member4PartitionId = getPartitionId(hz4);
 
-        MemberImpl member3 = getNode(hz3).getLocalMember();
-        MemberImpl member4 = getNode(hz4).getLocalMember();
+        MemberImpl member3 = Accessors.getNode(hz3).getLocalMember();
+        MemberImpl member4 = Accessors.getNode(hz4).getLocalMember();
         hz3.shutdown();
         hz4.shutdown();
         assertClusterSizeEventually(2, hz1, hz2);
@@ -254,7 +255,7 @@ public class FrozenPartitionTableTest extends HazelcastTestSupport {
                 randomName(), new StaticMemberNodeContext(factory, member4.getUuid(), member3.getAddress()));
         assertClusterSizeEventually(3, hz1, hz2);
 
-        OperationServiceImpl operationService = getOperationService(hz1);
+        OperationServiceImpl operationService = Accessors.getOperationService(hz1);
         operationService.invokeOnPartition(null, new NonRetryablePartitionOperation(), member3PartitionId).join();
 
         try {
@@ -265,7 +266,7 @@ public class FrozenPartitionTableTest extends HazelcastTestSupport {
     }
 
     private static PartitionTableView getPartitionTable(HazelcastInstance instance) {
-        return getPartitionService(instance).createPartitionTableView();
+        return Accessors.getPartitionService(instance).createPartitionTableView();
     }
 
     public static class NonRetryablePartitionOperation extends Operation {

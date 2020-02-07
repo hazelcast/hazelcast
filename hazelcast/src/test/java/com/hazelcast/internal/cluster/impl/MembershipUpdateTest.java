@@ -37,6 +37,7 @@ import com.hazelcast.internal.services.PostJoinAwareService;
 import com.hazelcast.internal.services.PreJoinAwareService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -305,7 +306,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         });
 
         for (int i = 0; i < instances.length(); i++) {
-            if (getNode(instances.get(i)).isMaster()) {
+            if (Accessors.getNode(instances.get(i)).isMaster()) {
                 continue;
             }
 
@@ -323,7 +324,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         HazelcastInstance master = null;
         for (int i = 0; i < instances.length(); i++) {
             HazelcastInstance instance = instances.get(i);
-            if (instance != null && getNode(instance).isMaster()) {
+            if (instance != null && Accessors.getNode(instance).isMaster()) {
                 master = instance;
                 break;
             }
@@ -369,7 +370,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         });
 
         for (int i = 0; i < instances.length(); i++) {
-            if (getNode(instances.get(i)).isMaster()) {
+            if (Accessors.getNode(instances.get(i)).isMaster()) {
                 continue;
             }
 
@@ -386,7 +387,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         HazelcastInstance master = null;
         for (int i = 0; i < instances.length(); i++) {
             HazelcastInstance instance = instances.get(i);
-            if (getNode(instances.get(i)).isMaster()) {
+            if (Accessors.getNode(instances.get(i)).isMaster()) {
                 master = instance;
                 break;
             }
@@ -422,8 +423,8 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         assertClusterSize(2, hz2);
 
         resetPacketFiltersFrom(hz1);
-        ClusterServiceImpl clusterService = (ClusterServiceImpl) getClusterService(hz1);
-        clusterService.getMembershipManager().sendMemberListToMember(getAddress(hz2));
+        ClusterServiceImpl clusterService = (ClusterServiceImpl) Accessors.getClusterService(hz1);
+        clusterService.getMembershipManager().sendMemberListToMember(Accessors.getAddress(hz2));
 
         assertClusterSizeEventually(3, hz2);
 
@@ -568,19 +569,19 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
 
         assertClusterSizeEventually(3, hz2);
 
-        Node node = getNode(hz1);
+        Node node = Accessors.getNode(hz1);
         ClusterServiceImpl clusterService = node.getClusterService();
         MembershipManager membershipManager = clusterService.getMembershipManager();
 
         MembersView membersView = MembersView.createNew(membershipManager.getMemberListVersion() + 1,
-                asList(membershipManager.getMember(getAddress(hz1)), membershipManager.getMember(getAddress(hz2))));
+                asList(membershipManager.getMember(Accessors.getAddress(hz1)), membershipManager.getMember(Accessors.getAddress(hz2))));
 
-        Operation memberUpdate = new MembersUpdateOp(membershipManager.getMember(getAddress(hz3)).getUuid(),
+        Operation memberUpdate = new MembersUpdateOp(membershipManager.getMember(Accessors.getAddress(hz3)).getUuid(),
                 membersView, clusterService.getClusterTime(), null, true);
         memberUpdate.setCallerUuid(node.getThisUuid());
 
         Future<Object> future =
-                node.getNodeEngine().getOperationService().invokeOnTarget(null, memberUpdate, getAddress(hz3));
+                node.getNodeEngine().getOperationService().invokeOnTarget(null, memberUpdate, Accessors.getAddress(hz3));
 
         try {
             future.get();
@@ -601,7 +602,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
 
         assertClusterSizeEventually(3, hz2);
 
-        Node node = getNode(hz1);
+        Node node = Accessors.getNode(hz1);
         ClusterServiceImpl clusterService = node.getClusterService();
         MembershipManager membershipManager = clusterService.getMembershipManager();
 
@@ -610,12 +611,12 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         MembersView membersView =
                 MembersView.cloneAdding(membershipManager.getMembersView(), singleton(newMemberInfo));
 
-        Operation memberUpdate = new MembersUpdateOp(membershipManager.getMember(getAddress(hz3)).getUuid(),
+        Operation memberUpdate = new MembersUpdateOp(membershipManager.getMember(Accessors.getAddress(hz3)).getUuid(),
                 membersView, clusterService.getClusterTime(), null, true);
-        NodeEngineImpl nonMasterNodeEngine = getNodeEngineImpl(hz2);
+        NodeEngineImpl nonMasterNodeEngine = Accessors.getNodeEngineImpl(hz2);
         memberUpdate.setCallerUuid(nonMasterNodeEngine.getNode().getThisUuid());
         Future<Object> future =
-                nonMasterNodeEngine.getOperationService().invokeOnTarget(null, memberUpdate, getAddress(hz3));
+                nonMasterNodeEngine.getOperationService().invokeOnTarget(null, memberUpdate, Accessors.getAddress(hz3));
         future.get();
 
         // member update should not be applied
@@ -641,7 +642,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
 
         rejectOperationsBetween(hz1, hz2, F_ID, singletonList(MEMBER_INFO_UPDATE));
 
-        final MemberImpl member3 = getNode(hz3).getLocalMember();
+        final MemberImpl member3 = Accessors.getNode(hz3).getLocalMember();
         hz3.getLifecycleService().terminate();
 
         assertClusterSizeEventually(3, hz1, hz4);
@@ -670,14 +671,14 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         final HazelcastInstance hz2 = factory.newHazelcastInstance();
         assertClusterSizeEventually(2, hz1, hz2);
 
-        final JoinRequest staleJoinReq = getNode(hz2).createJoinRequest(true);
+        final JoinRequest staleJoinReq = Accessors.getNode(hz2).createJoinRequest(true);
         hz2.shutdown();
         assertClusterSizeEventually(1, hz1);
 
         assertTrueAllTheTime(new AssertTask() {
             @Override
             public void run() {
-                ClusterServiceImpl clusterService = (ClusterServiceImpl) getClusterService(hz1);
+                ClusterServiceImpl clusterService = (ClusterServiceImpl) Accessors.getClusterService(hz1);
                 clusterService.getClusterJoinManager().handleJoinRequest(staleJoinReq, null);
 
                 assertClusterSize(1, hz1);
@@ -692,7 +693,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         HazelcastInstance hz3 = factory.newHazelcastInstance();
         assertClusterSizeEventually(3, hz1, hz2, hz3);
 
-        final JoinRequest staleJoinReq = getNode(hz3).createJoinRequest(true);
+        final JoinRequest staleJoinReq = Accessors.getNode(hz3).createJoinRequest(true);
         hz3.shutdown();
         hz1.shutdown();
         assertClusterSizeEventually(1, hz2);
@@ -700,7 +701,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         assertTrueAllTheTime(new AssertTask() {
             @Override
             public void run() {
-                ClusterServiceImpl clusterService = (ClusterServiceImpl) getClusterService(hz2);
+                ClusterServiceImpl clusterService = (ClusterServiceImpl) Accessors.getClusterService(hz2);
                 clusterService.getClusterJoinManager().handleJoinRequest(staleJoinReq, null);
 
                 assertClusterSize(1, hz2);
@@ -718,7 +719,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         final HazelcastInstance hz3 = factory.newHazelcastInstance();
         assertClusterSizeEventually(3, hz2, hz3);
 
-        final MemberImpl member3 = getNode(hz3).getLocalMember();
+        final MemberImpl member3 = Accessors.getNode(hz3).getLocalMember();
 
         // A new member is restarted with member3's UUID.
         // Then after some time, member3 is terminated.
@@ -756,7 +757,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
 
         HazelcastInstance instance1 = factory.newHazelcastInstance(config);
         final Address instance2Address = factory.nextAddress();
-        final OperationService operationService = getNode(instance1).getNodeEngine().getOperationService();
+        final OperationService operationService = Accessors.getNode(instance1).getNodeEngine().getOperationService();
         // send operations from master to joining member. The master has already added the joining member to its member list
         // while the FinalizeJoinOp is being executed on joining member, so it might send operations to the joining member.
         Future sendOpsFromMaster = spawn(new Runnable() {
@@ -834,14 +835,14 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
 
         assertClusterSizeEventually(3, hz1, hz2, hz3);
 
-        final Address target = getAddress(hz2);
+        final Address target = Accessors.getAddress(hz2);
         hz2.getLifecycleService().terminate();
 
         assertClusterSizeEventually(2, hz1, hz3);
 
-        assertNull(getEndpointManager(hz1).getConnection(target));
+        assertNull(Accessors.getEndpointManager(hz1).getConnection(target));
 
-        final EndpointManager cm3 = getEndpointManager(hz3);
+        final EndpointManager cm3 = Accessors.getEndpointManager(hz3);
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
@@ -862,13 +863,13 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
 
         assertClusterSizeEventually(3, hz1, hz2, hz3);
 
-        final Address target = getAddress(hz3);
+        final Address target = Accessors.getAddress(hz3);
 
         ConnectionRemovedListener connListener1 = new ConnectionRemovedListener(target);
-        getEndpointManager(hz1).addConnectionListener(connListener1);
+        Accessors.getEndpointManager(hz1).addConnectionListener(connListener1);
 
         ConnectionRemovedListener connListener2 = new ConnectionRemovedListener(target);
-        getEndpointManager(hz2).addConnectionListener(connListener2);
+        Accessors.getEndpointManager(hz2).addConnectionListener(connListener2);
 
         dropOperationsBetween(hz3, hz1, F_ID, singletonList(HEARTBEAT));
         // Artificially suspect from hz3
@@ -899,7 +900,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
     }
 
     static MemberMap getMemberMap(HazelcastInstance instance) {
-        ClusterServiceImpl clusterService = getNode(instance).getClusterService();
+        ClusterServiceImpl clusterService = Accessors.getNode(instance).getClusterService();
         return clusterService.getMembershipManager().getMemberMap();
     }
 

@@ -30,6 +30,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -57,7 +58,7 @@ public class MapMergePolicySerializationTest extends HazelcastTestSupport {
         MyObject myObjectExisting = new MyObject();
         map.put("key", myObjectExisting);
 
-        NodeEngineImpl nodeEngine = HazelcastTestSupport.getNode(instance).getNodeEngine();
+        NodeEngineImpl nodeEngine = Accessors.getNode(instance).getNodeEngine();
         MapService mapService = nodeEngine.getService(serviceName);
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         int partitionId = nodeEngine.getPartitionService().getPartitionId("key");

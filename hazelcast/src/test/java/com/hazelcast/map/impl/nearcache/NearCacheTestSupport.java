@@ -37,6 +37,7 @@ import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
 import com.hazelcast.map.listener.EntryExpiredListener;
 import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 
@@ -277,7 +278,7 @@ public class NearCacheTestSupport extends HazelcastTestSupport {
     }
 
     protected NearCache getNearCache(String mapName, HazelcastInstance instance) {
-        NodeEngineImpl nodeEngine = getNode(instance).nodeEngine;
+        NodeEngineImpl nodeEngine = Accessors.getNode(instance).nodeEngine;
         MapService service = nodeEngine.getService(SERVICE_NAME);
 
         MapServiceContext mapServiceContext = service.getMapServiceContext();

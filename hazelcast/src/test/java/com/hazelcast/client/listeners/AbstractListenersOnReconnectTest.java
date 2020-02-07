@@ -37,6 +37,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceSegment;
+import com.hazelcast.test.Accessors;
 import org.junit.After;
 import org.junit.Test;
 
@@ -312,7 +313,7 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
     protected void validateRegistrationsOnMembers(final TestHazelcastFactory factory) {
         assertTrueEventually(() -> {
             for (HazelcastInstance instance : factory.getAllHazelcastInstances()) {
-                NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(instance);
+                NodeEngineImpl nodeEngineImpl = Accessors.getNodeEngineImpl(instance);
                 EventServiceImpl eventService = (EventServiceImpl) nodeEngineImpl.getEventService();
                 EventServiceSegment serviceSegment = eventService.getSegment(getServiceName(), false);
                 Member member = instance.getCluster().getLocalMember();

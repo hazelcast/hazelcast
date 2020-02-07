@@ -26,6 +26,7 @@ import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.spi.impl.operationservice.impl.DummyOperation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
@@ -62,10 +63,10 @@ public class OverloadedConnectionsPluginTest extends AbstractDiagnosticsPluginTe
                 .setProperty(ClusterProperty.IO_OUTPUT_THREAD_COUNT.getName(), "1");
 
         local = Hazelcast.newHazelcastInstance(config);
-        serializationService = getSerializationService(local);
+        serializationService = Accessors.getSerializationService(local);
         HazelcastInstance remote = Hazelcast.newHazelcastInstance(config);
 
-        plugin = new OverloadedConnectionsPlugin(getNodeEngineImpl(local));
+        plugin = new OverloadedConnectionsPlugin(Accessors.getNodeEngineImpl(local));
         plugin.onStart();
 
         warmUpPartitions(local, remote);
@@ -106,7 +107,7 @@ public class OverloadedConnectionsPluginTest extends AbstractDiagnosticsPluginTe
         assertToKey(DummyOperation.class.getName(), new DummyOperation());
         assertToKey(Integer.class.getName(), Integer.valueOf(10));
         assertToKey("Backup(" + DummyOperation.class.getName() + ")",
-                new Backup(new DummyOperation(), getAddress(local), new long[0], true));
+                new Backup(new DummyOperation(), Accessors.getAddress(local), new long[0], true));
     }
 
     private void assertToKey(String key, Object object) {

@@ -39,7 +39,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.hazelcast.config.Config.DEFAULT_CLUSTER_NAME;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.test.AbstractHazelcastClassRunner.getTestMethodName;
-import static com.hazelcast.test.HazelcastTestSupport.getAddress;
+import static com.hazelcast.test.Accessors.getAddress;
 
 /**
  * Per test-method factory for Hazelcast members. It sets existing members host:port from given cluster to TCP join

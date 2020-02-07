@@ -23,6 +23,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -69,7 +70,7 @@ public class Invocation_OnBackupLeftTest extends HazelcastTestSupport {
         local = cluster[0];
         remote = cluster[1];
         warmUpPartitions(local, remote);
-        localOperationService = getOperationServiceImpl(cluster[0]);
+        localOperationService = Accessors.getOperationServiceImpl(cluster[0]);
     }
 
     @Test

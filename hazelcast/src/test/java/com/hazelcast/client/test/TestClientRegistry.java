@@ -52,7 +52,7 @@ import static com.hazelcast.client.impl.management.ManagementCenterService.MC_CL
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
-import static com.hazelcast.test.HazelcastTestSupport.getNodeEngineImpl;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 
 class TestClientRegistry {
 

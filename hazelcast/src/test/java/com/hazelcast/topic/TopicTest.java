@@ -26,6 +26,7 @@ import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -76,7 +77,7 @@ public class TopicTest extends HazelcastTestSupport {
 
         topic.destroy();
 
-        final TopicService topicService = getNode(instance).nodeEngine.getService(TopicService.SERVICE_NAME);
+        final TopicService topicService = Accessors.getNode(instance).nodeEngine.getService(TopicService.SERVICE_NAME);
 
         assertTrueEventually(new AssertTask() {
             @Override

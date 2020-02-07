@@ -23,6 +23,7 @@ import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.instance.StaticMemberNodeContext;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -62,7 +63,7 @@ public class Invocation_OnMemberLeftTest extends HazelcastTestSupport {
 
         HazelcastInstance[] cluster = instanceFactory.newInstances(config, 2);
 
-        localOperationService = getOperationServiceImpl(cluster[0]);
+        localOperationService = Accessors.getOperationServiceImpl(cluster[0]);
         localInvocationMonitor = localOperationService.getInvocationMonitor();
 
         remote = cluster[1];

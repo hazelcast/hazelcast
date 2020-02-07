@@ -53,6 +53,7 @@ import com.hazelcast.spi.impl.operationservice.BinaryOperationFactory;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -1590,7 +1591,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         mapConfig.setInMemoryFormat(inMemoryFormat);
 
         HazelcastInstance node = createHazelcastInstance(config);
-        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(node);
+        NodeEngineImpl nodeEngineImpl = Accessors.getNodeEngineImpl(node);
         OperationServiceImpl operationService = nodeEngineImpl.getOperationService();
 
         int keyCount = 1000;

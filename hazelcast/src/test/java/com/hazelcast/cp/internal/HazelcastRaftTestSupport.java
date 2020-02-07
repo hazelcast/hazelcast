@@ -26,6 +26,7 @@ import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cp.internal.raftop.metadata.GetRaftGroupOp;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import org.junit.After;
@@ -78,7 +79,7 @@ public abstract class HazelcastRaftTestSupport extends HazelcastTestSupport {
     protected HazelcastInstance getRandomFollowerInstance(HazelcastInstance[] instances, RaftNodeImpl leader) {
         Address address = ((CPMemberInfo) leader.getLocalMember()).getAddress();
         for (HazelcastInstance instance : instances) {
-            if (!getAddress(instance).equals(address)) {
+            if (!Accessors.getAddress(instance).equals(address)) {
                 return instance;
             }
         }
@@ -208,12 +209,12 @@ public abstract class HazelcastRaftTestSupport extends HazelcastTestSupport {
     }
 
     protected RaftInvocationManager getRaftInvocationManager(HazelcastInstance instance) {
-        RaftService service = getNodeEngineImpl(instance).getService(RaftService.SERVICE_NAME);
+        RaftService service = Accessors.getNodeEngineImpl(instance).getService(RaftService.SERVICE_NAME);
         return service.getInvocationManager();
     }
 
     public static RaftService getRaftService(HazelcastInstance instance) {
-        return getNodeEngineImpl(instance).getService(RaftService.SERVICE_NAME);
+        return Accessors.getNodeEngineImpl(instance).getService(RaftService.SERVICE_NAME);
     }
 
     public static RaftNodeImpl getRaftNode(HazelcastInstance instance, CPGroupId groupId) {

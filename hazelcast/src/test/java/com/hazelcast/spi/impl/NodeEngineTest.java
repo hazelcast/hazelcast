@@ -24,6 +24,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -49,7 +50,7 @@ public class NodeEngineTest extends HazelcastTestSupport {
     @Before
     public void setUp() {
         HazelcastInstance hz = createHazelcastInstance();
-        nodeEngine = getNode(hz).getNodeEngine();
+        nodeEngine = Accessors.getNode(hz).getNodeEngine();
     }
 
     @Test(expected = NullPointerException.class)

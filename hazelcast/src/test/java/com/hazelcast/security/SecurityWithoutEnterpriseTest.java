@@ -21,6 +21,7 @@ import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -60,7 +61,7 @@ public class SecurityWithoutEnterpriseTest extends HazelcastTestSupport {
     @Test
     public void testCredentialsSerialization() {
         HazelcastInstance hz = createHazelcastInstance(smallInstanceConfig());
-        SerializationService serializationService = getSerializationService(hz);
+        SerializationService serializationService = Accessors.getSerializationService(hz);
 
         UsernamePasswordCredentials upc = new UsernamePasswordCredentials("admin", "secret");
         UsernamePasswordCredentials upc2 = serializationService.toObject(serializationService.toData(upc));

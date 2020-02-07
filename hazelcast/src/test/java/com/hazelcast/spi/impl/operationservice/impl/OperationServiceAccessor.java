@@ -19,7 +19,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.counters.Counter;
 
-import static com.hazelcast.test.HazelcastTestSupport.getOperationServiceImpl;
+import static com.hazelcast.test.Accessors.getOperationServiceImpl;
 
 public final class OperationServiceAccessor {
 

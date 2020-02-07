@@ -22,6 +22,7 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -107,7 +108,7 @@ public class ClientClusterServiceMemberListTest extends HazelcastTestSupport {
     }
 
     private Member getLocalMember(HazelcastInstance instance) {
-        return getNode(instance).getLocalMember();
+        return Accessors.getNode(instance).getLocalMember();
     }
 
     private ClientClusterService getClientClusterService(HazelcastInstance client) {

@@ -25,6 +25,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nearcache.NearCacheStats;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -62,7 +63,7 @@ public class NearCacheStatsStressTest extends HazelcastTestSupport {
     @Before
     public void setUp() throws Exception {
         HazelcastInstance server = factory.newHazelcastInstance();
-        ss = getSerializationService(server);
+        ss = Accessors.getSerializationService(server);
 
         String mapName = "test";
 

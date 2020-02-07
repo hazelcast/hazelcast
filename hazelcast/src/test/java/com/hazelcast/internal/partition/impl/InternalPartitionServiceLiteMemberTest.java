@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.partition.NoDataMemberInClusterException;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -75,7 +76,7 @@ public class InternalPartitionServiceLiteMemberTest extends HazelcastTestSupport
         warmUpPartitions(liteInstance, dataInstance);
 
         for (int i = 0; i < partitionService.getPartitionCount(); i++) {
-            assertEquals(getNode(dataInstance).getThisAddress(), partitionService.getPartition(i).getOwnerOrNull());
+            assertEquals(Accessors.getNode(dataInstance).getThisAddress(), partitionService.getPartition(i).getOwnerOrNull());
         }
     }
 
@@ -124,7 +125,7 @@ public class InternalPartitionServiceLiteMemberTest extends HazelcastTestSupport
         final InternalPartitionServiceImpl partitionService = getInternalPartitionServiceImpl(dataInstance);
 
         for (int i = 0; i < partitionService.getPartitionCount(); i++) {
-            assertEquals(getNode(dataInstance).getThisAddress(), partitionService.getPartition(i).getOwnerOrNull());
+            assertEquals(Accessors.getNode(dataInstance).getThisAddress(), partitionService.getPartition(i).getOwnerOrNull());
         }
     }
 
@@ -146,7 +147,7 @@ public class InternalPartitionServiceLiteMemberTest extends HazelcastTestSupport
                 @Override
                 public void run() throws Exception {
                     for (int i = 0; i < partitionService.getPartitionCount(); i++) {
-                        assertEquals(getNode(master).getThisAddress(), partitionService.getPartition(i).getOwnerOrNull());
+                        assertEquals(Accessors.getNode(master).getThisAddress(), partitionService.getPartition(i).getOwnerOrNull());
                     }
                 }
             });
@@ -376,7 +377,7 @@ public class InternalPartitionServiceLiteMemberTest extends HazelcastTestSupport
         final Map<Address, List<Integer>> partitionsMap = partitionService.getMemberPartitionsMap();
 
         assertEquals(1, partitionsMap.size());
-        final List<Integer> partitions = partitionsMap.get(getAddress(dataInstance));
+        final List<Integer> partitions = partitionsMap.get(Accessors.getAddress(dataInstance));
         assertNotNull(partitions);
         assertFalse(partitions.isEmpty());
     }
@@ -527,6 +528,6 @@ public class InternalPartitionServiceLiteMemberTest extends HazelcastTestSupport
     }
 
     private InternalPartitionServiceImpl getInternalPartitionServiceImpl(HazelcastInstance instance) {
-        return (InternalPartitionServiceImpl) getNode(instance).getPartitionService();
+        return (InternalPartitionServiceImpl) Accessors.getNode(instance).getPartitionService();
     }
 }

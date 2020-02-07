@@ -28,6 +28,7 @@ import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
 import com.hazelcast.cp.internal.raft.impl.log.LogEntry;
 import com.hazelcast.cp.internal.raftop.snapshot.RestoreSnapshotOp;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -86,7 +87,7 @@ public class SemaphoreAdvancedTest extends AbstractSemaphoreAdvancedTest {
 
         assertTrueEventually(() -> {
             HazelcastInstance leader = leaderInstanceOf(groupId);
-            SemaphoreService service = getNodeEngineImpl(leader).getService(SemaphoreService.SERVICE_NAME);
+            SemaphoreService service = Accessors.getNodeEngineImpl(leader).getService(SemaphoreService.SERVICE_NAME);
             SemaphoreRegistry registry = service.getRegistryOrNull(groupId);
             assertFalse(registry.getWaitTimeouts().isEmpty());
         });
@@ -121,7 +122,7 @@ public class SemaphoreAdvancedTest extends AbstractSemaphoreAdvancedTest {
                    .toCompletableFuture().get();
 
         assertTrueEventually(() -> {
-            SemaphoreService service = getNodeEngineImpl(newInstance).getService(SemaphoreService.SERVICE_NAME);
+            SemaphoreService service = Accessors.getNodeEngineImpl(newInstance).getService(SemaphoreService.SERVICE_NAME);
             SemaphoreRegistry registry = service.getRegistryOrNull(groupId);
             assertNotNull(registry);
             assertFalse(registry.getWaitTimeouts().isEmpty());

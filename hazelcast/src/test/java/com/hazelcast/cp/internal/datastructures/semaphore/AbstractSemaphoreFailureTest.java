@@ -27,6 +27,7 @@ import com.hazelcast.cp.internal.datastructures.semaphore.operation.DrainPermits
 import com.hazelcast.cp.internal.session.ProxySessionManagerService;
 import com.hazelcast.cp.internal.session.SessionAwareProxy;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.test.Accessors;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -58,7 +59,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
         primaryInstance = getPrimaryInstance();
         proxyInstance = getProxyInstance();
         semaphore = proxyInstance.getCPSubsystem().getSemaphore(getProxyName());
-        sessionManagerService = getNodeEngineImpl(proxyInstance).getService(ProxySessionManagerService.SERVICE_NAME);
+        sessionManagerService = Accessors.getNodeEngineImpl(proxyInstance).getService(ProxySessionManagerService.SERVICE_NAME);
     }
 
     protected abstract HazelcastInstance[] createInstances();
@@ -97,7 +98,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
         invocationManager.invoke(groupId, new AcquirePermitsOp(objectName, sessionId, threadId, invUid, 1, MINUTES.toMillis(5)));
 
         assertTrueEventually(() -> {
-            SemaphoreService service = getNodeEngineImpl(primaryInstance).getService(SemaphoreService.SERVICE_NAME);
+            SemaphoreService service = Accessors.getNodeEngineImpl(primaryInstance).getService(SemaphoreService.SERVICE_NAME);
             SemaphoreRegistry registry = service.getRegistryOrNull(groupId);
             assertNotNull(registry);
             assertEquals(1, registry.getWaitTimeouts().size());
@@ -106,7 +107,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
         invocationManager.invoke(groupId, new AcquirePermitsOp(objectName, sessionId, threadId, invUid, 1, -1));
 
         assertTrueAllTheTime(() -> {
-            SemaphoreService service = getNodeEngineImpl(primaryInstance).getService(SemaphoreService.SERVICE_NAME);
+            SemaphoreService service = Accessors.getNodeEngineImpl(primaryInstance).getService(SemaphoreService.SERVICE_NAME);
             SemaphoreRegistry registry = service.getRegistryOrNull(groupId);
             assertEquals(1, registry.getWaitTimeouts().size());
         }, 10);
@@ -128,7 +129,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
                 .invoke(groupId, new AcquirePermitsOp(objectName, sessionId, threadId, invUid1, 1, MINUTES.toMillis(5)));
 
         assertTrueEventually(() -> {
-            SemaphoreService service = getNodeEngineImpl(primaryInstance).getService(SemaphoreService.SERVICE_NAME);
+            SemaphoreService service = Accessors.getNodeEngineImpl(primaryInstance).getService(SemaphoreService.SERVICE_NAME);
             SemaphoreRegistry registry = service.getRegistryOrNull(groupId);
             assertNotNull(registry);
             assertEquals(1, registry.getWaitTimeouts().size());
@@ -161,7 +162,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
                 .invoke(groupId, new AcquirePermitsOp(objectName, sessionId, threadId, invUid1, 2, MINUTES.toMillis(5)));
 
         assertTrueEventually(() -> {
-            SemaphoreService service = getNodeEngineImpl(primaryInstance).getService(SemaphoreService.SERVICE_NAME);
+            SemaphoreService service = Accessors.getNodeEngineImpl(primaryInstance).getService(SemaphoreService.SERVICE_NAME);
             SemaphoreRegistry registry = service.getRegistryOrNull(groupId);
             assertNotNull(registry);
             assertEquals(1, registry.getWaitTimeouts().size());
@@ -192,7 +193,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
                 .invoke(groupId, new AcquirePermitsOp(objectName, sessionId, threadId, invUid1, 1, MINUTES.toMillis(5)));
 
         assertTrueEventually(() -> {
-            SemaphoreService service = getNodeEngineImpl(primaryInstance).getService(SemaphoreService.SERVICE_NAME);
+            SemaphoreService service = Accessors.getNodeEngineImpl(primaryInstance).getService(SemaphoreService.SERVICE_NAME);
             SemaphoreRegistry registry = service.getRegistryOrNull(groupId);
             assertNotNull(registry);
             assertEquals(1, registry.getWaitTimeouts().size());
@@ -225,7 +226,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
                 .invoke(groupId, new AcquirePermitsOp(objectName, sessionId, threadId, invUid1, 2, MINUTES.toMillis(5)));
 
         assertTrueEventually(() -> {
-            SemaphoreService service = getNodeEngineImpl(primaryInstance).getService(SemaphoreService.SERVICE_NAME);
+            SemaphoreService service = Accessors.getNodeEngineImpl(primaryInstance).getService(SemaphoreService.SERVICE_NAME);
             SemaphoreRegistry registry = service.getRegistryOrNull(groupId);
             assertNotNull(registry);
             assertEquals(1, registry.getWaitTimeouts().size());
@@ -256,7 +257,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
                 .invoke(groupId, new AcquirePermitsOp(objectName, sessionId, threadId, invUid1, 1, MINUTES.toMillis(5)));
 
         assertTrueEventually(() -> {
-            SemaphoreService service = getNodeEngineImpl(primaryInstance).getService(SemaphoreService.SERVICE_NAME);
+            SemaphoreService service = Accessors.getNodeEngineImpl(primaryInstance).getService(SemaphoreService.SERVICE_NAME);
             SemaphoreRegistry registry = service.getRegistryOrNull(groupId);
             assertNotNull(registry);
             assertEquals(1, registry.getWaitTimeouts().size());
@@ -289,7 +290,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
                 .invoke(groupId, new AcquirePermitsOp(objectName, sessionId, threadId, invUid1, 2, MINUTES.toMillis(5)));
 
         assertTrueEventually(() -> {
-            SemaphoreService service = getNodeEngineImpl(primaryInstance).getService(SemaphoreService.SERVICE_NAME);
+            SemaphoreService service = Accessors.getNodeEngineImpl(primaryInstance).getService(SemaphoreService.SERVICE_NAME);
             SemaphoreRegistry registry = service.getRegistryOrNull(groupId);
             assertNotNull(registry);
             assertEquals(1, registry.getWaitTimeouts().size());
@@ -319,7 +320,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
                 .invoke(groupId, new AcquirePermitsOp(objectName, sessionId, threadId, invUid, 1, MINUTES.toMillis(5)));
 
         assertTrueEventually(() -> {
-            SemaphoreService service = getNodeEngineImpl(primaryInstance).getService(SemaphoreService.SERVICE_NAME);
+            SemaphoreService service = Accessors.getNodeEngineImpl(primaryInstance).getService(SemaphoreService.SERVICE_NAME);
             SemaphoreRegistry registry = service.getRegistryOrNull(groupId);
             assertNotNull(registry);
             assertEquals(1, registry.getWaitTimeouts().size());
@@ -354,7 +355,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
                 .invoke(groupId, new AcquirePermitsOp(objectName, sessionId, threadId, invUid, 2, MINUTES.toMillis(5)));
 
         assertTrueEventually(() -> {
-            SemaphoreService service = getNodeEngineImpl(primaryInstance).getService(SemaphoreService.SERVICE_NAME);
+            SemaphoreService service = Accessors.getNodeEngineImpl(primaryInstance).getService(SemaphoreService.SERVICE_NAME);
             SemaphoreRegistry registry = service.getRegistryOrNull(groupId);
             assertNotNull(registry);
             assertEquals(1, registry.getWaitTimeouts().size());
@@ -389,7 +390,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
                 .invoke(groupId, new AcquirePermitsOp(objectName, sessionId, threadId, invUid, 2, MINUTES.toMillis(5)));
 
         assertTrueEventually(() -> {
-            SemaphoreService service = getNodeEngineImpl(primaryInstance).getService(SemaphoreService.SERVICE_NAME);
+            SemaphoreService service = Accessors.getNodeEngineImpl(primaryInstance).getService(SemaphoreService.SERVICE_NAME);
             SemaphoreRegistry registry = service.getRegistryOrNull(groupId);
             assertNotNull(registry);
             assertEquals(1, registry.getWaitTimeouts().size());
@@ -421,7 +422,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
                 .invoke(groupId, new AcquirePermitsOp(objectName, sessionId, threadId, invUid1, 2, MINUTES.toMillis(5)));
 
         assertTrueEventually(() -> {
-            SemaphoreService service = getNodeEngineImpl(primaryInstance).getService(SemaphoreService.SERVICE_NAME);
+            SemaphoreService service = Accessors.getNodeEngineImpl(primaryInstance).getService(SemaphoreService.SERVICE_NAME);
             SemaphoreRegistry registry = service.getRegistryOrNull(groupId);
             assertNotNull(registry);
             assertEquals(1, registry.getWaitTimeouts().size());
@@ -436,7 +437,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
         });
 
         assertTrueEventually(() -> {
-            SemaphoreService service = getNodeEngineImpl(primaryInstance).getService(SemaphoreService.SERVICE_NAME);
+            SemaphoreService service = Accessors.getNodeEngineImpl(primaryInstance).getService(SemaphoreService.SERVICE_NAME);
             SemaphoreRegistry registry = service.getRegistryOrNull(groupId);
             assertEquals(2, registry.getWaitTimeouts().size());
         });
@@ -445,7 +446,7 @@ public abstract class AbstractSemaphoreFailureTest extends HazelcastRaftTestSupp
                 .invoke(groupId, new AcquirePermitsOp(objectName, sessionId, threadId, invUid1, 2, MINUTES.toMillis(5)));
 
         assertTrueEventually(() -> {
-            SemaphoreService service = getNodeEngineImpl(primaryInstance).getService(SemaphoreService.SERVICE_NAME);
+            SemaphoreService service = Accessors.getNodeEngineImpl(primaryInstance).getService(SemaphoreService.SERVICE_NAME);
             SemaphoreRegistry registry = service.getRegistryOrNull(groupId);
             Semaphore semaphore = registry.getResourceOrNull(objectName);
             assertEquals(2, semaphore.getInternalWaitKeysMap().size());

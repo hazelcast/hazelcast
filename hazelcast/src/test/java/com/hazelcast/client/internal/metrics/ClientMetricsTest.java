@@ -27,6 +27,7 @@ import com.hazelcast.internal.metrics.MetricTarget;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeUnit;
 import com.hazelcast.internal.metrics.impl.CapturingCollector;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -60,7 +61,7 @@ public class ClientMetricsTest extends HazelcastTestSupport {
     @Test
     public void testLongClientMetricIsMergedIntoMemberMetrics() {
         HazelcastInstance memberInstance = givenMemberWithTwoClients();
-        MetricsRegistry metricsRegistry = getNodeEngineImpl(memberInstance).getMetricsRegistry();
+        MetricsRegistry metricsRegistry = Accessors.getNodeEngineImpl(memberInstance).getMetricsRegistry();
 
         // randomly chosen long client metric, we just check that
         // we have client-side metrics merged into the member metrics
@@ -70,7 +71,7 @@ public class ClientMetricsTest extends HazelcastTestSupport {
     @Test
     public void testDoubleClientMetricIsMergedIntoMemberMetrics() {
         HazelcastInstance memberInstance = givenMemberWithTwoClients();
-        MetricsRegistry metricsRegistry = getNodeEngineImpl(memberInstance).getMetricsRegistry();
+        MetricsRegistry metricsRegistry = Accessors.getNodeEngineImpl(memberInstance).getMetricsRegistry();
 
         // randomly chosen double client metric, we just check that
         // we have client-side metrics merged into the member metrics
@@ -95,7 +96,7 @@ public class ClientMetricsTest extends HazelcastTestSupport {
             CapturingCollector collector = new CapturingCollector();
             metricsRegistry.collect(collector);
 
-            ClientEngine clientEngine = getNode(memberInstance).getClientEngine();
+            ClientEngine clientEngine = Accessors.getNode(memberInstance).getClientEngine();
             Collection<Client> clients = clientEngine.getClients();
 
             assertEquals(2, clients.size());

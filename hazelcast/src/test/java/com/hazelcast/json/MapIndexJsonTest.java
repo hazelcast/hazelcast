@@ -33,6 +33,7 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -238,7 +239,7 @@ public class MapIndexJsonTest extends HazelcastTestSupport {
     }
 
     protected static List<Index> getIndexOfAttributeForMap(HazelcastInstance instance, String mapName, String attribute) {
-        Node node = getNode(instance);
+        Node node = Accessors.getNode(instance);
         MapService service = node.nodeEngine.getService(MapService.SERVICE_NAME);
         MapServiceContext mapServiceContext = service.getMapServiceContext();
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);

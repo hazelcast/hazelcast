@@ -35,6 +35,7 @@ import com.hazelcast.query.PredicateBuilder.EntryObject;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleTestObjects.Employee;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -414,7 +415,7 @@ public class NearCacheTest extends NearCacheTestSupport {
         warmUpPartitions(instances);
 
         HazelcastInstance hazelcastInstance = instances[0];
-        InternalPartitionService partitionService = getPartitionService(hazelcastInstance);
+        InternalPartitionService partitionService = Accessors.getPartitionService(hazelcastInstance);
 
         // populate map
         IMap<Integer, Integer> map = hazelcastInstance.getMap(mapName);

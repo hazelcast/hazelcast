@@ -23,6 +23,7 @@ import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
@@ -55,7 +56,7 @@ public class ReliableTopicCreateTest extends HazelcastTestSupport {
     @Test
     public void testConstruction() {
         HazelcastInstance hz = createHazelcastInstance();
-        RingbufferService ringbufferService = getNodeEngineImpl(hz).getService(RingbufferService.SERVICE_NAME);
+        RingbufferService ringbufferService = Accessors.getNodeEngineImpl(hz).getService(RingbufferService.SERVICE_NAME);
 
         ReliableTopicProxy<String> topic = (ReliableTopicProxy<String>) hz.<String>getReliableTopic("foo");
 
@@ -83,7 +84,7 @@ public class ReliableTopicCreateTest extends HazelcastTestSupport {
         config.addRingBufferConfig(rbConfig);
 
         HazelcastInstance hz = createHazelcastInstance(config);
-        RingbufferService ringbufferService = getNodeEngineImpl(hz).getService(RingbufferService.SERVICE_NAME);
+        RingbufferService ringbufferService = Accessors.getNodeEngineImpl(hz).getService(RingbufferService.SERVICE_NAME);
 
         ReliableTopicProxy topic = (ReliableTopicProxy) hz.getReliableTopic("foo");
 
@@ -111,7 +112,7 @@ public class ReliableTopicCreateTest extends HazelcastTestSupport {
         config.addReliableTopicConfig(new ReliableTopicConfig("foo*").setTopicOverloadPolicy(DISCARD_NEWEST));
 
         HazelcastInstance hz = createHazelcastInstance(config);
-        RingbufferService ringbufferService = getNodeEngineImpl(hz).getService(RingbufferService.SERVICE_NAME);
+        RingbufferService ringbufferService = Accessors.getNodeEngineImpl(hz).getService(RingbufferService.SERVICE_NAME);
 
         ReliableTopicProxy<String> topic = (ReliableTopicProxy<String>) hz.<String>getReliableTopic("foo");
         Ringbuffer ringbuffer = topic.ringbuffer;

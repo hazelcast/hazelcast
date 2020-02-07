@@ -19,6 +19,7 @@ package com.hazelcast.cache;
 import com.hazelcast.cache.impl.CacheContext;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -156,7 +157,7 @@ public class CacheContextTest extends HazelcastTestSupport {
     }
 
     private CacheService getCacheService(HazelcastInstance instance) {
-        return getNodeEngineImpl(instance).getService(CacheService.SERVICE_NAME);
+        return Accessors.getNodeEngineImpl(instance).getService(CacheService.SERVICE_NAME);
     }
 
     protected enum DecreaseType {

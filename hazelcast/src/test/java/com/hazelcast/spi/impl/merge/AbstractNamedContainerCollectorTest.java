@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl.merge;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -45,7 +46,7 @@ public class AbstractNamedContainerCollectorTest extends HazelcastTestSupport {
     @Before
     public void setUp() {
         HazelcastInstance hazelcastInstance = createHazelcastInstance();
-        nodeEngine = getNodeEngineImpl(hazelcastInstance);
+        nodeEngine = Accessors.getNodeEngineImpl(hazelcastInstance);
         warmUpPartitions(hazelcastInstance);
     }
 

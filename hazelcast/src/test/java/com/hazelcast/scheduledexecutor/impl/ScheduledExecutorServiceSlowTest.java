@@ -24,6 +24,7 @@ import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.IScheduledFuture;
 import com.hazelcast.scheduledexecutor.ScheduledTaskStatistics;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -96,7 +97,7 @@ public class ScheduledExecutorServiceSlowTest extends ScheduledExecutorServiceTe
         latch.await(70, SECONDS);
         future.cancel(false);
 
-        assertEquals(getPartitionService(instances[0]).getPartitionId(key), future.getHandler().getPartitionId());
+        assertEquals(Accessors.getPartitionService(instances[0]).getPartitionId(key), future.getHandler().getPartitionId());
         assertEquals(8, runC.get(), 1);
         assertEquals(1, loadC.get());
     }

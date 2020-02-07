@@ -32,6 +32,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICacheManager;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.map.IMap;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -84,7 +85,7 @@ public class ClientStatisticsTest extends ClientTestSupport {
     public void testStatisticsCollectionNonDefaultPeriod() {
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
         final HazelcastClientInstanceImpl client = createHazelcastClient();
-        final ClientEngineImpl clientEngine = getClientEngineImpl(hazelcastInstance);
+        final ClientEngineImpl clientEngine = Accessors.getClientEngineImpl(hazelcastInstance);
 
         long clientConnectionTime = System.currentTimeMillis();
 
@@ -155,7 +156,7 @@ public class ClientStatisticsTest extends ClientTestSupport {
     public void testStatisticsPeriod() {
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
         HazelcastClientInstanceImpl client = createHazelcastClient();
-        ClientEngineImpl clientEngine = getClientEngineImpl(hazelcastInstance);
+        ClientEngineImpl clientEngine = Accessors.getClientEngineImpl(hazelcastInstance);
 
         // wait enough time for statistics collection
         waitForFirstStatisticsCollection(client, clientEngine);
@@ -182,7 +183,7 @@ public class ClientStatisticsTest extends ClientTestSupport {
 
         hazelcastInstance.getLifecycleService().terminate();
         hazelcastInstance = hazelcastFactory.newHazelcastInstance();
-        ClientEngineImpl clientEngine = getClientEngineImpl(hazelcastInstance);
+        ClientEngineImpl clientEngine = Accessors.getClientEngineImpl(hazelcastInstance);
 
         assertOpenEventually(reconnectListener.reconnectedLatch);
 
@@ -197,7 +198,7 @@ public class ClientStatisticsTest extends ClientTestSupport {
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
         final HazelcastClientInstanceImpl client1 = createHazelcastClient();
         final HazelcastClientInstanceImpl client2 = createHazelcastClient();
-        final ClientEngineImpl clientEngine = getClientEngineImpl(hazelcastInstance);
+        final ClientEngineImpl clientEngine = Accessors.getClientEngineImpl(hazelcastInstance);
 
         assertTrueEventually(() -> {
             Map<UUID, ClientStatistics> clientStatistics = clientEngine.getClientStatistics();
@@ -218,7 +219,7 @@ public class ClientStatisticsTest extends ClientTestSupport {
     @Test
     public void testNoUpdateWhenDisabled() {
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
-        final ClientEngineImpl clientEngine = getClientEngineImpl(hazelcastInstance);
+        final ClientEngineImpl clientEngine = Accessors.getClientEngineImpl(hazelcastInstance);
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getMetricsConfig()

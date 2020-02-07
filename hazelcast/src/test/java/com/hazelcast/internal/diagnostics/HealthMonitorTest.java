@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.Metric;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -53,8 +54,8 @@ public class HealthMonitorTest extends HazelcastTestSupport {
                 .setProperty(HEALTH_MONITORING_THRESHOLD_CPU_PERCENTAGE.getName(), "70");
 
         HazelcastInstance hz = createHazelcastInstance(config);
-        HealthMonitor healthMonitor = new HealthMonitor(getNode(hz));
-        metricsRegistry = getMetricsRegistry(hz);
+        HealthMonitor healthMonitor = new HealthMonitor(Accessors.getNode(hz));
+        metricsRegistry = Accessors.getMetricsRegistry(hz);
         metrics = healthMonitor.healthMetrics;
     }
 

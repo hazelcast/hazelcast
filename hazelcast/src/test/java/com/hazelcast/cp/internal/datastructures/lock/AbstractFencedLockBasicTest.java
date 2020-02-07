@@ -28,6 +28,7 @@ import com.hazelcast.cp.internal.session.operation.CloseSessionOp;
 import com.hazelcast.cp.lock.FencedLock;
 import com.hazelcast.cp.lock.exception.LockOwnershipLostException;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
+import com.hazelcast.test.Accessors;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -208,7 +209,7 @@ public abstract class AbstractFencedLockBasicTest extends HazelcastRaftTestSuppo
         });
 
         assertTrueEventually(() -> {
-            LockService service = getNodeEngineImpl(instances[0]).getService(LockService.SERVICE_NAME);
+            LockService service = Accessors.getNodeEngineImpl(instances[0]).getService(LockService.SERVICE_NAME);
             LockRegistry registry = service.getRegistryOrNull(lock.getGroupId());
             assertNotNull(registry);
             assertFalse(registry.getWaitTimeouts().isEmpty());
@@ -485,7 +486,7 @@ public abstract class AbstractFencedLockBasicTest extends HazelcastRaftTestSuppo
     }
 
     protected AbstractProxySessionManager getSessionManager(HazelcastInstance instance) {
-        return getNodeEngineImpl(instance).getService(ProxySessionManagerService.SERVICE_NAME);
+        return Accessors.getNodeEngineImpl(instance).getService(ProxySessionManagerService.SERVICE_NAME);
     }
 
     private void assertNoLockedSessionId() {
@@ -495,7 +496,7 @@ public abstract class AbstractFencedLockBasicTest extends HazelcastRaftTestSuppo
     }
 
     private void closeSession(HazelcastInstance instance, CPGroupId groupId, long sessionId) {
-        RaftService service = getNodeEngineImpl(instance).getService(RaftService.SERVICE_NAME);
+        RaftService service = Accessors.getNodeEngineImpl(instance).getService(RaftService.SERVICE_NAME);
         service.getInvocationManager().invoke(groupId, new CloseSessionOp(sessionId)).joinInternal();
     }
 

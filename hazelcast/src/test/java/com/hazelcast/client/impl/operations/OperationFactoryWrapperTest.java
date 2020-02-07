@@ -22,6 +22,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -49,7 +50,7 @@ public class OperationFactoryWrapperTest extends HazelcastTestSupport {
     @Test
     public void testOperationSeesActualCallersUUID() throws Exception {
         HazelcastInstance hz = createHazelcastInstance();
-        OperationServiceImpl operationService = getOperationServiceImpl(hz);
+        OperationServiceImpl operationService = Accessors.getOperationServiceImpl(hz);
 
         UUID expectedCallersUUID = UUID.randomUUID();
 

@@ -26,6 +26,7 @@ import com.hazelcast.internal.partition.impl.MigrationInterceptor;
 import com.hazelcast.internal.partition.impl.MigrationStats;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -97,7 +98,7 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);
         warmUpPartitions(hz1);
 
-        InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) getPartitionService(hz1);
+        InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) Accessors.getPartitionService(hz1);
         AtomicReference<HazelcastInstance> newInstanceRef = new AtomicReference<>();
         partitionService.setMigrationInterceptor(new MigrationInterceptor() {
             @Override

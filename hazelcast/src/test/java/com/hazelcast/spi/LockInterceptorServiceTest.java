@@ -31,6 +31,7 @@ import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -85,15 +86,15 @@ public class LockInterceptorServiceTest extends HazelcastTestSupport {
                 .setImplementation(implementation));
 
         HazelcastInstance member = createHazelcastInstance(config);
-        NodeEngine nodeEngine = getNodeEngineImpl(member);
-        implementation.serializationService = getSerializationService(member);
+        NodeEngine nodeEngine = Accessors.getNodeEngineImpl(member);
+        implementation.serializationService = Accessors.getSerializationService(member);
 
         LockProxySupport lockProxySupport = new LockProxySupport(
                 new DistributedObjectNamespace(LockInterceptingService.SERVICE_NAME, "test-object"), 10000);
 
         for (int i = 0; i < 100; i++) {
             try {
-                Data key = getSerializationService(member).toData("key" + i);
+                Data key = Accessors.getSerializationService(member).toData("key" + i);
                 lockProxySupport.lock(nodeEngine, key);
             } catch (RuntimeException e) {
                 ignore(e);

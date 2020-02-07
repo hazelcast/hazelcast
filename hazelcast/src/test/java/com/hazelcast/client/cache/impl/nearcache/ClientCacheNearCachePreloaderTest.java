@@ -34,6 +34,7 @@ import com.hazelcast.internal.nearcache.impl.AbstractNearCachePreloaderTest;
 import com.hazelcast.internal.nearcache.impl.NearCacheTestContext;
 import com.hazelcast.internal.nearcache.impl.NearCacheTestContextBuilder;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -110,7 +111,7 @@ public class ClientCacheNearCachePreloaderTest extends AbstractNearCachePreloade
                     .setMemberCacheManager(memberCacheManager)
                     .build();
         }
-        return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, getSerializationService(member))
+        return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, Accessors.getSerializationService(member))
                 .setDataInstance(member)
                 .setDataAdapter(dataAdapter)
                 .build();

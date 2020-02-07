@@ -20,6 +20,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.querycache.subscriber.operation.MadePublishableOperationFactory;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -47,7 +48,7 @@ public class NodeQueryCacheContextTest extends HazelcastTestSupport {
     @Before
     public void setUp() {
         HazelcastInstance hz = createHazelcastInstance();
-        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(hz);
+        NodeEngineImpl nodeEngineImpl = Accessors.getNodeEngineImpl(hz);
 
         MapService mapService = nodeEngineImpl.getService(MapService.SERVICE_NAME);
         context = mapService.getMapServiceContext().getQueryCacheContext();

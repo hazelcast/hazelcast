@@ -27,6 +27,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapStoreAdapter;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.transaction.TransactionalMap;
 import com.hazelcast.transaction.TransactionalQueue;
 import com.hazelcast.map.impl.operation.DefaultMapOperationProvider;
@@ -160,7 +161,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
         });
 
 
-        NodeEngine nodeEngine = getNodeEngineImpl(instance1);
+        NodeEngine nodeEngine = Accessors.getNodeEngineImpl(instance1);
         Data keyData = nodeEngine.toData(keyOwnedByInstance2);
         LockSupportService lockService = nodeEngine.getService(LockSupportService.SERVICE_NAME);
         for (LockResource lockResource : lockService.getAllLocks()) {

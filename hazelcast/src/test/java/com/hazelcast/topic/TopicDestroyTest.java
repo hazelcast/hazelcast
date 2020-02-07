@@ -19,6 +19,7 @@ package com.hazelcast.topic;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -65,7 +66,7 @@ public class TopicDestroyTest extends HazelcastTestSupport {
     }
 
     void assertRegistrationSize(int size) {
-        EventService eventService = getNode(instance).getNodeEngine().getEventService();
+        EventService eventService = Accessors.getNode(instance).getNodeEngine().getEventService();
         Collection<EventRegistration> regs = eventService.getRegistrations(TopicService.SERVICE_NAME, topicName);
 
         assertEquals(size, regs.size());

@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.ClientSelectors;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -51,7 +52,7 @@ public class ClientSelectorManagementCenterClientTest extends HazelcastTestSuppo
     public void testManagementCenterClient_doesNotGetDisconnected() {
         HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
 
-        final ClientEngineImpl clientEngineImpl = getClientEngineImpl(instance);
+        final ClientEngineImpl clientEngineImpl = Accessors.getClientEngineImpl(instance);
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setProperty(MC_CLIENT_MODE_PROP.getName(), "true");

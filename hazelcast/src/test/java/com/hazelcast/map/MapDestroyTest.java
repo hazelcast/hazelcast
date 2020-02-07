@@ -25,6 +25,7 @@ import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -96,13 +97,13 @@ public class MapDestroyTest extends HazelcastTestSupport {
     }
 
     private MapServiceContext getMapServiceContext(HazelcastInstance instance) {
-        NodeEngineImpl nodeEngine1 = getNodeEngineImpl(instance);
+        NodeEngineImpl nodeEngine1 = Accessors.getNodeEngineImpl(instance);
         MapService mapService = nodeEngine1.getService(MapService.SERVICE_NAME);
         return mapService.getMapServiceContext();
     }
 
     private int getPartitionCount(HazelcastInstance instance) {
-        Node node = getNode(instance);
+        Node node = Accessors.getNode(instance);
         return node.getProperties().getInteger(ClusterProperty.PARTITION_COUNT);
     }
 }

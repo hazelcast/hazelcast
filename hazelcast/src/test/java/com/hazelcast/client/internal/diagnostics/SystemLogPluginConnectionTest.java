@@ -21,6 +21,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.diagnostics.AbstractDiagnosticsPluginTest;
 import com.hazelcast.internal.diagnostics.SystemLogPlugin;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -46,7 +47,7 @@ public class SystemLogPluginConnectionTest extends AbstractDiagnosticsPluginTest
 
         hzFactory = new TestHazelcastFactory();
         HazelcastInstance hz = hzFactory.newHazelcastInstance(config);
-        plugin = new SystemLogPlugin(getNodeEngineImpl(hz));
+        plugin = new SystemLogPlugin(Accessors.getNodeEngineImpl(hz));
         plugin.onStart();
     }
 

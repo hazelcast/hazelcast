@@ -31,6 +31,7 @@ import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.spi.merge.PassThroughMergePolicy;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -105,7 +106,7 @@ public class WanPublisherMigrationTest extends HazelcastTestSupport {
         }
 
         int partitionsToMigrate = 0;
-        for (IPartition partition : getPartitionService(member1).getPartitions()) {
+        for (IPartition partition : Accessors.getPartitionService(member1).getPartitions()) {
             if (partition.isLocal()) {
                 partitionsToMigrate++;
             }
@@ -169,7 +170,7 @@ public class WanPublisherMigrationTest extends HazelcastTestSupport {
     }
 
     private MigrationCountingWanPublisher getPublisher(HazelcastInstance instance) {
-        WanReplicationService service = getNodeEngineImpl(instance).getWanReplicationService();
+        WanReplicationService service = Accessors.getNodeEngineImpl(instance).getWanReplicationService();
         DelegatingWanScheme delegate = service.getWanReplicationPublishers("dummyWan");
         return (MigrationCountingWanPublisher) delegate.getPublishers().iterator().next();
     }

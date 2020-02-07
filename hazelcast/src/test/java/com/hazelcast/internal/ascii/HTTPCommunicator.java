@@ -61,7 +61,7 @@ import java.util.UUID;
 import static com.hazelcast.instance.EndpointQualifier.REST;
 import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_PLAIN_TEXT;
 import static com.hazelcast.internal.util.StringUtil.bytesToString;
-import static com.hazelcast.test.HazelcastTestSupport.getNode;
+import static com.hazelcast.test.Accessors.getNode;
 
 @SuppressWarnings("SameParameterValue")
 public class HTTPCommunicator {

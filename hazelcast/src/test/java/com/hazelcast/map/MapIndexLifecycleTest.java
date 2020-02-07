@@ -41,6 +41,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -193,7 +194,7 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
     }
 
     private int numberOfPartitionQueryResults(HazelcastInstance instance, int partitionId, String attribute, Comparable value) {
-        OperationService operationService = getOperationService(instance);
+        OperationService operationService = Accessors.getOperationService(instance);
         Query query = Query.of().mapName(mapName).iterationType(IterationType.KEY).predicate(Predicates.equal(attribute, value))
                 .build();
         Operation queryOperation = getMapOperationProvider(instance, mapName).createQueryPartitionOperation(query);
@@ -228,7 +229,7 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
         Integer yearOwned = findYearOwnedBy(instance);
 
         for (int i = 0; i < partitionCount; i++) {
-            if (!getNode(instance).getPartitionService().isPartitionOwner(i)) {
+            if (!Accessors.getNode(instance).getPartitionService().isPartitionOwner(i)) {
                 continue;
             }
 
@@ -259,12 +260,12 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
     }
 
     private int getPartitionCount(HazelcastInstance instance) {
-        Node node = getNode(instance);
+        Node node = Accessors.getNode(instance);
         return node.getProperties().getInteger(ClusterProperty.PARTITION_COUNT);
     }
 
     private MapServiceContext getMapServiceContext(HazelcastInstance instance) {
-        NodeEngineImpl nodeEngine1 = getNodeEngineImpl(instance);
+        NodeEngineImpl nodeEngine1 = Accessors.getNodeEngineImpl(instance);
         MapService mapService = nodeEngine1.getService(MapService.SERVICE_NAME);
         return mapService.getMapServiceContext();
     }

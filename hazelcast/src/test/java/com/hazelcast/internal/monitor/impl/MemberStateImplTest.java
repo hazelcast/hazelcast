@@ -32,6 +32,7 @@ import com.hazelcast.internal.monitor.HotRestartState;
 import com.hazelcast.internal.monitor.NodeState;
 import com.hazelcast.internal.monitor.WanSyncState;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -116,7 +117,7 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         endpoints.put(EndpointQualifier.MEMBER, new Address("127.0.0.1", 5701));
         endpoints.put(EndpointQualifier.resolve(ProtocolType.WAN, "MyWAN"), new Address("127.0.0.1", 5901));
 
-        TimedMemberStateFactory factory = new TimedMemberStateFactory(getHazelcastInstanceImpl(hazelcastInstance));
+        TimedMemberStateFactory factory = new TimedMemberStateFactory(Accessors.getHazelcastInstanceImpl(hazelcastInstance));
         TimedMemberState timedMemberState = factory.createTimedMemberState();
 
         MemberStateImpl memberState = timedMemberState.getMemberState();

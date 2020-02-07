@@ -20,6 +20,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.ringbuffer.RingbufferStore;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
 import com.hazelcast.internal.services.ObjectNamespace;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -48,7 +49,7 @@ public class LatencyTrackingRingbufferStoreTest extends HazelcastTestSupport {
     @Before
     public void setup() {
         HazelcastInstance hz = createHazelcastInstance();
-        plugin = new StoreLatencyPlugin(getNodeEngineImpl(hz));
+        plugin = new StoreLatencyPlugin(Accessors.getNodeEngineImpl(hz));
         delegate = mock(RingbufferStore.class);
         ringbufferStore = new LatencyTrackingRingbufferStore<String>(delegate, plugin,
                 NAMESPACE);

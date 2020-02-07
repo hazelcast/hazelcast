@@ -44,6 +44,7 @@ import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -126,10 +127,10 @@ public class ClientListenersTest extends HazelcastTestSupport {
             }
         }, true);
 
-        Node node = getNode(server);
+        Node node = Accessors.getNode(server);
         NodeEngineImpl nodeEngine = node.nodeEngine;
         OperationServiceImpl operationService = nodeEngine.getOperationService();
-        SerializationService serializationService = getSerializationService(server);
+        SerializationService serializationService = Accessors.getSerializationService(server);
         Data key = serializationService.toData(1);
         Data value = serializationService.toData(new ClientRegressionWithMockNetworkTest.SamplePortable(1));
         SplitBrainMergeTypes.MapMergeTypes mergingEntry = createMergingEntry(serializationService, key, value, Mockito.mock(Record.class));

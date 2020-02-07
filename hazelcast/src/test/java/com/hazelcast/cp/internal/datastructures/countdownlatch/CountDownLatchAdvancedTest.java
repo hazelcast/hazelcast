@@ -26,6 +26,7 @@ import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
 import com.hazelcast.cp.internal.raft.impl.log.LogEntry;
 import com.hazelcast.cp.internal.raftop.snapshot.RestoreSnapshotOp;
 import com.hazelcast.internal.util.RandomPicker;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -93,7 +94,7 @@ public class CountDownLatchAdvancedTest extends AbstractCountDownLatchAdvancedTe
 
         assertTrueEventually(() -> {
             HazelcastInstance leader = getLeaderInstance(instances, groupId);
-            CountDownLatchService service = getNodeEngineImpl(leader).getService(CountDownLatchService.SERVICE_NAME);
+            CountDownLatchService service = Accessors.getNodeEngineImpl(leader).getService(CountDownLatchService.SERVICE_NAME);
             ResourceRegistry registry = service.getRegistryOrNull(groupId);
             assertFalse(registry.getWaitTimeouts().isEmpty());
         });
@@ -127,7 +128,7 @@ public class CountDownLatchAdvancedTest extends AbstractCountDownLatchAdvancedTe
                    .toCompletableFuture().get();
 
         assertTrueEventually(() -> {
-            CountDownLatchService service = getNodeEngineImpl(newInstance).getService(CountDownLatchService.SERVICE_NAME);
+            CountDownLatchService service = Accessors.getNodeEngineImpl(newInstance).getService(CountDownLatchService.SERVICE_NAME);
             CountDownLatchRegistry registry = service.getRegistryOrNull(groupId);
             assertNotNull(registry);
             assertFalse(registry.getWaitTimeouts().isEmpty());

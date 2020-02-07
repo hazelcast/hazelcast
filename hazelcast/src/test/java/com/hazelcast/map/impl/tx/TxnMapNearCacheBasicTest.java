@@ -30,6 +30,7 @@ import com.hazelcast.internal.nearcache.impl.NearCacheTestContextBuilder;
 import com.hazelcast.internal.nearcache.impl.NearCacheTestUtils;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.IMap;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -144,7 +145,7 @@ public class TxnMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, S
         NearCacheManager nearCacheManager = getMapNearCacheManager(nearCacheInstance);
         NearCache<Data, String> nearCache = nearCacheManager.getNearCache(DEFAULT_NEAR_CACHE_NAME);
 
-        return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, getSerializationService(nearCacheInstance))
+        return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, Accessors.getSerializationService(nearCacheInstance))
                 .setNearCacheInstance(nearCacheInstance)
                 .setNearCacheAdapter(new TransactionalMapDataStructureAdapter<K, V>(nearCacheInstance, DEFAULT_NEAR_CACHE_NAME))
                 .setNearCache(nearCache)

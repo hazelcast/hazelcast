@@ -29,6 +29,7 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -218,7 +219,7 @@ public class BackupExpirationTest extends HazelcastTestSupport {
 
         @Override
         public Object process(Map.Entry entry) {
-            NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(node);
+            NodeEngineImpl nodeEngineImpl = Accessors.getNodeEngineImpl(node);
             SerializationService ss = nodeEngineImpl.getSerializationService();
             MapService mapService = nodeEngineImpl.getService(MapService.SERVICE_NAME);
             MapServiceContext mapServiceContext = mapService.getMapServiceContext();

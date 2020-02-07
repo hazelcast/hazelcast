@@ -22,6 +22,7 @@ import com.hazelcast.internal.nearcache.impl.invalidation.Invalidator;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Before;
 import org.junit.Test;
@@ -41,7 +42,7 @@ public abstract class AbstractInvalidatorTest extends HazelcastTestSupport {
     public void setUp() {
         Config config = getBaseConfig();
         HazelcastInstance hz = createHazelcastInstance(config);
-        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(hz);
+        NodeEngineImpl nodeEngineImpl = Accessors.getNodeEngineImpl(hz);
         invalidator = createInvalidator(nodeEngineImpl);
         key = mock(Data.class);
     }

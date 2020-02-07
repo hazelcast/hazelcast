@@ -25,6 +25,7 @@ import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceSegment;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -76,7 +77,7 @@ public class ReplicatedMapEntryListenerOnReconnectTest extends AbstractListeners
             public void run() throws Exception {
                 boolean found = false;
                 for (HazelcastInstance instance : factory.getAllHazelcastInstances()) {
-                    NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(instance);
+                    NodeEngineImpl nodeEngineImpl = Accessors.getNodeEngineImpl(instance);
                     EventServiceImpl eventService = (EventServiceImpl) nodeEngineImpl.getEventService();
                     EventServiceSegment serviceSegment = eventService.getSegment(getServiceName(), false);
                     if (serviceSegment != null && serviceSegment.getRegistrationIdMap().size() == 1) {

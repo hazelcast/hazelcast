@@ -28,6 +28,7 @@ import com.hazelcast.map.impl.mapstore.TestEntryStore;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -96,7 +97,7 @@ public class WriteBehindEntryStoreQueueReplicationTest extends HazelcastTestSupp
 
     private static String dumpNotExpiredRecordsToString(HazelcastInstance node, String mapName) {
         List<Long> msg = new ArrayList<>();
-        NodeEngineImpl nodeEngine = getNode(node).getNodeEngine();
+        NodeEngineImpl nodeEngine = Accessors.getNode(node).getNodeEngine();
         MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();

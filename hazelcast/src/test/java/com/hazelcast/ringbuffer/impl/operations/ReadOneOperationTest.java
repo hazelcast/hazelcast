@@ -26,6 +26,7 @@ import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -62,12 +63,12 @@ public class ReadOneOperationTest extends HazelcastTestSupport {
         Config config = new Config().addRingBufferConfig(rbConfig);
 
         hz = createHazelcastInstance(config);
-        nodeEngine = getNodeEngineImpl(hz);
-        serializationService = getSerializationService(hz);
+        nodeEngine = Accessors.getNodeEngineImpl(hz);
+        serializationService = Accessors.getSerializationService(hz);
         final String name = rbConfig.getName();
         ringbuffer = hz.getRingbuffer(name);
 
-        ringbufferService = getNodeEngineImpl(hz).getService(RingbufferService.SERVICE_NAME);
+        ringbufferService = Accessors.getNodeEngineImpl(hz).getService(RingbufferService.SERVICE_NAME);
         ringbufferContainer = ringbufferService.getOrCreateContainer(
                 ringbufferService.getRingbufferPartitionId(name),
                 RingbufferService.getRingbufferNamespace(name),

@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.ringbuffer.Ringbuffer;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -48,7 +49,7 @@ public class RingbufferTTLTest extends HazelcastTestSupport {
         final String name = ringbufferConfig.getName();
         ringbuffer = hz.getRingbuffer(name);
 
-        RingbufferService ringbufferService = getNodeEngineImpl(hz).getService(RingbufferService.SERVICE_NAME);
+        RingbufferService ringbufferService = Accessors.getNodeEngineImpl(hz).getService(RingbufferService.SERVICE_NAME);
         ringbufferContainer = ringbufferService.getOrCreateContainer(
                 ringbufferService.getRingbufferPartitionId(name),
                 RingbufferService.getRingbufferNamespace(name),

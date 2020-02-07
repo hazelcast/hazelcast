@@ -19,6 +19,7 @@ package com.hazelcast.replicatedmap.impl.record;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -47,7 +48,7 @@ public class AbstractBaseReplicatedRecordStoreTest extends HazelcastTestSupport 
     @Before
     public void setUp() {
         HazelcastInstance instance = createHazelcastInstance();
-        NodeEngineImpl nodeEngine = getNodeEngineImpl(instance);
+        NodeEngineImpl nodeEngine = Accessors.getNodeEngineImpl(instance);
         ReplicatedMapService service = new ReplicatedMapService(nodeEngine);
 
         recordStore = new TestReplicatedRecordStore("recordStore", service, 0);

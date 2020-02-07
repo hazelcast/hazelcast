@@ -23,6 +23,7 @@ import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastTestSupport;
 
 import java.io.IOException;
@@ -127,10 +128,10 @@ abstract class Invocation_NestedAbstractTest extends HazelcastTestSupport {
             if (resultPartitionId == givenPartitionId) {
                 continue;
             }
-            if (!getPartitionService(hz).getPartition(resultPartitionId).isLocal()) {
+            if (!Accessors.getPartitionService(hz).getPartition(resultPartitionId).isLocal()) {
                 continue;
             }
-            if (!mappedToSameThread(getOperationService(hz), givenPartitionId, resultPartitionId)) {
+            if (!mappedToSameThread(Accessors.getOperationService(hz), givenPartitionId, resultPartitionId)) {
                 break;
             }
         }
@@ -145,7 +146,7 @@ abstract class Invocation_NestedAbstractTest extends HazelcastTestSupport {
             if (resultPartitionId == givenPartitionId) {
                 continue;
             }
-            if (!getPartitionService(instance).getPartition(resultPartitionId).isLocal()) {
+            if (!Accessors.getPartitionService(instance).getPartition(resultPartitionId).isLocal()) {
                 continue;
             }
             if (mappedToSameThread(operationService, givenPartitionId, resultPartitionId)) {

@@ -23,6 +23,7 @@ import com.hazelcast.internal.nearcache.impl.invalidation.Invalidation;
 import com.hazelcast.internal.nearcache.impl.invalidation.SingleNearCacheInvalidation;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -52,7 +53,7 @@ public class InvalidationTest extends HazelcastTestSupport {
     public void setUp() {
         Config config = getBaseConfig();
         HazelcastInstance hz = createHazelcastInstance(config);
-        serializationService = getSerializationService(hz);
+        serializationService = Accessors.getSerializationService(hz);
 
         Data key = serializationService.toData("key");
         String mapName = "mapName";

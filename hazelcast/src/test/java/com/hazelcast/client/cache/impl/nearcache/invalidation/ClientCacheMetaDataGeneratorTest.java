@@ -30,6 +30,7 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataGenerator;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -151,7 +152,7 @@ public class ClientCacheMetaDataGeneratorTest extends HazelcastTestSupport {
     }
 
     private static MetaDataGenerator getMetaDataGenerator(HazelcastInstance member) {
-        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(member);
+        NodeEngineImpl nodeEngineImpl = Accessors.getNodeEngineImpl(member);
         CacheService service = nodeEngineImpl.getService(CacheService.SERVICE_NAME);
         CacheEventHandler cacheEventHandler = service.getCacheEventHandler();
         return cacheEventHandler.getMetaDataGenerator();

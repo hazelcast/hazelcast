@@ -23,6 +23,7 @@ import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.services.NodeAware;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceAware;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -54,8 +55,8 @@ public class HazelcastManagedContextTest extends HazelcastTestSupport {
                 .setManagedContext(userContext);
 
         hazelcastInstance = createHazelcastInstance(config);
-        node = getNode(hazelcastInstance);
-        serializationService = getSerializationService(hazelcastInstance);
+        node = Accessors.getNode(hazelcastInstance);
+        serializationService = Accessors.getSerializationService(hazelcastInstance);
     }
 
     @Test

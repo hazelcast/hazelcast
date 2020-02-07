@@ -34,6 +34,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.partition.AbstractPartitionLostListenerTest;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.partition.IPartitionLostEvent;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -111,7 +112,7 @@ public class CachePartitionLostListenerTest extends AbstractPartitionLostListene
         iCache.addPartitionLostListener(listener);
 
         final IPartitionLostEvent internalEvent = new PartitionLostEventImpl(1, 1, null);
-        CacheService cacheService = getNode(instance).getNodeEngine().getService(CacheService.SERVICE_NAME);
+        CacheService cacheService = Accessors.getNode(instance).getNodeEngine().getService(CacheService.SERVICE_NAME);
         cacheService.onPartitionLost(internalEvent);
 
         assertTrueEventually(new AssertTask() {
@@ -152,7 +153,7 @@ public class CachePartitionLostListenerTest extends AbstractPartitionLostListene
         iCache.addPartitionLostListener(listener);
 
         final Set<Integer> survivingPartitionIds = new HashSet<Integer>();
-        Node survivingNode = getNode(survivingInstance);
+        Node survivingNode = Accessors.getNode(survivingInstance);
         Address survivingAddress = survivingNode.getThisAddress();
 
         for (IPartition partition : survivingNode.getPartitionService().getPartitions()) {

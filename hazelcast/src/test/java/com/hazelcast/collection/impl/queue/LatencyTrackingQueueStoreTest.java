@@ -19,6 +19,7 @@ package com.hazelcast.collection.impl.queue;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.collection.QueueStore;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestCollectionUtils;
@@ -54,7 +55,7 @@ public class LatencyTrackingQueueStoreTest extends HazelcastTestSupport {
     @Before
     public void setup() {
         HazelcastInstance hz = createHazelcastInstance();
-        plugin = new StoreLatencyPlugin(getNodeEngineImpl(hz));
+        plugin = new StoreLatencyPlugin(Accessors.getNodeEngineImpl(hz));
         delegate = mock(QueueStore.class);
         queueStore = new LatencyTrackingQueueStore<String>(delegate, plugin, NAME);
     }

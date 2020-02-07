@@ -30,6 +30,7 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -207,9 +208,9 @@ public class ClientSplitBrainTest extends ClientTestSupport {
         assertSizeEventually(3, clientInstanceImpl.getConnectionManager().getActiveConnections());
 
         // verify endpoints are cleared
-        ClientEngineImpl clientEngineImpl1 = getClientEngineImpl(h1);
-        ClientEngineImpl clientEngineImpl2 = getClientEngineImpl(h2);
-        ClientEngineImpl clientEngineImpl3 = getClientEngineImpl(h3);
+        ClientEngineImpl clientEngineImpl1 = Accessors.getClientEngineImpl(h1);
+        ClientEngineImpl clientEngineImpl2 = Accessors.getClientEngineImpl(h2);
+        ClientEngineImpl clientEngineImpl3 = Accessors.getClientEngineImpl(h3);
         assertEquals(1, clientEngineImpl1.getClientEndpointCount());
         assertEquals(1, clientEngineImpl2.getClientEndpointCount());
         assertEquals(1, clientEngineImpl3.getClientEndpointCount());

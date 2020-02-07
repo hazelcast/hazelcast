@@ -30,7 +30,7 @@ import org.junit.runner.RunWith;
 import static com.hazelcast.config.RestEndpointGroup.DATA;
 import static com.hazelcast.config.RestEndpointGroup.HEALTH_CHECK;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
-import static com.hazelcast.test.HazelcastTestSupport.getAddress;
+import static com.hazelcast.test.Accessors.getAddress;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 

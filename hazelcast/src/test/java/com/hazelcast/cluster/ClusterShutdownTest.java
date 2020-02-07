@@ -27,6 +27,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -91,8 +92,8 @@ public class ClusterShutdownTest extends HazelcastTestSupport {
         config.setProperty(ClusterProperty.BACKPRESSURE_MAX_CONCURRENT_INVOCATIONS_PER_PARTITION.toString(), "3");
 
         HazelcastInstance hz = createHazelcastInstance(config);
-        final OperationServiceImpl operationService = getOperationService(hz);
-        final Address address = getAddress(hz);
+        final OperationServiceImpl operationService = Accessors.getOperationService(hz);
+        final Address address = Accessors.getAddress(hz);
 
         for (int i = 0; i < 10; i++) {
             Future<Object> future = spawn(new Callable<Object>() {
@@ -109,7 +110,7 @@ public class ClusterShutdownTest extends HazelcastTestSupport {
             }
         }
 
-        Node node = getNode(hz);
+        Node node = Accessors.getNode(hz);
         hz.getCluster().shutdown();
 
         assertFalse(hz.getLifecycleService().isRunning());
@@ -162,7 +163,7 @@ public class ClusterShutdownTest extends HazelcastTestSupport {
     public static Node[] getNodes(HazelcastInstance[] instances) {
         Node[] nodes = new Node[instances.length];
         for (int i = 0; i < instances.length; i++) {
-            nodes[i] = getNode(instances[i]);
+            nodes[i] = Accessors.getNode(instances[i]);
         }
         return nodes;
     }

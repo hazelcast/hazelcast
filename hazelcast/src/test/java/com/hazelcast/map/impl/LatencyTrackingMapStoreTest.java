@@ -19,6 +19,7 @@ package com.hazelcast.map.impl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.MapStore;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -52,7 +53,7 @@ public class LatencyTrackingMapStoreTest extends HazelcastTestSupport {
     @Before
     public void setup() {
         hz = createHazelcastInstance();
-        plugin = new StoreLatencyPlugin(getNodeEngineImpl(hz));
+        plugin = new StoreLatencyPlugin(Accessors.getNodeEngineImpl(hz));
         delegate = mock(MapStore.class);
         cacheStore = new LatencyTrackingMapStore<String, String>(delegate, plugin, NAME);
     }

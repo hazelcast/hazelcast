@@ -36,6 +36,7 @@ import com.hazelcast.cp.lock.FencedLock;
 import com.hazelcast.instance.StaticMemberNodeContext;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeState;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -155,7 +156,7 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
 
         CPMember crashedMember = group.members().iterator().next();
 
-        HazelcastInstance runningInstance = (getAddress(instances[0])).equals(crashedMember.getAddress()) ? instances[1] : instances[0];
+        HazelcastInstance runningInstance = (Accessors.getAddress(instances[0])).equals(crashedMember.getAddress()) ? instances[1] : instances[0];
 
         factory.getInstance(crashedMember.getAddress()).getLifecycleService().terminate();
 
@@ -189,7 +190,7 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
         CPMember crashedMember = groupMembers[0].getUuid().equals(groupLeaderRaftNode.getLocalMember().getUuid())
                 ? groupMembers[1] : groupMembers[0];
 
-        HazelcastInstance runningInstance = (getAddress(instances[0])).equals(crashedMember.getAddress()) ? instances[1] : instances[0];
+        HazelcastInstance runningInstance = (Accessors.getAddress(instances[0])).equals(crashedMember.getAddress()) ? instances[1] : instances[0];
 
         RaftInvocationManager invocationManager = getRaftInvocationManager(runningInstance);
 
@@ -497,7 +498,7 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
         HazelcastInstance[] runningInstances = new HazelcastInstance[instances.length - shutdownAddresses.size()];
         for (int i = 0, j = 0; i < instances.length; i++) {
             HazelcastInstance instance = instances[i];
-            if (shutdownAddresses.contains(getAddress(instance))) {
+            if (shutdownAddresses.contains(Accessors.getAddress(instance))) {
                 instance.shutdown();
             } else {
                 runningInstances[j++] = instance;
@@ -574,7 +575,7 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
         instances[0].getCPSubsystem().getCPSubsystemManagementService().reset().toCompletableFuture().get();
 
         assertTrueEventually(() -> {
-            ProxySessionManagerService service = getNodeEngineImpl(instances[3]).getService(ProxySessionManagerService.SERVICE_NAME);
+            ProxySessionManagerService service = Accessors.getNodeEngineImpl(instances[3]).getService(ProxySessionManagerService.SERVICE_NAME);
             assertEquals(NO_SESSION_ID, service.getSession((RaftGroupId) lock.getGroupId()));
         });
     }
@@ -1014,7 +1015,7 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
 
         Node[] nodes = new Node[instances.length];
         for (int i = 0; i < instances.length; i++) {
-            nodes[i] = getNode(instances[i]);
+            nodes[i] = Accessors.getNode(instances[i]);
         }
 
         assertClusterSizeEventually(instances.length, instances);

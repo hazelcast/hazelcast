@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.query;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -41,7 +42,7 @@ public class QueryResultTest extends HazelcastTestSupport {
     @Before
     public void setup() {
         HazelcastInstance hz = createHazelcastInstance();
-        serializationService = getSerializationService(hz);
+        serializationService = Accessors.getSerializationService(hz);
     }
 
     @Test

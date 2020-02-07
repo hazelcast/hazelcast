@@ -28,6 +28,7 @@ import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -313,7 +314,7 @@ public class TransactionsWithWriteBehind_whenNoCoalescingQueueIsFullTest extends
 
     private static long getNodeWideUsedCapacity(HazelcastInstance node) {
         MapServiceContext mapServiceContext
-                = ((MapService) getNodeEngineImpl(node).getService(MapService.SERVICE_NAME)).getMapServiceContext();
+                = ((MapService) Accessors.getNodeEngineImpl(node).getService(MapService.SERVICE_NAME)).getMapServiceContext();
         return mapServiceContext.getNodeWideUsedCapacityCounter().currentValue();
     }
 

@@ -21,6 +21,7 @@ import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.client.cache.jsr.JsrClientTestUtil;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -52,7 +53,7 @@ public class ClientCacheCreateUseDestroyTest extends CacheCreateUseDestroyTest {
         HazelcastInstance member = factory.newHazelcastInstance(getConfig());
         CachingProvider provider = Caching.getCachingProvider();
         defaultCacheManager = provider.getCacheManager(null, null, propertiesByInstanceItself(factory.newHazelcastClient()));
-        cacheService = getNode(member).getNodeEngine().getService(ICacheService.SERVICE_NAME);
+        cacheService = Accessors.getNode(member).getNodeEngine().getService(ICacheService.SERVICE_NAME);
         CacheEntryListenerFactory.listener = null;
     }
 

@@ -22,6 +22,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.map.IMap;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.topic.Message;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -209,7 +210,7 @@ public class ClientDisconnectTest extends HazelcastTestSupport {
     }
 
     private void assertNonEmptyPendingInvocationAndWaitSet(HazelcastInstance server) {
-        NodeEngineImpl nodeEngine = getNodeEngineImpl(server);
+        NodeEngineImpl nodeEngine = Accessors.getNodeEngineImpl(server);
         OperationServiceImpl operationService = (OperationServiceImpl) nodeEngine.getOperationService();
         final InvocationRegistry invocationRegistry = operationService.getInvocationRegistry();
         final OperationParkerImpl operationParker = (OperationParkerImpl) nodeEngine.getOperationParker();
@@ -230,7 +231,7 @@ public class ClientDisconnectTest extends HazelcastTestSupport {
     }
 
     private void assertEmptyPendingInvocationAndWaitSet(HazelcastInstance server) {
-        NodeEngineImpl nodeEngine = getNodeEngineImpl(server);
+        NodeEngineImpl nodeEngine = Accessors.getNodeEngineImpl(server);
         OperationServiceImpl operationService = (OperationServiceImpl) nodeEngine.getOperationService();
         final InvocationRegistry invocationRegistry = operationService.getInvocationRegistry();
         final OperationParkerImpl operationParker = (OperationParkerImpl) nodeEngine.getOperationParker();

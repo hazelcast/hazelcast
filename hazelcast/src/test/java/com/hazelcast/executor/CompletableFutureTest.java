@@ -19,6 +19,7 @@ package com.hazelcast.executor;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -66,7 +67,7 @@ public class CompletableFutureTest extends HazelcastTestSupport {
 
     @Before
     public void setUp() {
-        NodeEngine nodeEngine = getNode(createHazelcastInstance()).getNodeEngine();
+        NodeEngine nodeEngine = Accessors.getNode(createHazelcastInstance()).getNodeEngine();
         executionService = nodeEngine.getExecutionService();
         startLogicLatch = new CountDownLatch(1);
         executedLogic = new CountDownLatch(1);

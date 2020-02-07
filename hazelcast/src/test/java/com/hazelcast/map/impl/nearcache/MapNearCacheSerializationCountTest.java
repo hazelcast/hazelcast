@@ -32,6 +32,7 @@ import com.hazelcast.internal.nearcache.impl.NearCacheTestContextBuilder;
 import com.hazelcast.internal.nearcache.impl.NearCacheTestUtils;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.IMap;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -212,7 +213,7 @@ public class MapNearCacheSerializationCountTest extends AbstractNearCacheSeriali
         NearCacheManager nearCacheManager = getMapNearCacheManager(nearCacheMember);
         NearCache<Data, String> nearCache = nearCacheManager.getNearCache(DEFAULT_NEAR_CACHE_NAME);
 
-        return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, getSerializationService(nearCacheMember))
+        return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, Accessors.getSerializationService(nearCacheMember))
                 .setNearCacheInstance(nearCacheMember)
                 .setNearCacheAdapter(new IMapDataStructureAdapter<K, V>(nearCacheMap))
                 .setNearCache(nearCache)

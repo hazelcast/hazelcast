@@ -26,6 +26,7 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.PutOperation;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -60,7 +61,7 @@ public class OperationServiceImpl_asyncInvokeOnPartitionTest extends HazelcastTe
 
         @Override
         public Object process(Map.Entry entry) {
-            Node node = getNode(instance);
+            Node node = Accessors.getNode(instance);
             NodeEngineImpl nodeEngine = node.nodeEngine;
             OperationServiceImpl operationService = (OperationServiceImpl) nodeEngine.getOperationService();
             Data sourceKey = nodeEngine.toData(entry.getKey());

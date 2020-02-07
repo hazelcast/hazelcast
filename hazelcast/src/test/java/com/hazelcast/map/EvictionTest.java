@@ -40,6 +40,7 @@ import com.hazelcast.query.PredicateBuilder.EntryObject;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.PredicateBuilderImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.OverridePropertyRule;
@@ -148,7 +149,7 @@ public class EvictionTest extends HazelcastTestSupport {
 
     private static RecordStore getRecordStore(HazelcastInstance instanceB, String keyOwnedByInstanceA) {
         Partition partition = instanceB.getPartitionService().getPartition(keyOwnedByInstanceA);
-        MapService service = getNodeEngineImpl(instanceB).getService(MapService.SERVICE_NAME);
+        MapService service = Accessors.getNodeEngineImpl(instanceB).getService(MapService.SERVICE_NAME);
         return service.getMapServiceContext()
                 .getPartitionContainer(partition.getPartitionId())
                 .getExistingRecordStore("Test");

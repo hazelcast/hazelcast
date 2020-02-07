@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -49,8 +50,8 @@ public class OperationServiceImpl_timeoutSlowTest extends HazelcastTestSupport {
         HazelcastInstance hz2 = factory.newHazelcastInstance(config);
 
         // invoke on the "remote" member
-        Address remoteAddress = getNode(hz2).getThisAddress();
-        OperationService operationService = getNode(hz1).getNodeEngine().getOperationService();
+        Address remoteAddress = Accessors.getNode(hz2).getThisAddress();
+        OperationService operationService = Accessors.getNode(hz1).getNodeEngine().getOperationService();
         InternalCompletableFuture<Boolean> future = operationService
                 .invokeOnTarget(null, new OperationServiceImpl_timeoutTest.SleepingOperation(callTimeoutMillis * 5), remoteAddress);
 

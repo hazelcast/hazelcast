@@ -26,7 +26,7 @@ import com.hazelcast.multimap.impl.MultiMapValue;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.Accessors;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -53,7 +53,7 @@ public final class MultiMapTestUtil {
     public static <K, V> Map<K, Collection<V>> getBackupMultiMap(HazelcastInstance[] instances, String multiMapName) {
         Map<K, Collection<V>> map = new HashMap<K, Collection<V>>();
         for (HazelcastInstance instance : instances) {
-            NodeEngineImpl nodeEngine = HazelcastTestSupport.getNodeEngineImpl(instance);
+            NodeEngineImpl nodeEngine = Accessors.getNodeEngineImpl(instance);
             MultiMapService mapService = nodeEngine.getService(MultiMapService.SERVICE_NAME);
             InternalPartitionService partitionService = nodeEngine.getPartitionService();
             SerializationService serializationService = nodeEngine.getSerializationService();

@@ -23,6 +23,7 @@ import com.hazelcast.internal.util.RootCauseMatcher;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -137,7 +138,7 @@ public class Invocation_ExceptionTest extends HazelcastTestSupport {
     @Test
     public void test() throws Exception {
         HazelcastInstance local = createHazelcastInstance();
-        OperationService operationService = getOperationService(local);
+        OperationService operationService = Accessors.getOperationService(local);
         InternalCompletableFuture f = operationService.invokeOnPartition(null, new OperationsReturnsNoResponse(
                 exception), 0);
         assertCompletesEventually(f);

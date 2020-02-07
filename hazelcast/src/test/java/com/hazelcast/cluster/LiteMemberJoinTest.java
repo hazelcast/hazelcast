@@ -41,7 +41,7 @@ import java.util.Set;
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSize;
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
 import static com.hazelcast.test.HazelcastTestSupport.closeConnectionBetween;
-import static com.hazelcast.test.HazelcastTestSupport.getNode;
+import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static com.hazelcast.test.OverridePropertyRule.clear;
 import static org.junit.Assert.assertTrue;

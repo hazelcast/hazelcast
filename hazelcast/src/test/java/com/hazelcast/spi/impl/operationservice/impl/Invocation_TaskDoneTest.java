@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -42,7 +43,7 @@ public class Invocation_TaskDoneTest extends HazelcastTestSupport {
 
     @Before
     public void before() {
-        operationService = getOperationService(createHazelcastInstance());
+        operationService = Accessors.getOperationService(createHazelcastInstance());
     }
 
     @Test

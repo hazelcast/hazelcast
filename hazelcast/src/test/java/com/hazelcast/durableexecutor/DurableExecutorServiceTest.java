@@ -29,6 +29,7 @@ import com.hazelcast.durableexecutor.impl.DurableExecutorContainer;
 import com.hazelcast.executor.ExecutorServiceTestSupport;
 import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -120,17 +121,17 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
         service.destroy();
         assertTrueEventually(() -> {
             for (int i = 0; i < NODE_COUNT; i++) {
-                DistributedDurableExecutorService internalService = getNodeEngineImpl(instances[i])
-                        .getService(DistributedDurableExecutorService.SERVICE_NAME);
+                DistributedDurableExecutorService internalService = Accessors.getNodeEngineImpl(instances[i])
+                                                                             .getService(DistributedDurableExecutorService.SERVICE_NAME);
                 boolean allEmpty = true;
                 StringBuilder failMessage = new StringBuilder();
                 for (int partitionId = 0;
-                     partitionId < getNode(instances[i]).getProperties().getInteger(PARTITION_COUNT);
+                     partitionId < Accessors.getNode(instances[i]).getProperties().getInteger(PARTITION_COUNT);
                      partitionId++) {
                     DurableExecutorContainer container = getDurableExecutorContainer(internalService, partitionId, executorName);
                     if (container != null) {
                         failMessage.append(String.format("Partition %d owned by %s\n", partitionId,
-                                getPartitionService(instances[0]).getPartition(partitionId).getOwnerOrNull()));
+                                Accessors.getPartitionService(instances[0]).getPartition(partitionId).getOwnerOrNull()));
                         allEmpty = false;
                     }
                 }

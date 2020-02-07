@@ -29,6 +29,7 @@ import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -91,7 +92,7 @@ public class ClientInvocationTest extends ClientTestSupport {
         }
 
         // crash the server
-        getNode(server).getNetworkingService().shutdown();
+        Accessors.getNode(server).getNetworkingService().shutdown();
         server.getLifecycleService().terminate();
 
         int callBackCount = 0;

@@ -28,6 +28,7 @@ import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuil
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import org.junit.After;
@@ -75,12 +76,12 @@ public abstract class CacheRecordStoreTestSupport
     }
 
     protected ICacheService getCacheService(HazelcastInstance instance) {
-        return getNodeEngineImpl(instance).getService(ICacheService.SERVICE_NAME);
+        return Accessors.getNodeEngineImpl(instance).getService(ICacheService.SERVICE_NAME);
     }
 
     protected ICacheRecordStore createCacheRecordStore(HazelcastInstance instance, String cacheName,
                                                        int partitionId, InMemoryFormat inMemoryFormat) {
-        NodeEngine nodeEngine = getNodeEngineImpl(instance);
+        NodeEngine nodeEngine = Accessors.getNodeEngineImpl(instance);
         ICacheService cacheService = getCacheService(instance);
         CacheConfig cacheConfig = createCacheConfig(cacheName, inMemoryFormat);
         cacheService.putCacheConfigIfAbsent(cacheConfig);

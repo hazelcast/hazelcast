@@ -25,6 +25,7 @@ import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -56,9 +57,9 @@ public class AddOperationsTest extends HazelcastTestSupport {
         Config config = new Config().addRingBufferConfig(rbConfig);
 
         HazelcastInstance hz = createHazelcastInstance(config);
-        nodeEngine = getNodeEngineImpl(hz);
+        nodeEngine = Accessors.getNodeEngineImpl(hz);
         ringbufferService = nodeEngine.getService(RingbufferService.SERVICE_NAME);
-        serializationService = getSerializationService(hz);
+        serializationService = Accessors.getSerializationService(hz);
         ringbuffer = hz.getRingbuffer(rbConfig.getName());
     }
 

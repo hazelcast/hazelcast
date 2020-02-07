@@ -24,6 +24,7 @@ import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.internal.services.ServiceNamespace;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -63,13 +64,13 @@ public class MasterSplitTest extends HazelcastTestSupport {
 
         MigrationInfo migration = createMigrationInfo(member1, member2);
 
-        int partitionStateVersion = getPartitionService(member1).getPartitionStateVersion();
+        int partitionStateVersion = Accessors.getPartitionService(member1).getPartitionStateVersion();
 
         Operation op = new MigrationRequestOperation(migration, Collections.<MigrationInfo>emptyList(), partitionStateVersion, true);
 
-        InvocationBuilder invocationBuilder = getOperationServiceImpl(member1)
-                .createInvocationBuilder(SERVICE_NAME, op, getAddress(member2))
-                .setCallTimeout(TimeUnit.MINUTES.toMillis(1));
+        InvocationBuilder invocationBuilder = Accessors.getOperationServiceImpl(member1)
+                                                       .createInvocationBuilder(SERVICE_NAME, op, Accessors.getAddress(member2))
+                                                       .setCallTimeout(TimeUnit.MINUTES.toMillis(1));
         Future future = invocationBuilder.invoke();
 
         try {
@@ -82,9 +83,10 @@ public class MasterSplitTest extends HazelcastTestSupport {
 
     private MigrationInfo createMigrationInfo(HazelcastInstance master, HazelcastInstance nonMaster) {
         MigrationInfo migration
-                = new MigrationInfo(getPartitionId(nonMaster), new PartitionReplica(getAddress(nonMaster), getNode(nonMaster).getThisUuid()),
-                new PartitionReplica(getAddress(master), getNode(master).getThisUuid()), 0, 1, -1, 0);
-        migration.setMaster(getAddress(nonMaster));
+                = new MigrationInfo(getPartitionId(nonMaster), new PartitionReplica(
+                Accessors.getAddress(nonMaster), Accessors.getNode(nonMaster).getThisUuid()),
+                new PartitionReplica(Accessors.getAddress(master), Accessors.getNode(master).getThisUuid()), 0, 1, -1, 0);
+        migration.setMaster(Accessors.getAddress(nonMaster));
         return migration;
     }
 
@@ -97,15 +99,15 @@ public class MasterSplitTest extends HazelcastTestSupport {
 
         MigrationInfo migration = createMigrationInfo(member1, member2);
 
-        int partitionStateVersion = getPartitionService(member1).getPartitionStateVersion();
+        int partitionStateVersion = Accessors.getPartitionService(member1).getPartitionStateVersion();
 
         ReplicaFragmentMigrationState migrationState
                 = new ReplicaFragmentMigrationState(Collections.<ServiceNamespace, long[]>emptyMap(), Collections.<Operation>emptySet());
         Operation op = new MigrationOperation(migration, Collections.<MigrationInfo>emptyList(), partitionStateVersion, migrationState, true, true);
 
-        InvocationBuilder invocationBuilder = getOperationServiceImpl(member1)
-                .createInvocationBuilder(SERVICE_NAME, op, getAddress(member2))
-                .setCallTimeout(TimeUnit.MINUTES.toMillis(1));
+        InvocationBuilder invocationBuilder = Accessors.getOperationServiceImpl(member1)
+                                                       .createInvocationBuilder(SERVICE_NAME, op, Accessors.getAddress(member2))
+                                                       .setCallTimeout(TimeUnit.MINUTES.toMillis(1));
         Future future = invocationBuilder.invoke();
 
         try {
@@ -125,9 +127,10 @@ public class MasterSplitTest extends HazelcastTestSupport {
 
         warmUpPartitions(member1, member2, member3);
 
-        InternalCompletableFuture<Object> future = getOperationServiceImpl(member2)
-                .createInvocationBuilder(SERVICE_NAME, new FetchPartitionStateOperation(), getAddress(member3))
-                .setTryCount(Integer.MAX_VALUE).setCallTimeout(Long.MAX_VALUE).invoke();
+        InternalCompletableFuture<Object> future = Accessors.getOperationServiceImpl(member2)
+                                                            .createInvocationBuilder(SERVICE_NAME, new FetchPartitionStateOperation(), Accessors
+                                                                    .getAddress(member3))
+                                                            .setTryCount(Integer.MAX_VALUE).setCallTimeout(Long.MAX_VALUE).invoke();
 
         try {
             future.get();

@@ -24,6 +24,7 @@ import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -83,7 +84,7 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(2).newInstances(config);
         local = cluster[0];
         remote = cluster[1];
-        localOperationService = (OperationServiceImpl) getOperationService(local);
+        localOperationService = (OperationServiceImpl) Accessors.getOperationService(local);
     }
 
     @Test(timeout = 600000)

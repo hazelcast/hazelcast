@@ -29,6 +29,7 @@ import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -129,7 +130,7 @@ public class MapMergePolicyQuickTest extends HazelcastTestSupport {
     }
 
     private MapServiceContext getMapServiceContext(HazelcastInstance instance) {
-        NodeEngineImpl nodeEngine = HazelcastTestSupport.getNodeEngineImpl(instance);
+        NodeEngineImpl nodeEngine = Accessors.getNodeEngineImpl(instance);
         MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
         return mapService.getMapServiceContext();
     }

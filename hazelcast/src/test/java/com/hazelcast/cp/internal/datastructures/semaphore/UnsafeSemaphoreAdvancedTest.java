@@ -26,6 +26,7 @@ import com.hazelcast.cp.internal.RaftOp;
 import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.operation.unsafe.UnsafeRaftReplicateOp;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -76,7 +77,7 @@ public class UnsafeSemaphoreAdvancedTest extends AbstractSemaphoreAdvancedTest {
 
     @Override
     protected <T> InternalCompletableFuture<T> invokeRaftOp(RaftGroupId groupId, RaftOp op) {
-        RaftService service = getNodeEngineImpl(proxyInstance).getService(RaftService.SERVICE_NAME);
+        RaftService service = Accessors.getNodeEngineImpl(proxyInstance).getService(RaftService.SERVICE_NAME);
         return service.getInvocationManager().invokeOnPartition(new UnsafeRaftReplicateOp(groupId, op));
     }
 }

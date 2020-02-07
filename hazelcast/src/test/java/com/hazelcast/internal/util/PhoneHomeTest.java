@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -51,7 +52,7 @@ public class PhoneHomeTest extends HazelcastTestSupport {
     @Test
     public void testPhoneHomeParameters() {
         HazelcastInstance hz = createHazelcastInstance();
-        Node node = getNode(hz);
+        Node node = Accessors.getNode(hz);
         PhoneHome phoneHome = new PhoneHome(node);
 
         sleepAtLeastMillis(1);
@@ -90,7 +91,7 @@ public class PhoneHomeTest extends HazelcastTestSupport {
                 .setProperty(ClusterProperty.PHONE_HOME_ENABLED.getName(), "false");
 
         HazelcastInstance hz = createHazelcastInstance(config);
-        Node node = getNode(hz);
+        Node node = Accessors.getNode(hz);
 
         PhoneHome phoneHome = new PhoneHome(node);
         phoneHome.check(node);
@@ -105,7 +106,7 @@ public class PhoneHomeTest extends HazelcastTestSupport {
                 .setProperty(ClusterProperty.PHONE_HOME_ENABLED.getName(), "true");
 
         HazelcastInstance hz = createHazelcastInstance(config);
-        Node node = getNode(hz);
+        Node node = Accessors.getNode(hz);
 
         PhoneHome phoneHome = new PhoneHome(node);
         phoneHome.check(node);
@@ -120,7 +121,7 @@ public class PhoneHomeTest extends HazelcastTestSupport {
     @Test
     public void testConvertToLetter() {
         HazelcastInstance hz = createHazelcastInstance();
-        Node node = getNode(hz);
+        Node node = Accessors.getNode(hz);
         PhoneHome phoneHome = new PhoneHome(node);
         assertEquals("A", phoneHome.convertToLetter(4));
         assertEquals("B", phoneHome.convertToLetter(9));

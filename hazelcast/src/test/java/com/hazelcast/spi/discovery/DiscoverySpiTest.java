@@ -50,6 +50,7 @@ import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
 import com.hazelcast.spi.partitiongroup.PartitionGroupStrategy;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -364,7 +365,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
     public void testSPIAwareMemberGroupFactoryInvalidConfig() throws Exception {
         HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance();
         try {
-            MemberGroupFactory groupFactory = new SPIAwareMemberGroupFactory(getNode(hazelcastInstance).getDiscoveryService());
+            MemberGroupFactory groupFactory = new SPIAwareMemberGroupFactory(Accessors.getNode(hazelcastInstance).getDiscoveryService());
             Collection<Member> members = createMembers();
             groupFactory.createMemberGroups(members);
         } finally {
@@ -378,7 +379,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
         Config config = getDiscoverySPIConfig(xmlFileName);
         // we create this instance in order to fully create Node
         HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance(config);
-        Node node = getNode(hazelcastInstance);
+        Node node = Accessors.getNode(hazelcastInstance);
         assertNotNull(node);
 
         MemberGroupFactory groupFactory = new SPIAwareMemberGroupFactory(node.getDiscoveryService());

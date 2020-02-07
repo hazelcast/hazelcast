@@ -18,6 +18,7 @@ package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -39,7 +40,7 @@ public class ConfigPropertiesPluginTest extends AbstractDiagnosticsPluginTest {
         Config config = new Config()
                 .setProperty("property1", "value1");
         HazelcastInstance hz = createHazelcastInstance(config);
-        plugin = new ConfigPropertiesPlugin(getNodeEngineImpl(hz));
+        plugin = new ConfigPropertiesPlugin(Accessors.getNodeEngineImpl(hz));
         plugin.onStart();
     }
 

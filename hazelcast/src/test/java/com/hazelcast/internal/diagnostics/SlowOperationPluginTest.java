@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.operation.EntryOperation;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -49,7 +50,7 @@ public class SlowOperationPluginTest extends AbstractDiagnosticsPluginTest {
 
         hz = createHazelcastInstance(config);
 
-        plugin = new SlowOperationPlugin(getNodeEngineImpl(hz));
+        plugin = new SlowOperationPlugin(Accessors.getNodeEngineImpl(hz));
         plugin.onStart();
     }
 

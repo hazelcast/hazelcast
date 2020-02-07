@@ -30,6 +30,7 @@ import com.hazelcast.internal.networking.nio.NioThread;
 import com.hazelcast.internal.nio.EndpointManager;
 import com.hazelcast.internal.nio.tcp.TcpIpConnection;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.OverridePropertyRule;
@@ -87,7 +88,7 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
     }
 
     private void assertBalanced(HazelcastInstance hz) {
-        EndpointManager<TcpIpConnection> em = getEndpointManager(hz);
+        EndpointManager<TcpIpConnection> em = Accessors.getEndpointManager(hz);
 
         Map<NioThread, Set<MigratablePipeline>> pipelinesPerOwner = getPipelinesPerOwner(em);
 
@@ -155,8 +156,8 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
     }
 
     private String debug(HazelcastInstance hz) {
-        NioNetworking threadingModel = (NioNetworking) getNode(hz).getNetworkingService().getNetworking();
-        EndpointManager<TcpIpConnection> em = getNode(hz).getEndpointManager();
+        NioNetworking threadingModel = (NioNetworking) Accessors.getNode(hz).getNetworkingService().getNetworking();
+        EndpointManager<TcpIpConnection> em = Accessors.getNode(hz).getEndpointManager();
 
         StringBuilder sb = new StringBuilder();
         sb.append("in owners\n");

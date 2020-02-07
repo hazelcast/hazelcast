@@ -29,6 +29,7 @@ import com.hazelcast.cp.internal.session.SessionExpiredException;
 import com.hazelcast.cp.internal.session.operation.CloseSessionOp;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.test.Accessors;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -477,7 +478,7 @@ public abstract class AbstractSessionAwareSemaphoreBasicTest extends HazelcastRa
 
         assertTrueEventually(() -> {
             for (HazelcastInstance instance : instances) {
-                SemaphoreService service = getNodeEngineImpl(instance).getService(SemaphoreService.SERVICE_NAME);
+                SemaphoreService service = Accessors.getNodeEngineImpl(instance).getService(SemaphoreService.SERVICE_NAME);
                 SemaphoreRegistry registry = service.getRegistryOrNull(getGroupId(semaphore));
                 assertNotNull(registry);
                 assertFalse(registry.getWaitTimeouts().isEmpty());
@@ -491,7 +492,7 @@ public abstract class AbstractSessionAwareSemaphoreBasicTest extends HazelcastRa
 
         assertTrueEventually(() -> {
             for (HazelcastInstance instance : instances) {
-                SemaphoreService service = getNodeEngineImpl(instance).getService(SemaphoreService.SERVICE_NAME);
+                SemaphoreService service = Accessors.getNodeEngineImpl(instance).getService(SemaphoreService.SERVICE_NAME);
                 SemaphoreRegistry registry = service.getRegistryOrNull(getGroupId(semaphore));
                 assertTrue(registry.getWaitTimeouts().isEmpty());
             }
@@ -506,7 +507,7 @@ public abstract class AbstractSessionAwareSemaphoreBasicTest extends HazelcastRa
     }
 
     protected AbstractProxySessionManager getSessionManager(HazelcastInstance instance) {
-        return getNodeEngineImpl(instance).getService(ProxySessionManagerService.SERVICE_NAME);
+        return Accessors.getNodeEngineImpl(instance).getService(ProxySessionManagerService.SERVICE_NAME);
     }
 
     protected RaftGroupId getGroupId(ISemaphore semaphore) {

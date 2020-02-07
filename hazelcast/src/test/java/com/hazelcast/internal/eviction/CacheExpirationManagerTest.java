@@ -27,6 +27,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.instance.impl.LifecycleServiceImpl;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -230,7 +231,7 @@ public class CacheExpirationManagerTest extends AbstractExpirationManagerTest {
     }
 
     private boolean hasClearExpiredRecordsTaskStarted(HazelcastInstance node) {
-        CacheService service = getNodeEngineImpl(node).getService(CacheService.SERVICE_NAME);
+        CacheService service = Accessors.getNodeEngineImpl(node).getService(CacheService.SERVICE_NAME);
         return service.getExpirationManager().isScheduled();
     }
 
@@ -260,7 +261,8 @@ public class CacheExpirationManagerTest extends AbstractExpirationManagerTest {
 
     @Override
     protected ExpirationManager newExpirationManager(HazelcastInstance node) {
-        return new ExpirationManager(new CacheClearExpiredRecordsTask(getPartitionSegments(node), getNodeEngineImpl(node)), getNodeEngineImpl(node));
+        return new ExpirationManager(new CacheClearExpiredRecordsTask(getPartitionSegments(node), Accessors.getNodeEngineImpl(node)), Accessors
+                .getNodeEngineImpl(node));
     }
 
     @Override
@@ -276,8 +278,8 @@ public class CacheExpirationManagerTest extends AbstractExpirationManagerTest {
     }
 
     protected CachePartitionSegment[] getPartitionSegments(HazelcastInstance instance) {
-        return ((CacheService) getNodeEngineImpl(instance)
-                .getService(CacheService.SERVICE_NAME))
+        return ((CacheService) Accessors.getNodeEngineImpl(instance)
+                                        .getService(CacheService.SERVICE_NAME))
                 .getPartitionSegments();
     }
 

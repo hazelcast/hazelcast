@@ -23,6 +23,7 @@ import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.HazelcastRaftTestSupport;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.proxy.CountDownLatchProxy;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -75,12 +76,12 @@ public class CountDownLatchLongAwaitTest extends HazelcastRaftTestSupport {
         Future<Boolean> f = spawn(() -> latch.await(5, TimeUnit.MINUTES));
 
         assertTrueEventually(() -> {
-            CountDownLatchService service = getNodeEngineImpl(instance).getService(CountDownLatchService.SERVICE_NAME);
+            CountDownLatchService service = Accessors.getNodeEngineImpl(instance).getService(CountDownLatchService.SERVICE_NAME);
             assertFalse(service.getLiveOperations(groupId).isEmpty());
         });
 
         assertTrueAllTheTime(() -> {
-            CountDownLatchService service = getNodeEngineImpl(instance).getService(CountDownLatchService.SERVICE_NAME);
+            CountDownLatchService service = Accessors.getNodeEngineImpl(instance).getService(CountDownLatchService.SERVICE_NAME);
             assertFalse(service.getLiveOperations(groupId).isEmpty());
         }, callTimeoutSeconds + 5);
 

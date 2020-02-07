@@ -25,6 +25,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
 import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -63,8 +64,8 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(2).newInstances();
         local = cluster[0];
         remote = cluster[1];
-        operationService = (OperationServiceImpl) getOperationService(local);
-        clusterService = getClusterService(local);
+        operationService = (OperationServiceImpl) Accessors.getOperationService(local);
+        clusterService = Accessors.getClusterService(local);
         operationRunner = new OperationRunnerImpl(operationService, getPartitionId(local), 0, newSwCounter());
         responseHandler = mock(OperationResponseHandler.class);
     }

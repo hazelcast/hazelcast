@@ -26,6 +26,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.test.Accessors;
 import org.junit.Before;
 
 import java.util.Collection;
@@ -52,7 +53,7 @@ public abstract class NearCacheManagerTestSupport extends CommonNearCacheTestSup
     public void setUp() {
         Config config = getConfig();
         HazelcastInstance instance = createHazelcastInstance(config);
-        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(instance);
+        NodeEngineImpl nodeEngineImpl = Accessors.getNodeEngineImpl(instance);
         properties = nodeEngineImpl.getProperties();
         ss = nodeEngineImpl.getSerializationService();
         executionService = nodeEngineImpl.getExecutionService();

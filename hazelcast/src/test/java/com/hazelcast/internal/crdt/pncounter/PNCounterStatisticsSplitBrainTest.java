@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.internal.monitor.LocalPNCounterStats;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.SplitBrainTestSupport;
@@ -94,7 +95,7 @@ public class PNCounterStatisticsSplitBrainTest extends SplitBrainTestSupport {
             @Override
             public void run() {
                 for (HazelcastInstance instance : instances) {
-                    PNCounterService service = getNodeEngineImpl(instance).getService(PNCounterService.SERVICE_NAME);
+                    PNCounterService service = Accessors.getNodeEngineImpl(instance).getService(PNCounterService.SERVICE_NAME);
                     Map<String, LocalPNCounterStats> stats = service.getStats();
 
                     assertEquals(contains, stats.containsKey(counterName));

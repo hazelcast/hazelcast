@@ -18,6 +18,7 @@ package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.cluster.ClusterVersionListener;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -55,8 +56,8 @@ public class ClusterVersionChangeTest
         cluster = (ClusterServiceImpl) instance.getCluster();
         // expecting countdown twice: once upon listener registration, once more on version upgrade
         clusterVersionUpgradeLatch = new CountDownLatch(2);
-        getNode(instance).getNodeExtension().registerListener(new ClusterVersionChangedListener(clusterVersionUpgradeLatch));
-        codebaseVersion = getNode(instance).getVersion();
+        Accessors.getNode(instance).getNodeExtension().registerListener(new ClusterVersionChangedListener(clusterVersionUpgradeLatch));
+        codebaseVersion = Accessors.getNode(instance).getVersion();
     }
 
     @Test

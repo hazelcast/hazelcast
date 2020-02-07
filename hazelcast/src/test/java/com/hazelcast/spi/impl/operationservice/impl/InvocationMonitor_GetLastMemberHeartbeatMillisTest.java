@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -51,10 +52,10 @@ public class InvocationMonitor_GetLastMemberHeartbeatMillisTest extends Hazelcas
 
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(2).newInstances(config);
         local = cluster[0];
-        localAddress = getAddress(local);
+        localAddress = Accessors.getAddress(local);
         remote = cluster[1];
-        remoteAddress = getAddress(remote);
-        invocationMonitor = getOperationServiceImpl(local).getInvocationMonitor();
+        remoteAddress = Accessors.getAddress(remote);
+        invocationMonitor = Accessors.getOperationServiceImpl(local).getInvocationMonitor();
     }
 
     @Test

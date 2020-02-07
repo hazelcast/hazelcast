@@ -21,6 +21,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -194,7 +195,7 @@ public class MultiMapContainerStatisticsTest extends HazelcastTestSupport {
     }
 
     private static MultiMapContainer getMultiMapContainer(HazelcastInstance hz, String key) {
-        NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);
+        NodeEngineImpl nodeEngine = Accessors.getNodeEngineImpl(hz);
         MultiMapService mapService = nodeEngine.getService(MultiMapService.SERVICE_NAME);
 
         Data dataKey = nodeEngine.getSerializationService().toData(key);

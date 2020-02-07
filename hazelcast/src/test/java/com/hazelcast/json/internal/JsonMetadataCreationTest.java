@@ -34,6 +34,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.impl.Metadata;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -298,10 +299,10 @@ public class JsonMetadataCreationTest extends HazelcastTestSupport {
     protected Metadata getMetadata(String mapName, Object key, int replicaIndex) {
         HazelcastInstance[] instances = factory.getAllHazelcastInstances().toArray(new HazelcastInstance[]{null});
         HazelcastInstance instance = factory.getAllHazelcastInstances().iterator().next();
-        InternalSerializationService serializationService = getSerializationService(instance);
+        InternalSerializationService serializationService = Accessors.getSerializationService(instance);
         Data keyData = serializationService.toData(key);
-        int partitionId = getPartitionService(instance).getPartitionId(key);
-        NodeEngineImpl nodeEngine = getNodeEngineImpl(getBackupInstance(instances, partitionId, replicaIndex));
+        int partitionId = Accessors.getPartitionService(instance).getPartitionId(key);
+        NodeEngineImpl nodeEngine = Accessors.getNodeEngineImpl(Accessors.getBackupInstance(instances, partitionId, replicaIndex));
         MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
         RecordStore recordStore = mapService.getMapServiceContext().getPartitionContainer(partitionId).getRecordStore(mapName);
         Record record = recordStore.getRecordOrNull(keyData);

@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -64,7 +65,7 @@ public class ReplicatedMapHitsAndLastAccessTimeTest extends ReplicatedMapAbstrac
         final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap(mapName);
         final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap(mapName);
 
-        final int partitionCount = getPartitionService(instance1).getPartitionCount();
+        final int partitionCount = Accessors.getPartitionService(instance1).getPartitionCount();
         final Set<String> keys = generateRandomKeys(instance1, partitionCount);
 
         for (String key : keys) {
@@ -118,7 +119,7 @@ public class ReplicatedMapHitsAndLastAccessTimeTest extends ReplicatedMapAbstrac
         final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
 
         final ReplicatedMap<String, String> map = instance1.getReplicatedMap(randomMapName());
-        final int partitionCount = getPartitionService(instance1).getPartitionCount();
+        final int partitionCount = Accessors.getPartitionService(instance1).getPartitionCount();
         final Set<String> keys = generateRandomKeys(instance1, partitionCount);
 
         for (String key : keys) {
@@ -147,7 +148,7 @@ public class ReplicatedMapHitsAndLastAccessTimeTest extends ReplicatedMapAbstrac
         final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
 
         final ReplicatedMap<String, String> map = instance1.getReplicatedMap(randomMapName());
-        final int partitionCount = getPartitionService(instance1).getPartitionCount();
+        final int partitionCount = Accessors.getPartitionService(instance1).getPartitionCount();
         final Set<String> keys = generateRandomKeys(instance1, partitionCount);
 
         for (String key : keys) {
@@ -185,7 +186,7 @@ public class ReplicatedMapHitsAndLastAccessTimeTest extends ReplicatedMapAbstrac
         final String mapName = randomMapName();
         final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap(mapName);
         final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap(mapName);
-        final int partitionCount = getPartitionService(instance1).getPartitionCount();
+        final int partitionCount = Accessors.getPartitionService(instance1).getPartitionCount();
         final Set<String> keys = generateRandomKeys(instance1, partitionCount);
 
         for (String key : keys) {
@@ -228,7 +229,7 @@ public class ReplicatedMapHitsAndLastAccessTimeTest extends ReplicatedMapAbstrac
         final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
 
         final ReplicatedMap<String, String> map = instance1.getReplicatedMap(randomMapName());
-        final int partitionCount = getPartitionService(instance1).getPartitionCount();
+        final int partitionCount = Accessors.getPartitionService(instance1).getPartitionCount();
         final Set<String> keys = generateRandomKeys(instance1, partitionCount);
 
         for (String key : keys) {
@@ -266,7 +267,7 @@ public class ReplicatedMapHitsAndLastAccessTimeTest extends ReplicatedMapAbstrac
         final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap(mapName);
         final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap(mapName);
 
-        final int partitionCount = getPartitionService(instance1).getPartitionCount();
+        final int partitionCount = Accessors.getPartitionService(instance1).getPartitionCount();
         final Set<String> keys = generateRandomKeys(instance1, partitionCount);
 
         for (String key : keys) {

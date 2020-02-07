@@ -31,6 +31,7 @@ import com.hazelcast.map.impl.querycache.accumulator.Accumulator;
 import com.hazelcast.map.listener.EventLostListener;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -120,7 +121,7 @@ public class QueryCacheRecoveryUponEventLossTest extends HazelcastTestSupport {
     }
 
     private void setTestSequencer(HazelcastInstance instance, int eventCount) {
-        Node node = getNode(instance);
+        Node node = Accessors.getNode(instance);
         MapService service = node.getNodeEngine().getService(MapService.SERVICE_NAME);
         MapServiceContext mapServiceContext = service.getMapServiceContext();
         QueryCacheContext queryCacheContext = mapServiceContext.getQueryCacheContext();
@@ -128,7 +129,7 @@ public class QueryCacheRecoveryUponEventLossTest extends HazelcastTestSupport {
     }
 
     private Map getBrokenSequences(HazelcastInstance instance, String mapName, QueryCache queryCache) {
-        Node node = getNode(instance);
+        Node node = Accessors.getNode(instance);
         MapService service = node.getNodeEngine().getService(MapService.SERVICE_NAME);
         MapServiceContext mapServiceContext = service.getMapServiceContext();
         QueryCacheContext context = mapServiceContext.getQueryCacheContext();

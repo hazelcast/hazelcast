@@ -26,6 +26,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.LockAwareLazyMapEntry;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.getters.Extractors;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -177,7 +178,7 @@ public class EntryProcessorLockTest extends HazelcastTestSupport {
 
     @Test
     public void test_Serialization_LockAwareLazyMapEntry_deserializesAs_LazyMapEntry() throws ExecutionException, InterruptedException {
-        InternalSerializationService ss = getSerializationService(createHazelcastInstance(getConfig()));
+        InternalSerializationService ss = Accessors.getSerializationService(createHazelcastInstance(getConfig()));
         LockAwareLazyMapEntry entry = new LockAwareLazyMapEntry(ss.toData("key"), "value", ss,
                 Extractors.newBuilder(ss).build(), false);
 

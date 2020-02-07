@@ -21,6 +21,7 @@ import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -61,13 +62,13 @@ public class OperationServiceImpl_invokeTargetAwareOperationTest extends Hazelca
 
         local = nodes[0];
         remote = nodes[1];
-        operationService = getOperationService(local);
+        operationService = Accessors.getOperationService(local);
         TargetAwareOperation.TARGETS.clear();
     }
 
     @Test
     public void whenInvokedOnLocalPartition() {
-        Address expected = getAddress(local);
+        Address expected = Accessors.getAddress(local);
         TargetAwareOperation operation = new TargetAwareOperation();
 
         InternalCompletableFuture<String> invocation = operationService.invokeOnPartition(
@@ -77,7 +78,7 @@ public class OperationServiceImpl_invokeTargetAwareOperationTest extends Hazelca
 
     @Test
     public void whenInvokedOnRemotePartition() {
-        Address expected = getAddress(remote);
+        Address expected = Accessors.getAddress(remote);
         TargetAwareOperation operation = new TargetAwareOperation();
 
         InternalCompletableFuture<String> invocation = operationService.invokeOnPartition(
@@ -87,21 +88,21 @@ public class OperationServiceImpl_invokeTargetAwareOperationTest extends Hazelca
 
     @Test
     public void whenInvokedOnLocalTarget() {
-        Address expected = getAddress(local);
+        Address expected = Accessors.getAddress(local);
         TargetAwareOperation operation = new TargetAwareOperation();
 
         InternalCompletableFuture<String> invocation = operationService.invokeOnTarget(
-                null, operation, getAddress(local));
+                null, operation, Accessors.getAddress(local));
         assertEquals(expected, invocation.join());
     }
 
     @Test
     public void whenInvokedOnRemoteTarget() {
-        Address expected = getAddress(remote);
+        Address expected = Accessors.getAddress(remote);
         TargetAwareOperation operation = new TargetAwareOperation();
 
         InternalCompletableFuture<String> invocation = operationService.invokeOnTarget(
-                null, operation, getAddress(remote));
+                null, operation, Accessors.getAddress(remote));
         assertEquals(expected, invocation.join());
     }
 
@@ -112,15 +113,15 @@ public class OperationServiceImpl_invokeTargetAwareOperationTest extends Hazelca
         operationService.invokeOnPartition(null, operation, operation.getPartitionId()).join();
 
         // primary operation targets remote, backup targets local
-        assertEquals(getAddress(remote), TargetAwareOperation.TARGETS.get(0));
-        assertEquals(getAddress(local), TargetAwareOperation.TARGETS.get(1));
+        assertEquals(Accessors.getAddress(remote), TargetAwareOperation.TARGETS.get(0));
+        assertEquals(Accessors.getAddress(local), TargetAwareOperation.TARGETS.get(1));
     }
 
     @Test
     public void whenInvokedWithTargetAwareBackups_multipleBackupsHaveTargetInjected() {
         int backupCount = 4;
         int partitionId = getPartitionId(local);
-        InternalPartitionService localPartitionService = getPartitionService(local);
+        InternalPartitionService localPartitionService = Accessors.getPartitionService(local);
         InternalPartition partition = localPartitionService.getPartition(partitionId);
 
         List<Address> expectedTargetAddresses = new ArrayList<Address>();

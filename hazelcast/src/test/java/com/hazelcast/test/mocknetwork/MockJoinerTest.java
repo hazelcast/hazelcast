@@ -19,6 +19,7 @@ package com.hazelcast.test.mocknetwork;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -92,7 +93,7 @@ public class MockJoinerTest extends HazelcastTestSupport {
         HazelcastInstance[] instances = factory.newInstances(new Config(), nodeCount);
         assertClusterSizeEventually(instances);
 
-        Address address = getAddress(instances[0]);
+        Address address = Accessors.getAddress(instances[0]);
         instances[0].getLifecycleService().terminate();
 
         instances[0] = factory.newHazelcastInstance(address, new Config());
@@ -106,7 +107,7 @@ public class MockJoinerTest extends HazelcastTestSupport {
         HazelcastInstance[] instances = factory.newInstances(new Config(), nodeCount);
         assertClusterSizeEventually(instances);
 
-        Address address = getAddress(instances[1]);
+        Address address = Accessors.getAddress(instances[1]);
         instances[1].getLifecycleService().terminate();
 
         instances[1] = factory.newHazelcastInstance(address, new Config());
@@ -127,7 +128,7 @@ public class MockJoinerTest extends HazelcastTestSupport {
             final int ix = i;
             new Thread() {
                 public void run() {
-                    Address address = getAddress(instances[ix]);
+                    Address address = Accessors.getAddress(instances[ix]);
                     instances[ix].getLifecycleService().terminate();
                     instances[ix] = factory.newHazelcastInstance(address, new Config());
                     latch.countDown();

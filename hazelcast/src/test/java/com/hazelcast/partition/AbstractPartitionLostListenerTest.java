@@ -25,6 +25,7 @@ import com.hazelcast.internal.partition.impl.ReplicaFragmentSyncInfo;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.internal.partition.IPartition;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.internal.util.scheduler.ScheduledEntry;
@@ -158,7 +159,7 @@ public abstract class AbstractPartitionLostListenerTest extends HazelcastTestSup
     protected final Map<Integer, Integer> getMinReplicaIndicesByPartitionId(List<HazelcastInstance> instances) {
         Map<Integer, Integer> survivingPartitions = new HashMap<Integer, Integer>();
         for (HazelcastInstance instance : instances) {
-            Node survivingNode = getNode(instance);
+            Node survivingNode = Accessors.getNode(instance);
             Address survivingNodeAddress = survivingNode.getThisAddress();
 
             for (IPartition partition : survivingNode.getPartitionService().getPartitions()) {
@@ -198,8 +199,8 @@ public abstract class AbstractPartitionLostListenerTest extends HazelcastTestSup
         }
 
         for (HazelcastInstance instance : instances) {
-            Address address = getNode(instance).getThisAddress();
-            for (Entry<Integer, PartitionReplicaVersionsView> entry : getOwnedReplicaVersions(getNode(instance)).entrySet()) {
+            Address address = Accessors.getNode(instance).getThisAddress();
+            for (Entry<Integer, PartitionReplicaVersionsView> entry : getOwnedReplicaVersions(Accessors.getNode(instance)).entrySet()) {
                 PartitionReplicaVersionsView replicaVersionsView = entry.getValue();
                 for (ServiceNamespace namespace : replicaVersionsView.getNamespaces()) {
                     System.out.println(namespace + " ReplicaVersions >> " + address + " - partitionId=" + entry.getKey()

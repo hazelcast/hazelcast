@@ -27,6 +27,7 @@ import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareOperationFactory;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -101,7 +102,7 @@ public class MapPutAllWrongTargetForPartitionTest extends HazelcastTestSupport {
         final String mapName = randomMapName();
 
         HazelcastInstance hz = instances[0];
-        NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);
+        NodeEngineImpl nodeEngine = Accessors.getNodeEngineImpl(hz);
         SerializationService serializationService = nodeEngine.getSerializationService();
 
         // create a PutAllPerMemberOperation with entries for all partitions

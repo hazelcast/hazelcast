@@ -20,6 +20,7 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -139,7 +140,7 @@ public class CacheConfigPropagationTest extends HazelcastTestSupport {
     }
 
     protected CacheService getCacheService(HazelcastInstance member) {
-        CacheService cacheService = getNodeEngineImpl(member).getService(SERVICE_NAME);
+        CacheService cacheService = Accessors.getNodeEngineImpl(member).getService(SERVICE_NAME);
         return cacheService;
     }
 

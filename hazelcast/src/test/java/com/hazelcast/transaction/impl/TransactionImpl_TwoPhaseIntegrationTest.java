@@ -19,6 +19,7 @@ package com.hazelcast.transaction.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -60,7 +61,7 @@ public class TransactionImpl_TwoPhaseIntegrationTest extends HazelcastTestSuppor
     @Before
     public void setup() {
         cluster = createHazelcastInstanceFactory(2).newInstances(getConfig());
-        localNodeEngine = getNodeEngineImpl(cluster[0]);
+        localNodeEngine = Accessors.getNodeEngineImpl(cluster[0]);
         localTxService = getTransactionManagerService(cluster[0]);
         remoteTxService = getTransactionManagerService(cluster[1]);
         txOwner = UuidUtil.newUnsecureUUID();
@@ -87,7 +88,7 @@ public class TransactionImpl_TwoPhaseIntegrationTest extends HazelcastTestSuppor
     }
 
     private TransactionManagerServiceImpl getTransactionManagerService(HazelcastInstance hz) {
-        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(hz);
+        NodeEngineImpl nodeEngineImpl = Accessors.getNodeEngineImpl(hz);
         return (TransactionManagerServiceImpl) nodeEngineImpl.getTransactionManagerService();
     }
 

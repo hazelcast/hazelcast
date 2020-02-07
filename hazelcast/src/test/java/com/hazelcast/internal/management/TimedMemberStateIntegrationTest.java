@@ -19,6 +19,7 @@ package com.hazelcast.internal.management;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -37,7 +38,7 @@ public class TimedMemberStateIntegrationTest extends HazelcastTestSupport {
     @Test
     public void testServices() {
         HazelcastInstance hz = createHazelcastInstance(smallInstanceConfig());
-        TimedMemberStateFactory factory = new TimedMemberStateFactory(getHazelcastInstanceImpl(hz));
+        TimedMemberStateFactory factory = new TimedMemberStateFactory(Accessors.getHazelcastInstanceImpl(hz));
 
         hz.getMap("trial").put(1, 1);
         hz.getMultiMap("trial").put(2, 2);
@@ -54,7 +55,7 @@ public class TimedMemberStateIntegrationTest extends HazelcastTestSupport {
     @Test
     public void testSSL_defaultConfig() {
         HazelcastInstance hz = createHazelcastInstance(smallInstanceConfig());
-        TimedMemberStateFactory factory = new TimedMemberStateFactory(getHazelcastInstanceImpl(hz));
+        TimedMemberStateFactory factory = new TimedMemberStateFactory(Accessors.getHazelcastInstanceImpl(hz));
 
         TimedMemberState timedMemberState = factory.createTimedMemberState();
         assertFalse(timedMemberState.sslEnabled);
@@ -78,7 +79,7 @@ public class TimedMemberStateIntegrationTest extends HazelcastTestSupport {
         config.getNetworkConfig().setSSLConfig(sslConfig);
 
         HazelcastInstance hz = createHazelcastInstance(config);
-        TimedMemberStateFactory factory = new TimedMemberStateFactory(getHazelcastInstanceImpl(hz));
+        TimedMemberStateFactory factory = new TimedMemberStateFactory(Accessors.getHazelcastInstanceImpl(hz));
 
         TimedMemberState timedMemberState = factory.createTimedMemberState();
         assertEquals(enabled, timedMemberState.sslEnabled);
@@ -106,7 +107,7 @@ public class TimedMemberStateIntegrationTest extends HazelcastTestSupport {
         }
 
         HazelcastInstance hz = createHazelcastInstance(config);
-        TimedMemberStateFactory factory = new TimedMemberStateFactory(getHazelcastInstanceImpl(hz));
+        TimedMemberStateFactory factory = new TimedMemberStateFactory(Accessors.getHazelcastInstanceImpl(hz));
 
         TimedMemberState timedMemberState = factory.createTimedMemberState();
         boolean expected = enabled == null ? false : enabled;

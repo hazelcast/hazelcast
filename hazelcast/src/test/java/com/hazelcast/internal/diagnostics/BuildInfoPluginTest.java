@@ -19,6 +19,7 @@ package com.hazelcast.internal.diagnostics;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -39,7 +40,7 @@ public class BuildInfoPluginTest extends AbstractDiagnosticsPluginTest {
     @Before
     public void setup() {
         HazelcastInstance hz = createHazelcastInstance();
-        plugin = new BuildInfoPlugin(getNodeEngineImpl(hz));
+        plugin = new BuildInfoPlugin(Accessors.getNodeEngineImpl(hz));
         plugin.onStart();
     }
 

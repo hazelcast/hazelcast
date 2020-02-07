@@ -25,6 +25,7 @@ import com.hazelcast.internal.nio.tcp.FirewallingNetworkingService;
 import com.hazelcast.internal.nio.tcp.OperationPacketFilter;
 import com.hazelcast.internal.nio.tcp.PacketFilter;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -78,7 +79,7 @@ public class AntiEntropyCorrectnessTest extends PartitionCorrectnessTestSupport 
             @Override
             public void run() {
                 for (HazelcastInstance instance : instances) {
-                    InternalPartitionServiceImpl partitionService = getNode(instance).partitionService;
+                    InternalPartitionServiceImpl partitionService = Accessors.getNode(instance).partitionService;
                     int availablePermits = partitionService.getReplicaManager().availableReplicaSyncPermits();
                     assertEquals(PARALLEL_REPLICATIONS, availablePermits);
                 }
@@ -87,7 +88,7 @@ public class AntiEntropyCorrectnessTest extends PartitionCorrectnessTestSupport 
     }
 
     public static void setBackupPacketDropFilter(HazelcastInstance instance, float blockRatio) {
-        Node node = getNode(instance);
+        Node node = Accessors.getNode(instance);
         FirewallingNetworkingService.FirewallingEndpointManager
                 em = (FirewallingNetworkingService.FirewallingEndpointManager) node.getEndpointManager();
         em.setPacketFilter(new BackupPacketDropFilter(node.getSerializationService(), blockRatio));

@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl.merge;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.RequireAssertEnabled;
@@ -46,7 +47,7 @@ public class AbstractContainerMergerTest extends HazelcastTestSupport {
     @Before
     public void setUp() {
         HazelcastInstance hazelcastInstance = createHazelcastInstance();
-        nodeEngine = getNodeEngineImpl(hazelcastInstance);
+        nodeEngine = Accessors.getNodeEngineImpl(hazelcastInstance);
         warmUpPartitions(hazelcastInstance);
 
         collector = new TestContainerCollector(nodeEngine, true, true);

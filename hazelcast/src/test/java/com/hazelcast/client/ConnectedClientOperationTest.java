@@ -24,6 +24,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -61,7 +62,7 @@ public class ConnectedClientOperationTest extends HazelcastTestSupport {
             factory.newHazelcastClient();
         }
 
-        Node node = getNode(h1);
+        Node node = Accessors.getNode(h1);
         Map<String, Integer> clientStats = node.clientEngine.getConnectedClientStats();
 
         assertEquals(numberOfClients, clientStats.get(ConnectionType.JAVA_CLIENT).intValue());
@@ -75,7 +76,7 @@ public class ConnectedClientOperationTest extends HazelcastTestSupport {
     @Test
     public void testGetConnectedClientsOperation_WhenZeroClientConnects() throws Exception {
         HazelcastInstance instance = factory.newHazelcastInstance();
-        Node node = getNode(instance);
+        Node node = Accessors.getNode(instance);
 
         Operation operation = new GetConnectedClientsOperation();
         OperationService operationService = node.nodeEngine.getOperationService();
@@ -92,7 +93,7 @@ public class ConnectedClientOperationTest extends HazelcastTestSupport {
         factory.newHazelcastClient();
         factory.newHazelcastClient();
 
-        Node node = getNode(instance);
+        Node node = Accessors.getNode(instance);
         Operation operation = new GetConnectedClientsOperation();
         OperationService operationService = node.nodeEngine.getOperationService();
         Future<Map<String, String>> future =

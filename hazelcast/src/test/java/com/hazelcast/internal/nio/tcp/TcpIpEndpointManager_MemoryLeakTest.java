@@ -19,6 +19,7 @@ package com.hazelcast.internal.nio.tcp;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -51,7 +52,7 @@ public class TcpIpEndpointManager_MemoryLeakTest
     @Test
     public void test() {
         HazelcastInstance hz1 = Hazelcast.newHazelcastInstance();
-        final TcpIpNetworkingService networkingService = (TcpIpNetworkingService) getNode(hz1).getNetworkingService();
+        final TcpIpNetworkingService networkingService = (TcpIpNetworkingService) Accessors.getNode(hz1).getNetworkingService();
 
         HazelcastInstance hz2 = Hazelcast.newHazelcastInstance();
         hz2.shutdown();

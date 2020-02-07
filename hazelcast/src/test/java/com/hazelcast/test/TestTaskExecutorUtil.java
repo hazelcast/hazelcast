@@ -24,7 +24,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 
-import static com.hazelcast.test.HazelcastTestSupport.getNodeEngineImpl;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static java.util.concurrent.TimeUnit.SECONDS;
 

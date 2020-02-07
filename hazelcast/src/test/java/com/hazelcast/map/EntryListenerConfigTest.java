@@ -22,6 +22,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -153,7 +154,7 @@ public class EntryListenerConfigTest extends HazelcastTestSupport {
     }
 
     private EventService getEventService() {
-        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(instance);
+        NodeEngineImpl nodeEngineImpl = Accessors.getNodeEngineImpl(instance);
         return nodeEngineImpl.getEventService();
     }
 

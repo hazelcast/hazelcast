@@ -22,6 +22,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.internal.management.dto.SlowOperationInvocationDTO;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -59,7 +60,7 @@ public class LocalOperationStatsImplTest extends HazelcastTestSupport {
         config.setProperty(ClusterProperty.MC_MAX_VISIBLE_SLOW_OPERATION_COUNT.getName(), "139");
 
         HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
-        Node node = getNode(hazelcastInstance);
+        Node node = Accessors.getNode(hazelcastInstance);
         LocalOperationStatsImpl localOperationStats = new LocalOperationStatsImpl(node);
 
         assertEquals(139, localOperationStats.getMaxVisibleSlowOperationCount());
@@ -89,7 +90,7 @@ public class LocalOperationStatsImplTest extends HazelcastTestSupport {
         slowOperationDTO.invocations = invocationList;
 
         HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
-        Node node = getNode(hazelcastInstance);
+        Node node = Accessors.getNode(hazelcastInstance);
         LocalOperationStatsImpl localOperationStats = new LocalOperationStatsImpl(node);
         localOperationStats.getSlowOperations().add(slowOperationDTO);
 

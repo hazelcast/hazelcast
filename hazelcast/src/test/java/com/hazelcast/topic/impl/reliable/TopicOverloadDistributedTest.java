@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -51,7 +52,7 @@ public class TopicOverloadDistributedTest extends TopicOverloadAbstractTest {
         HazelcastInstance[] hazelcastInstances = createHazelcastInstanceFactory(2).newInstances(config);
         HazelcastInstance hz = hazelcastInstances[0];
         warmUpPartitions(hazelcastInstances);
-        serializationService = getSerializationService(hz);
+        serializationService = Accessors.getSerializationService(hz);
 
         String topicName = getTestMethodName();
         topic = hz.<String>getReliableTopic(topicName);
