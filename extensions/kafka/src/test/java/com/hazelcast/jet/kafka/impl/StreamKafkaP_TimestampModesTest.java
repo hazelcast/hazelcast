@@ -46,7 +46,6 @@ public class StreamKafkaP_TimestampModesTest extends StreamSourceStageTestBase {
     public static void beforeClass1() throws IOException {
         kafkaTestSupport.createKafkaCluster();
         properties = new Properties();
-        properties.setProperty("group.id", randomString());
         properties.setProperty("bootstrap.servers", kafkaTestSupport.getBrokerConnectionString());
         properties.setProperty("key.deserializer", IntegerDeserializer.class.getCanonicalName());
         properties.setProperty("value.deserializer", StringDeserializer.class.getCanonicalName());

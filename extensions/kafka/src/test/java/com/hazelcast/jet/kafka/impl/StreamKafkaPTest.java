@@ -152,7 +152,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
         Arrays.setAll(instances, i -> createJetMember());
 
         Pipeline p = Pipeline.create();
-        p.readFrom(KafkaSources.kafka(properties(null), topic1Name, topic2Name))
+        p.readFrom(KafkaSources.kafka(properties(), topic1Name, topic2Name))
          .withoutTimestamps()
          .writeTo(Sinks.list("sink"));
 
@@ -460,14 +460,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
     }
 
     public static Properties properties() {
-        return properties(randomString());
-    }
-
-    public static Properties properties(String groupId) {
         Properties properties = new Properties();
-        if (groupId != null) {
-            properties.setProperty("group.id", groupId);
-        }
         properties.setProperty("bootstrap.servers", kafkaTestSupport.getBrokerConnectionString());
         properties.setProperty("key.deserializer", IntegerDeserializer.class.getCanonicalName());
         properties.setProperty("value.deserializer", StringDeserializer.class.getCanonicalName());

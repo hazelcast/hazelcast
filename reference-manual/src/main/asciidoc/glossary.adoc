@@ -100,7 +100,7 @@ the computation.
 
 Kafka::
 Apache Kafka is a product that offers a distributed publish-subscribe
-message queue with guarantees of delivery and message persistence. The
+message topics with guarantees of delivery and message persistence. The
 most commonly used component over which heterogeneous distributed
 systems exchange data.
 

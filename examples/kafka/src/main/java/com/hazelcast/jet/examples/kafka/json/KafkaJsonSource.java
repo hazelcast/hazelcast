@@ -81,7 +81,6 @@ public class KafkaJsonSource {
         Pipeline p = Pipeline.create();
         p.readFrom(KafkaSources.kafka(props(
                 "bootstrap.servers", BROKER_HOST + ':' + brokerPort,
-                "group.id", "0",
                 "key.deserializer", IntegerDeserializer.class.getName(),
                 "value.deserializer", JsonDeserializer.class.getName(),
                 "auto.offset.reset", AUTO_OFFSET_RESET), TOPIC))

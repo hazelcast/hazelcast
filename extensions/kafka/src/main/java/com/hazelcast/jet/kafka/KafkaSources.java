@@ -23,7 +23,6 @@ import com.hazelcast.jet.pipeline.Stage;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.pipeline.StreamSourceStage;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
 
 import javax.annotation.Nonnull;
 import java.util.Map.Entry;
@@ -91,12 +90,13 @@ public final class KafkaSources {
      *     restart or failure, the reading continues from the saved offset. You
      *     can achieve exactly-once or at-least-once behavior.
      *
-     *     <li>if processing guarantee is disabled, the source commits the
-     *     offsets to Kafka using {@link KafkaConsumer#commitSync()}. But the
-     *     offsets are committed before or after the event is fully processed.
-     *     Therefore some events can be processed twice or not at all. You can
-     *     configure {@code group.id} in this case. If not configured a random
-     *     UUID will be set.
+     *     <li>if processing guarantee is disabled, the source will start
+     *     reading from default offsets (based on the {@code auto.offset.reset}
+     *     property). You can enable offset committing by assigning a {@code
+     *     group.id}, enabling auto offset committing using {@code
+     *     enable.auto.commit} and configuring {@code auto.commit.interval.ms}
+     *     in the given properties. Refer to Kafka documentation for the
+     *     descriptions of these properties.
      * </ol>
      *
      * If you add Kafka partitions at run-time, consumption from them will
@@ -110,7 +110,7 @@ public final class KafkaSources {
      * {@code poll(timeout)} if the cluster is down. If {@link
      * JobConfig#setSnapshotIntervalMillis(long) snapshotting is enabled},
      * entire job might be blocked. This is a known issue of Kafka
-     * (KAFKA-1894). Refer to Kafka documentation for details.
+     * (KAFKA-1894, now fixed). Refer to Kafka documentation for details.
      * <p>
      * The default local parallelism for this processor is 4 (or less if less CPUs
      * are available). Note that deserialization is done inside {@code

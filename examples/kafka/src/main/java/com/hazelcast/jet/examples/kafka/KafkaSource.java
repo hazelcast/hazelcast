@@ -43,7 +43,6 @@ import org.apache.kafka.common.utils.Time;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Properties;
-import java.util.UUID;
 
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static kafka.admin.AdminUtils.createTopic;
@@ -70,7 +69,6 @@ public class KafkaSource {
                 "bootstrap.servers", BOOTSTRAP_SERVERS,
                 "key.deserializer", StringDeserializer.class.getCanonicalName(),
                 "value.deserializer", IntegerDeserializer.class.getCanonicalName(),
-                "group.id", UUID.randomUUID().toString(),
                 "auto.offset.reset", AUTO_OFFSET_RESET)
                 , "t1", "t2"))
          .withoutTimestamps()

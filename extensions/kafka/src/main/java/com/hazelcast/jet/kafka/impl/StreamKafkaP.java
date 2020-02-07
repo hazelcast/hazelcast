@@ -69,7 +69,6 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
     private final FunctionEx<? super ConsumerRecord<K, V>, ? extends T> projectionFn;
     private final EventTimeMapper<? super T> eventTimeMapper;
     private int totalParallelism;
-    private boolean snapshottingEnabled;
 
     private KafkaConsumer<K, V> consumer;
     private final int[] partitionCounts;
@@ -107,7 +106,6 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
     protected void init(@Nonnull Context context) {
         processorIndex = context.globalProcessorIndex();
         totalParallelism = context.totalParallelism();
-        snapshottingEnabled = context.snapshottingEnabled();
         consumer = new KafkaConsumer<>(properties);
         assignPartitions(false);
     }
@@ -191,11 +189,6 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
                 });
 
         emitFromTraverser(traverser);
-
-        if (!snapshottingEnabled && !isEmpty(records)) {
-            consumer.commitSync();
-        }
-
         return false;
     }
 

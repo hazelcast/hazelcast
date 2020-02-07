@@ -40,12 +40,14 @@ from the beginning.
 
 The Kafka source supports snapshots. Upon each snapshot it saves the
 current offset for each partition. When the job is restarted from a
-snapshot, the source can continue reading from the saved offset.
+snapshot, the source can continue reading from the saved offsets.
 
-If snapshots are disabled, the source will commit the offset of the
-last record it read to the Kafka cluster. Since the fact that the source
-read an item doesn't mean that the whole Jet pipeline processed it, this
-doesn't guarantee against data loss.
+If processing guarantee is disabled, the source will start reading from
+default offsets (based on the `auto.offset.reset` property). You can
+enable offset committing by assigning a `group.id`, enabling auto offset
+committing using `enable.auto.commit` and configuring
+`auto.commit.interval.ms` in the given properties. Refer to Kafka
+documentation for the descriptions of these properties.
 
 == Using Kafka as a Sink
 

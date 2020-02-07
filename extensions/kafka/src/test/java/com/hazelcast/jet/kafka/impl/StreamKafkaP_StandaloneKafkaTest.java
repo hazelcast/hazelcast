@@ -65,7 +65,6 @@ public class StreamKafkaP_StandaloneKafkaTest extends JetTestSupport {
 
     public static Properties getProperties(String brokerConnectionString) {
         Properties properties = new Properties();
-        properties.setProperty("group.id", randomString());
         properties.setProperty("bootstrap.servers", brokerConnectionString);
         properties.setProperty("key.deserializer", IntegerDeserializer.class.getCanonicalName());
         properties.setProperty("value.deserializer", StringDeserializer.class.getCanonicalName());
