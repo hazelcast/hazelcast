@@ -27,6 +27,7 @@ import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.datamodel.WindowResult;
 import com.hazelcast.jet.impl.JobProxy;
 import com.hazelcast.jet.impl.JobRepository;
+import com.hazelcast.jet.pipeline.JmsSourceBuilder;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.Sinks;
@@ -383,33 +384,50 @@ public abstract class JmsIntegrationTestBase extends SimpleTestInClusterSupport 
 
     @Test
     public void stressTest_exactlyOnce_forceful() throws Exception {
-        stressTest(false, EXACTLY_ONCE);
+        stressTest(false, EXACTLY_ONCE, false);
     }
 
     @Test
     public void stressTest_exactlyOnce_graceful() throws Exception {
-        stressTest(true, EXACTLY_ONCE);
+        stressTest(true, EXACTLY_ONCE, false);
     }
 
     @Test
     public void stressTest_atLeastOnce_forceful() throws Exception {
-        stressTest(false, AT_LEAST_ONCE);
+        stressTest(false, AT_LEAST_ONCE, false);
     }
 
     @Test
     public void stressTest_noGuarantee_forceful() throws Exception {
-        stressTest(false, NONE);
+        stressTest(false, NONE, false);
     }
 
-    private void stressTest(boolean graceful, ProcessingGuarantee maxGuarantee)
+    @Test
+    public void stressTest_exactlyOnce_forceful_durableTopic() throws Exception {
+        stressTest(false, EXACTLY_ONCE, true);
+    }
+
+    private void stressTest(boolean graceful, ProcessingGuarantee maxGuarantee, boolean useTopic)
             throws Exception {
         lastListInStressTest = null;
         final int MESSAGE_COUNT = 4_000;
         Pipeline p = Pipeline.create();
-        String queueName = "queue-" + counter++;
-        p.readFrom(Sources.jmsQueueBuilder(getConnectionFactory())
+        String destName = "queue-" + counter++;
+        JmsSourceBuilder sourceBuilder;
+        if (useTopic) {
+            sourceBuilder = Sources.jmsTopicBuilder(getConnectionFactory())
+                    .connectionFn(f -> {
+                        Connection conn = f.createConnection();
+                        conn.setClientID("foo-client-id");
+                        return conn;
+                    })
+                    .consumerFn(s -> s.createDurableSubscriber(s.createTopic(destName), "foo-consumer"));
+        } else {
+            sourceBuilder = Sources.jmsQueueBuilder(getConnectionFactory())
+                    .destinationName(destName);
+        }
+        p.readFrom(sourceBuilder
                           .maxGuarantee(maxGuarantee)
-                          .destinationName(queueName)
                           .build(msg -> Long.parseLong(((TextMessage) msg).getText())))
          .withoutTimestamps()
          .peek()
@@ -432,7 +450,8 @@ public abstract class JmsIntegrationTestBase extends SimpleTestInClusterSupport 
             try (
                     Connection connection = getConnectionFactory().get().createConnection();
                     Session session = connection.createSession(false, AUTO_ACKNOWLEDGE);
-                    MessageProducer producer = session.createProducer(session.createQueue(queueName))
+                    MessageProducer producer = session.createProducer(
+                            useTopic ? session.createTopic(destName) : session.createQueue(destName))
             ) {
                 long startTime = System.nanoTime();
                 for (int i = 0; i < MESSAGE_COUNT; i++) {
