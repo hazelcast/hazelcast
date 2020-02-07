@@ -60,8 +60,8 @@ public class AzureDiscoveryStrategyTest {
         given(azureClient.getAvailabilityZone()).willReturn(ZONE);
 
         // when
-        Map<String, Object> result1 = azureDiscoveryStrategy.discoverLocalMetadata();
-        Map<String, Object> result2 = azureDiscoveryStrategy.discoverLocalMetadata();
+        Map<String, String> result1 = azureDiscoveryStrategy.discoverLocalMetadata();
+        Map<String, String> result2 = azureDiscoveryStrategy.discoverLocalMetadata();
 
         // then
         assertEquals(ZONE, result1.get(PartitionGroupMetaData.PARTITION_GROUP_ZONE));

@@ -16,7 +16,7 @@
         <!-- we want to remain java 1.6 compatible -->
         <jdk.version>1.6</jdk.version>
 
-        <hazelcast.version>3.11</hazelcast.version>
+        <hazelcast.version>4.0</hazelcast.version>
 
         <junit.version>4.12</junit.version>
         <mockito.version>1.10.19</mockito.version>

@@ -20,7 +20,7 @@ package com.hazelcast.azure;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.Address;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.discovery.AbstractDiscoveryStrategy;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
@@ -55,7 +55,7 @@ public class AzureDiscoveryStrategy extends AbstractDiscoveryStrategy {
 
     private final AzureClient azureClient;
     private final PortRange portRange;
-    private final Map<String, Object> memberMetadata = new HashMap<String, Object>();
+    private final Map<String, String> memberMetadata = new HashMap<String, String>();
 
     AzureDiscoveryStrategy(Map<String, Comparable> properties) {
         super(LOGGER, properties);
@@ -124,7 +124,7 @@ public class AzureDiscoveryStrategy extends AbstractDiscoveryStrategy {
     }
 
     @Override
-    public Map<String, Object> discoverLocalMetadata() {
+    public Map<String, String> discoverLocalMetadata() {
         if (memberMetadata.isEmpty()) {
             memberMetadata.put(PartitionGroupMetaData.PARTITION_GROUP_ZONE, azureClient.getAvailabilityZone());
         }
