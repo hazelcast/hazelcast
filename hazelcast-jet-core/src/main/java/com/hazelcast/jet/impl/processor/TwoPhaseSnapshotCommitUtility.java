@@ -192,7 +192,7 @@ public abstract class TwoPhaseSnapshotCommitUtility<TXN_ID extends TransactionId
      */
     public abstract void close() throws Exception;
 
-    protected boolean usesTransactionLifecycle() {
+    public boolean usesTransactionLifecycle() {
         return externalGuarantee == EXACTLY_ONCE ||
                 externalGuarantee == AT_LEAST_ONCE && isSource;
     }

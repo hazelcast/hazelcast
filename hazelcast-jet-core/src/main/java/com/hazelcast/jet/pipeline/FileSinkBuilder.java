@@ -17,6 +17,7 @@
 package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 
@@ -37,18 +38,24 @@ import static com.hazelcast.jet.core.processor.SinkProcessors.writeFileP;
 public final class FileSinkBuilder<T> {
 
     /**
-     * A suffix added to file names until they are committed. Files ending with
-     * this suffix should be ignored when processing. See {@link
-     * Sinks#filesBuilder} for more information.
+     * A suffix added to file names until they are committed. Files
+     * ending with this suffix should be ignored when processing. See
+     * {@link Sinks#filesBuilder} for more information.
      */
     public static final String TEMP_FILE_SUFFIX = ".tmp";
+
+    /**
+     * A value to pass to {@link #rollByFileSize(long)} if you want to
+     * disable rolling by file size.
+     */
+    public static final long DISABLE_ROLLING = Long.MAX_VALUE;
 
     private final String directoryName;
 
     private FunctionEx<? super T, String> toStringFn = Object::toString;
     private Charset charset = StandardCharsets.UTF_8;
     private String datePattern;
-    private Long maxFileSize;
+    private long maxFileSize = DISABLE_ROLLING;
     private boolean exactlyOnce = true;
 
     /**
@@ -63,6 +70,7 @@ public final class FileSinkBuilder<T> {
      * Each item is followed with a platform-specific line separator. Default
      * value is {@link Object#toString}.
      */
+    @Nonnull
     public FileSinkBuilder<T> toStringFn(@Nonnull FunctionEx<? super T, String> toStringFn) {
         this.toStringFn = toStringFn;
         return this;
@@ -72,6 +80,7 @@ public final class FileSinkBuilder<T> {
      * Sets the character set used to encode the files. Default value is {@link
      * java.nio.charset.StandardCharsets#UTF_8}.
      */
+    @Nonnull
     public FileSinkBuilder<T> charset(@Nonnull Charset charset) {
         this.charset = charset;
         return this;
@@ -86,7 +95,10 @@ public final class FileSinkBuilder<T> {
      * The rolling is based on system time, not on event time. By default no
      * rolling by date is done. If the system clock goes back, the outcome is
      * unspecified and possibly corrupt.
+     *
+     * @since 4.0
      */
+    @Nonnull
     public FileSinkBuilder<T> rollByDate(@Nullable String datePattern) {
         this.datePattern = datePattern;
         return this;
@@ -96,8 +108,15 @@ public final class FileSinkBuilder<T> {
      * Enables rolling by file size. If the size after writing a batch of items
      * exceeds the limit, a new file will be started. From this follows that
      * the file will typically be larger than the given maximum.
+     * <p>
+     * To disable rolling after certain size, pass {@code
+     * DISABLE_ROLLING}. This is the default value.
+     *
+     * @since 4.0
      */
-    public FileSinkBuilder<T> rollByFileSize(@Nullable Long maxFileSize) {
+    @Nonnull
+    public FileSinkBuilder<T> rollByFileSize(long maxFileSize) {
+        Preconditions.checkPositive(1, "rolling size must be a positive number");
         this.maxFileSize = maxFileSize;
         return this;
     }
@@ -120,7 +139,10 @@ public final class FileSinkBuilder<T> {
      *      guarantee. If false, sink's guarantee will be at-least-once
      *      even if job's is exactly-once
      * @return this instance for fluent API
+     *
+     * @since 4.0
      */
+    @Nonnull
     public FileSinkBuilder<T> exactlyOnce(boolean enable) {
         exactlyOnce = enable;
         return this;
@@ -129,6 +151,7 @@ public final class FileSinkBuilder<T> {
     /**
      * Creates and returns the file {@link Sink} with the supplied components.
      */
+    @Nonnull
     public Sink<T> build() {
         return Sinks.fromProcessor("filesSink(" + directoryName + ')',
                 writeFileP(directoryName, charset, datePattern, maxFileSize, exactlyOnce, toStringFn));

@@ -66,13 +66,19 @@ public final class FileSourceBuilder {
 
     /**
      * Sets if files are in a shared storage visible to all members. Default
-     * value is {@code false}
+     * value is {@code false}.
      * <p>
      * If {@code sharedFileSystem} is {@code true}, Jet will assume all members
      * see the same files. They will split the work so that each member will
      * read a part of the files. If {@code sharedFileSystem} is {@code false},
      * each member will read all files in the directory, assuming the are
      * local.
+     * <p>
+     * If you start all the members on a single machine (such as for
+     * development), set this property to true. If you have multiple machines
+     * with multiple members each and the directory is not a shared storage,
+     * it's not possible to configure the file reader correctly - use only one
+     * member per machine.
      */
     @Nonnull
     public FileSourceBuilder sharedFileSystem(boolean sharedFileSystem) {

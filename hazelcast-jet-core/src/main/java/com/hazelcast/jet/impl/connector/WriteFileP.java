@@ -51,12 +51,15 @@ import java.nio.file.StandardCopyOption;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.function.LongSupplier;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
+import static com.hazelcast.jet.pipeline.FileSinkBuilder.DISABLE_ROLLING;
 import static com.hazelcast.jet.pipeline.FileSinkBuilder.TEMP_FILE_SUFFIX;
 
 /**
@@ -70,12 +73,19 @@ import static com.hazelcast.jet.pipeline.FileSinkBuilder.TEMP_FILE_SUFFIX;
 public final class WriteFileP<T> implements Processor {
 
     private static final LongSupplier SYSTEM_CLOCK = (LongSupplier & Serializable) System::currentTimeMillis;
+    /**
+     * A pattern to parse processor index from a file name. File name has the form:
+     * [<date>-]<global processor index>[-<sequence>][".tmp"]
+     * This regexp assumes the sequence is present and searches from the right
+     * because the structure of the date is user-supplied and can by anything.
+     */
+    private static final Pattern FILE_INDEX_WITH_SEQ = Pattern.compile("(\\d+)-\\d+(\\.tmp)?$");
 
     private final Path directory;
     private final FunctionEx<? super T, ? extends String> toStringFn;
     private final Charset charset;
     private final DateTimeFormatter dateFormatter;
-    private final Long maxFileSize;
+    private final long maxFileSize;
     private final boolean exactlyOnce;
     private final LongSupplier clock;
 
@@ -93,7 +103,7 @@ public final class WriteFileP<T> implements Processor {
             @Nonnull FunctionEx<? super T, ? extends String> toStringFn,
             @Nonnull String charset,
             @Nullable String dateFormatter,
-            @Nullable Long maxFileSize,
+            long maxFileSize,
             boolean exactlyOnce,
             @Nonnull LongSupplier clock
     ) {
@@ -140,13 +150,13 @@ public final class WriteFileP<T> implements Processor {
                 T castedItem = (T) item;
                 writer.write(toStringFn.apply(castedItem));
                 writer.write(System.lineSeparator());
-                if (maxFileSize != null && sizeTrackingStream.size >= maxFileSize) {
+                if (maxFileSize != DISABLE_ROLLING && sizeTrackingStream.size >= maxFileSize) {
                     utility.finishActiveTransaction();
                     writer = utility.activeTransaction().writer();
                 }
             }
             writer.flush();
-            if (maxFileSize != null && sizeTrackingStream.size >= maxFileSize) {
+            if (maxFileSize != DISABLE_ROLLING && sizeTrackingStream.size >= maxFileSize) {
                 utility.finishActiveTransaction();
             }
         } catch (IOException e) {
@@ -196,7 +206,7 @@ public final class WriteFileP<T> implements Processor {
         }
         sb.append(context.globalProcessorIndex());
         String file = sb.toString();
-        boolean usesSequence = utility.externalGuarantee() == EXACTLY_ONCE || maxFileSize != null;
+        boolean usesSequence = utility.externalGuarantee() == EXACTLY_ONCE || maxFileSize != DISABLE_ROLLING;
         if (usesSequence) {
             // check existing files if the sequence number is used
             int prefixLength = sb.length();
@@ -236,6 +246,27 @@ public final class WriteFileP<T> implements Processor {
         try (Stream<Path> fileStream = Files.list(directory)) {
             fileStream
                     .filter(file -> file.getFileName().toString().endsWith(TEMP_FILE_SUFFIX))
+                    .filter(file -> {
+                        assert utility.usesTransactionLifecycle();
+                        Matcher m = FILE_INDEX_WITH_SEQ.matcher(file.getFileName().toString());
+                        if (!m.find() || m.groupCount() < 1) {
+                            context.logger().warning("file with unknown name structure found in the directory: " + file);
+                            return false;
+                        }
+                        int index;
+                        try {
+                            index = Integer.parseInt(m.group(1));
+                        } catch (NumberFormatException e) {
+                            context.logger().warning(
+                                    "file with unknown name structure found in the directory: " + file, e);
+                            return false;
+                        }
+                        // this can leave some files unhandled if the index doesn't belong
+                        // to a local processor and the directory is only visible to this member.
+                        // We neglect that, some abandoned tmp files will not do much harm. To
+                        // fix it we would need to know whether the directory is shared or not.
+                        return index % context.totalParallelism() == context.globalProcessorIndex();
+                    })
                     .forEach(file -> uncheckRun(() -> {
                         LoggingUtil.logFine(context.logger(), "deleting %s",  file);
                         Files.delete(file);
@@ -266,7 +297,7 @@ public final class WriteFileP<T> implements Processor {
             @Nonnull FunctionEx<? super T, ? extends String> toStringFn,
             @Nonnull String charset,
             @Nullable String datePattern,
-            @Nullable Long maxFileSize,
+            long maxFileSize,
             boolean exactlyOnce
     ) {
         return metaSupplier(directoryName, toStringFn, charset, datePattern, maxFileSize, exactlyOnce, SYSTEM_CLOCK);
@@ -278,7 +309,7 @@ public final class WriteFileP<T> implements Processor {
             @Nonnull FunctionEx<? super T, ? extends String> toStringFn,
             @Nonnull String charset,
             @Nullable String datePattern,
-            @Nullable Long maxFileSize,
+            long maxFileSize,
             boolean exactlyOnce,
             @Nonnull LongSupplier clock
     ) {

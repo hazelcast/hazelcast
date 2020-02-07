@@ -42,6 +42,7 @@ import static com.hazelcast.jet.core.Partitioner.HASH_CODE;
 import static com.hazelcast.jet.core.SlidingWindowPolicy.slidingWinPolicy;
 import static com.hazelcast.jet.core.WatermarkPolicy.limitingLag;
 import static com.hazelcast.jet.core.processor.Processors.mapUsingServiceP;
+import static com.hazelcast.jet.pipeline.FileSinkBuilder.DISABLE_ROLLING;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -95,7 +96,7 @@ public class StockExchangeCoreApi {
                         kwr.getKey(), kwr.getValue())
         ));
         Vertex sink = dag.newVertex("sink", SinkProcessors.writeFileP(
-                OUTPUT_DIR_NAME, UTF_8, null, null, true, Object::toString));
+                OUTPUT_DIR_NAME, UTF_8, null, DISABLE_ROLLING, true, Object::toString));
 
         tradeSource.localParallelism(1);
 

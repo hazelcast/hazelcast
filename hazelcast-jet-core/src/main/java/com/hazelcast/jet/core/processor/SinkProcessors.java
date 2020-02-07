@@ -239,7 +239,7 @@ public final class SinkProcessors {
             @Nonnull String directoryName,
             @Nonnull Charset charset,
             @Nullable String datePattern,
-            @Nullable Long maxFileSize,
+            long maxFileSize,
             boolean exactlyOnce,
             @Nonnull FunctionEx<? super T, ? extends String> toStringFn
     ) {

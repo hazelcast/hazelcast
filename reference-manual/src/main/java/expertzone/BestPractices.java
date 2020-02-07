@@ -27,6 +27,7 @@ import static com.hazelcast.jet.core.processor.DiagnosticProcessors.peekInputP;
 import static com.hazelcast.jet.core.processor.Processors.combineByKeyP;
 import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeFileP;
+import static com.hazelcast.jet.pipeline.FileSinkBuilder.DISABLE_ROLLING;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
 
@@ -58,7 +59,7 @@ class BestPractices {
         //tag::s3[]
         Vertex diagnose = dag
                 .newVertex("diagnose", writeFileP(
-                        "tokenize-output", UTF_8, null, null, true, Object::toString))
+                        "tokenize-output", UTF_8, null, DISABLE_ROLLING, true, Object::toString))
                 .localParallelism(1);
         dag.edge(from(tokenize, 1).to(diagnose));
         //end::s3[]
