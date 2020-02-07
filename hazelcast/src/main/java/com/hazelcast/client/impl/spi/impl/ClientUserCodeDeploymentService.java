@@ -31,6 +31,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -62,8 +63,20 @@ public class ClientUserCodeDeploymentService {
         if (!clientUserCodeDeploymentConfig.isEnabled()) {
             return;
         }
-        loadClassesFromJars();
-        loadClasses();
+        Map<String, byte[]> classDefinitions = new HashMap<>();
+        loadClassesFromJars(classDefinitions);
+        loadClasses(classDefinitions);
+
+        List<Class<?>> classes = new ArrayList<>(classDefinitions.keySet().size());
+        for (String className : classDefinitions.keySet()) {
+            classes.add(configClassLoader.loadClass(className));
+        }
+        List<Class> sortedClasses = sortByInheritance(classes);
+        for (Class sortedClass : sortedClasses) {
+            String className = sortedClass.getName();
+            byte[] bytes = classDefinitions.get(className);
+            classDefinitionList.add(new AbstractMap.SimpleEntry<String, byte[]>(className, bytes));
+        }
     }
 
     public static List<Class> sortByInheritance(List<Class<?>> classList) {
@@ -88,7 +101,7 @@ public class ClientUserCodeDeploymentService {
     }
 
 
-    private void loadClasses() throws ClassNotFoundException {
+    private void loadClasses(Map<String, byte[]> classDefinitions) throws ClassNotFoundException {
         List<String> classNames = clientUserCodeDeploymentConfig.getClassNames();
         List<Class<?>> classes = new ArrayList<>(classNames.size());
         for (String className : classNames) {
@@ -105,7 +118,7 @@ public class ClientUserCodeDeploymentService {
                     throw new ClassNotFoundException(resource);
                 }
                 byte[] bytes = toByteArray(is);
-                classDefinitionList.add(new AbstractMap.SimpleEntry<String, byte[]>(className, bytes));
+                classDefinitions.put(className, bytes);
             } catch (IOException e) {
                 ignore(e);
             } finally {
@@ -114,18 +127,19 @@ public class ClientUserCodeDeploymentService {
         }
     }
 
-    private void loadClassesFromJars() throws IOException {
+    private void loadClassesFromJars(Map<String, byte[]> classDefinitions) throws IOException {
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         try {
             for (String jarPath : clientUserCodeDeploymentConfig.getJarPaths()) {
-                loadClassesFromJar(os, jarPath);
+                loadClassesFromJar(classDefinitions, os, jarPath);
             }
         } finally {
             closeResource(os);
         }
     }
 
-    private void loadClassesFromJar(ByteArrayOutputStream os, String jarPath) throws IOException {
+    private void loadClassesFromJar(Map<String, byte[]> classDefinitions,
+                                    ByteArrayOutputStream os, String jarPath) throws IOException {
         JarInputStream inputStream = null;
         try {
             inputStream = getJarInputStream(jarPath);
@@ -142,7 +156,7 @@ public class ClientUserCodeDeploymentService {
                 }
                 byte[] classDefinition = readClassDefinition(inputStream, os);
                 inputStream.closeEntry();
-                classDefinitionList.add(new AbstractMap.SimpleEntry<String, byte[]>(className, classDefinition));
+                classDefinitions.put(className, classDefinition);
             } while (true);
         } finally {
             closeResource(inputStream);
