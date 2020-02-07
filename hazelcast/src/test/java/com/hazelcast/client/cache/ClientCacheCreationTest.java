@@ -122,14 +122,14 @@ public class ClientCacheCreationTest extends CacheCreationTest {
         final CacheManager cacheManager = cachingProvider.getCacheManager();
         MutableConfiguration configuration = new MutableConfiguration();
         // ensure cache is created despite the low concurrent invocation limit
-        while (true) {
+        assertTrueEventually(() -> {
             try {
                 cacheManager.createCache("xmlCache", configuration);
-                break;
             } catch (HazelcastOverloadException e) {
-                sleepMillis(30);
+                throw new AssertionError("Could not create cache due to "
+                        + "low concurrent invocation count.");
             }
-        }
+        });
 
         IExecutorService executorService = client.getExecutorService("exec");
         //keep the slot for one invocation to test if client can reconnect even if all slots are kept
