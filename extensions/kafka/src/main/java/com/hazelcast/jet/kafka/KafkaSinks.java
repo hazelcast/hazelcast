@@ -53,10 +53,11 @@ public final class KafkaSinks {
      * The behavior depends on the job's processing guarantee:
      * <ul>
      *     <li><em>EXACTLY_ONCE:</em> the sink will use Kafka transactions to
-     *     commit the messages. This brings some overhead on the broker side,
-     *     slight throughput reduction (we don't send messages between snapshot
-     *     phases) and, most importantly, increases the latency of the messages
-     *     because they are only visible to consumers after they are committed.
+     *     commit the messages. Transactions are committed after a snapshot is
+     *     completed. This increases the latency of the messages because they
+     *     are only visible to consumers after they are committed and slightly
+     *     reduces the throughput because no messages are sent between the
+     *     snapshot phases.
      *     <p>
      *     When using transactions pay attention to your {@code
      *     transaction.timeout.ms} config property. It limits the entire
@@ -68,6 +69,10 @@ public final class KafkaSinks {
      *     about to commit, and Jet will attempt to commit the transaction
      *     after the restart, but the transaction must be still waiting in the
      *     broker. The default in Kafka 2.4 is 1 minute.
+     *     <p>
+     *     Also keep in mind the consumers need to use {@code
+     *     isolation.level=read_committed}, which is not the default. Otherwise
+     *     the consumers will see duplicate messages.
      *
      *     <li><em>AT_LEAST_ONCE:</em> messages are committed immediately, the
      *     sink ensure that all async operations are done at 1st snapshot

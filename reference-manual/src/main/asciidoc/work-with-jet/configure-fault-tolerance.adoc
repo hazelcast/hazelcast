@@ -6,14 +6,14 @@ correctly in the face of Jet members failing and leaving the cluster.
 
 Jet takes snapshots of the entire state of the computation at regular
 intervals. It coordinates the snapshot across the cluster and
-synchronizes it with a checkpoint on the data source. The source must
-ensure that, in the case of a restart, it will be able to replay all the
-data it emitted after the last checkpoint. Each of the other components
-in the job will restore its processing state to exactly what it was at
-the time of the last snapshot. If a cluster member goes away, Jet will
-restart the job on the remaining members, rewind the sources to the
-last checkpoint, restore the state of processing from the last
-snapshot, and then seamlessly continue from that point.
+synchronizes it with connectors with fault-tolerance support. The source
+must ensure that, in the case of a restart, it will be able to replay
+all the data it emitted after the last checkpoint. Each of the other
+components in the job will restore their processing state to exactly
+what it was at the time of the last snapshot. If a cluster member goes
+away, Jet will restart the job on the remaining members, restore the
+state of processing from the last snapshot, and then seamlessly continue
+from that point.
 
 == Exactly-Once
 
@@ -21,14 +21,16 @@ snapshot, and then seamlessly continue from that point.
 each stream item exactly once. This is the ultimate guarantee you can
 ask for.
 
-As of version 0.6, Hazelcast Jet supports exactly-once processing with
-the source being either a Hazelcast `IMap` journal or a Kafka topic,
-and the sink being a Hazelcast `IMap`.
+Hazelcast Jet supports exactly-once processing with multiple sources and
+sinks. Each of them specifies the guarantees it is able to provide, for
+details see the summary in <<overview-of-sources-and-sinks>>.
 
-If you configure Jet for exactly-once but use Kafka as the sink, after a
-job restart you may get duplicates in the output. As opposed to doubly
-processing an input item, this is more benign because it just means
-getting the exact same result twice.
+If you configure Jet job with the exactly-once guarantee but use a sink
+with the at-least-once guarantee, after a job restart you may get
+duplicates in the output. As opposed to doubly processing an input item,
+this is more benign because it just means getting the exact same result
+twice. If you use a source with the at-least-once guarantee, some events
+might be processed multiple times.
 
 == At-Least-Once
 
@@ -41,6 +43,11 @@ latency. In some cases it is good enough.
 In some other cases, however, duplicate processing of data items can
 have quite surprising consequences. There is more information about this
 in our <<pitfalls-alo, Jet Concepts>> chapter.
+
+Also note that duplicate event processing can occur only in the case of
+a failure. If there is no failure or if the job is restarted due to a
+normal member shutdown or addition, even jobs in this mode do
+exactly-once processing.
 
 == Enable Fault Tolerance
 

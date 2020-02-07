@@ -21,6 +21,8 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
 import org.apache.activemq.ActiveMQConnectionFactory;
 
+import javax.jms.Topic;
+
 public class JMS {
 
     static void s1() {
@@ -36,8 +38,14 @@ public class JMS {
     static void s2() {
         //tag::s2[]
         Pipeline p = Pipeline.create();
-        p.readFrom(Sources.jmsTopic(() -> new ActiveMQConnectionFactory(
-                "tcp://localhost:61616"), "topic"))
+        p.readFrom(Sources.jmsTopicBuilder(() -> new ActiveMQConnectionFactory(
+                        "tcp://localhost:61616"))
+                .consumerFn(sess -> {
+                    Topic topic = sess.createTopic("topic");
+                    return sess.createSharedDurableConsumer(topic, "foo-consumer");
+                })
+                .sharedConsumer(true)
+                .build())
          .withoutTimestamps()
          .writeTo(Sinks.logger());
         //end::s2[]

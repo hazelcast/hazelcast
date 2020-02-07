@@ -46,6 +46,13 @@ after startup: both new files and new content appended to existing ones. Files
 must be updated in an append-only fashion; if the existing content changes, the
 behavior is undefined.
 
+Often, GUI text editors, even if you just add lines at the end, delete
+the whole file and recreate it. This gives undefined results. For
+testing it's best to use:
+```
+echo "foo" >> your_file
+```
+
 If you delete the watched directory, the job will complete.
 
 == File Sink
@@ -55,6 +62,15 @@ can work with either a local or a shared network file system. Each
 member will write to different file names. You can achieve the effect of
 a distributed sink if you manually collect all the output files on all
 members and combine their contents.
+
+If the job is running in exactly-once mode, items are written to
+temporary files (ending with a ".tmp" suffix). When Jet commits a
+snapshot, it atomically renames the file to remove this suffix. Thanks
+to the two-phase commit of the snapshot the sink provides the
+exactly-once guarantee.
+
+The sink can roll a new file after certain size is reached or when a
+date changes.
 
 Here's a small example of usage:
 

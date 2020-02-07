@@ -160,25 +160,26 @@ public final class JmsSourceBuilder {
      * reduce the guarantee of this source compared to the job's guarantee. If
      * you configure a stronger guarantee than the job has, the job's guarantee
      * will be used. Use it if you want to avoid the overhead of acknowledging
-     * the messages in transactions if you can tolerate duplicated or missed
-     * messages.
+     * the messages or storing IDs of seen messages, if you can tolerate
+     * duplicated or missed messages.
      * <p>
      * If the processing guarantee is NONE, the processor will consume the
-     * messages in auto-acknowledge mode. If the processing guarantee is other
-     * than NONE, the processor will acknowledge messages in transactions in
-     * the 2nd phase of the snapshot, that is after all downstream stages fully
-     * processed the messages. Additionally, if the processing guarantee is
-     * EXACTLY_ONCE, the processor will store {@linkplain
-     * #messageIdFn(FunctionEx) message IDs} of the unacknowledged messages to
-     * the snapshot and should the job fail after the snapshot was successful,
-     * but before Jet managed to acknowledge the messages, the stored IDs will
-     * be used to deduplicate the re-delivered messages.
+     * messages in {@link Session#DUPS_OK_ACKNOWLEDGE} mode. If the processing
+     * guarantee is other than NONE, the processor will acknowledge messages in
+     * transactions in the 2nd phase of the snapshot, that is after all
+     * downstream stages fully processed the messages. Additionally, if the
+     * processing guarantee is EXACTLY_ONCE, the processor will store
+     * {@linkplain #messageIdFn(FunctionEx) message IDs} of the unacknowledged
+     * messages to the snapshot and should the job fail after the snapshot was
+     * successful, but before Jet managed to acknowledge the messages. The
+     * stored IDs will be used to filter out the re-delivered messages.
      * <p>
-     * If you use a non-durable consumer with a topic, set the max-guarantee
-     * to NONE - the broker will not redeliver the unacknowledged messages
-     * anyway. If you didn't specify your own {@link #consumerFn(FunctionEx)},
-     * Jet will do it for you automatically because the consumer for the topic
-     * is non-durable by default.
+     * If you use a non-durable consumer with a topic, the guarantee will not
+     * work since the broker doesn't store the messages at all. You can also
+     * set the max-guarantee to NONE in this case - the acknowledge operation
+     * is ignored anyway. If you didn't specify your own {@link
+     * #consumerFn(FunctionEx)}, a non-durable consumer is created for a topic
+     * by default.
      * <p>
      * The default is {@link ProcessingGuarantee#EXACTLY_ONCE}, which means
      * that the source's guarantee will match the job's guarantee.

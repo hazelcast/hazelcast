@@ -1,4 +1,4 @@
-Jet accesses data sources and sinks via its _connectors_. They are a
+Jet accesses data sources and sinks via _connectors_. They are a
 computation job's point of contact with the outside world.
 
 = Concerns
@@ -24,45 +24,66 @@ Journal feature). You can also set up an `IMap`/`ICache` as a sink for
 an infinite amount of data, either by ensuring that the size of the
 keyset will be finite or by allowing the eviction of old entries.
 
-== Is it Replayable?
+== Is it Fault-Tolerant?
 
-Most finite data sources are replayable because they come from
-persistent storage. You can easily replay the whole dataset. However, an
-infinite data source may be of such nature that it can be consumed only
-once. An example is the TCP socket connector. Such sources are bad at
-fault tolerance: if anything goes wrong during the computation, it
-cannot be retried.
+Can the connector work in a way that even in the case of a job failure
+and restart it doesn't miss or duplicate any items it reads or creates?
+There are multiple ways this can be achieved:
 
-== Does it Support Checkpointing?
+=== Replayable Source
 
-You cannot retry to process an infinite data stream from the very
-beginning. You must save the complete state at regular intervals, then
-replay the input stream from the last saved position (_checkpoint_).
-Jet can create snapshots of its internal processing state, but for this
-to be useful the data source must have the ability to replay its data
-from the chosen point, discarding everything before it. Both Kafka and
-the Hazelcast Event Journal support this.
+If a source has a notion of item offset and a reader can seek to an
+offset and read the exactly same data from it multiple times, we say
+it's replayable. For finite sources it's feasible to restart from offset
+0, such as re-read a file. However, an infinite data source may be of
+such nature that it can be consumed only once. An example is the TCP
+socket connector. Such sources are not fault-tolerant: if anything goes
+wrong during the computation, it cannot be retried. Examples of
+unbounded replayable sources are Hazelcast Event Journal or Kafka.
+
+=== Consumption Acknowledgements
+
+If a consumer has to acknowledge each processed message and
+non-acknowledged messages are redelivered, it's possible to create a
+fault-tolerant source. An example of this is the JMS source.
+
+=== XA Transactions
+
+Two-phase transactions are another way to achieve fault-tolerance. Jet
+can use the standard X/Open XA Transactions or equivalent API, such as
+the one of Apache Kafka.
+
+=== Idempotent writes
+
+An operation is idempotent if, even if executed multiple times, the end
+result is the same as if executed just once. If a sink is idempotent and
+the job restarts and repeats some writes, the duplicate writes will have
+no effect. An example is an IMap sink, but only if the keys are unique
+and deterministic.
 
 == Is it Distributed?
 
+A source is distributed if it can be read by multiple readers and each
+will get a part of the data. We don't discuss sinks here as practically
+all targets can be written to by multiple writers. It also doesn't
+matter whether the resource actually stores data in multiple nodes.
+
 A distributed computation engine prefers to work with distributed data
-resources. If the resource is not distributed, all Jet members will have
-to contend for access to a single endpoint. Kafka, HDFS, `IMap` and
-`ICache` are all distributed. On the other hand, an `IList` is not: it
-resides on a single member. When used as a source, only one Jet member
-pulls its data. When used as a sink, all Jet members send their data
-to the one that holds it.
+resources. If the resource is not distributed, one Jet member has to do
+all the reading and then split the data for other members. Kafka, HDFS,
+`IMap` and `ICache` are all distributed. On the other hand, an `IList`
+is not: it resides on a single member. When used as a source, only one
+Jet member pulls its data.
 
 A <<file-sources, file>> source/sink operating in local mode is a sort
 of a "manually distributed" resource, each member accessing its own
 local filesystem. You have to manually arrange the files so that on each
 member there is a subset of the full dataset. When used as a sink, you
-have to manually gather all the pieces that Jet created.
-
-The file source/sink can also operate in shared mode, accessing a shared
+have to manually gather all the pieces that Jet created. The file
+source/sink can also operate in shared mode, accessing a shared
 filesystem mounted as a local directory.
 
-== What about Data Locality?
+=== What about Data Locality?
 
 If you're looking to achieve record-breaking throughput for your
 application, you'll have to think carefully how close you can deliver
@@ -78,10 +99,9 @@ choices: have Jet connect to a Hazelcast IMDG cluster, or use Jet itself
 to host the data (since a Jet cluster is at the same time a Hazelcast
 IMDG cluster). In the second case Jet will automatically ensure a
 data-local access pattern, but there's a caveat: if the Jet job causes
-an error of unrestricted scope, such as `OutOfMemoryError` or
-`StackOverflowError`, it will have unpredictable consequences for the
-state of the whole Jet member, jeopardizing the integrity of the data
-stored on it.
+an error of unrestricted scope, such as `OutOfMemoryError`, it will have
+unpredictable consequences for the state of the whole Jet member,
+jeopardizing the integrity of the data stored on it.
 
 = Overview of Sources and Sinks
 
@@ -96,7 +116,7 @@ aren't packaged with Jet.
 
 .Sources and Sinks
 |===
-|Resource|Javadoc|Sample|Unbounded?|Replayable?|Checkpointing?|Distributed?|Data Locality
+|Resource|Javadoc|Sample|Unbounded?|Guarantee|Distributed?|Data Locality
 
 |<<connector-imdg, IMap>>
 |{jet-javadoc}/pipeline/Sources.html#map-java.lang.String-com.hazelcast.query.Predicate-com.hazelcast.projection.Projection-[Source]
@@ -104,8 +124,9 @@ aren't packaged with Jet.
 {jet-javadoc}/pipeline/Sinks.html#map-java.lang.String-[Sink]
 |{jet-examples}/imdg-connectors/src/main/java/com/hazelcast/jet/examples/imdg/MapSourceAndSinks.java[Sample]
 |image:cross-mark.png[X,16,16]
-|image:check-mark.png[X,16,16]
-|image:cross-mark.png[X,16,16]
+|Source: N/A
+
+Sink: at least once
 |image:check-mark.png[X,16,16]
 |Src image:check-mark.png[X,16,16]
 
@@ -117,8 +138,9 @@ Sink image:cross-mark.png[X,16,16]
 {jet-javadoc}/pipeline/Sinks.html#cache-java.lang.String-[Sink]
 |{jet-examples}/imdg-connectors/src/main/java/com/hazelcast/jet/examples/imdg/MapSourceAndSinks.java[Sample]
 |image:cross-mark.png[X,16,16]
-|image:check-mark.png[X,16,16]
-|image:cross-mark.png[X,16,16]
+|Source: N/A
+
+Sink: at least once
 |image:check-mark.png[X,16,16]
 |Src image:check-mark.png[X,16,16]
 
@@ -130,8 +152,9 @@ Sink image:cross-mark.png[X,16,16]
 {jet-javadoc}/pipeline/Sinks.html#remoteMap-java.lang.String-com.hazelcast.client.config.ClientConfig-[Sink]
 |{jet-examples}/imdg-connectors/src/main/java/com/hazelcast/jet/examples/imdg/RemoteMapSourceAndSink.java[Sample]
 |image:cross-mark.png[X,16,16]
-|image:check-mark.png[X,16,16]
-|image:cross-mark.png[X,16,16]
+|Source: N/A
+
+Sink: at least once
 |image:check-mark.png[X,16,16]
 |image:cross-mark.png[X,16,16]
 
@@ -141,8 +164,9 @@ Sink image:cross-mark.png[X,16,16]
 {jet-javadoc}/pipeline/Sinks.html#remoteCache-java.lang.String-com.hazelcast.client.config.ClientConfig-[Sink]
 |
 |image:cross-mark.png[X,16,16]
-|image:check-mark.png[X,16,16]
-|image:cross-mark.png[X,16,16]
+|Source: N/A
+
+Sink: at least once
 |image:check-mark.png[X,16,16]
 |image:cross-mark.png[X,16,16]
 
@@ -150,8 +174,7 @@ Sink image:cross-mark.png[X,16,16]
 |{jet-javadoc}/pipeline/Sources.html#mapJournal-java.lang.String-com.hazelcast.jet.function.PredicateEx-com.hazelcast.jet.function.FunctionEx-com.hazelcast.jet.pipeline.JournalInitialPosition-[Source]
 |{jet-examples}/event-journal/src/main/java/com/hazelcast/jet/examples/eventjournal/MapJournalSource.java[Sample]
 |image:check-mark.png[X,16,16]
-|image:check-mark.png[X,16,16]
-|image:check-mark.png[X,16,16]
+|exactly once
 |image:check-mark.png[X,16,16]
 |image:check-mark.png[X,16,16]
 
@@ -160,8 +183,7 @@ Sink image:cross-mark.png[X,16,16]
 |{jet-javadoc}/pipeline/Sources.html#cacheJournal-java.lang.String-com.hazelcast.function.PredicateEx-com.hazelcast.function.FunctionEx-com.hazelcast.jet.pipeline.JournalInitialPosition-[Source]
 |
 |image:check-mark.png[X,16,16]
-|image:check-mark.png[X,16,16]
-|image:check-mark.png[X,16,16]
+|exactly once
 |image:check-mark.png[X,16,16]
 |image:check-mark.png[X,16,16]
 
@@ -169,8 +191,7 @@ Sink image:cross-mark.png[X,16,16]
 |{jet-javadoc}/pipeline/Sources.html#remoteMapJournal-java.lang.String-com.hazelcast.client.config.ClientConfig-com.hazelcast.jet.function.PredicateEx-com.hazelcast.jet.function.FunctionEx-com.hazelcast.jet.pipeline.JournalInitialPosition-[Source]
 |{jet-examples}/event-journal/src/main/java/com/hazelcast/jet/examples/eventjournal/RemoteMapJournalSource.java[Sample]
 |image:check-mark.png[X,16,16]
-|image:check-mark.png[X,16,16]
-|image:check-mark.png[X,16,16]
+|exactly once
 |image:check-mark.png[X,16,16]
 |image:cross-mark.png[X,16,16]
 
@@ -178,8 +199,7 @@ Sink image:cross-mark.png[X,16,16]
 |{jet-javadoc}/pipeline/Sources.html#remoteCacheJournal-java.lang.String-com.hazelcast.client.config.ClientConfig-com.hazelcast.function.PredicateEx-com.hazelcast.function.FunctionEx-com.hazelcast.jet.pipeline.JournalInitialPosition-[Source]
 |
 |image:check-mark.png[X,16,16]
-|image:check-mark.png[X,16,16]
-|image:check-mark.png[X,16,16]
+|exactly once
 |image:check-mark.png[X,16,16]
 |image:cross-mark.png[X,16,16]
 
@@ -189,8 +209,9 @@ Sink image:cross-mark.png[X,16,16]
 {jet-javadoc}/pipeline/Sinks.html#list-java.lang.String-[Sink]
 |{jet-examples}/imdg-connectors/src/main/java/com/hazelcast/jet/examples/imdg/ListSourceAndSink.java[Sample]
 |image:cross-mark.png[X,16,16]
-|image:check-mark.png[X,16,16]
-|image:cross-mark.png[X,16,16]
+|Source: N/A
+
+Sink: at-least-once
 |image:cross-mark.png[X,16,16]
 |image:check-mark.png[X,16,16]
 
@@ -200,19 +221,19 @@ Sink image:cross-mark.png[X,16,16]
 {jet-javadoc}/pipeline/Sinks.html#remoteList-java.lang.String-com.hazelcast.client.config.ClientConfig-[Sink]
 |{jet-examples}/imdg-connectors/src/main/java/com/hazelcast/jet/examples/imdg/RemoteListSourceAndSink.java[Sample]
 |image:cross-mark.png[X,16,16]
-|image:check-mark.png[X,16,16]
-|image:cross-mark.png[X,16,16]
+|Source: N/A
+
+Sink: at-least-once
 |image:cross-mark.png[X,16,16]
 |image:cross-mark.png[X,16,16]
 
-|<<hdfs>>
+|<<hadoop>>
 |{jet-javadoc}/hadoop/HadoopSources.html[Source]
 
 {jet-javadoc}/hadoop/HadoopSinks.html[Sink]
 |{jet-examples}/hadoop/src/main/java/com/hazelcast/jet/examples/hadoop/HadoopWordCount.java[Sample]
 |image:cross-mark.png[X,16,16]
-|image:check-mark.png[X,16,16]
-|image:cross-mark.png[X,16,16]
+|N/A
 |image:check-mark.png[X,16,16]
 |image:check-mark.png[X,16,16]
 
@@ -222,8 +243,7 @@ Sink image:cross-mark.png[X,16,16]
 {jet-javadoc}/kafka/KafkaSinks.html[Sink]
 |{jet-examples}/kafka/src/main/java/com/hazelcast/jet/examples/kafka/KafkaSource.java[Source]
 |image:check-mark.png[X,16,16]
-|image:check-mark.png[X,16,16]
-|image:check-mark.png[X,16,16]
+|exactly-once
 |image:check-mark.png[X,16,16]
 |image:cross-mark.png[X,16,16]
 
@@ -233,8 +253,9 @@ Sink image:cross-mark.png[X,16,16]
 {jet-javadoc}/pipeline/Sinks.html#files-java.lang.String-[Sink]
 |{jet-examples}/files/src/main/java/com/hazelcast/jet/examples/files/AccessLogAnalyzer.java[Sample]
 |image:cross-mark.png[X,16,16]
-|image:check-mark.png[X,16,16]
-|image:cross-mark.png[X,16,16]
+|Source: N/A
+
+Sink: exactly-once
 |image:check-mark.png[X,16,16]
 |Local FS image:check-mark.png[X,16,16]
 
@@ -244,8 +265,7 @@ Sink image:cross-mark.png[X,16,16]
 |{jet-javadoc}/pipeline/Sources.html#fileWatcher-java.lang.String-[Source]
 |{jet-examples}/files/src/main/java/com/hazelcast/jet/examples/files/AccessLogStreamAnalyzer.java[Sample]
 |image:check-mark.png[X,16,16]
-|image:cross-mark.png[X,16,16]
-|image:cross-mark.png[X,16,16]
+|None
 |image:check-mark.png[X,16,16]
 |Local FS image:check-mark.png[X,16,16]
 
@@ -259,8 +279,9 @@ Sink image:cross-mark.png[X,16,16]
 
 {jet-examples}/files/src/main/java/com/hazelcast/jet/examples/files/avro/AvroSink.java[Sink Sample]
 |image:cross-mark.png[X,16,16]
-|image:check-mark.png[X,16,16]
-|image:cross-mark.png[X,16,16]
+|Source: N/A
+
+Sink: None
 |image:check-mark.png[X,16,16]
 |Local FS image:check-mark.png[X,16,16]
 
@@ -270,12 +291,13 @@ Sink image:cross-mark.png[X,16,16]
 |{jet-javadoc}/pipeline/Sources.html#socket-java.lang.String-int-java.nio.charset.Charset-[Source]
 
 {jet-javadoc}/pipeline/Sinks.html#socket-java.lang.String-int-com.hazelcast.jet.function.FunctionEx-java.nio.charset.Charset-[Sink]
-|{jet-examples}/sockets/src/main/java/com/hazelcast/jet/examples/sockets/StreamTextSocket.java[Source]
+|{jet-examples}/sockets/src/main/java/com/hazelcast/jet/examples/sockets/StreamTextSocket.java[Source Sample]
 
-{jet-examples}/sockets/src/main/java/com/hazelcast/jet/examples/sockets/WriteTextSocket.java[Sink]
+{jet-examples}/sockets/src/main/java/com/hazelcast/jet/examples/sockets/WriteTextSocket.java[Sink Sample]
 |image:check-mark.png[X,16,16]
-|image:cross-mark.png[X,16,16]
-|image:cross-mark.png[X,16,16]
+|Source: None
+
+Sink: At least once
 |image:cross-mark.png[X,16,16]
 |image:cross-mark.png[X,16,16]
 
@@ -289,8 +311,9 @@ Sink image:cross-mark.png[X,16,16]
 
 {jet-examples}/jms/src/main/java/com/hazelcast/jet/examples/jms/JmsTopicSample.java[Topic Sample]
 |image:check-mark.png[X,16,16]
-|image:cross-mark.png[X,16,16]
-|image:cross-mark.png[X,16,16]
+|Source: exactly once
+
+Sink: at least once
 |Queue Source image:check-mark.png[X,16,16]
 
 Queue Sink image:check-mark.png[X,16,16]
@@ -308,8 +331,9 @@ Topic Sink image:check-mark.png[X,16,16]
 
 {jet-examples}/jdbc/src/main/java/com/hazelcast/jet/examples/jdbc/JdbcSink.java[Sink Sample]
 |image:cross-mark.png[X,16,16]
-|image:check-mark.png[X,16,16]
-|image:cross-mark.png[X,16,16]
+|Source: N/A
+
+Sink: at least once
 |image:check-mark.png[X,16,16]
 |image:cross-mark.png[X,16,16]
 
@@ -321,26 +345,25 @@ Topic Sink image:check-mark.png[X,16,16]
 
 {jet-examples}/files/src/main/java/com/hazelcast/jet/examples/files/s3/S3WordCount.java[Sink Sample]
 |image:cross-mark.png[X,16,16]
-|image:check-mark.png[X,16,16]
-|image:cross-mark.png[X,16,16]
+|Source: N/A
+
+Sink: none
 |image:check-mark.png[X,16,16]
 |image:cross-mark.png[X,16,16]
 
 |Application Log
 |{jet-javadoc}/pipeline/Sinks.html#logger-com.hazelcast.jet.function.FunctionEx-[Sink]
-|{jet-examples}/enrichment/src/main/java/com/hazelcast/jet/examples/enrichment/Enrichment.java[Sink]
+|{jet-examples}/enrichment/src/main/java/com/hazelcast/jet/examples/enrichment/Enrichment.java[Sample]
 |N/A
 |N/A
-|image:cross-mark.png[X,16,16]
 |image:cross-mark.png[X,16,16]
 |image:check-mark.png[X,16,16]
 
-|<<return-results-to-caller>>
+|<<return-results-to-caller, Observable>>
 |{jet-javadoc}/pipeline/Sinks.html#observable-com.hazelcast.jet.Observable-[Sink]
-|{jet-examples}/wordcount/src/main/java/com/hazelcast/jet/examples/wordcount/WordCount.java[Sink]
-|image:check-mark.png[X,16,16]
+|{jet-examples}/wordcount/src/main/java/com/hazelcast/jet/examples/wordcount/WordCount.java[Sample]
 |N/A
-|image:cross-mark.png[X,16,16]
+|At least once
 |image:cross-mark.png[X,16,16]
 |image:cross-mark.png[X,16,16]
 |===

@@ -1108,7 +1108,8 @@ public final class Sources {
      * message timestamp} as the native timestamp, if {@linkplain
      * StreamSourceStage#withNativeTimestamps(long) enabled}.
      * <p>
-     * This source supports exactly-once and at-least-once mode, see {@link
+     * This source supports exactly-once and at-least-once mode for durable
+     * topic subscriptions, see {@link
      * JmsSourceBuilder#maxGuarantee(ProcessingGuarantee)} for more
      * information.
      * <p>

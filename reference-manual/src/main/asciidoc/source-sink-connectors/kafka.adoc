@@ -1,10 +1,10 @@
 = Kafka
 
-Apache Kafka is a production-worthy choice of both source and sink
+Apache Kafka is a production-worthy choice for both source and sink
 for infinite stream processing jobs. It supports fault tolerance and
 snapshotting. The basic paradigm is that of a distributed
-publish/subscribe message queue. Jet's Kafka Source subscribes to a
-Kafka topic and the sink publishes events to a Kafka topic.
+publish/subscribe topic. Jet's Kafka Source subscribes to a Kafka topic
+and the sink publishes events to a Kafka topic.
 
 The following code will consume from topics `t1` and `t2` and then write
 to `t3`:
@@ -26,12 +26,6 @@ using the supplied properties. Jet uses manual partition assignment to
 arrange the available Kafka partitions among the available processors
 and will ignore the `group.id` property.
 
-Currently there is a requirement that the global parallelism of the
-Kafka source be at most the number of partitions you are subscribing to.
-The local parallelism of the Kafka source is 2 and if your Jet cluster
-has 4 members, this means that a minimum of 8 Kafka partitions must be
-available.
-
 If any new partitions are added while the job is running, Jet will
 automatically assign them to the existing processors and consume them
 from the beginning.
@@ -51,10 +45,15 @@ documentation for the descriptions of these properties.
 
 == Using Kafka as a Sink
 
-The Kafka sink creates one `KafkaProducer` per cluster member and shares
-it among all the sink processors on that member. You can provide a
-mapping function that transforms the items the sink receives into
-`ProducerRecord`s.
+The sink provides the exactly-once guarantee at the cost of using Kafka
+transactions: Jet commits the produced records after each snapshot is
+completed. This greatly increases the latency because consumers see the
+records only after they are committed.
+
+If you use _at-least-once_ guarantee, records are visible immediately,
+but in the case of a failure some records could be produced duplicately.
+You can also have the job in exactly-once mode and decrease the
+guarantee just for a particular Kafka sink.
 
 == Limitations
 

@@ -94,13 +94,11 @@ public abstract class AsyncHazelcastWriterP implements Processor {
 
     private boolean flush() {
         checkError();
-        boolean result;
         try {
-            result = flushInternal();
+            return flushInternal();
         } catch (HazelcastInstanceNotActiveException e) {
             throw handleInstanceNotActive(e, isLocal());
         }
-        return result;
     }
 
     @CheckReturnValue

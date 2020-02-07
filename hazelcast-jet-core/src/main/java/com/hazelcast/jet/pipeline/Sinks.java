@@ -796,14 +796,14 @@ public final class Sinks {
      * on each member and the members won't overwrite each other's files.
      *
      * <h3>Fault tolerance</h3>
-     * If the job is running in <i>exactly-once</i> mode, items will be written
+     * If the job is running in <i>exactly-once</i> mode, Jet writes the items
      * to temporary files (ending with a {@value
-     * FileSinkBuilder#TEMP_FILE_SUFFIX} suffix). When the snapshot is
-     * committed, the file will be atomically renamed to remove this suffix.
-     * Thanks to the two-phase commit of the snapshot, exactly-once guarantee
-     * is provided for the sink. Because of this a new file will be started
-     * each time a state snapshotted, the sink will likely produce many more
-     * small files, depending on the snapshot interval.
+     * FileSinkBuilder#TEMP_FILE_SUFFIX} suffix). When Jet commits a snapshot,
+     * it atomically renames the file to remove this suffix. Thanks to the
+     * two-phase commit of the snapshot the sink provides exactly-once
+     * guarantee. Because Jet starts a new file each time it snapshots the
+     * state, the sink will likely produce many more small files, depending on
+     * the snapshot interval.
      * <p>
      * If you want to avoid the temporary files or the high number of files but
      * need to have exactly-once for other processors in the job, call {@link
