@@ -61,7 +61,7 @@ public class BasicObservable {
                 .map(WindowResult::result)
                 .writeTo(Sinks.observable(observable));
 
-        jet.newJob(p);
+        jet.newJob(p).join();
     }
 
     private static void printResults(List<Long> topNumbers) {

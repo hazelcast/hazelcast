@@ -72,7 +72,7 @@ public class HelloWorld {
         JobConfig config = new JobConfig();
         config.setName("hello-world");
         config.setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
-        jet.newJobIfAbsent(p, config);
+        jet.newJobIfAbsent(p, config).join();
     }
 
     private static void printResults(List<Long> topNumbers) {
