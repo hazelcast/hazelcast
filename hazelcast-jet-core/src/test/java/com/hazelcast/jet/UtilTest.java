@@ -16,21 +16,17 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Map.Entry;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.Util.idFromString;
 import static com.hazelcast.jet.Util.idToString;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 public class UtilTest extends JetTestSupport {
@@ -62,17 +58,5 @@ public class UtilTest extends JetTestSupport {
         assertEquals(-1, idFromString("ffff-ffff-ffff-ffff"));
         assertEquals(1234567890123456789L, idFromString("1122-10f4-7de9-8115"));
         assertEquals(-1234567890123456789L, idFromString("eedd-ef0b-8216-7eeb"));
-    }
-
-    @Test
-    public void when_copyClasspathDirectory_then_allFilesAndDirsPresent() throws Exception {
-        Path path = Util.copyClasspathDirectory("nested");
-        try {
-            assertTrue(Files.isRegularFile(path.resolve("folder/test")));
-            assertTrue(Files.isRegularFile(path.resolve("folder1/test1")));
-            assertTrue(Files.isRegularFile(path.resolve("folder2/test2")));
-        } finally {
-            IOUtil.delete(path);
-        }
     }
 }

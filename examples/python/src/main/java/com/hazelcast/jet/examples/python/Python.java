@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.examples.python;
 
-import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Observable;
@@ -27,7 +26,6 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.jet.python.PythonServiceConfig;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -68,8 +66,8 @@ public class Python {
                 + rnd.nextLong(Long.MAX_VALUE) + rnd.nextLong(Long.MAX_VALUE);
     }
 
-    public static void main(String[] args) throws IOException {
-        Path baseDir = Util.copyClasspathDirectory("python");
+    public static void main(String[] args) {
+        Path baseDir = Util.getFilePathOfClasspathResource("python");
         Pipeline p = buildPipeline(baseDir.toString());
 
         JetInstance jet = Jet.bootstrappedInstance();
@@ -79,7 +77,6 @@ public class Python {
             JobConfig config = new JobConfig().setName("python-mapping");
             jet.newJobIfAbsent(p, config).join();
         } finally {
-            IOUtil.delete(baseDir);
             Jet.shutdownAll();
         }
     }
