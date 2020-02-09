@@ -26,6 +26,9 @@ import javax.annotation.Nonnull;
 /**
  * Transforms which allow the user to call Python user-defined functions
  * from inside a Jet pipeline.
+ * <p>
+ * Support for Python is currently in the beta phase. The API might change
+ * in future versions.
  *
  * @since 4.0
  */
@@ -50,6 +53,28 @@ public final class PythonTransforms {
     }
 
     /**
+     * A stage-transforming method that adds a partitioned "map using Python"
+     * pipeline stage. It applies partitioning using the supplied {@code keyFn}.
+     * You need partitioning if your input stream comes from a non-distributed
+     * data source (all data coming in on a single cluster member), in order to
+     * distribute the Python work across the whole cluster.
+     * <p>
+     * Use it like this: {@code stage.apply(PythonService.mapUsingPython(keyFn,
+     * pyConfig))}. See {@link com.hazelcast.jet.python.PythonServiceConfig}
+     * for more details.
+     */
+    @Nonnull
+    public static <K> FunctionEx<StreamStage<String>, StreamStage<String>> mapUsingPython(
+            @Nonnull FunctionEx<? super String, ? extends K> keyFn,
+            @Nonnull PythonServiceConfig cfg
+    ) {
+        return s -> s
+                .groupingKey(keyFn)
+                .mapUsingServiceAsyncBatched(PythonService.factory(cfg), Integer.MAX_VALUE, PythonService::sendRequest)
+                .setName("mapUsingPython");
+    }
+
+    /**
      * A stage-transforming method that adds a "map using Python" pipeline stage.
      * Use it with {@code stage.apply(PythonService.mapUsingPythonBatch(pyConfig))}.
      * See {@link com.hazelcast.jet.python.PythonServiceConfig} for more details.
@@ -59,6 +84,28 @@ public final class PythonTransforms {
             @Nonnull PythonServiceConfig cfg
     ) {
         return s -> s
+                .mapUsingServiceAsyncBatched(PythonService.factory(cfg), Integer.MAX_VALUE, PythonService::sendRequest)
+                .setName("mapUsingPython");
+    }
+
+    /**
+     * A stage-transforming method that adds a partitioned "map using Python"
+     * pipeline stage. It applies partitioning using the supplied {@code keyFn}.
+     * You need partitioning if your input stream comes from a non-distributed
+     * data source (all data coming in on a single cluster member), in order to
+     * distribute the Python work across the whole cluster.
+     * <p>
+     * Use it like this: {@code stage.apply(PythonService.mapUsingPythonBatch(keyFn,
+     * pyConfig))}. See {@link com.hazelcast.jet.python.PythonServiceConfig}
+     * for more details.
+     */
+    @Nonnull
+    public static <K> FunctionEx<BatchStage<String>, BatchStage<String>> mapUsingPythonBatch(
+            @Nonnull FunctionEx<? super String, ? extends K> keyFn,
+            @Nonnull PythonServiceConfig cfg
+    ) {
+        return s -> s
+                .groupingKey(keyFn)
                 .mapUsingServiceAsyncBatched(PythonService.factory(cfg), Integer.MAX_VALUE, PythonService::sendRequest)
                 .setName("mapUsingPython");
     }

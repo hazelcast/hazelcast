@@ -89,6 +89,26 @@ public class PythonServiceTest extends SimpleTestInClusterSupport {
     }
 
     @Test
+    public void batchStage_mapUsingPython_onAllMembers() {
+        // Given
+        PythonServiceConfig cfg = new PythonServiceConfig()
+                .setHandlerFile(baseDir + "/echo.py")
+                .setHandlerFunction("handle");
+        List<String> items = IntStream.range(0, ITEM_COUNT).mapToObj(Integer::toString).collect(toList());
+        Pipeline p = Pipeline.create();
+        BatchStage<String> stage = p.readFrom(TestSources.items(items));
+
+        // When
+        BatchStage<String> mapped = stage.apply(mapUsingPythonBatch(x -> x, cfg)).setLocalParallelism(2);
+
+        // Then
+        mapped.writeTo(AssertionSinks.assertAnyOrder(
+                "Python didn't map the items correctly", items.stream().map(i -> "echo-" + i).collect(toList())
+        ));
+        instance().newJob(p).join();
+    }
+
+    @Test
     public void streamStage_mapUsingPython_withBaseDir() {
         // Given
         PythonServiceConfig cfg = new PythonServiceConfig()
@@ -138,12 +158,10 @@ public class PythonServiceTest extends SimpleTestInClusterSupport {
         List<String> items = IntStream.range(0, ITEM_COUNT).mapToObj(Integer::toString).collect(toList());
         Pipeline p = Pipeline.create();
         StreamStage<String> stage = p.readFrom(TestSources.items(items))
-                                     .addTimestamps(x -> 0, 0)
-                                     .groupingKey(x -> x)
-                                     .mapStateful(() -> null, (nul, key, item) -> item);
+                                     .addTimestamps(x -> 0, 0);
 
         // When
-        StreamStage<String> mapped = stage.apply(mapUsingPython(cfg)).setLocalParallelism(2);
+        StreamStage<String> mapped = stage.apply(mapUsingPython(x -> x, cfg)).setLocalParallelism(2);
 
         // Then
         mapped.writeTo(AssertionSinks.assertAnyOrder(
