@@ -365,6 +365,9 @@ import com.hazelcast.client.impl.protocol.codec.SqlCloseCodec;
 import com.hazelcast.client.impl.protocol.codec.SqlExecuteCodec;
 import com.hazelcast.client.impl.protocol.codec.SqlFetchCodec;
 import com.hazelcast.client.impl.protocol.codec.TopicAddMessageListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.TopicPublishAllAsyncCodec;
+import com.hazelcast.client.impl.protocol.codec.TopicPublishAllCodec;
+import com.hazelcast.client.impl.protocol.codec.TopicPublishAsyncCodec;
 import com.hazelcast.client.impl.protocol.codec.TopicPublishCodec;
 import com.hazelcast.client.impl.protocol.codec.TopicRemoveMessageListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.TransactionCommitCodec;
@@ -727,6 +730,9 @@ import com.hazelcast.client.impl.protocol.task.set.SetRemoveListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.set.SetRemoveMessageTask;
 import com.hazelcast.client.impl.protocol.task.set.SetSizeMessageTask;
 import com.hazelcast.client.impl.protocol.task.topic.TopicAddMessageListenerMessageTask;
+import com.hazelcast.client.impl.protocol.task.topic.TopicPublishAllAsyncMessageTask;
+import com.hazelcast.client.impl.protocol.task.topic.TopicPublishAllMessageTask;
+import com.hazelcast.client.impl.protocol.task.topic.TopicPublishAsyncMessageTask;
 import com.hazelcast.client.impl.protocol.task.topic.TopicPublishMessageTask;
 import com.hazelcast.client.impl.protocol.task.topic.TopicRemoveMessageListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.transaction.TransactionCommitMessageTask;
@@ -1196,6 +1202,12 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
     private void initializeTopicTaskFactories() {
         factories.put(TopicPublishCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new TopicPublishMessageTask(cm, node, con));
+        factories.put(TopicPublishAllCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new TopicPublishAllMessageTask(cm, node, con));
+        factories.put(TopicPublishAllAsyncCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new TopicPublishAllAsyncMessageTask(cm, node, con));
+        factories.put(TopicPublishAsyncCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new TopicPublishAsyncMessageTask(cm, node, con));
         factories.put(TopicAddMessageListenerCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new TopicAddMessageListenerMessageTask(cm, node, con));
         factories.put(TopicRemoveMessageListenerCodec.REQUEST_MESSAGE_TYPE,

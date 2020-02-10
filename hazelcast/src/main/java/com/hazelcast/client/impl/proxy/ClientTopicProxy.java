@@ -16,12 +16,19 @@
 
 package com.hazelcast.client.impl.proxy;
 
+import com.hazelcast.client.impl.ClientDelegatingFuture;
+import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.TopicAddMessageListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.TopicPublishAllAsyncCodec;
+import com.hazelcast.client.impl.protocol.codec.TopicPublishAllCodec;
+import com.hazelcast.client.impl.protocol.codec.TopicPublishAsyncCodec;
 import com.hazelcast.client.impl.protocol.codec.TopicPublishCodec;
 import com.hazelcast.client.impl.protocol.codec.TopicRemoveMessageListenerCodec;
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.EventHandler;
+import com.hazelcast.client.impl.spi.impl.ClientInvocation;
+import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.serialization.Data;
@@ -32,8 +39,13 @@ import com.hazelcast.topic.MessageListener;
 import com.hazelcast.topic.impl.DataAwareMessage;
 
 import javax.annotation.Nonnull;
+import java.util.Collection;
 import java.util.UUID;
+import java.util.concurrent.CompletionStage;
 
+import static com.hazelcast.internal.util.CollectionUtil.objectToDataCollection;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.Preconditions.checkNoNullInside;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
@@ -46,6 +58,12 @@ public class ClientTopicProxy<E> extends PartitionSpecificClientProxy implements
     private static final String NULL_MESSAGE_IS_NOT_ALLOWED = "Null message is not allowed!";
     private static final String NULL_LISTENER_IS_NOT_ALLOWED = "Null listener is not allowed!";
 
+    private static final ClientMessageDecoder PUBLISH_ALL_ASYNC_RESPONSE_DECODER =
+            clientMessage -> TopicPublishAllAsyncCodec.decodeResponse(clientMessage).response;
+
+    private static final ClientMessageDecoder PUBLISH_ASYNC_RESPONSE_DECODER =
+            clientMessage -> TopicPublishAsyncCodec.decodeResponse(clientMessage).response;
+
     public ClientTopicProxy(String serviceName, String objectId, ClientContext context) {
         super(serviceName, objectId, context);
     }
@@ -56,6 +74,22 @@ public class ClientTopicProxy<E> extends PartitionSpecificClientProxy implements
         Data data = toData(message);
         ClientMessage request = TopicPublishCodec.encodeRequest(name, data);
         invokeOnPartition(request);
+    }
+
+    @Override
+    public CompletionStage<E> publishAsync(@Nonnull E message) {
+        checkNotNull(message, NULL_MESSAGE_IS_NOT_ALLOWED);
+
+        Data data = toData(message);
+        final ClientMessage clientMessage = TopicPublishAsyncCodec.encodeRequest(name, data);
+
+        try {
+            ClientInvocationFuture invocationFuture = new ClientInvocation(getClient(),
+                    clientMessage, getName(), getPartitionId()).invoke();
+            return new ClientDelegatingFuture<>(invocationFuture, getSerializationService(), PUBLISH_ASYNC_RESPONSE_DECODER);
+        } catch (Exception e) {
+            throw rethrow(e);
+        }
     }
 
     @Nonnull
@@ -76,6 +110,34 @@ public class ClientTopicProxy<E> extends PartitionSpecificClientProxy implements
     public LocalTopicStats getLocalTopicStats() {
         throw new UnsupportedOperationException("Locality is ambiguous for client!");
     }
+
+    @Override
+    public void publishAll(@Nonnull Collection<? extends E> messages) {
+        checkNotNull(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
+        checkNoNullInside(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
+
+        Collection<Data> dataCollection = objectToDataCollection(messages, getSerializationService());
+        ClientMessage request = TopicPublishAllCodec.encodeRequest(name, dataCollection);
+        invokeOnPartition(request);
+    }
+
+    @Override
+    public CompletionStage<E> publishAllAsync(@Nonnull Collection<? extends E> messages) {
+        checkNotNull(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
+        checkNoNullInside(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
+
+        Collection<Data> dataCollection = objectToDataCollection(messages, getSerializationService());
+        final ClientMessage clientMessage = TopicPublishAllAsyncCodec.encodeRequest(name, dataCollection);
+
+        try {
+            ClientInvocationFuture invocationFuture = new ClientInvocation(getClient(),
+                    clientMessage, getName(), getPartitionId()).invoke();
+            return new ClientDelegatingFuture<>(invocationFuture, getSerializationService(), PUBLISH_ALL_ASYNC_RESPONSE_DECODER);
+        } catch (Exception e) {
+            throw rethrow(e);
+        }
+    }
+
 
     @Override
     public String toString() {

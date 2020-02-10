@@ -18,6 +18,7 @@ package com.hazelcast.client.topic;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.Message;
 import com.hazelcast.topic.MessageListener;
@@ -30,11 +31,18 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -58,19 +66,19 @@ public class ClientTopicTest {
 
     @Test
     public void testListener() throws InterruptedException {
-        ITopic topic = client.getTopic(randomString());
-
+        ITopic<String> topic = client.getTopic(randomString());
         final CountDownLatch latch = new CountDownLatch(10);
-        MessageListener listener = new MessageListener() {
-            public void onMessage(Message message) {
+        topic.addMessageListener(new MessageListener<String>() {
+
+            @Override
+            public void onMessage(Message<String> message) {
                 latch.countDown();
             }
-        };
-        topic.addMessageListener(listener);
-
+        });
         for (int i = 0; i < 10; i++) {
-            topic.publish(i);
+            topic.publish("message " + i);
         }
+
         assertTrue(latch.await(20, TimeUnit.SECONDS));
     }
 
@@ -92,5 +100,104 @@ public class ClientTopicTest {
         ITopic topic = client.getTopic(randomString());
 
         topic.getLocalTopicStats();
+    }
+
+    @Test
+    public void testPublish() throws InterruptedException {
+        ITopic<String> topic = client.getTopic(randomString());
+        final AtomicInteger count = new AtomicInteger(0);
+
+        topic.addMessageListener(new MessageListener<String>() {
+
+            @Override
+            public void onMessage(Message<String> message) {
+                count.incrementAndGet();
+            }
+        });
+        topic.publish("message");
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals(1, count.get());
+            }
+        });
+    }
+
+
+    @Test
+    public void testPublishAsync() throws InterruptedException {
+        ITopic<String> topic = client.getTopic(randomString());
+        final AtomicInteger count = new AtomicInteger(0);
+
+        topic.addMessageListener(new MessageListener<String>() {
+
+            @Override
+            public void onMessage(Message<String> message) {
+                count.incrementAndGet();
+            }
+        });
+        topic.publishAsync("message");
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals(1, count.get());
+            }
+        });
+    }
+
+    @Test
+    public void testPublishAll() throws InterruptedException {
+        ITopic<String> topic = client.getTopic(randomString());
+        final AtomicInteger count = new AtomicInteger(0);
+
+        topic.addMessageListener(new MessageListener<String>() {
+
+            @Override
+            public void onMessage(Message<String> message) {
+                count.incrementAndGet();
+            }
+        });
+        final List<String> messages = Arrays.asList("message 1", "message 2", "message 3");
+        topic.publishAllAsync(messages);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals(1, count.get());
+            }
+        });
+    }
+
+    @Test
+    public void testPublishAllAsync() throws InterruptedException {
+        ITopic<String> topic = client.getTopic(randomString());
+        final AtomicInteger count = new AtomicInteger(0);
+
+        topic.addMessageListener(new MessageListener<String>() {
+
+            @Override
+            public void onMessage(Message<String> message) {
+                count.incrementAndGet();
+            }
+        });
+
+        final List<String> messages = Arrays.asList("message 1", "message 2", "messgae 3");
+
+        topic.publishAllAsync(messages);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals(1, count.get());
+            }
+        });
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testPublishAllException() {
+        ITopic<Integer> topic = client.getTopic(randomString());
+        Collection<Integer> messages = new ArrayList<>();
+        messages.add(1);
+        messages.add(null);
+        messages.add(3);
+        topic.publishAll(messages);
     }
 }

@@ -16,14 +16,19 @@
 
 package com.hazelcast.topic.impl;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.LocalTopicStats;
 import com.hazelcast.topic.MessageListener;
 
 import javax.annotation.Nonnull;
+import java.util.Collection;
 import java.util.UUID;
+import java.util.concurrent.CompletionStage;
 
+import static com.hazelcast.internal.util.Preconditions.checkNoNullInside;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
@@ -36,15 +41,24 @@ public class TopicProxy<E> extends TopicProxySupport implements ITopic<E> {
 
     protected static final String NULL_MESSAGE_IS_NOT_ALLOWED = "Null message is not allowed!";
     protected static final String NULL_LISTENER_IS_NOT_ALLOWED = "Null listener is not allowed!";
+    private final int partitionId;
 
     public TopicProxy(String name, NodeEngine nodeEngine, TopicService service) {
         super(name, nodeEngine, service);
+        this.partitionId = nodeEngine.getPartitionService().getPartitionId(getNameAsPartitionAwareData());
     }
 
     @Override
     public void publish(@Nonnull E message) {
         checkNotNull(message, NULL_MESSAGE_IS_NOT_ALLOWED);
         publishInternal(message);
+    }
+
+    @Override
+    public CompletionStage<E> publishAsync(@Nonnull E message) {
+        checkNotNull(message, NULL_MESSAGE_IS_NOT_ALLOWED);
+        Operation op = new PublishAsyncOperation(getName(), toData(message)).setPartitionId(partitionId);
+        return invokeOnPartition(op);
     }
 
     @Nonnull
@@ -63,6 +77,34 @@ public class TopicProxy<E> extends TopicProxySupport implements ITopic<E> {
     @Override
     public LocalTopicStats getLocalTopicStats() {
         return getLocalTopicStatsInternal();
+    }
+
+    @Override
+    public void publishAll(@Nonnull Collection<? extends E> messages) {
+        checkNotNull(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
+        checkNoNullInside(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
+        Operation op = new PublishAllOperation(getName(), toDataArray(messages)).setPartitionId(partitionId);
+        invokeOnPartition(op);
+    }
+
+    @Override
+    public CompletionStage<E> publishAllAsync(@Nonnull Collection<? extends E> messages) {
+        checkNotNull(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
+        checkNoNullInside(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
+        Operation op = new PublishAllAsyncOperation(getName(), toDataArray(messages)).setPartitionId(partitionId);
+        return invokeOnPartition(op);
+    }
+
+
+    private Data[] toDataArray(Collection<? extends E> collection) {
+        Data[] items = new Data[collection.size()];
+        int k = 0;
+        for (E item : collection) {
+            checkNotNull(item, "collection mustn't contains null items");
+            items[k] = toData(item);
+            k++;
+        }
+        return items;
     }
 }
 

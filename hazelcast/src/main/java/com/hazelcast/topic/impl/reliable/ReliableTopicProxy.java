@@ -23,27 +23,33 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.internal.monitor.impl.LocalTopicStatsImpl;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.UuidUtil;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.ringbuffer.OverflowPolicy;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.LocalTopicStats;
 import com.hazelcast.topic.MessageListener;
 import com.hazelcast.topic.ReliableMessageListener;
 import com.hazelcast.topic.TopicOverloadException;
 import com.hazelcast.topic.TopicOverloadPolicy;
+import com.hazelcast.topic.impl.PublishAllOperation;
+import com.hazelcast.topic.impl.PublishOperation;
 
 import javax.annotation.Nonnull;
+import java.util.Collection;
 import java.util.UUID;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 
 import static com.hazelcast.internal.util.ExceptionUtil.peel;
+import static com.hazelcast.internal.util.Preconditions.checkNoNullInside;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.ringbuffer.impl.RingbufferService.TOPIC_RB_PREFIX;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.ASYNC_EXECUTOR;
@@ -184,6 +190,13 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
         }
     }
 
+    @Override
+    public CompletionStage<E> publishAsync(@Nonnull E message) {
+        checkNotNull(message, NULL_MESSAGE_IS_NOT_ALLOWED);
+        Operation op = new PublishOperation(name, toData(message));
+        return invokeOnPartition(op);
+    }
+
     private Long addOrOverwrite(ReliableTopicMessage message) throws Exception {
         return ringbuffer.addAsync(message, OverflowPolicy.OVERWRITE).toCompletableFuture().get();
     }
@@ -254,5 +267,34 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
     @Override
     public LocalTopicStats getLocalTopicStats() {
         return localTopicStats;
+    }
+
+
+    @Override
+    public void publishAll(@Nonnull Collection<? extends E> messages) {
+        checkNotNull(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
+        checkNoNullInside(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
+
+        Operation op = new PublishAllOperation(name, toDataArray(messages));
+        invokeOnPartition(op);
+    }
+
+    @Override
+    public CompletionStage<E> publishAllAsync(@Nonnull Collection<? extends E> messages) {
+        checkNotNull(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
+        checkNoNullInside(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
+        Operation op = new PublishAllOperation(getName(), toDataArray(messages));
+        return invokeOnPartition(op);
+    }
+
+    private Data[] toDataArray(Collection<? extends E> collection) {
+        Data[] items = new Data[collection.size()];
+        int k = 0;
+        for (E item : collection) {
+            checkNotNull(item, "collection mustn't contains null items");
+            items[k] = toData(item);
+            k++;
+        }
+        return items;
     }
 }

@@ -19,14 +19,14 @@ package com.hazelcast.topic.impl;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.topic.LocalTopicStats;
 import com.hazelcast.internal.monitor.impl.LocalTopicStatsImpl;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
 import com.hazelcast.spi.impl.InitializingObject;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.topic.LocalTopicStats;
 import com.hazelcast.topic.MessageListener;
-import com.hazelcast.internal.util.ExceptionUtil;
 
 import javax.annotation.Nonnull;
 import java.util.UUID;

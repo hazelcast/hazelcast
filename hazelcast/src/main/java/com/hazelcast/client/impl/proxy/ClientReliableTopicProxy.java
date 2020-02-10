@@ -17,9 +17,18 @@
 package com.hazelcast.client.impl.proxy;
 
 import com.hazelcast.client.config.ClientReliableTopicConfig;
+import com.hazelcast.client.impl.ClientDelegatingFuture;
+import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.TopicPublishAllAsyncCodec;
+import com.hazelcast.client.impl.protocol.codec.TopicPublishAllCodec;
+import com.hazelcast.client.impl.protocol.codec.TopicPublishAsyncCodec;
+import com.hazelcast.client.impl.protocol.codec.TopicPublishCodec;
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.ClientProxy;
+import com.hazelcast.client.impl.spi.impl.ClientInvocation;
+import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.UuidUtil;
@@ -37,13 +46,18 @@ import com.hazelcast.topic.impl.reliable.ReliableMessageListenerAdapter;
 import com.hazelcast.topic.impl.reliable.ReliableTopicMessage;
 
 import javax.annotation.Nonnull;
+import java.util.Collection;
 import java.util.UUID;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 
+import static com.hazelcast.internal.util.CollectionUtil.objectToDataCollection;
 import static com.hazelcast.internal.util.ConcurrencyUtil.DEFAULT_ASYNC_EXECUTOR;
 import static com.hazelcast.internal.util.ExceptionUtil.peel;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.Preconditions.checkNoNullInside;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.ringbuffer.impl.RingbufferService.TOPIC_RB_PREFIX;
 import static com.hazelcast.topic.impl.reliable.ReliableTopicService.SERVICE_NAME;
@@ -63,6 +77,12 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
     private static final String NULL_LISTENER_IS_NOT_ALLOWED = "Null listener is not allowed!";
     private static final int MAX_BACKOFF = 2000;
     private static final int INITIAL_BACKOFF_MS = 100;
+
+    private static final ClientMessageDecoder PUBLISH_ASYNC_RESPONSE_DECODER =
+            clientMessage -> TopicPublishAsyncCodec.decodeResponse(clientMessage).response;
+
+    private static final ClientMessageDecoder PUBLISH_ALL_ASYNC_RESPONSE_DECODER =
+            clientMessage -> TopicPublishAllAsyncCodec.decodeResponse(clientMessage).response;
 
     private final ILogger logger;
     private final ConcurrentMap<UUID, MessageRunner<E>> runnersMap = new ConcurrentHashMap<UUID, MessageRunner<E>>();
@@ -115,6 +135,21 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
         } catch (Exception e) {
             throw (RuntimeException) peel(e, null,
                     "Failed to publish message: " + payload + " to topic:" + getName());
+        }
+    }
+
+    @Override
+    public CompletionStage<E> publishAsync(@Nonnull E message) {
+        checkNotNull(message, NULL_MESSAGE_IS_NOT_ALLOWED);
+
+        Data element = toData(message);
+        ClientMessage request = TopicPublishCodec.encodeRequest(name, element);
+        try {
+            ClientInvocationFuture invocationFuture = new ClientInvocation(getClient(), request, getName()).invoke();
+            return new ClientDelegatingFuture<>(invocationFuture, getSerializationService(),
+                    PUBLISH_ASYNC_RESPONSE_DECODER);
+        } catch (Exception e) {
+            throw rethrow(e);
         }
     }
 
@@ -195,6 +230,33 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
     @Override
     public LocalTopicStats getLocalTopicStats() {
         throw new UnsupportedOperationException("Locality is ambiguous for client!");
+    }
+
+    @Override
+    public void publishAll(@Nonnull Collection<? extends E> messages) {
+        checkNotNull(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
+        checkNoNullInside(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
+
+
+        Collection<Data> dataCollection = objectToDataCollection(messages, getSerializationService());
+        ClientMessage request = TopicPublishAllCodec.encodeRequest(name, dataCollection);
+        invoke(request);
+    }
+
+    @Override
+    public CompletionStage<E> publishAllAsync(@Nonnull Collection<? extends E> messages) {
+        checkNotNull(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
+        checkNoNullInside(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
+
+        Collection<Data> dataCollection = objectToDataCollection(messages, getSerializationService());
+        ClientMessage request = TopicPublishAllCodec.encodeRequest(name, dataCollection);
+
+        try {
+            ClientInvocationFuture invocationFuture = new ClientInvocation(getClient(), request, getName()).invoke();
+            return new ClientDelegatingFuture<>(invocationFuture, getSerializationService(), PUBLISH_ALL_ASYNC_RESPONSE_DECODER);
+        } catch (Exception e) {
+            throw rethrow(e);
+        }
     }
 
     public Ringbuffer getRingbuffer() {
