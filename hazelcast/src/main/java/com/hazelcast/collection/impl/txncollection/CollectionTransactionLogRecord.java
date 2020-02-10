@@ -65,6 +65,16 @@ public class CollectionTransactionLogRecord implements TransactionLogRecord {
     }
 
     @Override
+    public void onCommitSuccess() {
+        // NOP
+    }
+
+    @Override
+    public void onCommitFailure() {
+        // NOP
+    }
+
+    @Override
     public Operation newRollbackOperation() {
         long[] itemIds = createItemIdArray();
         return new CollectionRollbackOperation(partitionId, name, serviceName, itemIds);
