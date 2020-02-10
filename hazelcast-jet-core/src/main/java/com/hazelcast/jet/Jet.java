@@ -71,6 +71,7 @@ public final class Jet {
     private static final ILogger LOGGER = Logger.getLogger(Jet.class);
 
     static {
+        JetBootstrap.configureLogging();
         assertHazelcastVersion();
     }
 

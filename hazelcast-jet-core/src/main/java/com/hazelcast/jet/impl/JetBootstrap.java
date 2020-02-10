@@ -41,6 +41,7 @@ import com.hazelcast.topic.ITopic;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -49,6 +50,7 @@ import java.net.URLClassLoader;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.jar.JarFile;
 import java.util.logging.LogManager;
@@ -73,6 +75,7 @@ public final class JetBootstrap {
     private static ConcurrentMemoizingSupplier<JetInstance> supplier;
 
     private static final ILogger LOGGER = Logger.getLogger(Jet.class.getName());
+    private static final AtomicBoolean LOGGING_CONFIGURED = new AtomicBoolean(false);
 
     private JetBootstrap() {
     }
@@ -167,8 +170,13 @@ public final class JetBootstrap {
     }
 
     public static void configureLogging() {
-        InputStream input = JetBootstrap.class.getClassLoader().getResourceAsStream("logging.properties");
-        Util.uncheckRun(() -> LogManager.getLogManager().readConfiguration(input));
+        if (LOGGING_CONFIGURED.compareAndSet(false, true)) {
+            try (InputStream input = JetBootstrap.class.getClassLoader().getResourceAsStream("logging.properties")) {
+                Util.uncheckRun(() -> LogManager.getLogManager().readConfiguration(input));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     private static class InstanceProxy extends AbstractJetInstance {
