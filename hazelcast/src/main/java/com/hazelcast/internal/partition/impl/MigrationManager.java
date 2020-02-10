@@ -291,7 +291,7 @@ public class MigrationManager {
         }
     }
 
-    MigrationInfo getActiveMigration() {
+    public MigrationInfo getActiveMigration() {
         return activeMigrationInfo;
     }
 
