@@ -72,6 +72,7 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.stream.IntStream.range;
 import static javax.jms.Session.AUTO_ACKNOWLEDGE;
+import static javax.jms.Session.DUPS_OK_ACKNOWLEDGE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -422,6 +423,13 @@ public abstract class JmsIntegrationTestBase extends SimpleTestInClusterSupport 
                         return conn;
                     })
                     .consumerFn(s -> s.createDurableSubscriber(s.createTopic(destName), "foo-consumer"));
+            // create the durable subscriber now so that it doesn't lose the initial messages
+            try (Connection conn = getConnectionFactory().get().createConnection()) {
+                conn.setClientID("foo-client-id");
+                try (Session sess = conn.createSession(false, DUPS_OK_ACKNOWLEDGE)) {
+                    sess.createDurableSubscriber(sess.createTopic(destName), "foo-consumer");
+                }
+            }
         } else {
             sourceBuilder = Sources.jmsQueueBuilder(getConnectionFactory())
                     .destinationName(destName);
