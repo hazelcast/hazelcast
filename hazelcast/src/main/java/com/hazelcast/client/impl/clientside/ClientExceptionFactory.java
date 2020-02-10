@@ -20,7 +20,6 @@ import com.hazelcast.cache.CacheNotExistsException;
 import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.UndefinedErrorCodeException;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes;
 import com.hazelcast.client.impl.protocol.codec.builtin.ErrorsCodec;
 import com.hazelcast.client.impl.protocol.exception.ErrorHolder;
 import com.hazelcast.client.impl.protocol.exception.MaxMessageSizeExceeded;
@@ -48,13 +47,13 @@ import com.hazelcast.durableexecutor.StaleTaskIdException;
 import com.hazelcast.flakeidgen.impl.NodeIdOutOfRangeException;
 import com.hazelcast.internal.cluster.impl.ConfigMismatchException;
 import com.hazelcast.internal.cluster.impl.VersionMismatchException;
+import com.hazelcast.internal.util.AddressUtil;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.ReachedMaxSizeException;
 import com.hazelcast.memory.NativeOutOfMemoryError;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.query.QueryException;
-import com.hazelcast.splitbrainprotection.SplitBrainProtectionException;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.scheduledexecutor.DuplicateTaskException;
@@ -69,11 +68,11 @@ import com.hazelcast.spi.exception.ServiceNotFoundException;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.exception.WrongTargetException;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionException;
 import com.hazelcast.topic.TopicOverloadException;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionTimedOutException;
-import com.hazelcast.internal.util.AddressUtil;
 import com.hazelcast.wan.WanQueueFullException;
 
 import javax.cache.CacheException;
@@ -101,16 +100,100 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeoutException;
 
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.ACCESS_CONTROL;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.ARRAY_INDEX_OUT_OF_BOUNDS;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.ARRAY_STORE;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.ASSERTION_ERROR;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.AUTHENTICATION;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.CACHE;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.CACHE_LOADER;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.CACHE_NOT_EXISTS;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.CACHE_WRITER;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.CALLER_NOT_MEMBER;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.CANCELLATION;
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.CANNOT_REPLICATE_EXCEPTION;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.CLASS_CAST;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.CLASS_NOT_FOUND;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.CONCURRENT_MODIFICATION;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.CONFIG_MISMATCH;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.CONSISTENCY_LOST_EXCEPTION;
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.CP_GROUP_DESTROYED_EXCEPTION;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.DISTRIBUTED_OBJECT_DESTROYED;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.DUPLICATE_TASK;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.ENTRY_PROCESSOR;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.EOF;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.EXECUTION;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.FLAKE_ID_NODE_ID_OUT_OF_RANGE_EXCEPTION;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.HAZELCAST;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.HAZELCAST_INSTANCE_NOT_ACTIVE;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.HAZELCAST_OVERLOAD;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.HAZELCAST_SERIALIZATION;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.ILLEGAL_ACCESS_ERROR;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.ILLEGAL_ACCESS_EXCEPTION;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.ILLEGAL_ARGUMENT;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.ILLEGAL_MONITOR_STATE;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.ILLEGAL_STATE;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.ILLEGAL_THREAD_STATE;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.INDETERMINATE_OPERATION_STATE;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.INDEX_OUT_OF_BOUNDS;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.INTERRUPTED;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.INVALID_ADDRESS;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.INVALID_CONFIGURATION;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.IO;
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.LEADER_DEMOTED_EXCEPTION;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.LOCAL_MEMBER_RESET;
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.LOCK_ACQUIRE_LIMIT_REACHED_EXCEPTION;
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.LOCK_OWNERSHIP_LOST_EXCEPTION;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.LOGIN;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.MAX_MESSAGE_SIZE_EXCEEDED;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.MEMBER_LEFT;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.MUTATION_DISALLOWED_EXCEPTION;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.NATIVE_OUT_OF_MEMORY_ERROR;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.NEGATIVE_ARRAY_SIZE;
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.NOT_LEADER_EXCEPTION;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.NOT_SERIALIZABLE;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.NO_DATA_MEMBER;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.NO_SUCH_ELEMENT;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.NULL_POINTER;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.OPERATION_TIMEOUT;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.OUT_OF_MEMORY_ERROR;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.PARTITION_MIGRATING;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.QUERY;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.QUERY_RESULT_SIZE_EXCEEDED;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.REACHED_MAX_SIZE;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.REJECTED_EXECUTION;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.REPLICATED_MAP_CANT_BE_CREATED;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.RESPONSE_ALREADY_SENT;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.RETRYABLE_HAZELCAST;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.RETRYABLE_IO;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.RUNTIME;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.SECURITY;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.SERVICE_NOT_FOUND;
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.SESSION_EXPIRED_EXCEPTION;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.SOCKET;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.SPLIT_BRAIN_PROTECTION;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.STACK_OVERFLOW_ERROR;
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.STALE_APPEND_REQUEST_EXCEPTION;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.STALE_SEQUENCE;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.STALE_TASK;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.STALE_TASK_ID;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.TARGET_DISCONNECTED;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.TARGET_NOT_MEMBER;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.TARGET_NOT_REPLICA_EXCEPTION;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.TIMEOUT;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.TOPIC_OVERLOAD;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.TRANSACTION;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.TRANSACTION_NOT_ACTIVE;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.TRANSACTION_TIMED_OUT;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.UNSUPPORTED_CALLBACK;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.UNSUPPORTED_OPERATION;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.URI_SYNTAX;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.UTF_DATA_FORMAT;
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.VERSION_MISMATCH_EXCEPTION;
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.WAIT_KEY_CANCELLED_EXCEPTION;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.WAN_REPLICATION_QUEUE_FULL;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.WRONG_TARGET;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.XA;
 
 /**
  * This class has the error codes and means of
@@ -123,563 +206,100 @@ public class ClientExceptionFactory {
 
     public ClientExceptionFactory(boolean jcacheAvailable) {
         if (jcacheAvailable) {
-            register(ClientProtocolErrorCodes.CACHE, CacheException.class, new ExceptionFactory() {
-                @Override
-                public Throwable createException(String message, Throwable cause) {
-                    return new CacheException(message, cause);
-                }
-            });
-            register(ClientProtocolErrorCodes.CACHE_LOADER, CacheLoaderException.class, new ExceptionFactory() {
-                @Override
-                public Throwable createException(String message, Throwable cause) {
-                    return new CacheLoaderException(message, cause);
-                }
-            });
-            register(ClientProtocolErrorCodes.CACHE_WRITER, CacheWriterException.class, new ExceptionFactory() {
-                @Override
-                public Throwable createException(String message, Throwable cause) {
-                    return new CacheWriterException(message, cause);
-                }
-            });
-
-            register(ClientProtocolErrorCodes.ENTRY_PROCESSOR, EntryProcessorException.class, new ExceptionFactory() {
-                @Override
-                public Throwable createException(String message, Throwable cause) {
-                    return new EntryProcessorException(message, cause);
-                }
-            });
+            register(CACHE, CacheException.class, CacheException::new);
+            register(CACHE_LOADER, CacheLoaderException.class, CacheLoaderException::new);
+            register(CACHE_WRITER, CacheWriterException.class, CacheWriterException::new);
+            register(ENTRY_PROCESSOR, EntryProcessorException.class, EntryProcessorException::new);
         }
 
-        register(ClientProtocolErrorCodes.ARRAY_INDEX_OUT_OF_BOUNDS, ArrayIndexOutOfBoundsException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new ArrayIndexOutOfBoundsException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.ARRAY_STORE, ArrayStoreException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new ArrayStoreException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.AUTHENTICATION, AuthenticationException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new AuthenticationException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.CACHE_NOT_EXISTS, CacheNotExistsException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new CacheNotExistsException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.CALLER_NOT_MEMBER, CallerNotMemberException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new CallerNotMemberException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.CANCELLATION, CancellationException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new CancellationException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.CLASS_CAST, ClassCastException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new ClassCastException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.CLASS_NOT_FOUND, ClassNotFoundException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new ClassNotFoundException(message, cause);
-            }
-        });
-        register(ClientProtocolErrorCodes.CONCURRENT_MODIFICATION, ConcurrentModificationException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new ConcurrentModificationException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.CONFIG_MISMATCH, ConfigMismatchException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new ConfigMismatchException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.DISTRIBUTED_OBJECT_DESTROYED, DistributedObjectDestroyedException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new DistributedObjectDestroyedException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.EOF, EOFException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new EOFException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.EXECUTION, ExecutionException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new ExecutionException(message, cause);
-            }
-        });
-        register(ClientProtocolErrorCodes.HAZELCAST, HazelcastException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new HazelcastException(message, cause);
-            }
-        });
-        register(ClientProtocolErrorCodes.HAZELCAST_INSTANCE_NOT_ACTIVE, HazelcastInstanceNotActiveException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new HazelcastInstanceNotActiveException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.HAZELCAST_OVERLOAD, HazelcastOverloadException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new HazelcastOverloadException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.HAZELCAST_SERIALIZATION, HazelcastSerializationException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new HazelcastSerializationException(message, cause);
-            }
-        });
-        register(ClientProtocolErrorCodes.IO, IOException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new IOException(message, cause);
-            }
-        });
-        register(ClientProtocolErrorCodes.ILLEGAL_ARGUMENT, IllegalArgumentException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new IllegalArgumentException(message, cause);
-            }
-        });
-        register(ClientProtocolErrorCodes.ILLEGAL_ACCESS_EXCEPTION, IllegalAccessException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new IllegalAccessException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.ILLEGAL_ACCESS_ERROR, IllegalAccessError.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new IllegalAccessError(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.ILLEGAL_MONITOR_STATE, IllegalMonitorStateException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new IllegalMonitorStateException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.ILLEGAL_STATE, IllegalStateException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new IllegalStateException(message, cause);
-            }
-        });
-        register(ClientProtocolErrorCodes.ILLEGAL_THREAD_STATE, IllegalThreadStateException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new IllegalThreadStateException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.INDEX_OUT_OF_BOUNDS, IndexOutOfBoundsException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new IndexOutOfBoundsException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.INTERRUPTED, InterruptedException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new InterruptedException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.INVALID_ADDRESS, AddressUtil.InvalidAddressException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new AddressUtil.InvalidAddressException(message, false);
-            }
-        });
-        register(ClientProtocolErrorCodes.INVALID_CONFIGURATION, InvalidConfigurationException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new InvalidConfigurationException(message, cause);
-            }
-        });
-        register(ClientProtocolErrorCodes.MEMBER_LEFT, MemberLeftException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new MemberLeftException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.NEGATIVE_ARRAY_SIZE, NegativeArraySizeException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new NegativeArraySizeException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.NO_SUCH_ELEMENT, NoSuchElementException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new NoSuchElementException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.NOT_SERIALIZABLE, NotSerializableException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new NotSerializableException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.NULL_POINTER, NullPointerException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new NullPointerException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.OPERATION_TIMEOUT, OperationTimeoutException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new OperationTimeoutException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.PARTITION_MIGRATING, PartitionMigratingException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new PartitionMigratingException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.QUERY, QueryException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new QueryException(message, cause);
-            }
-        });
-        register(ClientProtocolErrorCodes.QUERY_RESULT_SIZE_EXCEEDED, QueryResultSizeExceededException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new QueryResultSizeExceededException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.SPLIT_BRAIN_PROTECTION, SplitBrainProtectionException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new SplitBrainProtectionException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.REACHED_MAX_SIZE, ReachedMaxSizeException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new ReachedMaxSizeException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.REJECTED_EXECUTION, RejectedExecutionException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new RejectedExecutionException(message, cause);
-            }
-        });
-        register(ClientProtocolErrorCodes.RESPONSE_ALREADY_SENT, ResponseAlreadySentException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new ResponseAlreadySentException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.RETRYABLE_HAZELCAST, RetryableHazelcastException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new RetryableHazelcastException(message, cause);
-            }
-        });
-        register(ClientProtocolErrorCodes.RETRYABLE_IO, RetryableIOException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new RetryableIOException(message, cause);
-            }
-        });
-        register(ClientProtocolErrorCodes.RUNTIME, RuntimeException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new RuntimeException(message, cause);
-            }
-        });
-
-        register(ClientProtocolErrorCodes.SECURITY, SecurityException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new SecurityException(message, cause);
-            }
-        });
-        register(ClientProtocolErrorCodes.SOCKET, SocketException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new SocketException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.STALE_SEQUENCE, StaleSequenceException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new StaleSequenceException(message, 0);
-            }
-        });
-        register(ClientProtocolErrorCodes.TARGET_DISCONNECTED, TargetDisconnectedException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new TargetDisconnectedException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.TARGET_NOT_MEMBER, TargetNotMemberException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new TargetNotMemberException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.TIMEOUT, TimeoutException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new TimeoutException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.TOPIC_OVERLOAD, TopicOverloadException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new TopicOverloadException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.TRANSACTION, TransactionException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new TransactionException(message, cause);
-            }
-        });
-        register(ClientProtocolErrorCodes.TRANSACTION_NOT_ACTIVE, TransactionNotActiveException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new TransactionNotActiveException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.TRANSACTION_TIMED_OUT, TransactionTimedOutException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new TransactionTimedOutException(message, cause);
-            }
-        });
-        register(ClientProtocolErrorCodes.URI_SYNTAX, URISyntaxException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new URISyntaxException("not available", message);
-            }
-        });
-        register(ClientProtocolErrorCodes.UTF_DATA_FORMAT, UTFDataFormatException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new UTFDataFormatException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.UNSUPPORTED_OPERATION, UnsupportedOperationException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new UnsupportedOperationException(message, cause);
-            }
-        });
-        register(ClientProtocolErrorCodes.WRONG_TARGET, WrongTargetException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new WrongTargetException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.XA, XAException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new XAException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.ACCESS_CONTROL, AccessControlException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new AccessControlException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.LOGIN, LoginException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new LoginException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.UNSUPPORTED_CALLBACK, UnsupportedCallbackException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new UnsupportedCallbackException(null, message);
-            }
-        });
-        register(ClientProtocolErrorCodes.NO_DATA_MEMBER, NoDataMemberInClusterException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new NoDataMemberInClusterException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.REPLICATED_MAP_CANT_BE_CREATED, ReplicatedMapCantBeCreatedOnLiteMemberException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new ReplicatedMapCantBeCreatedOnLiteMemberException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.MAX_MESSAGE_SIZE_EXCEEDED, MaxMessageSizeExceeded.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new MaxMessageSizeExceeded(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.WAN_REPLICATION_QUEUE_FULL, WanQueueFullException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new WanQueueFullException(message);
-            }
-        });
-
-        register(ClientProtocolErrorCodes.ASSERTION_ERROR, AssertionError.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new AssertionError(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.OUT_OF_MEMORY_ERROR, OutOfMemoryError.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new OutOfMemoryError(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.STACK_OVERFLOW_ERROR, StackOverflowError.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new StackOverflowError(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.NATIVE_OUT_OF_MEMORY_ERROR, NativeOutOfMemoryError.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new NativeOutOfMemoryError(message, cause);
-            }
-        });
-        register(ClientProtocolErrorCodes.SERVICE_NOT_FOUND, ServiceNotFoundException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new ServiceNotFoundException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.STALE_TASK_ID, StaleTaskIdException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new StaleTaskIdException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.DUPLICATE_TASK, DuplicateTaskException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new DuplicateTaskException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.STALE_TASK, StaleTaskException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new StaleTaskException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.LOCAL_MEMBER_RESET, LocalMemberResetException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new LocalMemberResetException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.INDETERMINATE_OPERATION_STATE, IndeterminateOperationStateException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new IndeterminateOperationStateException(message, cause);
-            }
-        });
-        register(ClientProtocolErrorCodes.FLAKE_ID_NODE_ID_OUT_OF_RANGE_EXCEPTION, NodeIdOutOfRangeException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new NodeIdOutOfRangeException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.TARGET_NOT_REPLICA_EXCEPTION, TargetNotReplicaException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new TargetNotReplicaException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.MUTATION_DISALLOWED_EXCEPTION, MutationDisallowedException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new MutationDisallowedException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.CONSISTENCY_LOST_EXCEPTION, ConsistencyLostException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new ConsistencyLostException(message);
-            }
-        });
-        register(SESSION_EXPIRED_EXCEPTION, SessionExpiredException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new SessionExpiredException(message, cause);
-            }
-        });
-        register(WAIT_KEY_CANCELLED_EXCEPTION, WaitKeyCancelledException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new WaitKeyCancelledException(message, cause);
-            }
-        });
-        register(LOCK_ACQUIRE_LIMIT_REACHED_EXCEPTION, LockAcquireLimitReachedException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new LockAcquireLimitReachedException(message);
-            }
-        });
-        register(LOCK_OWNERSHIP_LOST_EXCEPTION, LockOwnershipLostException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new LockOwnershipLostException(message);
-            }
-        });
-        register(CP_GROUP_DESTROYED_EXCEPTION, CPGroupDestroyedException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new CPGroupDestroyedException();
-            }
-        });
-        register(CANNOT_REPLICATE_EXCEPTION, CannotReplicateException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new CannotReplicateException(null);
-            }
-        });
-        register(LEADER_DEMOTED_EXCEPTION, LeaderDemotedException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new LeaderDemotedException(null, null);
-            }
-        });
-        register(STALE_APPEND_REQUEST_EXCEPTION, StaleAppendRequestException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new StaleAppendRequestException(null);
-            }
-        });
+        register(ARRAY_INDEX_OUT_OF_BOUNDS, ArrayIndexOutOfBoundsException.class, (message, cause) -> new ArrayIndexOutOfBoundsException(message));
+        register(ARRAY_STORE, ArrayStoreException.class, (message, cause) -> new ArrayStoreException(message));
+        register(AUTHENTICATION, AuthenticationException.class, (message, cause) -> new AuthenticationException(message));
+        register(CACHE_NOT_EXISTS, CacheNotExistsException.class, (message, cause) -> new CacheNotExistsException(message));
+        register(CALLER_NOT_MEMBER, CallerNotMemberException.class, (message, cause) -> new CallerNotMemberException(message));
+        register(CANCELLATION, CancellationException.class, (message, cause) -> new CancellationException(message));
+        register(CLASS_CAST, ClassCastException.class, (message, cause) -> new ClassCastException(message));
+        register(CLASS_NOT_FOUND, ClassNotFoundException.class, ClassNotFoundException::new);
+        register(CONCURRENT_MODIFICATION, ConcurrentModificationException.class, (message, cause) -> new ConcurrentModificationException(message));
+        register(CONFIG_MISMATCH, ConfigMismatchException.class, (message, cause) -> new ConfigMismatchException(message));
+        register(DISTRIBUTED_OBJECT_DESTROYED, DistributedObjectDestroyedException.class, (message, cause) -> new DistributedObjectDestroyedException(message));
+        register(EOF, EOFException.class, (message, cause) -> new EOFException(message));
+        register(EXECUTION, ExecutionException.class, ExecutionException::new);
+        register(HAZELCAST, HazelcastException.class, HazelcastException::new);
+        register(HAZELCAST_INSTANCE_NOT_ACTIVE, HazelcastInstanceNotActiveException.class, (message, cause) -> new HazelcastInstanceNotActiveException(message));
+        register(HAZELCAST_OVERLOAD, HazelcastOverloadException.class, (message, cause) -> new HazelcastOverloadException(message));
+        register(HAZELCAST_SERIALIZATION, HazelcastSerializationException.class, HazelcastSerializationException::new);
+        register(IO, IOException.class, IOException::new);
+        register(ILLEGAL_ARGUMENT, IllegalArgumentException.class, IllegalArgumentException::new);
+        register(ILLEGAL_ACCESS_EXCEPTION, IllegalAccessException.class, (message, cause) -> new IllegalAccessException(message));
+        register(ILLEGAL_ACCESS_ERROR, IllegalAccessError.class, (message, cause) -> new IllegalAccessError(message));
+        register(ILLEGAL_MONITOR_STATE, IllegalMonitorStateException.class, (message, cause) -> new IllegalMonitorStateException(message));
+        register(ILLEGAL_STATE, IllegalStateException.class, IllegalStateException::new);
+        register(ILLEGAL_THREAD_STATE, IllegalThreadStateException.class, (message, cause) -> new IllegalThreadStateException(message));
+        register(INDEX_OUT_OF_BOUNDS, IndexOutOfBoundsException.class, (message, cause) -> new IndexOutOfBoundsException(message));
+        register(INTERRUPTED, InterruptedException.class, (message, cause) -> new InterruptedException(message));
+        register(INVALID_ADDRESS, AddressUtil.InvalidAddressException.class, (message, cause) -> new AddressUtil.InvalidAddressException(message, false));
+        register(INVALID_CONFIGURATION, InvalidConfigurationException.class, InvalidConfigurationException::new);
+        register(MEMBER_LEFT, MemberLeftException.class, (message, cause) -> new MemberLeftException(message));
+        register(NEGATIVE_ARRAY_SIZE, NegativeArraySizeException.class, (message, cause) -> new NegativeArraySizeException(message));
+        register(NO_SUCH_ELEMENT, NoSuchElementException.class, (message, cause) -> new NoSuchElementException(message));
+        register(NOT_SERIALIZABLE, NotSerializableException.class, (message, cause) -> new NotSerializableException(message));
+        register(NULL_POINTER, NullPointerException.class, (message, cause) -> new NullPointerException(message));
+        register(OPERATION_TIMEOUT, OperationTimeoutException.class, (message, cause) -> new OperationTimeoutException(message));
+        register(PARTITION_MIGRATING, PartitionMigratingException.class, (message, cause) -> new PartitionMigratingException(message));
+        register(QUERY, QueryException.class, QueryException::new);
+        register(QUERY_RESULT_SIZE_EXCEEDED, QueryResultSizeExceededException.class, (message, cause) -> new QueryResultSizeExceededException(message));
+        register(SPLIT_BRAIN_PROTECTION, SplitBrainProtectionException.class, (message, cause) -> new SplitBrainProtectionException(message));
+        register(REACHED_MAX_SIZE, ReachedMaxSizeException.class, (message, cause) -> new ReachedMaxSizeException(message));
+        register(REJECTED_EXECUTION, RejectedExecutionException.class, RejectedExecutionException::new);
+        register(RESPONSE_ALREADY_SENT, ResponseAlreadySentException.class, (message, cause) -> new ResponseAlreadySentException(message));
+        register(RETRYABLE_HAZELCAST, RetryableHazelcastException.class, RetryableHazelcastException::new);
+        register(RETRYABLE_IO, RetryableIOException.class, RetryableIOException::new);
+        register(RUNTIME, RuntimeException.class, RuntimeException::new);
+        register(SECURITY, SecurityException.class, SecurityException::new);
+        register(SOCKET, SocketException.class, (message, cause) -> new SocketException(message));
+        register(STALE_SEQUENCE, StaleSequenceException.class, (message, cause) -> new StaleSequenceException(message, 0));
+        register(TARGET_DISCONNECTED, TargetDisconnectedException.class, (message, cause) -> new TargetDisconnectedException(message));
+        register(TARGET_NOT_MEMBER, TargetNotMemberException.class, (message, cause) -> new TargetNotMemberException(message));
+        register(TIMEOUT, TimeoutException.class, (message, cause) -> new TimeoutException(message));
+        register(TOPIC_OVERLOAD, TopicOverloadException.class, (message, cause) -> new TopicOverloadException(message));
+        register(TRANSACTION, TransactionException.class, TransactionException::new);
+        register(TRANSACTION_NOT_ACTIVE, TransactionNotActiveException.class, (message, cause) -> new TransactionNotActiveException(message));
+        register(TRANSACTION_TIMED_OUT, TransactionTimedOutException.class, TransactionTimedOutException::new);
+        register(URI_SYNTAX, URISyntaxException.class, (message, cause) -> new URISyntaxException("not available", message));
+        register(UTF_DATA_FORMAT, UTFDataFormatException.class, (message, cause) -> new UTFDataFormatException(message));
+        register(UNSUPPORTED_OPERATION, UnsupportedOperationException.class, UnsupportedOperationException::new);
+        register(WRONG_TARGET, WrongTargetException.class, (message, cause) -> new WrongTargetException(message));
+        register(XA, XAException.class, (message, cause) -> new XAException(message));
+        register(ACCESS_CONTROL, AccessControlException.class, (message, cause) -> new AccessControlException(message));
+        register(LOGIN, LoginException.class, (message, cause) -> new LoginException(message));
+        register(UNSUPPORTED_CALLBACK, UnsupportedCallbackException.class, (message, cause) -> new UnsupportedCallbackException(null, message));
+        register(NO_DATA_MEMBER, NoDataMemberInClusterException.class, (message, cause) -> new NoDataMemberInClusterException(message));
+        register(REPLICATED_MAP_CANT_BE_CREATED, ReplicatedMapCantBeCreatedOnLiteMemberException.class, (message, cause) -> new ReplicatedMapCantBeCreatedOnLiteMemberException(message));
+        register(MAX_MESSAGE_SIZE_EXCEEDED, MaxMessageSizeExceeded.class, (message, cause) -> new MaxMessageSizeExceeded(message));
+        register(WAN_REPLICATION_QUEUE_FULL, WanQueueFullException.class, (message, cause) -> new WanQueueFullException(message));
+        register(ASSERTION_ERROR, AssertionError.class, (message, cause) -> new AssertionError(message));
+        register(OUT_OF_MEMORY_ERROR, OutOfMemoryError.class, (message, cause) -> new OutOfMemoryError(message));
+        register(STACK_OVERFLOW_ERROR, StackOverflowError.class, (message, cause) -> new StackOverflowError(message));
+        register(NATIVE_OUT_OF_MEMORY_ERROR, NativeOutOfMemoryError.class, NativeOutOfMemoryError::new);
+        register(SERVICE_NOT_FOUND, ServiceNotFoundException.class, (message, cause) -> new ServiceNotFoundException(message));
+        register(STALE_TASK_ID, StaleTaskIdException.class, (message, cause) -> new StaleTaskIdException(message));
+        register(DUPLICATE_TASK, DuplicateTaskException.class, (message, cause) -> new DuplicateTaskException(message));
+        register(STALE_TASK, StaleTaskException.class, (message, cause) -> new StaleTaskException(message));
+        register(LOCAL_MEMBER_RESET, LocalMemberResetException.class, (message, cause) -> new LocalMemberResetException(message));
+        register(INDETERMINATE_OPERATION_STATE, IndeterminateOperationStateException.class, IndeterminateOperationStateException::new);
+        register(FLAKE_ID_NODE_ID_OUT_OF_RANGE_EXCEPTION, NodeIdOutOfRangeException.class, (message, cause) -> new NodeIdOutOfRangeException(message));
+        register(TARGET_NOT_REPLICA_EXCEPTION, TargetNotReplicaException.class, (message, cause) -> new TargetNotReplicaException(message));
+        register(MUTATION_DISALLOWED_EXCEPTION, MutationDisallowedException.class, (message, cause) -> new MutationDisallowedException(message));
+        register(CONSISTENCY_LOST_EXCEPTION, ConsistencyLostException.class, (message, cause) -> new ConsistencyLostException(message));
+        register(SESSION_EXPIRED_EXCEPTION, SessionExpiredException.class, SessionExpiredException::new);
+        register(WAIT_KEY_CANCELLED_EXCEPTION, WaitKeyCancelledException.class, WaitKeyCancelledException::new);
+        register(LOCK_ACQUIRE_LIMIT_REACHED_EXCEPTION, LockAcquireLimitReachedException.class, (message, cause) -> new LockAcquireLimitReachedException(message));
+        register(LOCK_OWNERSHIP_LOST_EXCEPTION, LockOwnershipLostException.class, (message, cause) -> new LockOwnershipLostException(message));
+        register(CP_GROUP_DESTROYED_EXCEPTION, CPGroupDestroyedException.class, (message, cause) -> new CPGroupDestroyedException());
+        register(CANNOT_REPLICATE_EXCEPTION, CannotReplicateException.class, (message, cause) -> new CannotReplicateException(null));
+        register(LEADER_DEMOTED_EXCEPTION, LeaderDemotedException.class, (message, cause) -> new LeaderDemotedException(null, null));
+        register(STALE_APPEND_REQUEST_EXCEPTION, StaleAppendRequestException.class, (message, cause) -> new StaleAppendRequestException(null));
         register(NOT_LEADER_EXCEPTION, NotLeaderException.class, (message, cause) -> new NotLeaderException(null, null, null));
         register(VERSION_MISMATCH_EXCEPTION, VersionMismatchException.class,
                 ((message, cause) -> new VersionMismatchException(message)));
