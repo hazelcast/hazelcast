@@ -24,11 +24,10 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.test.Accessors;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import org.junit.After;
@@ -37,9 +36,9 @@ import org.junit.Before;
 import javax.cache.expiry.Duration;
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.expiry.TouchedExpiryPolicy;
-
 import java.util.Collections;
 
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertTrue;
 
 public abstract class CacheRecordStoreTestSupport
@@ -76,12 +75,12 @@ public abstract class CacheRecordStoreTestSupport
     }
 
     protected ICacheService getCacheService(HazelcastInstance instance) {
-        return Accessors.getNodeEngineImpl(instance).getService(ICacheService.SERVICE_NAME);
+        return getNodeEngineImpl(instance).getService(ICacheService.SERVICE_NAME);
     }
 
     protected ICacheRecordStore createCacheRecordStore(HazelcastInstance instance, String cacheName,
                                                        int partitionId, InMemoryFormat inMemoryFormat) {
-        NodeEngine nodeEngine = Accessors.getNodeEngineImpl(instance);
+        NodeEngine nodeEngine = getNodeEngineImpl(instance);
         ICacheService cacheService = getCacheService(instance);
         CacheConfig cacheConfig = createCacheConfig(cacheName, inMemoryFormat);
         cacheService.putCacheConfigIfAbsent(cacheConfig);

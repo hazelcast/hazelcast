@@ -21,7 +21,6 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.querycache.NodeQueryCacheContext;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.accumulator.Accumulator;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -35,6 +34,7 @@ import java.util.Map;
 
 import static com.hazelcast.map.impl.querycache.utils.QueryCacheUtil.getAccumulatorOrNull;
 import static com.hazelcast.map.impl.querycache.utils.QueryCacheUtil.getAccumulators;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -48,7 +48,7 @@ public class QueryCacheUtilTest extends HazelcastTestSupport {
     @Before
     public void setUp() {
         HazelcastInstance instance = createHazelcastInstance();
-        MapService mapService = Accessors.getNodeEngineImpl(instance).getService(MapService.SERVICE_NAME);
+        MapService mapService = getNodeEngineImpl(instance).getService(MapService.SERVICE_NAME);
 
         context = new NodeQueryCacheContext(mapService.getMapServiceContext());
     }

@@ -33,7 +33,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.wan.WanEvent;
@@ -50,6 +49,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -227,7 +227,7 @@ public class AbstractWanCustomPublisherMapTest extends HazelcastTestSupport {
 
         // get internal services to use in this test
         HazelcastInstance node = instance1;
-        NodeEngineImpl nodeEngineImpl = Accessors.getNodeEngineImpl(node);
+        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(node);
         InternalPartitionService partitionService = nodeEngineImpl.getPartitionService();
         OperationServiceImpl operationService = nodeEngineImpl.getOperationService();
         SerializationService serializationService = nodeEngineImpl.getSerializationService();
@@ -260,7 +260,7 @@ public class AbstractWanCustomPublisherMapTest extends HazelcastTestSupport {
     }
 
     private WanDummyPublisher getWanReplicationImpl(HazelcastInstance instance) {
-        WanReplicationService service = Accessors.getNodeEngineImpl(instance).getWanReplicationService();
+        WanReplicationService service = getNodeEngineImpl(instance).getWanReplicationService();
         DelegatingWanScheme delegate = service.getWanReplicationPublishers("dummyWan");
         return (WanDummyPublisher) delegate.getPublishers().iterator().next();
     }

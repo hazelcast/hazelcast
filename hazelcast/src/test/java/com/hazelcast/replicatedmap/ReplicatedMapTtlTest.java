@@ -17,15 +17,14 @@
 package com.hazelcast.replicatedmap;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.scheduler.SecondsBasedEntryTaskScheduler;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapProxy;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.AbstractBaseReplicatedRecordStore;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.SlowTest;
-import com.hazelcast.internal.util.scheduler.SecondsBasedEntryTaskScheduler;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -36,6 +35,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static junit.framework.TestCase.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -156,7 +156,7 @@ public class ReplicatedMapTtlTest extends ReplicatedMapAbstractTest {
             map.put(i, i, 100, TimeUnit.DAYS);
         }
 
-        ReplicatedMapService service = Accessors.getNodeEngineImpl(node).getService(ReplicatedMapService.SERVICE_NAME);
+        ReplicatedMapService service = getNodeEngineImpl(node).getService(ReplicatedMapService.SERVICE_NAME);
         service.reset();
 
         assertAllTtlSchedulersEmpty(map);

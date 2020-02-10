@@ -16,13 +16,12 @@
 
 package com.hazelcast.internal.partition;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.cluster.Address;
-import com.hazelcast.partition.AbstractPartitionLostListenerTest;
 import com.hazelcast.internal.services.DistributedObjectNamespace;
 import com.hazelcast.internal.services.ServiceNamespace;
-import com.hazelcast.test.Accessors;
+import com.hazelcast.partition.AbstractPartitionLostListenerTest;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.SlowTest;
 import org.hamcrest.Matchers;
@@ -41,6 +40,7 @@ import java.util.Set;
 
 import static com.hazelcast.internal.partition.TestPartitionUtils.getPartitionReplicaVersionsView;
 import static com.hazelcast.internal.partition.TestPartitionUtils.getReplicaAddresses;
+import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
@@ -114,7 +114,7 @@ public class PartitionReplicaVersionsCorrectnessStressTest extends AbstractParti
                                          Map<Integer, Integer> minSurvivingReplicaIndexByPartitionId)
             throws InterruptedException {
         for (HazelcastInstance instance : survivingInstances) {
-            Node node = Accessors.getNode(instance);
+            Node node = getNode(instance);
             Address address = node.getThisAddress();
 
             InternalPartitionService partitionService = node.getPartitionService();
@@ -124,7 +124,7 @@ public class PartitionReplicaVersionsCorrectnessStressTest extends AbstractParti
                     PartitionReplicaVersionsView initialReplicaVersions = replicaVersionsByPartitionId.get(partitionId);
                     int minSurvivingReplicaIndex = minSurvivingReplicaIndexByPartitionId.get(partitionId);
                     PartitionReplicaVersionsView
-                            replicaVersions = getPartitionReplicaVersionsView(Accessors.getNode(instance), partitionId);
+                            replicaVersions = getPartitionReplicaVersionsView(getNode(instance), partitionId);
                     List<Address> addresses = getReplicaAddresses(instance, partitionId);
 
                     String message = log + " PartitionId: " + partitionId

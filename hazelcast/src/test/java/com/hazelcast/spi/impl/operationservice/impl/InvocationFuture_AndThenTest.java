@@ -16,11 +16,10 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -37,6 +36,8 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 
+import static com.hazelcast.test.Accessors.getAddress;
+import static com.hazelcast.test.Accessors.getOperationService;
 import static org.mockito.Matchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -52,21 +53,21 @@ public class InvocationFuture_AndThenTest extends HazelcastTestSupport {
     @Before
     public void setup() {
         local = createHazelcastInstance();
-        operationService = Accessors.getOperationService(local);
+        operationService = getOperationService(local);
     }
 
     @Test(expected = NullPointerException.class)
     public void whenNullCallback() {
         DummyOperation op = new DummyOperation(null);
 
-        InternalCompletableFuture<Object> future = operationService.invokeOnTarget(null, op, Accessors.getAddress(local));
+        InternalCompletableFuture<Object> future = operationService.invokeOnTarget(null, op, getAddress(local));
 
         future.whenCompleteAsync(null);
     }
 
     @Test
     public void whenNodeIsShutdown() {
-        Address address = Accessors.getAddress(local);
+        Address address = getAddress(local);
         local.shutdown();
 
         DummyOperation op = new DummyOperation(null);
@@ -86,7 +87,7 @@ public class InvocationFuture_AndThenTest extends HazelcastTestSupport {
     public void whenNullCallback2() {
         DummyOperation op = new DummyOperation(null);
 
-        InternalCompletableFuture<Object> future = operationService.invokeOnTarget(null, op, Accessors.getAddress(local));
+        InternalCompletableFuture<Object> future = operationService.invokeOnTarget(null, op, getAddress(local));
 
         future.whenCompleteAsync(null, mock(Executor.class));
     }
@@ -95,7 +96,7 @@ public class InvocationFuture_AndThenTest extends HazelcastTestSupport {
     public void whenNullExecutor() {
         DummyOperation op = new DummyOperation(null);
 
-        InternalCompletableFuture<Object> future = operationService.invokeOnTarget(null, op, Accessors.getAddress(local));
+        InternalCompletableFuture<Object> future = operationService.invokeOnTarget(null, op, getAddress(local));
 
         future.whenCompleteAsync(getExecutionCallbackMock(), null);
     }
@@ -105,7 +106,7 @@ public class InvocationFuture_AndThenTest extends HazelcastTestSupport {
     public void whenNullResponse_thenCallbackExecuted() throws ExecutionException, InterruptedException {
         DummyOperation op = new DummyOperation(null);
         final BiConsumer<Object, Throwable> callback = getExecutionCallbackMock();
-        InternalCompletableFuture<Object> future = operationService.invokeOnTarget(null, op, Accessors.getAddress(local));
+        InternalCompletableFuture<Object> future = operationService.invokeOnTarget(null, op, getAddress(local));
         future.get();
 
         // callback can be completed immediately, since a response (NULL_RESPONSE) has been already set

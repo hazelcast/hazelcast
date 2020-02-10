@@ -16,16 +16,15 @@
 
 package com.hazelcast.internal.partition;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.tcp.FirewallingNetworkingService;
 import com.hazelcast.internal.nio.tcp.OperationPacketFilter;
 import com.hazelcast.internal.nio.tcp.PacketFilter;
+import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -40,6 +39,7 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 import java.util.Arrays;
 import java.util.Collection;
 
+import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
@@ -79,7 +79,7 @@ public class AntiEntropyCorrectnessTest extends PartitionCorrectnessTestSupport 
             @Override
             public void run() {
                 for (HazelcastInstance instance : instances) {
-                    InternalPartitionServiceImpl partitionService = Accessors.getNode(instance).partitionService;
+                    InternalPartitionServiceImpl partitionService = getNode(instance).partitionService;
                     int availablePermits = partitionService.getReplicaManager().availableReplicaSyncPermits();
                     assertEquals(PARALLEL_REPLICATIONS, availablePermits);
                 }
@@ -88,7 +88,7 @@ public class AntiEntropyCorrectnessTest extends PartitionCorrectnessTestSupport 
     }
 
     public static void setBackupPacketDropFilter(HazelcastInstance instance, float blockRatio) {
-        Node node = Accessors.getNode(instance);
+        Node node = getNode(instance);
         FirewallingNetworkingService.FirewallingEndpointManager
                 em = (FirewallingNetworkingService.FirewallingEndpointManager) node.getEndpointManager();
         em.setPacketFilter(new BackupPacketDropFilter(node.getSerializationService(), blockRatio));

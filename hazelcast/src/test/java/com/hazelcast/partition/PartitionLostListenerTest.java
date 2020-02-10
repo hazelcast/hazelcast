@@ -16,19 +16,18 @@
 
 package com.hazelcast.partition;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.partition.IPartitionLostEvent;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.PartitionLostEventImpl;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.partition.PartitionLostListenerStressTest.EventCollectingPartitionLostListener;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.internal.partition.IPartitionLostEvent;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -47,6 +46,7 @@ import java.util.List;
 import java.util.Set;
 
 import static com.google.common.collect.Iterables.getLast;
+import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -85,7 +85,7 @@ public class PartitionLostListenerTest extends HazelcastTestSupport {
 
         IPartitionLostEvent internalEvent = new PartitionLostEventImpl(1, 0, null);
 
-        NodeEngineImpl nodeEngine = Accessors.getNode(instance).getNodeEngine();
+        NodeEngineImpl nodeEngine = getNode(instance).getNodeEngine();
         InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) nodeEngine.getPartitionService();
         partitionService.onPartitionLost(internalEvent);
 
@@ -104,7 +104,7 @@ public class PartitionLostListenerTest extends HazelcastTestSupport {
 
         IPartitionLostEvent internalEvent = new PartitionLostEventImpl(1, 0, null);
 
-        NodeEngineImpl nodeEngine = Accessors.getNode(instance1).getNodeEngine();
+        NodeEngineImpl nodeEngine = getNode(instance1).getNodeEngine();
         InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) nodeEngine.getPartitionService();
         partitionService.onPartitionLost(internalEvent);
 
@@ -123,7 +123,7 @@ public class PartitionLostListenerTest extends HazelcastTestSupport {
         final EventCollectingPartitionLostListener listener = new EventCollectingPartitionLostListener();
         survivingInstance.getPartitionService().addPartitionLostListener(listener);
 
-        Node survivingNode = Accessors.getNode(survivingInstance);
+        Node survivingNode = getNode(survivingInstance);
         final Address survivingAddress = survivingNode.getThisAddress();
 
         final Set<Integer> survivingPartitionIds = new HashSet<Integer>();

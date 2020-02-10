@@ -31,7 +31,6 @@ import com.hazelcast.internal.nearcache.impl.NearCacheTestContextBuilder;
 import com.hazelcast.internal.nearcache.impl.NearCacheTestUtils;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.IMap;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -48,6 +47,7 @@ import static com.hazelcast.config.NearCacheConfig.DEFAULT_SERIALIZE_KEYS;
 import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.createNearCacheConfig;
 import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.getBaseConfig;
 import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.getMapNearCacheManager;
+import static com.hazelcast.test.Accessors.getSerializationService;
 
 /**
  * Basic Near Cache tests for {@link IMap} on Hazelcast members.
@@ -126,7 +126,7 @@ public class MapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, Stri
         NearCacheManager nearCacheManager = getMapNearCacheManager(nearCacheInstance);
         NearCache<Data, String> nearCache = nearCacheManager.getNearCache(DEFAULT_NEAR_CACHE_NAME);
 
-        return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, Accessors.getSerializationService(nearCacheInstance))
+        return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, getSerializationService(nearCacheInstance))
                 .setNearCacheInstance(nearCacheInstance)
                 .setNearCacheAdapter(new IMapDataStructureAdapter<K, V>(nearCacheMap))
                 .setNearCache(nearCache)

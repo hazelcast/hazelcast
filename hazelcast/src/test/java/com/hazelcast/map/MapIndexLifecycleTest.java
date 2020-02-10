@@ -41,7 +41,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -57,6 +56,9 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
+import static com.hazelcast.test.Accessors.getNode;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
+import static com.hazelcast.test.Accessors.getOperationService;
 import static java.util.Arrays.copyOfRange;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -194,7 +196,7 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
     }
 
     private int numberOfPartitionQueryResults(HazelcastInstance instance, int partitionId, String attribute, Comparable value) {
-        OperationService operationService = Accessors.getOperationService(instance);
+        OperationService operationService = getOperationService(instance);
         Query query = Query.of().mapName(mapName).iterationType(IterationType.KEY).predicate(Predicates.equal(attribute, value))
                 .build();
         Operation queryOperation = getMapOperationProvider(instance, mapName).createQueryPartitionOperation(query);
@@ -229,7 +231,7 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
         Integer yearOwned = findYearOwnedBy(instance);
 
         for (int i = 0; i < partitionCount; i++) {
-            if (!Accessors.getNode(instance).getPartitionService().isPartitionOwner(i)) {
+            if (!getNode(instance).getPartitionService().isPartitionOwner(i)) {
                 continue;
             }
 
@@ -260,12 +262,12 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
     }
 
     private int getPartitionCount(HazelcastInstance instance) {
-        Node node = Accessors.getNode(instance);
+        Node node = getNode(instance);
         return node.getProperties().getInteger(ClusterProperty.PARTITION_COUNT);
     }
 
     private MapServiceContext getMapServiceContext(HazelcastInstance instance) {
-        NodeEngineImpl nodeEngine1 = Accessors.getNodeEngineImpl(instance);
+        NodeEngineImpl nodeEngine1 = getNodeEngineImpl(instance);
         MapService mapService = nodeEngine1.getService(MapService.SERVICE_NAME);
         return mapService.getMapServiceContext();
     }

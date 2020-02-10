@@ -38,7 +38,6 @@ import com.hazelcast.scheduledexecutor.ScheduledTaskStatistics;
 import com.hazelcast.scheduledexecutor.StaleTaskException;
 import com.hazelcast.scheduledexecutor.TaskUtils;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -63,6 +62,7 @@ import java.util.concurrent.TimeoutException;
 import static com.hazelcast.internal.partition.IPartition.MAX_BACKUP_COUNT;
 import static com.hazelcast.scheduledexecutor.TaskUtils.named;
 import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -95,7 +95,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         IScheduledFuture future = instances[0].getScheduledExecutorService(schedulerName)
                                               .schedule(new PlainCallableTask(), 0, SECONDS);
 
-        NodeEngineImpl nodeEngine = Accessors.getNodeEngineImpl(instances[0]);
+        NodeEngineImpl nodeEngine = getNodeEngineImpl(instances[0]);
         ManagedExecutorService mes = (ManagedExecutorService) nodeEngine.getExecutionService()
                 .getScheduledDurable(sec.getName());
         DistributedScheduledExecutorService dses = nodeEngine.getService(DistributedScheduledExecutorService.SERVICE_NAME);
@@ -209,7 +209,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         HazelcastInstance[] instances = createClusterWithCount(1, config);
         IScheduledExecutorService service = instances[0].getScheduledExecutorService(schedulerName);
         String key = "hitSamePartitionToCheckCapacity";
-        int keyOwner = Accessors.getNodeEngineImpl(instances[0]).getPartitionService().getPartitionId(key);
+        int keyOwner = getNodeEngineImpl(instances[0]).getPartitionService().getPartitionId(key);
 
         List<IScheduledFuture> futures = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
@@ -249,7 +249,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         HazelcastInstance[] instances = createClusterWithCount(1, config);
         IScheduledExecutorService service = instances[0].getScheduledExecutorService(schedulerName);
         String key = "hitSamePartitionToCheckCapacity";
-        int keyOwner = Accessors.getNodeEngineImpl(instances[0]).getPartitionService().getPartitionId(key);
+        int keyOwner = getNodeEngineImpl(instances[0]).getPartitionService().getPartitionId(key);
 
         List<IScheduledFuture> futures = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
@@ -291,7 +291,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         HazelcastInstance[] instances = createClusterWithCount(2, config);
         IScheduledExecutorService service = instances[0].getScheduledExecutorService(schedulerName);
         String key = generateKeyOwnedBy(instances[0]);
-        int keyOwner = Accessors.getNodeEngineImpl(instances[0]).getPartitionService().getPartitionId(key);
+        int keyOwner = getNodeEngineImpl(instances[0]).getPartitionService().getPartitionId(key);
 
         IScheduledFuture future = service.scheduleOnKeyOwner(new PlainCallableTask(), key, 0, TimeUnit.SECONDS);
         future.get();
@@ -335,7 +335,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         HazelcastInstance[] instances = createClusterWithCount(2, config);
         IScheduledExecutorService service = instances[0].getScheduledExecutorService(schedulerName);
         String key = generateKeyOwnedBy(instances[0]);
-        int keyOwner = Accessors.getNodeEngineImpl(instances[0]).getPartitionService().getPartitionId(key);
+        int keyOwner = getNodeEngineImpl(instances[0]).getPartitionService().getPartitionId(key);
 
         IScheduledFuture future = service.scheduleOnKeyOwner(new PlainCallableTask(), key, 0, TimeUnit.SECONDS);
         future.get();
@@ -418,7 +418,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         HazelcastInstance[] instances = hazelcastInstanceFactory.newInstances(config, 3);
         IScheduledExecutorService service = instances[0].getScheduledExecutorService(schedulerName);
         String key = generateKeyOwnedBy(instances[0]);
-        int keyOwner = Accessors.getNodeEngineImpl(instances[0]).getPartitionService().getPartitionId(key);
+        int keyOwner = getNodeEngineImpl(instances[0]).getPartitionService().getPartitionId(key);
 
         IScheduledFuture future = service.scheduleOnKeyOwner(new PlainCallableTask(), key, 0, TimeUnit.SECONDS);
         future.get();
@@ -455,7 +455,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         HazelcastInstance[] instances = hazelcastInstanceFactory.newInstances(config, 3);
         IScheduledExecutorService service = instances[0].getScheduledExecutorService(schedulerName);
         String key = generateKeyOwnedBy(instances[0]);
-        int keyOwner = Accessors.getNodeEngineImpl(instances[0]).getPartitionService().getPartitionId(key);
+        int keyOwner = getNodeEngineImpl(instances[0]).getPartitionService().getPartitionId(key);
 
         IScheduledFuture future = service.scheduleOnKeyOwner(new PlainCallableTask(), key, 1, TimeUnit.HOURS);
         future.getStats();
@@ -1060,7 +1060,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
 
         int partitionOwner = handler.getPartitionId();
         IPartitionLostEvent internalEvent = new PartitionLostEventImpl(partitionOwner, replicaLostCount, null);
-        ((InternalPartitionServiceImpl) Accessors.getNodeEngineImpl(instances[0]).getPartitionService()).onPartitionLost(internalEvent);
+        ((InternalPartitionServiceImpl) getNodeEngineImpl(instances[0]).getPartitionService()).onPartitionLost(internalEvent);
 
         assertTrueEventually(() -> {
             try {
@@ -1200,7 +1200,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         ICountDownLatch latch = instances[0].getCPSubsystem().getCountDownLatch("latch");
         latch.trySetCount(1);
 
-        MemberImpl member = Accessors.getNodeEngineImpl(instances[1]).getLocalMember();
+        MemberImpl member = getNodeEngineImpl(instances[1]).getLocalMember();
         IScheduledExecutorService s = getScheduledExecutor(instances, "s");
         s.scheduleOnMember(TaskUtils.named("blah", new PlainInstanceAwareRunnableTask("latch")), member, 1, TimeUnit.SECONDS);
 
@@ -1232,7 +1232,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         HazelcastInstance[] instances = createClusterWithCount(2);
         IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
 
-        MemberImpl member = Accessors.getNodeEngineImpl(instances[0]).getLocalMember();
+        MemberImpl member = getNodeEngineImpl(instances[0]).getLocalMember();
         IScheduledFuture<Double> future = executorService.scheduleOnMember(new PlainCallableTask(), member, delay, SECONDS);
 
         assertTrue(future.getHandler().isAssignedToMember());

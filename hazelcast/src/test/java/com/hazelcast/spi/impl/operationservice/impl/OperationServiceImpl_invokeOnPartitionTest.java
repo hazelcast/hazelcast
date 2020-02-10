@@ -18,7 +18,6 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.ExceptionThrowingCallable;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -30,6 +29,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.test.Accessors.getOperationService;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -48,7 +48,7 @@ public class OperationServiceImpl_invokeOnPartitionTest extends HazelcastTestSup
 
         local = nodes[0];
         remote = nodes[1];
-        operationService = Accessors.getOperationService(local);
+        operationService = getOperationService(local);
     }
 
     @Test

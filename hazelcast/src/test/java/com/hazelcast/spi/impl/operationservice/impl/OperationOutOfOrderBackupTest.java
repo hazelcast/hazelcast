@@ -31,7 +31,6 @@ import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -49,6 +48,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.internal.partition.TestPartitionUtils.getDefaultReplicaVersions;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -79,8 +79,8 @@ public class OperationOutOfOrderBackupTest extends HazelcastTestSupport {
         warmUpPartitions(hz2, hz1);
 
         partitionId = getPartitionId(hz1);
-        nodeEngine1 = Accessors.getNodeEngineImpl(hz1);
-        nodeEngine2 = Accessors.getNodeEngineImpl(hz2);
+        nodeEngine1 = getNodeEngineImpl(hz1);
+        nodeEngine2 = getNodeEngineImpl(hz2);
     }
 
     @Test

@@ -16,15 +16,13 @@
 
 package com.hazelcast.collection.impl.txnqueue;
 
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.collection.ItemEvent;
+import com.hazelcast.collection.ItemListener;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.collection.IQueue;
-import com.hazelcast.collection.ItemEvent;
-import com.hazelcast.collection.ItemListener;
-import com.hazelcast.test.Accessors;
-import com.hazelcast.transaction.TransactionalQueue;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -35,6 +33,7 @@ import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions;
+import com.hazelcast.transaction.TransactionalQueue;
 import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.transaction.TransactionalTaskContext;
 import org.junit.Test;
@@ -49,6 +48,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 
+import static com.hazelcast.test.Accessors.getNode;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -589,7 +589,7 @@ public class TransactionQueueTest extends HazelcastTestSupport {
     }
 
     private void assertTransactionMapSize(HazelcastInstance instance, String name, int size) {
-        final QueueService queueService = Accessors.getNode(instance).nodeEngine.getService(QueueService.SERVICE_NAME);
+        final QueueService queueService = getNode(instance).nodeEngine.getService(QueueService.SERVICE_NAME);
         assertEquals(size, queueService.getOrCreateContainer(name, true).txMapSize());
     }
 

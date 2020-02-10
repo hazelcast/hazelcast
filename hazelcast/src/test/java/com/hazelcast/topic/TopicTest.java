@@ -26,7 +26,6 @@ import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -53,6 +52,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.test.Accessors.getNode;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -77,7 +77,7 @@ public class TopicTest extends HazelcastTestSupport {
 
         topic.destroy();
 
-        final TopicService topicService = Accessors.getNode(instance).nodeEngine.getService(TopicService.SERVICE_NAME);
+        final TopicService topicService = getNode(instance).nodeEngine.getService(TopicService.SERVICE_NAME);
 
         assertTrueEventually(new AssertTask() {
             @Override

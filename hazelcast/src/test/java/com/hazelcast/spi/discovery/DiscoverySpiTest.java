@@ -16,6 +16,9 @@
 
 package com.hazelcast.spi.discovery;
 
+import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DiscoveryConfig;
@@ -31,26 +34,22 @@ import com.hazelcast.config.properties.PropertyTypeConverter;
 import com.hazelcast.config.properties.SimplePropertyDefinition;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.BuildInfoProvider;
-import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.partition.membergroup.DefaultMemberGroup;
-import com.hazelcast.spi.partitiongroup.MemberGroup;
 import com.hazelcast.internal.partition.membergroup.MemberGroupFactory;
 import com.hazelcast.internal.partition.membergroup.SPIAwareMemberGroupFactory;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.discovery.impl.DefaultDiscoveryService;
 import com.hazelcast.spi.discovery.impl.DefaultDiscoveryServiceProvider;
 import com.hazelcast.spi.discovery.integration.DiscoveryMode;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
+import com.hazelcast.spi.partitiongroup.MemberGroup;
 import com.hazelcast.spi.partitiongroup.PartitionGroupStrategy;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -86,6 +85,7 @@ import static com.hazelcast.config.properties.PropertyTypeConverter.BOOLEAN;
 import static com.hazelcast.config.properties.PropertyTypeConverter.INTEGER;
 import static com.hazelcast.config.properties.PropertyTypeConverter.STRING;
 import static com.hazelcast.spi.discovery.DiscoverySpiTest.ParametrizedDiscoveryStrategyFactory.BOOL_PROPERTY;
+import static com.hazelcast.test.Accessors.getNode;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -365,7 +365,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
     public void testSPIAwareMemberGroupFactoryInvalidConfig() throws Exception {
         HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance();
         try {
-            MemberGroupFactory groupFactory = new SPIAwareMemberGroupFactory(Accessors.getNode(hazelcastInstance).getDiscoveryService());
+            MemberGroupFactory groupFactory = new SPIAwareMemberGroupFactory(getNode(hazelcastInstance).getDiscoveryService());
             Collection<Member> members = createMembers();
             groupFactory.createMemberGroups(members);
         } finally {
@@ -379,7 +379,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
         Config config = getDiscoverySPIConfig(xmlFileName);
         // we create this instance in order to fully create Node
         HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance(config);
-        Node node = Accessors.getNode(hazelcastInstance);
+        Node node = getNode(hazelcastInstance);
         assertNotNull(node);
 
         MemberGroupFactory groupFactory = new SPIAwareMemberGroupFactory(node.getDiscoveryService());

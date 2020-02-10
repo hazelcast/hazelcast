@@ -20,9 +20,9 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.map.EventLostEvent;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -31,7 +31,6 @@ import com.hazelcast.map.impl.querycache.accumulator.Accumulator;
 import com.hazelcast.map.listener.EventLostListener;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -47,6 +46,7 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
 import static com.hazelcast.map.impl.querycache.AbstractQueryCacheTestSupport.getMap;
+import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -121,7 +121,7 @@ public class QueryCacheRecoveryUponEventLossTest extends HazelcastTestSupport {
     }
 
     private void setTestSequencer(HazelcastInstance instance, int eventCount) {
-        Node node = Accessors.getNode(instance);
+        Node node = getNode(instance);
         MapService service = node.getNodeEngine().getService(MapService.SERVICE_NAME);
         MapServiceContext mapServiceContext = service.getMapServiceContext();
         QueryCacheContext queryCacheContext = mapServiceContext.getQueryCacheContext();
@@ -129,7 +129,7 @@ public class QueryCacheRecoveryUponEventLossTest extends HazelcastTestSupport {
     }
 
     private Map getBrokenSequences(HazelcastInstance instance, String mapName, QueryCache queryCache) {
-        Node node = Accessors.getNode(instance);
+        Node node = getNode(instance);
         MapService service = node.getNodeEngine().getService(MapService.SERVICE_NAME);
         MapServiceContext mapServiceContext = service.getMapServiceContext();
         QueryCacheContext context = mapServiceContext.getQueryCacheContext();

@@ -37,7 +37,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceSegment;
-import com.hazelcast.test.Accessors;
 import org.junit.After;
 import org.junit.Test;
 
@@ -56,6 +55,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.client.properties.ClientProperty.HEARTBEAT_INTERVAL;
 import static com.hazelcast.client.properties.ClientProperty.HEARTBEAT_TIMEOUT;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -313,7 +313,7 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
     protected void validateRegistrationsOnMembers(final TestHazelcastFactory factory) {
         assertTrueEventually(() -> {
             for (HazelcastInstance instance : factory.getAllHazelcastInstances()) {
-                NodeEngineImpl nodeEngineImpl = Accessors.getNodeEngineImpl(instance);
+                NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(instance);
                 EventServiceImpl eventService = (EventServiceImpl) nodeEngineImpl.getEventService();
                 EventServiceSegment serviceSegment = eventService.getSegment(getServiceName(), false);
                 Member member = instance.getCluster().getLocalMember();

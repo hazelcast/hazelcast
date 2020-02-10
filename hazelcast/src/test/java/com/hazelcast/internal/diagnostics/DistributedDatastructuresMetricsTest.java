@@ -33,7 +33,6 @@ import com.hazelcast.internal.metrics.collectors.MetricsCollector;
 import com.hazelcast.map.IMap;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.replicatedmap.ReplicatedMap;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -53,6 +52,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.regex.Pattern;
 
 import static com.hazelcast.cache.CacheUtil.getDistributedObjectName;
+import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -315,7 +315,7 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
     }
 
     private void assertHasStatsEventually(final String dsName, final String metricPrefix) {
-        final MetricsRegistry registry = Accessors.getNode(hz).nodeEngine.getMetricsRegistry();
+        final MetricsRegistry registry = getNode(hz).nodeEngine.getMetricsRegistry();
         assertTrueEventually(() -> {
             final StringMetricsCollector collector = new StringMetricsCollector(dsName, metricPrefix);
             registry.collect(collector);
@@ -324,7 +324,7 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
     }
 
     private void assertHasNoStats(final String dsName, final String metricPrefix) {
-        final MetricsRegistry registry = Accessors.getNode(hz).nodeEngine.getMetricsRegistry();
+        final MetricsRegistry registry = getNode(hz).nodeEngine.getMetricsRegistry();
         final StringMetricsCollector collector = new StringMetricsCollector(dsName, metricPrefix);
         registry.collect(collector);
         assertTrue(collector.probes.isEmpty());

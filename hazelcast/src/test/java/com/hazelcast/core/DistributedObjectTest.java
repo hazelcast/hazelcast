@@ -30,7 +30,6 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyRegistry;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -51,6 +50,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
 
+import static com.hazelcast.test.Accessors.getNode;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -175,7 +176,7 @@ public class DistributedObjectTest extends HazelcastTestSupport {
         }
 
         for (int i = 0; i < nodeCount; i++) {
-            NodeEngine nodeEngine = Accessors.getNodeEngineImpl(instances[i]);
+            NodeEngine nodeEngine = getNodeEngineImpl(instances[i]);
             OperationService operationService = nodeEngine.getOperationService();
             ProxyServiceImpl proxyService = (ProxyServiceImpl) nodeEngine.getProxyService();
             Operation postJoinOperation = proxyService.getPostJoinOperation();
@@ -184,7 +185,7 @@ public class DistributedObjectTest extends HazelcastTestSupport {
                 if (i == j) {
                     continue;
                 }
-                Node node2 = Accessors.getNode(instances[j]);
+                Node node2 = getNode(instances[j]);
                 operationService.send(postJoinOperation, node2.address);
             }
         }
@@ -224,7 +225,7 @@ public class DistributedObjectTest extends HazelcastTestSupport {
             instance.getDistributedObject(serviceName, objectName);
         });
         initializationStarted.await();
-        NodeEngineImpl nodeEngine = Accessors.getNodeEngineImpl(instance);
+        NodeEngineImpl nodeEngine = getNodeEngineImpl(instance);
         UUID source = nodeEngine.getLocalMember().getUuid();
         nodeEngine.getProxyService().destroyDistributedObject(serviceName, objectName, source);
         objectDestroyed.countDown();
@@ -377,13 +378,13 @@ public class DistributedObjectTest extends HazelcastTestSupport {
         ProxyRegistry[] registries = new ProxyRegistry[nodeCount];
         for (int i = 0; i < instances.length; i++) {
             instances[i] = factory.newHazelcastInstance(config);
-            NodeEngine nodeEngine = Accessors.getNodeEngineImpl(instances[i]);
+            NodeEngine nodeEngine = getNodeEngineImpl(instances[i]);
             ProxyServiceImpl proxyService = (ProxyServiceImpl) nodeEngine.getProxyService();
             registries[i] = proxyService.getOrCreateRegistry(serviceName);
         }
 
         for (int i = 0; i < instances.length; i++) {
-            NodeEngine nodeEngine = Accessors.getNodeEngineImpl(instances[i]);
+            NodeEngine nodeEngine = getNodeEngineImpl(instances[i]);
             UUID source = nodeEngine.getLocalMember().getUuid();
             registries[i].createProxy(objectName, source, true, true);
             for (int j = i + 1; j < instances.length; j++) {

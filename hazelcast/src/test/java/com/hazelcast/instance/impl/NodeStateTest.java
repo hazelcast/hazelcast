@@ -19,16 +19,15 @@ package com.hazelcast.instance.impl;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.impl.AllowedDuringPassiveState;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.internal.util.ExceptionUtil;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -40,6 +39,8 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
 import static com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl_asyncInvokeOnPartitionTest.InvocationEntryProcessor.latch;
+import static com.hazelcast.test.Accessors.getNode;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -52,14 +53,14 @@ public class NodeStateTest extends HazelcastTestSupport {
     public void nodeState_isActive_whenInstanceStarted() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance hz = factory.newHazelcastInstance();
-        assertEquals(NodeState.ACTIVE, Accessors.getNode(hz).getState());
+        assertEquals(NodeState.ACTIVE, getNode(hz).getState());
     }
 
     @Test
     public void nodeState_isShutdown_whenInstanceShutdown() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance hz = factory.newHazelcastInstance();
-        Node node = Accessors.getNode(hz);
+        Node node = getNode(hz);
         hz.shutdown();
         assertEquals(NodeState.SHUT_DOWN, node.getState());
     }
@@ -68,7 +69,7 @@ public class NodeStateTest extends HazelcastTestSupport {
     public void nodeState_isShutdown_whenInstanceTerminated() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance hz = factory.newHazelcastInstance();
-        Node node = Accessors.getNode(hz);
+        Node node = getNode(hz);
         hz.shutdown();
         assertEquals(NodeState.SHUT_DOWN, node.getState());
     }
@@ -77,7 +78,7 @@ public class NodeStateTest extends HazelcastTestSupport {
     public void multipleShutdowns_Allowed() throws InterruptedException {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance hz = factory.newHazelcastInstance();
-        Node node = Accessors.getNode(hz);
+        Node node = getNode(hz);
 
         for (int i = 0; i < 3; i++) {
             node.shutdown(false);
@@ -88,7 +89,7 @@ public class NodeStateTest extends HazelcastTestSupport {
     public void concurrentShutdowns_Allowed() throws InterruptedException {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance hz = factory.newHazelcastInstance();
-        final Node node = Accessors.getNode(hz);
+        final Node node = getNode(hz);
 
         Thread[] shutdownThreads = new Thread[3];
         for (int i = 0; i < shutdownThreads.length; i++) {
@@ -195,14 +196,14 @@ public class NodeStateTest extends HazelcastTestSupport {
     private void testInvocation_whilePassive(InvocationTask invocationTask) throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         final HazelcastInstance hz = factory.newHazelcastInstance();
-        final Node node = Accessors.getNode(hz);
+        final Node node = getNode(hz);
 
         changeClusterStateEventually(hz, ClusterState.PASSIVE);
 
         assertEquals(NodeState.PASSIVE, node.getState());
 
         try {
-            invocationTask.invoke(Accessors.getNodeEngineImpl(hz));
+            invocationTask.invoke(getNodeEngineImpl(hz));
         } catch (Throwable e) {
             // countdown-latch on failure
             latch.countDown();

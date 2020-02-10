@@ -20,7 +20,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -35,6 +34,8 @@ import org.junit.runner.RunWith;
 import static com.hazelcast.internal.partition.InternalPartition.MAX_BACKUP_COUNT;
 import static com.hazelcast.spi.impl.operationservice.OperationAccessor.setCallerAddress;
 import static com.hazelcast.spi.impl.operationservice.impl.DummyBackupAwareOperation.backupCompletedMap;
+import static com.hazelcast.test.Accessors.getAddress;
+import static com.hazelcast.test.Accessors.getOperationService;
 import static java.lang.Math.min;
 import static java.util.UUID.randomUUID;
 import static org.junit.Assert.assertEquals;
@@ -69,7 +70,7 @@ public class OperationBackupHandlerTest extends HazelcastTestSupport {
         warmUpPartitions(cluster);
         local = cluster[0];
 
-        operationService = (OperationServiceImpl) Accessors.getOperationService(local);
+        operationService = (OperationServiceImpl) getOperationService(local);
         backupHandler = operationService.backupHandler;
     }
 
@@ -230,7 +231,7 @@ public class OperationBackupHandlerTest extends HazelcastTestSupport {
         operation.syncBackupCount = syncBackupCount;
         operation.asyncBackupCount = asyncBackupCount;
         operation.backupKey = randomUUID().toString();
-        setCallerAddress(operation, Accessors.getAddress(local));
+        setCallerAddress(operation, getAddress(local));
         operation.setPartitionId(getPartitionId(local));
         return operation;
     }

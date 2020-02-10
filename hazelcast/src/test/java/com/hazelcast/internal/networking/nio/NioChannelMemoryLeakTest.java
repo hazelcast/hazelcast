@@ -21,7 +21,6 @@ import com.hazelcast.config.JoinConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nio.tcp.TcpIpNetworkingService;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -37,6 +36,8 @@ import static com.hazelcast.core.Hazelcast.newHazelcastInstance;
 import static com.hazelcast.spi.properties.ClusterProperty.MERGE_FIRST_RUN_DELAY_SECONDS;
 import static com.hazelcast.spi.properties.ClusterProperty.MERGE_NEXT_RUN_DELAY_SECONDS;
 import static com.hazelcast.spi.properties.ClusterProperty.WAIT_SECONDS_BEFORE_JOIN;
+import static com.hazelcast.test.Accessors.getAddress;
+import static com.hazelcast.test.Accessors.getNode;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -57,7 +58,7 @@ public class NioChannelMemoryLeakTest extends HazelcastTestSupport {
         config.setProperty(MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "1");
 
         HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
-        TcpIpNetworkingService networkingService = (TcpIpNetworkingService) Accessors.getNode(instance).getNetworkingService();
+        TcpIpNetworkingService networkingService = (TcpIpNetworkingService) getNode(instance).getNetworkingService();
         final NioNetworking networking = (NioNetworking) networkingService.getNetworking();
 
         assertTrueEventually(() -> assertThat(networking.getChannels(), Matchers.empty()));
@@ -81,7 +82,7 @@ public class NioChannelMemoryLeakTest extends HazelcastTestSupport {
             assertClusterSizeEventually(2, instance1, instance2);
             assertClusterSizeEventually(1, instance3);
 
-            Accessors.getNode(instance3).getClusterService().merge(Accessors.getAddress(instance1));
+            getNode(instance3).getClusterService().merge(getAddress(instance1));
             assertClusterSizeEventually(3, instance1, instance2, instance3);
         }
 
@@ -100,7 +101,7 @@ public class NioChannelMemoryLeakTest extends HazelcastTestSupport {
         // it may end up with two different connections between them.
         int maxChannelCount = (clusterSize - 1) * 2;
 
-        final NioNetworking networking = (NioNetworking) Accessors.getNode(instance).getNetworkingService().getNetworking();
+        final NioNetworking networking = (NioNetworking) getNode(instance).getNetworkingService().getNetworking();
         Set<NioChannel> channels = networking.getChannels();
 
         assertThat(channels.size(), lessThanOrEqualTo(maxChannelCount));

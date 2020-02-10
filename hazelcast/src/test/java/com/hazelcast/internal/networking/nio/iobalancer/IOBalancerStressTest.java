@@ -19,7 +19,6 @@ package com.hazelcast.internal.networking.nio.iobalancer;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.internal.networking.nio.MigratablePipeline;
 import com.hazelcast.internal.networking.nio.NioChannel;
@@ -29,8 +28,8 @@ import com.hazelcast.internal.networking.nio.NioOutboundPipeline;
 import com.hazelcast.internal.networking.nio.NioThread;
 import com.hazelcast.internal.nio.EndpointManager;
 import com.hazelcast.internal.nio.tcp.TcpIpConnection;
+import com.hazelcast.map.IMap;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.OverridePropertyRule;
@@ -49,6 +48,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.test.Accessors.getEndpointManager;
+import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -88,7 +89,7 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
     }
 
     private void assertBalanced(HazelcastInstance hz) {
-        EndpointManager<TcpIpConnection> em = Accessors.getEndpointManager(hz);
+        EndpointManager<TcpIpConnection> em = getEndpointManager(hz);
 
         Map<NioThread, Set<MigratablePipeline>> pipelinesPerOwner = getPipelinesPerOwner(em);
 
@@ -156,8 +157,8 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
     }
 
     private String debug(HazelcastInstance hz) {
-        NioNetworking threadingModel = (NioNetworking) Accessors.getNode(hz).getNetworkingService().getNetworking();
-        EndpointManager<TcpIpConnection> em = Accessors.getNode(hz).getEndpointManager();
+        NioNetworking threadingModel = (NioNetworking) getNode(hz).getNetworkingService().getNetworking();
+        EndpointManager<TcpIpConnection> em = getNode(hz).getEndpointManager();
 
         StringBuilder sb = new StringBuilder();
         sb.append("in owners\n");

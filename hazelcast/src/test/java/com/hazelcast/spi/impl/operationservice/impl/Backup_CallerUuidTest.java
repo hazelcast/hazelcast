@@ -17,11 +17,10 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
-import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -33,6 +32,7 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hazelcast.test.Accessors.getOperationService;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -58,7 +58,7 @@ public class Backup_CallerUuidTest extends HazelcastTestSupport {
 
     @Test
     public void test() {
-        InternalCompletableFuture f = Accessors.getOperationService(hz).invokeOnPartition(new DummyUpdateOperation()
+        InternalCompletableFuture f = getOperationService(hz).invokeOnPartition(new DummyUpdateOperation()
                 .setPartitionId(getPartitionId(hz)));
         assertCompletesEventually(f);
 

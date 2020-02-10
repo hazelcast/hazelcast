@@ -18,7 +18,6 @@ package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -32,6 +31,7 @@ import static com.hazelcast.internal.diagnostics.DiagnosticsPlugin.DISABLED;
 import static com.hazelcast.internal.diagnostics.SystemLogPlugin.ENABLED;
 import static com.hazelcast.internal.diagnostics.SystemLogPlugin.LOG_PARTITIONS;
 import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -51,7 +51,7 @@ public class SystemLogPluginTest extends AbstractDiagnosticsPluginTest {
 
         hzFactory = createHazelcastInstanceFactory(2);
         hz = hzFactory.newHazelcastInstance(config);
-        plugin = new SystemLogPlugin(Accessors.getNodeEngineImpl(hz));
+        plugin = new SystemLogPlugin(getNodeEngineImpl(hz));
         plugin.onStart();
     }
 
@@ -65,7 +65,7 @@ public class SystemLogPluginTest extends AbstractDiagnosticsPluginTest {
         config.setProperty(ENABLED.getName(), "false");
         HazelcastInstance instance = hzFactory.newHazelcastInstance(config);
 
-        plugin = new SystemLogPlugin(Accessors.getNodeEngineImpl(instance));
+        plugin = new SystemLogPlugin(getNodeEngineImpl(instance));
         plugin.onStart();
 
         assertEquals(DISABLED, plugin.getPeriodMillis());

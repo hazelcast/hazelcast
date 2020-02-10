@@ -23,7 +23,6 @@ import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.ParseException;
 import com.hazelcast.internal.management.events.Event;
 import com.hazelcast.internal.management.events.EventMetadata;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -37,6 +36,7 @@ import org.junit.runner.RunWith;
 import java.util.List;
 
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
+import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -59,7 +59,7 @@ public class ManagementCenterServiceIntegrationTest extends HazelcastTestSupport
         instance = factory.newHazelcastInstance(getConfig().setClusterName(CLUSTER_NAME));
 
         assertTrueEventually(() -> {
-            ManagementCenterService mcs = Accessors.getNode(instance).getManagementCenterService();
+            ManagementCenterService mcs = getNode(instance).getManagementCenterService();
             assertNotNull(mcs);
             this.mcs = mcs;
         });

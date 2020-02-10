@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.cluster.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
@@ -24,7 +25,6 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.map.IMap;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.partition.IndeterminateOperationStateExceptionTest.BackupOperation;
 import com.hazelcast.partition.IndeterminateOperationStateExceptionTest.SilentOperation;
 import com.hazelcast.partition.PartitionLostListener;
@@ -36,7 +36,6 @@ import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -59,6 +58,10 @@ import java.util.concurrent.Future;
 import static com.hazelcast.instance.impl.TestUtil.terminateInstance;
 import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
 import static com.hazelcast.internal.partition.InternalPartitionService.PARTITION_LOST_EVENT_TOPIC;
+import static com.hazelcast.test.Accessors.getAddress;
+import static com.hazelcast.test.Accessors.getNode;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
+import static com.hazelcast.test.Accessors.getOperationService;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -136,13 +139,13 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
         hz1.getCluster().changeClusterState(ClusterState.FROZEN);
 
         HazelcastInstance hz2 = instances[0];
-        Address address = Accessors.getNode(hz2).getThisAddress();
+        Address address = getNode(hz2).getThisAddress();
         hz2.getLifecycleService().terminate();
 
         hz2 = factory.newHazelcastInstance(address);
 
         assertClusterSizeEventually(3, hz1, hz2);
-        assertEquals(NodeState.ACTIVE, Accessors.getNode(hz2).getState());
+        assertEquals(NodeState.ACTIVE, getNode(hz2).getState());
     }
 
     @Test
@@ -157,13 +160,13 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
         hz1.getCluster().changeClusterState(ClusterState.PASSIVE);
 
         HazelcastInstance hz2 = instances[0];
-        Address address = Accessors.getNode(hz2).getThisAddress();
+        Address address = getNode(hz2).getThisAddress();
         hz2.getLifecycleService().terminate();
 
         hz2 = factory.newHazelcastInstance(address);
 
         assertClusterSizeEventually(3, hz1, hz2);
-        assertEquals(NodeState.PASSIVE, Accessors.getNode(hz2).getState());
+        assertEquals(NodeState.PASSIVE, getNode(hz2).getState());
     }
 
     @Test
@@ -340,7 +343,7 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
 
         changeClusterStateEventually(master, clusterState);
 
-        final Address otherAddress = Accessors.getAddress(other);
+        final Address otherAddress = getAddress(other);
 
         other.shutdown();
         assertClusterSizeEventually(1, master);
@@ -401,7 +404,7 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
             @Override
             public void run()
                     throws Exception {
-                assertEquals(1, Accessors.getNodeEngineImpl(other).getProxyService().getProxyCount());
+                assertEquals(1, getNodeEngineImpl(other).getProxyService().getProxyCount());
             }
         });
     }
@@ -423,8 +426,8 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
         HazelcastInstance hz2 = factory.newHazelcastInstance();
         warmUpPartitions(hz1, hz2);
 
-        Future<Object> future = Accessors.getOperationService(hz2).invokeOnTarget(null, new SilentOperation(), Accessors
-                .getAddress(hz1));
+        Future<Object> future = getOperationService(hz2).invokeOnTarget(null, new SilentOperation(),
+                getAddress(hz1));
 
         changeClusterStateEventually(hz2, state);
         hz1.shutdown();
@@ -443,7 +446,7 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
         int partitionId = getPartitionId(hz2);
         changeClusterStateEventually(hz1, ClusterState.PASSIVE);
 
-        InternalCompletableFuture future = Accessors.getOperationService(hz1).invokeOnPartition(null,
+        InternalCompletableFuture future = getOperationService(hz1).invokeOnPartition(null,
                 new PrimaryAllowedDuringPassiveStateOperation(), partitionId);
         future.join();
 
@@ -457,7 +460,7 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
 
     private static void assertNodeState(HazelcastInstance[] instances, NodeState expectedState) {
         for (HazelcastInstance instance : instances) {
-            Node node = Accessors.getNode(instance);
+            Node node = getNode(instance);
             assertEquals(expectedState, node.getState());
         }
     }
@@ -468,7 +471,7 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
             public void run()
                     throws Exception {
 
-                final EventService eventService = Accessors.getNode(instance).getNodeEngine().getEventService();
+                final EventService eventService = getNode(instance).getNodeEngine().getEventService();
                 final Collection<EventRegistration> registrations =
                         eventService.getRegistrations(serviceName, topic);
                 assertEquals(size, registrations.size());

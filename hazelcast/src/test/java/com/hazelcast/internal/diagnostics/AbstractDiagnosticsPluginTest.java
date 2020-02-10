@@ -18,7 +18,6 @@ package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Before;
 
@@ -28,6 +27,7 @@ import java.io.PrintWriter;
 import java.lang.reflect.Field;
 
 import static com.hazelcast.internal.nio.IOUtil.deleteQuietly;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 
 public class AbstractDiagnosticsPluginTest extends HazelcastTestSupport {
 
@@ -58,7 +58,7 @@ public class AbstractDiagnosticsPluginTest extends HazelcastTestSupport {
     }
 
     static Diagnostics getDiagnostics(HazelcastInstance hazelcastInstance) {
-        NodeEngineImpl nodeEngine = Accessors.getNodeEngineImpl(hazelcastInstance);
+        NodeEngineImpl nodeEngine = getNodeEngineImpl(hazelcastInstance);
         try {
             Field field = NodeEngineImpl.class.getDeclaredField("diagnostics");
             field.setAccessible(true);

@@ -38,7 +38,6 @@ import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import com.hazelcast.test.Accessors;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -52,6 +51,7 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.cp.internal.session.AbstractProxySessionManager.NO_SESSION_ID;
 import static com.hazelcast.internal.util.ThreadUtil.getThreadId;
 import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
@@ -92,7 +92,7 @@ public abstract class AbstractSemaphoreAdvancedTest extends HazelcastRaftTestSup
 
         CPGroupId groupId = getGroupId();
         HazelcastInstance leader = leaderInstanceOf(groupId);
-        SemaphoreService service = Accessors.getNodeEngineImpl(leader).getService(SemaphoreService.SERVICE_NAME);
+        SemaphoreService service = getNodeEngineImpl(leader).getService(SemaphoreService.SERVICE_NAME);
         SemaphoreRegistry registry = service.getRegistryOrNull(groupId);
 
         CountDownLatch latch = new CountDownLatch(1);
@@ -121,7 +121,7 @@ public abstract class AbstractSemaphoreAdvancedTest extends HazelcastRaftTestSup
 
         CPGroupId groupId = getGroupId();
         HazelcastInstance leader = leaderInstanceOf(groupId);
-        SemaphoreService service = Accessors.getNodeEngineImpl(leader).getService(SemaphoreService.SERVICE_NAME);
+        SemaphoreService service = getNodeEngineImpl(leader).getService(SemaphoreService.SERVICE_NAME);
         SemaphoreRegistry registry = service.getRegistryOrNull(groupId);
 
         CountDownLatch latch = new CountDownLatch(1);
@@ -153,7 +153,7 @@ public abstract class AbstractSemaphoreAdvancedTest extends HazelcastRaftTestSup
 
         CPGroupId groupId = getGroupId();
         HazelcastInstance leader = leaderInstanceOf(groupId);
-        SemaphoreService service = Accessors.getNodeEngineImpl(leader).getService(SemaphoreService.SERVICE_NAME);
+        SemaphoreService service = getNodeEngineImpl(leader).getService(SemaphoreService.SERVICE_NAME);
         SemaphoreRegistry registry = service.getRegistryOrNull(groupId);
 
         boolean success = semaphore.tryAcquire(2, 1, TimeUnit.SECONDS);
@@ -169,7 +169,7 @@ public abstract class AbstractSemaphoreAdvancedTest extends HazelcastRaftTestSup
 
         CPGroupId groupId = getGroupId();
         HazelcastInstance leader = leaderInstanceOf(groupId);
-        SemaphoreService service = Accessors.getNodeEngineImpl(leader).getService(SemaphoreService.SERVICE_NAME);
+        SemaphoreService service = getNodeEngineImpl(leader).getService(SemaphoreService.SERVICE_NAME);
         SemaphoreRegistry registry = service.getRegistryOrNull(groupId);
 
         CountDownLatch latch = new CountDownLatch(1);
@@ -200,7 +200,7 @@ public abstract class AbstractSemaphoreAdvancedTest extends HazelcastRaftTestSup
 
         CPGroupId groupId = getGroupId();
         HazelcastInstance leader = leaderInstanceOf(groupId);
-        SemaphoreService service = Accessors.getNodeEngineImpl(leader).getService(SemaphoreService.SERVICE_NAME);
+        SemaphoreService service = getNodeEngineImpl(leader).getService(SemaphoreService.SERVICE_NAME);
         SemaphoreRegistry registry = service.getRegistryOrNull(groupId);
 
         spawn(() -> {
@@ -231,7 +231,7 @@ public abstract class AbstractSemaphoreAdvancedTest extends HazelcastRaftTestSup
 
         assertTrueEventually(() -> {
             for (HazelcastInstance instance : instances) {
-                RaftSessionService sessionService = Accessors.getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
+                RaftSessionService sessionService = getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
                 assertFalse(sessionService.getAllSessions(groupId).get().isEmpty());
             }
         });
@@ -247,7 +247,7 @@ public abstract class AbstractSemaphoreAdvancedTest extends HazelcastRaftTestSup
 
         assertTrueEventually(() -> {
             for (HazelcastInstance instance : instances) {
-                RaftSessionService service1 = Accessors.getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
+                RaftSessionService service1 = getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
                 assertTrue(service1.getAllSessions(groupId).get().isEmpty());
             }
 
@@ -262,14 +262,14 @@ public abstract class AbstractSemaphoreAdvancedTest extends HazelcastRaftTestSup
 
         assertTrueEventually(() -> {
             for (HazelcastInstance instance : instances) {
-                RaftSessionService sessionService = Accessors.getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
+                RaftSessionService sessionService = getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
                 assertFalse(sessionService.getAllSessions(getGroupId()).get().isEmpty());
             }
         });
 
         assertTrueAllTheTime(() -> {
             for (HazelcastInstance instance : instances) {
-                RaftSessionService sessionService = Accessors.getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
+                RaftSessionService sessionService = getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
                 assertFalse(sessionService.getAllSessions(getGroupId()).get().isEmpty());
             }
         }, 20);
@@ -287,14 +287,14 @@ public abstract class AbstractSemaphoreAdvancedTest extends HazelcastRaftTestSup
 
         assertTrueEventually(() -> {
             for (HazelcastInstance instance : instances) {
-                RaftSessionService sessionService = Accessors.getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
+                RaftSessionService sessionService = getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
                 assertFalse(sessionService.getAllSessions(getGroupId()).get().isEmpty());
             }
         });
 
         assertTrueAllTheTime(() -> {
             for (HazelcastInstance instance : instances) {
-                RaftSessionService sessionService = Accessors.getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
+                RaftSessionService sessionService = getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
                 assertFalse(sessionService.getAllSessions(getGroupId()).get().isEmpty());
             }
         }, 20);
@@ -412,7 +412,7 @@ public abstract class AbstractSemaphoreAdvancedTest extends HazelcastRaftTestSup
                 invokeRaftOp(groupId, new AcquirePermitsOp(objectName, sessionId, getThreadId(), invUid, 1, SECONDS.toMillis(300)));
 
         assertTrueEventually(() -> {
-            NodeEngineImpl nodeEngine = Accessors.getNodeEngineImpl(primaryInstance);
+            NodeEngineImpl nodeEngine = getNodeEngineImpl(primaryInstance);
             SemaphoreService service = nodeEngine.getService(SemaphoreService.SERVICE_NAME);
             SemaphoreRegistry registry = service.getRegistryOrNull(groupId);
             assertNotNull(registry);
@@ -425,8 +425,8 @@ public abstract class AbstractSemaphoreAdvancedTest extends HazelcastRaftTestSup
                 invokeRaftOp(groupId, new AcquirePermitsOp(objectName, sessionId, getThreadId(), invUid, 1, SECONDS.toMillis(300)));
 
         assertTrueEventually(() -> {
-            NodeEngineImpl nodeEngine = Accessors.getNodeEngineImpl(primaryInstance);
-            RaftService raftService = Accessors.getNodeEngineImpl(primaryInstance).getService(RaftService.SERVICE_NAME);
+            NodeEngineImpl nodeEngine = getNodeEngineImpl(primaryInstance);
+            RaftService raftService = getNodeEngineImpl(primaryInstance).getService(RaftService.SERVICE_NAME);
             int partitionId = raftService.getCPGroupPartitionId(groupId);
             SemaphoreService service = nodeEngine.getService(SemaphoreService.SERVICE_NAME);
             SemaphoreRegistry registry = service.getRegistryOrNull(groupId);
@@ -458,7 +458,7 @@ public abstract class AbstractSemaphoreAdvancedTest extends HazelcastRaftTestSup
         invokeRaftOp(groupId, op).joinInternal();
 
         assertTrueEventually(() -> {
-            NodeEngineImpl nodeEngine = Accessors.getNodeEngineImpl(primaryInstance);
+            NodeEngineImpl nodeEngine = getNodeEngineImpl(primaryInstance);
             SemaphoreService service = nodeEngine.getService(SemaphoreService.SERVICE_NAME);
             assertTrue(service.getRegistryOrNull(groupId).getWaitTimeouts().isEmpty());
         });
@@ -489,7 +489,7 @@ public abstract class AbstractSemaphoreAdvancedTest extends HazelcastRaftTestSup
         });
 
         assertTrueEventually(() -> {
-            SemaphoreService service = Accessors.getNodeEngineImpl(proxyInstance).getService(SemaphoreService.SERVICE_NAME);
+            SemaphoreService service = getNodeEngineImpl(proxyInstance).getService(SemaphoreService.SERVICE_NAME);
             SemaphoreRegistry registry = service.getRegistryOrNull(getGroupId());
             assertNotNull(registry);
             Semaphore semaphore = registry.getResourceOrNull(objectName);
@@ -503,7 +503,7 @@ public abstract class AbstractSemaphoreAdvancedTest extends HazelcastRaftTestSup
     }
 
     private AbstractProxySessionManager getSessionManager() {
-        return Accessors.getNodeEngineImpl(proxyInstance).getService(ProxySessionManagerService.SERVICE_NAME);
+        return getNodeEngineImpl(proxyInstance).getService(ProxySessionManagerService.SERVICE_NAME);
     }
 
     protected RaftGroupId getGroupId() {

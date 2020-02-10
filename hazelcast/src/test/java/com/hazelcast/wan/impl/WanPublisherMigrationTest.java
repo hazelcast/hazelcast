@@ -31,7 +31,6 @@ import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.spi.merge.PassThroughMergePolicy;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -58,6 +57,8 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
+import static com.hazelcast.test.Accessors.getPartitionService;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -106,7 +107,7 @@ public class WanPublisherMigrationTest extends HazelcastTestSupport {
         }
 
         int partitionsToMigrate = 0;
-        for (IPartition partition : Accessors.getPartitionService(member1).getPartitions()) {
+        for (IPartition partition : getPartitionService(member1).getPartitions()) {
             if (partition.isLocal()) {
                 partitionsToMigrate++;
             }
@@ -170,7 +171,7 @@ public class WanPublisherMigrationTest extends HazelcastTestSupport {
     }
 
     private MigrationCountingWanPublisher getPublisher(HazelcastInstance instance) {
-        WanReplicationService service = Accessors.getNodeEngineImpl(instance).getWanReplicationService();
+        WanReplicationService service = getNodeEngineImpl(instance).getWanReplicationService();
         DelegatingWanScheme delegate = service.getWanReplicationPublishers("dummyWan");
         return (MigrationCountingWanPublisher) delegate.getPublishers().iterator().next();
     }

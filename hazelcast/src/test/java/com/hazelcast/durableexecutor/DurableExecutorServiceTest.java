@@ -29,7 +29,6 @@ import com.hazelcast.durableexecutor.impl.DurableExecutorContainer;
 import com.hazelcast.executor.ExecutorServiceTestSupport;
 import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -57,6 +56,9 @@ import java.util.function.Consumer;
 
 import static com.hazelcast.durableexecutor.impl.DurableExecutorServiceHelper.getDurableExecutorContainer;
 import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
+import static com.hazelcast.test.Accessors.getNode;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
+import static com.hazelcast.test.Accessors.getPartitionService;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -121,17 +123,17 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
         service.destroy();
         assertTrueEventually(() -> {
             for (int i = 0; i < NODE_COUNT; i++) {
-                DistributedDurableExecutorService internalService = Accessors.getNodeEngineImpl(instances[i])
+                DistributedDurableExecutorService internalService = getNodeEngineImpl(instances[i])
                                                                              .getService(DistributedDurableExecutorService.SERVICE_NAME);
                 boolean allEmpty = true;
                 StringBuilder failMessage = new StringBuilder();
                 for (int partitionId = 0;
-                     partitionId < Accessors.getNode(instances[i]).getProperties().getInteger(PARTITION_COUNT);
+                     partitionId < getNode(instances[i]).getProperties().getInteger(PARTITION_COUNT);
                      partitionId++) {
                     DurableExecutorContainer container = getDurableExecutorContainer(internalService, partitionId, executorName);
                     if (container != null) {
                         failMessage.append(String.format("Partition %d owned by %s\n", partitionId,
-                                Accessors.getPartitionService(instances[0]).getPartition(partitionId).getOwnerOrNull()));
+                                getPartitionService(instances[0]).getPartition(partitionId).getOwnerOrNull()));
                         allEmpty = false;
                     }
                 }

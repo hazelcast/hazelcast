@@ -18,7 +18,6 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -30,6 +29,8 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.ExecutionException;
 
+import static com.hazelcast.test.Accessors.getAddress;
+import static com.hazelcast.test.Accessors.getOperationService;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -43,14 +44,14 @@ public class InvocationFuture_IsDoneTest extends HazelcastTestSupport {
     @Before
     public void setup() {
         local = createHazelcastInstance();
-        operationService = Accessors.getOperationService(local);
+        operationService = getOperationService(local);
     }
 
     @Test
     public void whenNullResponse() throws ExecutionException, InterruptedException {
         DummyOperation op = new DummyOperation(null);
 
-        InternalCompletableFuture future = operationService.invokeOnTarget(null, op, Accessors.getAddress(local));
+        InternalCompletableFuture future = operationService.invokeOnTarget(null, op, getAddress(local));
         future.get();
 
         assertTrue(future.isDone());
@@ -60,7 +61,7 @@ public class InvocationFuture_IsDoneTest extends HazelcastTestSupport {
     public void whenInterruptedResponse() {
         DummyOperation op = new GetLostPartitionOperation();
 
-        InvocationFuture future = (InvocationFuture) operationService.invokeOnTarget(null, op, Accessors.getAddress(local));
+        InvocationFuture future = (InvocationFuture) operationService.invokeOnTarget(null, op, getAddress(local));
         future.complete(InvocationConstant.INTERRUPTED);
 
         assertTrue(future.isDone());
@@ -70,7 +71,7 @@ public class InvocationFuture_IsDoneTest extends HazelcastTestSupport {
     public void whenTimeoutResponse() {
         DummyOperation op = new GetLostPartitionOperation();
 
-        InvocationFuture future = (InvocationFuture) operationService.invokeOnTarget(null, op, Accessors.getAddress(local));
+        InvocationFuture future = (InvocationFuture) operationService.invokeOnTarget(null, op, getAddress(local));
         future.complete(InvocationConstant.CALL_TIMEOUT);
 
         assertTrue(future.isDone());
@@ -80,7 +81,7 @@ public class InvocationFuture_IsDoneTest extends HazelcastTestSupport {
     public void isDone_whenNoResponse() {
         DummyOperation op = new GetLostPartitionOperation();
 
-        InternalCompletableFuture future = operationService.invokeOnTarget(null, op, Accessors.getAddress(local));
+        InternalCompletableFuture future = operationService.invokeOnTarget(null, op, getAddress(local));
 
         assertFalse(future.isDone());
     }
@@ -89,7 +90,7 @@ public class InvocationFuture_IsDoneTest extends HazelcastTestSupport {
     public void isDone_whenObjectResponse() {
         DummyOperation op = new DummyOperation("foobar");
 
-        InternalCompletableFuture future = operationService.invokeOnTarget(null, op, Accessors.getAddress(local));
+        InternalCompletableFuture future = operationService.invokeOnTarget(null, op, getAddress(local));
 
         assertTrue(future.isDone());
     }

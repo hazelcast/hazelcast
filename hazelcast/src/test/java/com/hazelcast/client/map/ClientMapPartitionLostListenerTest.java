@@ -30,7 +30,6 @@ import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.proxyservice.InternalProxyService;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -46,6 +45,8 @@ import java.util.List;
 import java.util.UUID;
 
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import static com.hazelcast.test.Accessors.getNode;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -103,7 +104,7 @@ public class ClientMapPartitionLostListenerTest extends HazelcastTestSupport {
         TestEventCollectingMapPartitionLostListener listener = new TestEventCollectingMapPartitionLostListener(0);
         client.getMap(mapName).addPartitionLostListener(listener);
 
-        MapService mapService = Accessors.getNode(instance).getNodeEngine().getService(MapService.SERVICE_NAME);
+        MapService mapService = getNode(instance).getNodeEngine().getService(MapService.SERVICE_NAME);
         int partitionId = 5;
         mapService.onPartitionLost(new PartitionLostEventImpl(partitionId, 0, null));
 
@@ -131,7 +132,7 @@ public class ClientMapPartitionLostListenerTest extends HazelcastTestSupport {
         assertProxyExistsEventually(instance1, mapName);
         assertProxyExistsEventually(instance2, mapName);
 
-        MapService mapService = Accessors.getNode(instance2).getNodeEngine().getService(SERVICE_NAME);
+        MapService mapService = getNode(instance2).getNodeEngine().getService(SERVICE_NAME);
         int partitionId = 5;
         mapService.onPartitionLost(new PartitionLostEventImpl(partitionId, 0, null));
 
@@ -158,7 +159,7 @@ public class ClientMapPartitionLostListenerTest extends HazelcastTestSupport {
     }
 
     private static void assertProxyExistsEventually(HazelcastInstance instance, final String proxyName) {
-        final InternalProxyService proxyService = Accessors.getNodeEngineImpl(instance).getProxyService();
+        final InternalProxyService proxyService = getNodeEngineImpl(instance).getProxyService();
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
@@ -175,7 +176,7 @@ public class ClientMapPartitionLostListenerTest extends HazelcastTestSupport {
 
     private static void assertRegistrationEventually(final HazelcastInstance instance, final String mapName,
                                                      final boolean shouldBeRegistered) {
-        final EventService eventService = Accessors.getNode(instance).getNodeEngine().getEventService();
+        final EventService eventService = getNode(instance).getNodeEngine().getEventService();
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {

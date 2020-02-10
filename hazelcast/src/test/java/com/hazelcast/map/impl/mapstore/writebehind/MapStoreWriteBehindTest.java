@@ -35,7 +35,6 @@ import com.hazelcast.map.impl.mapstore.MapStoreTest.TestMapStore;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -64,6 +63,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.test.Accessors.getNode;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
@@ -177,7 +177,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
 
     private int writeBehindQueueSize(HazelcastInstance node, String mapName) {
         int size = 0;
-        final NodeEngineImpl nodeEngine = Accessors.getNode(node).getNodeEngine();
+        final NodeEngineImpl nodeEngine = getNode(node).getNodeEngine();
         MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         final int partitionCount = nodeEngine.getPartitionService().getPartitionCount();

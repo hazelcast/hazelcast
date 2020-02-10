@@ -22,7 +22,6 @@ import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -32,6 +31,7 @@ import org.junit.runner.RunWith;
 
 import static com.hazelcast.internal.metrics.MetricTarget.DIAGNOSTICS;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 
@@ -48,7 +48,7 @@ public class MetricsPluginTest extends AbstractDiagnosticsPluginTest {
                 .setProperty(Diagnostics.ENABLED.getName(), "true")
                 .setProperty(MetricsPlugin.PERIOD_SECONDS.getName(), "1");
         HazelcastInstance hz = createHazelcastInstance(config);
-        NodeEngineImpl nodeEngineImpl = Accessors.getNodeEngineImpl(hz);
+        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(hz);
         metricsRegistry = nodeEngineImpl.getMetricsRegistry();
         plugin = new MetricsPlugin(nodeEngineImpl);
         plugin.onStart();

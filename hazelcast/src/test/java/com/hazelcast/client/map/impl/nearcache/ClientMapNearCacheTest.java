@@ -37,7 +37,6 @@ import com.hazelcast.map.MapStoreAdapter;
 import com.hazelcast.map.impl.nearcache.NearCacheTestSupport;
 import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -59,6 +58,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.getBaseConfig;
+import static com.hazelcast.test.Accessors.getSerializationService;
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -1108,7 +1108,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         anotherClientMap.loadAll(true);
 
         InternalSerializationService serializationService =
-                Accessors.getSerializationService(hazelcastFactory.getAllHazelcastInstances().iterator().next());
+                getSerializationService(hazelcastFactory.getAllHazelcastInstances().iterator().next());
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
@@ -1142,7 +1142,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         IMap<Object, Object> memberMap = member.getMap(clientMap.getName());
         memberMap.loadAll(true);
 
-        InternalSerializationService serializationService = Accessors.getSerializationService(member);
+        InternalSerializationService serializationService = getSerializationService(member);
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {

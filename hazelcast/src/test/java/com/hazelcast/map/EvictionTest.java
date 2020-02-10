@@ -40,7 +40,6 @@ import com.hazelcast.query.PredicateBuilder.EntryObject;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.PredicateBuilderImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.OverridePropertyRule;
@@ -70,6 +69,7 @@ import static com.hazelcast.config.EvictionPolicy.RANDOM;
 import static com.hazelcast.map.EvictionMaxSizePolicyTest.setMockRuntimeMemoryInfoAccessor;
 import static com.hazelcast.map.impl.eviction.MapClearExpiredRecordsTask.PROP_TASK_PERIOD_SECONDS;
 import static com.hazelcast.query.SampleTestObjects.Employee;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.test.OverridePropertyRule.set;
 import static java.lang.Integer.MAX_VALUE;
 import static java.lang.Math.max;
@@ -149,7 +149,7 @@ public class EvictionTest extends HazelcastTestSupport {
 
     private static RecordStore getRecordStore(HazelcastInstance instanceB, String keyOwnedByInstanceA) {
         Partition partition = instanceB.getPartitionService().getPartition(keyOwnedByInstanceA);
-        MapService service = Accessors.getNodeEngineImpl(instanceB).getService(MapService.SERVICE_NAME);
+        MapService service = getNodeEngineImpl(instanceB).getService(MapService.SERVICE_NAME);
         return service.getMapServiceContext()
                 .getPartitionContainer(partition.getPartitionId())
                 .getExistingRecordStore("Test");

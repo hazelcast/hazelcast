@@ -29,7 +29,6 @@ import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -48,6 +47,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 
 import static com.hazelcast.spi.properties.ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 
@@ -79,8 +79,8 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
         instance1.getLifecycleService().terminate();
         instance1 = hazelcastFactory.newHazelcastInstance(config);
 
-        final EventService eventService1 = Accessors.getNodeEngineImpl(instance1).getEventService();
-        final EventService eventService2 = Accessors.getNodeEngineImpl(instance2).getEventService();
+        final EventService eventService1 = getNodeEngineImpl(instance1).getEventService();
+        final EventService eventService2 = getNodeEngineImpl(instance2).getEventService();
 
         assertTrueEventually(() -> {
             Collection<EventRegistration> regs1 = eventService1.getRegistrations(MapService.SERVICE_NAME, mapName);

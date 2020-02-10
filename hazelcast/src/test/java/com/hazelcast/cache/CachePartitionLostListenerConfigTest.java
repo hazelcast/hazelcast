@@ -28,7 +28,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.config.CachePartitionLostListenerConfigReadOnly;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -47,6 +46,7 @@ import java.util.EventListener;
 import java.util.List;
 
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
+import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -74,7 +74,7 @@ public class CachePartitionLostListenerConfigTest extends HazelcastTestSupport {
         CacheManager cacheManager = cachingProvider.getCacheManager();
         cacheManager.getCache(cacheName);
 
-        final EventService eventService = Accessors.getNode(instance).getNodeEngine().getEventService();
+        final EventService eventService = getNode(instance).getNodeEngine().getEventService();
 
         assertTrueEventually(new AssertTask() {
             @Override

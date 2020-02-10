@@ -22,7 +22,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -36,6 +35,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import static com.hazelcast.test.Accessors.getOperationService;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 
@@ -50,7 +50,7 @@ public class OperationFactoryWrapperTest extends HazelcastTestSupport {
     @Test
     public void testOperationSeesActualCallersUUID() throws Exception {
         HazelcastInstance hz = createHazelcastInstance();
-        OperationServiceImpl operationService = Accessors.getOperationServiceImpl(hz);
+        OperationServiceImpl operationService = getOperationService(hz);
 
         UUID expectedCallersUUID = UUID.randomUUID();
 

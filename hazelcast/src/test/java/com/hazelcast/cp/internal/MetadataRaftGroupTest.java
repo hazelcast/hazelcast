@@ -36,7 +36,6 @@ import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.RandomPicker;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -63,6 +62,9 @@ import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getLeaderMember;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getSnapshotEntry;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.FINALIZE_JOIN;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.F_ID;
+import static com.hazelcast.test.Accessors.getAddress;
+import static com.hazelcast.test.Accessors.getNode;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.test.PacketFiltersUtil.dropOperationsBetween;
 import static com.hazelcast.test.PacketFiltersUtil.dropOperationsToAddresses;
 import static com.hazelcast.test.PacketFiltersUtil.resetPacketFiltersFrom;
@@ -91,12 +93,12 @@ public class MetadataRaftGroupTest extends HazelcastRaftTestSupport {
 
         List<Address> raftAddresses = new ArrayList<>();
         for (int i = 0; i < cpNodeCount; i++) {
-            raftAddresses.add(Accessors.getAddress(instances[i]));
+            raftAddresses.add(getAddress(instances[i]));
         }
 
         assertTrueEventually(() -> {
             for (HazelcastInstance instance : instances) {
-                if (raftAddresses.contains(Accessors.getAddress(instance))) {
+                if (raftAddresses.contains(getAddress(instance))) {
                     assertNotNull(getRaftNode(instance, getMetadataGroupId(instance)));
                 }
             }
@@ -104,7 +106,7 @@ public class MetadataRaftGroupTest extends HazelcastRaftTestSupport {
 
         assertTrueAllTheTime(() -> {
             for (HazelcastInstance instance : instances) {
-                if (!raftAddresses.contains(Accessors.getAddress(instance))) {
+                if (!raftAddresses.contains(getAddress(instance))) {
                     assertNull(getRaftNode(instance, getMetadataGroupId(instance)));
                 }
             }
@@ -535,7 +537,7 @@ public class MetadataRaftGroupTest extends HazelcastRaftTestSupport {
         RaftInvocationManager invocationService = null;
         HazelcastInstance aliveInstance = null;
         for (HazelcastInstance instance : instances) {
-            if (!Accessors.getAddress(instance).equals(endpoint.getAddress())) {
+            if (!getAddress(instance).equals(endpoint.getAddress())) {
                 aliveInstance = instance;
                 invocationService = getRaftInvocationManager(instance);
                 break;
@@ -626,7 +628,7 @@ public class MetadataRaftGroupTest extends HazelcastRaftTestSupport {
         Node[] nodes = new Node[startedNodeCount];
         for (int i = 0; i < startedNodeCount; i++) {
             instances[i] = factory.newHazelcastInstance(config);
-            nodes[i] = Accessors.getNode(instances[i]);
+            nodes[i] = getNode(instances[i]);
         }
 
         // wait for the cp discovery process to start
@@ -665,7 +667,7 @@ public class MetadataRaftGroupTest extends HazelcastRaftTestSupport {
         long seed = System.currentTimeMillis();
         for (HazelcastInstance instance : Arrays.copyOf(instances, nodeCount - 1)) {
             Address address = instance.getCluster().getLocalMember().getAddress();
-            Accessors.getNodeEngineImpl(instance).getOperationService()
+            getNodeEngineImpl(instance).getOperationService()
                      .invokeOnTarget(RaftService.SERVICE_NAME, new ResetCPMemberOp(seed), address).get();
         }
 

@@ -33,7 +33,6 @@ import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -45,6 +44,8 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.config.EvictionPolicy.NONE;
+import static com.hazelcast.test.Accessors.getAddress;
+import static com.hazelcast.test.Accessors.getOperationService;
 import static java.util.Objects.requireNonNull;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -123,8 +124,8 @@ public class DynamicMapConfigTest extends HazelcastTestSupport {
     }
 
     private void executeOperation(HazelcastInstance node, Operation op) {
-        OperationServiceImpl operationService = Accessors.getOperationService(node);
-        Address address = Accessors.getAddress(node);
+        OperationServiceImpl operationService = getOperationService(node);
+        Address address = getAddress(node);
         operationService.invokeOnTarget(MapService.SERVICE_NAME, op, address).join();
     }
 }

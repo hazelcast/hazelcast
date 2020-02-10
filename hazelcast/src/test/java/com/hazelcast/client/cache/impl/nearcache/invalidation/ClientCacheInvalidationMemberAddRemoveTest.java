@@ -18,8 +18,8 @@ package com.hazelcast.client.cache.impl.nearcache.invalidation;
 
 import com.hazelcast.cache.impl.CacheEventHandler;
 import com.hazelcast.cache.impl.CacheService;
-import com.hazelcast.client.cache.impl.nearcache.NearCachedClientCacheProxy;
 import com.hazelcast.client.cache.impl.nearcache.ClientNearCacheTestSupport;
+import com.hazelcast.client.cache.impl.nearcache.NearCachedClientCacheProxy;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.config.CacheConfig;
@@ -37,7 +37,6 @@ import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataContainer;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataGenerator;
 import com.hazelcast.internal.nearcache.impl.invalidation.StaleReadDetector;
 import com.hazelcast.internal.nearcache.impl.store.AbstractNearCacheRecordStore;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -59,8 +58,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.cache.CacheTestSupport.createClientCachingProvider;
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
-import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.InMemoryFormat.BINARY;
+import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.INVALIDATE;
 import static com.hazelcast.internal.nearcache.impl.invalidation.InvalidationUtils.NO_SEQUENCE;
@@ -70,6 +69,8 @@ import static com.hazelcast.internal.util.RandomPicker.getInt;
 import static com.hazelcast.spi.properties.ClusterProperty.CACHE_INVALIDATION_MESSAGE_BATCH_ENABLED;
 import static com.hazelcast.spi.properties.ClusterProperty.CACHE_INVALIDATION_MESSAGE_BATCH_SIZE;
 import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
+import static com.hazelcast.test.Accessors.getPartitionService;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
@@ -206,7 +207,7 @@ public class ClientCacheInvalidationMemberAddRemoveTest extends ClientNearCacheT
 
             @SuppressWarnings("unchecked")
             private String createFailureMessage(int i) {
-                int partitionId = Accessors.getPartitionService(serverInstance).getPartitionId(i);
+                int partitionId = getPartitionService(serverInstance).getPartitionId(i);
 
                 NearCacheRecordStore nearCacheRecordStore = getNearCacheRecordStore();
                 NearCacheRecord record = nearCacheRecordStore.getRecord(i);
@@ -231,7 +232,7 @@ public class ClientCacheInvalidationMemberAddRemoveTest extends ClientNearCacheT
             }
 
             private MetaDataGenerator getMetaDataGenerator(HazelcastInstance node) {
-                CacheService service = Accessors.getNodeEngineImpl(node).getService(CacheService.SERVICE_NAME);
+                CacheService service = getNodeEngineImpl(node).getService(CacheService.SERVICE_NAME);
                 CacheEventHandler cacheEventHandler = service.getCacheEventHandler();
                 return cacheEventHandler.getMetaDataGenerator();
             }

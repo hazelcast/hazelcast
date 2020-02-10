@@ -31,7 +31,6 @@ import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import org.junit.Before;
 
@@ -43,6 +42,7 @@ import static com.hazelcast.config.NearCacheConfig.DEFAULT_MEMORY_FORMAT;
 import static com.hazelcast.internal.nearcache.NearCache.DEFAULT_EXPIRATION_TASK_INITIAL_DELAY_SECONDS;
 import static com.hazelcast.internal.nearcache.NearCache.UpdateSemantic.READ_UPDATE;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.NOT_RESERVED;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -57,7 +57,7 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
     @Before
     public void setUp() throws Exception {
         HazelcastInstance instance = createHazelcastInstance();
-        NodeEngineImpl nodeEngineImpl = Accessors.getNodeEngineImpl(instance);
+        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(instance);
         ss = nodeEngineImpl.getSerializationService();
         executionService = nodeEngineImpl.getExecutionService();
         properties = nodeEngineImpl.getProperties();

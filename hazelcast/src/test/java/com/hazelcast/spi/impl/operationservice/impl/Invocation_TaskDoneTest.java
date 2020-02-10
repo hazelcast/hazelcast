@@ -18,7 +18,6 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -32,6 +31,7 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Function;
 
+import static com.hazelcast.test.Accessors.getOperationService;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -43,7 +43,7 @@ public class Invocation_TaskDoneTest extends HazelcastTestSupport {
 
     @Before
     public void before() {
-        operationService = Accessors.getOperationService(createHazelcastInstance());
+        operationService = getOperationService(createHazelcastInstance());
     }
 
     @Test

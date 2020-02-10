@@ -16,11 +16,11 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.OperationTimeoutException;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
@@ -28,7 +28,6 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -44,6 +43,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
 import static com.hazelcast.spi.properties.ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS;
+import static com.hazelcast.test.Accessors.getNode;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -113,7 +114,7 @@ public class OperationServiceImpl_timeoutTest extends HazelcastTestSupport {
         warmUpPartitions(instances);
 
         final HazelcastInstance hz = instances[memberCount - 1];
-        NodeEngine nodeEngine = Accessors.getNodeEngineImpl(hz);
+        NodeEngine nodeEngine = getNodeEngineImpl(hz);
         OperationService operationService = nodeEngine.getOperationService();
         int partitionId = (int) (Math.random() * nodeEngine.getPartitionService().getPartitionCount());
 
@@ -188,8 +189,8 @@ public class OperationServiceImpl_timeoutTest extends HazelcastTestSupport {
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);
 
         // invoke on the "local" member
-        Address localAddress = Accessors.getNode(hz1).getThisAddress();
-        OperationService operationService = Accessors.getNode(hz1).getNodeEngine().getOperationService();
+        Address localAddress = getNode(hz1).getThisAddress();
+        OperationService operationService = getNode(hz1).getNodeEngine().getOperationService();
         InternalCompletableFuture<Boolean> future = operationService
                 .invokeOnTarget(null, new SleepingOperation(callTimeoutMillis * 5), localAddress);
 

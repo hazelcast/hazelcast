@@ -19,7 +19,6 @@ package com.hazelcast.transaction.impl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -34,6 +33,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.transaction.impl.Transaction.State.ACTIVE;
 import static com.hazelcast.transaction.impl.Transaction.State.COMMITTING;
 import static com.hazelcast.transaction.impl.Transaction.State.ROLLED_BACK;
@@ -52,7 +52,7 @@ public class TransactionManagerServiceImplTest extends HazelcastTestSupport {
     @Before
     public void setup() {
         HazelcastInstance hz = createHazelcastInstance();
-        NodeEngineImpl nodeEngine = Accessors.getNodeEngineImpl(hz);
+        NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);
         txService = new TransactionManagerServiceImpl(nodeEngine);
     }
 

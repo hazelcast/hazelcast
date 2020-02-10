@@ -30,7 +30,6 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.map.listener.EntryEvictedListener;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -46,6 +45,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
+import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -60,10 +60,10 @@ public class LocalMapStatsMultipleNodeTest extends HazelcastTestSupport {
         MultiMap<Object, Object> multiMap1 = instances[1].getMultiMap("testHits_whenMultipleNodes");
 
         // InternalPartitionService is used in order to determine owners of these keys that we will use.
-        InternalPartitionService partitionService = Accessors.getNode(instances[0]).getPartitionService();
+        InternalPartitionService partitionService = getNode(instances[0]).getPartitionService();
         Address address = partitionService.getPartitionOwner(partitionService.getPartitionId("test1"));
 
-        boolean inFirstInstance = address.equals(Accessors.getNode(instances[0]).getThisAddress());
+        boolean inFirstInstance = address.equals(getNode(instances[0]).getThisAddress());
         multiMap0.get("test0");
 
         multiMap0.put("test1", 1);

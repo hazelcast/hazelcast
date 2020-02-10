@@ -25,7 +25,6 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
 import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -41,6 +40,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.spi.impl.operationservice.OperationAccessor.setCallId;
 import static com.hazelcast.spi.impl.operationservice.OperationAccessor.setCallTimeout;
+import static com.hazelcast.test.Accessors.getClusterService;
+import static com.hazelcast.test.Accessors.getOperationService;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.same;
@@ -64,8 +65,8 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(2).newInstances();
         local = cluster[0];
         remote = cluster[1];
-        operationService = (OperationServiceImpl) Accessors.getOperationService(local);
-        clusterService = Accessors.getClusterService(local);
+        operationService = (OperationServiceImpl) getOperationService(local);
+        clusterService = getClusterService(local);
         operationRunner = new OperationRunnerImpl(operationService, getPartitionId(local), 0, newSwCounter());
         responseHandler = mock(OperationResponseHandler.class);
     }

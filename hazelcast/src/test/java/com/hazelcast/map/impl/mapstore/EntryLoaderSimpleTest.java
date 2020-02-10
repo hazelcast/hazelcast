@@ -23,6 +23,7 @@ import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.IMap;
@@ -33,10 +34,8 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -59,6 +58,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
+import static com.hazelcast.test.Accessors.getPartitionService;
+import static com.hazelcast.test.Accessors.getSerializationService;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -352,15 +354,15 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
     }
 
     private void assertInMemory(HazelcastInstance[] instances, String mapName, String key, String expectedValue) {
-        InternalPartitionService partitionService = Accessors.getPartitionService(instances[0]);
+        InternalPartitionService partitionService = getPartitionService(instances[0]);
         int partitionId = partitionService.getPartitionId(key);
         Address partitionOwnerAddress = partitionService.getPartitionOwner(partitionId);
 
         HazelcastInstance owner = getInstance(instances, partitionOwnerAddress);
 
-        InternalSerializationService serializationService = Accessors.getSerializationService(owner);
+        InternalSerializationService serializationService = getSerializationService(owner);
         Data keyData = serializationService.toData(key);
-        NodeEngineImpl nodeEngine = Accessors.getNodeEngineImpl(owner);
+        NodeEngineImpl nodeEngine = getNodeEngineImpl(owner);
         MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
         RecordStore recordStore = mapService.getMapServiceContext().getPartitionContainer(partitionId).getRecordStore(mapName);
         Record record = recordStore.getRecordOrNull(keyData);
@@ -382,7 +384,7 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
     public void testLoadEntryAtCurrentTime() {
         testEntryLoader.putExternally("key", "value", 42);
 
-        MapService service = Accessors.getNodeEngineImpl(instances[0]).getService(MapService.SERVICE_NAME);
+        MapService service = getNodeEngineImpl(instances[0]).getService(MapService.SERVICE_NAME);
         MapServiceContext mapServiceContext = service.getMapServiceContext();
         Config config = mapServiceContext.getNodeEngine().getConfig();
         MapContainer mapContainer = new MapContainer("anyName", config, mapServiceContext);

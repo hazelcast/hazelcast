@@ -17,11 +17,12 @@
 package com.hazelcast.map;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.merge.LatestUpdateMergePolicy;
@@ -29,17 +30,16 @@ import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.internal.util.Clock;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -130,7 +130,7 @@ public class MapMergePolicyQuickTest extends HazelcastTestSupport {
     }
 
     private MapServiceContext getMapServiceContext(HazelcastInstance instance) {
-        NodeEngineImpl nodeEngine = Accessors.getNodeEngineImpl(instance);
+        NodeEngineImpl nodeEngine = getNodeEngineImpl(instance);
         MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
         return mapService.getMapServiceContext();
     }

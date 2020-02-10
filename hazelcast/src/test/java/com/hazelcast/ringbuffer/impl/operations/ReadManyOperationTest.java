@@ -26,7 +26,6 @@ import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -38,6 +37,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -63,12 +63,12 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
         Config config = new Config().addRingBufferConfig(rbConfig);
 
         hz = createHazelcastInstance(config);
-        nodeEngine = Accessors.getNodeEngineImpl(hz);
+        nodeEngine = getNodeEngineImpl(hz);
         serializationService = nodeEngine.getSerializationService();
         final String name = rbConfig.getName();
         ringbuffer = hz.getRingbuffer(name);
 
-        ringbufferService = Accessors.getNodeEngineImpl(hz).getService(RingbufferService.SERVICE_NAME);
+        ringbufferService = getNodeEngineImpl(hz).getService(RingbufferService.SERVICE_NAME);
         ringbufferContainer = ringbufferService.getOrCreateContainer(
                 ringbufferService.getRingbufferPartitionId(name),
                 RingbufferService.getRingbufferNamespace(name),

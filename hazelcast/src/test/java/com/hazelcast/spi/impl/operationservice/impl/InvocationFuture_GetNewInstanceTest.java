@@ -16,16 +16,15 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -40,6 +39,9 @@ import java.io.Serializable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.test.Accessors.getAddress;
+import static com.hazelcast.test.Accessors.getNode;
+import static com.hazelcast.test.Accessors.getOperationService;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
@@ -66,12 +68,12 @@ public class InvocationFuture_GetNewInstanceTest extends HazelcastTestSupport {
 
     @Test
     public void invocationToLocalMember() throws ExecutionException, InterruptedException {
-        Node localNode = Accessors.getNode(local);
+        Node localNode = getNode(local);
 
         Data response = localNode.nodeEngine.toData(new DummyObject());
         Operation op = new OperationWithResponse(response);
 
-        OperationService service = Accessors.getOperationService(local);
+        OperationService service = getOperationService(local);
         Future future = service.createInvocationBuilder(null, op, localNode.address).invoke();
         Object instance1 = future.get();
         Object instance2 = future.get();
@@ -87,14 +89,14 @@ public class InvocationFuture_GetNewInstanceTest extends HazelcastTestSupport {
 
     @Test
     public void invocationToRemoteMember() throws ExecutionException, InterruptedException {
-        Node localNode = Accessors.getNode(local);
+        Node localNode = getNode(local);
 
         Data response = localNode.nodeEngine.toData(new DummyObject());
         Operation op = new OperationWithResponse(response);
 
-        Address remoteAddress = Accessors.getAddress(remote);
+        Address remoteAddress = getAddress(remote);
 
-        OperationService operationService = Accessors.getOperationService(local);
+        OperationService operationService = getOperationService(local);
         Future future = operationService.createInvocationBuilder(null, op, remoteAddress).invoke();
         Object instance1 = future.get();
         Object instance2 = future.get();

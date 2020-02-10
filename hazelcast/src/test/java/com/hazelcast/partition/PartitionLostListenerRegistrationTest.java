@@ -22,7 +22,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -37,6 +36,7 @@ import java.util.UUID;
 
 import static com.hazelcast.internal.partition.InternalPartitionService.PARTITION_LOST_EVENT_TOPIC;
 import static com.hazelcast.internal.partition.InternalPartitionService.SERVICE_NAME;
+import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -135,7 +135,7 @@ public class PartitionLostListenerRegistrationTest extends HazelcastTestSupport 
                 assertTrueEventually(new AssertTask() {
                     @Override
                     public void run() {
-                        EventService eventService = Accessors.getNode(instance).getNodeEngine().getEventService();
+                        EventService eventService = getNode(instance).getNodeEngine().getEventService();
                         Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME,
                                 PARTITION_LOST_EVENT_TOPIC);
                         assertEquals(expectedSize, registrations.size());

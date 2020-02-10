@@ -31,7 +31,6 @@ import com.hazelcast.internal.nearcache.impl.NearCacheTestContext;
 import com.hazelcast.internal.nearcache.impl.NearCacheTestContextBuilder;
 import com.hazelcast.internal.nearcache.impl.NearCacheTestUtils;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -57,6 +56,7 @@ import static com.hazelcast.spi.properties.ClusterProperty.MAP_INVALIDATION_MESS
 import static com.hazelcast.spi.properties.ClusterProperty.MAP_INVALIDATION_MESSAGE_BATCH_SIZE;
 import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
 import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_OPERATION_THREAD_COUNT;
+import static com.hazelcast.test.Accessors.getSerializationService;
 import static java.util.Arrays.asList;
 
 /**
@@ -186,7 +186,7 @@ public class TxnMapNearCacheSerializationCountTest extends AbstractNearCacheSeri
         NearCacheManager nearCacheManager = getMapNearCacheManager(nearCacheMember);
         NearCache<Data, String> nearCache = nearCacheManager.getNearCache(DEFAULT_NEAR_CACHE_NAME);
 
-        return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, Accessors.getSerializationService(nearCacheMember))
+        return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, getSerializationService(nearCacheMember))
                 .setNearCacheInstance(nearCacheMember)
                 .setNearCacheAdapter(new TransactionalMapDataStructureAdapter<K, V>(nearCacheMember, DEFAULT_NEAR_CACHE_NAME))
                 .setNearCache(nearCache)

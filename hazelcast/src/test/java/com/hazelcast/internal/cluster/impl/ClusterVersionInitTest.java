@@ -19,7 +19,6 @@ package com.hazelcast.internal.cluster.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -32,6 +31,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.Callable;
+
+import static com.hazelcast.test.Accessors.getNode;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -132,7 +133,7 @@ public class ClusterVersionInitTest extends HazelcastTestSupport {
     private void setupInstance(Config config) {
         instance = Hazelcast.newHazelcastInstance(config);
         cluster = (ClusterServiceImpl) instance.getCluster();
-        codebaseVersion = Accessors.getNode(instance).getVersion();
+        codebaseVersion = getNode(instance).getVersion();
     }
 
     @After

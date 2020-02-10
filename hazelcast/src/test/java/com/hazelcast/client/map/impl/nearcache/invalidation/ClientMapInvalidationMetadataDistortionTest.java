@@ -24,20 +24,19 @@ import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidator;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataGenerator;
 import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.nearcache.NearCacheTestSupport;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.internal.util.UuidUtil;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -46,11 +45,12 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask.MAX_TOLERATED_MISS_COUNT;
+import static com.hazelcast.internal.util.RandomPicker.getInt;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.spi.properties.ClusterProperty.CACHE_INVALIDATION_MESSAGE_BATCH_ENABLED;
 import static com.hazelcast.spi.properties.ClusterProperty.CACHE_INVALIDATION_MESSAGE_BATCH_SIZE;
 import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
-import static com.hazelcast.internal.util.RandomPicker.getInt;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.lang.Integer.MAX_VALUE;
 import static org.junit.Assert.assertEquals;
 
@@ -183,7 +183,7 @@ public class ClientMapInvalidationMetadataDistortionTest extends NearCacheTestSu
     }
 
     private void distortRandomPartitionSequence(String mapName, HazelcastInstance member) {
-        NodeEngineImpl nodeEngineImpl = Accessors.getNodeEngineImpl(member);
+        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(member);
         MapService mapService = nodeEngineImpl.getService(SERVICE_NAME);
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         MapNearCacheManager mapNearCacheManager = mapServiceContext.getMapNearCacheManager();
@@ -195,7 +195,7 @@ public class ClientMapInvalidationMetadataDistortionTest extends NearCacheTestSu
     }
 
     private void distortRandomPartitionUuid(HazelcastInstance member) {
-        NodeEngineImpl nodeEngineImpl = Accessors.getNodeEngineImpl(member);
+        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(member);
         int partitionCount = nodeEngineImpl.getPartitionService().getPartitionCount();
         int partitionId = getInt(partitionCount);
         MapService mapService = nodeEngineImpl.getService(SERVICE_NAME);

@@ -16,10 +16,9 @@
 
 package com.hazelcast.internal.partition;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.cluster.Address;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -28,6 +27,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -38,7 +38,7 @@ public class InternalPartitionTest extends HazelcastTestSupport {
     @Test
     public void test_isLocal_singleMember() {
         HazelcastInstance hz = createHazelcastInstance();
-        InternalPartition partition = Accessors.getNode(hz).getPartitionService().getPartition(0);
+        InternalPartition partition = getNode(hz).getPartitionService().getPartition(0);
         assertTrue(partition.isLocal());
     }
 
@@ -47,7 +47,7 @@ public class InternalPartitionTest extends HazelcastTestSupport {
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(2).newInstances();
         warmUpPartitions(cluster);
 
-        Node node = Accessors.getNode(cluster[0]);
+        Node node = getNode(cluster[0]);
         InternalPartitionService partitionService = node.getPartitionService();
         Address thisAddress = node.getThisAddress();
         for (int k = 0; k < partitionService.getPartitionCount(); k++) {

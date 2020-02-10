@@ -25,7 +25,6 @@ import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -39,6 +38,8 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.test.Accessors.getNode;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -97,13 +98,13 @@ public class MapDestroyTest extends HazelcastTestSupport {
     }
 
     private MapServiceContext getMapServiceContext(HazelcastInstance instance) {
-        NodeEngineImpl nodeEngine1 = Accessors.getNodeEngineImpl(instance);
+        NodeEngineImpl nodeEngine1 = getNodeEngineImpl(instance);
         MapService mapService = nodeEngine1.getService(MapService.SERVICE_NAME);
         return mapService.getMapServiceContext();
     }
 
     private int getPartitionCount(HazelcastInstance instance) {
-        Node node = Accessors.getNode(instance);
+        Node node = getNode(instance);
         return node.getProperties().getInteger(ClusterProperty.PARTITION_COUNT);
     }
 }

@@ -18,16 +18,15 @@ package com.hazelcast.internal.metrics.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.metrics.MetricConsumer;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.managementcenter.ConcurrentArrayRingbuffer.RingbufferSlice;
-import com.hazelcast.internal.metrics.MetricConsumer;
 import com.hazelcast.internal.metrics.managementcenter.MetricsResultSet;
 import com.hazelcast.internal.metrics.managementcenter.ReadMetricsOperation;
 import com.hazelcast.map.IMap;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -40,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -54,7 +54,7 @@ public class ReadMetricsOperationTest extends HazelcastTestSupport {
         IMap<Object, Object> map = hzInstance.getMap("map");
         map.put("key", "value");
 
-        NodeEngineImpl nodeEngine = Accessors.getNode(hzInstance).getNodeEngine();
+        NodeEngineImpl nodeEngine = getNode(hzInstance).getNodeEngine();
         OperationServiceImpl operationService = nodeEngine.getOperationService();
 
         AtomicLong nextSequence = new AtomicLong();

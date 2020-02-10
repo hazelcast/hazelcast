@@ -17,23 +17,20 @@
 package com.hazelcast.map.impl.tx;
 
 import com.hazelcast.collection.IQueue;
-import com.hazelcast.internal.locksupport.LockResource;
-import com.hazelcast.internal.locksupport.LockSupportService;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.internal.locksupport.LockResource;
+import com.hazelcast.internal.locksupport.LockSupportService;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapStoreAdapter;
-import com.hazelcast.test.Accessors;
-import com.hazelcast.transaction.TransactionalMap;
-import com.hazelcast.transaction.TransactionalQueue;
 import com.hazelcast.map.impl.operation.DefaultMapOperationProvider;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.query.Predicate;
@@ -54,6 +51,8 @@ import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions;
+import com.hazelcast.transaction.TransactionalMap;
+import com.hazelcast.transaction.TransactionalQueue;
 import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.transaction.TransactionalTaskContext;
 import org.junit.Test;
@@ -70,6 +69,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.instance.impl.TestUtil.terminateInstance;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -161,7 +161,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
         });
 
 
-        NodeEngine nodeEngine = Accessors.getNodeEngineImpl(instance1);
+        NodeEngine nodeEngine = getNodeEngineImpl(instance1);
         Data keyData = nodeEngine.toData(keyOwnedByInstance2);
         LockSupportService lockService = nodeEngine.getService(LockSupportService.SERVICE_NAME);
         for (LockResource lockResource : lockService.getAllLocks()) {

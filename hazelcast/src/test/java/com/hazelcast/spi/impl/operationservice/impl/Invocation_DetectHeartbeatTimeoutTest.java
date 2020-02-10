@@ -20,7 +20,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -37,6 +36,7 @@ import static com.hazelcast.spi.impl.operationservice.impl.Invocation.HeartbeatT
 import static com.hazelcast.spi.impl.operationservice.impl.Invocation.HeartbeatTimeout.NO_TIMEOUT__RESPONSE_AVAILABLE;
 import static com.hazelcast.spi.impl.operationservice.impl.Invocation.HeartbeatTimeout.TIMEOUT;
 import static com.hazelcast.spi.properties.ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS;
+import static com.hazelcast.test.Accessors.getOperationService;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -53,7 +53,7 @@ public class Invocation_DetectHeartbeatTimeoutTest extends HazelcastTestSupport 
         HazelcastInstance local = factory.newHazelcastInstance();
         HazelcastInstance remote = factory.newHazelcastInstance();
 
-        OperationService opService = Accessors.getOperationService(local);
+        OperationService opService = getOperationService(local);
         Operation operation = new VoidOperation();
         InvocationFuture future = (InvocationFuture) opService.createInvocationBuilder(
                 null, operation, getPartitionId(remote))
@@ -74,7 +74,7 @@ public class Invocation_DetectHeartbeatTimeoutTest extends HazelcastTestSupport 
         HazelcastInstance local = factory.newHazelcastInstance();
         HazelcastInstance remote = factory.newHazelcastInstance();
 
-        OperationService opService = Accessors.getOperationService(local);
+        OperationService opService = getOperationService(local);
         Operation operation = new SlowOperation(SECONDS.toMillis(60));
         InvocationFuture future = (InvocationFuture) opService.invokeOnPartition(null, operation, getPartitionId(remote));
 
@@ -92,7 +92,7 @@ public class Invocation_DetectHeartbeatTimeoutTest extends HazelcastTestSupport 
         HazelcastInstance local = factory.newHazelcastInstance();
         HazelcastInstance remote = factory.newHazelcastInstance();
 
-        OperationService opService = Accessors.getOperationService(local);
+        OperationService opService = getOperationService(local);
         Operation operation = new SlowOperation(SECONDS.toMillis(60));
         InvocationFuture future = (InvocationFuture) opService.invokeOnPartition(null, operation, getPartitionId(remote));
 
@@ -111,7 +111,7 @@ public class Invocation_DetectHeartbeatTimeoutTest extends HazelcastTestSupport 
         HazelcastInstance local = factory.newHazelcastInstance(config);
         HazelcastInstance remote = factory.newHazelcastInstance(config);
 
-        OperationService opService = Accessors.getOperationService(local);
+        OperationService opService = getOperationService(local);
         InvocationFuture future = (InvocationFuture) opService.invokeOnPartition(new SlowOperation(SECONDS.toMillis(60))
                 .setPartitionId(getPartitionId(remote)));
 
@@ -134,7 +134,7 @@ public class Invocation_DetectHeartbeatTimeoutTest extends HazelcastTestSupport 
         HazelcastInstance local = factory.newHazelcastInstance(config);
         HazelcastInstance remote = factory.newHazelcastInstance(config);
 
-        OperationService opService = Accessors.getOperationService(local);
+        OperationService opService = getOperationService(local);
         Operation operation = new VoidOperation(SECONDS.toMillis(20));
         InvocationFuture future = (InvocationFuture) opService.invokeOnPartition(null, operation, getPartitionId(remote));
         Invocation invocation = future.invocation;

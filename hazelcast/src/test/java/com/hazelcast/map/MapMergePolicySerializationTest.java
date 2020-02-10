@@ -18,19 +18,18 @@ package com.hazelcast.map;
 
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -42,6 +41,7 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
+import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -58,7 +58,7 @@ public class MapMergePolicySerializationTest extends HazelcastTestSupport {
         MyObject myObjectExisting = new MyObject();
         map.put("key", myObjectExisting);
 
-        NodeEngineImpl nodeEngine = Accessors.getNode(instance).getNodeEngine();
+        NodeEngineImpl nodeEngine = getNode(instance).getNodeEngine();
         MapService mapService = nodeEngine.getService(serviceName);
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         int partitionId = nodeEngine.getPartitionService().getPartitionId("key");

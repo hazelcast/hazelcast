@@ -19,7 +19,6 @@ package com.hazelcast.internal.diagnostics;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -29,6 +28,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -46,7 +46,7 @@ public class NetworkingImbalancePluginTest extends AbstractDiagnosticsPluginTest
         // we need to start a real Hazelcast instance here, since the mocked network doesn't have a TcpIpConnectionManager
         hz = Hazelcast.newHazelcastInstance(config);
 
-        plugin = new NetworkingImbalancePlugin(Accessors.getNodeEngineImpl(hz));
+        plugin = new NetworkingImbalancePlugin(getNodeEngineImpl(hz));
         plugin.onStart();
     }
 

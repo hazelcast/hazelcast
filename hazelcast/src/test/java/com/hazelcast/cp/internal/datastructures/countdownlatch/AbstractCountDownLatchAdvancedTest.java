@@ -21,13 +21,13 @@ import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.cp.internal.HazelcastRaftTestSupport;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.proxy.CountDownLatchProxy;
-import com.hazelcast.test.Accessors;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -57,7 +57,7 @@ public abstract class AbstractCountDownLatchAdvancedTest extends HazelcastRaftTe
 
         CPGroupId groupId = getGroupId(latch);
         HazelcastInstance leader = leaderInstanceOf(groupId);
-        CountDownLatchService service = Accessors.getNodeEngineImpl(leader).getService(CountDownLatchService.SERVICE_NAME);
+        CountDownLatchService service = getNodeEngineImpl(leader).getService(CountDownLatchService.SERVICE_NAME);
         CountDownLatchRegistry registry = service.getRegistryOrNull(groupId);
 
         CountDownLatch threadLatch = new CountDownLatch(1);
@@ -89,7 +89,7 @@ public abstract class AbstractCountDownLatchAdvancedTest extends HazelcastRaftTe
 
         CPGroupId groupId = getGroupId(latch);
         HazelcastInstance leader = leaderInstanceOf(groupId);
-        CountDownLatchService service = Accessors.getNodeEngineImpl(leader).getService(CountDownLatchService.SERVICE_NAME);
+        CountDownLatchService service = getNodeEngineImpl(leader).getService(CountDownLatchService.SERVICE_NAME);
         CountDownLatchRegistry registry = service.getRegistryOrNull(groupId);
 
         boolean success = latch.await(1, TimeUnit.SECONDS);
@@ -105,7 +105,7 @@ public abstract class AbstractCountDownLatchAdvancedTest extends HazelcastRaftTe
 
         CPGroupId groupId = getGroupId(latch);
         HazelcastInstance leader = leaderInstanceOf(groupId);
-        CountDownLatchService service = Accessors.getNodeEngineImpl(leader).getService(CountDownLatchService.SERVICE_NAME);
+        CountDownLatchService service = getNodeEngineImpl(leader).getService(CountDownLatchService.SERVICE_NAME);
         CountDownLatchRegistry registry = service.getRegistryOrNull(groupId);
 
         spawn(() -> {

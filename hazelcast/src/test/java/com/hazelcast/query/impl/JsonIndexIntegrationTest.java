@@ -23,16 +23,15 @@ import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastJsonValue;
-import com.hazelcast.map.IMap;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -48,6 +47,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
@@ -197,7 +197,7 @@ public class JsonIndexIntegrationTest extends HazelcastTestSupport {
     }
 
     private static List<Index> getIndexOfAttributeForMap(HazelcastInstance instance, String mapName, String attribute) {
-        Node node = Accessors.getNode(instance);
+        Node node = getNode(instance);
         MapService service = node.nodeEngine.getService(MapService.SERVICE_NAME);
         MapServiceContext mapServiceContext = service.getMapServiceContext();
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);

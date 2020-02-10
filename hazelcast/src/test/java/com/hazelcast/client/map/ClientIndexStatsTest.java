@@ -21,16 +21,15 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
-import com.hazelcast.map.LocalIndexStatsTest;
-import com.hazelcast.query.LocalIndexStats;
-import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.internal.monitor.impl.LocalIndexStatsImpl;
 import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.LocalIndexStatsTest;
+import com.hazelcast.map.LocalMapStats;
+import com.hazelcast.query.LocalIndexStats;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.Indexes;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -47,6 +46,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.test.Accessors.getAllIndexes;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -130,8 +130,8 @@ public class ClientIndexStatsTest extends LocalIndexStatsTest {
         LocalMapStats stats2 = map2.getLocalMapStats();
 
         List<Indexes> allIndexes = new ArrayList<Indexes>();
-        allIndexes.addAll(Accessors.getAllIndexes(map1));
-        allIndexes.addAll(Accessors.getAllIndexes(map2));
+        allIndexes.addAll(getAllIndexes(map1));
+        allIndexes.addAll(getAllIndexes(map2));
 
         LocalMapStatsImpl combinedStats = new LocalMapStatsImpl();
 

@@ -18,9 +18,8 @@ package com.hazelcast.internal.partition;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.impl.MapService;
 import com.hazelcast.internal.services.ServiceNamespace;
-import com.hazelcast.test.Accessors;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -38,6 +37,7 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 import java.util.Collection;
 
 import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_BACKUP_SYNC_INTERVAL;
+import static com.hazelcast.test.Accessors.getPartitionService;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertFalse;
 
@@ -67,7 +67,7 @@ public class AntiEntropyCleanupTest extends HazelcastTestSupport {
         String mapName = randomMapName();
 
         HazelcastInstance instance1 = instances[0];
-        for (int partitionId = 0; partitionId < Accessors.getPartitionService(instance1).getPartitionCount(); partitionId++) {
+        for (int partitionId = 0; partitionId < getPartitionService(instance1).getPartitionCount(); partitionId++) {
             String key = generateKeyForPartition(instance1, partitionId);
             instance1.getMap(mapName).put(key, key);
         }
@@ -75,7 +75,7 @@ public class AntiEntropyCleanupTest extends HazelcastTestSupport {
         instance1.getMap(mapName).destroy();
 
         for (final HazelcastInstance instance : instances) {
-            final InternalPartitionService partitionService = Accessors.getPartitionService(instance);
+            final InternalPartitionService partitionService = getPartitionService(instance);
             final PartitionReplicaVersionManager replicaVersionManager = partitionService.getPartitionReplicaVersionManager();
 
             assertTrueEventually(new AssertTask() {

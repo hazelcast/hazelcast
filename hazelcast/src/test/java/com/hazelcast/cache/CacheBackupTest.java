@@ -23,7 +23,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -39,6 +38,7 @@ import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
 
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
+import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -74,12 +74,12 @@ public class CacheBackupTest extends HazelcastTestSupport {
 
         cache.put(KEY, VALUE);
 
-        final Node node = Accessors.getNode(hz);
+        final Node node = getNode(hz);
         final InternalPartitionService partitionService = node.getPartitionService();
         final int keyPartitionId = partitionService.getPartitionId(KEY);
 
         for (int i = 1; i <= backupCount; i++) {
-            final Node backupNode = Accessors.getNode(instances[i]);
+            final Node backupNode = getNode(instances[i]);
             final SerializationService serializationService = backupNode.getSerializationService();
             final ICacheService cacheService = backupNode.getNodeEngine().getService(ICacheService.SERVICE_NAME);
             if (sync) {

@@ -25,7 +25,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.SlowTest;
@@ -43,6 +42,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.cache.impl.eviction.CacheClearExpiredRecordsTask.PROP_TASK_PERIOD_SECONDS;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.test.OverridePropertyRule.set;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -73,7 +73,7 @@ public class CacheExpirationBouncingMemberTest extends AbstractExpirationBouncin
         public List apply(HazelcastInstance instance) {
             List unexpiredMsg = new ArrayList();
 
-            NodeEngineImpl nodeEngineImpl = Accessors.getNodeEngineImpl(instance);
+            NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(instance);
             CacheService service = nodeEngineImpl.getService(CacheService.SERVICE_NAME);
             InternalPartitionService partitionService = nodeEngineImpl.getPartitionService();
             for (int partitionId = 0; partitionId < partitionService.getPartitionCount(); partitionId++) {

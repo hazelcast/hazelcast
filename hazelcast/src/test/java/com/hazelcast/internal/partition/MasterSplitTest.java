@@ -20,11 +20,10 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.partition.operation.FetchPartitionStateOperation;
 import com.hazelcast.internal.partition.operation.MigrationOperation;
 import com.hazelcast.internal.partition.operation.MigrationRequestOperation;
+import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.internal.services.ServiceNamespace;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -41,6 +40,10 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.partition.IPartitionService.SERVICE_NAME;
+import static com.hazelcast.test.Accessors.getAddress;
+import static com.hazelcast.test.Accessors.getNode;
+import static com.hazelcast.test.Accessors.getOperationService;
+import static com.hazelcast.test.Accessors.getPartitionService;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -64,12 +67,12 @@ public class MasterSplitTest extends HazelcastTestSupport {
 
         MigrationInfo migration = createMigrationInfo(member1, member2);
 
-        int partitionStateVersion = Accessors.getPartitionService(member1).getPartitionStateVersion();
+        int partitionStateVersion = getPartitionService(member1).getPartitionStateVersion();
 
         Operation op = new MigrationRequestOperation(migration, Collections.<MigrationInfo>emptyList(), partitionStateVersion, true);
 
-        InvocationBuilder invocationBuilder = Accessors.getOperationServiceImpl(member1)
-                                                       .createInvocationBuilder(SERVICE_NAME, op, Accessors.getAddress(member2))
+        InvocationBuilder invocationBuilder = getOperationService(member1)
+                                                       .createInvocationBuilder(SERVICE_NAME, op, getAddress(member2))
                                                        .setCallTimeout(TimeUnit.MINUTES.toMillis(1));
         Future future = invocationBuilder.invoke();
 
@@ -84,9 +87,9 @@ public class MasterSplitTest extends HazelcastTestSupport {
     private MigrationInfo createMigrationInfo(HazelcastInstance master, HazelcastInstance nonMaster) {
         MigrationInfo migration
                 = new MigrationInfo(getPartitionId(nonMaster), new PartitionReplica(
-                Accessors.getAddress(nonMaster), Accessors.getNode(nonMaster).getThisUuid()),
-                new PartitionReplica(Accessors.getAddress(master), Accessors.getNode(master).getThisUuid()), 0, 1, -1, 0);
-        migration.setMaster(Accessors.getAddress(nonMaster));
+                getAddress(nonMaster), getNode(nonMaster).getThisUuid()),
+                new PartitionReplica(getAddress(master), getNode(master).getThisUuid()), 0, 1, -1, 0);
+        migration.setMaster(getAddress(nonMaster));
         return migration;
     }
 
@@ -99,14 +102,14 @@ public class MasterSplitTest extends HazelcastTestSupport {
 
         MigrationInfo migration = createMigrationInfo(member1, member2);
 
-        int partitionStateVersion = Accessors.getPartitionService(member1).getPartitionStateVersion();
+        int partitionStateVersion = getPartitionService(member1).getPartitionStateVersion();
 
         ReplicaFragmentMigrationState migrationState
                 = new ReplicaFragmentMigrationState(Collections.<ServiceNamespace, long[]>emptyMap(), Collections.<Operation>emptySet());
         Operation op = new MigrationOperation(migration, Collections.<MigrationInfo>emptyList(), partitionStateVersion, migrationState, true, true);
 
-        InvocationBuilder invocationBuilder = Accessors.getOperationServiceImpl(member1)
-                                                       .createInvocationBuilder(SERVICE_NAME, op, Accessors.getAddress(member2))
+        InvocationBuilder invocationBuilder = getOperationService(member1)
+                                                       .createInvocationBuilder(SERVICE_NAME, op, getAddress(member2))
                                                        .setCallTimeout(TimeUnit.MINUTES.toMillis(1));
         Future future = invocationBuilder.invoke();
 
@@ -127,10 +130,10 @@ public class MasterSplitTest extends HazelcastTestSupport {
 
         warmUpPartitions(member1, member2, member3);
 
-        InternalCompletableFuture<Object> future = Accessors.getOperationServiceImpl(member2)
-                                                            .createInvocationBuilder(SERVICE_NAME, new FetchPartitionStateOperation(), Accessors
-                                                                    .getAddress(member3))
-                                                            .setTryCount(Integer.MAX_VALUE).setCallTimeout(Long.MAX_VALUE).invoke();
+        InternalCompletableFuture<Object> future =
+                getOperationService(member2).createInvocationBuilder(SERVICE_NAME, new FetchPartitionStateOperation(),
+                                                                    getAddress(member3))
+                                            .setTryCount(Integer.MAX_VALUE).setCallTimeout(Long.MAX_VALUE).invoke();
 
         try {
             future.get();

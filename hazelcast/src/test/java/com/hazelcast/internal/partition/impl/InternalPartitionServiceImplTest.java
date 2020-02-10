@@ -17,10 +17,10 @@
 package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.impl.DefaultNodeExtension;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.instance.impl.Node;
@@ -28,7 +28,6 @@ import com.hazelcast.instance.impl.NodeContext;
 import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionTableView;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -44,6 +43,9 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.partition.InternalPartition.MAX_REPLICA_COUNT;
+import static com.hazelcast.test.Accessors.getAddress;
+import static com.hazelcast.test.Accessors.getClusterService;
+import static com.hazelcast.test.Accessors.getPartitionService;
 import static org.hamcrest.Matchers.empty;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -77,8 +79,8 @@ public class InternalPartitionServiceImplTest extends HazelcastTestSupport {
         };
 
         instance = HazelcastInstanceFactory.newHazelcastInstance(new Config(), randomName(), nodeContext);
-        partitionService = (InternalPartitionServiceImpl) Accessors.getPartitionService(instance);
-        localMember = Accessors.getClusterService(instance).getLocalMember();
+        partitionService = (InternalPartitionServiceImpl) getPartitionService(instance);
+        localMember = getClusterService(instance).getLocalMember();
         partitionCount = partitionService.getPartitionCount();
     }
 
@@ -155,7 +157,7 @@ public class InternalPartitionServiceImplTest extends HazelcastTestSupport {
 
     @Test
     public void test_getMemberPartitions_whenNotInitialized() {
-        List<Integer> partitions = partitionService.getMemberPartitions(Accessors.getAddress(instance));
+        List<Integer> partitions = partitionService.getMemberPartitions(getAddress(instance));
         assertTrue(partitionService.getPartitionStateManager().isInitialized());
         assertEquals(partitionCount, partitions.size());
     }
@@ -163,20 +165,20 @@ public class InternalPartitionServiceImplTest extends HazelcastTestSupport {
     @Test
     public void test_getMemberPartitions_whenInitialized() {
         partitionService.firstArrangement();
-        List<Integer> partitions = partitionService.getMemberPartitions(Accessors.getAddress(instance));
+        List<Integer> partitions = partitionService.getMemberPartitions(getAddress(instance));
         assertEquals(partitionCount, partitions.size());
     }
 
     @Test
     public void test_getMemberPartitionsIfAssigned_whenNotInitialized() {
-        List<Integer> partitions = partitionService.getMemberPartitionsIfAssigned(Accessors.getAddress(instance));
+        List<Integer> partitions = partitionService.getMemberPartitionsIfAssigned(getAddress(instance));
         assertThat(partitions, empty());
     }
 
     @Test
     public void test_getMemberPartitionsIfAssigned_whenInitialized() {
         partitionService.firstArrangement();
-        List<Integer> partitions = partitionService.getMemberPartitionsIfAssigned(Accessors.getAddress(instance));
+        List<Integer> partitions = partitionService.getMemberPartitionsIfAssigned(getAddress(instance));
         assertEquals(partitionCount, partitions.size());
     }
 }

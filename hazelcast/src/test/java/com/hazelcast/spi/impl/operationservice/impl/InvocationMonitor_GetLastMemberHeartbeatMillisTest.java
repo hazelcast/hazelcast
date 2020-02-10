@@ -16,10 +16,9 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.cluster.Address;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -31,6 +30,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.spi.properties.ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS;
+import static com.hazelcast.test.Accessors.getAddress;
+import static com.hazelcast.test.Accessors.getOperationService;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -52,10 +53,10 @@ public class InvocationMonitor_GetLastMemberHeartbeatMillisTest extends Hazelcas
 
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(2).newInstances(config);
         local = cluster[0];
-        localAddress = Accessors.getAddress(local);
+        localAddress = getAddress(local);
         remote = cluster[1];
-        remoteAddress = Accessors.getAddress(remote);
-        invocationMonitor = Accessors.getOperationServiceImpl(local).getInvocationMonitor();
+        remoteAddress = getAddress(remote);
+        invocationMonitor = getOperationService(local).getInvocationMonitor();
     }
 
     @Test

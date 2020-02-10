@@ -25,7 +25,6 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -43,6 +42,7 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -96,7 +96,7 @@ public class CacheLoadAllTest extends CacheTestSupport {
 
     private Map<String, String> createAndFillEntries() {
         final int ENTRY_COUNT_PER_PARTITION = 3;
-        Node node = Accessors.getNode(hazelcastInstance);
+        Node node = getNode(hazelcastInstance);
         int partitionCount = node.getPartitionService().getPartitionCount();
         Map<String, String> entries = new HashMap<String, String>(partitionCount * ENTRY_COUNT_PER_PARTITION);
 
@@ -140,7 +140,7 @@ public class CacheLoadAllTest extends CacheTestSupport {
             assertEquals(expectedValue, actualValue);
         }
 
-        Node node = Accessors.getNode(hazelcastInstance);
+        Node node = getNode(hazelcastInstance);
         InternalPartitionService partitionService = node.getPartitionService();
         SerializationService serializationService = node.getSerializationService();
 
@@ -151,7 +151,7 @@ public class CacheLoadAllTest extends CacheTestSupport {
             Data keyData = serializationService.toData(key);
             int keyPartitionId = partitionService.getPartitionId(keyData);
             for (int i = 0; i < INSTANCE_COUNT; i++) {
-                Node n = Accessors.getNode(hazelcastInstances[i]);
+                Node n = getNode(hazelcastInstances[i]);
                 ICacheService cacheService = n.getNodeEngine().getService(ICacheService.SERVICE_NAME);
                 ICacheRecordStore recordStore = cacheService.getRecordStore("/hz/" + cacheName, keyPartitionId);
                 assertNotNull(recordStore);

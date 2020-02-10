@@ -16,19 +16,18 @@
 
 package com.hazelcast.partition;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.PartitionReplicaVersionsView;
 import com.hazelcast.internal.partition.impl.ReplicaFragmentSyncInfo;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.services.ServiceNamespace;
-import com.hazelcast.internal.partition.IPartition;
-import com.hazelcast.test.Accessors;
+import com.hazelcast.internal.util.scheduler.ScheduledEntry;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.internal.util.scheduler.ScheduledEntry;
 import org.junit.After;
 import org.junit.Before;
 
@@ -45,6 +44,7 @@ import static com.hazelcast.internal.partition.TestPartitionUtils.getAllReplicaA
 import static com.hazelcast.internal.partition.TestPartitionUtils.getOngoingReplicaSyncRequests;
 import static com.hazelcast.internal.partition.TestPartitionUtils.getOwnedReplicaVersions;
 import static com.hazelcast.internal.partition.TestPartitionUtils.getScheduledReplicaSyncRequests;
+import static com.hazelcast.test.Accessors.getNode;
 import static junit.framework.TestCase.assertNotNull;
 
 @SuppressWarnings("WeakerAccess")
@@ -159,7 +159,7 @@ public abstract class AbstractPartitionLostListenerTest extends HazelcastTestSup
     protected final Map<Integer, Integer> getMinReplicaIndicesByPartitionId(List<HazelcastInstance> instances) {
         Map<Integer, Integer> survivingPartitions = new HashMap<Integer, Integer>();
         for (HazelcastInstance instance : instances) {
-            Node survivingNode = Accessors.getNode(instance);
+            Node survivingNode = getNode(instance);
             Address survivingNodeAddress = survivingNode.getThisAddress();
 
             for (IPartition partition : survivingNode.getPartitionService().getPartitions()) {
@@ -199,8 +199,8 @@ public abstract class AbstractPartitionLostListenerTest extends HazelcastTestSup
         }
 
         for (HazelcastInstance instance : instances) {
-            Address address = Accessors.getNode(instance).getThisAddress();
-            for (Entry<Integer, PartitionReplicaVersionsView> entry : getOwnedReplicaVersions(Accessors.getNode(instance)).entrySet()) {
+            Address address = getNode(instance).getThisAddress();
+            for (Entry<Integer, PartitionReplicaVersionsView> entry : getOwnedReplicaVersions(getNode(instance)).entrySet()) {
                 PartitionReplicaVersionsView replicaVersionsView = entry.getValue();
                 for (ServiceNamespace namespace : replicaVersionsView.getNamespaces()) {
                     System.out.println(namespace + " ReplicaVersions >> " + address + " - partitionId=" + entry.getKey()

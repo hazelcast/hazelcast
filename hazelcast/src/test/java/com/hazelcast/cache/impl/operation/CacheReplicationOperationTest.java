@@ -22,7 +22,6 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -33,6 +32,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Collection;
 
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -45,7 +45,7 @@ public class CacheReplicationOperationTest extends HazelcastTestSupport {
         CacheConfig config = new CacheConfig("test-cache");
 
         // add config to cache service
-        NodeEngineImpl nodeEngineImpl = Accessors.getNodeEngineImpl(createHazelcastInstance());
+        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(createHazelcastInstance());
         CacheService cacheService = nodeEngineImpl.getService(CacheService.SERVICE_NAME);
         cacheService.putCacheConfigIfAbsent(config);
 

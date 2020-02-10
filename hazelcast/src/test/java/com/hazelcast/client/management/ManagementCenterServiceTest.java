@@ -35,7 +35,6 @@ import com.hazelcast.internal.management.dto.ClientBwListEntryDTO;
 import com.hazelcast.internal.management.dto.MCEventDTO;
 import com.hazelcast.internal.management.events.Event;
 import com.hazelcast.internal.management.events.EventMetadata;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -64,6 +63,7 @@ import static com.hazelcast.config.MaxSizePolicy.PER_NODE;
 import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
 import static com.hazelcast.internal.management.events.EventMetadata.EventType.WAN_SYNC_STARTED;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.test.Accessors.getNode;
 import static java.util.Arrays.stream;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -365,7 +365,7 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
     }
 
     private static com.hazelcast.internal.management.ManagementCenterService getMemberMCService(HazelcastInstance instance) {
-        return Accessors.getNode(instance).getManagementCenterService();
+        return getNode(instance).getManagementCenterService();
     }
 
     private static class TestEvent implements Event {

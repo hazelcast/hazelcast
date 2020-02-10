@@ -29,7 +29,6 @@ import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -49,6 +48,7 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.function.BiConsumer;
 
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -92,7 +92,7 @@ public class ClientInvocationTest extends ClientTestSupport {
         }
 
         // crash the server
-        Accessors.getNode(server).getNetworkingService().shutdown();
+        getNode(server).getNetworkingService().shutdown();
         server.getLifecycleService().terminate();
 
         int callBackCount = 0;

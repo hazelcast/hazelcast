@@ -20,7 +20,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -31,6 +30,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.internal.util.IterationType.ENTRY;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -45,7 +45,7 @@ public class QueryEngineImpl_queryLocalPartitions_resultSizeNoLimitTest extends 
         HazelcastInstance hz = createHazelcastInstance();
         map = hz.getMap(randomName());
 
-        MapService mapService = Accessors.getNodeEngineImpl(hz).getService(MapService.SERVICE_NAME);
+        MapService mapService = getNodeEngineImpl(hz).getService(MapService.SERVICE_NAME);
         queryEngine = new QueryEngineImpl(mapService.getMapServiceContext());
     }
 

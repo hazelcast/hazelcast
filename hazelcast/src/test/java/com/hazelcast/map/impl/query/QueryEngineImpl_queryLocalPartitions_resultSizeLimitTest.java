@@ -23,7 +23,6 @@ import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -34,6 +33,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.internal.util.IterationType.ENTRY;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -56,7 +56,7 @@ public class QueryEngineImpl_queryLocalPartitions_resultSizeLimitTest extends Ha
         HazelcastInstance hz = createHazelcastInstance(config);
         map = hz.getMap(randomName());
 
-        MapService mapService = Accessors.getNodeEngineImpl(hz).getService(MapService.SERVICE_NAME);
+        MapService mapService = getNodeEngineImpl(hz).getService(MapService.SERVICE_NAME);
         queryEngine = new QueryEngineImpl(mapService.getMapServiceContext());
 
         // we fill all partitions, so we get the NodeResultLimit for all partitions as well

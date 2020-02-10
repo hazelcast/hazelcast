@@ -31,7 +31,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastTestSupport;
 
 import java.io.IOException;
@@ -47,6 +46,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
+import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.fail;
 
 public class ExecutorServiceTestSupport extends HazelcastTestSupport {
@@ -84,7 +84,7 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
     }
 
     ExecutionService getExecutionService(HazelcastInstance instance) {
-        return Accessors.getNode(instance).getNodeEngine().getExecutionService();
+        return getNode(instance).getNodeEngine().getExecutionService();
     }
 
     public static class CountDownLatchAwaitingCallable implements Callable<String> {

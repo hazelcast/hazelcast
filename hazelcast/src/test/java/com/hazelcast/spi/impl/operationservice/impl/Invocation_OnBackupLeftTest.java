@@ -23,7 +23,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -39,8 +38,9 @@ import java.io.IOException;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.hazelcast.spi.impl.operationservice.impl.InvocationConstant.VOID;
 import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
+import static com.hazelcast.spi.impl.operationservice.impl.InvocationConstant.VOID;
+import static com.hazelcast.test.Accessors.getOperationService;
 import static java.util.Collections.newSetFromMap;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
@@ -70,7 +70,7 @@ public class Invocation_OnBackupLeftTest extends HazelcastTestSupport {
         local = cluster[0];
         remote = cluster[1];
         warmUpPartitions(local, remote);
-        localOperationService = Accessors.getOperationServiceImpl(cluster[0]);
+        localOperationService = getOperationService(cluster[0]);
     }
 
     @Test

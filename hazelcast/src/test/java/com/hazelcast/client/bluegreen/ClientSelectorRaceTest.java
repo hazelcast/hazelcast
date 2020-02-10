@@ -21,7 +21,6 @@ import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.ClientSelectors;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -34,6 +33,7 @@ import org.junit.runner.RunWith;
 import java.util.Collection;
 import java.util.LinkedList;
 
+import static com.hazelcast.test.Accessors.getClientEngineImpl;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -51,7 +51,7 @@ public class ClientSelectorRaceTest extends HazelcastTestSupport {
     public void testConcurrency() throws InterruptedException {
         HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
 
-        final ClientEngineImpl clientEngineImpl = Accessors.getClientEngineImpl(instance);
+        final ClientEngineImpl clientEngineImpl = getClientEngineImpl(instance);
 
         LinkedList<Thread> threads = new LinkedList<Thread>();
         int numberOfClients = 100;

@@ -17,7 +17,6 @@
 package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -28,6 +27,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Properties;
 
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -42,7 +42,7 @@ public class SystemPropertiesPluginTest extends AbstractDiagnosticsPluginTest {
     @Before
     public void setup() {
         HazelcastInstance hz = createHazelcastInstance();
-        plugin = new SystemPropertiesPlugin(Accessors.getNodeEngineImpl(hz));
+        plugin = new SystemPropertiesPlugin(getNodeEngineImpl(hz));
         plugin.onStart();
         System.setProperty(FAKE_PROPERTY, "foobar");
     }

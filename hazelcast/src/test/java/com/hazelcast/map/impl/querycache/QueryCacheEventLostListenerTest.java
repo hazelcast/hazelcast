@@ -20,9 +20,9 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.map.EventLostEvent;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -30,7 +30,6 @@ import com.hazelcast.map.impl.querycache.subscriber.TestSubscriberContext;
 import com.hazelcast.map.listener.EventLostListener;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -43,6 +42,7 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.CountDownLatch;
 
 import static com.hazelcast.map.impl.querycache.AbstractQueryCacheTestSupport.getMap;
+import static com.hazelcast.test.Accessors.getNode;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -95,7 +95,7 @@ public class QueryCacheEventLostListenerTest extends HazelcastTestSupport {
     }
 
     private void setTestSequencer(HazelcastInstance instance, int eventCount) {
-        Node node = Accessors.getNode(instance);
+        Node node = getNode(instance);
         MapService service = node.getNodeEngine().getService(MapService.SERVICE_NAME);
         MapServiceContext mapServiceContext = service.getMapServiceContext();
         QueryCacheContext queryCacheContext = mapServiceContext.getQueryCacheContext();

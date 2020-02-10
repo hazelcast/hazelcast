@@ -18,8 +18,8 @@ package com.hazelcast.transaction.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -27,7 +27,6 @@ import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl.TxBackupLog;
-import com.hazelcast.internal.util.UuidUtil;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -35,6 +34,7 @@ import org.junit.runner.RunWith;
 
 import java.util.UUID;
 
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.transaction.TransactionOptions.TransactionType.TWO_PHASE;
 import static com.hazelcast.transaction.impl.Transaction.State.COMMITTED;
 import static com.hazelcast.transaction.impl.Transaction.State.COMMITTING;
@@ -61,7 +61,7 @@ public class TransactionImpl_TwoPhaseIntegrationTest extends HazelcastTestSuppor
     @Before
     public void setup() {
         cluster = createHazelcastInstanceFactory(2).newInstances(getConfig());
-        localNodeEngine = Accessors.getNodeEngineImpl(cluster[0]);
+        localNodeEngine = getNodeEngineImpl(cluster[0]);
         localTxService = getTransactionManagerService(cluster[0]);
         remoteTxService = getTransactionManagerService(cluster[1]);
         txOwner = UuidUtil.newUnsecureUUID();
@@ -88,7 +88,7 @@ public class TransactionImpl_TwoPhaseIntegrationTest extends HazelcastTestSuppor
     }
 
     private TransactionManagerServiceImpl getTransactionManagerService(HazelcastInstance hz) {
-        NodeEngineImpl nodeEngineImpl = Accessors.getNodeEngineImpl(hz);
+        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(hz);
         return (TransactionManagerServiceImpl) nodeEngineImpl.getTransactionManagerService();
     }
 

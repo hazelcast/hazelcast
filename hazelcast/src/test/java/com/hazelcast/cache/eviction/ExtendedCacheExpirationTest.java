@@ -23,7 +23,6 @@ import com.hazelcast.cache.impl.eviction.CacheClearExpiredRecordsTask;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -42,6 +41,7 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.test.Accessors.getNode;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertNull;
 
@@ -116,7 +116,7 @@ public class ExtendedCacheExpirationTest extends CacheTestSupport {
 
         // terminate other nodes than number zero to cause backup promotion at the 0th member
         for (int i = 1; i < CLUSTER_SIZE; i++) {
-            Accessors.getNode(instances[i]).shutdown(true);
+            getNode(instances[i]).shutdown(true);
         }
 
         assertTrueEventually(() -> {

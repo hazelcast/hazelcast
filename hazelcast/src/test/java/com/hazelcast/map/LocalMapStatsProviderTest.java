@@ -19,7 +19,6 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.management.ManagementCenterService;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -28,6 +27,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -44,16 +44,16 @@ public class LocalMapStatsProviderTest extends HazelcastTestSupport {
         final HazelcastInstance instance = createHazelcastInstance(config);
 
         assertTrueEventually(() -> {
-            ManagementCenterService mcs = Accessors.getNode(instance).getManagementCenterService();
+            ManagementCenterService mcs = getNode(instance).getManagementCenterService();
             assertNotNull(mcs);
         });
 
         assertTrueAllTheTime(() -> {
-            ManagementCenterService mcs = Accessors.getNode(instance).getManagementCenterService();
+            ManagementCenterService mcs = getNode(instance).getManagementCenterService();
             mcs.getTimedMemberStateJson();
 
             //check partition migration triggered or not
-            int partitionStateVersion = Accessors.getNode(instance).getPartitionService().getPartitionStateVersion();
+            int partitionStateVersion = getNode(instance).getPartitionService().getPartitionStateVersion();
             assertEquals(0, partitionStateVersion);
         }, 5);
     }

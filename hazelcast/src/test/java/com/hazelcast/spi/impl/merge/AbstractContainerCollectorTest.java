@@ -18,7 +18,6 @@ package com.hazelcast.spi.impl.merge;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -31,6 +30,7 @@ import org.junit.runner.RunWith;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
@@ -44,7 +44,7 @@ public class AbstractContainerCollectorTest extends HazelcastTestSupport {
     @Before
     public void setUp() {
         HazelcastInstance hazelcastInstance = createHazelcastInstance();
-        nodeEngine = Accessors.getNodeEngineImpl(hazelcastInstance);
+        nodeEngine = getNodeEngineImpl(hazelcastInstance);
         warmUpPartitions(hazelcastInstance);
     }
 

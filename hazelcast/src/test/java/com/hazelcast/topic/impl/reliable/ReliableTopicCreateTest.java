@@ -23,17 +23,16 @@ import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.test.Accessors;
-import com.hazelcast.topic.ITopic;
+import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
-import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -42,6 +41,7 @@ import org.junit.runner.RunWith;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.topic.TopicOverloadPolicy.DISCARD_NEWEST;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -56,7 +56,7 @@ public class ReliableTopicCreateTest extends HazelcastTestSupport {
     @Test
     public void testConstruction() {
         HazelcastInstance hz = createHazelcastInstance();
-        RingbufferService ringbufferService = Accessors.getNodeEngineImpl(hz).getService(RingbufferService.SERVICE_NAME);
+        RingbufferService ringbufferService = getNodeEngineImpl(hz).getService(RingbufferService.SERVICE_NAME);
 
         ReliableTopicProxy<String> topic = (ReliableTopicProxy<String>) hz.<String>getReliableTopic("foo");
 
@@ -84,7 +84,7 @@ public class ReliableTopicCreateTest extends HazelcastTestSupport {
         config.addRingBufferConfig(rbConfig);
 
         HazelcastInstance hz = createHazelcastInstance(config);
-        RingbufferService ringbufferService = Accessors.getNodeEngineImpl(hz).getService(RingbufferService.SERVICE_NAME);
+        RingbufferService ringbufferService = getNodeEngineImpl(hz).getService(RingbufferService.SERVICE_NAME);
 
         ReliableTopicProxy topic = (ReliableTopicProxy) hz.getReliableTopic("foo");
 
@@ -112,7 +112,7 @@ public class ReliableTopicCreateTest extends HazelcastTestSupport {
         config.addReliableTopicConfig(new ReliableTopicConfig("foo*").setTopicOverloadPolicy(DISCARD_NEWEST));
 
         HazelcastInstance hz = createHazelcastInstance(config);
-        RingbufferService ringbufferService = Accessors.getNodeEngineImpl(hz).getService(RingbufferService.SERVICE_NAME);
+        RingbufferService ringbufferService = getNodeEngineImpl(hz).getService(RingbufferService.SERVICE_NAME);
 
         ReliableTopicProxy<String> topic = (ReliableTopicProxy<String>) hz.<String>getReliableTopic("foo");
         Ringbuffer ringbuffer = topic.ringbuffer;

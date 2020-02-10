@@ -37,7 +37,6 @@ import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
 import com.hazelcast.map.listener.EntryExpiredListener;
 import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 
@@ -53,6 +52,7 @@ import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.spi.properties.ClusterProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
 import static com.hazelcast.spi.properties.ClusterProperty.MAP_INVALIDATION_MESSAGE_BATCH_SIZE;
 import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
+import static com.hazelcast.test.Accessors.getNode;
 import static java.lang.String.format;
 import static java.util.concurrent.Executors.newFixedThreadPool;
 import static org.junit.Assert.assertEquals;
@@ -278,7 +278,7 @@ public class NearCacheTestSupport extends HazelcastTestSupport {
     }
 
     protected NearCache getNearCache(String mapName, HazelcastInstance instance) {
-        NodeEngineImpl nodeEngine = Accessors.getNode(instance).nodeEngine;
+        NodeEngineImpl nodeEngine = getNode(instance).nodeEngine;
         MapService service = nodeEngine.getService(SERVICE_NAME);
 
         MapServiceContext mapServiceContext = service.getMapServiceContext();

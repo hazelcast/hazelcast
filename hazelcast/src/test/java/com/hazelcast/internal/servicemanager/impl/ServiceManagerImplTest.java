@@ -20,14 +20,13 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.impl.MapService;
 import com.hazelcast.internal.services.ConfigurableService;
 import com.hazelcast.internal.services.ManagedService;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import com.hazelcast.spi.impl.servicemanager.impl.ServiceManagerImpl;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -37,10 +36,11 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import javax.swing.JPanel;
+import javax.swing.*;
 import java.util.List;
 import java.util.Properties;
 
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -63,7 +63,7 @@ public class ServiceManagerImplTest extends HazelcastTestSupport {
         ConfigAccessor.getServicesConfig(config).addServiceConfig(serviceConfig);
 
         HazelcastInstance hz = createHazelcastInstance(config);
-        NodeEngineImpl nodeEngine = Accessors.getNodeEngineImpl(hz);
+        NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);
         serviceManager = (ServiceManagerImpl) nodeEngine.getServiceManager();
     }
 

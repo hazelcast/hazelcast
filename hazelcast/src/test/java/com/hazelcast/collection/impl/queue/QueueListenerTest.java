@@ -25,7 +25,6 @@ import com.hazelcast.config.QueueConfig;
 import com.hazelcast.core.DistributedObjectEvent;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -40,6 +39,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -116,9 +116,9 @@ public class QueueListenerTest extends HazelcastTestSupport {
         HazelcastInstance second = factory.newHazelcastInstance(config);
         assertTrueEventually(() -> {
             assertEquals(2,
-                    Accessors.getNodeEngineImpl(instance).getEventService().getRegistrations(QueueService.SERVICE_NAME, QUEUE_NAME).size());
+                    getNodeEngineImpl(instance).getEventService().getRegistrations(QueueService.SERVICE_NAME, QUEUE_NAME).size());
             assertEquals(2,
-                    Accessors.getNodeEngineImpl(second).getEventService().getRegistrations(QueueService.SERVICE_NAME, QUEUE_NAME).size());
+                    getNodeEngineImpl(second).getEventService().getRegistrations(QueueService.SERVICE_NAME, QUEUE_NAME).size());
         });
         for (int i = 0; i < TOTAL_QUEUE_PUT / 4; i++) {
             queue.put(i);

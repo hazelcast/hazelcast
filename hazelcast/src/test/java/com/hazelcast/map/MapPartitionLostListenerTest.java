@@ -16,17 +16,16 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.partition.IPartition;
+import com.hazelcast.internal.partition.IPartitionLostEvent;
 import com.hazelcast.internal.partition.PartitionLostEventImpl;
 import com.hazelcast.map.impl.MapPartitionLostEventFilter;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.listener.EntryAddedListener;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.partition.AbstractPartitionLostListenerTest;
-import com.hazelcast.internal.partition.IPartition;
-import com.hazelcast.internal.partition.IPartitionLostEvent;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -39,6 +38,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -63,7 +63,7 @@ public class MapPartitionLostListenerTest extends AbstractPartitionLostListenerT
 
         final IPartitionLostEvent internalEvent = new PartitionLostEventImpl(1, 0, null);
 
-        MapService mapService = Accessors.getNode(instance).getNodeEngine().getService(MapService.SERVICE_NAME);
+        MapService mapService = getNode(instance).getNodeEngine().getService(MapService.SERVICE_NAME);
         mapService.onPartitionLost(internalEvent);
 
         assertEventEventually(listener, internalEvent);
@@ -82,7 +82,7 @@ public class MapPartitionLostListenerTest extends AbstractPartitionLostListenerT
 
         final IPartitionLostEvent internalEvent = new PartitionLostEventImpl(1, 0, null);
 
-        MapService mapService = Accessors.getNode(instance1).getNodeEngine().getService(MapService.SERVICE_NAME);
+        MapService mapService = getNode(instance1).getNodeEngine().getService(MapService.SERVICE_NAME);
         mapService.onPartitionLost(internalEvent);
 
         assertEventEventually(listener1, internalEvent);
@@ -100,7 +100,7 @@ public class MapPartitionLostListenerTest extends AbstractPartitionLostListenerT
 
         final IPartitionLostEvent internalEvent = new PartitionLostEventImpl(1, 0, null);
 
-        MapService mapService = Accessors.getNode(instance).getNodeEngine().getService(MapService.SERVICE_NAME);
+        MapService mapService = getNode(instance).getNodeEngine().getService(MapService.SERVICE_NAME);
         mapService.onPartitionLost(internalEvent);
 
         assertEventEventually(listener, internalEvent);
@@ -117,7 +117,7 @@ public class MapPartitionLostListenerTest extends AbstractPartitionLostListenerT
         survivingInstance.getMap(getIthMapName(0)).addPartitionLostListener(listener);
 
         final Set<Integer> survivingPartitionIds = new HashSet<Integer>();
-        Node survivingNode = Accessors.getNode(survivingInstance);
+        Node survivingNode = getNode(survivingInstance);
         Address survivingAddress = survivingNode.getThisAddress();
 
         for (IPartition partition : survivingNode.getPartitionService().getPartitions()) {

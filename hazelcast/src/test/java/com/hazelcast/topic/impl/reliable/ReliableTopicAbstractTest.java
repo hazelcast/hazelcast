@@ -21,13 +21,12 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.Accessors;
-import com.hazelcast.topic.LocalTopicStats;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.topic.ITopic;
+import com.hazelcast.topic.LocalTopicStats;
 import com.hazelcast.topic.Message;
-import com.hazelcast.internal.util.Clock;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -37,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import static com.hazelcast.test.Accessors.getNode;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -244,7 +244,7 @@ public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
             }
         });
 
-        final ReliableTopicService reliableTopicService = Accessors.getNode(local).nodeEngine.getService(ReliableTopicService.SERVICE_NAME);
+        final ReliableTopicService reliableTopicService = getNode(local).nodeEngine.getService(ReliableTopicService.SERVICE_NAME);
         final Map<String, LocalTopicStats> stats = reliableTopicService.getStats();
         assertEquals(2, stats.size());
         assertEquals(messageCount, stats.get(topic.getName()).getPublishOperationCount());
@@ -257,7 +257,7 @@ public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
     public void testDestroyTopicRemovesStatistics() {
         topic.publish("foobar");
 
-        final ReliableTopicService reliableTopicService = Accessors.getNode(local).nodeEngine.getService(ReliableTopicService.SERVICE_NAME);
+        final ReliableTopicService reliableTopicService = getNode(local).nodeEngine.getService(ReliableTopicService.SERVICE_NAME);
         final Map<String, LocalTopicStats> stats = reliableTopicService.getStats();
         assertEquals(1, stats.size());
         assertEquals(1, stats.get(topic.getName()).getPublishOperationCount());

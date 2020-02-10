@@ -17,16 +17,15 @@
 package com.hazelcast.topic.impl.reliable;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.Accessors;
-import com.hazelcast.topic.ITopic;
+import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
-import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.topic.ITopic;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -35,6 +34,7 @@ import org.junit.runner.RunWith;
 import java.util.Map;
 
 import static com.hazelcast.ringbuffer.impl.RingbufferService.TOPIC_RB_PREFIX;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -83,7 +83,7 @@ public class ReliableTopicDestroyTest extends HazelcastTestSupport {
         topic.publish("foo");
         topic.destroy();
         final RingbufferService ringbufferService
-                = Accessors.getNodeEngineImpl(getMember()).getService(RingbufferService.SERVICE_NAME);
+                = getNodeEngineImpl(getMember()).getService(RingbufferService.SERVICE_NAME);
 
         assertTrueEventually(new AssertTask() {
             @Override

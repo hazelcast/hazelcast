@@ -21,7 +21,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -32,6 +31,7 @@ import org.junit.runner.RunWith;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -107,7 +107,7 @@ public class ExpirationManagerStressTest extends HazelcastTestSupport {
     }
 
     public static ExpirationManager getExpirationManager(HazelcastInstance node) {
-        MapService mapService = Accessors.getNodeEngineImpl(node).getService(MapService.SERVICE_NAME);
+        MapService mapService = getNodeEngineImpl(node).getService(MapService.SERVICE_NAME);
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         return mapServiceContext.getExpirationManager();
     }

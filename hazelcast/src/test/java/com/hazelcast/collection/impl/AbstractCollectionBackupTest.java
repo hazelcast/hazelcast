@@ -21,12 +21,13 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 
 import java.util.Collection;
 
+import static com.hazelcast.test.Accessors.getBackupInstance;
+import static com.hazelcast.test.Accessors.getPartitionIdViaReflection;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -70,10 +71,10 @@ public abstract class AbstractCollectionBackupTest extends HazelcastTestSupport 
             collection.add(item);
         }
 
-        int partitionId = Accessors.getPartitionIdViaReflection(collection);
+        int partitionId = getPartitionIdViaReflection(collection);
         LOGGER.info("Collection " + collectionName + " is stored in partition " + partitionId);
-        HazelcastInstance promotedInstance = Accessors.getBackupInstance(instances, partitionId, 1);
-        HazelcastInstance backupInstance = Accessors.getBackupInstance(instances, partitionId, 2);
+        HazelcastInstance promotedInstance = getBackupInstance(instances, partitionId, 1);
+        HazelcastInstance backupInstance = getBackupInstance(instances, partitionId, 2);
 
         // we terminate the ownerInstance, so the backups on promotedInstance have to be promoted
         factory.terminate(ownerInstance);
@@ -105,7 +106,7 @@ public abstract class AbstractCollectionBackupTest extends HazelcastTestSupport 
             collection.add(item);
         }
 
-        int partitionId = Accessors.getPartitionIdViaReflection(collection);
+        int partitionId = getPartitionIdViaReflection(collection);
         LOGGER.info("Collection " + collectionName + " is stored in partition " + partitionId);
 
         // scale up
@@ -134,7 +135,7 @@ public abstract class AbstractCollectionBackupTest extends HazelcastTestSupport 
         LOGGER.info("Testing " + backupCount + " backups on " + instances.length + " members");
 
         for (int i = 1; i <= backupCount; i++) {
-            HazelcastInstance backupInstance = Accessors.getBackupInstance(instances, partitionId, i);
+            HazelcastInstance backupInstance = getBackupInstance(instances, partitionId, i);
             Collection<Integer> backupCollection = getBackupCollection(backupInstance, collectionName);
             assertEqualsStringFormat("expected %d items in backupCollection, but found %d", ITEM_COUNT, backupCollection.size());
             for (int item = 0; item < ITEM_COUNT; item++) {

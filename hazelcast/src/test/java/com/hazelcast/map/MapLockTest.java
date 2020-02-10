@@ -16,13 +16,12 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.internal.locksupport.LockSupportService;
-import com.hazelcast.internal.locksupport.LockSupportServiceImpl;
-import com.hazelcast.internal.locksupport.LockStoreContainer;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.locksupport.LockStoreContainer;
+import com.hazelcast.internal.locksupport.LockSupportService;
+import com.hazelcast.internal.locksupport.LockSupportServiceImpl;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -39,6 +38,7 @@ import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -385,7 +385,7 @@ public class MapLockTest extends HazelcastTestSupport {
         }
         map.destroy();
 
-        NodeEngineImpl nodeEngine = Accessors.getNodeEngineImpl(instance);
+        NodeEngineImpl nodeEngine = getNodeEngineImpl(instance);
         LockSupportServiceImpl lockService = nodeEngine.getService(LockSupportService.SERVICE_NAME);
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         for (int i = 0; i < partitionCount; i++) {

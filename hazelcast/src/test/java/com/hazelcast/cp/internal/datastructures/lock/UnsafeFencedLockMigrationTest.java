@@ -21,7 +21,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.internal.HazelcastRaftTestSupport;
 import com.hazelcast.cp.lock.FencedLock;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -32,6 +31,7 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertThat;
 
@@ -84,7 +84,7 @@ public class UnsafeFencedLockMigrationTest extends HazelcastRaftTestSupport {
         Future waitingLock2 = spawn(lock2::lock);
 
         // Ensure waiting op is registered
-        LockService lockService = Accessors.getNodeEngineImpl(hz1).getService(LockService.SERVICE_NAME);
+        LockService lockService = getNodeEngineImpl(hz1).getService(LockService.SERVICE_NAME);
         assertTrueEventually(() -> {
             LockRegistry registry1 = lockService.getRegistryOrNull(lock1.getGroupId());
             assertThat(registry1.getLiveOperations(), hasSize(1));
@@ -121,7 +121,7 @@ public class UnsafeFencedLockMigrationTest extends HazelcastRaftTestSupport {
             latch.countDown();
 
             // wait until other thread blocks
-            LockService lockService = Accessors.getNodeEngineImpl(hz1).getService(LockService.SERVICE_NAME);
+            LockService lockService = getNodeEngineImpl(hz1).getService(LockService.SERVICE_NAME);
             assertTrueEventually(() -> {
                 LockRegistry registry = lockService.getRegistryOrNull(lock.getGroupId());
                 assertThat(registry.getLiveOperations(), hasSize(1));

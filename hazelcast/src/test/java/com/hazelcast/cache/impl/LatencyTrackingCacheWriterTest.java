@@ -18,7 +18,6 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -33,6 +32,7 @@ import javax.cache.integration.CacheWriter;
 import java.util.Collection;
 import java.util.LinkedList;
 
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -51,7 +51,7 @@ public class LatencyTrackingCacheWriterTest extends HazelcastTestSupport {
     @SuppressWarnings("unchecked")
     public void setup() {
         HazelcastInstance hz = createHazelcastInstance();
-        plugin = new StoreLatencyPlugin(Accessors.getNodeEngineImpl(hz));
+        plugin = new StoreLatencyPlugin(getNodeEngineImpl(hz));
         delegate = mock(CacheWriter.class);
         cacheWriter = new LatencyTrackingCacheWriter<Integer, String>(delegate, plugin, NAME);
     }

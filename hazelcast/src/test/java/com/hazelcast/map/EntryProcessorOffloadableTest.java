@@ -31,7 +31,6 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationMonitor;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -67,6 +66,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -868,7 +868,7 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
         final Address instance1Address = instances[1].getCluster().getLocalMember().getAddress();
         final List<Long> heartBeatTimestamps = new LinkedList<>();
         Thread hbMonitorThread = new Thread(() -> {
-            NodeEngine nodeEngine = Accessors.getNodeEngineImpl(instances[0]);
+            NodeEngine nodeEngine = getNodeEngineImpl(instances[0]);
             OperationServiceImpl osImpl = (OperationServiceImpl) nodeEngine.getOperationService();
             Map<Address, AtomicLong> heartBeats = osImpl.getInvocationMonitor().getHeartbeatPerMember();
             long lastbeat = Long.MIN_VALUE;

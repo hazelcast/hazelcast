@@ -22,7 +22,6 @@ import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -39,6 +38,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.test.Accessors.getClusterService;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.hamcrest.Matchers.hasItem;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
@@ -62,7 +63,7 @@ public class EventServiceTest extends HazelcastTestSupport {
         EventService eventService = getEventService(hz2);
         Set<UUID> registrationIds = new HashSet<UUID>();
         Object listener = new Object();
-        while (Accessors.getClusterService(hz2).getSize() < 3) {
+        while (getClusterService(hz2).getSize() < 3) {
             EventRegistration registration = eventService.registerListener(serviceName, topic, listener);
             registrationIds.add(registration.getId());
         }
@@ -114,6 +115,6 @@ public class EventServiceTest extends HazelcastTestSupport {
     }
 
     private static EventService getEventService(HazelcastInstance hz) {
-        return Accessors.getNodeEngineImpl(hz).getEventService();
+        return getNodeEngineImpl(hz).getEventService();
     }
 }

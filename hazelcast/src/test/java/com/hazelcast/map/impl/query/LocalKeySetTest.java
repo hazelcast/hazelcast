@@ -17,11 +17,10 @@
 package com.hazelcast.map.impl.query;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.IMap;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -34,6 +33,7 @@ import org.junit.runner.RunWith;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.test.Accessors.getSerializationService;
 import static com.hazelcast.test.TestCollectionUtils.setOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -61,7 +61,7 @@ public class LocalKeySetTest extends HazelcastTestSupport {
         HazelcastInstance remote = cluster[1];
 
         map = local.getMap(randomName());
-        serializationService = Accessors.getSerializationService(local);
+        serializationService = getSerializationService(local);
 
         localKey1 = generateKeyOwnedBy(local);
         localKey2 = generateKeyOwnedBy(local);

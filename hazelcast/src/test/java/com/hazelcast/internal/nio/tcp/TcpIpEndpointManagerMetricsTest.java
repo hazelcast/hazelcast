@@ -19,7 +19,6 @@ package com.hazelcast.internal.nio.tcp;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.impl.CapturingCollector;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.OverridePropertyRule;
@@ -32,6 +31,7 @@ import org.junit.runner.RunWith;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_PREFIX_CONNECTION;
 import static com.hazelcast.internal.metrics.ProbeUnit.COUNT;
 import static com.hazelcast.internal.metrics.impl.DefaultMetricDescriptorSupplier.DEFAULT_DESCRIPTOR_SUPPLIER;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.test.OverridePropertyRule.set;
 import static com.hazelcast.test.TestEnvironment.HAZELCAST_TEST_USE_NETWORK;
 import static org.junit.Assert.assertEquals;
@@ -49,7 +49,7 @@ public class TcpIpEndpointManagerMetricsTest extends HazelcastTestSupport {
         CapturingCollector collector = new CapturingCollector();
         HazelcastInstance instance = createHazelcastInstance();
 
-        Accessors.getNodeEngineImpl(instance).getMetricsRegistry().collect(collector);
+        getNodeEngineImpl(instance).getMetricsRegistry().collect(collector);
 
         // defined by TcpIpEndpointManager
         verifyCollectedOnce(collector, metricDescriptor(TCP_PREFIX_CONNECTION, "count"));

@@ -22,7 +22,6 @@ import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.internal.operation.GetLeadedGroupsOp;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -37,6 +36,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import static com.hazelcast.cp.internal.RaftGroupMembershipManager.LEADERSHIP_BALANCE_TASK_PERIOD;
+import static com.hazelcast.test.Accessors.getOperationService;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -101,7 +101,7 @@ public class CPGroupRebalanceTest extends HazelcastRaftTestSupport {
     }
 
     private Map<CPMember, Collection<CPGroupId>> getLeadershipsMap(HazelcastInstance instance, Collection<CPMember> members) {
-        OperationServiceImpl operationService = Accessors.getOperationService(instance);
+        OperationServiceImpl operationService = getOperationService(instance);
         Map<CPMember, Collection<CPGroupId>> leaderships = new HashMap<>();
 
         for (CPMember member : members) {

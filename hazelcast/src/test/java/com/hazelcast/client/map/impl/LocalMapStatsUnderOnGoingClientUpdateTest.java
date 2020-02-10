@@ -19,11 +19,10 @@ package com.hazelcast.client.map.impl;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
-import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.internal.services.StatisticsAwareService;
-import com.hazelcast.test.Accessors;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.LocalMapStats;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -37,6 +36,7 @@ import org.junit.runner.RunWith;
 import java.util.Map;
 
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -72,7 +72,7 @@ public class LocalMapStatsUnderOnGoingClientUpdateTest extends HazelcastTestSupp
         map.put(2, 2);
 
         // get internal StatisticsAwareService.
-        MapService mapService = Accessors.getNodeEngineImpl(member).getService(SERVICE_NAME);
+        MapService mapService = getNodeEngineImpl(member).getService(SERVICE_NAME);
         Map<String, LocalMapStats> stats = ((StatisticsAwareService) mapService).getStats();
         LocalMapStats localMapStats = stats.get(mapName);
 

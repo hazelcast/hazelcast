@@ -23,7 +23,6 @@ import com.hazelcast.cp.internal.HazelcastRaftTestSupport;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.RaftInvocationManager;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.ChangeLoggingRule;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -35,6 +34,7 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.cp.internal.session.AbstractProxySessionManager.NO_SESSION_ID;
 import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -204,7 +204,7 @@ public abstract class AbstractProxySessionManagerTest extends HazelcastRaftTestS
 
     private SessionAccessor getSessionAccessor() {
         HazelcastInstance leaderInstance = getLeaderInstance(members, groupId);
-        return Accessors.getNodeEngineImpl(leaderInstance).getService(RaftSessionService.SERVICE_NAME);
+        return getNodeEngineImpl(leaderInstance).getService(RaftSessionService.SERVICE_NAME);
     }
 
     @Override

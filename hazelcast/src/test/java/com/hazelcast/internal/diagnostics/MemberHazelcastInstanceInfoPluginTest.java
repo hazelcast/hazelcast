@@ -17,7 +17,6 @@
 package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -25,6 +24,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 
@@ -37,7 +37,7 @@ public class MemberHazelcastInstanceInfoPluginTest extends AbstractDiagnosticsPl
     @Before
     public void setup() {
         HazelcastInstance hz = createHazelcastInstance();
-        plugin = new MemberHazelcastInstanceInfoPlugin(Accessors.getNodeEngineImpl(hz));
+        plugin = new MemberHazelcastInstanceInfoPlugin(getNodeEngineImpl(hz));
         plugin.onStart();
     }
 

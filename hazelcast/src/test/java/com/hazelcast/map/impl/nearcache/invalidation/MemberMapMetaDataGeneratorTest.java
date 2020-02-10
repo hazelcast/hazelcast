@@ -26,7 +26,6 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -38,6 +37,7 @@ import org.junit.runner.RunWith;
 
 import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.getBaseConfig;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
@@ -109,7 +109,7 @@ public class MemberMapMetaDataGeneratorTest extends HazelcastTestSupport {
     }
 
     private static MetaDataGenerator getMetaDataGenerator(HazelcastInstance member) {
-        MapService mapService = Accessors.getNodeEngineImpl(member).getService(SERVICE_NAME);
+        MapService mapService = getNodeEngineImpl(member).getService(SERVICE_NAME);
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         MapNearCacheManager mapNearCacheManager = mapServiceContext.getMapNearCacheManager();
         Invalidator invalidator = mapNearCacheManager.getInvalidator();

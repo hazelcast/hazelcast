@@ -27,11 +27,10 @@ import com.hazelcast.replicatedmap.impl.operation.ReplicateUpdateOperation;
 import com.hazelcast.replicatedmap.impl.operation.ReplicatedMapDataSerializerHook;
 import com.hazelcast.replicatedmap.impl.operation.VersionResponsePair;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
+import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -47,6 +46,7 @@ import java.lang.reflect.Modifier;
 import java.util.Random;
 
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -87,7 +87,7 @@ public class ReplicatedMapReorderedReplicationTest extends HazelcastTestSupport 
         final int partitionId = randomPartitionOwnedBy(instances[0]).getPartitionId();
 
         final String mapName = randomMapName();
-        final NodeEngineImpl nodeEngine = Accessors.getNodeEngineImpl(instances[0]);
+        final NodeEngineImpl nodeEngine = getNodeEngineImpl(instances[0]);
 
         final Thread[] threads = new Thread[threadCount];
         for (int i = 0; i < threadCount; i++) {
@@ -112,7 +112,7 @@ public class ReplicatedMapReorderedReplicationTest extends HazelcastTestSupport 
 
         final ReplicatedRecordStore[] stores = new ReplicatedRecordStore[nodeCount];
         for (int i = 0; i < nodeCount; i++) {
-            ReplicatedMapService service = Accessors.getNodeEngineImpl(instances[i]).getService(ReplicatedMapService.SERVICE_NAME);
+            ReplicatedMapService service = getNodeEngineImpl(instances[i]).getService(ReplicatedMapService.SERVICE_NAME);
             service.triggerAntiEntropy();
             stores[i] = service.getReplicatedRecordStore(mapName, false, partitionId);
         }

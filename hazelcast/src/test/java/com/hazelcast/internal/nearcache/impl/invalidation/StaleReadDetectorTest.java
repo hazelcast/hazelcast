@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.nearcache.impl.invalidation;
 
-
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
@@ -26,7 +25,6 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -39,6 +37,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -77,7 +76,7 @@ public class StaleReadDetectorTest extends HazelcastTestSupport {
     }
 
     private static boolean isRepairingHandlerCreatedForMap(HazelcastInstance node, String mapName) {
-        NodeEngineImpl nodeEngineImpl = Accessors.getNodeEngineImpl(node);
+        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(node);
         MapService mapService = nodeEngineImpl.getService(SERVICE_NAME);
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         MapNearCacheManager mapNearCacheManager = mapServiceContext.getMapNearCacheManager();

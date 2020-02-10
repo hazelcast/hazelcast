@@ -26,7 +26,6 @@ import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -41,6 +40,8 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.test.Accessors.getNode;
+import static com.hazelcast.test.Accessors.getOperationService;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -72,7 +73,7 @@ public class ContainsValueOperationTest extends HazelcastTestSupport {
     }
 
     private InternalCompletableFuture<Object> executeOperation(Map map, String key, int value) {
-        int partitionId = Accessors.getNode(member1).getPartitionService().getPartitionId(key);
+        int partitionId = getNode(member1).getPartitionService().getPartitionId(key);
         MapProxyImpl mapProxy = (MapProxyImpl) map;
         MapServiceContext mapServiceContext = ((MapService) mapProxy.getService()).getMapServiceContext();
         MapOperationProvider operationProvider = mapServiceContext.getMapOperationProvider(mapProxy.getName());
@@ -80,7 +81,7 @@ public class ContainsValueOperationTest extends HazelcastTestSupport {
                 = operationProvider.createContainsValueOperationFactory(mapProxy.getName(), mapServiceContext.toData(value));
         Operation operation = operationFactory.createOperation();
 
-        OperationServiceImpl operationService = Accessors.getOperationService(member1);
+        OperationServiceImpl operationService = getOperationService(member1);
         return operationService.createInvocationBuilder(MapService.SERVICE_NAME, operation, partitionId).invoke();
     }
 }

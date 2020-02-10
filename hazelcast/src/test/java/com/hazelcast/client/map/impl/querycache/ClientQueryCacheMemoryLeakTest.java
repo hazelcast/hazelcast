@@ -17,11 +17,11 @@
 package com.hazelcast.client.map.impl.querycache;
 
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
-import com.hazelcast.client.map.impl.querycache.subscriber.ClientQueryCacheEventService;
-import com.hazelcast.client.map.impl.querycache.subscriber.QueryCacheToListenerMapper;
 import com.hazelcast.client.impl.proxy.ClientMapProxy;
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.ProxyManager;
+import com.hazelcast.client.map.impl.querycache.subscriber.ClientQueryCacheEventService;
+import com.hazelcast.client.map.impl.querycache.subscriber.QueryCacheToListenerMapper;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.EntryEvent;
@@ -47,7 +47,6 @@ import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceSegment;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -69,6 +68,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.util.RandomPicker.getInt;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -335,7 +335,7 @@ public class ClientQueryCacheMemoryLeakTest extends HazelcastTestSupport {
     }
 
     private static void assertNoListenerLeftOnEventService(HazelcastInstance node) {
-        NodeEngineImpl nodeEngineImpl = Accessors.getNodeEngineImpl(node);
+        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(node);
         EventServiceImpl eventService = ((EventServiceImpl) nodeEngineImpl.getEventService());
         EventServiceSegment segment = eventService.getSegment(MapService.SERVICE_NAME, false);
         ConcurrentMap registrationIdMap = segment.getRegistrationIdMap();
@@ -354,14 +354,14 @@ public class ClientQueryCacheMemoryLeakTest extends HazelcastTestSupport {
     }
 
     private static PublisherContext getPublisherContext(HazelcastInstance node) {
-        MapService mapService = Accessors.getNodeEngineImpl(node).getService(MapService.SERVICE_NAME);
+        MapService mapService = getNodeEngineImpl(node).getService(MapService.SERVICE_NAME);
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         QueryCacheContext queryCacheContext = mapServiceContext.getQueryCacheContext();
         return queryCacheContext.getPublisherContext();
     }
 
     private static void assertNoUserListenerLeft(HazelcastInstance node) {
-        NodeEngineImpl nodeEngineImpl = Accessors.getNodeEngineImpl(node);
+        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(node);
         EventServiceImpl eventServiceImpl = (EventServiceImpl) nodeEngineImpl.getEventService();
         EventServiceSegment segment = eventServiceImpl.getSegment(MapService.SERVICE_NAME, false);
         ConcurrentMap registrationIdMap = segment.getRegistrationIdMap();
@@ -370,7 +370,7 @@ public class ClientQueryCacheMemoryLeakTest extends HazelcastTestSupport {
     }
 
     private static void assertServerSideEventServiceCleared(HazelcastInstance node) {
-        NodeEngineImpl nodeEngineImpl = Accessors.getNodeEngineImpl(node);
+        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(node);
         EventServiceImpl eventServiceImpl = (EventServiceImpl) nodeEngineImpl.getEventService();
         EventServiceSegment segment = eventServiceImpl.getSegment(MapService.SERVICE_NAME, false);
         ConcurrentMap registrationIdMap = segment.getRegistrationIdMap();

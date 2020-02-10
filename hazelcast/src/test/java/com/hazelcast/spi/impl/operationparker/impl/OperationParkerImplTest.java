@@ -20,7 +20,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.map.IMap;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -33,6 +32,8 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.locks.LockSupport;
 
+import static com.hazelcast.test.Accessors.getNode;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class OperationParkerImplTest extends HazelcastTestSupport {
@@ -40,7 +41,7 @@ public class OperationParkerImplTest extends HazelcastTestSupport {
     @Test
     public void testAwaitQueueCount_shouldNotExceedBlockedThreadCount() {
         final HazelcastInstance hz = createHazelcastInstance();
-        NodeEngineImpl nodeEngine = Accessors.getNode(hz).nodeEngine;
+        NodeEngineImpl nodeEngine = getNode(hz).nodeEngine;
         OperationParkerImpl waitNotifyService = (OperationParkerImpl) nodeEngine.getOperationParker();
 
         final int keyCount = 1000;

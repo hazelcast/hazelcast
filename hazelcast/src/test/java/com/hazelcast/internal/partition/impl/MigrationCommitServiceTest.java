@@ -35,7 +35,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -58,6 +57,11 @@ import static com.hazelcast.internal.partition.MigrationEndpoint.SOURCE;
 import static com.hazelcast.internal.partition.TestPartitionUtils.getDefaultReplicaVersions;
 import static com.hazelcast.internal.partition.TestPartitionUtils.getPartitionReplicaVersionsView;
 import static com.hazelcast.internal.partition.impl.MigrationCommitTest.resetInternalMigrationListener;
+import static com.hazelcast.test.Accessors.getAddress;
+import static com.hazelcast.test.Accessors.getNode;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
+import static com.hazelcast.test.Accessors.getOperationService;
+import static com.hazelcast.test.Accessors.getPartitionService;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -87,7 +91,7 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
         warmUpPartitions(instances);
         waitAllForSafeState(instances);
 
-        OperationServiceImpl operationService = Accessors.getOperationService(instances[0]);
+        OperationServiceImpl operationService = getOperationService(instances[0]);
         for (int partitionId = 0; partitionId < PARTITION_COUNT; partitionId++) {
             operationService.invokeOnPartition(null, new TestIncrementOperation(), partitionId).get();
         }
@@ -96,7 +100,7 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
             @Override
             public void run() {
                 for (int partitionId = 0; partitionId < PARTITION_COUNT; partitionId++) {
-                    InternalPartitionService partitionService = Accessors.getPartitionService(instances[0]);
+                    InternalPartitionService partitionService = getPartitionService(instances[0]);
                     InternalPartition partition = partitionService.getPartition(partitionId);
                     for (int i = 0; i <= BACKUP_COUNT; i++) {
                         Address replicaAddress = partition.getReplicaAddress(i);
@@ -110,7 +114,7 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
         });
 
         for (HazelcastInstance instance : instances) {
-            TestMigrationAwareService service = Accessors.getNodeEngineImpl(instance).getService(TestMigrationAwareService.SERVICE_NAME);
+            TestMigrationAwareService service = getNodeEngineImpl(instance).getService(TestMigrationAwareService.SERVICE_NAME);
             service.clearEvents();
         }
     }
@@ -337,7 +341,7 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
 
     private PartitionReplica clearReplicaIndex(final int partitionId, int replicaIndexToClear) {
         final InternalPartitionServiceImpl partitionService
-                = (InternalPartitionServiceImpl) Accessors.getPartitionService(instances[0]);
+                = (InternalPartitionServiceImpl) getPartitionService(instances[0]);
         InternalPartitionImpl partition = (InternalPartitionImpl) partitionService.getPartition(partitionId);
 
         final PartitionReplica oldReplicaOwner = partition.getReplica(replicaIndexToClear);
@@ -349,20 +353,20 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
             public void run() {
                 partitionService.checkClusterPartitionRuntimeStates();
                 for (HazelcastInstance instance : instances) {
-                    assertEquals(partitionService.getPartitionStateVersion(), Accessors.getPartitionService(instance).getPartitionStateVersion());
+                    assertEquals(partitionService.getPartitionStateVersion(), getPartitionService(instance).getPartitionStateVersion());
                 }
             }
         });
 
         HazelcastInstance oldReplicaOwnerInstance = factory.getInstance(oldReplicaOwner.address());
-        ClearReplicaRunnable op = new ClearReplicaRunnable(partitionId, Accessors.getNodeEngineImpl(oldReplicaOwnerInstance));
-        Accessors.getOperationService(oldReplicaOwnerInstance).execute(op);
+        ClearReplicaRunnable op = new ClearReplicaRunnable(partitionId, getNodeEngineImpl(oldReplicaOwnerInstance));
+        getOperationService(oldReplicaOwnerInstance).execute(op);
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
                 PartitionReplicaVersionsView replicaVersionsView
-                        = getPartitionReplicaVersionsView(Accessors.getNode(factory.getInstance(oldReplicaOwner.address())), partitionId);
+                        = getPartitionReplicaVersionsView(getNode(factory.getInstance(oldReplicaOwner.address())), partitionId);
                 for (ServiceNamespace namespace : replicaVersionsView.getNamespaces()) {
                     assertArrayEquals(new long[InternalPartition.MAX_BACKUP_COUNT], replicaVersionsView.getVersions(namespace));
                 }
@@ -373,7 +377,7 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
         migrationAwareService.clearPartitionReplica(partitionId);
 
         for (HazelcastInstance instance : instances) {
-            TestMigrationAwareService service = Accessors.getNodeEngineImpl(instance)
+            TestMigrationAwareService service = getNodeEngineImpl(instance)
                                                          .getService(TestMigrationAwareService.SERVICE_NAME);
 
             service.clearEvents();
@@ -383,7 +387,7 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
     }
 
     private void migrateWithSuccess(final MigrationInfo migration) {
-        InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) Accessors.getPartitionService(instances[0]);
+        InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) getPartitionService(instances[0]);
         partitionService.getMigrationManager().scheduleMigration(migration);
         assertTrueEventually(new AssertTask() {
             @Override
@@ -398,15 +402,15 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
     }
 
     private void migrateWithFailure(final MigrationInfo migration) {
-        if (!Accessors.getAddress(instances[0]).equals(migration.getDestinationAddress())) {
+        if (!getAddress(instances[0]).equals(migration.getDestinationAddress())) {
             HazelcastInstance destinationInstance = factory.getInstance(migration.getDestinationAddress());
             RejectMigrationOnComplete destinationListener = new RejectMigrationOnComplete(destinationInstance);
             InternalPartitionServiceImpl destinationPartitionService
-                    = (InternalPartitionServiceImpl) Accessors.getPartitionService(destinationInstance);
+                    = (InternalPartitionServiceImpl) getPartitionService(destinationInstance);
             destinationPartitionService.getMigrationManager().setMigrationInterceptor(destinationListener);
         }
 
-        InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) Accessors.getPartitionService(instances[0]);
+        InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) getPartitionService(instances[0]);
 
         CountDownMigrationRollbackOnMaster masterListener = new CountDownMigrationRollbackOnMaster(migration);
         partitionService.getMigrationManager().setMigrationInterceptor(masterListener);
@@ -518,7 +522,7 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
         boolean shouldContainData = replicaIndex != -1 && replicaIndex <= BACKUP_COUNT;
         assertEquals(msg, shouldContainData, service.contains(partitionId));
 
-        long[] replicaVersions = getDefaultReplicaVersions(Accessors.getNode(factory.getInstance(address)), partitionId);
+        long[] replicaVersions = getDefaultReplicaVersions(getNode(factory.getInstance(address)), partitionId);
 
         msg = msg + " , ReplicaVersions: " + Arrays.toString(replicaVersions);
         if (shouldContainData) {
@@ -539,7 +543,7 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
     }
 
     private void assertPartitionDataAfterMigrations() throws Exception {
-        OperationServiceImpl operationService = Accessors.getOperationService(instances[0]);
+        OperationServiceImpl operationService = getOperationService(instances[0]);
         for (int partitionId = 0; partitionId < PARTITION_COUNT; partitionId++) {
             assertNotNull(operationService.invokeOnPartition(null, new TestGetOperation(), partitionId)
                                           .get(1, TimeUnit.MINUTES));
@@ -576,12 +580,12 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
     }
 
     private InternalPartitionImpl getPartition(HazelcastInstance instance, int partitionId) {
-        InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) Accessors.getPartitionService(instance);
+        InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) getPartitionService(instance);
         return (InternalPartitionImpl) partitionService.getPartition(partitionId);
     }
 
     private TestMigrationAwareService getService(Address address) {
-        return Accessors.getNodeEngineImpl(factory.getInstance(address)).getService(TestMigrationAwareService.SERVICE_NAME);
+        return getNodeEngineImpl(factory.getInstance(address)).getService(TestMigrationAwareService.SERVICE_NAME);
     }
 
     private static class RejectMigrationOnComplete implements MigrationInterceptor {

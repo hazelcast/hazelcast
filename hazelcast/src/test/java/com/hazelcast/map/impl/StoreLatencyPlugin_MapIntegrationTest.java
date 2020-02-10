@@ -20,7 +20,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.MapStore;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -38,6 +37,7 @@ import java.util.Map;
 import java.util.Random;
 
 import static com.hazelcast.internal.nio.IOUtil.deleteQuietly;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.test.TestStringUtils.fileAsText;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -61,7 +61,7 @@ public class StoreLatencyPlugin_MapIntegrationTest extends HazelcastTestSupport 
 
     @After
     public void after() {
-        File file = Accessors.getNodeEngineImpl(hz).getDiagnostics().currentFile();
+        File file = getNodeEngineImpl(hz).getDiagnostics().currentFile();
         deleteQuietly(file);
     }
 
@@ -74,7 +74,7 @@ public class StoreLatencyPlugin_MapIntegrationTest extends HazelcastTestSupport 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                File file = Accessors.getNodeEngineImpl(hz).getDiagnostics().currentFile();
+                File file = getNodeEngineImpl(hz).getDiagnostics().currentFile();
                 String content = fileAsText(file);
                 assertContains(content, "mappy");
             }

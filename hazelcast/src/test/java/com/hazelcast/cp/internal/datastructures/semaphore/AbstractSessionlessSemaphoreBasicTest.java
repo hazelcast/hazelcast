@@ -23,7 +23,6 @@ import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.cp.internal.HazelcastRaftTestSupport;
 import com.hazelcast.cp.internal.datastructures.semaphore.proxy.SessionlessSemaphoreProxy;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
-import com.hazelcast.test.Accessors;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -32,6 +31,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -422,7 +422,7 @@ public abstract class AbstractSessionlessSemaphoreBasicTest extends HazelcastRaf
         assertTrueEventually(() -> {
             CPGroupId groupId = getGroupId(semaphore);
             HazelcastInstance leader = leaderInstanceOf(groupId);
-            SemaphoreService service = Accessors.getNodeEngineImpl(leader).getService(SemaphoreService.SERVICE_NAME);
+            SemaphoreService service = getNodeEngineImpl(leader).getService(SemaphoreService.SERVICE_NAME);
             SemaphoreRegistry registry = service.getRegistryOrNull(groupId);
             assertNotNull(registry);
             assertFalse(registry.getWaitTimeouts().isEmpty());

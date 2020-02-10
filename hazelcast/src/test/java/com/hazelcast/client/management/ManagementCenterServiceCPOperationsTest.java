@@ -29,7 +29,6 @@ import com.hazelcast.cp.internal.HazelcastRaftTestSupport;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.internal.management.dto.CPMemberDTO;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -44,6 +43,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.cp.CPGroup.METADATA_CP_GROUP_NAME;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.Assert.assertEquals;
@@ -138,6 +138,6 @@ public class ManagementCenterServiceCPOperationsTest extends HazelcastRaftTestSu
     }
 
     public static RaftService getRaftService(HazelcastInstance instance) {
-        return Accessors.getNodeEngineImpl(instance).getService(RaftService.SERVICE_NAME);
+        return getNodeEngineImpl(instance).getService(RaftService.SERVICE_NAME);
     }
 }

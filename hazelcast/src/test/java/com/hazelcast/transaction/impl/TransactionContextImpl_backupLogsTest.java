@@ -20,16 +20,15 @@ import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalObject;
-import com.hazelcast.internal.util.UuidUtil;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -37,6 +36,7 @@ import org.junit.runner.RunWith;
 
 import java.util.UUID;
 
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
@@ -58,14 +58,14 @@ public class TransactionContextImpl_backupLogsTest extends HazelcastTestSupport 
     public void setup() {
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(2).newInstances();
         localHz = cluster[0];
-        localNodeEngine = Accessors.getNodeEngineImpl(localHz);
+        localNodeEngine = getNodeEngineImpl(localHz);
         localTxManager = getTransactionManagerService(cluster[0]);
         remoteTxManager = getTransactionManagerService(cluster[1]);
         ownerUuid = UuidUtil.newUnsecureUUID();
     }
 
     private TransactionManagerServiceImpl getTransactionManagerService(HazelcastInstance hz) {
-        NodeEngineImpl nodeEngine = Accessors.getNodeEngineImpl(hz);
+        NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);
         return (TransactionManagerServiceImpl) nodeEngine.getTransactionManagerService();
     }
 

@@ -35,7 +35,6 @@ import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -52,6 +51,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.partition.TestPartitionUtils.getPartitionReplicaVersionsView;
+import static com.hazelcast.test.Accessors.getNode;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
@@ -84,7 +84,7 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
     }
 
     void fillData(HazelcastInstance hz) {
-        NodeEngine nodeEngine = Accessors.getNode(hz).nodeEngine;
+        NodeEngine nodeEngine = getNode(hz).nodeEngine;
         OperationService operationService = nodeEngine.getOperationService();
         for (int i = 0; i < partitionCount; i++) {
             operationService.invokeOnPartition(null, new TestIncrementOperation(), i);
@@ -141,7 +141,7 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
 
         if (count == 1) {
             HazelcastInstance hz = instances.get(0);
-            Address address = Accessors.getNode(hz).getThisAddress();
+            Address address = getNode(hz).getThisAddress();
             TestUtil.terminateInstance(hz);
             return Collections.singleton(address);
         } else {
@@ -151,7 +151,7 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
 
             for (int i = 0; i < count; i++) {
                 final HazelcastInstance hz = instances.get(i);
-                addresses.add(Accessors.getNode(hz).getThisAddress());
+                addresses.add(getNode(hz).getThisAddress());
 
                 new Thread() {
                     public void run() {
@@ -182,7 +182,7 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
         final int replicaCount = Math.min(instances.size(), InternalPartition.MAX_REPLICA_COUNT);
 
         for (HazelcastInstance hz : instances) {
-            Node node = Accessors.getNode(hz);
+            Node node = getNode(hz);
             InternalPartitionService partitionService = node.getPartitionService();
             InternalPartition[] partitions = partitionService.getInternalPartitions();
             ClusterService clusterService = node.getClusterService();
@@ -230,7 +230,7 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
                 fragmentTotals[i] += fragmentedService.size(NAMESPACES[i]);
             }
 
-            Node node = Accessors.getNode(hz);
+            Node node = getNode(hz);
             InternalPartitionService partitionService = node.getPartitionService();
             InternalPartition[] partitions = partitionService.getInternalPartitions();
             PartitionReplica localReplica = PartitionReplica.from(node.getLocalMember());
@@ -302,7 +302,7 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
                     HazelcastInstance backupInstance = factory.getInstance(address);
                     assertNotNull("Instance for " + address + " is not found! -> " + partition, backupInstance);
 
-                    Node backupNode = Accessors.getNode(backupInstance);
+                    Node backupNode = getNode(backupInstance);
                     assertNotNull(backupNode);
 
                     PartitionReplicaVersionsView backupReplicaVersionsView
@@ -357,7 +357,7 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
     }
 
     private <S extends TestAbstractMigrationAwareService> S getService(HazelcastInstance hz, String serviceName) {
-        Node node = Accessors.getNode(hz);
+        Node node = getNode(hz);
         return node.nodeEngine.getService(serviceName);
     }
 

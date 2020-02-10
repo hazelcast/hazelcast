@@ -24,7 +24,6 @@ import com.hazelcast.cp.internal.datastructures.lock.operation.UnlockOp;
 import com.hazelcast.cp.internal.session.ProxySessionManagerService;
 import com.hazelcast.cp.internal.session.RaftSessionService;
 import com.hazelcast.cp.lock.FencedLock;
-import com.hazelcast.test.Accessors;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -36,6 +35,7 @@ import static com.hazelcast.cp.internal.datastructures.lock.FencedLockBasicTest.
 import static com.hazelcast.cp.internal.session.AbstractProxySessionManager.NO_SESSION_ID;
 import static com.hazelcast.internal.util.ThreadUtil.getThreadId;
 import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -75,7 +75,7 @@ public abstract class AbstractFencedLockAdvancedTest extends HazelcastRaftTestSu
 
         CPGroupId groupId = lock.getGroupId();
         HazelcastInstance leader = leaderInstanceOf(groupId);
-        LockService service = Accessors.getNodeEngineImpl(leader).getService(LockService.SERVICE_NAME);
+        LockService service = getNodeEngineImpl(leader).getService(LockService.SERVICE_NAME);
         LockRegistry registry = service.getRegistryOrNull(groupId);
 
         CountDownLatch latch = new CountDownLatch(1);
@@ -101,7 +101,7 @@ public abstract class AbstractFencedLockAdvancedTest extends HazelcastRaftTestSu
 
         CPGroupId groupId = lock.getGroupId();
         HazelcastInstance leader = leaderInstanceOf(groupId);
-        LockService service = Accessors.getNodeEngineImpl(leader).getService(LockService.SERVICE_NAME);
+        LockService service = getNodeEngineImpl(leader).getService(LockService.SERVICE_NAME);
         LockRegistry registry = service.getRegistryOrNull(groupId);
 
         CountDownLatch latch = new CountDownLatch(1);
@@ -129,7 +129,7 @@ public abstract class AbstractFencedLockAdvancedTest extends HazelcastRaftTestSu
 
         CPGroupId groupId = lock.getGroupId();
         HazelcastInstance leader = leaderInstanceOf(groupId);
-        LockService service = Accessors.getNodeEngineImpl(leader).getService(LockService.SERVICE_NAME);
+        LockService service = getNodeEngineImpl(leader).getService(LockService.SERVICE_NAME);
         LockRegistry registry = service.getRegistryOrNull(groupId);
 
         long fence = lock.tryLockAndGetFence(1, TimeUnit.SECONDS);
@@ -145,7 +145,7 @@ public abstract class AbstractFencedLockAdvancedTest extends HazelcastRaftTestSu
 
         CPGroupId groupId = lock.getGroupId();
         HazelcastInstance leader = leaderInstanceOf(groupId);
-        LockService service = Accessors.getNodeEngineImpl(leader).getService(LockService.SERVICE_NAME);
+        LockService service = getNodeEngineImpl(leader).getService(LockService.SERVICE_NAME);
         LockRegistry registry = service.getRegistryOrNull(groupId);
 
         spawn(() -> {
@@ -171,12 +171,12 @@ public abstract class AbstractFencedLockAdvancedTest extends HazelcastRaftTestSu
 
         assertTrueEventually(() -> {
             for (HazelcastInstance instance : instances) {
-                RaftSessionService sessionService = Accessors.getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
+                RaftSessionService sessionService = getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
                 assertFalse(sessionService.getAllSessions(groupId).get().isEmpty());
             }
         });
 
-        RaftSessionService sessionService = Accessors.getNodeEngineImpl(primaryInstance).getService(RaftSessionService.SERVICE_NAME);
+        RaftSessionService sessionService = getNodeEngineImpl(primaryInstance).getService(RaftSessionService.SERVICE_NAME);
         long sessionId = sessionService.getAllSessions(groupId).get().iterator().next().id();
 
         getRaftInvocationManager(proxyInstance)
@@ -184,11 +184,11 @@ public abstract class AbstractFencedLockAdvancedTest extends HazelcastRaftTestSu
 
         assertTrueEventually(() -> {
             for (HazelcastInstance instance : instances) {
-                RaftSessionService service = Accessors.getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
+                RaftSessionService service = getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
                 assertTrue(service.getAllSessions(groupId).get().isEmpty());
             }
 
-            ProxySessionManagerService service = Accessors.getNodeEngineImpl(proxyInstance).getService(ProxySessionManagerService.SERVICE_NAME);
+            ProxySessionManagerService service = getNodeEngineImpl(proxyInstance).getService(ProxySessionManagerService.SERVICE_NAME);
             assertEquals(NO_SESSION_ID, service.getSession(groupId));
         });
     }
@@ -199,14 +199,14 @@ public abstract class AbstractFencedLockAdvancedTest extends HazelcastRaftTestSu
 
         assertTrueEventually(() -> {
             for (HazelcastInstance instance : instances) {
-                RaftSessionService sessionService = Accessors.getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
+                RaftSessionService sessionService = getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
                 assertFalse(sessionService.getAllSessions(lock.getGroupId()).get().isEmpty());
             }
         });
 
         assertTrueAllTheTime(() -> {
             for (HazelcastInstance instance : instances) {
-                RaftSessionService sessionService = Accessors.getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
+                RaftSessionService sessionService = getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
                 assertFalse(sessionService.getAllSessions(lock.getGroupId()).get().isEmpty());
             }
         }, 20);
@@ -233,14 +233,14 @@ public abstract class AbstractFencedLockAdvancedTest extends HazelcastRaftTestSu
 
         assertTrueEventually(() -> {
             for (HazelcastInstance instance : instances) {
-                RaftSessionService sessionService = Accessors.getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
+                RaftSessionService sessionService = getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
                 assertEquals(2, sessionService.getAllSessions(lock.getGroupId()).get().size());
             }
         });
 
         assertTrueAllTheTime(() -> {
             for (HazelcastInstance instance : instances) {
-                RaftSessionService sessionService = Accessors.getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
+                RaftSessionService sessionService = getNodeEngineImpl(instance).getService(RaftSessionService.SERVICE_NAME);
                 assertEquals(2, sessionService.getAllSessions(lock.getGroupId()).get().size());
             }
         }, 20);
@@ -259,7 +259,7 @@ public abstract class AbstractFencedLockAdvancedTest extends HazelcastRaftTestSu
         });
 
         assertTrueEventually(() -> {
-            LockService service = Accessors.getNodeEngineImpl(primaryInstance).getService(LockService.SERVICE_NAME);
+            LockService service = getNodeEngineImpl(primaryInstance).getService(LockService.SERVICE_NAME);
             LockRegistry registry = service.getRegistryOrNull(this.lock.getGroupId());
             assertNotNull(registry);
             Lock lock = registry.getResourceOrNull(objectName);

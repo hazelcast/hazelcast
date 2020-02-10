@@ -93,10 +93,6 @@ public class Accessors {
         return getNodeEngineImpl(hz).getOperationService();
     }
 
-    public static OperationServiceImpl getOperationServiceImpl(HazelcastInstance hz) {
-        return getNodeEngineImpl(hz).getOperationService();
-    }
-
     public static MetricsRegistry getMetricsRegistry(HazelcastInstance hz) {
         return getNodeEngineImpl(hz).getMetricsRegistry();
     }

@@ -21,9 +21,8 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.RingbufferStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.ringbuffer.RingbufferStore;
 import com.hazelcast.ringbuffer.Ringbuffer;
-import com.hazelcast.test.Accessors;
+import com.hazelcast.ringbuffer.RingbufferStore;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -39,6 +38,7 @@ import java.io.File;
 import java.util.Random;
 
 import static com.hazelcast.internal.nio.IOUtil.deleteQuietly;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.test.TestStringUtils.fileAsText;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -62,7 +62,7 @@ public class StoreLatencyPluginRingbufferIntegrationTest extends HazelcastTestSu
 
     @After
     public void after() {
-        File file = Accessors.getNodeEngineImpl(hz).getDiagnostics().currentFile();
+        File file = getNodeEngineImpl(hz).getDiagnostics().currentFile();
         deleteQuietly(file);
     }
 
@@ -75,7 +75,7 @@ public class StoreLatencyPluginRingbufferIntegrationTest extends HazelcastTestSu
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                File file = Accessors.getNodeEngineImpl(hz).getDiagnostics().currentFile();
+                File file = getNodeEngineImpl(hz).getDiagnostics().currentFile();
                 String content = fileAsText(file);
                 assertContains(content, "ringworm");
             }

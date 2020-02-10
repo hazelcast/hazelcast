@@ -16,10 +16,9 @@
 
 package com.hazelcast.internal.cluster.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.cluster.Address;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -37,6 +36,7 @@ import java.util.Arrays;
 import java.util.Collection;
 
 import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
+import static com.hazelcast.test.Accessors.getNode;
 
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
@@ -82,7 +82,7 @@ public class ClusterRollingRestartTest extends HazelcastTestSupport {
 
         changeClusterStateEventually(instances[0], clusterState);
 
-        Address address = Accessors.getNode(instances[0]).getThisAddress();
+        Address address = getNode(instances[0]).getThisAddress();
         instances[0].shutdown();
         instances[0] = factory.newHazelcastInstance(address);
 

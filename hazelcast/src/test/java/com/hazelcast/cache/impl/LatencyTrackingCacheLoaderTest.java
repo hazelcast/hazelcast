@@ -18,7 +18,6 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -33,6 +32,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
@@ -53,7 +53,7 @@ public class LatencyTrackingCacheLoaderTest extends HazelcastTestSupport {
     @SuppressWarnings("unchecked")
     public void setup() {
         HazelcastInstance hz = createHazelcastInstance();
-        plugin = new StoreLatencyPlugin(Accessors.getNodeEngineImpl(hz));
+        plugin = new StoreLatencyPlugin(getNodeEngineImpl(hz));
         delegate = mock(CacheLoader.class);
         cacheLoader = new LatencyTrackingCacheLoader<String, String>(delegate, plugin, NAME);
     }

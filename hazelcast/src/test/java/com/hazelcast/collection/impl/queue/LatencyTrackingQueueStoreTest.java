@@ -16,10 +16,9 @@
 
 package com.hazelcast.collection.impl.queue;
 
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.collection.QueueStore;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestCollectionUtils;
@@ -37,6 +36,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.google.common.primitives.Longs.asList;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -55,7 +55,7 @@ public class LatencyTrackingQueueStoreTest extends HazelcastTestSupport {
     @Before
     public void setup() {
         HazelcastInstance hz = createHazelcastInstance();
-        plugin = new StoreLatencyPlugin(Accessors.getNodeEngineImpl(hz));
+        plugin = new StoreLatencyPlugin(getNodeEngineImpl(hz));
         delegate = mock(QueueStore.class);
         queueStore = new LatencyTrackingQueueStore<String>(delegate, plugin, NAME);
     }

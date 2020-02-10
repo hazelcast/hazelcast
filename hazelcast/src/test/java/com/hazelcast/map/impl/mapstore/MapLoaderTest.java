@@ -43,7 +43,6 @@ import com.hazelcast.map.impl.mapstore.writebehind.TestMapUsingMapStoreBuilder;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -72,6 +71,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.TestCollectionUtils.setOfValuesBetween;
 import static com.hazelcast.test.TimeConstants.MINUTE;
 import static java.lang.String.format;
@@ -132,7 +132,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
     }
 
     private HazelcastInstance[] findOwnerAndReplicas(HazelcastInstance[] instances, String name) {
-        Node node = Accessors.getNode(instances[0]);
+        Node node = getNode(instances[0]);
         InternalPartitionService partitionService = node.getPartitionService();
         int partitionId = partitionService.getPartitionId(name);
         InternalPartition partition = partitionService.getPartition(partitionId);

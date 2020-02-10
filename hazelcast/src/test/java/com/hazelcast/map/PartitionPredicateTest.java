@@ -20,13 +20,12 @@ import com.hazelcast.aggregation.Aggregators;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.projection.Projections;
 import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -40,6 +39,7 @@ import org.junit.runner.RunWith;
 import java.util.Collection;
 import java.util.Map;
 
+import static com.hazelcast.test.Accessors.getSerializationService;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -202,7 +202,7 @@ public class PartitionPredicateTest extends HazelcastTestSupport {
 
     @Test
     public void testSerialization() {
-        SerializationService serializationService = Accessors.getSerializationService(local);
+        SerializationService serializationService = getSerializationService(local);
         Data serialized = serializationService.toData(predicate);
         PartitionPredicate deserialized = serializationService.toObject(serialized);
 

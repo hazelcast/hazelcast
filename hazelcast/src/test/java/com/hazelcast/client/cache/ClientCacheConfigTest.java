@@ -26,7 +26,6 @@ import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -46,6 +45,7 @@ import java.net.URL;
 import java.util.Properties;
 
 import static com.hazelcast.cache.CacheTestSupport.createClientCachingProvider;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -216,6 +216,6 @@ public class ClientCacheConfigTest extends HazelcastTestSupport {
     }
 
     private static ICacheService getCacheService(HazelcastInstance instance) {
-        return Accessors.getNodeEngineImpl(instance).getService(ICacheService.SERVICE_NAME);
+        return getNodeEngineImpl(instance).getService(ICacheService.SERVICE_NAME);
     }
 }

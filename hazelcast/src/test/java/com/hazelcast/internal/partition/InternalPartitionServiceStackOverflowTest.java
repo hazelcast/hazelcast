@@ -18,11 +18,10 @@ package com.hazelcast.internal.partition;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationResponseHandlerFactory;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
-import com.hazelcast.spi.impl.operationservice.OperationResponseHandlerFactory;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -33,6 +32,7 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.CountDownLatch;
 
+import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -56,7 +56,7 @@ public class InternalPartitionServiceStackOverflowTest extends HazelcastTestSupp
 
     public void test(int partitionId) {
         HazelcastInstance hz = createHazelcastInstance();
-        OperationService opService = Accessors.getNode(hz).nodeEngine.getOperationService();
+        OperationService opService = getNode(hz).nodeEngine.getOperationService();
 
         int iterations = 2000;
         final CountDownLatch latch = new CountDownLatch(iterations);

@@ -34,7 +34,6 @@ import com.hazelcast.internal.nearcache.impl.invalidation.RepairingHandler;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -53,6 +52,7 @@ import static com.hazelcast.cache.CacheTestSupport.createClientCachingProvider;
 import static com.hazelcast.cache.impl.ICacheService.SERVICE_NAME;
 import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.internal.util.RandomPicker.getInt;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.lang.Integer.MAX_VALUE;
 import static org.junit.Assert.assertEquals;
 
@@ -105,7 +105,7 @@ public class ClientCacheInvalidationMetaDataFetcherTest extends HazelcastTestSup
     }
 
     private void distortRandomPartitionSequence(String cacheName, int partition, long sequence, HazelcastInstance member) {
-        NodeEngineImpl nodeEngineImpl = Accessors.getNodeEngineImpl(member);
+        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(member);
         CacheService service = nodeEngineImpl.getService(SERVICE_NAME);
         CacheEventHandler cacheEventHandler = service.getCacheEventHandler();
         MetaDataGenerator metaDataGenerator = cacheEventHandler.getMetaDataGenerator();
@@ -113,7 +113,7 @@ public class ClientCacheInvalidationMetaDataFetcherTest extends HazelcastTestSup
     }
 
     private void distortRandomPartitionUuid(int partition, UUID uuid, HazelcastInstance member) {
-        NodeEngineImpl nodeEngineImpl = Accessors.getNodeEngineImpl(member);
+        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(member);
         CacheService service = nodeEngineImpl.getService(SERVICE_NAME);
         CacheEventHandler cacheEventHandler = service.getCacheEventHandler();
         MetaDataGenerator metaDataGenerator = cacheEventHandler.getMetaDataGenerator();

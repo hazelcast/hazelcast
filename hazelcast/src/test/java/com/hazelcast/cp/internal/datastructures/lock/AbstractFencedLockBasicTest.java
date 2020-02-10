@@ -28,7 +28,6 @@ import com.hazelcast.cp.internal.session.operation.CloseSessionOp;
 import com.hazelcast.cp.lock.FencedLock;
 import com.hazelcast.cp.lock.exception.LockOwnershipLostException;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
-import com.hazelcast.test.Accessors;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -40,6 +39,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static com.hazelcast.cp.internal.session.AbstractProxySessionManager.NO_SESSION_ID;
 import static com.hazelcast.cp.lock.FencedLock.INVALID_FENCE;
 import static com.hazelcast.internal.util.ThreadUtil.getThreadId;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -209,7 +209,7 @@ public abstract class AbstractFencedLockBasicTest extends HazelcastRaftTestSuppo
         });
 
         assertTrueEventually(() -> {
-            LockService service = Accessors.getNodeEngineImpl(instances[0]).getService(LockService.SERVICE_NAME);
+            LockService service = getNodeEngineImpl(instances[0]).getService(LockService.SERVICE_NAME);
             LockRegistry registry = service.getRegistryOrNull(lock.getGroupId());
             assertNotNull(registry);
             assertFalse(registry.getWaitTimeouts().isEmpty());
@@ -486,7 +486,7 @@ public abstract class AbstractFencedLockBasicTest extends HazelcastRaftTestSuppo
     }
 
     protected AbstractProxySessionManager getSessionManager(HazelcastInstance instance) {
-        return Accessors.getNodeEngineImpl(instance).getService(ProxySessionManagerService.SERVICE_NAME);
+        return getNodeEngineImpl(instance).getService(ProxySessionManagerService.SERVICE_NAME);
     }
 
     private void assertNoLockedSessionId() {
@@ -496,7 +496,7 @@ public abstract class AbstractFencedLockBasicTest extends HazelcastRaftTestSuppo
     }
 
     private void closeSession(HazelcastInstance instance, CPGroupId groupId, long sessionId) {
-        RaftService service = Accessors.getNodeEngineImpl(instance).getService(RaftService.SERVICE_NAME);
+        RaftService service = getNodeEngineImpl(instance).getService(RaftService.SERVICE_NAME);
         service.getInvocationManager().invoke(groupId, new CloseSessionOp(sessionId)).joinInternal();
     }
 

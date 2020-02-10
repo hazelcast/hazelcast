@@ -16,12 +16,11 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -32,6 +31,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.spi.properties.ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS;
+import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -50,8 +50,8 @@ public class OperationServiceImpl_timeoutSlowTest extends HazelcastTestSupport {
         HazelcastInstance hz2 = factory.newHazelcastInstance(config);
 
         // invoke on the "remote" member
-        Address remoteAddress = Accessors.getNode(hz2).getThisAddress();
-        OperationService operationService = Accessors.getNode(hz1).getNodeEngine().getOperationService();
+        Address remoteAddress = getNode(hz2).getThisAddress();
+        OperationService operationService = getNode(hz1).getNodeEngine().getOperationService();
         InternalCompletableFuture<Boolean> future = operationService
                 .invokeOnTarget(null, new OperationServiceImpl_timeoutTest.SleepingOperation(callTimeoutMillis * 5), remoteAddress);
 

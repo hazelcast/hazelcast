@@ -42,7 +42,6 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 
@@ -59,6 +58,7 @@ import static com.hazelcast.internal.nearcache.NearCacheRecord.READ_PERMITTED;
 import static com.hazelcast.internal.nearcache.impl.AbstractNearCacheBasicTest.DEFAULT_NEAR_CACHE_NAME;
 import static com.hazelcast.spi.properties.ClusterProperty.CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
 import static com.hazelcast.spi.properties.ClusterProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
+import static com.hazelcast.test.Accessors.getNode;
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -160,7 +160,7 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
      * @return the {@link MapNearCacheManager}
      */
     public static MapNearCacheManager getMapNearCacheManager(HazelcastInstance instance) {
-        NodeEngineImpl nodeEngine = Accessors.getNode(instance).nodeEngine;
+        NodeEngineImpl nodeEngine = getNode(instance).nodeEngine;
         MapService service = nodeEngine.getService(MapService.SERVICE_NAME);
 
         return service.getMapServiceContext().getMapNearCacheManager();

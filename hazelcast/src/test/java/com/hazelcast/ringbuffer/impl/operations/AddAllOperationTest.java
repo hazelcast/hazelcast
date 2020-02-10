@@ -20,12 +20,11 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.ringbuffer.OverflowPolicy;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -36,6 +35,8 @@ import org.junit.runner.RunWith;
 
 import static com.hazelcast.ringbuffer.OverflowPolicy.FAIL;
 import static com.hazelcast.ringbuffer.OverflowPolicy.OVERWRITE;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
+import static com.hazelcast.test.Accessors.getSerializationService;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -56,8 +57,8 @@ public class AddAllOperationTest extends HazelcastTestSupport {
         Config config = new Config().addRingBufferConfig(rbConfig);
 
         HazelcastInstance hz = createHazelcastInstance(config);
-        nodeEngine = Accessors.getNodeEngineImpl(hz);
-        serializationService = Accessors.getSerializationService(hz);
+        nodeEngine = getNodeEngineImpl(hz);
+        serializationService = getSerializationService(hz);
         ringbuffer = hz.getRingbuffer(rbConfig.getName());
         ringbufferService = nodeEngine.getService(RingbufferService.SERVICE_NAME);
     }

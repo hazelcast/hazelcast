@@ -16,6 +16,7 @@
 
 package com.hazelcast.instance.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.instance.BuildInfoProvider;
@@ -23,10 +24,8 @@ import com.hazelcast.internal.cluster.ClusterVersionListener;
 import com.hazelcast.internal.cluster.impl.ClusterStateManager;
 import com.hazelcast.internal.cluster.impl.JoinRequest;
 import com.hazelcast.internal.cluster.impl.VersionMismatchException;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -45,6 +44,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
+import static com.hazelcast.test.Accessors.getNode;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -72,28 +72,28 @@ public class DefaultNodeExtensionTest extends HazelcastTestSupport {
     public void setup() throws Exception {
         buildNumber = BuildInfoProvider.getBuildInfo().getBuildNumber();
         hazelcastInstance = createHazelcastInstance();
-        nodeExtension = Accessors.getNode(hazelcastInstance).getNodeExtension();
-        node = Accessors.getNode(hazelcastInstance);
+        nodeExtension = getNode(hazelcastInstance).getNodeExtension();
+        node = getNode(hazelcastInstance);
         nodeVersion = node.getVersion();
         joinAddress = new Address("127.0.0.1", 9999);
     }
 
     @Test
     public void test_nodeVersionCompatibleWith_ownClusterVersion() {
-        MemberVersion currentVersion = Accessors.getNode(hazelcastInstance).getVersion();
+        MemberVersion currentVersion = getNode(hazelcastInstance).getVersion();
         assertTrue(nodeExtension.isNodeVersionCompatibleWith(currentVersion.asVersion()));
     }
 
     @Test
     public void test_nodeVersionNotCompatibleWith_otherMinorVersion() {
-        MemberVersion currentVersion = Accessors.getNode(hazelcastInstance).getVersion();
+        MemberVersion currentVersion = getNode(hazelcastInstance).getVersion();
         Version minorPlusOne = Version.of(currentVersion.getMajor(), currentVersion.getMinor() + 1);
         assertFalse(nodeExtension.isNodeVersionCompatibleWith(minorPlusOne));
     }
 
     @Test
     public void test_nodeVersionNotCompatibleWith_otherMajorVersion() {
-        MemberVersion currentVersion = Accessors.getNode(hazelcastInstance).getVersion();
+        MemberVersion currentVersion = getNode(hazelcastInstance).getVersion();
         Version majorPlusOne = Version.of(currentVersion.getMajor() + 1, currentVersion.getMinor());
         assertFalse(nodeExtension.isNodeVersionCompatibleWith(majorPlusOne));
     }

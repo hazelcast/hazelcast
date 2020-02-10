@@ -18,17 +18,16 @@ package com.hazelcast.spi.impl.operationexecutor.slowoperationdetector;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.monitor.LocalOperationStats;
-import com.hazelcast.json.internal.JsonSerializable;
-import com.hazelcast.map.IMap;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
+import com.hazelcast.internal.monitor.LocalOperationStats;
+import com.hazelcast.json.internal.JsonSerializable;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.IMap;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastTestSupport;
 
 import java.lang.reflect.Field;
@@ -39,6 +38,8 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.test.Accessors.getHazelcastInstanceImpl;
+import static com.hazelcast.test.Accessors.getOperationService;
 import static java.lang.String.format;
 import static java.lang.String.valueOf;
 import static org.junit.Assert.assertFalse;
@@ -67,7 +68,7 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
     }
 
     static void executeOperation(HazelcastInstance instance, Operation operation) {
-        Accessors.getOperationService(instance).execute(operation);
+        getOperationService(instance).execute(operation);
     }
 
     static void executeEntryProcessor(IMap<String, String> map, EntryProcessor<String, String, Object> entryProcessor) {
@@ -78,7 +79,7 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
         if (instance == null) {
             return;
         }
-        OperationServiceImpl operationService = (OperationServiceImpl) Accessors.getOperationService(instance);
+        OperationServiceImpl operationService = (OperationServiceImpl) getOperationService(instance);
         operationService.shutdownInvocations();
         operationService.shutdownOperationExecutor();
     }
@@ -97,7 +98,7 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
     }
 
     static JsonObject getOperationStats(HazelcastInstance instance) {
-        TimedMemberStateFactory timedMemberStateFactory = new TimedMemberStateFactory(Accessors.getHazelcastInstanceImpl(instance));
+        TimedMemberStateFactory timedMemberStateFactory = new TimedMemberStateFactory(getHazelcastInstanceImpl(instance));
         LocalOperationStats operationStats = timedMemberStateFactory.createTimedMemberState()
                                                                     .getMemberState()
                                                                     .getOperationStats();
@@ -114,7 +115,7 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
     }
 
     static Collection<SlowOperationLog> getSlowOperationLogs(HazelcastInstance instance) {
-        OperationServiceImpl operationService = Accessors.getOperationService(instance);
+        OperationServiceImpl operationService = getOperationService(instance);
         SlowOperationDetector slowOperationDetector = getFieldFromObject(operationService, "slowOperationDetector");
         Map<Integer, SlowOperationLog> slowOperationLogs = getFieldFromObject(slowOperationDetector, "slowOperationLogs");
 

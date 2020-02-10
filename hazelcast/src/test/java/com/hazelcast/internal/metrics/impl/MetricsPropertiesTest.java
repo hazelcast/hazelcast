@@ -22,7 +22,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.OverridePropertyRule;
@@ -38,6 +37,7 @@ import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static com.hazelcast.internal.metrics.ProbeUnit.COUNT;
 import static com.hazelcast.internal.metrics.impl.DefaultMetricDescriptorSupplier.DEFAULT_DESCRIPTOR_SUPPLIER;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
@@ -74,7 +74,7 @@ public class MetricsPropertiesTest extends HazelcastTestSupport {
         assertEquals(24, metricsConfig.getCollectionFrequencySeconds());
 
         // verify that the overridden config is used
-        MetricsService metricsService = Accessors.getNodeEngineImpl(instance).getService(MetricsService.SERVICE_NAME);
+        MetricsService metricsService = getNodeEngineImpl(instance).getService(MetricsService.SERVICE_NAME);
         assertSame(metricsConfig, metricsService.getConfig());
     }
 
@@ -103,7 +103,7 @@ public class MetricsPropertiesTest extends HazelcastTestSupport {
         assertEquals(defaultConfig.getCollectionFrequencySeconds(), metricsConfig.getCollectionFrequencySeconds());
 
         // verify that the overridden config is used
-        MetricsService metricsService = Accessors.getNodeEngineImpl(instance).getService(MetricsService.SERVICE_NAME);
+        MetricsService metricsService = getNodeEngineImpl(instance).getService(MetricsService.SERVICE_NAME);
         assertSame(metricsConfig, metricsService.getConfig());
     }
 
@@ -128,7 +128,7 @@ public class MetricsPropertiesTest extends HazelcastTestSupport {
         assertEquals(24, metricsConfig.getCollectionFrequencySeconds());
 
         // verify that the overridden config is used
-        MetricsService metricsService = Accessors.getNodeEngineImpl(instance).getService(MetricsService.SERVICE_NAME);
+        MetricsService metricsService = getNodeEngineImpl(instance).getService(MetricsService.SERVICE_NAME);
         assertSame(metricsConfig, metricsService.getConfig());
     }
 
@@ -158,14 +158,14 @@ public class MetricsPropertiesTest extends HazelcastTestSupport {
         assertEquals(defaultConfig.getCollectionFrequencySeconds(), metricsConfig.getCollectionFrequencySeconds());
 
         // verify that the overridden config is used
-        MetricsService metricsService = Accessors.getNodeEngineImpl(instance).getService(MetricsService.SERVICE_NAME);
+        MetricsService metricsService = getNodeEngineImpl(instance).getService(MetricsService.SERVICE_NAME);
         assertSame(metricsConfig, metricsService.getConfig());
     }
 
     @Test
     public void testDebugMetricsSysPropNotSet() {
         HazelcastInstance instance = createHazelcastInstance();
-        MetricsRegistry metricsRegistry = Accessors.getNodeEngineImpl(instance).getMetricsRegistry();
+        MetricsRegistry metricsRegistry = getNodeEngineImpl(instance).getMetricsRegistry();
 
         assertEquals(INFO, metricsRegistry.minimumLevel());
     }
@@ -174,7 +174,7 @@ public class MetricsPropertiesTest extends HazelcastTestSupport {
     public void testDebugMetricsSysPropDisabled() {
         System.setProperty(ClusterProperty.METRICS_DEBUG.getName(), "false");
         HazelcastInstance instance = createHazelcastInstance();
-        MetricsRegistry metricsRegistry = Accessors.getNodeEngineImpl(instance).getMetricsRegistry();
+        MetricsRegistry metricsRegistry = getNodeEngineImpl(instance).getMetricsRegistry();
 
         assertEquals(INFO, metricsRegistry.minimumLevel());
     }
@@ -183,7 +183,7 @@ public class MetricsPropertiesTest extends HazelcastTestSupport {
     public void testDebugMetricsSysPropEnabled() {
         System.setProperty(ClusterProperty.METRICS_DEBUG.getName(), "true");
         HazelcastInstance instance = createHazelcastInstance();
-        MetricsRegistry metricsRegistry = Accessors.getNodeEngineImpl(instance).getMetricsRegistry();
+        MetricsRegistry metricsRegistry = getNodeEngineImpl(instance).getMetricsRegistry();
 
         assertEquals(DEBUG, metricsRegistry.minimumLevel());
     }
@@ -212,7 +212,7 @@ public class MetricsPropertiesTest extends HazelcastTestSupport {
         CapturingCollector collector = new CapturingCollector();
         instance.getMap("testMap").put("42", "42");
 
-        MetricsRegistry metricsRegistry = Accessors.getNodeEngineImpl(instance).getMetricsRegistry();
+        MetricsRegistry metricsRegistry = getNodeEngineImpl(instance).getMetricsRegistry();
         metricsRegistry.collect(collector);
 
         MetricDescriptor descriptor = DEFAULT_DESCRIPTOR_SUPPLIER

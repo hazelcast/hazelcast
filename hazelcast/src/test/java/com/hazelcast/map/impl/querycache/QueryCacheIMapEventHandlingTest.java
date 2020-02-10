@@ -19,13 +19,14 @@ package com.hazelcast.map.impl.querycache;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.impl.operation.MergeOperation;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryRemovedListener;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -33,8 +34,6 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -53,6 +52,8 @@ import java.util.concurrent.Future;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.querycache.AbstractQueryCacheTestSupport.getMap;
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
+import static com.hazelcast.test.Accessors.getNode;
+import static com.hazelcast.test.Accessors.getSerializationService;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
@@ -101,10 +102,10 @@ public class QueryCacheIMapEventHandlingTest extends HazelcastTestSupport {
     }
 
     private void executeMergeOperation(HazelcastInstance member, String mapName, int key, int mergedValue) throws Exception {
-        Node node = Accessors.getNode(member);
+        Node node = getNode(member);
         NodeEngineImpl nodeEngine = node.nodeEngine;
         OperationServiceImpl operationService = nodeEngine.getOperationService();
-        SerializationService serializationService = Accessors.getSerializationService(member);
+        SerializationService serializationService = getSerializationService(member);
 
         Data keyData = serializationService.toData(key);
         Data valueData = serializationService.toData(mergedValue);

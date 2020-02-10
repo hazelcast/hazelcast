@@ -23,13 +23,12 @@ import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.test.Accessors;
+import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -60,6 +59,7 @@ import static com.hazelcast.spi.properties.ClusterProperty.MERGE_FIRST_RUN_DELAY
 import static com.hazelcast.spi.properties.ClusterProperty.MERGE_NEXT_RUN_DELAY_SECONDS;
 import static com.hazelcast.spi.properties.ClusterProperty.TCP_JOIN_PORT_TRY_COUNT;
 import static com.hazelcast.spi.properties.ClusterProperty.WAIT_SECONDS_BEFORE_JOIN;
+import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -215,7 +215,7 @@ public class JoinStressTest extends HazelcastTestSupport {
     }
 
     private void logEvaluatedMember(HazelcastInstance hz) {
-        ClusterServiceImpl instanceClusterService = Accessors.getNode(hz).getClusterService();
+        ClusterServiceImpl instanceClusterService = getNode(hz).getClusterService();
         logger.info("Evaluating member: " + hz + " " + hz.getLocalEndpoint().getSocketAddress() + " with memberList "
                 + instanceClusterService.getMemberListString());
     }

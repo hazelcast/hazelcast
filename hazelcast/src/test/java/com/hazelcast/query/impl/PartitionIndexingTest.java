@@ -29,7 +29,6 @@ import com.hazelcast.internal.partition.PartitionReplicationEvent;
 import com.hazelcast.map.IMap;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -47,6 +46,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.hazelcast.test.Accessors.getAllIndexes;
+import static com.hazelcast.test.Accessors.getPartitionService;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -109,7 +110,7 @@ public class PartitionIndexingTest extends HazelcastTestSupport {
         config.getMapConfig(MAP_NAME).addIndexConfig(new IndexConfig(IndexType.SORTED, "__key"));
 
         HazelcastInstance instance1 = factory.newHazelcastInstance(config);
-        int expectedPartitions = Accessors.getPartitionService(instance1).getPartitionCount();
+        int expectedPartitions = getPartitionService(instance1).getPartitionCount();
 
         IMap<Integer, Integer> map1 = instance1.getMap(MAP_NAME);
         assertPartitionsIndexedCorrectly(expectedPartitions, map1);
@@ -147,7 +148,7 @@ public class PartitionIndexingTest extends HazelcastTestSupport {
         Config config = getConfig();
 
         HazelcastInstance instance1 = factory.newHazelcastInstance(config);
-        int expectedPartitions = Accessors.getPartitionService(instance1).getPartitionCount();
+        int expectedPartitions = getPartitionService(instance1).getPartitionCount();
 
         IMap<Integer, Integer> map1 = instance1.getMap(MAP_NAME);
         assertPartitionsIndexedCorrectly(expectedPartitions, map1);
@@ -189,7 +190,7 @@ public class PartitionIndexingTest extends HazelcastTestSupport {
         Map<String, BitSet> indexToPartitions = new HashMap<String, BitSet>();
 
         for (IMap map : maps) {
-            for (Indexes indexes : Accessors.getAllIndexes(map)) {
+            for (Indexes indexes : getAllIndexes(map)) {
                 for (InternalIndex index : indexes.getIndexes()) {
                     String indexName = index.getName();
                     BitSet indexPartitions = indexToPartitions.get(indexName);

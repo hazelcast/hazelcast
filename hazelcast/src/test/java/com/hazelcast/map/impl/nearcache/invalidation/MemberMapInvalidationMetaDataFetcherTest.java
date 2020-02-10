@@ -30,7 +30,6 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -47,6 +46,7 @@ import java.util.concurrent.ConcurrentMap;
 import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.getBaseConfig;
 import static com.hazelcast.internal.util.RandomPicker.getInt;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -86,7 +86,7 @@ public class MemberMapInvalidationMetaDataFetcherTest extends HazelcastTestSuppo
         config.getMapConfig(mapName).setNearCacheConfig(new NearCacheConfig());
 
         HazelcastInstance member = factory.newHazelcastInstance(config);
-        MapService mapService = Accessors.getNodeEngineImpl(member).getService(MapService.SERVICE_NAME);
+        MapService mapService = getNodeEngineImpl(member).getService(MapService.SERVICE_NAME);
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
 
         distortRandomPartitionSequence(mapName, partition, givenSequence, member);
@@ -97,7 +97,7 @@ public class MemberMapInvalidationMetaDataFetcherTest extends HazelcastTestSuppo
     }
 
     private void distortRandomPartitionSequence(String mapName, int partition, long sequence, HazelcastInstance member) {
-        NodeEngineImpl nodeEngineImpl = Accessors.getNodeEngineImpl(member);
+        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(member);
         MapService mapService = nodeEngineImpl.getService(SERVICE_NAME);
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         MapNearCacheManager mapNearCacheManager = mapServiceContext.getMapNearCacheManager();
@@ -107,7 +107,7 @@ public class MemberMapInvalidationMetaDataFetcherTest extends HazelcastTestSuppo
     }
 
     private void distortRandomPartitionUuid(int partition, UUID uuid, HazelcastInstance member) {
-        NodeEngineImpl nodeEngineImpl = Accessors.getNodeEngineImpl(member);
+        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(member);
         MapService mapService = nodeEngineImpl.getService(SERVICE_NAME);
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         MapNearCacheManager mapNearCacheManager = mapServiceContext.getMapNearCacheManager();

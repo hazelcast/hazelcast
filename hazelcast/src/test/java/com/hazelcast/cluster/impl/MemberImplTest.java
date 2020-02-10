@@ -21,10 +21,9 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.UuidUtil;
-import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -42,6 +41,8 @@ import java.util.Map;
 import java.util.UUID;
 
 import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
+import static com.hazelcast.test.Accessors.getHazelcastInstanceImpl;
+import static com.hazelcast.test.Accessors.getSerializationService;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -58,7 +59,7 @@ public class MemberImplTest extends HazelcastTestSupport {
     @BeforeClass
     public static void setUp() throws Exception {
         HazelcastInstance instance = new TestHazelcastInstanceFactory().newHazelcastInstance();
-        hazelcastInstance = Accessors.getHazelcastInstanceImpl(instance);
+        hazelcastInstance = getHazelcastInstanceImpl(instance);
         address = new Address("127.0.0.1", 5701);
     }
 
@@ -200,7 +201,7 @@ public class MemberImplTest extends HazelcastTestSupport {
     }
 
     private void testSerialization(Member member) {
-        SerializationService serializationService = Accessors.getSerializationService(hazelcastInstance);
+        SerializationService serializationService = getSerializationService(hazelcastInstance);
         Data serialized = serializationService.toData(member);
         Member deserialized = serializationService.toObject(serialized);
         assertEquals(member, deserialized);

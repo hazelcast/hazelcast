@@ -25,7 +25,6 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nearcache.NearCacheStats;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -43,6 +42,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static com.hazelcast.internal.nearcache.NearCache.UpdateSemantic.READ_UPDATE;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.NOT_RESERVED;
 import static com.hazelcast.internal.util.RandomPicker.getInt;
+import static com.hazelcast.test.Accessors.getSerializationService;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -63,7 +63,7 @@ public class NearCacheStatsStressTest extends HazelcastTestSupport {
     @Before
     public void setUp() throws Exception {
         HazelcastInstance server = factory.newHazelcastInstance();
-        ss = Accessors.getSerializationService(server);
+        ss = getSerializationService(server);
 
         String mapName = "test";
 

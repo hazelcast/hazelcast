@@ -16,12 +16,11 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -36,6 +35,9 @@ import org.junit.runner.RunWith;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.test.Accessors.getAddress;
+import static com.hazelcast.test.Accessors.getOperationService;
+import static com.hazelcast.test.Accessors.getPartitionService;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -62,13 +64,13 @@ public class OperationServiceImpl_invokeTargetAwareOperationTest extends Hazelca
 
         local = nodes[0];
         remote = nodes[1];
-        operationService = Accessors.getOperationService(local);
+        operationService = getOperationService(local);
         TargetAwareOperation.TARGETS.clear();
     }
 
     @Test
     public void whenInvokedOnLocalPartition() {
-        Address expected = Accessors.getAddress(local);
+        Address expected = getAddress(local);
         TargetAwareOperation operation = new TargetAwareOperation();
 
         InternalCompletableFuture<String> invocation = operationService.invokeOnPartition(
@@ -78,7 +80,7 @@ public class OperationServiceImpl_invokeTargetAwareOperationTest extends Hazelca
 
     @Test
     public void whenInvokedOnRemotePartition() {
-        Address expected = Accessors.getAddress(remote);
+        Address expected = getAddress(remote);
         TargetAwareOperation operation = new TargetAwareOperation();
 
         InternalCompletableFuture<String> invocation = operationService.invokeOnPartition(
@@ -88,21 +90,21 @@ public class OperationServiceImpl_invokeTargetAwareOperationTest extends Hazelca
 
     @Test
     public void whenInvokedOnLocalTarget() {
-        Address expected = Accessors.getAddress(local);
+        Address expected = getAddress(local);
         TargetAwareOperation operation = new TargetAwareOperation();
 
         InternalCompletableFuture<String> invocation = operationService.invokeOnTarget(
-                null, operation, Accessors.getAddress(local));
+                null, operation, getAddress(local));
         assertEquals(expected, invocation.join());
     }
 
     @Test
     public void whenInvokedOnRemoteTarget() {
-        Address expected = Accessors.getAddress(remote);
+        Address expected = getAddress(remote);
         TargetAwareOperation operation = new TargetAwareOperation();
 
         InternalCompletableFuture<String> invocation = operationService.invokeOnTarget(
-                null, operation, Accessors.getAddress(remote));
+                null, operation, getAddress(remote));
         assertEquals(expected, invocation.join());
     }
 
@@ -113,15 +115,15 @@ public class OperationServiceImpl_invokeTargetAwareOperationTest extends Hazelca
         operationService.invokeOnPartition(null, operation, operation.getPartitionId()).join();
 
         // primary operation targets remote, backup targets local
-        assertEquals(Accessors.getAddress(remote), TargetAwareOperation.TARGETS.get(0));
-        assertEquals(Accessors.getAddress(local), TargetAwareOperation.TARGETS.get(1));
+        assertEquals(getAddress(remote), TargetAwareOperation.TARGETS.get(0));
+        assertEquals(getAddress(local), TargetAwareOperation.TARGETS.get(1));
     }
 
     @Test
     public void whenInvokedWithTargetAwareBackups_multipleBackupsHaveTargetInjected() {
         int backupCount = 4;
         int partitionId = getPartitionId(local);
-        InternalPartitionService localPartitionService = Accessors.getPartitionService(local);
+        InternalPartitionService localPartitionService = getPartitionService(local);
         InternalPartition partition = localPartitionService.getPartition(partitionId);
 
         List<Address> expectedTargetAddresses = new ArrayList<Address>();

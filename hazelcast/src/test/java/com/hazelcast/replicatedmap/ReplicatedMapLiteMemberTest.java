@@ -20,7 +20,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -32,6 +31,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -118,7 +118,7 @@ public class ReplicatedMapLiteMemberTest extends HazelcastTestSupport {
     }
 
     private ReplicatedMapService getReplicatedMapService(HazelcastInstance instance) {
-        NodeEngineImpl nodeEngine = Accessors.getNodeEngineImpl(instance);
+        NodeEngineImpl nodeEngine = getNodeEngineImpl(instance);
         return nodeEngine.getService(SERVICE_NAME);
     }
 

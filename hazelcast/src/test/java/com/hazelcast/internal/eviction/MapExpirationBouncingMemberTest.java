@@ -19,14 +19,13 @@ package com.hazelcast.internal.eviction;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IFunction;
-import com.hazelcast.map.IMap;
 import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.SlowTest;
@@ -39,6 +38,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import static com.hazelcast.map.impl.eviction.MapClearExpiredRecordsTask.PROP_TASK_PERIOD_SECONDS;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.test.OverridePropertyRule.set;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -65,7 +65,7 @@ public class MapExpirationBouncingMemberTest extends AbstractExpirationBouncingM
         public List apply(HazelcastInstance instance) {
             List unexpiredMsg = new ArrayList();
 
-            NodeEngineImpl nodeEngineImpl = Accessors.getNodeEngineImpl(instance);
+            NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(instance);
             MapService service = nodeEngineImpl.getService(MapService.SERVICE_NAME);
             MapServiceContext mapServiceContext = service.getMapServiceContext();
             PartitionContainer[] containers = mapServiceContext.getPartitionContainers();

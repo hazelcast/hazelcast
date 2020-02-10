@@ -18,12 +18,11 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
 import com.hazelcast.internal.eviction.ExpiredKey;
-import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.LocalMapStats;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -35,6 +34,8 @@ import org.junit.runner.RunWith;
 
 import java.util.Collections;
 
+import static com.hazelcast.test.Accessors.getOperationService;
+import static com.hazelcast.test.Accessors.getPartitionService;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -69,12 +70,12 @@ public class EvictBatchBackupOperationTest extends HazelcastTestSupport {
         }
 
         // 4. Evict all replicas
-        int partitionCount = Accessors.getPartitionService(node1).getPartitionCount();
+        int partitionCount = getPartitionService(node1).getPartitionCount();
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             for (int replicaIndex = 0; replicaIndex <= backupCount; replicaIndex++) {
                 EvictBatchBackupOperation operation = new EvictBatchBackupOperation(mapName,
                         Collections.<ExpiredKey>emptyList(), 0);
-                OperationServiceImpl operationService = Accessors.getOperationService(node1);
+                OperationServiceImpl operationService = getOperationService(node1);
                 operationService.createInvocationBuilder(MapService.SERVICE_NAME, operation, partitionId)
                         .setReplicaIndex(replicaIndex).invoke().join();
             }

@@ -28,7 +28,6 @@ import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.TestUtil;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;
 import org.junit.Before;
@@ -39,6 +38,8 @@ import javax.cache.configuration.Configuration;
 import javax.cache.spi.CachingProvider;
 
 import static com.hazelcast.cache.impl.maxsize.impl.EntryCountCacheEvictionChecker.calculateMaxPartitionSize;
+import static com.hazelcast.test.Accessors.getNode;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.lang.Integer.parseInt;
 import static org.junit.Assert.assertEquals;
 
@@ -137,7 +138,7 @@ public abstract class CacheTestSupport extends HazelcastTestSupport {
 
     private int getPartitionCount() {
         try {
-            Node node = Accessors.getNode(getHazelcastInstance());
+            Node node = getNode(getHazelcastInstance());
             return node.getProperties().getInteger(ClusterProperty.PARTITION_COUNT);
         } catch (IllegalArgumentException e) {
             return parseInt(ClusterProperty.PARTITION_COUNT.getDefaultValue());
@@ -154,7 +155,7 @@ public abstract class CacheTestSupport extends HazelcastTestSupport {
     }
 
     public static ICacheService getCacheService(HazelcastInstance instance) {
-        return Accessors.getNodeEngineImpl(instance).getService(ICacheService.SERVICE_NAME);
+        return getNodeEngineImpl(instance).getService(ICacheService.SERVICE_NAME);
     }
 
     public static HazelcastServerCachingProvider createServerCachingProvider(HazelcastInstance instance) {

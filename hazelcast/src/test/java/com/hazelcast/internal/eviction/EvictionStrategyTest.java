@@ -27,7 +27,6 @@ import com.hazelcast.internal.eviction.impl.strategy.sampling.SampleableEvictabl
 import com.hazelcast.internal.eviction.impl.strategy.sampling.SamplingEvictionStrategy;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -39,6 +38,7 @@ import org.mockito.Matchers;
 
 import static com.hazelcast.internal.eviction.EvictionChecker.EVICT_ALWAYS;
 import static com.hazelcast.internal.eviction.EvictionListener.NO_LISTENER;
+import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -108,7 +108,7 @@ public class EvictionStrategyTest<K, V extends Evictable, S extends SampleableEv
         final int recordCount = 100;
         final int expectedEvictedRecordValue = recordCount / 2;
 
-        Node node = Accessors.getNode(instance);
+        Node node = getNode(instance);
 
         SerializationService serializationService = node.getSerializationService();
         ICacheService cacheService = node.getNodeEngine().getService(ICacheService.SERVICE_NAME);

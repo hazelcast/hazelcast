@@ -19,7 +19,6 @@ package com.hazelcast.executor;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -42,6 +41,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 
+import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
@@ -67,7 +67,7 @@ public class CompletableFutureTest extends HazelcastTestSupport {
 
     @Before
     public void setUp() {
-        NodeEngine nodeEngine = Accessors.getNode(createHazelcastInstance()).getNodeEngine();
+        NodeEngine nodeEngine = getNode(createHazelcastInstance()).getNodeEngine();
         executionService = nodeEngine.getExecutionService();
         startLogicLatch = new CountDownLatch(1);
         executedLogic = new CountDownLatch(1);

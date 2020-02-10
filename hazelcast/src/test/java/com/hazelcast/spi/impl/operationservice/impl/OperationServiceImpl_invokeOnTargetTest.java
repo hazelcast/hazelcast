@@ -16,12 +16,11 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cluster.Address;
-import com.hazelcast.spi.impl.operationservice.ExceptionAction;
-import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.exception.TargetNotMemberException;
-import com.hazelcast.test.Accessors;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.test.ExceptionThrowingCallable;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -33,6 +32,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.test.Accessors.getAddress;
+import static com.hazelcast.test.Accessors.getOperationService;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -51,7 +52,7 @@ public class OperationServiceImpl_invokeOnTargetTest extends HazelcastTestSuppor
 
         local = nodes[0];
         remote = nodes[1];
-        operationService = Accessors.getOperationService(local);
+        operationService = getOperationService(local);
     }
 
     @Test
@@ -59,7 +60,7 @@ public class OperationServiceImpl_invokeOnTargetTest extends HazelcastTestSuppor
         String expected = "foobar";
         DummyOperation operation = new DummyOperation(expected);
         InternalCompletableFuture<String> invocation = operationService.invokeOnTarget(
-                null, operation, Accessors.getAddress(local));
+                null, operation, getAddress(local));
         assertEquals(expected, invocation.join());
 
         //todo: we need to verify that the call was run on the calling thread
@@ -70,13 +71,13 @@ public class OperationServiceImpl_invokeOnTargetTest extends HazelcastTestSuppor
         String expected = "foobar";
         DummyOperation operation = new DummyOperation(expected);
         InternalCompletableFuture<String> invocation = operationService.invokeOnTarget(
-                null, operation, Accessors.getAddress(remote));
+                null, operation, getAddress(remote));
         assertEquals(expected, invocation.join());
     }
 
     @Test
     public void whenNonExistingTarget() {
-        Address remoteAddress = Accessors.getAddress(remote);
+        Address remoteAddress = getAddress(remote);
         remote.shutdown();
 
         // ensure local instance observes remote shutdown
@@ -110,7 +111,7 @@ public class OperationServiceImpl_invokeOnTargetTest extends HazelcastTestSuppor
     public void whenExceptionThrownInOperationRun() {
         DummyOperation operation = new DummyOperation(new ExceptionThrowingCallable());
         InternalCompletableFuture<String> invocation = operationService.invokeOnTarget(
-                null, operation, Accessors.getAddress(remote));
+                null, operation, getAddress(remote));
 
         try {
             invocation.joinInternal();

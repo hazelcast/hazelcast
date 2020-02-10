@@ -22,7 +22,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -36,6 +35,7 @@ import org.junit.runner.RunWith;
 import java.io.Serializable;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -55,7 +55,7 @@ public class DistributedExecutorServiceTest extends HazelcastTestSupport {
         config.addExecutorConfig(new ExecutorConfig().setName(EXECUTOR_NAME).setStatisticsEnabled(false));
 
         hz = createHazelcastInstance(config);
-        NodeEngineImpl nodeEngine = Accessors.getNodeEngineImpl(hz);
+        NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);
         distributedExecutorService = nodeEngine.getService(DistributedExecutorService.SERVICE_NAME);
     }
 

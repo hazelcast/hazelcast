@@ -20,13 +20,12 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -38,6 +37,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
+import static com.hazelcast.test.Accessors.getSerializationService;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -63,12 +64,12 @@ public class ReadOneOperationTest extends HazelcastTestSupport {
         Config config = new Config().addRingBufferConfig(rbConfig);
 
         hz = createHazelcastInstance(config);
-        nodeEngine = Accessors.getNodeEngineImpl(hz);
-        serializationService = Accessors.getSerializationService(hz);
+        nodeEngine = getNodeEngineImpl(hz);
+        serializationService = getSerializationService(hz);
         final String name = rbConfig.getName();
         ringbuffer = hz.getRingbuffer(name);
 
-        ringbufferService = Accessors.getNodeEngineImpl(hz).getService(RingbufferService.SERVICE_NAME);
+        ringbufferService = getNodeEngineImpl(hz).getService(RingbufferService.SERVICE_NAME);
         ringbufferContainer = ringbufferService.getOrCreateContainer(
                 ringbufferService.getRingbufferPartitionId(name),
                 RingbufferService.getRingbufferNamespace(name),

@@ -19,7 +19,6 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -33,6 +32,7 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.CancellationException;
 
+import static com.hazelcast.test.Accessors.getOperationService;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -50,7 +50,7 @@ public class InvocationFuture_CancelTest extends HazelcastTestSupport {
     @Before
     public void setup() {
         HazelcastInstance hz = createHazelcastInstance();
-        opService = Accessors.getOperationService(hz);
+        opService = getOperationService(hz);
     }
 
     @Test

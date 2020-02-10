@@ -27,7 +27,6 @@ import com.hazelcast.internal.metrics.MetricTarget;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeUnit;
 import com.hazelcast.internal.metrics.impl.CapturingCollector;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -43,6 +42,8 @@ import java.util.UUID;
 import static com.hazelcast.internal.metrics.MetricTarget.MANAGEMENT_CENTER;
 import static com.hazelcast.internal.metrics.ProbeUnit.COUNT;
 import static com.hazelcast.internal.metrics.impl.DefaultMetricDescriptorSupplier.DEFAULT_DESCRIPTOR_SUPPLIER;
+import static com.hazelcast.test.Accessors.getNode;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -61,7 +62,7 @@ public class ClientMetricsTest extends HazelcastTestSupport {
     @Test
     public void testLongClientMetricIsMergedIntoMemberMetrics() {
         HazelcastInstance memberInstance = givenMemberWithTwoClients();
-        MetricsRegistry metricsRegistry = Accessors.getNodeEngineImpl(memberInstance).getMetricsRegistry();
+        MetricsRegistry metricsRegistry = getNodeEngineImpl(memberInstance).getMetricsRegistry();
 
         // randomly chosen long client metric, we just check that
         // we have client-side metrics merged into the member metrics
@@ -71,7 +72,7 @@ public class ClientMetricsTest extends HazelcastTestSupport {
     @Test
     public void testDoubleClientMetricIsMergedIntoMemberMetrics() {
         HazelcastInstance memberInstance = givenMemberWithTwoClients();
-        MetricsRegistry metricsRegistry = Accessors.getNodeEngineImpl(memberInstance).getMetricsRegistry();
+        MetricsRegistry metricsRegistry = getNodeEngineImpl(memberInstance).getMetricsRegistry();
 
         // randomly chosen double client metric, we just check that
         // we have client-side metrics merged into the member metrics
@@ -96,7 +97,7 @@ public class ClientMetricsTest extends HazelcastTestSupport {
             CapturingCollector collector = new CapturingCollector();
             metricsRegistry.collect(collector);
 
-            ClientEngine clientEngine = Accessors.getNode(memberInstance).getClientEngine();
+            ClientEngine clientEngine = getNode(memberInstance).getClientEngine();
             Collection<Client> clients = clientEngine.getClients();
 
             assertEquals(2, clients.size());

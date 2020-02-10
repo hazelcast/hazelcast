@@ -26,10 +26,9 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -43,6 +42,7 @@ import javax.cache.configuration.FactoryBuilder;
 import javax.cache.configuration.MutableCacheEntryListenerConfiguration;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -102,7 +102,7 @@ public class InternalCacheRecordStoreTest extends CacheTestSupport {
 
         cache.removeAll();
 
-        Node node = Accessors.getNode(instance);
+        Node node = getNode(instance);
         assertNotNull(node);
 
         ICacheService cacheService = node.getNodeEngine().getService(ICacheService.SERVICE_NAME);
@@ -119,7 +119,7 @@ public class InternalCacheRecordStoreTest extends CacheTestSupport {
         HazelcastCacheManager hzCacheManager = (HazelcastCacheManager) cacheManager;
 
         HazelcastInstance instance1 = hzCacheManager.getHazelcastInstance();
-        Node node1 = Accessors.getNode(instance1);
+        Node node1 = getNode(instance1);
         NodeEngineImpl nodeEngine1 = node1.getNodeEngine();
         InternalPartitionService partitionService1 = nodeEngine1.getPartitionService();
         int partitionCount = partitionService1.getPartitionCount();
@@ -139,7 +139,7 @@ public class InternalCacheRecordStoreTest extends CacheTestSupport {
         }
 
         HazelcastInstance instance2 = getHazelcastInstance();
-        Node node2 = Accessors.getNode(instance2);
+        Node node2 = getNode(instance2);
 
         warmUpPartitions(instance1, instance2);
         waitAllForSafeState(instance1, instance2);

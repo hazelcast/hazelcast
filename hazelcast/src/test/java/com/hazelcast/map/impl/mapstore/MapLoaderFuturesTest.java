@@ -26,7 +26,6 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -35,6 +34,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -71,7 +71,7 @@ public class MapLoaderFuturesTest extends HazelcastTestSupport {
 
     private static int loadingFutureCount(String mapName, HazelcastInstance node) {
         int count = 0;
-        NodeEngineImpl nodeEngine = Accessors.getNode(node).getNodeEngine();
+        NodeEngineImpl nodeEngine = getNode(node).getNodeEngine();
         MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();

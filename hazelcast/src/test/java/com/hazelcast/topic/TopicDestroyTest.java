@@ -19,7 +19,6 @@ package com.hazelcast.topic;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -32,6 +31,7 @@ import org.junit.runner.RunWith;
 import java.util.Collection;
 import java.util.UUID;
 
+import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -66,7 +66,7 @@ public class TopicDestroyTest extends HazelcastTestSupport {
     }
 
     void assertRegistrationSize(int size) {
-        EventService eventService = Accessors.getNode(instance).getNodeEngine().getEventService();
+        EventService eventService = getNode(instance).getNodeEngine().getEventService();
         Collection<EventRegistration> regs = eventService.getRegistrations(TopicService.SERVICE_NAME, topicName);
 
         assertEquals(size, regs.size());

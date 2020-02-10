@@ -29,7 +29,6 @@ import com.hazelcast.cp.internal.session.SessionExpiredException;
 import com.hazelcast.cp.internal.session.operation.CloseSessionOp;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
-import com.hazelcast.test.Accessors;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -38,6 +37,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.cp.internal.session.AbstractProxySessionManager.NO_SESSION_ID;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -478,7 +478,7 @@ public abstract class AbstractSessionAwareSemaphoreBasicTest extends HazelcastRa
 
         assertTrueEventually(() -> {
             for (HazelcastInstance instance : instances) {
-                SemaphoreService service = Accessors.getNodeEngineImpl(instance).getService(SemaphoreService.SERVICE_NAME);
+                SemaphoreService service = getNodeEngineImpl(instance).getService(SemaphoreService.SERVICE_NAME);
                 SemaphoreRegistry registry = service.getRegistryOrNull(getGroupId(semaphore));
                 assertNotNull(registry);
                 assertFalse(registry.getWaitTimeouts().isEmpty());
@@ -492,7 +492,7 @@ public abstract class AbstractSessionAwareSemaphoreBasicTest extends HazelcastRa
 
         assertTrueEventually(() -> {
             for (HazelcastInstance instance : instances) {
-                SemaphoreService service = Accessors.getNodeEngineImpl(instance).getService(SemaphoreService.SERVICE_NAME);
+                SemaphoreService service = getNodeEngineImpl(instance).getService(SemaphoreService.SERVICE_NAME);
                 SemaphoreRegistry registry = service.getRegistryOrNull(getGroupId(semaphore));
                 assertTrue(registry.getWaitTimeouts().isEmpty());
             }
@@ -507,7 +507,7 @@ public abstract class AbstractSessionAwareSemaphoreBasicTest extends HazelcastRa
     }
 
     protected AbstractProxySessionManager getSessionManager(HazelcastInstance instance) {
-        return Accessors.getNodeEngineImpl(instance).getService(ProxySessionManagerService.SERVICE_NAME);
+        return getNodeEngineImpl(instance).getService(ProxySessionManagerService.SERVICE_NAME);
     }
 
     protected RaftGroupId getGroupId(ISemaphore semaphore) {

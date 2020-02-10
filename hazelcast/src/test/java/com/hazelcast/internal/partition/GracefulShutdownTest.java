@@ -21,17 +21,16 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
-import com.hazelcast.internal.partition.impl.MigrationInterceptor;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.partition.impl.MigrationInterceptor;
+import com.hazelcast.internal.util.RandomPicker;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.internal.util.RandomPicker;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -50,6 +49,9 @@ import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.chang
 import static com.hazelcast.internal.partition.AbstractPartitionAssignmentsCorrectnessTest.assertPartitionAssignments;
 import static com.hazelcast.internal.partition.AbstractPartitionAssignmentsCorrectnessTest.assertPartitionAssignmentsEventually;
 import static com.hazelcast.internal.partition.InternalPartition.MAX_REPLICA_COUNT;
+import static com.hazelcast.test.Accessors.getAddress;
+import static com.hazelcast.test.Accessors.getNode;
+import static com.hazelcast.test.Accessors.getPartitionService;
 import static com.hazelcast.test.PacketFiltersUtil.dropOperationsFrom;
 import static com.hazelcast.test.PacketFiltersUtil.resetPacketFiltersFrom;
 import static java.util.Collections.singletonList;
@@ -354,7 +356,7 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
         }.start();
 
         // spin until node starts to shut down
-        Node shuttingDownNode = Accessors.getNode(shuttingDownInstance);
+        Node shuttingDownNode = getNode(shuttingDownInstance);
         while (shuttingDownNode.isRunning()) {
             Thread.yield();
         }
@@ -506,7 +508,7 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
         // Drop mastership claim operation submitted from master candidate
         dropOperationsFrom(instances[1], ClusterDataSerializerHook.F_ID, singletonList(ClusterDataSerializerHook.FETCH_MEMBER_LIST_STATE));
 
-        final InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) Accessors.getPartitionService(instances[1]);
+        final InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) getPartitionService(instances[1]);
         final AtomicReference<MigrationInfo> startedMigration = new AtomicReference<MigrationInfo>();
         partitionService.setMigrationInterceptor(new MigrationInterceptor() {
             @Override
@@ -523,7 +525,7 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertTrue(Accessors.getNode(instances[1]).isMaster());
+                assertTrue(getNode(instances[1]).isMaster());
             }
         });
 
@@ -538,8 +540,8 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
             @Override
             public void run() {
                 // other members have not received/accepted mastership claim yet
-                assertNotEquals(Accessors.getAddress(instances[1]), Accessors.getNode(instances[2]).getMasterAddress());
-                assertNotEquals(Accessors.getAddress(instances[1]), Accessors.getNode(instances[3]).getMasterAddress());
+                assertNotEquals(getAddress(instances[1]), getNode(instances[2]).getMasterAddress());
+                assertNotEquals(getAddress(instances[1]), getNode(instances[3]).getMasterAddress());
 
                 // no partition state version change
                 assertEquals(partitionStateVersion, partitionService.getPartitionStateVersion());
@@ -576,7 +578,7 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
     }
 
     private static InternalPartition[] getPartitionTable(HazelcastInstance instance) {
-        InternalPartitionServiceImpl partitionService = Accessors.getNode(instance).partitionService;
+        InternalPartitionServiceImpl partitionService = getNode(instance).partitionService;
         return partitionService.getPartitionStateManager().getPartitionsCopy();
     }
 

@@ -22,11 +22,10 @@ import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.services.ManagedService;
+import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
-import com.hazelcast.spi.exception.RetryableHazelcastException;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -44,6 +43,7 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
@@ -71,7 +71,7 @@ public class MigrationAwareServiceEventTest extends HazelcastTestSupport {
         warmUpPartitions(hz);
 
         final AssertTask assertTask = new AssertTask() {
-            final InternalPartitionService partitionService = Accessors.getNode(hz).getPartitionService();
+            final InternalPartitionService partitionService = getNode(hz).getPartitionService();
 
             @Override
             public void run() throws Exception {

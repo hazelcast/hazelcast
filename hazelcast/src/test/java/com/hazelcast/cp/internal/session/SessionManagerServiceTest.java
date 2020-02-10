@@ -16,13 +16,13 @@
 
 package com.hazelcast.cp.internal.session;
 
-import com.hazelcast.test.Accessors;
-import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.mockito.Mockito.spy;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -31,7 +31,7 @@ public class SessionManagerServiceTest extends AbstractProxySessionManagerTest {
 
     @Override
     protected ProxySessionManagerService getSessionManager() {
-        ProxySessionManagerService service = Accessors.getNodeEngineImpl(members[0]).getService(ProxySessionManagerService.SERVICE_NAME);
+        ProxySessionManagerService service = getNodeEngineImpl(members[0]).getService(ProxySessionManagerService.SERVICE_NAME);
         return spy(service);
     }
 }

@@ -29,7 +29,6 @@ import com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -49,6 +48,7 @@ import java.util.Collection;
 import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.createNearCacheConfig;
 import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.getBaseConfig;
 import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.getMapNearCacheManager;
+import static com.hazelcast.test.Accessors.getSerializationService;
 import static java.util.Arrays.asList;
 
 /**
@@ -138,7 +138,7 @@ public class TxnMapNearCacheLeakTest extends AbstractNearCacheLeakTest<Data, Str
 
         RepairingTask repairingTask = ((MapNearCacheManager) nearCacheManager).getRepairingTask();
 
-        return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, Accessors.getSerializationService(nearCacheInstance))
+        return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, getSerializationService(nearCacheInstance))
                 .setNearCacheInstance(nearCacheInstance)
                 .setNearCacheAdapter(new TransactionalMapDataStructureAdapter<K, V>(nearCacheInstance, DEFAULT_NEAR_CACHE_NAME))
                 .setNearCache(nearCache)

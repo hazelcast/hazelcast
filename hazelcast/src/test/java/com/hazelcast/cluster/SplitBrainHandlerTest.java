@@ -27,15 +27,14 @@ import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.instance.FirewallingNodeContext;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.internal.util.Clock;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -57,6 +56,8 @@ import static com.hazelcast.cluster.ClusterState.ACTIVE;
 import static com.hazelcast.cluster.ClusterState.FROZEN;
 import static com.hazelcast.instance.impl.HazelcastInstanceFactory.newHazelcastInstance;
 import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
+import static com.hazelcast.test.Accessors.getAddress;
+import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.SplitBrainTestSupport.blockCommunicationBetween;
 import static com.hazelcast.test.SplitBrainTestSupport.unblockCommunicationBetween;
 import static org.junit.Assert.assertEquals;
@@ -424,7 +425,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         MembershipAdapter membershipAdapter = new MembershipAdapter() {
             @Override
             public void memberRemoved(MembershipEvent event) {
-                if (Accessors.getNode(hz1).getLocalMember().equals(event.getMember())) {
+                if (getNode(hz1).getLocalMember().equals(event.getMember())) {
                     splitLatch.countDown();
                 }
             }
@@ -456,7 +457,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         assertOpenEventually(mergeLatch);
         assertClusterSizeEventually(3, hz1, hz2, hz3);
 
-        assertMasterAddress(Accessors.getAddress(hz2), hz1, hz2, hz3);
+        assertMasterAddress(getAddress(hz2), hz1, hz2, hz3);
     }
 
     @Test
@@ -640,7 +641,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         MembershipAdapter membershipAdapter = new MembershipAdapter() {
             @Override
             public void memberRemoved(MembershipEvent event) {
-                if (Accessors.getNode(hz3).getLocalMember().equals(event.getMember())) {
+                if (getNode(hz3).getLocalMember().equals(event.getMember())) {
                     splitLatch.countDown();
                 }
             }
@@ -668,7 +669,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         assertOpenEventually(mergeLatch);
         assertClusterSizeEventually(3, hz1, hz2, hz3);
 
-        assertMasterAddress(Accessors.getAddress(hz1), hz1, hz2, hz3);
+        assertMasterAddress(getAddress(hz1), hz1, hz2, hz3);
     }
 
     @Test
@@ -702,7 +703,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         MembershipAdapter membershipAdapter = new MembershipAdapter() {
             @Override
             public void memberRemoved(MembershipEvent event) {
-                if (Accessors.getNode(hz1).getLocalMember().equals(event.getMember())) {
+                if (getNode(hz1).getLocalMember().equals(event.getMember())) {
                     splitLatch.countDown();
                 }
             }
@@ -746,7 +747,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         assertOpenEventually(mergeLatch);
         assertClusterSizeEventually(3, hz1, hz2, hz3);
 
-        assertMasterAddress(Accessors.getAddress(hz3), hz1, hz2, hz3);
+        assertMasterAddress(getAddress(hz3), hz1, hz2, hz3);
     }
 
     public static class MergedEventLifeCycleListener implements LifecycleListener {

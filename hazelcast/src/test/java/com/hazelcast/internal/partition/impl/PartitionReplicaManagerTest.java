@@ -21,7 +21,6 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -37,6 +36,8 @@ import java.util.Collections;
 import java.util.Set;
 
 import static com.hazelcast.internal.partition.NonFragmentedServiceNamespace.INSTANCE;
+import static com.hazelcast.test.Accessors.getNode;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -55,8 +56,8 @@ public class PartitionReplicaManagerTest extends HazelcastTestSupport {
         factory = createHazelcastInstanceFactory(1);
         hazelcastInstance = factory.newHazelcastInstance();
 
-        Node node = Accessors.getNode(hazelcastInstance);
-        NodeEngineImpl nodeEngine = Accessors.getNodeEngineImpl(hazelcastInstance);
+        Node node = getNode(hazelcastInstance);
+        NodeEngineImpl nodeEngine = getNodeEngineImpl(hazelcastInstance);
         InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) nodeEngine.getPartitionService();
 
         manager = new PartitionReplicaManager(node, partitionService);

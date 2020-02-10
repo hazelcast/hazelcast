@@ -39,17 +39,16 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.internal.longregister.LongRegisterService;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.ItemCounter;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.event.EntryEventData;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryRemovedListener;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.eventservice.impl.LocalEventDispatcher;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -79,6 +78,7 @@ import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.core.EntryEventType.ADDED;
 import static com.hazelcast.core.EntryEventType.REMOVED;
 import static com.hazelcast.core.EntryEventType.UPDATED;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertTrue;
@@ -111,7 +111,7 @@ public class EventQueuePluginTest extends AbstractDiagnosticsPluginTest {
 
         hz = createHazelcastInstance(config);
 
-        NodeEngineImpl nodeEngine = Accessors.getNodeEngineImpl(hz);
+        NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);
         EventServiceImpl eventService = (EventServiceImpl) nodeEngine.getEventService();
 
         plugin = new EventQueuePlugin(nodeEngine, eventService.getEventExecutor());

@@ -25,7 +25,6 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareOperationFactory;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -46,6 +45,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.spi.properties.ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS;
 import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
+import static com.hazelcast.test.Accessors.getOperationService;
 import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
 
@@ -57,7 +57,7 @@ public class OperationServiceImpl_invokeOnPartitionsTest extends HazelcastTestSu
     public void test_onAllPartitions() throws Exception {
         Config config = new Config().setProperty(PARTITION_COUNT.getName(), "100");
         HazelcastInstance hz = createHazelcastInstance(config);
-        OperationServiceImpl opService = Accessors.getOperationServiceImpl(hz);
+        OperationServiceImpl opService = getOperationService(hz);
 
         Map<Integer, Object> result = opService.invokeOnAllPartitions(null, new OperationFactoryImpl());
 
@@ -72,7 +72,7 @@ public class OperationServiceImpl_invokeOnPartitionsTest extends HazelcastTestSu
     public void test_onSelectedPartitions() throws Exception {
         Config config = new Config().setProperty(PARTITION_COUNT.getName(), "100");
         HazelcastInstance hz = createHazelcastInstance(config);
-        OperationServiceImpl opService = Accessors.getOperationServiceImpl(hz);
+        OperationServiceImpl opService = getOperationService(hz);
 
         Collection<Integer> partitions = new LinkedList<>();
         Collections.addAll(partitions, 1, 2, 3);
@@ -89,7 +89,7 @@ public class OperationServiceImpl_invokeOnPartitionsTest extends HazelcastTestSu
     public void test_onEmptyPartitionLIst() throws Exception {
         Config config = new Config().setProperty(PARTITION_COUNT.getName(), "100");
         HazelcastInstance hz = createHazelcastInstance(config);
-        OperationServiceImpl opService = Accessors.getOperationServiceImpl(hz);
+        OperationServiceImpl opService = getOperationService(hz);
 
         Map<Integer, Object> result = opService.invokeOnPartitions(null, new OperationFactoryImpl(), emptyList());
 
@@ -100,7 +100,7 @@ public class OperationServiceImpl_invokeOnPartitionsTest extends HazelcastTestSu
     public void testAsync_onAllPartitions_getResponeViaFuture() throws Exception {
         Config config = new Config().setProperty(PARTITION_COUNT.getName(), "100");
         HazelcastInstance hz = createHazelcastInstance(config);
-        OperationServiceImpl opService = Accessors.getOperationServiceImpl(hz);
+        OperationServiceImpl opService = getOperationService(hz);
 
         Future<Map<Integer, Object>> future = opService.invokeOnAllPartitionsAsync(null, new OperationFactoryImpl());
 
@@ -116,7 +116,7 @@ public class OperationServiceImpl_invokeOnPartitionsTest extends HazelcastTestSu
     public void testAsync_onSelectedPartitions_getResponeViaFuture() throws Exception {
         Config config = new Config().setProperty(PARTITION_COUNT.getName(), "100");
         HazelcastInstance hz = createHazelcastInstance(config);
-        OperationServiceImpl opService = Accessors.getOperationServiceImpl(hz);
+        OperationServiceImpl opService = getOperationService(hz);
 
         Collection<Integer> partitions = new LinkedList<>();
         Collections.addAll(partitions, 1, 2, 3);
@@ -134,7 +134,7 @@ public class OperationServiceImpl_invokeOnPartitionsTest extends HazelcastTestSu
     public void testAsync_onEmptyPartitionList_getResponeViaFuture() throws Exception {
         Config config = new Config().setProperty(PARTITION_COUNT.getName(), "100");
         HazelcastInstance hz = createHazelcastInstance(config);
-        OperationServiceImpl opService = Accessors.getOperationServiceImpl(hz);
+        OperationServiceImpl opService = getOperationService(hz);
 
         Future<Map<Integer, Object>> future = opService.invokeOnPartitionsAsync(null, new OperationFactoryImpl(), emptyList());
 
@@ -146,7 +146,7 @@ public class OperationServiceImpl_invokeOnPartitionsTest extends HazelcastTestSu
     public void testAsync_onAllPartitions_getResponseViaCallback() {
         Config config = new Config().setProperty(PARTITION_COUNT.getName(), "100");
         HazelcastInstance hz = createHazelcastInstance(config);
-        OperationServiceImpl opService = Accessors.getOperationServiceImpl(hz);
+        OperationServiceImpl opService = getOperationService(hz);
 
         final AtomicReference<Map<Integer, Object>> resultReference = new AtomicReference<Map<Integer, Object>>();
         final CountDownLatch responseLatch = new CountDownLatch(1);
@@ -170,7 +170,7 @@ public class OperationServiceImpl_invokeOnPartitionsTest extends HazelcastTestSu
     public void testAsync_onSelectedPartitions_getResponseViaCallback() {
         Config config = new Config().setProperty(PARTITION_COUNT.getName(), "100");
         HazelcastInstance hz = createHazelcastInstance(config);
-        OperationServiceImpl opService = Accessors.getOperationServiceImpl(hz);
+        OperationServiceImpl opService = getOperationService(hz);
 
         Collection<Integer> partitions = new LinkedList<>();
         Collections.addAll(partitions, 1, 2, 3);
@@ -197,7 +197,7 @@ public class OperationServiceImpl_invokeOnPartitionsTest extends HazelcastTestSu
     public void testAsync_onEmptyPartitionList_getResponseViaCallback() {
         Config config = new Config().setProperty(PARTITION_COUNT.getName(), "100");
         HazelcastInstance hz = createHazelcastInstance(config);
-        OperationServiceImpl opService = Accessors.getOperationServiceImpl(hz);
+        OperationServiceImpl opService = getOperationService(hz);
 
         final AtomicReference<Map<Integer, Object>> resultReference = new AtomicReference<>();
         final CountDownLatch responseLatch = new CountDownLatch(1);
@@ -223,7 +223,7 @@ public class OperationServiceImpl_invokeOnPartitionsTest extends HazelcastTestSu
         HazelcastInstance hz1 = hzFactory.newHazelcastInstance(config);
         HazelcastInstance hz2 = hzFactory.newHazelcastInstance(config);
         warmUpPartitions(hz1, hz2);
-        OperationServiceImpl opService = Accessors.getOperationServiceImpl(hz1);
+        OperationServiceImpl opService = getOperationService(hz1);
 
         Map<Integer, Object> result = opService.invokeOnAllPartitions(null, new SlowOperationFactoryImpl());
 
@@ -240,7 +240,7 @@ public class OperationServiceImpl_invokeOnPartitionsTest extends HazelcastTestSu
         config.getSerializationConfig()
                 .addDataSerializableFactory(321, new PartitionAwareOperationFactoryDataSerializableFactory());
         HazelcastInstance hz = createHazelcastInstance(config);
-        OperationServiceImpl opService = Accessors.getOperationServiceImpl(hz);
+        OperationServiceImpl opService = getOperationService(hz);
 
         Map<Integer, Object> result = opService
                 .invokeOnPartitions(null, new PartitionAwareOperationFactoryImpl(new int[]{0, 1, 2}), new int[]{1});

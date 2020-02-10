@@ -28,7 +28,6 @@ import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.impl.MigrationInterceptorTest.MigrationInterceptorImpl;
 import com.hazelcast.internal.partition.impl.MigrationInterceptorTest.MigrationProgressNotification;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -52,6 +51,8 @@ import java.util.logging.LogRecord;
 
 import static com.hazelcast.internal.partition.MigrationInfo.MigrationStatus.SUCCESS;
 import static com.hazelcast.internal.partition.impl.MigrationInterceptorTest.MigrationProgressEvent.COMMIT;
+import static com.hazelcast.test.Accessors.getAddress;
+import static com.hazelcast.test.Accessors.getPartitionService;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -114,11 +115,11 @@ public class MigrationCommitTest extends HazelcastTestSupport {
         assertClusterSizeEventually(1, hz1);
         waitAllForSafeState(hz1);
 
-        InternalPartition partition0 = Accessors.getPartitionService(hz1).getPartition(0);
-        InternalPartition partition1 = Accessors.getPartitionService(hz1).getPartition(1);
+        InternalPartition partition0 = getPartitionService(hz1).getPartition(0);
+        InternalPartition partition1 = getPartitionService(hz1).getPartition(1);
 
-        assertEquals(Accessors.getAddress(hz1), partition0.getOwnerOrNull());
-        assertEquals(Accessors.getAddress(hz1), partition1.getOwnerOrNull());
+        assertEquals(getAddress(hz1), partition0.getOwnerOrNull());
+        assertEquals(getAddress(hz1), partition1.getOwnerOrNull());
         assertFalse(partition0.isMigrating());
         assertFalse(partition1.isMigrating());
     }
@@ -217,11 +218,11 @@ public class MigrationCommitTest extends HazelcastTestSupport {
 
         waitAllForSafeState(hz1, hz2);
 
-        InternalPartition partition0 = Accessors.getPartitionService(hz2).getPartition(0);
-        InternalPartition partition1 = Accessors.getPartitionService(hz2).getPartition(1);
+        InternalPartition partition0 = getPartitionService(hz2).getPartition(0);
+        InternalPartition partition1 = getPartitionService(hz2).getPartition(1);
 
-        assertEquals(Accessors.getAddress(hz2), partition0.getOwnerOrNull());
-        assertEquals(Accessors.getAddress(hz2), partition1.getOwnerOrNull());
+        assertEquals(getAddress(hz2), partition0.getOwnerOrNull());
+        assertEquals(getAddress(hz2), partition1.getOwnerOrNull());
         assertFalse(partition0.isMigrating());
         assertFalse(partition1.isMigrating());
         assertTrue(masterListener.rollback);
@@ -307,11 +308,11 @@ public class MigrationCommitTest extends HazelcastTestSupport {
 
         waitAllForSafeState(hz1, hz3);
 
-        InternalPartition partition0 = Accessors.getPartitionService(hz3).getPartition(0);
-        InternalPartition partition1 = Accessors.getPartitionService(hz3).getPartition(1);
+        InternalPartition partition0 = getPartitionService(hz3).getPartition(0);
+        InternalPartition partition1 = getPartitionService(hz3).getPartition(1);
 
-        assertEquals(Accessors.getAddress(hz3), partition0.getOwnerOrNull());
-        assertEquals(Accessors.getAddress(hz3), partition1.getOwnerOrNull());
+        assertEquals(getAddress(hz3), partition0.getOwnerOrNull());
+        assertEquals(getAddress(hz3), partition1.getOwnerOrNull());
         assertFalse(partition0.isMigrating());
         assertFalse(partition1.isMigrating());
         assertFalse(masterListener.rollback);
@@ -351,11 +352,11 @@ public class MigrationCommitTest extends HazelcastTestSupport {
 
         waitAllForSafeState(hz1, hz2);
 
-        InternalPartition partition0 = Accessors.getPartitionService(hz1).getPartition(0);
-        InternalPartition partition1 = Accessors.getPartitionService(hz1).getPartition(1);
+        InternalPartition partition0 = getPartitionService(hz1).getPartition(0);
+        InternalPartition partition1 = getPartitionService(hz1).getPartition(1);
 
-        assertEquals(Accessors.getAddress(hz2), partition0.getOwnerOrNull());
-        assertEquals(Accessors.getAddress(hz2), partition1.getOwnerOrNull());
+        assertEquals(getAddress(hz2), partition0.getOwnerOrNull());
+        assertEquals(getAddress(hz2), partition1.getOwnerOrNull());
         assertFalse(partition0.isMigrating());
         assertFalse(partition1.isMigrating());
         assertTrue(masterListener.rollback.get());
@@ -412,7 +413,7 @@ public class MigrationCommitTest extends HazelcastTestSupport {
 
         HazelcastInstance hz1 = factory.newHazelcastInstance(config1);
 
-        InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) Accessors.getPartitionService(hz1);
+        InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) getPartitionService(hz1);
         final MigrationManager migrationManager = partitionService.getMigrationManager();
 
         HazelcastInstance hz2 = factory.newHazelcastInstance(createConfig());
@@ -466,10 +467,10 @@ public class MigrationCommitTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) Accessors.getPartitionService(hz1);
+                InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) getPartitionService(hz1);
                 boolean found = false;
                 for (MigrationInfo migrationInfo : partitionService.getMigrationManager().getCompletedMigrationsCopy()) {
-                    if (migrationInfo.getStatus() == SUCCESS && migrationInfo.getDestinationAddress().equals(Accessors.getAddress(hz3))) {
+                    if (migrationInfo.getStatus() == SUCCESS && migrationInfo.getDestinationAddress().equals(getAddress(hz3))) {
                         found = true;
                     }
                 }
@@ -482,7 +483,7 @@ public class MigrationCommitTest extends HazelcastTestSupport {
             @Override
             public void run()
                     throws Exception {
-                InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) Accessors.getPartitionService(hz1);
+                InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) getPartitionService(hz1);
                 assertFalse(partitionService.getMigrationManager().getCompletedMigrationsCopy().isEmpty());
             }
         }, 10);
@@ -534,8 +535,8 @@ public class MigrationCommitTest extends HazelcastTestSupport {
     }
 
     private InternalPartition getOwnedPartition(HazelcastInstance instance) {
-        InternalPartitionService partitionService = Accessors.getPartitionService(instance);
-        Address address = Accessors.getAddress(instance);
+        InternalPartitionService partitionService = getPartitionService(instance);
+        Address address = getAddress(instance);
         if (address.equals(partitionService.getPartitionOwner(0))) {
             return partitionService.getPartition(0);
         } else if (address.equals(partitionService.getPartitionOwner(1))) {
@@ -545,7 +546,7 @@ public class MigrationCommitTest extends HazelcastTestSupport {
     }
 
     static void resetInternalMigrationListener(HazelcastInstance instance) {
-        InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) Accessors.getPartitionService(instance);
+        InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) getPartitionService(instance);
         partitionService.resetMigrationInterceptor();
     }
 
@@ -576,7 +577,7 @@ public class MigrationCommitTest extends HazelcastTestSupport {
 
             if (migrationInfoRef.compareAndSet(null, migrationInfo)) {
                 InternalPartitionServiceImpl partitionService
-                        = (InternalPartitionServiceImpl) Accessors.getPartitionService(instance);
+                        = (InternalPartitionServiceImpl) getPartitionService(instance);
                 PartitionStateManager partitionStateManager = partitionService.getPartitionStateManager();
                 partitionStateManager.incrementVersion();
             } else {
@@ -717,7 +718,7 @@ public class MigrationCommitTest extends HazelcastTestSupport {
 
         @Override
         public void onMigrationCommit(MigrationParticipant participant, MigrationInfo migrationInfo) {
-            System.out.println(Accessors.getAddress(instance) + " > commit " + migrationInfo + " as " + participant);
+            System.out.println(getAddress(instance) + " > commit " + migrationInfo + " as " + participant);
         }
 
         @Override

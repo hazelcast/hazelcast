@@ -16,14 +16,13 @@
 
 package com.hazelcast.internal.partition;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.partition.service.TestGetOperation;
 import com.hazelcast.internal.partition.service.TestPutOperation;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.test.Accessors;
 import org.junit.Test;
 import org.junit.runners.Parameterized;
 
@@ -37,6 +36,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.test.Accessors.getNode;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -135,7 +136,7 @@ public abstract class AbstractGracefulShutdownCorrectnessTest extends PartitionC
         });
 
         HazelcastInstance hz = factory.newHazelcastInstance(config);
-        NodeEngine nodeEngine = Accessors.getNodeEngineImpl(hz);
+        NodeEngine nodeEngine = getNodeEngineImpl(hz);
         OperationService operationService = nodeEngine.getOperationService();
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
 
@@ -168,7 +169,7 @@ public abstract class AbstractGracefulShutdownCorrectnessTest extends PartitionC
 
         if (count == 1) {
             HazelcastInstance hz = instances.remove(0);
-            Address address = Accessors.getNode(hz).getThisAddress();
+            Address address = getNode(hz).getThisAddress();
             hz.shutdown();
             return Collections.singleton(address);
         } else {
@@ -177,7 +178,7 @@ public abstract class AbstractGracefulShutdownCorrectnessTest extends PartitionC
 
             for (int i = 0; i < count; i++) {
                 final HazelcastInstance hz = instances.remove(0);
-                addresses.add(Accessors.getNode(hz).getThisAddress());
+                addresses.add(getNode(hz).getThisAddress());
 
                 new Thread() {
                     public void run() {

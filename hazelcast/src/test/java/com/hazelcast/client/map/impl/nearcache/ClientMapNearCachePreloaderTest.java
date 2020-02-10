@@ -30,7 +30,6 @@ import com.hazelcast.internal.nearcache.impl.NearCacheTestContext;
 import com.hazelcast.internal.nearcache.impl.NearCacheTestContextBuilder;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.IMap;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -44,6 +43,7 @@ import static com.hazelcast.config.NearCacheConfig.DEFAULT_INVALIDATE_ON_CHANGE;
 import static com.hazelcast.config.NearCacheConfig.DEFAULT_MEMORY_FORMAT;
 import static com.hazelcast.config.NearCacheConfig.DEFAULT_SERIALIZE_KEYS;
 import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.getBaseConfig;
+import static com.hazelcast.test.Accessors.getSerializationService;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -90,7 +90,7 @@ public class ClientMapNearCachePreloaderTest extends AbstractNearCachePreloaderT
                     .setDataAdapter(dataAdapter)
                     .build();
         }
-        return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, Accessors.getSerializationService(member))
+        return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, getSerializationService(member))
                 .setDataInstance(member)
                 .setDataAdapter(dataAdapter)
                 .build();

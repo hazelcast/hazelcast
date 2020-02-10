@@ -35,7 +35,6 @@ import com.hazelcast.query.PredicateBuilder.EntryObject;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleTestObjects.Employee;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -54,6 +53,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.test.Accessors.getPartitionService;
 import static java.lang.String.format;
 import static java.lang.String.valueOf;
 import static org.junit.Assert.assertEquals;
@@ -415,7 +415,7 @@ public class NearCacheTest extends NearCacheTestSupport {
         warmUpPartitions(instances);
 
         HazelcastInstance hazelcastInstance = instances[0];
-        InternalPartitionService partitionService = Accessors.getPartitionService(hazelcastInstance);
+        InternalPartitionService partitionService = getPartitionService(hazelcastInstance);
 
         // populate map
         IMap<Integer, Integer> map = hazelcastInstance.getMap(mapName);

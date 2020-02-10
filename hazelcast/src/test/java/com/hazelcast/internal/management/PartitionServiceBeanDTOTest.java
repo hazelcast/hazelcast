@@ -23,7 +23,6 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.management.dto.PartitionServiceBeanDTO;
 import com.hazelcast.internal.monitor.impl.MemberStateImpl;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -35,6 +34,7 @@ import org.junit.runner.RunWith;
 
 import java.net.UnknownHostException;
 
+import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assume.assumeNotNull;
 
@@ -64,7 +64,7 @@ public class PartitionServiceBeanDTOTest extends HazelcastTestSupport {
         warmUpPartitions(instance);
 
         MemberStateImpl memberState = new MemberStateImpl();
-        TimedMemberStateFactoryHelper.registerJMXBeans(Accessors.getNode(instance).hazelcastInstance, memberState);
+        TimedMemberStateFactoryHelper.registerJMXBeans(getNode(instance).hazelcastInstance, memberState);
         PartitionServiceBeanDTO partitionServiceDTO = memberState.getMXBeans().getPartitionServiceBean();
         assertEquals(partitionServiceDTO.getPartitionCount(), partitionServiceDTO.getActivePartitionCount());
     }
