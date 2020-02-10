@@ -284,7 +284,7 @@ public class MigrationManager {
         }
     }
 
-    MigrationInfo getActiveMigration() {
+    public MigrationInfo getActiveMigration() {
         return activeMigrationInfo;
     }
 
@@ -818,10 +818,11 @@ public class MigrationManager {
                 if (migrationCollector.lostPartitionDestination != null) {
                     lostPartitions.put(partitionId, migrationCollector.lostPartitionDestination);
                 }
-                migrations.add(migrationCollector.migrations);
-                migrationCount += migrationCollector.migrations.size();
+                if (!migrationCollector.migrations.isEmpty()) {
+                    migrations.add(migrationCollector.migrations);
+                    migrationCount += migrationCollector.migrations.size();
+                }
             }
-            migrationCount += lostPartitions.size();
 
             stats.markNewRepartition(migrationCount);
             if (migrationCount > 0) {
