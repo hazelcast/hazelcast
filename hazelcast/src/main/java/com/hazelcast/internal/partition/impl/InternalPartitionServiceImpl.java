@@ -60,8 +60,10 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.EventPublishingService;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
+import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -1300,6 +1302,9 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
                 shouldFetchPartitionTables = false;
                 return;
             }
+
+            syncWithPartitionThreads();
+
             maxVersion = partitionStateManager.getVersion();
             logger.info("Fetching most recent partition table! my version: " + maxVersion);
 
@@ -1456,6 +1461,35 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
                 if (allCompletedMigrations.add(activeMigration)) {
                     logger.info("Marked active migration " + activeMigration + " as " + MigrationStatus.FAILED);
                 }
+            }
+        }
+
+        private void syncWithPartitionThreads() {
+            OperationExecutor opExecutor = nodeEngine.getOperationService().getOperationExecutor();
+            CountDownLatch latch = new CountDownLatch(opExecutor.getPartitionThreadCount());
+            opExecutor.executeOnPartitionThreads(new PartitionThreadBarrierTask(latch));
+            try {
+                latch.await();
+            } catch (InterruptedException e) {
+                logger.warning(e);
+                Thread.currentThread().interrupt();
+            }
+        }
+
+        /**
+         * PartitionThreadBarrierTask is executed on all partition operation threads
+         * and to ensure all pending/running migration operations are completed.
+         */
+        private final class PartitionThreadBarrierTask implements Runnable, UrgentSystemOperation {
+            private final CountDownLatch latch;
+
+            private PartitionThreadBarrierTask(CountDownLatch latch) {
+                this.latch = latch;
+            }
+
+            @Override
+            public void run() {
+                latch.countDown();
             }
         }
 
