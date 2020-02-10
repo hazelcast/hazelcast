@@ -106,10 +106,14 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
         }
 
         Address masterAddress = nodeEngine.getMasterAddress();
-        Address callerAddress = getCallerAddress();
-        if (!callerAddress.equals(masterAddress)) {
-            throw new IllegalStateException("Caller is not master node! Caller: " + callerAddress
-                + ", Master: " + masterAddress);
+        Address caller = getCallerAddress();
+        if (!caller.equals(masterAddress)) {
+            throw new IllegalStateException("Caller is not master node! Caller: " + caller + ", Master: " + masterAddress);
+        }
+
+        InternalPartitionServiceImpl partitionService = getService();
+        if (!partitionService.isMemberMaster(caller)) {
+            throw new RetryableHazelcastException("Caller is not master node known by migration system! Caller: " + caller);
         }
     }
 

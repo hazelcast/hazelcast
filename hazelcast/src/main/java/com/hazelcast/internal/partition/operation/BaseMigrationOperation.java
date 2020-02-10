@@ -16,33 +16,33 @@
 
 package com.hazelcast.internal.partition.operation;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.MigrationAwareService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.MigrationInfo;
+import com.hazelcast.internal.partition.PartitionMigrationEvent;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionStateVersionMismatchException;
+import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.MigrationInterceptor;
 import com.hazelcast.internal.partition.impl.MigrationInterceptor.MigrationParticipant;
-import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.MigrationManager;
 import com.hazelcast.internal.partition.impl.PartitionStateManager;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.impl.operationservice.ExceptionAction;
-import com.hazelcast.internal.partition.MigrationAwareService;
-import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.internal.partition.PartitionMigrationEvent;
-import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.spi.impl.operationservice.ExceptionAction;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 
 import java.io.IOException;
 import java.util.List;
@@ -140,13 +140,18 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
     /** Verifies that the local master is equal to the migration master. */
     final void verifyMaster() {
         NodeEngine nodeEngine = getNodeEngine();
+        InternalPartitionServiceImpl service = getService();
         Address masterAddress = nodeEngine.getMasterAddress();
 
         if (!migrationInfo.getMaster().equals(masterAddress)) {
             throw new IllegalStateException("Migration initiator is not master node! => " + toString());
         }
 
-        if (getMigrationParticipantType() == MigrationParticipant.SOURCE && !masterAddress.equals(getCallerAddress())) {
+        if (!service.isMemberMaster(migrationInfo.getMaster())) {
+            throw new RetryableHazelcastException("Migration initiator is not the master node known by migration system!");
+        }
+
+        if (getMigrationParticipantType() == MigrationParticipant.SOURCE && !service.isMemberMaster(getCallerAddress())) {
             throw new IllegalStateException("Caller is not master node! => " + toString());
         }
     }
