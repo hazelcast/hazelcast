@@ -24,7 +24,7 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 
 import java.util.Arrays;
 
-import static com.hazelcast.test.HazelcastTestSupport.getNode;
+import static com.hazelcast.test.Accessors.getNode;
 
 /**
  * Base class for {@link BackupAccessor} implementations.

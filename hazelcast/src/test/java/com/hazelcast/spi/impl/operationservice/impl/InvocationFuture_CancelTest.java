@@ -32,6 +32,7 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.CancellationException;
 
+import static com.hazelcast.test.Accessors.getOperationService;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 

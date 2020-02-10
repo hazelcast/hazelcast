@@ -16,12 +16,13 @@
 
 package com.hazelcast.cp.internal.session;
 
-import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.mockito.Mockito.spy;
 
 @RunWith(HazelcastParallelClassRunner.class)

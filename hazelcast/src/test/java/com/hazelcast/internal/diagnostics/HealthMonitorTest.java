@@ -34,6 +34,8 @@ import static com.hazelcast.spi.properties.ClusterProperty.HEALTH_MONITORING_DEL
 import static com.hazelcast.spi.properties.ClusterProperty.HEALTH_MONITORING_LEVEL;
 import static com.hazelcast.spi.properties.ClusterProperty.HEALTH_MONITORING_THRESHOLD_CPU_PERCENTAGE;
 import static com.hazelcast.spi.properties.ClusterProperty.HEALTH_MONITORING_THRESHOLD_MEMORY_PERCENTAGE;
+import static com.hazelcast.test.Accessors.getMetricsRegistry;
+import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 

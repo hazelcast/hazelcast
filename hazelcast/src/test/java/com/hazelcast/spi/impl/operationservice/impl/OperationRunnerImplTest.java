@@ -40,6 +40,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.spi.impl.operationservice.OperationAccessor.setCallId;
 import static com.hazelcast.spi.impl.operationservice.OperationAccessor.setCallTimeout;
+import static com.hazelcast.test.Accessors.getClusterService;
+import static com.hazelcast.test.Accessors.getOperationService;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.same;

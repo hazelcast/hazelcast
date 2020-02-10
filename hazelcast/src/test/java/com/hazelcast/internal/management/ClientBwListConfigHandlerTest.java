@@ -46,6 +46,8 @@ import java.util.Set;
 
 import static com.hazelcast.internal.management.dto.ClientBwListDTO.Mode;
 import static com.hazelcast.internal.management.dto.ClientBwListEntryDTO.Type;
+import static com.hazelcast.test.Accessors.getNode;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;

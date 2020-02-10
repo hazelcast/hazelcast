@@ -36,6 +36,8 @@ import java.util.Collections;
 import java.util.Set;
 
 import static com.hazelcast.internal.partition.NonFragmentedServiceNamespace.INSTANCE;
+import static com.hazelcast.test.Accessors.getNode;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)

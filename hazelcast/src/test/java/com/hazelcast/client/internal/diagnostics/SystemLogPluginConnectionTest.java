@@ -31,6 +31,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.internal.diagnostics.SystemLogPlugin.LOG_PARTITIONS;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)

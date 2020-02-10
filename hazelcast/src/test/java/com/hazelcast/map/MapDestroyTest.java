@@ -38,6 +38,8 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.test.Accessors.getNode;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)

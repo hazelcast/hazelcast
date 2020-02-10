@@ -32,6 +32,8 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.Callable;
 
+import static com.hazelcast.test.Accessors.getNode;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClusterVersionInitTest extends HazelcastTestSupport {

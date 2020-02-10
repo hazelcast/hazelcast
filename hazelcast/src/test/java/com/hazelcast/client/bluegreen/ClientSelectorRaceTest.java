@@ -33,6 +33,7 @@ import org.junit.runner.RunWith;
 import java.util.Collection;
 import java.util.LinkedList;
 
+import static com.hazelcast.test.Accessors.getClientEngineImpl;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)

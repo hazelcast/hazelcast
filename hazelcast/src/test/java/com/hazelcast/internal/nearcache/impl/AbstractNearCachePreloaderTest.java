@@ -54,6 +54,7 @@ import static com.hazelcast.internal.nio.IOUtil.copy;
 import static com.hazelcast.internal.nio.IOUtil.deleteQuietly;
 import static com.hazelcast.internal.nio.IOUtil.getFileFromResources;
 import static com.hazelcast.internal.nio.IOUtil.touch;
+import static com.hazelcast.test.Accessors.getSerializationService;
 import static com.hazelcast.test.TimeConstants.MINUTE;
 import static java.lang.String.format;
 import static java.lang.Thread.currentThread;

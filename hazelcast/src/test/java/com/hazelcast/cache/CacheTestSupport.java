@@ -38,6 +38,8 @@ import javax.cache.configuration.Configuration;
 import javax.cache.spi.CachingProvider;
 
 import static com.hazelcast.cache.impl.maxsize.impl.EntryCountCacheEvictionChecker.calculateMaxPartitionSize;
+import static com.hazelcast.test.Accessors.getNode;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.lang.Integer.parseInt;
 import static org.junit.Assert.assertEquals;
 

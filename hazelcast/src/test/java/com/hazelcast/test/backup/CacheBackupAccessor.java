@@ -38,9 +38,9 @@ import javax.cache.spi.CachingProvider;
 import java.util.Map;
 
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
-import static com.hazelcast.test.HazelcastTestSupport.getHazelcastInstanceImpl;
-import static com.hazelcast.test.HazelcastTestSupport.getNode;
-import static com.hazelcast.test.HazelcastTestSupport.getNodeEngineImpl;
+import static com.hazelcast.test.Accessors.getHazelcastInstanceImpl;
+import static com.hazelcast.test.Accessors.getNode;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.test.TestTaskExecutorUtil.runOnPartitionThread;
 
 /**

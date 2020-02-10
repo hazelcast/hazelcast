@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import static com.hazelcast.test.Accessors.getOperationService;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 
@@ -49,7 +50,7 @@ public class OperationFactoryWrapperTest extends HazelcastTestSupport {
     @Test
     public void testOperationSeesActualCallersUUID() throws Exception {
         HazelcastInstance hz = createHazelcastInstance();
-        OperationServiceImpl operationService = getOperationServiceImpl(hz);
+        OperationServiceImpl operationService = getOperationService(hz);
 
         UUID expectedCallersUUID = UUID.randomUUID();
 

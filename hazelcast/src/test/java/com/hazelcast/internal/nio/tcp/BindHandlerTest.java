@@ -54,8 +54,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.instance.ProtocolType.WAN;
-import static com.hazelcast.test.HazelcastTestSupport.getNode;
-import static com.hazelcast.test.HazelcastTestSupport.getSerializationService;
+import static com.hazelcast.test.Accessors.getNode;
+import static com.hazelcast.test.Accessors.getSerializationService;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;

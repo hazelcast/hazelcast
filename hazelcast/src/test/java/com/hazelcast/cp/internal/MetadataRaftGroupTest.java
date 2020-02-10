@@ -62,6 +62,9 @@ import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getLeaderMember;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getSnapshotEntry;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.FINALIZE_JOIN;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.F_ID;
+import static com.hazelcast.test.Accessors.getAddress;
+import static com.hazelcast.test.Accessors.getNode;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.test.PacketFiltersUtil.dropOperationsBetween;
 import static com.hazelcast.test.PacketFiltersUtil.dropOperationsToAddresses;
 import static com.hazelcast.test.PacketFiltersUtil.resetPacketFiltersFrom;
@@ -665,7 +668,7 @@ public class MetadataRaftGroupTest extends HazelcastRaftTestSupport {
         for (HazelcastInstance instance : Arrays.copyOf(instances, nodeCount - 1)) {
             Address address = instance.getCluster().getLocalMember().getAddress();
             getNodeEngineImpl(instance).getOperationService()
-                                       .invokeOnTarget(RaftService.SERVICE_NAME, new ResetCPMemberOp(seed), address).get();
+                     .invokeOnTarget(RaftService.SERVICE_NAME, new ResetCPMemberOp(seed), address).get();
         }
 
         // wait for the cp discovery process to start

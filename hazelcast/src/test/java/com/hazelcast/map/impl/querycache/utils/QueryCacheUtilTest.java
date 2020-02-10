@@ -34,6 +34,7 @@ import java.util.Map;
 
 import static com.hazelcast.map.impl.querycache.utils.QueryCacheUtil.getAccumulatorOrNull;
 import static com.hazelcast.map.impl.querycache.utils.QueryCacheUtil.getAccumulators;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;

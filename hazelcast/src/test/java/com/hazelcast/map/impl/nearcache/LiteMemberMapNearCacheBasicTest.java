@@ -45,6 +45,7 @@ import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.createNea
 import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.getBaseConfig;
 import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.getMapNearCacheManager;
 import static com.hazelcast.map.impl.nearcache.MapNearCacheBasicTest.addMapStoreConfig;
+import static com.hazelcast.test.Accessors.getSerializationService;
 
 /**
  * Basic Near Cache tests for {@link IMap} on Hazelcast Lite members.

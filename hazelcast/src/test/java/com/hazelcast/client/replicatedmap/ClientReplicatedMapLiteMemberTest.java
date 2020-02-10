@@ -39,7 +39,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
-import static com.hazelcast.test.HazelcastTestSupport.getAddress;
+import static com.hazelcast.test.Accessors.getAddress;
 import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;

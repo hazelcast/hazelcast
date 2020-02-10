@@ -69,6 +69,7 @@ import static com.hazelcast.config.EvictionPolicy.RANDOM;
 import static com.hazelcast.map.EvictionMaxSizePolicyTest.setMockRuntimeMemoryInfoAccessor;
 import static com.hazelcast.map.impl.eviction.MapClearExpiredRecordsTask.PROP_TASK_PERIOD_SECONDS;
 import static com.hazelcast.query.SampleTestObjects.Employee;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.test.OverridePropertyRule.set;
 import static java.lang.Integer.MAX_VALUE;
 import static java.lang.Math.max;

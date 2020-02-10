@@ -45,6 +45,7 @@ import java.net.URL;
 import java.util.Properties;
 
 import static com.hazelcast.cache.CacheTestSupport.createClientCachingProvider;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 

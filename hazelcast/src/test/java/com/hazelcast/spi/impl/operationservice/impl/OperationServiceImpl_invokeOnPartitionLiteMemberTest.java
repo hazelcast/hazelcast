@@ -41,6 +41,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
 
 import static com.hazelcast.internal.partition.InternalPartitionService.SERVICE_NAME;
+import static com.hazelcast.test.Accessors.getOperationService;
 import static java.util.Collections.singletonList;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.TestCase.assertTrue;
