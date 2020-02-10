@@ -30,6 +30,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -92,5 +94,29 @@ public class ClientTopicTest {
         ITopic topic = client.getTopic(randomString());
 
         topic.getLocalTopicStats();
+    }
+
+    @Test
+    public void testPublishAll() throws InterruptedException {
+        ITopic<Integer> topic = client.getTopic(randomString());
+
+        final CountDownLatch latch = new CountDownLatch(10);
+
+        Collection<Integer> receivedMessages = new ArrayList<>();
+        MessageListener<Integer> listener = new MessageListener() {
+            public void onMessage(Message message) {
+                latch.countDown();
+                receivedMessages.add((Integer) message.getMessageObject());
+            }
+        };
+        topic.addMessageListener(listener);
+
+        Collection<Integer> messages = new ArrayList<>();
+        for (int i = 0; i < 10; i++) {
+            messages.add(i);
+        }
+        topic.publishAll(messages);
+        assertTrue(latch.await(20, TimeUnit.SECONDS));
+        assertTrue(receivedMessages.containsAll(messages));
     }
 }

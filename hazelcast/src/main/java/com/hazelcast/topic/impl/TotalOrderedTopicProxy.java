@@ -22,6 +22,9 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.annotation.Nonnull;
 
+import java.util.Collection;
+
+import static com.hazelcast.internal.util.Preconditions.checkNoNullInside;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
@@ -46,5 +49,12 @@ public class TotalOrderedTopicProxy<E> extends TopicProxy<E> {
                 .setPartitionId(partitionId);
         InternalCompletableFuture f = invokeOnPartition(operation);
         f.joinInternal();
+    }
+
+    @Override
+    public void publishAll(@Nonnull Collection<? extends E> messages) {
+        checkNotNull(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
+        checkNoNullInside(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
+        messages.stream().forEach(message -> publish(message));
     }
 }

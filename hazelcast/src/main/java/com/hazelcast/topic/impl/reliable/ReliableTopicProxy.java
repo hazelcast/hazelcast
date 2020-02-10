@@ -38,12 +38,14 @@ import com.hazelcast.topic.TopicOverloadException;
 import com.hazelcast.topic.TopicOverloadPolicy;
 
 import javax.annotation.Nonnull;
+import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 
 import static com.hazelcast.internal.util.ExceptionUtil.peel;
+import static com.hazelcast.internal.util.Preconditions.checkNoNullInside;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.ringbuffer.impl.RingbufferService.TOPIC_RB_PREFIX;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.ASYNC_EXECUTOR;
@@ -254,5 +256,12 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
     @Override
     public LocalTopicStats getLocalTopicStats() {
         return localTopicStats;
+    }
+
+    @Override
+    public void publishAll(@Nonnull Collection<? extends E> messages) {
+        checkNotNull(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
+        checkNoNullInside(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
+        messages.stream().forEach(message -> publish(message));
     }
 }

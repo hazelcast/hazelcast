@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.proxy;
 
+import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.TopicAddMessageListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.TopicPublishCodec;
@@ -32,8 +33,11 @@ import com.hazelcast.topic.MessageListener;
 import com.hazelcast.topic.impl.DataAwareMessage;
 
 import javax.annotation.Nonnull;
+import java.util.Collection;
+import java.util.Optional;
 import java.util.UUID;
 
+import static com.hazelcast.internal.util.Preconditions.checkNoNullInside;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
@@ -75,6 +79,13 @@ public class ClientTopicProxy<E> extends PartitionSpecificClientProxy implements
     @Override
     public LocalTopicStats getLocalTopicStats() {
         throw new UnsupportedOperationException("Locality is ambiguous for client!");
+    }
+
+    @Override
+    public void publishAll(@Nonnull Collection<? extends E> messages) {
+        checkNotNull(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
+        checkNoNullInside(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
+        messages.stream().forEach(message -> publish(message));
     }
 
     @Override

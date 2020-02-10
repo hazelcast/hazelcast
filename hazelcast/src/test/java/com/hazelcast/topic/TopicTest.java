@@ -39,12 +39,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -124,6 +119,58 @@ public class TopicTest extends HazelcastTestSupport {
         for (int i = 0; i < nodeCount; i++) {
             HazelcastInstance instance = instances[i];
             instance.getTopic(randomName).publish(instance.getCluster().getLocalMember());
+        }
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals(nodeCount, count1.get());
+                assertEquals(nodeCount * nodeCount, count2.get());
+                assertEquals(nodeCount, count3.get());
+            }
+        });
+    }
+
+    @Test
+    public void testTopicPublishingAllMember() {
+        final int nodeCount = 3;
+        final String randomName = "testTopicPublishinAllgMember" + generateRandomString(5);
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
+        HazelcastInstance[] instances = factory.newInstances();
+
+        final AtomicInteger count1 = new AtomicInteger(0);
+        final AtomicInteger count2 = new AtomicInteger(0);
+        final AtomicInteger count3 = new AtomicInteger(0);
+
+        Collection<Member> messages = new ArrayList<>();
+
+
+        for (int i = 0; i < nodeCount; i++) {
+            final HazelcastInstance instance = instances[i];
+            ITopic<Member> topic = instance.getTopic(randomName);
+            topic.addMessageListener(new MessageListener<Member>() {
+                public void onMessage(Message<Member> message) {
+                    Member publishingMember = message.getPublishingMember();
+                    if (publishingMember.equals(instance.getCluster().getLocalMember())) {
+                        count1.incrementAndGet();
+                    }
+
+                    Member messageObject = message.getMessageObject();
+                    if (publishingMember.equals(messageObject)) {
+                        count2.incrementAndGet();
+                    }
+                    if (publishingMember.localMember()) {
+                        count3.incrementAndGet();
+                    }
+                }
+            });
+        }
+
+
+        for (int i = 0; i < nodeCount; i++) {
+            HazelcastInstance instance = instances[i];
+            instance.getTopic(randomName).publishAll(Arrays.asList(instance.getCluster().getLocalMember()));
         }
 
         assertTrueEventually(new AssertTask() {

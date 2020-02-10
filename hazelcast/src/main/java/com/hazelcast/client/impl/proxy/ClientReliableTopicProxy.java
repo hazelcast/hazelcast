@@ -37,6 +37,7 @@ import com.hazelcast.topic.impl.reliable.ReliableMessageListenerAdapter;
 import com.hazelcast.topic.impl.reliable.ReliableTopicMessage;
 
 import javax.annotation.Nonnull;
+import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -44,6 +45,7 @@ import java.util.concurrent.Executor;
 
 import static com.hazelcast.internal.util.ConcurrencyUtil.DEFAULT_ASYNC_EXECUTOR;
 import static com.hazelcast.internal.util.ExceptionUtil.peel;
+import static com.hazelcast.internal.util.Preconditions.checkNoNullInside;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.ringbuffer.impl.RingbufferService.TOPIC_RB_PREFIX;
 import static com.hazelcast.topic.impl.reliable.ReliableTopicService.SERVICE_NAME;
@@ -196,6 +198,13 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
     @Override
     public LocalTopicStats getLocalTopicStats() {
         throw new UnsupportedOperationException("Locality is ambiguous for client!");
+    }
+
+    @Override
+    public void publishAll(@Nonnull Collection<? extends E> messages) {
+        checkNotNull(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
+        checkNoNullInside(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
+        messages.stream().forEach(message -> publish(message));
     }
 
     public Ringbuffer getRingbuffer() {

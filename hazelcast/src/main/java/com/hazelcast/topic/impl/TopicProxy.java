@@ -16,15 +16,20 @@
 
 package com.hazelcast.topic.impl;
 
+import com.hazelcast.core.IFunction;
+import com.hazelcast.ringbuffer.impl.operations.AddAllOperation;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.LocalTopicStats;
 import com.hazelcast.topic.MessageListener;
 
 import javax.annotation.Nonnull;
+import java.util.Collection;
 import java.util.UUID;
 
-import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.*;
 
 /**
  * Topic proxy used when global ordering is disabled (nodes get
@@ -63,6 +68,13 @@ public class TopicProxy<E> extends TopicProxySupport implements ITopic<E> {
     @Override
     public LocalTopicStats getLocalTopicStats() {
         return getLocalTopicStatsInternal();
+    }
+
+    @Override
+    public void publishAll(@Nonnull Collection<? extends E> messages) {
+        checkNotNull(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
+        checkNoNullInside(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
+        messages.stream().forEach(message -> publish(message));
     }
 }
 

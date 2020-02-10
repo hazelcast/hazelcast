@@ -19,6 +19,7 @@ package com.hazelcast.topic;
 import com.hazelcast.core.DistributedObject;
 
 import javax.annotation.Nonnull;
+import java.util.Collection;
 import java.util.UUID;
 
 /**
@@ -94,4 +95,13 @@ public interface ITopic<E> extends DistributedObject {
      * @return statistics about this topic
      */
     @Nonnull LocalTopicStats getLocalTopicStats();
+
+    /**
+     * Publishes all message to all subscribers of this topic.
+     *
+     * @param messages the messages to publish to all subscribers of this topic
+     * @throws TopicOverloadException if the consumer is too slow
+     *                                (only works in combination with reliable topic)
+     */
+    void publishAll(@Nonnull Collection<? extends E> messages);
 }
