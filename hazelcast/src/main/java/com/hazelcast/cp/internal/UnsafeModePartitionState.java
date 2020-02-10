@@ -43,6 +43,10 @@ public class UnsafeModePartitionState implements IdentifiedDataSerializable {
         return ++commitIndex;
     }
 
+    long commitIndex() {
+        return commitIndex;
+    }
+
     boolean registerWaitingOp(long commitIndex, Operation op) {
         return waitingOperations.putIfAbsent(commitIndex, op) == null;
     }
