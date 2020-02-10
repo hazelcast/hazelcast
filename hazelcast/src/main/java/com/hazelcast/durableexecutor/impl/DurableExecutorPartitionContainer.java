@@ -62,7 +62,7 @@ public class DurableExecutorPartitionContainer {
             }
             map.put(executorContainer.getName(), executorContainer);
         }
-        return new ReplicationOperation(map);
+        return map.isEmpty() ? null : new ReplicationOperation(map);
     }
 
     public void clearRingBuffersHavingLesserBackupCountThan(int thresholdReplicaIndex) {
