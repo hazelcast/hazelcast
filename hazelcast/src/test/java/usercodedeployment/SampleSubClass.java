@@ -16,11 +16,5 @@
 
 package usercodedeployment;
 
-import java.io.Serializable;
-
-public class ParentClass implements Serializable, Runnable {
-    @Override
-    public void run() {
-
-    }
+public class SampleSubClass extends SampleBaseClass {
 }
