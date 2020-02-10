@@ -23,6 +23,7 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -47,6 +48,11 @@ public class RuntimeMetricSetTest extends HazelcastTestSupport {
         metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), ProbeLevel.INFO);
         RuntimeMetricSet.register(metricsRegistry);
         runtime = Runtime.getRuntime();
+    }
+
+    @After
+    public void tearDown() {
+        metricsRegistry.shutdown();
     }
 
     @Test

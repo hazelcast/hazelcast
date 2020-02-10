@@ -166,7 +166,7 @@ public final class MetricDescriptorConstants {
     public static final String GC_METRIC_MINOR_TIME = "minorTime";
     public static final String GC_METRIC_MAJOR_COUNT = "majorCount";
     public static final String GC_METRIC_MAJOR_TIME = "majorTime";
-    public static final String GC_METRIC_UNKNOWN_COUNT = "unknowsnCount";
+    public static final String GC_METRIC_UNKNOWN_COUNT = "unknownCount";
     public static final String GC_METRIC_UNKNOWN_TIME = "unknownTime";
     // ===[/GC]=========================================================
 
