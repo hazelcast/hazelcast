@@ -48,7 +48,7 @@ public class ClientDeployment_StandaloneClusterTest extends JetTestSupport {
         JetInstance client = createJetClient(jetClientConfig);
 
         DAG dag = new DAG();
-        dag.newVertex("v", () -> new LoadPersonIsolated(true));
+        dag.newVertex("v", () -> new LoadClassesIsolated(true));
 
         instance.newJob(dag).join();
     }

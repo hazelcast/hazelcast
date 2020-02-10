@@ -38,7 +38,9 @@ import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.List;
 
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.TestUtil.executeAndPeel;
@@ -56,7 +58,7 @@ public abstract class AbstractDeploymentTest extends SimpleTestInClusterSupport 
     @Test
     public void testDeployment_whenJarAddedAsResource_thenClassesAvailableOnClassLoader() throws Throwable {
         DAG dag = new DAG();
-        dag.newVertex("load class", () -> new LoadPersonIsolated(true));
+        dag.newVertex("load class", () -> new LoadClassesIsolated(true));
 
         JetInstance jetInstance = getJetInstance();
         JobConfig jobConfig = new JobConfig();
@@ -68,7 +70,7 @@ public abstract class AbstractDeploymentTest extends SimpleTestInClusterSupport 
     @Test
     public void testDeployment_whenClassAddedAsResource_thenClassAvailableOnClassLoader() throws Throwable {
         DAG dag = new DAG();
-        dag.newVertex("create and print person", () -> new LoadPersonIsolated(true));
+        dag.newVertex("create and print person", () -> new LoadClassesIsolated(true));
 
         JobConfig jobConfig = new JobConfig();
         URL classUrl = this.getClass().getResource("/cp1/");
@@ -82,8 +84,8 @@ public abstract class AbstractDeploymentTest extends SimpleTestInClusterSupport 
     @Test
     public void testDeployment_whenClassAddedAsResource_then_availableInDestroyWhenCancelled() throws Throwable {
         DAG dag = new DAG();
-        LoadPersonIsolated.assertionErrorInClose = null;
-        dag.newVertex("v", () -> new LoadPersonIsolated(false));
+        LoadClassesIsolated.assertionErrorInClose = null;
+        dag.newVertex("v", () -> new LoadClassesIsolated(false));
 
         JobConfig jobConfig = new JobConfig();
         URL classUrl = this.getClass().getResource("/cp1/");
@@ -94,8 +96,8 @@ public abstract class AbstractDeploymentTest extends SimpleTestInClusterSupport 
         Job job = getJetInstance().newJob(dag, jobConfig);
         assertJobStatusEventually(job, RUNNING);
         cancelAndJoin(job);
-        if (LoadPersonIsolated.assertionErrorInClose != null) {
-            throw LoadPersonIsolated.assertionErrorInClose;
+        if (LoadClassesIsolated.assertionErrorInClose != null) {
+            throw LoadClassesIsolated.assertionErrorInClose;
         }
     }
 
@@ -113,11 +115,28 @@ public abstract class AbstractDeploymentTest extends SimpleTestInClusterSupport 
     @Test
     public void testDeployment_whenZipAddedAsResource_thenClassesAvailableOnClassLoader() throws Throwable {
         DAG dag = new DAG();
-        dag.newVertex("load class", () -> new LoadPersonIsolated(true));
+        dag.newVertex("load class", () -> new LoadClassesIsolated(true));
 
         JetInstance jetInstance = getJetInstance();
         JobConfig jobConfig = new JobConfig();
         jobConfig.addJarsInZip(this.getClass().getResource("/zip-resources/person-jar.zip"));
+
+        executeAndPeel(jetInstance.newJob(dag, jobConfig));
+    }
+
+    @Test
+    public void testDeployment_whenZipAddedAsResource_thenClassesFromAllJarsAvailableOnClassLoader() throws Throwable {
+        DAG dag = new DAG();
+        List<String> onClasspath = new ArrayList<>();
+        onClasspath.add("com.sample.pojo.person.Person$Appereance");
+        onClasspath.add("com.sample.pojo.car.Car");
+        List<String> notOnClasspath = new ArrayList<>();
+        notOnClasspath.add("com.sample.pojo.address.Address");
+        dag.newVertex("load class", () -> new LoadClassesIsolated(onClasspath, notOnClasspath, true));
+
+        JetInstance jetInstance = getJetInstance();
+        JobConfig jobConfig = new JobConfig();
+        jobConfig.addJarsInZip(this.getClass().getResource("/zip-resources/person-car-jar.zip"));
 
         executeAndPeel(jetInstance.newJob(dag, jobConfig));
     }

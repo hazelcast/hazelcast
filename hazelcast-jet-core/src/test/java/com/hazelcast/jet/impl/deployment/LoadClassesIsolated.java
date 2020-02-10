@@ -17,21 +17,36 @@
 package com.hazelcast.jet.impl.deployment;
 
 import com.hazelcast.jet.core.AbstractProcessor;
-
+import com.hazelcast.jet.core.Processor;
+import java.util.ArrayList;
+import java.util.List;
 import javax.annotation.Nonnull;
 
 import static org.junit.Assert.fail;
 
-class LoadPersonIsolated extends AbstractProcessor {
+public class LoadClassesIsolated extends AbstractProcessor {
+
     static volatile AssertionError assertionErrorInClose;
     private final boolean shouldComplete;
+    private final List<String> onClasspath;
+    private final List<String> notOnClasspath;
 
-    LoadPersonIsolated(boolean shouldComplete) {
+    LoadClassesIsolated(boolean shouldComplete) {
+        this.shouldComplete = shouldComplete;
+        onClasspath = new ArrayList<>();
+        onClasspath.add("com.sample.pojo.person.Person$Appereance");
+        notOnClasspath = new ArrayList<>();
+        notOnClasspath.add("com.sample.pojo.car.Car");
+    }
+
+    LoadClassesIsolated(List<String> onClasspath, List<String> notOnClasspath, boolean shouldComplete) {
+        this.onClasspath = onClasspath;
+        this.notOnClasspath = notOnClasspath;
         this.shouldComplete = shouldComplete;
     }
 
     @Override
-    protected void init(@Nonnull Context context) {
+    protected void init(@Nonnull Processor.Context context) {
         checkLoadClass();
     }
 
@@ -52,15 +67,19 @@ class LoadPersonIsolated extends AbstractProcessor {
 
     private void checkLoadClass() {
         ClassLoader cl = Thread.currentThread().getContextClassLoader();
-        try {
-            cl.loadClass("com.sample.pojo.person.Person$Appereance");
-        } catch (ClassNotFoundException e) {
-            fail(e.getMessage());
+        for (String classname : onClasspath) {
+            try {
+                cl.loadClass(classname);
+            } catch (ClassNotFoundException e) {
+                fail(e.getMessage());
+            }
         }
-        try {
-            cl.loadClass("com.sample.pojo.car.Car");
-            fail();
-        } catch (ClassNotFoundException ignored) {
+        for (String classname : notOnClasspath) {
+            try {
+                cl.loadClass(classname);
+                fail();
+            } catch (ClassNotFoundException ignored) {
+            }
         }
     }
 }
