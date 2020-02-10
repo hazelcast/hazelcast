@@ -67,6 +67,19 @@
                 <configuration>
                     <createSourcesJar>true</createSourcesJar>
                     <createDependencyReducedPom>true</createDependencyReducedPom>
+                    <artifactSet>
+                        <includes>
+                            <include>com.hazelcast.jet:*</include>
+                            <include>com.hazelcast:*</include>
+                            <include>info.picocli:picocli</include>
+                        </includes>
+                    </artifactSet>
+                    <relocations>
+                        <relocation>
+                            <pattern>picocli</pattern>
+                            <shadedPattern>com.hazelcast.jet.picocli</shadedPattern>
+                        </relocation>
+                    </relocations>
                     <transformers>
                         <transformer
                                 implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>

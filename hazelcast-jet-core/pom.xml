@@ -121,6 +121,7 @@
             <groupId>com.rabbitmq.jms</groupId>
             <artifactId>rabbitmq-jms</artifactId>
             <version>1.14.0</version>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
