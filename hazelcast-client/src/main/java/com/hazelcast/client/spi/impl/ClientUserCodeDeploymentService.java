@@ -32,8 +32,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.AbstractMap;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -64,53 +62,12 @@ public class ClientUserCodeDeploymentService {
         if (!clientUserCodeDeploymentConfig.isEnabled()) {
             return;
         }
-        Map<String, byte[]> classDefinitions = new HashMap<String, byte[]>();
-        loadClassesFromJars(classDefinitions);
-        loadClasses(classDefinitions);
-
-        List<Class<?>> classes = new ArrayList<Class<?>>(classDefinitions.keySet().size());
-        for (String className : classDefinitions.keySet()) {
-            classes.add(configClassLoader.loadClass(className));
-        }
-        List<Class> sortedClasses = sortByInheritance(classes);
-        for (Class sortedClass : sortedClasses) {
-            String className = sortedClass.getName();
-            byte[] bytes = classDefinitions.get(className);
-            classDefinitionList.add(new AbstractMap.SimpleEntry<String, byte[]>(className, bytes));
-        }
+        loadClassesFromJars();
+        loadClasses();
     }
 
-    public static List<Class> sortByInheritance(List<Class<?>> classList) {
-        List<Class> sortedList = new LinkedList<Class>();
-        for (Class aClass : classList) {
-            boolean isInserted = false;
-
-            int index = 0;
-            for (Class sortedClass : sortedList) {
-                if (aClass.isAssignableFrom(sortedClass)) {
-                    sortedList.add(index, aClass);
-                    isInserted = true;
-                    break;
-                }
-                index++;
-            }
-            if (!isInserted) {
-                sortedList.add(aClass);
-            }
-        }
-        return sortedList;
-    }
-
-
-    private void loadClasses(Map<String, byte[]> classDefinitions) throws ClassNotFoundException {
-        List<String> classNames = clientUserCodeDeploymentConfig.getClassNames();
-        List<Class<?>> classes = new ArrayList<Class<?>>(classNames.size());
-        for (String className : classNames) {
-            classes.add(configClassLoader.loadClass(className));
-        }
-        List<Class> sortedClasses = sortByInheritance(classes);
-        for (Class clazz : sortedClasses) {
-            String className = clazz.getName();
+    private void loadClasses() throws ClassNotFoundException {
+        for (String className : clientUserCodeDeploymentConfig.getClassNames()) {
             String resource = className.replace('.', '/').concat(".class");
             InputStream is = null;
             try {
@@ -119,7 +76,7 @@ public class ClientUserCodeDeploymentService {
                     throw new ClassNotFoundException(resource);
                 }
                 byte[] bytes = toByteArray(is);
-                classDefinitions.put(className, bytes);
+                classDefinitionList.add(new AbstractMap.SimpleEntry<String, byte[]>(className, bytes));
             } catch (IOException e) {
                 ignore(e);
             } finally {
@@ -128,19 +85,18 @@ public class ClientUserCodeDeploymentService {
         }
     }
 
-    private void loadClassesFromJars(Map<String, byte[]> classDefinitions) throws IOException {
+    private void loadClassesFromJars() throws IOException {
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         try {
             for (String jarPath : clientUserCodeDeploymentConfig.getJarPaths()) {
-                loadClassesFromJar(classDefinitions, os, jarPath);
+                loadClassesFromJar(os, jarPath);
             }
         } finally {
             closeResource(os);
         }
     }
 
-    private void loadClassesFromJar(Map<String, byte[]> classDefinitions,
-                                    ByteArrayOutputStream os, String jarPath) throws IOException {
+    private void loadClassesFromJar(ByteArrayOutputStream os, String jarPath) throws IOException {
         JarInputStream inputStream = null;
         try {
             inputStream = getJarInputStream(jarPath);
@@ -157,7 +113,7 @@ public class ClientUserCodeDeploymentService {
                 }
                 byte[] classDefinition = readClassDefinition(inputStream, os);
                 inputStream.closeEntry();
-                classDefinitions.put(className, classDefinition);
+                classDefinitionList.add(new AbstractMap.SimpleEntry<String, byte[]>(className, classDefinition));
             } while (true);
         } finally {
             closeResource(inputStream);

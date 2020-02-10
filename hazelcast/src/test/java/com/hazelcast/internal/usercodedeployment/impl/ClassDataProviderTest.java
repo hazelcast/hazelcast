@@ -25,6 +25,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Collections;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -82,7 +83,7 @@ public class ClassDataProviderTest {
     }
 
     private static ClassSource newMockClassSource() {
-        ClassSource classSource = new ClassSource(null, null);
+        ClassSource classSource = new ClassSource(null, null, Collections.EMPTY_MAP);
         classSource.addClassDefinition("className", new byte[4]);
         return classSource;
     }

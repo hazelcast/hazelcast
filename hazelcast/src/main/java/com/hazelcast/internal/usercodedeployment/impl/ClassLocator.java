@@ -31,6 +31,9 @@ import com.hazelcast.spi.OperationService;
 import java.io.Closeable;
 import java.security.PrivilegedAction;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
@@ -95,7 +98,18 @@ public final class ClassLocator {
         return tryToGetClassFromRemote(name);
     }
 
-    public void defineClassFromClient(final String name, final byte[] classDef) {
+
+    public void defineClassesFromClient(List<Map.Entry<String, byte[]>> bundledClassDefinitions) {
+        Map<String, byte[]> bundledClassDefMap = new HashMap<String, byte[]>();
+        for (Map.Entry<String, byte[]> bundledClassDefinition : bundledClassDefinitions) {
+            bundledClassDefMap.put(bundledClassDefinition.getKey(), bundledClassDefinition.getValue());
+        }
+        for (Map.Entry<String, byte[]> bundledClassDefinition : bundledClassDefinitions) {
+            defineClassFromClient(bundledClassDefinition.getKey(), bundledClassDefinition.getValue(), bundledClassDefMap);
+        }
+    }
+
+    public Class<?> defineClassFromClient(final String name, byte[] classDef, final Map<String, byte[]> bundledClassDefMap) {
         // we need to acquire a classloading lock before defining a class
         // Java 7+ can use locks with per-class granularity while Java 6 has to use a single lock
         // mutexFactory abstract these differences away
@@ -112,18 +126,18 @@ public final class ClassLocator {
                         } else if (logger.isFineEnabled()) {
                             logger.finest("Class " + name + " is already in local cache with equal byte code");
                         }
-                        return;
+                        return classSource.getClazz(name);
                     }
                 } else {
                     classSource = doPrivileged(new PrivilegedAction<ClassSource>() {
                         @Override
                         public ClassSource run() {
-                            return new ClassSource(parent, ClassLocator.this);
+                            return new ClassSource(parent, ClassLocator.this, bundledClassDefMap);
                         }
                     });
                     clientClassSourceMap.put(mainClassName, classSource);
                 }
-                classSource.define(name, classDef);
+                return classSource.define(name, classDef);
             }
         } finally {
             IOUtil.closeResource(classMutex);
@@ -150,7 +164,7 @@ public final class ClassLocator {
                 } else if (ThreadLocalClassCache.getFromCache(mainClassName) != null) {
                     classSource = ThreadLocalClassCache.getFromCache(mainClassName);
                 } else {
-                    classSource = new ClassSource(parent, this);
+                    classSource = new ClassSource(parent, this, Collections.EMPTY_MAP);
                 }
                 ClassData classData = fetchBytecodeFromRemote(name);
                 if (classData == null) {
