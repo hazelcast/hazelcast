@@ -42,12 +42,11 @@ public final class FetchPartitionStateOperation extends AbstractPartitionOperati
     @Override
     public void run() {
         Address caller = getCallerAddress();
-        NodeEngine nodeEngine = getNodeEngine();
-        Address master = nodeEngine.getMasterAddress();
-        if (!caller.equals(master)) {
-            String msg = caller + " requested our partition table but it's not our known master. " + "Master: " + master;
+        InternalPartitionServiceImpl service = getService();
+        if (!service.isMemberMaster(caller)) {
+            String msg = caller + " requested our partition table but it's not our known master.";
             getLogger().warning(msg);
-            throw new IllegalStateException(msg);
+            throw new RetryableHazelcastException(msg);
         }
         InternalPartitionServiceImpl service = getService();
         partitionState = service.createPartitionStateInternal();

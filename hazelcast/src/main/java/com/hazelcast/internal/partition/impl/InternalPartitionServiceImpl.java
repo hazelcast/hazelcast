@@ -100,6 +100,7 @@ import static com.hazelcast.cluster.memberselector.MemberSelectors.NON_LOCAL_MEM
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.FutureUtil.returnWithDeadline;
 import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.partition.impl.MigrationManager.applyMigration;
 import static java.lang.Math.ceil;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
@@ -503,7 +504,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
 
             int partitionId = migrationInfo.getPartitionId();
             InternalPartitionImpl partition = (InternalPartitionImpl) partitions[partitionId];
-            migrationManager.applyMigration(partition, migrationInfo);
+            applyMigration(partition, migrationInfo);
 
             migrationInfo.setStatus(MigrationStatus.SUCCESS);
             completedMigrations.add(migrationInfo);
@@ -536,7 +537,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
             for (MigrationInfo migrationInfo : migrationInfos) {
                 int partitionId = migrationInfo.getPartitionId();
                 InternalPartitionImpl partition = (InternalPartitionImpl) partitions[partitionId];
-                migrationManager.applyMigration(partition, migrationInfo);
+                applyMigration(partition, migrationInfo);
                 migrationInfo.setStatus(MigrationStatus.SUCCESS);
             }
 
@@ -724,24 +725,21 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
     }
 
     private boolean validateSenderIsMaster(Address sender, String messageType) {
-        Address master = latestMaster;
         Address thisAddress = node.getThisAddress();
-        if (thisAddress.equals(master) && !thisAddress.equals(sender)) {
+        if (thisAddress.equals(latestMaster) && !thisAddress.equals(sender)) {
             logger.warning("This is the master node and received " + messageType + " from " + sender
                     + ". Ignoring incoming state! ");
             return false;
         } else {
-            if (sender == null || !sender.equals(master)) {
+            if (!isMemberMaster(sender)) {
                 if (node.clusterService.getMember(sender) == null) {
                     logger.severe("Received " + messageType + " from an unknown member!"
-                            + " => Sender: " + sender + ", Master: " + master + "! ");
-                    return false;
+                            + " => Sender: " + sender + "! ");
                 } else {
                     logger.warning("Received " + messageType + ", but its sender doesn't seem to be master!"
-                            + " => Sender: " + sender + ", Master: " + master + "! "
-                            + "(Ignore if master node has changed recently.)");
-                    return false;
+                            + " => Sender: " + sender + "! (Ignore if master node has changed recently.)");
                 }
+                return false;
             }
         }
         return true;
@@ -950,7 +948,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
                         logger.fine("Applying completed migration " + migration);
                     }
                     InternalPartitionImpl partition = partitionStateManager.getPartitionImpl(migration.getPartitionId());
-                    migrationManager.applyMigration(partition, migration);
+                    applyMigration(partition, migration);
                 }
                 migrationManager.scheduleActiveMigrationFinalization(migration);
             }
@@ -1337,12 +1335,31 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
      * This method should be used instead of {@code node.isMaster()}
      * when the logic relies on being master.
      */
-    boolean isLocalMemberMaster() {
-        Address master = latestMaster;
-        if (master == null && node.getClusterService().getSize() == 1) {
-            master = node.getClusterService().getMasterAddress();
+    public boolean isLocalMemberMaster() {
+        return isMemberMaster(node.getThisAddress());
+    }
+
+    /**
+     * Returns true only if the member is the last known master by
+     * {@code InternalPartitionServiceImpl} and {@code ClusterServiceImpl}.
+     * <p>
+     * Last known master is updated under partition service lock,
+     * when the former master leaves the cluster.
+     */
+    public boolean isMemberMaster(Address address) {
+        if (address == null) {
+            return false;
         }
-        return node.getThisAddress().equals(master);
+        Address master = latestMaster;
+        ClusterServiceImpl clusterService = node.getClusterService();
+
+        // If this is the only node, we can rely on ClusterService only.
+        if (master == null && clusterService.getSize() == 1) {
+            master = clusterService.getMasterAddress();
+        }
+
+        // address should be the known master by both PartitionService and ClusterService.
+        return address.equals(master) && address.equals(clusterService.getMasterAddress());
     }
 
     @SuppressWarnings("checkstyle:npathcomplexity")
@@ -1382,7 +1399,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
             InternalPartitionImpl partition = partitionStateManager.getPartitionImpl(migration.getPartitionId());
             boolean added = migrationManager.addCompletedMigration(migration);
             assert added : "Could not add completed migration on destination: " + migration;
-            migrationManager.applyMigration(partition, migration);
+            applyMigration(partition, migration);
             partitionStateManager.setVersion(finalVersion);
             activeMigration.setStatus(migration.getStatus());
             migrationManager.finalizeMigration(migration);
