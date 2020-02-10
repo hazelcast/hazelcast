@@ -35,8 +35,8 @@ import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 import java.io.IOException;
 import java.util.UUID;
 
+import static com.hazelcast.map.impl.DirectBackupEntryProcessor.DIRECT_BACKUP_PROCESSOR;
 import static com.hazelcast.map.impl.operation.EntryOperator.operator;
-import static com.hazelcast.map.listener.EntryProcessorUtil.directBackupProcessor;
 
 /**
  * Set &amp; Unlock processing for the EntryOperation
@@ -114,7 +114,7 @@ public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
 
     @Override
     public Operation getBackupOperation() {
-        if (entryBackupProcessor == directBackupProcessor()) {
+        if (entryBackupProcessor == DIRECT_BACKUP_PROCESSOR) {
             return backupRecord == null ? new RemoveBackupOperation(name, dataKey, false) : new PutBackupOperation(name, dataKey,
                     backupRecord, backupValue);
         }
@@ -127,7 +127,7 @@ public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
     }
 
     private boolean shouldUseDirectBackup() {
-        return mapContainer.getTotalBackupCount() > 0 && entryBackupProcessor == directBackupProcessor();
+        return mapContainer.getTotalBackupCount() > 0 && entryBackupProcessor == DIRECT_BACKUP_PROCESSOR;
     }
 
     @Override

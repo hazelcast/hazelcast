@@ -41,8 +41,8 @@ import java.util.List;
 import java.util.Set;
 
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
+import static com.hazelcast.map.impl.DirectBackupEntryProcessor.DIRECT_BACKUP_PROCESSOR;
 import static com.hazelcast.map.impl.operation.EntryOperator.operator;
-import static com.hazelcast.map.listener.EntryProcessorUtil.directBackupProcessor;
 
 public class MultipleEntryOperation extends MapOperation
         implements MutatingOperation, PartitionAwareOperation, BackupAwareOperation {
@@ -119,7 +119,7 @@ public class MultipleEntryOperation extends MapOperation
     }
 
     private boolean shouldUseDirectBackup() {
-        return entryProcessor.getBackupProcessor() == directBackupProcessor()
+        return entryProcessor.getBackupProcessor() == DIRECT_BACKUP_PROCESSOR
                 && mapContainer.getTotalBackupCount() > 0;
     }
 
@@ -137,7 +137,7 @@ public class MultipleEntryOperation extends MapOperation
     public Operation getBackupOperation() {
         EntryProcessor backupProcessor = entryProcessor.getBackupProcessor();
         Operation backupOperation = null;
-        if (backupProcessor == directBackupProcessor()) {
+        if (backupProcessor == DIRECT_BACKUP_PROCESSOR) {
             backupOperation = getDirectBackupOperation();
         } else if (backupProcessor != null) {
             backupOperation = getMultipleEntryBackupOperation(backupProcessor);

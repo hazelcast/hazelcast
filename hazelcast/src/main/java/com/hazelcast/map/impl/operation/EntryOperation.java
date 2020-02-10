@@ -51,8 +51,8 @@ import java.util.UUID;
 import static com.hazelcast.core.Offloadable.NO_OFFLOADING;
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
+import static com.hazelcast.map.impl.DirectBackupEntryProcessor.DIRECT_BACKUP_PROCESSOR;
 import static com.hazelcast.map.impl.operation.EntryOperator.operator;
-import static com.hazelcast.map.listener.EntryProcessorUtil.directBackupProcessor;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.OFFLOADABLE_EXECUTOR;
 import static com.hazelcast.spi.impl.operationservice.CallStatus.RESPONSE;
 import static com.hazelcast.spi.impl.operationservice.CallStatus.WAIT;
@@ -280,7 +280,7 @@ public class EntryOperation extends LockAwareOperation
             return null;
         }
         EntryProcessor backupProcessor = entryProcessor.getBackupProcessor();
-        if (backupProcessor == directBackupProcessor()) {
+        if (backupProcessor == DIRECT_BACKUP_PROCESSOR) {
             return backupRecord == null ? new RemoveBackupOperation(name, dataKey, false) : new PutBackupOperation(name, dataKey,
                     backupRecord, backupValue);
         }
@@ -300,7 +300,7 @@ public class EntryOperation extends LockAwareOperation
             return false;
         }
         return mapContainer.getTotalBackupCount() > 0
-                && entryProcessor.getBackupProcessor() == directBackupProcessor();
+                && entryProcessor.getBackupProcessor() == DIRECT_BACKUP_PROCESSOR;
     }
 
     @Override

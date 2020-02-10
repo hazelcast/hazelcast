@@ -46,8 +46,8 @@ import java.util.Queue;
 import java.util.Set;
 
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
+import static com.hazelcast.map.impl.DirectBackupEntryProcessor.DIRECT_BACKUP_PROCESSOR;
 import static com.hazelcast.map.impl.operation.EntryOperator.operator;
-import static com.hazelcast.map.listener.EntryProcessorUtil.directBackupProcessor;
 
 /**
  * GOTCHA: This operation does NOT load missing keys from map-store for now.
@@ -237,7 +237,7 @@ public class PartitionWideEntryOperation extends MapOperation
     }
 
     private boolean shouldUseDirectBackup() {
-        return entryProcessor.getBackupProcessor() == directBackupProcessor()
+        return entryProcessor.getBackupProcessor() == DIRECT_BACKUP_PROCESSOR
                 && mapContainer.getTotalBackupCount() > 0;
     }
 
@@ -255,7 +255,7 @@ public class PartitionWideEntryOperation extends MapOperation
     public Operation getBackupOperation() {
         EntryProcessor backupProcessor = entryProcessor.getBackupProcessor();
         Operation backupOperation = null;
-        if (backupProcessor == directBackupProcessor()) {
+        if (backupProcessor == DIRECT_BACKUP_PROCESSOR) {
             // direct copy backup
             backupOperation = getDirectBackupOperation();
         } else if (backupProcessor != null) {
