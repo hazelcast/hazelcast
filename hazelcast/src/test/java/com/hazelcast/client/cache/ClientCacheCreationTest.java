@@ -25,6 +25,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastOverloadException;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.executor.ExecutorServiceTestSupport;
@@ -120,7 +121,15 @@ public class ClientCacheCreationTest extends CacheCreationTest {
         HazelcastClientCachingProvider cachingProvider = createClientCachingProvider(client);
         final CacheManager cacheManager = cachingProvider.getCacheManager();
         MutableConfiguration configuration = new MutableConfiguration();
-        cacheManager.createCache("xmlCache", configuration);
+        // ensure cache is created despite the low concurrent invocation limit
+        assertTrueEventually(() -> {
+            try {
+                cacheManager.createCache("xmlCache", configuration);
+            } catch (HazelcastOverloadException e) {
+                throw new AssertionError("Could not create cache due to "
+                        + "low concurrent invocation count.");
+            }
+        });
 
         IExecutorService executorService = client.getExecutorService("exec");
         //keep the slot for one invocation to test if client can reconnect even if all slots are kept
