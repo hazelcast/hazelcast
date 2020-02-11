@@ -22,6 +22,7 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -45,6 +46,11 @@ public class ThreadMetricSetTest extends HazelcastTestSupport {
     public void setup() {
         metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), INFO);
         ThreadMetricSet.register(metricsRegistry);
+    }
+
+    @After
+    public void tearDown() {
+        metricsRegistry.shutdown();
     }
 
     @Test
