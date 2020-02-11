@@ -40,6 +40,8 @@ import usercodedeployment.CapitalizatingFirstnameExtractor;
 import usercodedeployment.EntryProcessorWithAnonymousAndInner;
 import usercodedeployment.IncrementingEntryProcessor;
 import usercodedeployment.Person;
+import usercodedeployment.SampleBaseClass;
+import usercodedeployment.SampleSubClass;
 
 import java.util.Collection;
 import java.util.LinkedList;
@@ -215,6 +217,57 @@ public class ClientUserCodeDeploymentTest extends ClientTestSupport {
         assertEquals("ada", results.iterator().next().getValue().getName());
     }
 
+    @Test
+    public void testWithParentAndChildClassesWorksIndependentOfOrder_childFirst() {
+        ClientConfig clientConfig = new ClientConfig();
+        ClientUserCodeDeploymentConfig clientUserCodeDeploymentConfig = new ClientUserCodeDeploymentConfig();
+        clientUserCodeDeploymentConfig.addClass(SampleSubClass.class);
+        clientUserCodeDeploymentConfig.addClass(SampleBaseClass.class);
+        clientConfig.setUserCodeDeploymentConfig(clientUserCodeDeploymentConfig.setEnabled(true));
+
+        factory.newHazelcastInstance(createNodeConfig());
+        factory.newHazelcastClient(clientConfig);
+    }
+
+    @Test
+    public void testWithParentAndChildClassesWorksIndependentOfOrder_parentFirst() {
+        ClientConfig clientConfig = new ClientConfig();
+        ClientUserCodeDeploymentConfig clientUserCodeDeploymentConfig = new ClientUserCodeDeploymentConfig();
+        clientUserCodeDeploymentConfig.addClass(SampleBaseClass.class);
+        clientUserCodeDeploymentConfig.addClass(SampleSubClass.class);
+        clientConfig.setUserCodeDeploymentConfig(clientUserCodeDeploymentConfig.setEnabled(true));
+
+        factory.newHazelcastInstance(createNodeConfig());
+        factory.newHazelcastClient(clientConfig);
+    }
 
 
+    @Test
+    public void testWithParentAndChildClassesWorksIndependentOfOrder_withChildParentJar() {
+        ClientConfig clientConfig = new ClientConfig();
+        ClientUserCodeDeploymentConfig clientUserCodeDeploymentConfig = new ClientUserCodeDeploymentConfig();
+        /*child parent jar contains two classes as follows. This classes are not put into code base on purpose,
+        in order not to effect the test. Child class is loaded first when reading via JarInputStream.getNextJarEntry, which
+        is the case we wanted to test.
+
+        package usercodedeployment;
+        import java.io.Serializable;
+        public class ParentClass implements Serializable, Runnable {
+            @Override
+            public void run() {
+
+            }
+        }
+
+        package usercodedeployment;
+        public class AChildClass extends AParentClass {
+        }
+
+         */
+        clientUserCodeDeploymentConfig.addJar("ChildParent.jar");
+        clientConfig.setUserCodeDeploymentConfig(clientUserCodeDeploymentConfig.setEnabled(true));
+
+        factory.newHazelcastInstance(createNodeConfig());
+        factory.newHazelcastClient(clientConfig);
+    }
 }
