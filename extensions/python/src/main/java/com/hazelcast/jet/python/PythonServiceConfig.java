@@ -34,16 +34,23 @@ import java.util.StringJoiner;
  * same size, with a one-to-one mapping between input and output elements.
  * Here's a simple example of a function that transforms every input
  * string by prepending {@code "echo-"} to it:
- * <pre>
+ * <pre>{@code
  * def transform_list(input_list):
  *     return ["echo-%s" % i for i in input_list]
- * </pre>
- * You tell Jet the location of your project {@linkplain #setBaseDir
- * directory} and the name of the Python {@linkplain #setHandlerModule
- * module} containing {@code transform_list()}. If you have a very simple
- * setup with everything in a single Python file, you can use {@link
- * #setHandlerFile} instead of {@link #setBaseDir}. This file is assumed to
- * be the Python module that contains {@code transform_list()}. You can
+ * }</pre>
+ * If you have a very simple setup with everything in a single Python file,
+ * you can use {@link #setHandlerFile}. Let's say you saved the above
+ * Python code to a file named {@code echo.py}. You can use it from Jet
+ * like this:
+ * <pre>{@code
+ * StreamStage<String> inputStage = createInputStage();
+ * StreamStage<String> outputStage = inputStage.apply(
+ *         mapUsingPython(new PythonServiceConfig()
+ *                 .setHandlerFile("path/to/echo.py")));
+ * }</pre>
+ * In more complex setups you can tell Jet the location of your project
+ * {@linkplain #setBaseDir directory} and the name of the Python {@linkplain
+ * #setHandlerModule module} containing {@code transform_list()}. You can
  * also use a {@linkplain #setHandlerFunction different name} for the
  * function.
  * <p>
