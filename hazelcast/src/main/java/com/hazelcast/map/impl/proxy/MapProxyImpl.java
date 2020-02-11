@@ -22,6 +22,7 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.map.EntryProcessor;
@@ -44,7 +45,6 @@ import com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest;
 import com.hazelcast.map.impl.querycache.subscriber.SubscriberContext;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
@@ -68,6 +68,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
 
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
@@ -1023,6 +1024,29 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     private static void checkNotPagingPredicate(Predicate predicate, String method) {
         if (predicate instanceof PagingPredicate) {
             throw new IllegalArgumentException("PagingPredicate not supported in " + method + " method");
+        }
+    }
+
+    @Override
+    public V computeIfPresent(K key,
+                               BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+
+        while (true) {
+            Data oldValueData = toData(getInternal(key));
+            if (oldValueData == null) {
+                return null;
+            }
+
+            V oldValueClone = toObject(oldValueData);
+            V newValue = remappingFunction.apply(key, oldValueClone);
+            if (newValue != null) {
+                if (replaceInternal(key, oldValueData, toData(newValue))) {
+                    return newValue;
+                }
+            } else if (removeInternal(key, oldValueData)) {
+                return null;
+            }
         }
     }
 }
