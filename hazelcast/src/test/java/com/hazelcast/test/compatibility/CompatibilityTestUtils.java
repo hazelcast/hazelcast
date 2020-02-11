@@ -24,8 +24,15 @@ import java.lang.instrument.Instrumentation;
 
 public final class CompatibilityTestUtils {
 
-    // When running a compatibility test, all com.hazelcast.* classes are transformed so that none are
-    // loaded with final modifier to allow subclass proxying.
+    /**
+     * When running a compatibility test, all com.hazelcast.* classes are transformed so that none are
+     * loaded with final modifier to allow subclass proxying.
+     * We configure the agent with REDEFINE type strategy and NoOp initialization strategy.
+     * This allows for the redefinition of the type (instead of default REBASE strategy) without
+     * adding any methods (which result in modifying Serializable classes' serialVersionUid). For
+     * more details see {@link net.bytebuddy.ByteBuddy#rebase(Class)} vs
+     * {@link net.bytebuddy.ByteBuddy#redefine(Class)}.
+     */
     public static void attachFinalRemovalAgent() {
         Instrumentation instrumentation = ByteBuddyAgent.install();
         new AgentBuilder.Default().with(AgentBuilder.TypeStrategy.Default.REDEFINE)

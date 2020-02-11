@@ -69,34 +69,34 @@ public class HazelcastVersionLocator {
         return files;
     }
 
-    // attempts to locate member artifact in local maven repository, then downloads
+    // attempts to locate hazelcast artifact in local maven repository, then downloads
     private static File locateMainArtifact(String version, File target, boolean enterprise) {
         File artifact = new File(LOCAL_M2_REPOSITORY_PREFIX + constructPath(version, enterprise));
         if (artifact.exists()) {
             return artifact;
         } else {
-            return downloadMember(version, target, enterprise);
+            return downloadMainArtifact(version, target, enterprise);
         }
     }
 
-    // attempts to locate member tests artifact in local maven repository, then downloads
+    // attempts to locate tests artifact in local maven repository, then downloads
     private static File locateTestsArtifact(String version, File target, boolean enterprise) {
         File artifact = new File(LOCAL_M2_REPOSITORY_PREFIX + constructPathForTests(version, enterprise));
         if (artifact.exists()) {
             return artifact;
         } else {
-            return downloadMemberTests(version, target, enterprise);
+            return downloadTestsArtifact(version, target, enterprise);
         }
     }
 
-    private static File downloadMember(String version, File target, boolean enterprise) {
+    private static File downloadMainArtifact(String version, File target, boolean enterprise) {
         String url = constructUrl(version, enterprise);
         String filename = extractFilenameFromUrl(url);
         logWarningForArtifactDownload(version, false, enterprise);
         return downloadFile(url, target, filename);
     }
 
-    private static File downloadMemberTests(String version, File target, boolean enterprise) {
+    private static File downloadTestsArtifact(String version, File target, boolean enterprise) {
         String url = constructUrlForTests(version, enterprise);
         String filename = extractFilenameFromUrl(url);
         logWarningForArtifactDownload(version, true, enterprise);
