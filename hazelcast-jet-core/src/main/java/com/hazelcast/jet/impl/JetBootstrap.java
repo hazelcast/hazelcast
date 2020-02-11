@@ -110,7 +110,8 @@ public final class JetBootstrap {
                             new URLClassLoader(new URL[]{jarUrl}, JetBootstrap.class.getClassLoader())
             );
 
-            Class<?> clazz = classLoader.loadClass(mainClass);
+            Class<?> clazz = loadMainClass(classLoader, mainClass);
+
             Method main = clazz.getDeclaredMethod("main", String[].class);
             int mods = main.getModifiers();
             if ((mods & Modifier.PUBLIC) == 0 || (mods & Modifier.STATIC) == 0) {
@@ -126,6 +127,15 @@ public final class JetBootstrap {
                 remembered.shutdown();
             }
             JetBootstrap.supplier = null;
+        }
+    }
+
+    private static Class<?> loadMainClass(ClassLoader classLoader, String mainClass) throws ClassNotFoundException {
+        try {
+            return classLoader.loadClass(mainClass);
+        } catch (ClassNotFoundException e) {
+            System.err.println("Cannot find or load main class: " + mainClass);
+            throw e;
         }
     }
 
