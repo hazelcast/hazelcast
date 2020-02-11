@@ -251,7 +251,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
 
         // make sure there are no entries left
-        IMap<String, TestData> map2 = newPrimary.getMap("test");
+        IMap<String, TestData> map2 = newPrimary.getMap(MAP_NAME);
         Map<String, Boolean> executedEntries = map2.executeOnEntries(new TestLoggingEntryProcessor());
         assertEquals(0, executedEntries.size());
     }
@@ -286,7 +286,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
 
         // make sure there are no entries left
-        IMap<String, TestData> map2 = newPrimary.getMap("test");
+        IMap<String, TestData> map2 = newPrimary.getMap(MAP_NAME);
         Map<String, Boolean> executedEntries = map2.executeOnEntries(new TestLoggingEntryProcessor());
         assertEquals(0, executedEntries.size());
     }
@@ -484,7 +484,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
                 instance2.shutdown();
                 newPrimary = instance1;
             }
-            IMap<String, TestData> map2 = newPrimary.getMap("test");
+            IMap<String, TestData> map2 = newPrimary.getMap(MAP_NAME);
             assertFalse(map2.containsKey("a"));
         } finally {
             instance1.shutdown();
