@@ -47,19 +47,19 @@ public abstract class MessageRunner<E> implements BiConsumer<ReadResultSet<Relia
     protected final ILogger logger;
     protected final ReliableMessageListener<E> listener;
     protected final String topicName;
-    protected long sequence;
+    protected volatile long sequence;
     private final SerializationService serializationService;
     private final ConcurrentMap<UUID, MessageRunner<E>> runnersMap;
     private final UUID id;
     private final Executor executor;
-    private final int batchSze;
+    private final int batchSize;
     private volatile boolean cancelled;
 
     public MessageRunner(UUID id,
                          ReliableMessageListener<E> listener,
                          Ringbuffer<ReliableTopicMessage> ringbuffer,
                          String topicName,
-                         int batchSze,
+                         int batchSize,
                          SerializationService serializationService,
                          Executor executor,
                          ConcurrentMap<UUID, MessageRunner<E>> runnersMap,
@@ -70,7 +70,7 @@ public abstract class MessageRunner<E> implements BiConsumer<ReadResultSet<Relia
         this.topicName = topicName;
         this.serializationService = serializationService;
         this.logger = logger;
-        this.batchSze = batchSze;
+        this.batchSize = batchSize;
         this.executor = executor;
         this.runnersMap = runnersMap;
 
@@ -86,7 +86,7 @@ public abstract class MessageRunner<E> implements BiConsumer<ReadResultSet<Relia
         if (cancelled) {
             return;
         }
-        ringbuffer.readManyAsync(sequence, 1, batchSze, null)
+        ringbuffer.readManyAsync(sequence, 1, batchSize, null)
                   .whenCompleteAsync(this, executor);
     }
 
