@@ -77,6 +77,16 @@ public class MockTransactionLogRecord implements TransactionLogRecord {
     }
 
     @Override
+    public void onCommitSuccess() {
+        // NOP
+    }
+
+    @Override
+    public void onCommitFailure() {
+        // NOP
+    }
+
+    @Override
     public Operation newRollbackOperation() {
         rollbackCalled = true;
         return createOperation(failRollback);

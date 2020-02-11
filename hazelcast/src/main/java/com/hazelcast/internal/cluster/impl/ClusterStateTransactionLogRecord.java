@@ -52,7 +52,8 @@ public class ClusterStateTransactionLogRecord implements TargetAwareTransactionL
     }
 
     public ClusterStateTransactionLogRecord(ClusterStateChange stateChange, Address initiator, Address target,
-            String txnId, long leaseTime, int memberListVersion, int partitionStateVersion, boolean isTransient) {
+                                            String txnId, long leaseTime, int memberListVersion,
+                                            int partitionStateVersion, boolean isTransient) {
         this.memberListVersion = memberListVersion;
         Preconditions.checkNotNull(stateChange);
         Preconditions.checkNotNull(initiator);
@@ -76,12 +77,23 @@ public class ClusterStateTransactionLogRecord implements TargetAwareTransactionL
 
     @Override
     public Operation newPrepareOperation() {
-        return new LockClusterStateOp(stateChange, initiator, txnId, leaseTime, memberListVersion, partitionStateVersion);
+        return new LockClusterStateOp(stateChange, initiator, txnId,
+                leaseTime, memberListVersion, partitionStateVersion);
     }
 
     @Override
     public Operation newCommitOperation() {
         return new CommitClusterStateOp(stateChange, initiator, txnId, isTransient);
+    }
+
+    @Override
+    public void onCommitSuccess() {
+        // NOP
+    }
+
+    @Override
+    public void onCommitFailure() {
+        // NOP
     }
 
     @Override
