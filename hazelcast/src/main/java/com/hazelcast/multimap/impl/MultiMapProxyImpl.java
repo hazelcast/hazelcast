@@ -49,7 +49,7 @@ import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
 @SuppressWarnings("checkstyle:methodcount")
-public class ObjectMultiMapProxy<K, V>
+public class MultiMapProxyImpl<K, V>
         extends MultiMapProxySupport
         implements MultiMap<K, V>, InitializingObject {
 
@@ -57,7 +57,7 @@ public class ObjectMultiMapProxy<K, V>
     protected static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
     protected static final String NULL_LISTENER_IS_NOT_ALLOWED = "Null listener is not allowed!";
 
-    public ObjectMultiMapProxy(MultiMapConfig config, MultiMapService service, NodeEngine nodeEngine, String name) {
+    public MultiMapProxyImpl(MultiMapConfig config, MultiMapService service, NodeEngine nodeEngine, String name) {
         super(config, service, nodeEngine, name);
     }
 
@@ -179,7 +179,7 @@ public class ObjectMultiMapProxy<K, V>
     public Set<Map.Entry<K, V>> entrySet() {
         NodeEngine nodeEngine = getNodeEngine();
         Map map = entrySetInternal();
-        Set<Map.Entry<K, V>> entrySet = new HashSet<Map.Entry<K, V>>();
+        Set<Map.Entry<K, V>> entrySet = new HashSet<>();
         for (Object obj : map.values()) {
             if (obj == null) {
                 continue;
