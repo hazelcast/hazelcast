@@ -54,7 +54,7 @@ network feature is often disabled in managed cloud environments. In this
 case you can enable the TCP-IP join inside 
 `config/hazelcast.yaml`. For more details, please see the the section on
 setting up clusters in [Hazelcast IMDG's reference
-manual](https://docs.hazelcast.org/docs/3.12.3/manual/html-single/index.html#setting-up-clusters)
+manual](https://docs.hazelcast.org/docs/4.0/manual/html-single/index.html#setting-up-clusters)
 
 ### 4. Submit a Job
 
@@ -88,6 +88,6 @@ start it.
 Additional Information
 ----------------------
 
-* [Hazelcast Jet on GitHub](https://github.com/hazelcast-jet)
+* [Hazelcast Jet on GitHub](https://github.com/hazelcast-jet), the repo includes [code examples](https://github.com/hazelcast/hazelcast-jet/tree/master/examples)
 * [Hazelcast Jet Homepage](https://jet.hazelcast.org)
 * [Hazelcast Jet Reference Manual](https://docs.hazelcast.org/docs/jet/latest/manual/)
