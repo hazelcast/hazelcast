@@ -44,12 +44,7 @@ public class RaftUtil {
     }
 
     public static <T extends RaftEndpoint> T getLeaderMember(final RaftNodeImpl node) {
-        Callable<RaftEndpoint> task = new Callable<RaftEndpoint>() {
-            @Override
-            public RaftEndpoint call() {
-                return node.state().leader();
-            }
-        };
+        Callable<RaftEndpoint> task = () -> node.state().leader();
         return (T) readRaftState(node, task);
     }
 
@@ -72,12 +67,7 @@ public class RaftUtil {
     }
 
     public static long getLastApplied(final RaftNodeImpl node) {
-        Callable<Long> task = new Callable<Long>() {
-            @Override
-            public Long call() {
-                return node.state().lastApplied();
-            }
-        };
+        Callable<Long> task = () -> node.state().lastApplied();
         return readRaftState(node, task);
     }
 
@@ -120,6 +110,12 @@ public class RaftUtil {
 
     public static RaftGroupMembers getCommittedGroupMembers(RaftNodeImpl node) {
         Callable<RaftGroupMembers> task = () -> node.state().committedGroupMembers();
+
+        return readRaftState(node, task);
+    }
+
+    public static RaftEndpoint getVotedFor(RaftNodeImpl node) {
+        Callable<RaftEndpoint> task = () -> node.state().votedFor();
 
         return readRaftState(node, task);
     }

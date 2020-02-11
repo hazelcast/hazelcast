@@ -435,8 +435,10 @@ public final class RaftState {
 
     private void setTerm(int newTerm) {
         assert newTerm >= term : "New term: " + newTerm + ", current term: " + term;
-        term = newTerm;
-        votedFor = null;
+        if (newTerm > term) {
+            term = newTerm;
+            votedFor = null;
+        }
     }
 
     /**
