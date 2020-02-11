@@ -119,7 +119,7 @@
         <atomikos.version>3.9.3</atomikos.version>
         <!-- Additional JVM system arguments -->
         <extraVmArgs/>
-        <vmHeapSettings>-Xms512m -Xmx2G -XX:MaxPermSize=1024M</vmHeapSettings>
+        <vmHeapSettings>-Xms512m -Xmx2G</vmHeapSettings>
         <!-- Java 9+ module system args to be appended during surefire/failsafe executions. -->
         <javaModuleArgs/>
     </properties>
@@ -467,7 +467,7 @@
         <profile>
             <id>LOCAL</id>
             <properties>
-                <vmHeapSettings>-Xms128m -Xmx1G -XX:MaxPermSize=128M</vmHeapSettings>
+                <vmHeapSettings>-Xms128m -Xmx1G</vmHeapSettings>
             </properties>
             <build>
                 <plugins>
@@ -539,7 +539,7 @@
         <profile>
             <id>test-coverage-Local</id>
             <properties>
-                <vmHeapSettings>-Xms128m -Xmx1G -XX:MaxPermSize=128M</vmHeapSettings>
+                <vmHeapSettings>-Xms128m -Xmx1G</vmHeapSettings>
             </properties>
             <build>
                 <plugins>
@@ -1047,7 +1047,7 @@
             <!-- for compatibility testing -->
             <id>generate-compatibility-samples</id>
             <properties>
-                <vmHeapSettings>-Xms128m -Xmx1G -XX:MaxPermSize=128M</vmHeapSettings>
+                <vmHeapSettings>-Xms128m -Xmx1G</vmHeapSettings>
             </properties>
             <build>
                 <plugins>

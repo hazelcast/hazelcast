@@ -944,7 +944,7 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void tstPutAllAsyncEmpty() {
+    public void testPutAllAsyncEmpty() {
         IMap<Integer, Integer> map = getInstance().getMap("testPutAllEmpty");
         ((MapProxyImpl<Integer, Integer>) map).putAllAsync(emptyMap());
     }

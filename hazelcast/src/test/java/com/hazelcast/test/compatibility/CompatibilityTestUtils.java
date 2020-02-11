@@ -18,11 +18,7 @@ package com.hazelcast.test.compatibility;
 
 import net.bytebuddy.agent.ByteBuddyAgent;
 import net.bytebuddy.agent.builder.AgentBuilder;
-import net.bytebuddy.description.type.TypeDescription;
-import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.jar.asm.Opcodes;
-import net.bytebuddy.matcher.ElementMatcher;
-import net.bytebuddy.utility.JavaModule;
 
 import java.lang.instrument.Instrumentation;
 
@@ -32,25 +28,18 @@ public final class CompatibilityTestUtils {
     // loaded with final modifier to allow subclass proxying.
     public static void attachFinalRemovalAgent() {
         Instrumentation instrumentation = ByteBuddyAgent.install();
-        new AgentBuilder.Default()
-                .disableClassFormatChanges()
-                .type(new ElementMatcher<TypeDescription>() {
-                    @Override
-                    public boolean matches(TypeDescription target) {
-                        return target.getName().startsWith("com.hazelcast");
-                    }
-                })
-                .transform(new AgentBuilder.Transformer() {
-                    @Override
-                    public DynamicType.Builder<?> transform(DynamicType.Builder<?> builder,
-                                                            TypeDescription typeDescription,
-                                                            ClassLoader classLoader, JavaModule module) {
-                        int actualModifiers = typeDescription.getActualModifiers(false);
-                        // unset final modifier
-                        int nonFinalModifiers = actualModifiers & ~Opcodes.ACC_FINAL;
-                        return builder.modifiers(nonFinalModifiers);
-                    }
-                })
-                .installOn(instrumentation);
+        new AgentBuilder.Default().with(AgentBuilder.TypeStrategy.Default.REDEFINE)
+                                  .with(AgentBuilder.InitializationStrategy.NoOp.INSTANCE)
+                                  .type(target -> target.getName().startsWith("com.hazelcast"))
+                                  .transform((builder, typeDescription, classLoader, module) -> {
+                                      int actualModifiers = typeDescription.getActualModifiers(false);
+                                      // unset final modifier
+                                      int nonFinalModifiers = actualModifiers & ~Opcodes.ACC_FINAL;
+                                      if (actualModifiers != nonFinalModifiers) {
+                                          return builder.modifiers(nonFinalModifiers);
+                                      } else {
+                                          return builder;
+                                      }
+                                  }).installOn(instrumentation);
     }
 }
