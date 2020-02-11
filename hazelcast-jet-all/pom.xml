@@ -76,8 +76,8 @@
                     </artifactSet>
                     <relocations>
                         <relocation>
-                            <pattern>picocli</pattern>
-                            <shadedPattern>com.hazelcast.jet.picocli</shadedPattern>
+                            <pattern>picocli.</pattern>
+                            <shadedPattern>com.hazelcast.jet.picocli.</shadedPattern>
                         </relocation>
                     </relocations>
                     <transformers>
