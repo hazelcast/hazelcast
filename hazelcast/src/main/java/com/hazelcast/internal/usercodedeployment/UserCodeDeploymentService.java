@@ -27,6 +27,8 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -65,11 +67,11 @@ public final class UserCodeDeploymentService implements ManagedService {
         enabled = config.isEnabled();
     }
 
-    public void defineClass(String name, byte[] classDefinition) {
+    public void defineClasses(List<Map.Entry<String, byte[]>> classDefinitions) {
         if (!enabled) {
             throw new IllegalStateException("User Code Deployment is not enabled.");
         }
-        locator.defineClassFromClient(name, classDefinition);
+        locator.defineClassesFromClient(classDefinitions);
     }
 
     // called by operations sent by other members
