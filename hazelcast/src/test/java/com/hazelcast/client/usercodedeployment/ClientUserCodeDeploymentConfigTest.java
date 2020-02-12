@@ -27,18 +27,19 @@ import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
 import usercodedeployment.IncrementingEntryProcessor;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -194,12 +195,20 @@ public class ClientUserCodeDeploymentConfigTest extends HazelcastTestSupport {
     }
 
     private static class CustomClassLoader extends ClassLoader {
+
+        boolean getResourceAsStreamCalled;
+
+        @Override
+        public InputStream getResourceAsStream(String name) {
+            getResourceAsStreamCalled = true;
+            return super.getResourceAsStream(name);
+        }
     }
 
     @Test
     public void testUserCodeDeploymentUsesCurrentThreadContextClassLoader() throws ClassNotFoundException, IOException {
         ClientUserCodeDeploymentConfig config = new ClientUserCodeDeploymentConfig();
-        CustomClassLoader classLoader = Mockito.spy(new CustomClassLoader());
+        CustomClassLoader classLoader = new CustomClassLoader();
 
         config.setEnabled(true);
         config.addClass(IncrementingEntryProcessor.class);
@@ -210,7 +219,7 @@ public class ClientUserCodeDeploymentConfigTest extends HazelcastTestSupport {
         List<Map.Entry<String, byte[]>> list = service.getClassDefinitionList();
         assertClassLoaded(list, IncrementingEntryProcessor.class.getName());
 
-        Mockito.verify(classLoader, Mockito.times(1)).getResourceAsStream(Mockito.any());
+        assertTrue(classLoader.getResourceAsStreamCalled);
     }
 
 }
