@@ -65,9 +65,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.internal.cluster.Versions.V3_10;
-import static com.hazelcast.internal.cluster.Versions.V3_11;
-import static com.hazelcast.internal.cluster.Versions.V3_9;
+import static com.hazelcast.internal.cluster.Versions.V4_0;
 import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
 import static com.hazelcast.internal.util.FutureUtil.waitForever;
 import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
@@ -93,29 +91,29 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
     private final DynamicConfigListener listener;
 
     private NodeEngine nodeEngine;
-    private final ConcurrentMap<String, MapConfig> mapConfigs = new ConcurrentHashMap<String, MapConfig>();
-    private final ConcurrentMap<String, MultiMapConfig> multiMapConfigs = new ConcurrentHashMap<String, MultiMapConfig>();
+    private final ConcurrentMap<String, MapConfig> mapConfigs = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, MultiMapConfig> multiMapConfigs = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, CardinalityEstimatorConfig> cardinalityEstimatorConfigs =
-            new ConcurrentHashMap<String, CardinalityEstimatorConfig>();
-    private final ConcurrentMap<String, PNCounterConfig> pnCounterConfigs = new ConcurrentHashMap<String, PNCounterConfig>();
-    private final ConcurrentMap<String, RingbufferConfig> ringbufferConfigs = new ConcurrentHashMap<String, RingbufferConfig>();
-    private final ConcurrentMap<String, ListConfig> listConfigs = new ConcurrentHashMap<String, ListConfig>();
-    private final ConcurrentMap<String, SetConfig> setConfigs = new ConcurrentHashMap<String, SetConfig>();
+            new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, PNCounterConfig> pnCounterConfigs = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, RingbufferConfig> ringbufferConfigs = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, ListConfig> listConfigs = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, SetConfig> setConfigs = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, ReplicatedMapConfig> replicatedMapConfigs =
-            new ConcurrentHashMap<String, ReplicatedMapConfig>();
-    private final ConcurrentMap<String, TopicConfig> topicConfigs = new ConcurrentHashMap<String, TopicConfig>();
-    private final ConcurrentMap<String, ExecutorConfig> executorConfigs = new ConcurrentHashMap<String, ExecutorConfig>();
+            new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, TopicConfig> topicConfigs = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, ExecutorConfig> executorConfigs = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, DurableExecutorConfig> durableExecutorConfigs =
-            new ConcurrentHashMap<String, DurableExecutorConfig>();
+            new ConcurrentHashMap<>();
     private final ConcurrentMap<String, ScheduledExecutorConfig> scheduledExecutorConfigs =
-            new ConcurrentHashMap<String, ScheduledExecutorConfig>();
-    private final ConcurrentMap<String, QueueConfig> queueConfigs = new ConcurrentHashMap<String, QueueConfig>();
+            new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, QueueConfig> queueConfigs = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, ReliableTopicConfig> reliableTopicConfigs =
-            new ConcurrentHashMap<String, ReliableTopicConfig>();
+            new ConcurrentHashMap<>();
     private final ConcurrentMap<String, CacheSimpleConfig> cacheSimpleConfigs =
-            new ConcurrentHashMap<String, CacheSimpleConfig>();
+            new ConcurrentHashMap<>();
     private final ConcurrentMap<String, FlakeIdGeneratorConfig> flakeIdGeneratorConfigs =
-            new ConcurrentHashMap<String, FlakeIdGeneratorConfig>();
+            new ConcurrentHashMap<>();
 
     private final ConfigPatternMatcher configPatternMatcher;
     private final ILogger logger;
@@ -532,29 +530,24 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
         Map<Class<? extends IdentifiedDataSerializable>, Version> configToVersion =
                 new HashMap<>();
 
-        // Since 3.9
-        configToVersion.put(MapConfig.class, V3_9);
-        configToVersion.put(MultiMapConfig.class, V3_9);
-        configToVersion.put(CardinalityEstimatorConfig.class, V3_9);
-        configToVersion.put(RingbufferConfig.class, V3_9);
-        configToVersion.put(ListConfig.class, V3_9);
-        configToVersion.put(SetConfig.class, V3_9);
-        configToVersion.put(ReplicatedMapConfig.class, V3_9);
-        configToVersion.put(TopicConfig.class, V3_9);
-        configToVersion.put(ExecutorConfig.class, V3_9);
-        configToVersion.put(DurableExecutorConfig.class, V3_9);
-        configToVersion.put(ScheduledExecutorConfig.class, V3_9);
-        configToVersion.put(QueueConfig.class, V3_9);
-        configToVersion.put(ReliableTopicConfig.class, V3_9);
-        configToVersion.put(CacheSimpleConfig.class, V3_9);
-        configToVersion.put(EventJournalConfig.class, V3_9);
-
-        // Since 3.10
-        configToVersion.put(FlakeIdGeneratorConfig.class, V3_10);
-        configToVersion.put(PNCounterConfig.class, V3_10);
-
-        // Since 3.11
-        configToVersion.put(MerkleTreeConfig.class, V3_11);
+        configToVersion.put(MapConfig.class, V4_0);
+        configToVersion.put(MultiMapConfig.class, V4_0);
+        configToVersion.put(CardinalityEstimatorConfig.class, V4_0);
+        configToVersion.put(RingbufferConfig.class, V4_0);
+        configToVersion.put(ListConfig.class, V4_0);
+        configToVersion.put(SetConfig.class, V4_0);
+        configToVersion.put(ReplicatedMapConfig.class, V4_0);
+        configToVersion.put(TopicConfig.class, V4_0);
+        configToVersion.put(ExecutorConfig.class, V4_0);
+        configToVersion.put(DurableExecutorConfig.class, V4_0);
+        configToVersion.put(ScheduledExecutorConfig.class, V4_0);
+        configToVersion.put(QueueConfig.class, V4_0);
+        configToVersion.put(ReliableTopicConfig.class, V4_0);
+        configToVersion.put(CacheSimpleConfig.class, V4_0);
+        configToVersion.put(EventJournalConfig.class, V4_0);
+        configToVersion.put(FlakeIdGeneratorConfig.class, V4_0);
+        configToVersion.put(PNCounterConfig.class, V4_0);
+        configToVersion.put(MerkleTreeConfig.class, V4_0);
 
         return Collections.unmodifiableMap(configToVersion);
     }

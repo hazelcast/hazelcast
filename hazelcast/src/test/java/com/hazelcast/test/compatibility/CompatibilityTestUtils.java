@@ -18,39 +18,35 @@ package com.hazelcast.test.compatibility;
 
 import net.bytebuddy.agent.ByteBuddyAgent;
 import net.bytebuddy.agent.builder.AgentBuilder;
-import net.bytebuddy.description.type.TypeDescription;
-import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.jar.asm.Opcodes;
-import net.bytebuddy.matcher.ElementMatcher;
-import net.bytebuddy.utility.JavaModule;
 
 import java.lang.instrument.Instrumentation;
 
 public final class CompatibilityTestUtils {
 
-    // When running a compatibility test, all com.hazelcast.* classes are transformed so that none are
-    // loaded with final modifier to allow subclass proxying.
+    /**
+     * When running a compatibility test, all com.hazelcast.* classes are transformed so that none are
+     * loaded with final modifier to allow subclass proxying.
+     * We configure the agent with REDEFINE type strategy and NoOp initialization strategy.
+     * This allows for the redefinition of the type (instead of default REBASE strategy) without
+     * adding any methods (which result in modifying Serializable classes' serialVersionUid). For
+     * more details see {@link net.bytebuddy.ByteBuddy#rebase(Class)} vs
+     * {@link net.bytebuddy.ByteBuddy#redefine(Class)}.
+     */
     public static void attachFinalRemovalAgent() {
         Instrumentation instrumentation = ByteBuddyAgent.install();
-        new AgentBuilder.Default()
-                .disableClassFormatChanges()
-                .type(new ElementMatcher<TypeDescription>() {
-                    @Override
-                    public boolean matches(TypeDescription target) {
-                        return target.getName().startsWith("com.hazelcast");
-                    }
-                })
-                .transform(new AgentBuilder.Transformer() {
-                    @Override
-                    public DynamicType.Builder<?> transform(DynamicType.Builder<?> builder,
-                                                            TypeDescription typeDescription,
-                                                            ClassLoader classLoader, JavaModule module) {
-                        int actualModifiers = typeDescription.getActualModifiers(false);
-                        // unset final modifier
-                        int nonFinalModifiers = actualModifiers & ~Opcodes.ACC_FINAL;
-                        return builder.modifiers(nonFinalModifiers);
-                    }
-                })
-                .installOn(instrumentation);
+        new AgentBuilder.Default().with(AgentBuilder.TypeStrategy.Default.REDEFINE)
+                                  .with(AgentBuilder.InitializationStrategy.NoOp.INSTANCE)
+                                  .type(target -> target.getName().startsWith("com.hazelcast"))
+                                  .transform((builder, typeDescription, classLoader, module) -> {
+                                      int actualModifiers = typeDescription.getActualModifiers(false);
+                                      // unset final modifier
+                                      int nonFinalModifiers = actualModifiers & ~Opcodes.ACC_FINAL;
+                                      if (actualModifiers != nonFinalModifiers) {
+                                          return builder.modifiers(nonFinalModifiers);
+                                      } else {
+                                          return builder;
+                                      }
+                                  }).installOn(instrumentation);
     }
 }

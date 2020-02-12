@@ -178,9 +178,9 @@ public class MemberVersionTest {
 
     @Test
     public void testAsSerializationVersion() {
-        Version version = MemberVersion.of(3, 8, 2).asVersion();
+        Version version = MemberVersion.of(4, 0, 2).asVersion();
 
-        assertEquals(Versions.V3_8, version);
+        assertEquals(Versions.V4_0, version);
     }
 
     @Test
