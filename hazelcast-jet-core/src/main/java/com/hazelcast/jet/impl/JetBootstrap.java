@@ -32,7 +32,7 @@ import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.impl.util.ConcurrentMemoizingSupplier;
-import com.hazelcast.jet.impl.util.Util;
+import com.hazelcast.jet.impl.util.JetConsoleLogHandler;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.IMap;
@@ -41,8 +41,6 @@ import com.hazelcast.topic.ITopic;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.URL;
@@ -53,6 +51,9 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.jar.JarFile;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Handler;
+import java.util.logging.Level;
 import java.util.logging.LogManager;
 
 import static com.hazelcast.jet.impl.config.ConfigProvider.locateAndGetJetConfig;
@@ -181,10 +182,18 @@ public final class JetBootstrap {
 
     public static void configureLogging() {
         if (LOGGING_CONFIGURED.compareAndSet(false, true)) {
-            try (InputStream input = JetBootstrap.class.getClassLoader().getResourceAsStream("logging.properties")) {
-                Util.uncheckRun(() -> LogManager.getLogManager().readConfiguration(input));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+            try {
+                java.util.logging.Logger rootLogger = LogManager.getLogManager().getLogger("");
+                for (Handler handler : rootLogger.getHandlers()) {
+                    if (handler instanceof ConsoleHandler) {
+                        rootLogger.removeHandler(handler);
+                    }
+                }
+
+                rootLogger.addHandler(new JetConsoleLogHandler());
+                rootLogger.setLevel(Level.INFO);
+            } catch (Exception e) {
+                System.err.println("Error configuring java.util.logging for Jet: " + e);
             }
         }
     }

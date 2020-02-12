@@ -25,7 +25,7 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.StreamHandler;
 
-public class JetLogHandler extends StreamHandler {
+public class JetConsoleLogHandler extends StreamHandler {
 
     public static final String ANSI_RESET = "\u001B[0m";
     public static final String ANSI_BLACK = "\u001B[30m";
@@ -37,7 +37,7 @@ public class JetLogHandler extends StreamHandler {
     public static final String ANSI_CYAN = "\u001B[36m";
     public static final String ANSI_WHITE = "\u001B[37m";
 
-    public JetLogHandler() {
+    public JetConsoleLogHandler() {
         super(System.out, new JetLogFormatter());
     }
 
