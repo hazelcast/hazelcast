@@ -284,7 +284,7 @@ public class MigrationManager {
         }
     }
 
-    MigrationInfo getActiveMigration() {
+    public MigrationInfo getActiveMigration() {
         return activeMigrationInfo;
     }
 
@@ -601,7 +601,7 @@ public class MigrationManager {
     }
 
     /** Mutates the partition state and applies the migration. */
-    void applyMigration(InternalPartitionImpl partition, MigrationInfo migrationInfo) {
+    static void applyMigration(InternalPartitionImpl partition, MigrationInfo migrationInfo) {
         final PartitionReplica[] members = Arrays.copyOf(partition.getReplicas(), InternalPartition.MAX_REPLICA_COUNT);
         if (migrationInfo.getSourceCurrentReplicaIndex() > -1) {
             members[migrationInfo.getSourceCurrentReplicaIndex()] = null;
@@ -818,10 +818,11 @@ public class MigrationManager {
                 if (migrationCollector.lostPartitionDestination != null) {
                     lostPartitions.put(partitionId, migrationCollector.lostPartitionDestination);
                 }
-                migrations.add(migrationCollector.migrations);
-                migrationCount += migrationCollector.migrations.size();
+                if (!migrationCollector.migrations.isEmpty()) {
+                    migrations.add(migrationCollector.migrations);
+                    migrationCount += migrationCollector.migrations.size();
+                }
             }
-            migrationCount += lostPartitions.size();
 
             stats.markNewRepartition(migrationCount);
             if (migrationCount > 0) {
