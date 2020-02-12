@@ -144,13 +144,18 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
     /** Verifies that the local master is equal to the migration master. */
     final void verifyMaster() {
         NodeEngine nodeEngine = getNodeEngine();
+        InternalPartitionServiceImpl service = getService();
         Address masterAddress = nodeEngine.getMasterAddress();
 
         if (!migrationInfo.getMaster().equals(masterAddress)) {
             throw new IllegalStateException("Migration initiator is not master node! => " + toString());
         }
 
-        if (getMigrationParticipantType() == MigrationParticipant.SOURCE && !masterAddress.equals(getCallerAddress())) {
+        if (!service.isMemberMaster(migrationInfo.getMaster())) {
+            throw new RetryableHazelcastException("Migration initiator is not the master node known by migration system!");
+        }
+
+        if (getMigrationParticipantType() == MigrationParticipant.SOURCE && !service.isMemberMaster(getCallerAddress())) {
             throw new IllegalStateException("Caller is not master node! => " + toString());
         }
     }

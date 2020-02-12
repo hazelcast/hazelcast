@@ -45,7 +45,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.logging.Level;
 
 /**
  * Migration operation used by Hazelcast version 3.9
@@ -88,9 +87,12 @@ public class MigrationOperation extends BaseMigrationOperation implements Target
      */
     @Override
     public void run() throws Exception {
-        setActiveMigration();
+        if (firstFragment) {
+            setActiveMigration();
+        }
 
         try {
+            checkActiveMigration();
             doRun();
         } catch (Throwable t) {
             logMigrationFailure(t);
@@ -124,6 +126,15 @@ public class MigrationOperation extends BaseMigrationOperation implements Target
             }
         } else {
             logMigrationCancelled();
+        }
+    }
+
+    private void checkActiveMigration() {
+        InternalPartitionServiceImpl partitionService = getService();
+        MigrationInfo activeMigration = partitionService.getMigrationManager().getActiveMigration();
+        if (!migrationInfo.equals(activeMigration)) {
+            throw new IllegalStateException("Unexpected active migration " + activeMigration
+                    + "! First migration fragment should have set active migration to: " + migrationInfo);
         }
     }
 
@@ -176,13 +187,11 @@ public class MigrationOperation extends BaseMigrationOperation implements Target
     }
 
     private void logMigrationFailure(Throwable e) {
-        Level level = Level.WARNING;
-        if (e instanceof IllegalStateException) {
-            level = Level.FINEST;
-        }
         ILogger logger = getLogger();
-        if (logger.isLoggable(level)) {
-            logger.log(level, e.getMessage(), e);
+        if (e instanceof IllegalStateException) {
+            logger.warning(e.getMessage());
+        } else {
+            logger.warning(e.getMessage(), e);
         }
     }
 

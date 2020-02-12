@@ -24,7 +24,6 @@ import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.NodeEngine;
 
 public class ShutdownRequestOperation extends AbstractPartitionOperation implements MigrationCycleOperation {
 
@@ -34,13 +33,11 @@ public class ShutdownRequestOperation extends AbstractPartitionOperation impleme
     @Override
     public void run() {
         InternalPartitionServiceImpl partitionService = getService();
-        final ILogger logger = getLogger();
-        final Address caller = getCallerAddress();
+        ILogger logger = getLogger();
+        Address caller = getCallerAddress();
 
-        final NodeEngine nodeEngine = getNodeEngine();
-        final ClusterService clusterService = nodeEngine.getClusterService();
-
-        if (clusterService.isMaster()) {
+        if (partitionService.isLocalMemberMaster()) {
+            ClusterService clusterService = getNodeEngine().getClusterService();
             Member member = clusterService.getMember(caller);
             if (member != null) {
                 if (logger.isFinestEnabled()) {
