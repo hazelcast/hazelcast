@@ -16,25 +16,25 @@
 
 package com.hazelcast.internal.partition.operation;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.partition.MigrationAwareService;
+import com.hazelcast.internal.partition.MigrationEndpoint;
 import com.hazelcast.internal.partition.MigrationInfo;
+import com.hazelcast.internal.partition.PartitionMigrationEvent;
 import com.hazelcast.internal.partition.ReplicaFragmentMigrationState;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.MigrationInterceptor.MigrationParticipant;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.internal.partition.impl.PartitionReplicaManager;
+import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationAccessor;
 import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
 import com.hazelcast.spi.impl.operationservice.TargetAware;
-import com.hazelcast.internal.partition.MigrationAwareService;
-import com.hazelcast.internal.partition.MigrationEndpoint;
-import com.hazelcast.internal.partition.PartitionMigrationEvent;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -42,7 +42,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.logging.Level;
 
 import static com.hazelcast.spi.impl.operationexecutor.OperationRunner.runDirect;
 
@@ -84,9 +83,12 @@ public class MigrationOperation extends BaseMigrationOperation implements Target
      */
     @Override
     public void run() throws Exception {
-        setActiveMigration();
+        if (firstFragment) {
+            setActiveMigration();
+        }
 
         try {
+            checkActiveMigration();
             doRun();
         } catch (Throwable t) {
             logMigrationFailure(t);
@@ -120,6 +122,15 @@ public class MigrationOperation extends BaseMigrationOperation implements Target
             }
         } else {
             logMigrationCancelled();
+        }
+    }
+
+    private void checkActiveMigration() {
+        InternalPartitionServiceImpl partitionService = getService();
+        MigrationInfo activeMigration = partitionService.getMigrationManager().getActiveMigration();
+        if (!migrationInfo.equals(activeMigration)) {
+            throw new IllegalStateException("Unexpected active migration " + activeMigration
+                    + "! First migration fragment should have set active migration to: " + migrationInfo);
         }
     }
 
@@ -170,13 +181,11 @@ public class MigrationOperation extends BaseMigrationOperation implements Target
     }
 
     private void logMigrationFailure(Throwable e) {
-        Level level = Level.WARNING;
-        if (e instanceof IllegalStateException) {
-            level = Level.FINEST;
-        }
         ILogger logger = getLogger();
-        if (logger.isLoggable(level)) {
-            logger.log(level, e.getMessage(), e);
+        if (e instanceof IllegalStateException) {
+            logger.warning(e.getMessage());
+        } else {
+            logger.warning(e.getMessage(), e);
         }
     }
 
