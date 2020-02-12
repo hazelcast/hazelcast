@@ -11,7 +11,7 @@
 
 # Hazelcast Discovery Plugin for Microsoft Azure
 
-This project provides a discovery strategy for Hazelcast 3.6-RC+1 enabled applications running on Azure. It will provide all Hazelcast instances by returning VMs within your Azure resource group. It supports virtual machine scale sets and tagging.
+This project provides a discovery strategy for Hazelcast 4.0+ enabled applications running on Azure. It will provide all Hazelcast instances by returning VMs within your Azure resource group. It supports virtual machine scale sets and tagging.
 
 ![Architectual diagram](img/azurespi.png)
 
@@ -59,6 +59,7 @@ Ensure that you have added the package `hazelcast-azure` to your Maven or Gradle
 
 In your Hazelcast configuration, use the `AzureDiscoveryStrategy` as shown below:
 
+#### XML Configuration:
 ```xml
 <hazelcast>
   <network>
@@ -77,14 +78,31 @@ In your Hazelcast configuration, use the `AzureDiscoveryStrategy` as shown below
   </network>
 </hazelcast>
 ```
+#### YAML Configuration:
+```yaml
+hazelcast:
+  network:
+    join:
+      multicast:
+        enabled: false
+      azure:
+        enabled: true
+        client-id: CLIENT_ID
+        tenant-id: TENANT_ID
+        client-secret: CLIENT_SECRET
+        subscription-id: SUB_ID
+        resource-group: RESOURCE-GROUP-NAME
+        scale-set: SCALE-SET-NAME
+        tag: TAG-NAME=HZLCAST001
+```
 
 You will need to setup [Azure Active Directory Service Principal credentials](https://azure.microsoft.com/en-us/documentation/articles/resource-group-create-service-principal-portal/) for your Azure Subscription for this plugin to work. With the credentials, fill in the placeholder values above.
 
 # Configuring at Azure Side
 
-- `client-id` - The Azure Active Directory Service Principal client ID.
-- `client-secret` - The Azure Active Directory Service Principal client secret.
-- `tenant-id` - The Azure Active Directory tenant ID.
+- `client-id` - *(Optional)* The Azure Active Directory Service Principal client ID.
+- `client-secret` - *(Optional)* The Azure Active Directory Service Principal client secret.
+- `tenant-id` - *(Optional)* The Azure Active Directory tenant ID.
 - `subscription-id` - *(Optional)* The Azure subscription ID.
 - `resource-group` - *(Optional)* The Azure [resource group](https://azure.microsoft.com/en-us/documentation/articles/resource-group-portal/) name of the cluster. You can find this in the Azure [portal](https://portal.azure.com) or [CLI](https://npmjs.org/azure-cli).
 - `scale-set` - *(Optional)* The Azure [VM scale set](https://docs.microsoft.com/en-us/azure/virtual-machine-scale-sets/overview) name of the cluster. If this setting is configured, the plugin will search for instances over the resources only within this scale set.
@@ -92,11 +110,38 @@ You will need to setup [Azure Active Directory Service Principal credentials](ht
 
 **Notes**
 
-* If you *do not* configure all of the `client-id`, `client-secret`, and `tenant-id` settings, the plugin will try to retrieve the Azure REST API access token from the [instance metadata service](https://docs.microsoft.com/en-us/azure/virtual-machines/windows/instance-metadata-service).   
+* You should configure all or none of `client-id`, `client-secret`, and `tenant-id` settings. If you *do not* configure all of them, the plugin will try to retrieve the Azure REST API access token from the [instance metadata service](https://docs.microsoft.com/en-us/azure/virtual-machines/windows/instance-metadata-service). 
+* If you use the plugin in the Hazelcast Client running outside of the Azure network, then the following settings are mandatory:  `client-id`, `client-secret`, and `tenant-id`     
 * If you *do not* configure any of the `subscription-id`, `resource-group`, or `scale-set` settings, again the plugin will try to retrieve these settings' current values using instance metadata service.
 * If you *do not* configure `tag` setting, the plugin will search for instances over all available resources. 
 
-The only requirement is that every VM can access each other either by private or public IP address. Also, the resources should have the identity with correct access roles in order to use instance metadata service. 
+The only requirement is that every VM can access each other either by private or public IP address. Also, the resources should have the identity with correct access roles in order to use instance metadata service.
+
+## Minimal Configuration Example
+
+If you setup your Azure resource identities with the correct access roles, you will need just the following minimal configuration to setup Hazelcast Azure Discovery:
+
+#### XML Configuration:
+```xml
+<hazelcast>
+  <network>
+    <join>
+      <multicast enabled="false"/>
+      <azure enabled="true"/>
+    </join>
+  </network>
+</hazelcast>
+```
+#### YAML Configuration:
+```yaml
+hazelcast:
+  network:
+    join:
+      multicast:
+        enabled: false
+      azure:
+        enabled: true
+```
 
 # Using Azure With ZONE_AWARE Partition Group
 
