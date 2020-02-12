@@ -366,6 +366,14 @@
             <optional>true</optional>
         </dependency>
 
+        <!-- Thread Affinity compile time dep -->
+        <dependency>
+            <groupId>net.openhft</groupId>
+            <artifactId>affinity</artifactId>
+            <scope>provided</scope>
+            <version>3.2.2</version>
+        </dependency>
+
         <dependency>
             <groupId>net.spy</groupId>
             <artifactId>spymemcached</artifactId>

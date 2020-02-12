@@ -16,6 +16,8 @@
 
 package com.hazelcast.spi.properties;
 
+import com.hazelcast.util.function.Function;
+
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.Preconditions.checkHasText;
@@ -30,10 +32,21 @@ public final class HazelcastProperty {
     private final String defaultValue;
     private final TimeUnit timeUnit;
     private final HazelcastProperty parent;
+    private final Function<HazelcastProperties, ?> function;
     private volatile String deprecatedName;
 
     public HazelcastProperty(String name) {
         this(name, (String) null);
+    }
+
+    public HazelcastProperty(String name, Function<HazelcastProperties, ?> function) {
+        checkHasText(name, "The property name cannot be null or empty!");
+        this.name = name;
+        this.function = function;
+        this.defaultValue = null;
+        this.deprecatedName = null;
+        this.parent = null;
+        this.timeUnit = null;
     }
 
     public HazelcastProperty(String name, boolean defaultValue) {
@@ -71,6 +84,7 @@ public final class HazelcastProperty {
     public HazelcastProperty(String name, String defaultValue, TimeUnit timeUnit, HazelcastProperty parent) {
         checkHasText(name, "The property name cannot be null or empty!");
         this.name = name;
+        this.function = null;
         this.defaultValue = defaultValue;
         this.timeUnit = timeUnit;
         this.parent = parent;
@@ -96,6 +110,10 @@ public final class HazelcastProperty {
 
     public String getDeprecatedName() {
         return deprecatedName;
+    }
+
+    public Function<HazelcastProperties, ?> getFunction() {
+        return function;
     }
 
     /**

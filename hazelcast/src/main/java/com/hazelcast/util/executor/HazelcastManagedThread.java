@@ -17,6 +17,12 @@
 package com.hazelcast.util.executor;
 
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.internal.affinity.AffinityController;
+import com.hazelcast.internal.affinity.AffinitySupportExtention;
+import com.hazelcast.logging.ILogger;
+
+import static com.hazelcast.internal.affinity.ThreadAffinityLoader.loadExtention;
+import static com.hazelcast.logging.Logger.getLogger;
 
 /**
  * Base class for all Hazelcast threads to manage them from a single point.
@@ -27,19 +33,28 @@ import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
  */
 public class HazelcastManagedThread extends Thread {
 
+    private static final ILogger LOGGER = getLogger(HazelcastManagedThread.class);
+    private static final AffinitySupportExtention THREAD_AFFIN_EXTENTION = loadExtention(LOGGER);
+
+    private AffinityController affinityController;
+
     public HazelcastManagedThread() {
+        this.affinityController = THREAD_AFFIN_EXTENTION.create(getClass());
     }
 
     public HazelcastManagedThread(Runnable target) {
         super(target);
+        this.affinityController = THREAD_AFFIN_EXTENTION.create(getClass());
     }
 
     public HazelcastManagedThread(String name) {
         super(name);
+        this.affinityController = THREAD_AFFIN_EXTENTION.create(getClass());
     }
 
     public HazelcastManagedThread(Runnable target, String name) {
         super(target, name);
+        this.affinityController = THREAD_AFFIN_EXTENTION.create(getClass());
     }
 
     @Override
@@ -60,8 +75,8 @@ public class HazelcastManagedThread extends Thread {
     /**
      * Does the actual run and can be overridden to customize.
      */
-    protected void executeRun() {
-        super.run();
+    public void doRun() {
+
     }
 
     /**
@@ -73,11 +88,26 @@ public class HazelcastManagedThread extends Thread {
 
     /**
      * Manages the thread lifecycle and can be overridden to customize if needed.
+     * Manages the thread lifecycle.
      */
-    public void run() {
+    public final void run() {
+        if (affinityController == null) {
+            run0();
+            return;
+        }
+
+        affinityController.assign();
+        try {
+            run0();
+        } finally {
+            affinityController.release();
+        }
+    }
+
+    private void run0() {
         try {
             beforeRun();
-            executeRun();
+            doRun();
         } catch (OutOfMemoryError e) {
             OutOfMemoryErrorDispatcher.onOutOfMemory(e);
         } finally {
@@ -85,3 +115,4 @@ public class HazelcastManagedThread extends Thread {
         }
     }
 }
+

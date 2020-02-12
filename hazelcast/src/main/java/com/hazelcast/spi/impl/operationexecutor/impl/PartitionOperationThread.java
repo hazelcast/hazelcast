@@ -17,6 +17,8 @@
 package com.hazelcast.spi.impl.operationexecutor.impl;
 
 import com.hazelcast.instance.NodeExtension;
+import com.hazelcast.internal.affinity.ThreadAffinity;
+import com.hazelcast.internal.affinity.ThreadAffinity.Group;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
@@ -26,6 +28,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  * An {@link OperationThread} that executes Operations for a particular partition,
  * e.g. a map.get operation.
  */
+@ThreadAffinity(Group.PARTITION_THREAD)
 public final class PartitionOperationThread extends OperationThread {
 
     private final OperationRunner[] partitionOperationRunners;

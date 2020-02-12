@@ -21,6 +21,8 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.internal.affinity.ThreadAffinity;
+import com.hazelcast.internal.affinity.ThreadAffinityParamsHelper;
 import com.hazelcast.internal.cluster.fd.ClusterFailureDetectorType;
 import com.hazelcast.internal.diagnostics.HealthMonitorLevel;
 import com.hazelcast.map.QueryResultSizeExceededException;
@@ -29,6 +31,7 @@ import com.hazelcast.query.TruePredicate;
 import com.hazelcast.query.impl.IndexCopyBehavior;
 import com.hazelcast.query.impl.predicates.QueryOptimizerFactory;
 import com.hazelcast.spi.InvocationBuilder;
+import com.hazelcast.util.function.Function;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -73,7 +76,11 @@ public final class GroupProperty {
      * The default is -1, which means that the value is determined dynamically.
      */
     public static final HazelcastProperty PARTITION_OPERATION_THREAD_COUNT
-            = new HazelcastProperty("hazelcast.operation.thread.count", -1);
+            = new HazelcastProperty("hazelcast.operation.thread.count",
+                (Function<HazelcastProperties, Integer>) o -> {
+                    int affinityCount = ThreadAffinityParamsHelper.countCores(ThreadAffinity.Group.PARTITION_THREAD);
+                    return affinityCount == 0 ? -1 : affinityCount;
+                });
 
     /**
      * The number of generic operation handler threads per member.
@@ -203,7 +210,11 @@ public final class GroupProperty {
      * The default is 3 (i.e. 6 threads).
      */
     public static final HazelcastProperty IO_THREAD_COUNT
-            = new HazelcastProperty("hazelcast.io.thread.count", 3);
+            = new HazelcastProperty("hazelcast.io.thread.count",
+            (Function<HazelcastProperties, Integer>) o -> {
+                int affinityCount = ThreadAffinityParamsHelper.countCores(ThreadAffinity.Group.IO);
+                return affinityCount == 0 ? 3 : affinityCount / 2;
+            });
 
     /**
      * Controls the number of socket input threads. By default it is the same as {@link #IO_THREAD_COUNT}.

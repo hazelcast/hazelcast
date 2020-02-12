@@ -100,6 +100,7 @@ public class HazelcastProperties {
      * @param property the {@link HazelcastProperty} to get the value from
      * @return the value or {@code null} if nothing has been configured
      */
+    @SuppressWarnings("checkstyle:npathcomplexity")
     public String getString(HazelcastProperty property) {
         String value = properties.getProperty(property.getName());
         if (value != null) {
@@ -131,6 +132,10 @@ public class HazelcastProperties {
 
                 return value;
             }
+        }
+
+        if (property.getFunction() != null) {
+            return "" + property.getFunction().apply(this);
         }
 
         return property.getDefaultValue();

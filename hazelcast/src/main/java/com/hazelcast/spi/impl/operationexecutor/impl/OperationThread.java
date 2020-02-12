@@ -96,7 +96,7 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
     public abstract OperationRunner operationRunner(int partitionId);
 
     @Override
-    public final void run() {
+    public final void doRun() {
         nodeExtension.onThreadStart(this);
         try {
             while (!shutdown) {
