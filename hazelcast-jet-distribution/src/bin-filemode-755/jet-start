@@ -35,7 +35,8 @@ echo "########################################"
 
 if [[ "$DAEMON" = "true" ]]; then
     mkdir -p $JET_HOME/logs
-    JET_LOG="$JET_HOME/logs/hazelcast-jet.out"
+    DATE=`date "+%Y-%m-%d.%H.%M.%S"`
+    JET_LOG="$JET_HOME/logs/hazelcast-jet.$DATE.out"
     echo "Starting Hazelcast Jet in daemon mode. Standard out and error will be written to $JET_LOG"
     nohup $JAVA "${JAVA_OPTS_ARRAY[@]}" "${LICENSING_OPTS_ARRAY[@]}" -cp "$CLASSPATH" com.hazelcast.jet.server.JetMemberStarter > "$JET_LOG" 2>&1 &
 else
