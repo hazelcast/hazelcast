@@ -1048,9 +1048,6 @@ in a convenient way. Jet's Pipeline API offers some tools to help
 testing a pipeline without having to integrate with a real data source
 or sink.
 
-NOTE: These APIs are currently marked as `@Beta` and are not covered
-by the <<jet-version-compatibility, backward-compatibility guarantees>>.
-
 == Test Sources
 
 Jet provides some {jet-javadoc}/pipeline/test/TestSources.html[test and development sources]

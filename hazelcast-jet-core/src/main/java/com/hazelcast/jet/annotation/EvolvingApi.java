@@ -14,11 +14,22 @@
  * limitations under the License.
  */
 
-/**
- * This package contains various mock sources to help with pipeline testing
- * and development.
- *
- * @since 3.2
- */
-package com.hazelcast.jet.pipeline.test;
+package com.hazelcast.jet.annotation;
 
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+/**
+ * Indicates that the annotated class, method or interface has stable
+ * implementation but its API may change between minor versions.
+ *
+ * @since 4.0
+ */
+@Documented
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.PACKAGE, ElementType.TYPE, ElementType.METHOD, ElementType.FIELD})
+public @interface EvolvingApi {
+}

@@ -16,8 +16,6 @@
 
 package com.hazelcast.jet.pipeline.test;
 
-import com.hazelcast.spi.annotation.Beta;
-
 import java.io.Serializable;
 
 /**
@@ -28,7 +26,6 @@ import java.io.Serializable;
  * @since 3.2
  */
 @FunctionalInterface
-@Beta
 public interface GeneratorFunction<R> extends Serializable {
 
     /**

@@ -20,4 +20,7 @@
  * function. See {@link com.hazelcast.jet.python.PythonServiceConfig} for
  * more details.
  */
+@EvolvingApi
 package com.hazelcast.jet.python;
+
+import com.hazelcast.jet.annotation.EvolvingApi;

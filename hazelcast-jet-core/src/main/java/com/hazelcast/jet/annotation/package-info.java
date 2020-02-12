@@ -15,10 +15,8 @@
  */
 
 /**
- * This package contains various mock sources to help with pipeline testing
- * and development.
+ * Annotations used for describing public API stability.
  *
- * @since 3.2
+ * @since 4.0
  */
-package com.hazelcast.jet.pipeline.test;
-
+package com.hazelcast.jet.annotation;

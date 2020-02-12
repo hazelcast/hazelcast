@@ -20,8 +20,11 @@ However some exceptions apply:
 
 * Classes in `com.hazelcast.jet.core` package which form the
 <<expert-zone, Core API>> of Jet only provide PATCH level compatibility guarantee.
+* Types and methods annotated with `@EvolvingApi` only provide PATCH level
+compatibility guarantee. These are typically new features where the API is
+subject to further changes.
 * Classes in `impl` packages do not provide any compatibility
-guarantees between versions.
+guarantees between versions and should not be used.
 
 == Summary Table
 

@@ -23,7 +23,6 @@ import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.impl.pipeline.SinkImpl;
 import com.hazelcast.jet.impl.pipeline.test.AssertionP;
 import com.hazelcast.jet.pipeline.Sink;
-import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
 
@@ -37,7 +36,6 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
  *
  * @since 3.2
  */
-@Beta
 public final class AssertionSinkBuilder<S, T> {
 
     private final SupplierEx<? extends S> createFn;

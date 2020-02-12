@@ -17,7 +17,7 @@
 package com.hazelcast.jet.pipeline.test;
 
 import com.hazelcast.jet.Job;
-import com.hazelcast.spi.annotation.Beta;
+import com.hazelcast.jet.annotation.EvolvingApi;
 
 /**
  * An exception which indicates that an assertion passed successfully. It is
@@ -26,7 +26,7 @@ import com.hazelcast.spi.annotation.Beta;
  *
  * @since 3.2
  */
-@Beta
+@EvolvingApi
 public final class AssertionCompletedException extends RuntimeException {
 
     /**

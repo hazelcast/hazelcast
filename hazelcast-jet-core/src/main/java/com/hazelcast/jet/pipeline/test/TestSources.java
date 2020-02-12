@@ -16,12 +16,12 @@
 
 package com.hazelcast.jet.pipeline.test;
 
+import com.hazelcast.jet.annotation.EvolvingApi;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.pipeline.SourceBuilder.TimestampedSourceBuffer;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.pipeline.StreamSourceStage;
-import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
 import java.util.Arrays;
@@ -36,7 +36,7 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
  *
  * @since 3.2
  */
-@Beta
+@EvolvingApi
 public final class TestSources {
 
     private TestSources() {
@@ -74,11 +74,12 @@ public final class TestSources {
      * Returns a streaming source which generates events of type {@link SimpleEvent} at
      * the specified rate infinitely.
      * <p>
-     * This source is not fault-tolerant. The sequence will be reset once a job
-     * is restarted. The source supports {@linkplain
+     * The source supports {@linkplain
      * StreamSourceStage#withNativeTimestamps(long) native timestamps}. The
      * timestamp is the current system time at the moment they are
-     * generated.
+     * generated. The source is not distributed and all the items are
+     * generated on the same node. This source is not fault-tolerant.
+     * The sequence will be reset once a job is restarted.
      * <p>
      * <b>Note:</b>
      * There is no absolute guarantee that the actual rate of emitted
@@ -89,6 +90,7 @@ public final class TestSources {
      *
      * @since 3.2
      */
+    @EvolvingApi
     @Nonnull
     public static StreamSource<SimpleEvent> itemStream(int itemsPerSecond) {
         return itemStream(itemsPerSecond, SimpleEvent::new);
@@ -98,11 +100,12 @@ public final class TestSources {
      * Returns a streaming source which generates events created by the {@code
      * generatorFn} at the specified rate infinitely.
      * <p>
-     * This source is not fault-tolerant. The sequence will be reset once a job
-     * is restarted. The source supports {@linkplain
+     * The source supports {@linkplain
      * StreamSourceStage#withNativeTimestamps(long) native timestamps}. The
      * timestamp is the current system time at the moment they are
-     * generated.
+     * generated. The source is not distributed and all the items are
+     * generated on the same node. This source is not fault-tolerant.
+     * The sequence will be reset once a job is restarted.
      * <p>
      * <b>Note:</b>
      * There is no absolute guarantee that the actual rate of emitted
@@ -115,6 +118,7 @@ public final class TestSources {
      *
      * @since 3.2
      */
+    @EvolvingApi
     @Nonnull
     public static <T> StreamSource<T> itemStream(
         int itemsPerSecond,

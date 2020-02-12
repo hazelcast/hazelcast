@@ -20,7 +20,6 @@ import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.pipeline.BatchStage;
 import com.hazelcast.jet.pipeline.StreamStage;
-import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -38,7 +37,6 @@ import java.util.List;
  *
  * @since 3.2
  */
-@Beta
 public final class Assertions {
 
     private Assertions() {

@@ -17,7 +17,6 @@
 package com.hazelcast.jet.pipeline.test;
 
 import com.hazelcast.jet.impl.util.Util;
-import com.hazelcast.spi.annotation.Beta;
 
 import java.io.Serializable;
 import java.util.Objects;
@@ -27,7 +26,6 @@ import java.util.Objects;
  *
  * @since 3.2
  */
-@Beta
 public class SimpleEvent implements Serializable {
 
     private final long timestamp;
