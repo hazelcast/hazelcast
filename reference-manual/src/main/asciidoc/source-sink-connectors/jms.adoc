@@ -4,7 +4,7 @@ JMS (Java Message Service) connector can be used both as a source and a
 sink for infinite stream processing. The source supports the
 exactly-once guarantee and sink supports the at-least-once guarantee.
 
-In order to use JMS connector, user should include a JMS Client in
+In order to use JMS connector, the user should include a JMS Client in
 classpath. IO failures are generally handled by the JMS Client and do
 not cause the connector to fail. Most of the clients offer a
 configuration parameter to enable auto-reconnection, refer to client
@@ -29,8 +29,8 @@ acknowledge the messages, the stored IDs will be used to filter out the
 re-delivered messages.
 
 Also keep in mind that exactly-once guarantee for JMS topic doesn't work
-if you use a non-durable consumer. The broker doesn't store the messages
-at all in this case.
+if you use a non-durable topic consumer. The broker doesn't store the
+messages at all in this case.
 
 The JMS source uses non-blocking API to receive the messages and
 transforms each message to a desired output object using the supplied
@@ -79,3 +79,8 @@ include::{javasource}/integration/JMS.java[tag=s3]
 ----
 include::{javasource}/integration/JMS.java[tag=s4]
 ----
+
+== Supported implementations
+
+We run our tests against ActiveMQ and RabbitMQ brokers. However any JMS
+1.1 implementation should work.
