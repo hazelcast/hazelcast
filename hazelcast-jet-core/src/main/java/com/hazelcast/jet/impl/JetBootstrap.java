@@ -57,6 +57,7 @@ import java.util.logging.Level;
 import java.util.logging.LogManager;
 
 import static com.hazelcast.jet.impl.config.ConfigProvider.locateAndGetJetConfig;
+import static com.hazelcast.spi.properties.ClusterProperty.LOGGING_TYPE;
 
 /**
  * This class shouldn't be directly used, instead see {@link Jet#bootstrappedInstance()}
@@ -183,15 +184,18 @@ public final class JetBootstrap {
     public static void configureLogging() {
         if (LOGGING_CONFIGURED.compareAndSet(false, true)) {
             try {
-                java.util.logging.Logger rootLogger = LogManager.getLogManager().getLogger("");
-                for (Handler handler : rootLogger.getHandlers()) {
-                    if (handler instanceof ConsoleHandler) {
-                        rootLogger.removeHandler(handler);
+                String loggingType = System.getProperty(LOGGING_TYPE.getName(), "jdk");
+                if (loggingType.equals("jdk")) {
+                    java.util.logging.Logger rootLogger = LogManager.getLogManager().getLogger("");
+                    for (Handler handler : rootLogger.getHandlers()) {
+                        if (handler instanceof ConsoleHandler) {
+                            rootLogger.removeHandler(handler);
+                            rootLogger.addHandler(new JetConsoleLogHandler());
+                            rootLogger.setLevel(Level.INFO);
+                            return;
+                        }
                     }
                 }
-
-                rootLogger.addHandler(new JetConsoleLogHandler());
-                rootLogger.setLevel(Level.INFO);
             } catch (Exception e) {
                 System.err.println("Error configuring java.util.logging for Jet: " + e);
             }
