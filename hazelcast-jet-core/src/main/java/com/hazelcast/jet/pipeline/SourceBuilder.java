@@ -63,6 +63,8 @@ public final class SourceBuilder<C> {
     /**
      * The buffer object that the {@code fillBufferFn} gets on each call. Used
      * in sources that emit items without a timestamp.
+     * <p>
+     * This class isn't thread-safe.
      *
      * @param <T> type of the emitted item
      */
@@ -83,6 +85,9 @@ public final class SourceBuilder<C> {
 
         /**
          * Adds an item to the buffer.
+         * <p>
+         * Since this class isn't thread-safe, you can call this method only on the
+         * thread on which you received its instance from Jet.
          */
         void add(@Nonnull T item);
     }
@@ -90,6 +95,8 @@ public final class SourceBuilder<C> {
     /**
      * The buffer object that the {@code fillBufferFn} gets on each call. Used
      * in sources that emit timestamped items.
+     * <p>
+     * This class isn't thread-safe.
      *
      * @param <T> type of the emitted item
      */
@@ -104,6 +111,9 @@ public final class SourceBuilder<C> {
         /**
          * Adds an item to the buffer, assigning {@code System.currentTimeMillis()}
          * to it as the timestamp.
+         * <p>
+         * Since this class isn't thread-safe, you can call this method only on the
+         * thread on which you received its instance from Jet.
          */
         @Override
         default void add(@Nonnull T item) {
@@ -431,6 +441,10 @@ public final class SourceBuilder<C> {
          * any items. Jet will automatically employ an exponential backoff strategy
          * to avoid calling your function in a tight loop, if the previous call didn't
          * add any items to the buffer.
+         * <p>
+         * The given {@link SourceBuffer} isn't thread-safe, you shouldn't pass
+         * it to other threads. For example, you shouldn't add to it in a
+         * callback of an asynchronous operation.
          *
          * @param fillBufferFn function that fills the buffer with source data
          * @param <T_NEW> type of the emitted items
@@ -578,6 +592,10 @@ public final class SourceBuilder<C> {
          * any items. Jet will automatically employ an exponential backoff strategy
          * to avoid calling your function in a tight loop, if the previous call didn't
          * add any items to the buffer.
+         * <p>
+         * The given {@link TimestampedSourceBuffer} isn't thread-safe, you
+         * shouldn't pass it to other threads. For example, you shouldn't add
+         * to it in a callback of an asynchronous operation.
          *
          * @param fillBufferFn function that fills the buffer with source data
          * @param <T_NEW> type of the emitted items
