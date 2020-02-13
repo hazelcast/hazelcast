@@ -21,13 +21,14 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.ManagedContext;
 import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
 import com.hazelcast.durableexecutor.impl.DurableExecutorContainer;
 import com.hazelcast.executor.ExecutorServiceTestSupport;
+import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.partition.PartitionAware;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -55,10 +56,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 import static com.hazelcast.durableexecutor.impl.DurableExecutorServiceHelper.getDurableExecutorContainer;
-import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
-import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
-import static com.hazelcast.test.Accessors.getPartitionService;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -75,7 +73,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
 
     @Test(expected = UnsupportedOperationException.class)
     public void testInvokeAll() throws Exception {
-        HazelcastInstance instance = createHazelcastInstance();
+        HazelcastInstance instance = createHazelcastInstance(smallInstanceConfig());
         DurableExecutorService service = instance.getDurableExecutorService(randomString());
         List<BasicTestCallable> callables = Collections.emptyList();
         service.invokeAll(callables);
@@ -83,7 +81,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
 
     @Test(expected = UnsupportedOperationException.class)
     public void testInvokeAll_WithTimeout() throws Exception {
-        HazelcastInstance instance = createHazelcastInstance();
+        HazelcastInstance instance = createHazelcastInstance(smallInstanceConfig());
         DurableExecutorService service = instance.getDurableExecutorService(randomString());
         List<BasicTestCallable> callables = Collections.emptyList();
         service.invokeAll(callables, 1, TimeUnit.SECONDS);
@@ -91,7 +89,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
 
     @Test(expected = UnsupportedOperationException.class)
     public void testInvokeAny() throws Exception {
-        HazelcastInstance instance = createHazelcastInstance();
+        HazelcastInstance instance = createHazelcastInstance(smallInstanceConfig());
         DurableExecutorService service = instance.getDurableExecutorService(randomString());
         List<BasicTestCallable> callables = Collections.emptyList();
         service.invokeAny(callables);
@@ -99,7 +97,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
 
     @Test(expected = UnsupportedOperationException.class)
     public void testInvokeAny_WithTimeout() throws Exception {
-        HazelcastInstance instance = createHazelcastInstance();
+        HazelcastInstance instance = createHazelcastInstance(smallInstanceConfig());
         DurableExecutorService service = instance.getDurableExecutorService(randomString());
         List<BasicTestCallable> callables = Collections.emptyList();
         service.invokeAny(callables, 1, TimeUnit.SECONDS);
@@ -107,33 +105,47 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
 
     @Test
     public void testDestroyCleansAllContainers() throws Exception {
-        final String executorName = randomMapName();
+        String executorName = randomMapName();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(NODE_COUNT);
-        final HazelcastInstance[] instances = factory.newInstances(smallInstanceConfig());
-
+        HazelcastInstance[] instances = factory.newInstances(smallInstanceConfig());
         DurableExecutorService service = instances[0].getDurableExecutorService(executorName);
+        InternalPartitionService partitionService = getNodeEngineImpl(instances[0]).getPartitionService();
 
         List<Future<String>> futures = new ArrayList<>(TASK_COUNT);
         for (int i = 0; i < TASK_COUNT; i++) {
             futures.add(service.submit(new DummyCallable()));
         }
-        for (Future<String> future: futures) {
+        for (Future<String> future : futures) {
             future.get();
         }
-        service.destroy();
+
+        // wait for all backup operations to complete
         assertTrueEventually(() -> {
-            for (int i = 0; i < NODE_COUNT; i++) {
-                DistributedDurableExecutorService internalService = getNodeEngineImpl(instances[i])
-                                                                             .getService(DistributedDurableExecutorService.SERVICE_NAME);
-                boolean allEmpty = true;
-                StringBuilder failMessage = new StringBuilder();
-                for (int partitionId = 0;
-                     partitionId < getNode(instances[i]).getProperties().getInteger(PARTITION_COUNT);
-                     partitionId++) {
+            for (HazelcastInstance instance : instances) {
+                NodeEngineImpl ne = getNodeEngineImpl(instance);
+                DistributedDurableExecutorService internalService = ne.getService(DistributedDurableExecutorService.SERVICE_NAME);
+                for (int partitionId = 0; partitionId < partitionService.getPartitionCount(); partitionId++) {
                     DurableExecutorContainer container = getDurableExecutorContainer(internalService, partitionId, executorName);
                     if (container != null) {
-                        failMessage.append(String.format("Partition %d owned by %s\n", partitionId,
-                                getPartitionService(instances[0]).getPartition(partitionId).getOwnerOrNull()));
+                        assertEquals(0, container.getRingBuffer().getTaskSize());
+                    }
+                }
+            }
+        });
+
+        service.destroy();
+        assertTrueEventually(() -> {
+            for (HazelcastInstance instance : instances) {
+                NodeEngineImpl ne = getNodeEngineImpl(instance);
+                DistributedDurableExecutorService internalService = ne.getService(DistributedDurableExecutorService.SERVICE_NAME);
+
+                boolean allEmpty = true;
+                StringBuilder failMessage = new StringBuilder();
+                for (int partitionId = 0; partitionId < partitionService.getPartitionCount(); partitionId++) {
+                    DurableExecutorContainer container = getDurableExecutorContainer(internalService, partitionId, executorName);
+                    if (container != null) {
+                        failMessage.append(String.format("Partition %d owned by %s on %s\n",
+                                partitionId, partitionService.getPartition(partitionId).getOwnerOrNull(), instance));
                         allEmpty = false;
                     }
                 }
@@ -146,7 +158,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
 
     @Test
     public void testAwaitTermination() throws Exception {
-        HazelcastInstance instance = createHazelcastInstance();
+        HazelcastInstance instance = createHazelcastInstance(smallInstanceConfig());
         DurableExecutorService service = instance.getDurableExecutorService(randomString());
         assertFalse(service.awaitTermination(1, TimeUnit.SECONDS));
     }
@@ -155,7 +167,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
     public void testFullRingBuffer() throws Exception {
         String name = randomString();
         String key = randomString();
-        Config config = new Config();
+        Config config = smallInstanceConfig();
         config.getDurableExecutorConfig(name).setCapacity(1);
         HazelcastInstance instance = createHazelcastInstance(config);
         DurableExecutorService service = instance.getDurableExecutorService(name);
@@ -172,8 +184,8 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
     @Test
     public void test_registerCallback_beforeFutureIsCompletedOnOtherNode() throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        HazelcastInstance instance1 = factory.newHazelcastInstance();
-        HazelcastInstance instance2 = factory.newHazelcastInstance();
+        HazelcastInstance instance1 = factory.newHazelcastInstance(smallInstanceConfig());
+        HazelcastInstance instance2 = factory.newHazelcastInstance(smallInstanceConfig());
 
         assertTrue(instance1.getCPSubsystem().getCountDownLatch("latch").trySetCount(1));
 
@@ -183,7 +195,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
         String key = generateKeyOwnedBy(instance1);
         DurableExecutorServiceFuture<Boolean> future = executorService.submitToKeyOwner(task, key);
 
-        CountingDownExecutionCallback<Boolean> callback = new CountingDownExecutionCallback<Boolean>(1);
+        CountingDownExecutionCallback<Boolean> callback = new CountingDownExecutionCallback<>(1);
         future.whenCompleteAsync(callback);
         instance1.getCPSubsystem().getCountDownLatch("latch").countDown();
 
@@ -194,8 +206,8 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
     @Test
     public void test_registerCallback_afterFutureIsCompletedOnOtherNode() throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        HazelcastInstance instance1 = factory.newHazelcastInstance();
-        HazelcastInstance instance2 = factory.newHazelcastInstance();
+        HazelcastInstance instance1 = factory.newHazelcastInstance(smallInstanceConfig());
+        HazelcastInstance instance2 = factory.newHazelcastInstance(smallInstanceConfig());
         String name = randomString();
         DurableExecutorService executorService = instance2.getDurableExecutorService(name);
         BasicTestCallable task = new BasicTestCallable();
@@ -203,7 +215,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
         DurableExecutorServiceFuture<String> future = executorService.submitToKeyOwner(task, key);
         assertEquals(BasicTestCallable.RESULT, future.get());
 
-        CountingDownExecutionCallback<String> callback = new CountingDownExecutionCallback<String>(1);
+        CountingDownExecutionCallback<String> callback = new CountingDownExecutionCallback<>(1);
         future.whenCompleteAsync(callback);
 
         assertOpenEventually(callback.getLatch(), 10);
@@ -212,8 +224,8 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
     @Test
     public void test_registerCallback_multipleTimes_futureIsCompletedOnOtherNode() throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        HazelcastInstance instance1 = factory.newHazelcastInstance();
-        HazelcastInstance instance2 = factory.newHazelcastInstance();
+        HazelcastInstance instance1 = factory.newHazelcastInstance(smallInstanceConfig());
+        HazelcastInstance instance2 = factory.newHazelcastInstance(smallInstanceConfig());
 
         assertTrue(instance1.getCPSubsystem().getCountDownLatch("latch").trySetCount(1));
 
@@ -224,7 +236,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
         DurableExecutorServiceFuture<Boolean> future = executorService.submitToKeyOwner(task, key);
 
         CountDownLatch latch = new CountDownLatch(2);
-        CountingDownExecutionCallback<Boolean> callback = new CountingDownExecutionCallback<Boolean>(latch);
+        CountingDownExecutionCallback<Boolean> callback = new CountingDownExecutionCallback<>(latch);
         future.whenCompleteAsync(callback);
         future.whenCompleteAsync(callback);
         instance1.getCPSubsystem().getCountDownLatch("latch").countDown();
@@ -236,10 +248,10 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
     @Test
     public void testSubmitFailingCallableException_withExecutionCallback() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        HazelcastInstance instance = factory.newHazelcastInstance();
+        HazelcastInstance instance = factory.newHazelcastInstance(smallInstanceConfig());
         DurableExecutorService service = instance.getDurableExecutorService(randomString());
 
-        CountingDownExecutionCallback<String> callback = new CountingDownExecutionCallback<String>(1);
+        CountingDownExecutionCallback<String> callback = new CountingDownExecutionCallback<>(1);
         service.submit(new FailingTestTask()).whenCompleteAsync(callback);
 
         assertOpenEventually(callback.getLatch());
@@ -250,17 +262,14 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
 
     @Test
     public void testManagedContextAndLocal() throws Exception {
-        Config config = new Config();
+        Config config = smallInstanceConfig();
         config.addDurableExecutorConfig(new DurableExecutorConfig("test").setPoolSize(1));
         final AtomicBoolean initialized = new AtomicBoolean();
-        config.setManagedContext(new ManagedContext() {
-            @Override
-            public Object initialize(Object obj) {
-                if (obj instanceof RunnableWithManagedContext) {
-                    initialized.set(true);
-                }
-                return obj;
+        config.setManagedContext(obj -> {
+            if (obj instanceof RunnableWithManagedContext) {
+                initialized.set(true);
             }
+            return obj;
         });
 
         HazelcastInstance instance = createHazelcastInstance(config);
@@ -274,8 +283,8 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
     @Test
     public void testExecuteOnKeyOwner() throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        HazelcastInstance instance1 = factory.newHazelcastInstance();
-        HazelcastInstance instance2 = factory.newHazelcastInstance();
+        HazelcastInstance instance1 = factory.newHazelcastInstance(smallInstanceConfig());
+        HazelcastInstance instance2 = factory.newHazelcastInstance(smallInstanceConfig());
         String key = generateKeyOwnedBy(instance2);
         String instanceName = instance2.getName();
         ICountDownLatch latch = instance2.getCPSubsystem().getCountDownLatch(instanceName);
@@ -289,7 +298,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
 
     @Test
     public void hazelcastInstanceAwareAndLocal() throws Exception {
-        Config config = new Config();
+        Config config = smallInstanceConfig();
         config.addDurableExecutorConfig(new DurableExecutorConfig("test").setPoolSize(1));
         HazelcastInstance instance = createHazelcastInstance(config);
         DurableExecutorService executor = instance.getDurableExecutorService("test");
@@ -302,7 +311,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
     @Test
     public void testExecuteMultipleNode() throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(NODE_COUNT);
-        HazelcastInstance[] instances = factory.newInstances();
+        HazelcastInstance[] instances = factory.newInstances(smallInstanceConfig());
         for (int i = 0; i < NODE_COUNT; i++) {
             DurableExecutorService service = instances[i].getDurableExecutorService("testExecuteMultipleNode");
             int rand = new Random().nextInt(100);
@@ -317,10 +326,10 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
     @Test
     public void testSubmitToKeyOwnerRunnable() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(NODE_COUNT);
-        HazelcastInstance[] instances = factory.newInstances();
+        HazelcastInstance[] instances = factory.newInstances(smallInstanceConfig());
         final AtomicInteger nullResponseCount = new AtomicInteger(0);
         final CountDownLatch responseLatch = new CountDownLatch(NODE_COUNT);
-        Consumer callback = response -> {
+        Consumer<Object> callback = response -> {
             if (response == null) {
                 nullResponseCount.incrementAndGet();
             }
@@ -347,7 +356,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
     @SuppressWarnings("ConstantConditions")
     public void submitNullTask() {
         DurableExecutorService executor = createSingleNodeDurableExecutorService("submitNullTask");
-        executor.submit((Callable) null);
+        executor.submit((Callable<?>) null);
     }
 
     /**
@@ -357,18 +366,18 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
     public void testBasicTask() throws Exception {
         Callable<String> task = new BasicTestCallable();
         DurableExecutorService executor = createSingleNodeDurableExecutorService("testBasicTask");
-        Future future = executor.submit(task);
+        Future<String> future = executor.submit(task);
         assertEquals(future.get(), BasicTestCallable.RESULT);
     }
 
     @Test
     public void testSubmitMultipleNode() throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(NODE_COUNT);
-        HazelcastInstance[] instances = factory.newInstances();
+        HazelcastInstance[] instances = factory.newInstances(smallInstanceConfig());
         for (int i = 0; i < NODE_COUNT; i++) {
             DurableExecutorService service = instances[i].getDurableExecutorService("testSubmitMultipleNode");
-            Future future = service.submit(new IncrementAtomicLongCallable("testSubmitMultipleNode"));
-            assertEquals((long) (i + 1), future.get());
+            Future<Long> future = service.submit(new IncrementAtomicLongCallable("testSubmitMultipleNode"));
+            assertEquals(i + 1, (long) future.get());
         }
     }
 
@@ -377,28 +386,28 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
     @Test
     public void testSubmitToKeyOwnerCallable() throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(NODE_COUNT);
-        HazelcastInstance[] instances = factory.newInstances();
+        HazelcastInstance[] instances = factory.newInstances(smallInstanceConfig());
 
-        List<Future> futures = new ArrayList<Future>();
+        List<Future<Boolean>> futures = new ArrayList<>();
         for (int i = 0; i < NODE_COUNT; i++) {
             HazelcastInstance instance = instances[i];
             DurableExecutorService service = instance.getDurableExecutorService("testSubmitToKeyOwnerCallable");
 
             Member localMember = instance.getCluster().getLocalMember();
             int key = findNextKeyForMember(instance, localMember);
-            Future future = service.submitToKeyOwner(new MemberUUIDCheckCallable(localMember.getUuid()), key);
+            Future<Boolean> future = service.submitToKeyOwner(new MemberUUIDCheckCallable(localMember.getUuid()), key);
             futures.add(future);
         }
 
-        for (Future future : futures) {
-            assertTrue((Boolean) future.get(10, TimeUnit.SECONDS));
+        for (Future<Boolean> future : futures) {
+            assertTrue(future.get(10, TimeUnit.SECONDS));
         }
     }
 
     @Test
     public void testSubmitToKeyOwnerCallable_withCallback() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(NODE_COUNT);
-        HazelcastInstance[] instances = factory.newInstances();
+        HazelcastInstance[] instances = factory.newInstances(smallInstanceConfig());
         BooleanSuccessResponseCountingCallback callback = new BooleanSuccessResponseCountingCallback(NODE_COUNT);
 
         for (int i = 0; i < NODE_COUNT; i++) {
@@ -417,7 +426,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
     public void testIsDoneMethod() throws Exception {
         Callable<String> task = new BasicTestCallable();
         DurableExecutorService executor = createSingleNodeDurableExecutorService("isDoneMethod");
-        Future future = executor.submit(task);
+        Future<String> future = executor.submit(task);
         assertResult(future, BasicTestCallable.RESULT);
     }
 
@@ -431,8 +440,8 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
         for (int i = 0; i < TASK_COUNT; i++) {
             Callable<String> task1 = new BasicTestCallable();
             Callable<String> task2 = new BasicTestCallable();
-            Future future1 = executor.submit(task1);
-            Future future2 = executor.submit(task2);
+            Future<String> future1 = executor.submit(task1);
+            Future<String> future2 = executor.submit(task2);
             assertResult(future2, BasicTestCallable.RESULT);
             assertResult(future1, BasicTestCallable.RESULT);
         }
@@ -451,14 +460,14 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
 
     /* ############ future ############ */
 
-    private void assertResult(Future future, Object expected) throws Exception {
+    private void assertResult(Future<?> future, Object expected) throws Exception {
         assertEquals(future.get(), expected);
         assertTrue(future.isDone());
     }
 
     @Test
     public void testIssue292() {
-        CountingDownExecutionCallback<Member> callback = new CountingDownExecutionCallback<Member>(1);
+        CountingDownExecutionCallback<Member> callback = new CountingDownExecutionCallback<>(1);
         createSingleNodeDurableExecutorService("testIssue292").submit(new MemberCheck()).whenCompleteAsync(callback);
         assertOpenEventually(callback.getLatch());
         assertTrue(callback.getResult() instanceof Member);
@@ -471,7 +480,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
     public void testNestedExecution() {
         Callable<String> task = new NestedExecutorTask();
         DurableExecutorService executor = createSingleNodeDurableExecutorService("testNestedExecution");
-        Future future = executor.submit(task);
+        Future<?> future = executor.submit(task);
         assertCompletesEventually(future);
     }
 
@@ -481,8 +490,8 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
     @Test
     public void testShutdownBehaviour() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        HazelcastInstance instance1 = factory.newHazelcastInstance();
-        factory.newHazelcastInstance();
+        HazelcastInstance instance1 = factory.newHazelcastInstance(smallInstanceConfig());
+        factory.newHazelcastInstance(smallInstanceConfig());
         DurableExecutorService executor = instance1.getDurableExecutorService("testShutdownBehaviour");
         // fresh instance, is not shutting down
         assertFalse(executor.isShutdown());
@@ -526,7 +535,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
 
     @Test
     public void testStatsIssue2039() {
-        Config config = new Config();
+        Config config = smallInstanceConfig();
         String name = "testStatsIssue2039";
         config.addDurableExecutorConfig(new DurableExecutorConfig(name).setPoolSize(1).setCapacity(1));
         HazelcastInstance instance = createHazelcastInstance(config);
@@ -535,7 +544,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
         executorService.execute(new SleepLatchRunnable());
         assertOpenEventually(SleepLatchRunnable.startLatch, 30);
 
-        Future rejected = executorService.submit(new EmptyRunnable());
+        Future<?> rejected = executorService.submit(new EmptyRunnable());
 
         try {
             rejected.get(1, TimeUnit.MINUTES);
@@ -558,7 +567,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
     public void testLongRunningCallable() throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
 
-        Config config = new Config();
+        Config config = smallInstanceConfig();
         long callTimeoutMillis = 3000;
         config.setProperty(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), String.valueOf(callTimeoutMillis));
 
@@ -578,9 +587,6 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
         transient HazelcastInstance instance;
 
         String instanceName;
-
-        InstanceAsserterRunnable() {
-        }
 
         InstanceAsserterRunnable(String instanceName) {
             this.instanceName = instanceName;
@@ -622,22 +628,6 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
         }
     }
 
-    static class LatchRunnable implements Runnable, Serializable {
-
-        static CountDownLatch latch;
-        final int executionTime = 200;
-
-        @Override
-        public void run() {
-            try {
-                Thread.sleep(executionTime);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            latch.countDown();
-        }
-    }
-
     static class ICountDownLatchAwaitCallable implements Callable<Boolean>, HazelcastInstanceAware, Serializable {
 
         private final String name;
@@ -660,7 +650,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
         }
     }
 
-    static class SleepLatchRunnable implements Runnable, Serializable, PartitionAware {
+    static class SleepLatchRunnable implements Runnable, Serializable, PartitionAware<String> {
 
         static CountDownLatch startLatch;
         static CountDownLatch sleepLatch;
@@ -677,19 +667,19 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
         }
 
         @Override
-        public Object getPartitionKey() {
+        public String getPartitionKey() {
             return "key";
         }
     }
 
-    static class EmptyRunnable implements Runnable, PartitionAware, Serializable {
+    static class EmptyRunnable implements Runnable, PartitionAware<String>, Serializable {
 
         @Override
         public void run() {
         }
 
         @Override
-        public Object getPartitionKey() {
+        public String getPartitionKey() {
             return "key";
         }
     }
