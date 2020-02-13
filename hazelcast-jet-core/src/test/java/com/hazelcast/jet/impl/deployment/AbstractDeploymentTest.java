@@ -33,6 +33,7 @@ import org.junit.Test;
 
 import javax.annotation.Nonnull;
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
@@ -48,7 +49,9 @@ import static com.hazelcast.jet.pipeline.test.Assertions.assertCollected;
 import static java.util.Collections.emptyEnumeration;
 import static java.util.Collections.enumeration;
 import static java.util.Collections.singleton;
+import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public abstract class AbstractDeploymentTest extends SimpleTestInClusterSupport {
@@ -143,11 +146,35 @@ public abstract class AbstractDeploymentTest extends SimpleTestInClusterSupport 
 
     @Test
     public void testDeployment_whenAttachFile_thenFileAvailableOnMembers() throws Throwable {
-        Pipeline pipeline = Pipeline.create();
         String fileToAttach = Paths.get(getClass().getResource("/deployment/resource.txt").toURI()).toString();
 
+        Pipeline pipeline = attachFilePipeline(fileToAttach);
+
+        JetInstance jetInstance = getJetInstance();
+        JobConfig jobConfig = new JobConfig();
+        jobConfig.attachFile(fileToAttach, fileToAttach);
+
+        executeAndPeel(jetInstance.newJob(pipeline, jobConfig));
+    }
+
+    @Test
+    public void testDeployment_whenAttachFileWithoutId_thenFileAvailableOnMembers() throws Throwable {
+        String fileName = "resource.txt";
+        String fileToAttach = Paths.get(getClass().getResource("/deployment/" + fileName).toURI()).toString();
+
+        Pipeline pipeline = attachFilePipeline(fileName);
+
+        JetInstance jetInstance = getJetInstance();
+        JobConfig jobConfig = new JobConfig();
+        jobConfig.attachFile(fileToAttach);
+
+        executeAndPeel(jetInstance.newJob(pipeline, jobConfig));
+    }
+
+    private Pipeline attachFilePipeline(String attachedFile) {
+        Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(TestSources.items(1))
-                .mapUsingService(ServiceFactory.withCreateContextFn(context -> context.attachedFile(fileToAttach))
+                .mapUsingService(ServiceFactory.withCreateContextFn(context -> context.attachedFile(attachedFile))
                                                .withCreateServiceFn((context, file) -> file),
                         (file, integer) -> {
                             assertTrue("File does not exist", file.exists());
@@ -161,32 +188,112 @@ public abstract class AbstractDeploymentTest extends SimpleTestInClusterSupport 
                             return file;
                         })
                 .writeTo(Sinks.logger());
+        return pipeline;
+    }
+
+    @Test
+    public void testDeployment_whenAttachDirectory_thenFilesAvailableOnMembers() throws Throwable {
+        String dirToAttach = Paths.get(this.getClass().getResource("/deployment").toURI()).toString();
+
+        Pipeline pipeline = attachDirectoryPipeline(dirToAttach);
 
         JetInstance jetInstance = getJetInstance();
         JobConfig jobConfig = new JobConfig();
-        jobConfig.attachFile(fileToAttach, fileToAttach);
+        jobConfig.attachDirectory(dirToAttach, dirToAttach);
 
         executeAndPeel(jetInstance.newJob(pipeline, jobConfig));
     }
 
     @Test
-    public void testDeployment_whenAttachDirectory_thenFilesAvailableOnMembers() throws Throwable {
-        Pipeline pipeline = Pipeline.create();
-        String dirToAttach = Paths.get(this.getClass().getResource("/deployment").toURI()).toString();
+    public void testDeployment_whenAttachDirectoryWithoutId_thenFilesAvailableOnMembers() throws Throwable {
+        String dirName = "deployment";
+        String dirToAttach = Paths.get(this.getClass().getResource("/" + dirName).toURI()).toString();
 
+        Pipeline pipeline = attachDirectoryPipeline(dirName);
+
+        JetInstance jetInstance = getJetInstance();
+        JobConfig jobConfig = new JobConfig();
+        jobConfig.attachDirectory(dirToAttach);
+
+        executeAndPeel(jetInstance.newJob(pipeline, jobConfig));
+    }
+
+    private Pipeline attachDirectoryPipeline(String attachedDirectory) {
+        Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(TestSources.items(1))
                 .flatMapUsingService(
-                        ServiceFactories.sharedService(context -> context.attachedDirectory(dirToAttach)),
+                        ServiceFactories.sharedService(context -> context.attachedDirectory(attachedDirectory)),
                         (file, integer) -> Traversers.traverseStream(Files.list(file.toPath()).map(Path::toString)))
                 .apply(assertCollected(c -> {
                     c.forEach(s -> assertTrue(new File(s).exists()));
                     assertEquals("list size must be 3", 3, c.size());
                 }))
                 .writeTo(Sinks.logger());
+        return pipeline;
+    }
+
+    @Test
+    public void testDeployment_whenAttachNestedDirectory_thenFilesAvailableOnMembers() throws Throwable {
+        Pipeline pipeline = Pipeline.create();
+        String dirName = "nested";
+        String dirToAttach = Paths.get(this.getClass().getResource("/" + dirName).toURI()).toString();
+
+        pipeline.readFrom(TestSources.items(1))
+                .flatMapUsingService(
+                        ServiceFactories.sharedService(context -> context.attachedDirectory(dirName)),
+                        (file, integer) -> Traversers.traverseStream(Files.list(file.toPath()).map(Path::toString)))
+                .apply(assertCollected(c -> {
+                    c.forEach(s -> {
+                        File dir = new File(s);
+                        assertTrue(dir.exists());
+                        try {
+                            List<Path> subFiles = Files.list(dir.toPath()).collect(toList());
+                            assertEquals("each dir should contain 1 file", 1, subFiles.size());
+                        } catch (IOException ex) {
+                            throw new RuntimeException(ex);
+                        }
+                    });
+                    assertEquals("list size must be 3", 3, c.size());
+                }))
+                .writeTo(Sinks.logger());
 
         JetInstance jetInstance = getJetInstance();
         JobConfig jobConfig = new JobConfig();
-        jobConfig.attachDirectory(dirToAttach, dirToAttach);
+        jobConfig.attachDirectory(dirToAttach);
+
+        executeAndPeel(jetInstance.newJob(pipeline, jobConfig));
+    }
+
+    @Test
+    public void testDeployment_whenAttachMoreFilesAndDirs_thenAllAvailableOnMembers() throws Throwable {
+                Pipeline pipeline = Pipeline.create();
+        String dirToAttach1 = Paths.get(this.getClass().getResource("/nested/folder").toURI()).toString();
+        String dirToAttach2 = Paths.get(this.getClass().getResource("/nested/folder1").toURI()).toString();
+        String fileToAttach1 = Paths.get(getClass().getResource("/deployment/resource.txt").toURI()).toString();
+        String fileToAttach2 = Paths.get(getClass().getResource("/nested/folder2/test2").toURI()).toString();
+
+        pipeline.readFrom(TestSources.items(1))
+                .mapUsingService(
+                        ServiceFactories.sharedService(context -> {
+                            assertTrue(context.attachedDirectory(dirToAttach1).exists());
+                            assertTrue(context.attachedDirectory(dirToAttach1).isDirectory());
+                            assertTrue(context.attachedDirectory(dirToAttach2).exists());
+                            assertTrue(context.attachedDirectory(dirToAttach2).isDirectory());
+                            assertTrue(context.attachedFile(fileToAttach1).exists());
+                            assertFalse(context.attachedFile(fileToAttach1).isDirectory());
+                            assertTrue(context.attachedFile(fileToAttach2).exists());
+                            assertFalse(context.attachedFile(fileToAttach2).isDirectory());
+                            return true;
+                        }),
+                        (state, integer) -> state)
+                .writeTo(Sinks.logger());
+
+        JetInstance jetInstance = getJetInstance();
+        JobConfig jobConfig = new JobConfig();
+        jobConfig.attachDirectory(dirToAttach1, dirToAttach1);
+        jobConfig.attachDirectory(dirToAttach2, dirToAttach2);
+        jobConfig.attachFile(fileToAttach1, fileToAttach1);
+        jobConfig.attachFile(fileToAttach2, fileToAttach2);
 
         executeAndPeel(jetInstance.newJob(pipeline, jobConfig));
     }
