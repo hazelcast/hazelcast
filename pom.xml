@@ -83,8 +83,7 @@
 
         <log4j.version>1.2.17</log4j.version>
 
-        <!--- This is the last log4j2 version working with Java 6 -->
-        <log4j2.version>2.3</log4j2.version>
+        <log4j2.version>2.13.0</log4j2.version>
         <slf4j.api.version>1.7.25</slf4j.api.version>
 
         <jackson.version>2.9.7</jackson.version>
