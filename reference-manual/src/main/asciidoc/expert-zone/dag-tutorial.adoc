@@ -99,8 +99,8 @@ things: the function that extracts the partitioning key (`wholeItem()`
 &mdash; same as the grouping key extractor), and the policy object that
 decides how to compute the partition ID from the key. Here we use the
 built-in `HASH_CODE`, which will derive the ID from `Object.hashCode()`.
-As long as the definitions of `equals()/hashCode()` on the key object 
-match our expected notion of key equality, this policy is always safe 
+As long as the definitions of `equals()/hashCode()` on the key object
+match our expected notion of key equality, this policy is always safe
 to use on a local edge.
 
 <2> is a _distributed partitioned_ edge: for each word there is a single
@@ -471,7 +471,7 @@ output items. If the outbox refuses a pending item, it will return
 `false`, which will make the framework call the same `tryProcess1()`
 method later, with the same input item.
 
-Let's show the code that creates the `tokenize` 's two inbound edges:
+Let's show the code that creates the ``tokenize``'s two inbound edges:
 
 [source]
 ----

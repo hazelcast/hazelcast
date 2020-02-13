@@ -77,7 +77,7 @@ They are especially relevant if the volume of data you need in the Jet
 job is significantly less than the volume of the stored data.
 
 Note that the above feature is not available on `ICache`. It is,
-however, available on `ICache`'s event journal, which we introduce next.
+however, available on ``ICache``'s event journal, which we introduce next.
 
 [[connector-imdg-journal]]
 == Receive an Infinite Stream of Update Events

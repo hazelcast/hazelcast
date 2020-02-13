@@ -270,7 +270,7 @@ public interface GeneralStage<T> extends Stage {
      * field on them by looking up from a registry:
      * <pre>{@code
      * stage.mapUsingService(
-     *     ServiceFactory.withCreateFn(jet -> new ItemDetailRegistry(jet)),
+     *     ServiceFactories.sharedService(ctx -> new ItemDetailRegistry(ctx.jetInstance())),
      *     (reg, item) -> item.setDetail(reg.fetchDetail(item))
      * )
      * }</pre>
@@ -316,7 +316,7 @@ public interface GeneralStage<T> extends Stage {
      * field on them by looking up from a registry:
      * <pre>{@code
      * stage.mapUsingServiceAsync(
-     *     ServiceFactory.withCreateFn(jet -> new ItemDetailRegistry(jet)),
+     *     ServiceFactories.sharedService(ctx -> new ItemDetailRegistry(ctx.jetInstance())),
      *     (reg, item) -> reg.fetchDetailAsync(item)
      *                       .thenApply(detail -> item.setDetail(detail))
      * )
@@ -360,7 +360,7 @@ public interface GeneralStage<T> extends Stage {
      * field on them by looking up from a registry:
      * <pre>{@code
      * stage.mapUsingServiceAsync(
-     *     ServiceFactory.withCreateFn(jet -> new ItemDetailRegistry(jet)),
+     *     ServiceFactories.sharedService(ctx -> new ItemDetailRegistry(ctx.jetInstance())),
      *     (reg, item) -> reg.fetchDetailAsync(item)
      *                       .thenApply(detail -> item.setDetail(detail))
      * )
@@ -412,7 +412,7 @@ public interface GeneralStage<T> extends Stage {
      * size of the items to lookup is specified as {@code 100}:
      * <pre>{@code
      * stage.mapUsingServiceAsyncBatched(
-     *     ServiceFactory.withCreateFn(jet -> new ItemDetailRegistry(jet)),
+     *     ServiceFactories.sharedService(ctx -> new ItemDetailRegistry(ctx.jetInstance())),
      *     100,
      *     (reg, itemList) -> reg
      *             .fetchDetailsAsync(itemList)
@@ -459,7 +459,7 @@ public interface GeneralStage<T> extends Stage {
      * about their contents, and keeps only photos of cats:
      * <pre>{@code
      * photos.filterUsingService(
-     *     ServiceFactory.withCreateFn(jet -> new ImageClassifier(jet)),
+     *     ServiceFactories.sharedService(ctx -> new ImageClassifier(ctx.jetInstance())),
      *     (classifier, photo) -> classifier.classify(photo).equals("cat")
      * )
      * }</pre>
@@ -496,7 +496,7 @@ public interface GeneralStage<T> extends Stage {
      * of all the parts that go into making them:
      * <pre>{@code
      * StreamStage<Part> parts = products.flatMapUsingService(
-     *     ServiceFactory.withCreateFn(jet -> new PartRegistryCtx()),
+     *     ServiceFactories.sharedService(ctx -> new PartRegistryCtx()),
      *     (registry, product) -> Traversers.traverseIterable(
      *                                registry.fetchParts(product))
      * );

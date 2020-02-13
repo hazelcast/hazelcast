@@ -261,7 +261,7 @@ may be running on disparate JVM implementations.
 Another common choice is to use Java's standard `Object.hashCode()`. It
 is often significantly faster and it's safe to use on a local edge.
 On a distributed edge it is not a safe strategy in general because
-`hashCode()` 's contract does not require repeatable results across
+``hashCode()``'s contract does not require repeatable results across
 JVMs or even different instances of the same JVM version. If a given
 class's Javadoc explicitly specifies the hashing function it uses, then
 its instances are safe to partition with `hashCode()`.
