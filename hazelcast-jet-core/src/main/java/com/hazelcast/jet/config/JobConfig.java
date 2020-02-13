@@ -23,6 +23,7 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.pipeline.ServiceFactory;
+import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -227,6 +228,11 @@ public class JobConfig implements IdentifiedDataSerializable {
      * <p>
      * See also {@link #addJar} and {@link #addClasspathResource}.
      *
+     * @implNote Backing storage for this method is an {@link IMap} with a
+     * default backup count of 1. When adding big files as a resource, size
+     * the cluster accordingly in terms of memory, since each file will have 2
+     * copies inside the cluster(primary + backup replica).
+     *
      * @return {@code this} instance for fluent API
      */
     @Nonnull
@@ -250,6 +256,11 @@ public class JobConfig implements IdentifiedDataSerializable {
      * one path segment. The last path segment ("filename") will be used as the
      * resource ID, so two JARs with the same filename will be in conflict.
      *
+     * @implNote Backing storage for this method is an {@link IMap} with a
+     * default backup count of 1. When adding big files as a resource, size
+     * the cluster accordingly in terms of memory, since each file will have 2
+     * copies inside the cluster(primary + backup replica).
+     *
      * @return {@code this} instance for fluent API
      */
     @Nonnull
@@ -266,6 +277,11 @@ public class JobConfig implements IdentifiedDataSerializable {
      * This variant identifies the JAR with a {@code File}. The filename part
      * of the path will be used as the resource ID, so two JARs with the same
      * filename will be in conflict.
+     *
+     * @implNote Backing storage for this method is an {@link IMap} with a
+     * default backup count of 1. When adding big files as a resource, size
+     * the cluster accordingly in terms of memory, since each file will have 2
+     * copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
      */
@@ -284,6 +300,11 @@ public class JobConfig implements IdentifiedDataSerializable {
      * This variant identifies the JAR with a path string. The filename part
      * will be used as the resource ID, so two JARs with the same filename will
      * be in conflict.
+     *
+     * @implNote Backing storage for this method is an {@link IMap} with a
+     * default backup count of 1. When adding big files as a resource, size
+     * the cluster accordingly in terms of memory, since each file will have 2
+     * copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
      */
@@ -305,6 +326,11 @@ public class JobConfig implements IdentifiedDataSerializable {
      * <p>
      * The ZIP file should contain only JARs. Any other files will be ignored.
      *
+     * @implNote Backing storage for this method is an {@link IMap} with a
+     * default backup count of 1. When adding big files as a resource, size
+     * the cluster accordingly in terms of memory, since each file will have 2
+     * copies inside the cluster(primary + backup replica).
+     *
      * @return {@code this} instance for fluent API
      * @since 4.0
      */
@@ -324,6 +350,11 @@ public class JobConfig implements IdentifiedDataSerializable {
      * will be in conflict.
      * <p>
      * The ZIP file should contain only JARs. Any other files will be ignored.
+     *
+     * @implNote Backing storage for this method is an {@link IMap} with a
+     * default backup count of 1. When adding big files as a resource, size
+     * the cluster accordingly in terms of memory, since each file will have 2
+     * copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
      * @since 4.0
@@ -346,6 +377,11 @@ public class JobConfig implements IdentifiedDataSerializable {
      * <p>
      * The ZIP file should contain only JARs. Any other files will be ignored.
      *
+     * @implNote Backing storage for this method is an {@link IMap} with a
+     * default backup count of 1. When adding big files as a resource, size
+     * the cluster accordingly in terms of memory, since each file will have 2
+     * copies inside the cluster(primary + backup replica).
+     *
      * @return {@code this} instance for fluent API
      * @since 4.0
      */
@@ -364,6 +400,11 @@ public class JobConfig implements IdentifiedDataSerializable {
      * as the resource ID, so two resources with the same filename will be in
      * conflict.
      *
+     * @implNote Backing storage for this method is an {@link IMap} with a
+     * default backup count of 1. When adding big files as a resource, size
+     * the cluster accordingly in terms of memory, since each file will have 2
+     * copies inside the cluster(primary + backup replica).
+     *
      * @return {@code this} instance for fluent API
      */
     @Nonnull
@@ -376,6 +417,11 @@ public class JobConfig implements IdentifiedDataSerializable {
      * the code attached to the underlying pipeline or DAG will have access to
      * it. The supplied {@code id} becomes the path under which the resource is
      * available from the class loader.
+     *
+     * @implNote Backing storage for this method is an {@link IMap} with a
+     * default backup count of 1. When adding big files as a resource, size
+     * the cluster accordingly in terms of memory, since each file will have 2
+     * copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
      */
@@ -391,6 +437,11 @@ public class JobConfig implements IdentifiedDataSerializable {
      * classpath, under its own filename. This means that two files with the
      * same filename will be in conflict.
      *
+     * @implNote Backing storage for this method is an {@link IMap} with a
+     * default backup count of 1. When adding big files as a resource, size
+     * the cluster accordingly in terms of memory, since each file will have 2
+     * copies inside the cluster(primary + backup replica).
+     *
      * @return {@code this} instance for fluent API
      */
     @Nonnull
@@ -404,6 +455,11 @@ public class JobConfig implements IdentifiedDataSerializable {
      * classpath. All the code attached to the underlying pipeline or DAG
      * will have access to it. The supplied {@code id} becomes the path under
      * which the resource is available from the class loader.
+     *
+     * @implNote Backing storage for this method is an {@link IMap} with a
+     * default backup count of 1. When adding big files as a resource, size
+     * the cluster accordingly in terms of memory, since each file will have 2
+     * copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
      */
@@ -420,6 +476,11 @@ public class JobConfig implements IdentifiedDataSerializable {
      * under its own filename. This means that two files with the same filename
      * will be in conflict.
      *
+     * @implNote Backing storage for this method is an {@link IMap} with a
+     * default backup count of 1. When adding big files as a resource, size
+     * the cluster accordingly in terms of memory, since each file will have 2
+     * copies inside the cluster(primary + backup replica).
+     *
      * @return {@code this} instance for fluent API
      */
     @Nonnull
@@ -432,6 +493,11 @@ public class JobConfig implements IdentifiedDataSerializable {
      * classpath. All the code attached to the underlying pipeline or DAG
      * will have access to it. The supplied {@code id} becomes the path
      * under which the resource is available from the class loader.
+     *
+     * @implNote Backing storage for this method is an {@link IMap} with a
+     * default backup count of 1. When adding big files as a resource, size
+     * the cluster accordingly in terms of memory, since each file will have 2
+     * copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
      */
@@ -453,6 +519,11 @@ public class JobConfig implements IdentifiedDataSerializable {
      * have the same name as the one supplied here, but it will be in a
      * temporary directory on the Jet server.
      *
+     * @implNote Backing storage for this method is an {@link IMap} with a
+     * default backup count of 1. When adding big files as a resource, size
+     * the cluster accordingly in terms of memory, since each file will have 2
+     * copies inside the cluster(primary + backup replica).
+     *
      * @return {@code this} instance for fluent API
      * @since 4.0
      */
@@ -472,6 +543,11 @@ public class JobConfig implements IdentifiedDataSerializable {
      * for example, to {@link ServiceFactory#createContextFn()}. The file will
      * have the same name as the one supplied here, but it will be in a
      * temporary directory on the Jet server.
+     *
+     * @implNote Backing storage for this method is an {@link IMap} with a
+     * default backup count of 1. When adding big files as a resource, size
+     * the cluster accordingly in terms of memory, since each file will have 2
+     * copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
      * @since 4.0
@@ -494,6 +570,11 @@ public class JobConfig implements IdentifiedDataSerializable {
      * have the same name as the one supplied here, but it will be in a
      * temporary directory on the Jet server.
      *
+     * @implNote Backing storage for this method is an {@link IMap} with a
+     * default backup count of 1. When adding big files as a resource, size
+     * the cluster accordingly in terms of memory, since each file will have 2
+     * copies inside the cluster(primary + backup replica).
+     *
      * @return {@code this} instance for fluent API
      * @since 4.0
      */
@@ -513,6 +594,11 @@ public class JobConfig implements IdentifiedDataSerializable {
      * for example, to {@link ServiceFactory#createContextFn()}. The file will
      * have the same name as the one supplied here, but it will be in a
      * temporary directory on the Jet server.
+     *
+     * @implNote Backing storage for this method is an {@link IMap} with a
+     * default backup count of 1. When adding big files as a resource, size
+     * the cluster accordingly in terms of memory, since each file will have 2
+     * copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
      * @since 4.0
@@ -536,6 +622,11 @@ public class JobConfig implements IdentifiedDataSerializable {
      * have the same name as the one supplied here, but it will be in a
      * temporary directory on the Jet server.
      *
+     * @implNote Backing storage for this method is an {@link IMap} with a
+     * default backup count of 1. When adding big files as a resource, size
+     * the cluster accordingly in terms of memory, since each file will have 2
+     * copies inside the cluster(primary + backup replica).
+     *
      * @return {@code this} instance for fluent API
      * @since 4.0
      */
@@ -555,6 +646,11 @@ public class JobConfig implements IdentifiedDataSerializable {
      * for example, to {@link ServiceFactory#createContextFn()}. The file will
      * have the same name as the one supplied here, but it will be in a
      * temporary directory on the Jet server.
+     *
+     * @implNote Backing storage for this method is an {@link IMap} with a
+     * default backup count of 1. When adding big files as a resource, size
+     * the cluster accordingly in terms of memory, since each file will have 2
+     * copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
      * @since 4.0
@@ -577,6 +673,11 @@ public class JobConfig implements IdentifiedDataSerializable {
      * for example, to {@link ServiceFactory#createContextFn()}. It will be a
      * temporary directory on the Jet server.
      *
+     * @implNote Backing storage for this method is an {@link IMap} with a
+     * default backup count of 1. When adding big files as a resource, size
+     * the cluster accordingly in terms of memory, since each file will have 2
+     * copies inside the cluster(primary + backup replica).
+     *
      * @return {@code this} instance for fluent API
      * @since 4.0
      */
@@ -596,6 +697,11 @@ public class JobConfig implements IdentifiedDataSerializable {
      * where {@code ctx} is the {@code ProcessorSupplier} context available,
      * for example, to {@link ServiceFactory#createContextFn()}. It will be a
      * temporary directory on the Jet server.
+     *
+     * @implNote Backing storage for this method is an {@link IMap} with a
+     * default backup count of 1. When adding big files as a resource, size
+     * the cluster accordingly in terms of memory, since each file will have 2
+     * copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
      * @since 4.0
@@ -620,6 +726,11 @@ public class JobConfig implements IdentifiedDataSerializable {
      * for example, to {@link ServiceFactory#createContextFn()}. It will be a
      * temporary directory on the Jet server.
      *
+     * @implNote Backing storage for this method is an {@link IMap} with a
+     * default backup count of 1. When adding big files as a resource, size
+     * the cluster accordingly in terms of memory, since each file will have 2
+     * copies inside the cluster(primary + backup replica).
+     *
      * @return {@code this} instance for fluent API
      * @since 4.0
      */
@@ -639,6 +750,11 @@ public class JobConfig implements IdentifiedDataSerializable {
      * where {@code ctx} is the {@code ProcessorSupplier} context available,
      * for example, to {@link ServiceFactory#createContextFn()}. It will be a
      * temporary directory on the Jet server.
+     *
+     * @implNote Backing storage for this method is an {@link IMap} with a
+     * default backup count of 1. When adding big files as a resource, size
+     * the cluster accordingly in terms of memory, since each file will have 2
+     * copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
      * @since 4.0
@@ -661,6 +777,11 @@ public class JobConfig implements IdentifiedDataSerializable {
      * for example, to {@link ServiceFactory#createContextFn()}. It will be a
      * temporary directory on the Jet server.
      *
+     * @implNote Backing storage for this method is an {@link IMap} with a
+     * default backup count of 1. When adding big files as a resource, size
+     * the cluster accordingly in terms of memory, since each file will have 2
+     * copies inside the cluster(primary + backup replica).
+     *
      * @return {@code this} instance for fluent API
      * @since 4.0
      */
@@ -681,6 +802,11 @@ public class JobConfig implements IdentifiedDataSerializable {
      * for example, to {@link ServiceFactory#createContextFn()}. It will be a
      * temporary directory on the Jet server.
      *
+     * @implNote Backing storage for this method is an {@link IMap} with a
+     * default backup count of 1. When adding big files as a resource, size
+     * the cluster accordingly in terms of memory, since each file will have 2
+     * copies inside the cluster(primary + backup replica).
+     *
      * @return {@code this} instance for fluent API
      * @since 4.0
      */
@@ -694,6 +820,11 @@ public class JobConfig implements IdentifiedDataSerializable {
      * {@link #attachDirectory(File, String) attachDirectory(dir, id)} for every
      * entry that resolves to a directory and {@link #attachFile(File, String)
      * attachFile(file, id)} for every entry that resolves to a regular file.
+     *
+     * @implNote Backing storage for this method is an {@link IMap} with a
+     * default backup count of 1. When adding big files as a resource, size
+     * the cluster accordingly in terms of memory, since each file will have 2
+     * copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
      */
