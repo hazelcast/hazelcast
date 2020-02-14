@@ -19,10 +19,7 @@ package com.hazelcast.util.executor;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.affinity.ThreadAffinityController;
 import com.hazelcast.internal.affinity.ThreadAffinitySupport;
-import com.hazelcast.logging.ILogger;
 import org.jetbrains.annotations.Nullable;
-
-import static com.hazelcast.logging.Logger.getLogger;
 
 /**
  * Base class for all Hazelcast threads to manage them from a single point.
@@ -33,7 +30,7 @@ import static com.hazelcast.logging.Logger.getLogger;
  */
 public class HazelcastManagedThread extends Thread {
 
-    private static final ThreadAffinitySupport THREAD_AFFINITY_SUPPORT = ThreadAffinitySupport.INSTANCE;
+    private static final ThreadAffinitySupport THREAD_AFFINITY_SUPPORT = ThreadAffinitySupport.getInstance();
 
     private ThreadAffinityController affinityController;
 

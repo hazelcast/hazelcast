@@ -69,7 +69,7 @@ public class ThreadAffinityController {
         return "ThreadAffinityController{" + "group='" + group + '\'' + ", cores=" + cores + '}';
     }
 
-    private class Entry {
+    private final class Entry {
         private final int coreId;
         private final AffinityLock lock;
 

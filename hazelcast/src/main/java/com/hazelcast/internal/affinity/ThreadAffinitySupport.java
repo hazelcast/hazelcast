@@ -38,10 +38,10 @@ import static com.hazelcast.util.OsHelper.isUnixFamily;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.util.Collections.disjoint;
 
-public class ThreadAffinitySupport {
+public final class ThreadAffinitySupport {
 
-    public static volatile ThreadAffinitySupport INSTANCE = null;
     private static final AtomicBoolean INIT = new AtomicBoolean(false);
+    private static volatile ThreadAffinitySupport instance;
 
     private final ILogger logger;
     private ConcurrentMap<ThreadAffinity, ThreadAffinityController> registry = new ConcurrentHashMap<>();
@@ -58,6 +58,10 @@ public class ThreadAffinitySupport {
         }
 
         return null;
+    }
+
+    public static ThreadAffinitySupport getInstance() {
+        return instance;
     }
 
     public static void init(ILogger logger, HazelcastProperties properties) {
@@ -80,7 +84,7 @@ public class ThreadAffinitySupport {
         failFastConfigConflicts(properties);
 
         logger.info("Thread affinity dependencies available, support enabled");
-        INSTANCE = new ThreadAffinitySupport(logger);
+        instance = new ThreadAffinitySupport(logger);
     }
 
     protected static void failFastMissingLibs() {
