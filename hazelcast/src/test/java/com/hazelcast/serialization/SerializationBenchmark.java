@@ -129,7 +129,7 @@ public class SerializationBenchmark {
 
         private final InternalSerializationService serializationService;
 
-        public Serializer(InternalSerializationService serializationService) {
+        Serializer(InternalSerializationService serializationService) {
             this.serializationService = serializationService;
         }
 
