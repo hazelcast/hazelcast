@@ -144,7 +144,7 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public void beforeStart() {
-        ThreadAffinitySupport.init(logger);
+        ThreadAffinitySupport.init(logger, node.getProperties());
     }
 
     @Override
