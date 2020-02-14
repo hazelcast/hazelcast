@@ -32,7 +32,7 @@
                     <properties>
                         <property name="access-key">test-access-key</property>
                         <property name="secret-key">test-secret-key</property>
-                        <property name="region">test-region</property>
+                        <property name="region">us-east-1</property>
                         <property name="iam-role">test-iam-role</property>
                         <property name="host-header">ec2.test-host-header</property>
                         <property name="security-group-name">test-security-group-name</property>

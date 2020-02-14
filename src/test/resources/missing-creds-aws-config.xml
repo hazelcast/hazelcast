@@ -30,7 +30,7 @@
             <discovery-strategies>
                 <discovery-strategy enabled="true" class="com.hazelcast.aws.AwsDiscoveryStrategy">
                     <properties>
-                        <property name="region">test-region</property>
+                        <property name="region">us-east-1</property>
                         <property name="host-header">ec2.test-host-header</property>
                         <property name="security-group-name">test-security-group-name</property>
                         <property name="tag-key">test-tag-key</property>

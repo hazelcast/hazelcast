@@ -64,7 +64,7 @@ public class AwsDiscoveryStrategyFactoryTest
         props.put("access-key", "test-value");
         props.put("secret-key", "test-value");
         props.put("host-header", "test-value");
-        props.put("region", "test-value");
+        props.put("region", "us-east-1");
         createStrategy(props);
     }
 
@@ -72,7 +72,7 @@ public class AwsDiscoveryStrategyFactoryTest
     public void testMinimalOk()
             throws Exception {
         final Map<String, Comparable> props = new HashMap<String, Comparable>();
-        props.put("region", "test-value");
+        props.put("region", "us-east-1");
         createStrategy(props);
     }
 
@@ -80,7 +80,7 @@ public class AwsDiscoveryStrategyFactoryTest
     public void testOnlyGivenRoleOk() {
         final Map<String, Comparable> props = new HashMap<String, Comparable>();
         props.put("iam-role", "test-value");
-        props.put("region", "test-value");
+        props.put("region", "us-east-1");
         createStrategy(props);
     }
 
@@ -89,7 +89,7 @@ public class AwsDiscoveryStrategyFactoryTest
         final Map<String, Comparable> props = new HashMap<String, Comparable>();
         props.put("secret-key", "test-value");
         props.put("access-key", "test-value");
-        props.put("region", "test-value");
+        props.put("region", "us-east-1");
         createStrategy(props);
     }
 
@@ -99,7 +99,7 @@ public class AwsDiscoveryStrategyFactoryTest
         final Map<String, Comparable> props = new HashMap<String, Comparable>();
         props.put("access-key", "test-value");
         props.put("secret-key", "test-value");
-        props.put("region", "test-value");
+        props.put("region", "us-east-1");
         props.put("iam-role", "test-value");
         props.put("host-header", "ec2.test-value");
         props.put("security-group-name", "test-value");
@@ -161,7 +161,7 @@ public class AwsDiscoveryStrategyFactoryTest
 
         assertEquals("test-access-key", providerProperties.get("access-key"));
         assertEquals("test-secret-key", providerProperties.get("secret-key"));
-        assertEquals("test-region", providerProperties.get("region"));
+        assertEquals("us-east-1", providerProperties.get("region"));
         assertEquals("test-iam-role", providerProperties.get("iam-role"));
         assertEquals("ec2.test-host-header", providerProperties.get("host-header"));
         assertEquals("test-security-group-name", providerProperties.get("security-group-name"));
