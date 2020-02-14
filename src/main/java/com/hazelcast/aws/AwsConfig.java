@@ -27,6 +27,7 @@ public final class AwsConfig {
     private final String tagValue;
     private final int connectionTimeoutSeconds;
     private final int connectionRetries;
+    private final int readTimeoutSeconds;
     private final PortRange hzPort;
     private String accessKey;
     private String secretKey;
@@ -36,7 +37,7 @@ public final class AwsConfig {
     // Constructor has a lot of parameters, but it's private.
     private AwsConfig(String accessKey, String secretKey, String region, String iamRole, String hostHeader,
                       String securityGroupName, String tagKey, String tagValue, int connectionTimeoutSeconds,
-                      int connectionRetries, PortRange hzPort) {
+                      int connectionRetries, int readTimeoutSeconds, PortRange hzPort) {
         this.accessKey = accessKey;
         this.secretKey = secretKey;
         this.region = region;
@@ -47,6 +48,7 @@ public final class AwsConfig {
         this.tagValue = tagValue;
         this.connectionTimeoutSeconds = connectionTimeoutSeconds;
         this.connectionRetries = connectionRetries;
+        this.readTimeoutSeconds = readTimeoutSeconds;
         this.hzPort = hzPort;
     }
 
@@ -124,6 +126,10 @@ public final class AwsConfig {
         return connectionRetries;
     }
 
+    public int getReadTimeoutSeconds() {
+        return readTimeoutSeconds;
+    }
+
     public PortRange getHzPort() {
         return hzPort;
     }
@@ -133,7 +139,8 @@ public final class AwsConfig {
         return "AwsConfig{" + "accessKey='***', secretKey='***', region='" + region + '\'' + ", iamRole='" + iamRole + '\''
                 + ", hostHeader='" + hostHeader + '\'' + ", securityGroupName='" + securityGroupName + '\'' + ", tagKey='"
                 + tagKey + '\'' + ", tagValue='" + tagValue + '\'' + ", connectionTimeoutSeconds=" + connectionTimeoutSeconds
-                + ", connectionRetries=" + connectionRetries + ", hzPort=" + hzPort + '}';
+                + ", readTimeoutSeconds=" + readTimeoutSeconds + ", connectionRetries=" + connectionRetries
+                + ", hzPort=" + hzPort + '}';
     }
 
     public static class Builder {
@@ -147,6 +154,7 @@ public final class AwsConfig {
         private String tagValue;
         private int connectionTimeoutSeconds;
         private int connectionRetries;
+        private int readTimeoutSeconds;
         private PortRange hzPort;
 
         public Builder setAccessKey(String accessKey) {
@@ -199,6 +207,11 @@ public final class AwsConfig {
             return this;
         }
 
+        public Builder setReadTimeoutSeconds(int readTimeoutSeconds) {
+            this.readTimeoutSeconds = readTimeoutSeconds;
+            return this;
+        }
+
         public Builder setHzPort(PortRange hzPort) {
             this.hzPort = hzPort;
             return this;
@@ -206,7 +219,7 @@ public final class AwsConfig {
 
         public AwsConfig build() {
             return new AwsConfig(accessKey, secretKey, region, iamRole, hostHeader, securityGroupName, tagKey, tagValue,
-                    connectionTimeoutSeconds, connectionRetries, hzPort);
+                    connectionTimeoutSeconds, connectionRetries, readTimeoutSeconds, hzPort);
         }
     }
 }

@@ -55,17 +55,19 @@ public final class MetadataUtil {
      * Performs the HTTP request to retrieve AWS Instance Metadata from the given URI.
      *
      * @param uri              the full URI where a `GET` request will retrieve the metadata information, represented as JSON.
-     * @param timeoutInSeconds timeout for the AWS service call
+     * @param connectTimeoutInSeconds connect timeout for the AWS service call
+     * @param readTimeoutSeconds read timeout for the AWS service call
      * @return The content of the HTTP response, as a String. NOTE: This is NEVER null.
      */
-    public static String retrieveMetadataFromURI(String uri, int timeoutInSeconds) {
+    public static String retrieveMetadataFromURI(String uri, int connectTimeoutInSeconds, int readTimeoutSeconds) {
         StringBuilder response = new StringBuilder();
 
         InputStreamReader is = null;
         BufferedReader reader = null;
         try {
             URLConnection url = new URL(uri).openConnection();
-            url.setConnectTimeout((int) TimeUnit.SECONDS.toMillis(timeoutInSeconds));
+            url.setReadTimeout((int) TimeUnit.SECONDS.toMillis(readTimeoutSeconds));
+            url.setConnectTimeout((int) TimeUnit.SECONDS.toMillis(connectTimeoutInSeconds));
             is = new InputStreamReader(url.getInputStream(), "UTF-8");
             reader = new BufferedReader(is);
             String resp;
@@ -97,15 +99,17 @@ public final class MetadataUtil {
      * Performs the HTTP request to retrieve AWS Instance Metadata from the given URI.
      *
      * @param uri              the full URI where a `GET` request will retrieve the metadata information, represented as JSON.
-     * @param timeoutInSeconds timeout for the AWS service call
+     * @param connectTimeoutInSeconds connect timeout for the AWS service call
      * @param retries          number of retries in case the AWS request fails
+     * @param readTimeoutInSeconds read timeout for the AWS service call
      * @return The content of the HTTP response, as a String. NOTE: This is NEVER null.
      */
-    public static String retrieveMetadataFromURI(final String uri, final int timeoutInSeconds, int retries) {
+    public static String retrieveMetadataFromURI(final String uri, final int connectTimeoutInSeconds,
+                                                 int retries, final int readTimeoutInSeconds) {
         return RetryUtils.retry(new Callable<String>() {
             @Override
             public String call() {
-                return retrieveMetadataFromURI(uri, timeoutInSeconds);
+                return retrieveMetadataFromURI(uri, connectTimeoutInSeconds, readTimeoutInSeconds);
             }
         }, retries);
     }

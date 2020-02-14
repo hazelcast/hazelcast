@@ -40,6 +40,7 @@
                         <property name="tag-value">test-tag-value</property>
                         <property name="connection-timeout-seconds">10</property>
                         <property name="connection-retries">10</property>
+                        <property name="read-timeout-seconds">11</property>
                         <property name="hz-port">5702</property>
                     </properties>
                 </discovery-strategy>

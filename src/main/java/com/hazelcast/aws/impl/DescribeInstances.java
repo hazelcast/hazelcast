@@ -167,7 +167,11 @@ public class DescribeInstances {
      */
     String retrieveRoleFromURI(String uri) {
         return MetadataUtil
-                .retrieveMetadataFromURI(uri, awsConfig.getConnectionTimeoutSeconds(), awsConfig.getConnectionRetries());
+                .retrieveMetadataFromURI(uri,
+                        awsConfig.getConnectionTimeoutSeconds(),
+                        awsConfig.getConnectionRetries(),
+                        awsConfig.getReadTimeoutSeconds()
+                );
     }
 
     /**
@@ -286,6 +290,7 @@ public class DescribeInstances {
 
         HttpURLConnection httpConnection = (HttpURLConnection) (url.openConnection());
         httpConnection.setRequestMethod(Constants.GET);
+        httpConnection.setReadTimeout((int) TimeUnit.SECONDS.toMillis(awsConfig.getReadTimeoutSeconds()));
         httpConnection.setConnectTimeout((int) TimeUnit.SECONDS.toMillis(awsConfig.getConnectionTimeoutSeconds()));
         httpConnection.setDoOutput(false);
         httpConnection.connect();

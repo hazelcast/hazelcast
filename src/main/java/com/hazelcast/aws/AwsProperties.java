@@ -88,6 +88,11 @@ public enum AwsProperties {
     CONNECTION_RETRIES("connection-retries", INTEGER, true),
 
     /**
+     * Sets the read timeout in seconds. Its default value is 10.
+     */
+    READ_TIMEOUT_SECONDS("read-timeout-seconds", INTEGER, true),
+
+    /**
      * The discovery mechanism will discover only IP addresses. You can define the port or the port range on which Hazelcast is
      * expected to be running.
      * <p>

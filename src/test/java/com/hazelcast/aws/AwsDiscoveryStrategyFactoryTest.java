@@ -168,6 +168,7 @@ public class AwsDiscoveryStrategyFactoryTest
         assertEquals("test-tag-key", providerProperties.get("tag-key"));
         assertEquals("test-tag-value", providerProperties.get("tag-value"));
         assertEquals("10", providerProperties.get("connection-timeout-seconds"));
+        assertEquals("11", providerProperties.get("read-timeout-seconds"));
         assertEquals("5702", providerProperties.get("hz-port"));
     }
 }
