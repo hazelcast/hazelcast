@@ -44,7 +44,7 @@ class CpuIdPool {
     }
 
     @Override
-    public String toString() {
-        return "CoreIdPool{" + "assigned=" + ids + ", available=" + available + '}';
+    public synchronized String toString() {
+        return "CpuIdPool{" + "assigned=" + ids + ", available=" + available + '}';
     }
 }

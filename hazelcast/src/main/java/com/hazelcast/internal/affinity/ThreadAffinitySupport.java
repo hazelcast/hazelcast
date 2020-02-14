@@ -74,39 +74,39 @@ public class ThreadAffinitySupport {
             // Check if dependency OpenHFT Affinity is present in classpath
             Class.forName("net.openhft.affinity.AffinityLock");
         } catch (ClassNotFoundException e) {
-            logger.warning("Dependency net.openhft:affinity not found in classpath. Affinity support is disabled.");
-            return;
+            throw new IllegalStateException("Dependency net.openhft:affinity not found in classpath.");
         }
 
         try {
             // Check if JNA is available in the classpath
             Class.forName("com.sun.jna.Platform");
         } catch (ClassNotFoundException e) {
-            logger.warning("Dependency net.java.dev.jna:jna* not found in classpath. Affinity support is disabled.");
+            throw new IllegalStateException("Dependency net.java.dev.jna:jna* not found in classpath.");
         }
 
         if (!disjoint(ThreadAffinityProperties.getCoreIds(IO), ThreadAffinityProperties.getCoreIds(PARTITION_THREAD))) {
-            logger.warning("Affinity assignments for the different affinity groups have some cores in common (shared).");
+            throw new IllegalStateException("Affinity assignments for the different affinity groups "
+                    + "have some cores in common (shared).");
         }
 
-        failFastChecks();
+        failFastConfigConflicts();
 
         logger.info("Thread affinity dependencies available, support enabled");
         INSTANCE = new ThreadAffinitySupport(logger);
     }
 
-    private static void failFastChecks() {
+    private static void failFastConfigConflicts() {
         // Available resources conflicts
         int totalAvailableCores = Runtime.getRuntime().availableProcessors();
         int partitionOpCores = ThreadAffinityProperties.countCores(PARTITION_THREAD);
         if (partitionOpCores > totalAvailableCores) {
-            throw new IllegalStateException("Thread affinity core count for " + PARTITION_THREAD + " is set to high, "
+            throw new IllegalStateException("Thread affinity core count for " + PARTITION_THREAD + " is set too high, "
                     + "more than the available core count on the system " + totalAvailableCores);
         }
 
         int ioCores = ThreadAffinityProperties.countCores(IO);
         if (ioCores > totalAvailableCores) {
-            throw new IllegalStateException("Thread affinity core count for " + IO + " is set to high, "
+            throw new IllegalStateException("Thread affinity core count for " + IO + " is set too high, "
                     + "more than the available core count on the system " + totalAvailableCores);
         }
 
@@ -115,7 +115,7 @@ public class ThreadAffinitySupport {
         }
 
         if (partitionOpCores + ioCores > totalAvailableCores) {
-            throw new IllegalStateException("Thread affinity core sum for all affinity groups is to high, "
+            throw new IllegalStateException("Thread affinity core sum for all affinity groups is too high, "
                     + "more than the available core count on the system " + totalAvailableCores);
         }
 

@@ -19,17 +19,24 @@ package com.hazelcast.internal.affinity;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public final class ThreadAffinityProperties {
 
     private static final String PROPERTY_BASE = "hz.%s";
+    private static final AtomicBoolean ENABLED = new AtomicBoolean(false);
 
     private ThreadAffinityProperties() {
     }
 
     public static boolean isAffinityEnabled() {
+        if (ENABLED.get()) {
+            return true;
+        }
+
         for (ThreadAffinity.Group group : ThreadAffinity.Group.values()) {
             if (System.getProperty(String.format(PROPERTY_BASE, group.value)) != null) {
+                ENABLED.set(true);
                 return true;
             }
         }

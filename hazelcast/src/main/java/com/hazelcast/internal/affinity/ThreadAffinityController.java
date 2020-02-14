@@ -66,14 +66,14 @@ public class ThreadAffinityController {
 
     @Override
     public String toString() {
-        return "AffinityEnforcerThreadInterceptor{" + "type='" + group + '\'' + ", cores=" + cores + '}';
+        return "ThreadAffinityController{" + "group='" + group + '\'' + ", cores=" + cores + '}';
     }
 
     private class Entry {
         private final int coreId;
         private final AffinityLock lock;
 
-        public Entry(int coreId, AffinityLock lock) {
+        private Entry(int coreId, AffinityLock lock) {
             this.coreId = coreId;
             this.lock = lock;
         }
