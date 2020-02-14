@@ -24,6 +24,8 @@ import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
+import com.hazelcast.internal.nearcache.NearCache;
+import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
@@ -478,11 +480,13 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
     }
 
     private static void assertNearCachePreloadDoneEventually(final NearCacheTestContext clientContext) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertTrue("Expected the Near Cache pre-loading to be eventually done", clientContext.nearCache.isPreloadDone());
-            }
+        assertTrueEventually(() -> {
+            NearCache nearCache = clientContext.nearCache;
+            NearCacheStats stats = nearCache.getNearCacheStats();
+            int size = nearCache.size();
+
+            assertTrue(format("Preloading has not finished yet. [size: %d, %s]",
+                    size, stats), nearCache.isPreloadDone());
         });
     }
 
