@@ -20,16 +20,16 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-public final class ThreadAffinityParamsHelper {
+public final class ThreadAffinityProperties {
 
     private static final String PROPERTY_BASE = "hz.%s";
 
-    private ThreadAffinityParamsHelper() {
+    private ThreadAffinityProperties() {
     }
 
     public static boolean isAffinityEnabled() {
         for (ThreadAffinity.Group group : ThreadAffinity.Group.values()) {
-            if (System.getProperty(group.value) != null) {
+            if (System.getProperty(String.format(PROPERTY_BASE, group.value)) != null) {
                 return true;
             }
         }
@@ -38,12 +38,12 @@ public final class ThreadAffinityParamsHelper {
     }
 
     public static Set<Integer> getCoreIds(ThreadAffinity.Group group) {
-        String property = String.format(PROPERTY_BASE, group.value).toLowerCase();
+        String property = String.format(PROPERTY_BASE, group.value);
         return parseCoreIds(property);
     }
 
     public static int countCores(ThreadAffinity.Group group) {
-        String property = String.format(PROPERTY_BASE, group.value).toLowerCase();
+        String property = String.format(PROPERTY_BASE, group.value);
         return parseCoreIds(property).size();
     }
 

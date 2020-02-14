@@ -30,6 +30,7 @@ import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.hotrestart.InternalHotRestartService;
 import com.hazelcast.hotrestart.NoOpHotRestartService;
 import com.hazelcast.hotrestart.NoopInternalHotRestartService;
+import com.hazelcast.internal.affinity.ThreadAffinitySupport;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.ascii.TextCommandServiceImpl;
 import com.hazelcast.internal.cluster.ClusterStateListener;
@@ -143,6 +144,7 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public void beforeStart() {
+        ThreadAffinitySupport.init(logger);
     }
 
     @Override

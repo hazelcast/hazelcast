@@ -17,11 +17,11 @@
 package com.hazelcast.util.executor;
 
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
-import com.hazelcast.internal.affinity.AffinityController;
-import com.hazelcast.internal.affinity.AffinitySupportExtention;
+import com.hazelcast.internal.affinity.ThreadAffinityController;
+import com.hazelcast.internal.affinity.ThreadAffinitySupport;
 import com.hazelcast.logging.ILogger;
+import org.jetbrains.annotations.Nullable;
 
-import static com.hazelcast.internal.affinity.ThreadAffinityLoader.loadExtention;
 import static com.hazelcast.logging.Logger.getLogger;
 
 /**
@@ -33,28 +33,32 @@ import static com.hazelcast.logging.Logger.getLogger;
  */
 public class HazelcastManagedThread extends Thread {
 
-    private static final ILogger LOGGER = getLogger(HazelcastManagedThread.class);
-    private static final AffinitySupportExtention THREAD_AFFIN_EXTENTION = loadExtention(LOGGER);
+    private static final ThreadAffinitySupport THREAD_AFFINITY_SUPPORT = ThreadAffinitySupport.INSTANCE;
 
-    private AffinityController affinityController;
+    private ThreadAffinityController affinityController;
 
     public HazelcastManagedThread() {
-        this.affinityController = THREAD_AFFIN_EXTENTION.create(getClass());
+        this.affinityController = THREAD_AFFINITY_SUPPORT.create(getClass());
     }
 
     public HazelcastManagedThread(Runnable target) {
         super(target);
-        this.affinityController = THREAD_AFFIN_EXTENTION.create(getClass());
+        this.affinityController = getAffinityController();
     }
 
     public HazelcastManagedThread(String name) {
         super(name);
-        this.affinityController = THREAD_AFFIN_EXTENTION.create(getClass());
+        this.affinityController = getAffinityController();
     }
 
     public HazelcastManagedThread(Runnable target, String name) {
         super(target, name);
-        this.affinityController = THREAD_AFFIN_EXTENTION.create(getClass());
+        this.affinityController = getAffinityController();
+    }
+
+    @Nullable
+    protected ThreadAffinityController getAffinityController() {
+        return THREAD_AFFINITY_SUPPORT != null ? THREAD_AFFINITY_SUPPORT.create(getClass()) : null;
     }
 
     @Override

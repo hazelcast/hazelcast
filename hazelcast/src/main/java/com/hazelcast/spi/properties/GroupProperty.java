@@ -22,7 +22,7 @@ import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.affinity.ThreadAffinity;
-import com.hazelcast.internal.affinity.ThreadAffinityParamsHelper;
+import com.hazelcast.internal.affinity.ThreadAffinityProperties;
 import com.hazelcast.internal.cluster.fd.ClusterFailureDetectorType;
 import com.hazelcast.internal.diagnostics.HealthMonitorLevel;
 import com.hazelcast.map.QueryResultSizeExceededException;
@@ -78,7 +78,7 @@ public final class GroupProperty {
     public static final HazelcastProperty PARTITION_OPERATION_THREAD_COUNT
             = new HazelcastProperty("hazelcast.operation.thread.count",
                 (Function<HazelcastProperties, Integer>) o -> {
-                    int affinityCount = ThreadAffinityParamsHelper.countCores(ThreadAffinity.Group.PARTITION_THREAD);
+                    int affinityCount = ThreadAffinityProperties.countCores(ThreadAffinity.Group.PARTITION_THREAD);
                     return affinityCount == 0 ? -1 : affinityCount;
                 });
 
@@ -212,7 +212,7 @@ public final class GroupProperty {
     public static final HazelcastProperty IO_THREAD_COUNT
             = new HazelcastProperty("hazelcast.io.thread.count",
             (Function<HazelcastProperties, Integer>) o -> {
-                int affinityCount = ThreadAffinityParamsHelper.countCores(ThreadAffinity.Group.IO);
+                int affinityCount = ThreadAffinityProperties.countCores(ThreadAffinity.Group.IO);
                 return affinityCount == 0 ? 3 : affinityCount / 2;
             });
 

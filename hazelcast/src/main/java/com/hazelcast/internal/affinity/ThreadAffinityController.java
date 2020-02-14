@@ -21,17 +21,17 @@ import net.openhft.affinity.AffinityLock;
 
 import java.util.Set;
 
-public class AffinityController {
+public class ThreadAffinityController {
 
     private final ILogger logger;
     private final ThreadLocal<Entry> assignments = new ThreadLocal<>();
     private final ThreadAffinity.Group group;
     private final CpuIdPool cores;
 
-    AffinityController(ILogger logger, ThreadAffinity type) {
+    ThreadAffinityController(ILogger logger, ThreadAffinity type) {
         this.logger = logger;
         this.group = type.value();
-        Set<Integer> assignedCoreIds = ThreadAffinityParamsHelper.getCoreIds(group);
+        Set<Integer> assignedCoreIds = ThreadAffinityProperties.getCoreIds(group);
         if (assignedCoreIds.isEmpty()) {
             logger.warning("No assigned core ids for type " + group + ". Affinity enabled in NOOP mode.");
         }
@@ -48,7 +48,7 @@ public class AffinityController {
             return;
         }
 
-        logger.info("Assigning affinity on " + Thread.currentThread().getName() + " of type: "
+        logger.fine("Assigning affinity on " + Thread.currentThread().getName() + " of type: "
                 + group + " to core: " + assignedId + ".");
         Entry entry = new Entry(assignedId, AffinityLock.acquireLock(assignedId));
         assignments.set(entry);

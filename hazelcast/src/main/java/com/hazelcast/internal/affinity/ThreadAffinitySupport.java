@@ -19,23 +19,49 @@ package com.hazelcast.internal.affinity;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.properties.GroupProperty;
 
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import static com.hazelcast.internal.affinity.ThreadAffinity.Group.IO;
 import static com.hazelcast.internal.affinity.ThreadAffinity.Group.PARTITION_THREAD;
-import static com.hazelcast.internal.affinity.ThreadAffinityParamsHelper.isAffinityEnabled;
+import static com.hazelcast.internal.affinity.ThreadAffinityProperties.isAffinityEnabled;
+import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.OsHelper.OS;
 import static com.hazelcast.util.OsHelper.isUnixFamily;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.util.Collections.disjoint;
 
-@SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
-public final class ThreadAffinityLoader {
+public class ThreadAffinitySupport {
 
-    private ThreadAffinityLoader() {
+    public static volatile ThreadAffinitySupport INSTANCE = null;
+    private static final AtomicBoolean INIT = new AtomicBoolean(false);
+
+    private final ILogger logger;
+    private ConcurrentMap<ThreadAffinity, ThreadAffinityController> registry = new ConcurrentHashMap<>();
+
+    private ThreadAffinitySupport(ILogger logger) {
+        this.logger = logger;
     }
 
-    public static AffinitySupportExtention loadExtention(ILogger logger) {
+    public ThreadAffinityController create(Class<? extends Thread> cls) {
+        checkNotNull(cls);
+        ThreadAffinity type = cls.getAnnotation(ThreadAffinity.class);
+        if (type != null) {
+            return getOrPutIfAbsent(registry, type, key -> new ThreadAffinityController(logger, type));
+        }
+
+        return null;
+    }
+
+    public static void init(ILogger logger) {
         if (!isAffinityEnabled()) {
-            return null;
+            return;
+        }
+
+        if (!INIT.compareAndSet(false, true)) {
+            throw new IllegalStateException("Thread affinity support disallows multiple Hazelcast instances under the same JVM");
         }
 
         if (!isUnixFamily()) {
@@ -49,7 +75,7 @@ public final class ThreadAffinityLoader {
             Class.forName("net.openhft.affinity.AffinityLock");
         } catch (ClassNotFoundException e) {
             logger.warning("Dependency net.openhft:affinity not found in classpath. Affinity support is disabled.");
-            return null;
+            return;
         }
 
         try {
@@ -59,26 +85,26 @@ public final class ThreadAffinityLoader {
             logger.warning("Dependency net.java.dev.jna:jna* not found in classpath. Affinity support is disabled.");
         }
 
-        if (!disjoint(ThreadAffinityParamsHelper.getCoreIds(IO), ThreadAffinityParamsHelper.getCoreIds(PARTITION_THREAD))) {
+        if (!disjoint(ThreadAffinityProperties.getCoreIds(IO), ThreadAffinityProperties.getCoreIds(PARTITION_THREAD))) {
             logger.warning("Affinity assignments for the different affinity groups have some cores in common (shared).");
         }
 
         failFastChecks();
 
         logger.info("Thread affinity dependencies available, support enabled");
-        return new AffinitySupportExtention(logger);
+        INSTANCE = new ThreadAffinitySupport(logger);
     }
 
     private static void failFastChecks() {
         // Available resources conflicts
         int totalAvailableCores = Runtime.getRuntime().availableProcessors();
-        int partitionOpCores = ThreadAffinityParamsHelper.countCores(PARTITION_THREAD);
+        int partitionOpCores = ThreadAffinityProperties.countCores(PARTITION_THREAD);
         if (partitionOpCores > totalAvailableCores) {
             throw new IllegalStateException("Thread affinity core count for " + PARTITION_THREAD + " is set to high, "
                     + "more than the available core count on the system " + totalAvailableCores);
         }
 
-        int ioCores = ThreadAffinityParamsHelper.countCores(IO);
+        int ioCores = ThreadAffinityProperties.countCores(IO);
         if (ioCores > totalAvailableCores) {
             throw new IllegalStateException("Thread affinity core count for " + IO + " is set to high, "
                     + "more than the available core count on the system " + totalAvailableCores);
