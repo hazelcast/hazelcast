@@ -225,6 +225,9 @@ public final class MetricNames {
      * Number of job executions started on the Jet cluster. Each job can
      * execute multiple times, for example when it's restarted or suspended
      * and then resumed.
+     * <p>
+     * This metric is zero on non-master members. When a master fails and a new
+     * master takes over, the count is reset.
      *
      * @since 4.0
      */
@@ -234,6 +237,9 @@ public final class MetricNames {
      * Number of job executions finished on the Jet cluster. Each job can
      * execute multiple times, for example when it's restarted or suspended
      * and then resumed.
+     * <p>
+     * This metric is zero on non-master members. When a master fails and a new
+     * master takes over, the count is reset.
      *
      * @since 4.0
      */

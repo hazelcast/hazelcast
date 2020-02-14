@@ -345,6 +345,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
                 com.hazelcast.jet.impl.util.Util.doWithClassLoader(removed, () ->
                     executionContext.completeExecution(error));
             } finally {
+                executionCompleted.inc();
                 removed.shutdown();
                 executionContextJobIds.remove(executionContext.jobId());
                 logger.fine("Completed execution of " + executionContext.jobNameAndExecutionId());
@@ -367,7 +368,6 @@ public class JobExecutionService implements DynamicMetricsProvider {
         executionStarted.inc();
         CompletableFuture<Void> future = execCtx.beginExecution();
         future.whenComplete(withTryCatch(logger, (i, e) -> {
-            executionCompleted.inc();
             if (e instanceof CancellationException) {
                 logger.fine("Execution of " + execCtx.jobNameAndExecutionId() + " was cancelled");
             } else if (e != null) {
