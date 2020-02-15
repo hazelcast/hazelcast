@@ -27,6 +27,7 @@ import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.OperationsPerInvocation;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
@@ -44,11 +45,13 @@ import java.util.concurrent.TimeUnit;
 
 @State(Scope.Benchmark)
 @BenchmarkMode(Mode.Throughput)
-@OutputTimeUnit(TimeUnit.SECONDS)
+@OutputTimeUnit(TimeUnit.MICROSECONDS)
 @Fork(value = 1, warmups = 0)
-@Warmup(iterations = 2)
-@Measurement(iterations = 2)
+@Warmup(iterations = 3, time = 1)
+@Measurement(iterations = 3, time = 1)
+@OperationsPerInvocation(SerializationBenchmark.BATCH_SIZE)
 public class SerializationBenchmark {
+    static final int BATCH_SIZE = 1_000;
 
     Serializable serializable;
     Serializer serializableSerializer;
@@ -135,14 +138,20 @@ public class SerializationBenchmark {
 
         byte[] serialize(Object object) throws IOException {
             try (BufferObjectDataOutput output = serializationService.createObjectDataOutput()) {
-                serializationService.writeObject(output, object);
+                for (int i = 0; i < BATCH_SIZE; i++) {
+                    serializationService.writeObject(output, object);
+                }
                 return output.toByteArray();
             }
         }
 
-        <T> T deserialize(byte[] bytes) throws IOException {
+        Object[] deserialize(byte[] bytes) throws IOException {
+            Object[] result = new Object[BATCH_SIZE];
             try (BufferObjectDataInput input = serializationService.createObjectDataInput(bytes)) {
-                return serializationService.readObject(input);
+                for (int i = 0; i < BATCH_SIZE; i++) {
+                    result[i] = serializationService.readObject(input);
+                }
+                return result;
             }
         }
     }
