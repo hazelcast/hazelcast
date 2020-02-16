@@ -37,16 +37,18 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.collection.ItemEvent;
 import com.hazelcast.collection.ItemListener;
+import com.hazelcast.collection.LocalCollectionStats;
 import com.hazelcast.collection.impl.common.DataAwareItemEvent;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
 
-import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
+
+import javax.annotation.Nonnull;
 
 import static com.hazelcast.internal.util.CollectionUtil.objectToDataCollection;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -213,6 +215,11 @@ public class ClientSetProxy<E> extends PartitionSpecificClientProxy implements I
         SetGetAllCodec.ResponseParameters resultParameters = SetGetAllCodec.decodeResponse(response);
         List<Data> resultCollection = resultParameters.response;
         return new UnmodifiableLazyList(resultCollection, getSerializationService());
+    }
+
+    @Override
+    public LocalCollectionStats getLocalCollectionStats() {
+        throw new UnsupportedOperationException("Locality is ambiguous for client!");
     }
 
     @Override

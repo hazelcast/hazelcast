@@ -37,4 +37,13 @@ import java.util.Set;
  * @see Set
  */
 public interface ISet<E> extends Set<E>, ICollection<E> {
+
+    /**
+     * Returns {@link LocalCollectionStats} for this collection.
+     * LocalCollectionStats is the statistics for this collection.
+     *
+     * @return this collection's local statistics.
+     */
+    LocalCollectionStats getLocalCollectionStats();
+
 }

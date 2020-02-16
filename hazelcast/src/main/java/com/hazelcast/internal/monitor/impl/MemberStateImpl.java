@@ -17,6 +17,7 @@
 package com.hazelcast.internal.monitor.impl;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.collection.LocalCollectionStats;
 import com.hazelcast.collection.LocalQueueStats;
 import com.hazelcast.executor.LocalExecutorStats;
 import com.hazelcast.instance.EndpointQualifier;
@@ -71,6 +72,8 @@ public class MemberStateImpl implements MemberState {
     private Map<String, LocalMapStats> mapStats = new HashMap<>();
     private Map<String, LocalMultiMapStats> multiMapStats = new HashMap<>();
     private Map<String, LocalQueueStats> queueStats = new HashMap<>();
+    private Map<String, LocalCollectionStats> listStats = new HashMap<>();
+    private Map<String, LocalCollectionStats> setStats = new HashMap<>();
     private Map<String, LocalTopicStats> topicStats = new HashMap<>();
     private Map<String, LocalTopicStats> reliableTopicStats = new HashMap<>();
     private Map<String, LocalPNCounterStats> pnCounterStats = new HashMap<>();
@@ -117,6 +120,16 @@ public class MemberStateImpl implements MemberState {
     @Override
     public LocalQueueStats getLocalQueueStats(String queueName) {
         return queueStats.get(queueName);
+    }
+
+    @Override
+    public LocalCollectionStats getLocalListStats(String listName) {
+        return listStats.get(listName);
+    }
+
+    @Override
+    public LocalCollectionStats getLocalSetStats(String setName) {
+        return setStats.get(setName);
     }
 
     @Override
@@ -213,6 +226,14 @@ public class MemberStateImpl implements MemberState {
 
     public void putLocalQueueStats(String name, LocalQueueStats localQueueStats) {
         queueStats.put(name, localQueueStats);
+    }
+
+    public void putLocalListStats(String name, LocalCollectionStats localListStats) {
+        listStats.put(name, localListStats);
+    }
+
+    public void putLocalSetStats(String name, LocalCollectionStats localSetStats) {
+        setStats.put(name, localSetStats);
     }
 
     public void putLocalReplicatedMapStats(String name, LocalReplicatedMapStats localReplicatedMapStats) {
@@ -374,19 +395,7 @@ public class MemberStateImpl implements MemberState {
 
             endpoints.add(endpoint);
         }
-        root.add("endpoints", endpoints);
-
-        serializeMap(root, "mapStats", mapStats);
-        serializeMap(root, "multiMapStats", multiMapStats);
-        serializeMap(root, "replicatedMapStats", replicatedMapStats);
-        serializeMap(root, "queueStats", queueStats);
-        serializeMap(root, "topicStats", topicStats);
-        serializeMap(root, "reliableTopicStats", reliableTopicStats);
-        serializeMap(root, "pnCounterStats", pnCounterStats);
-        serializeMap(root, "executorStats", executorStats);
-        serializeMap(root, "cacheStats", cacheStats);
-        serializeMap(root, "wanStats", wanStats);
-        serializeMap(root, "flakeIdStats", flakeIdGeneratorStats);
+        serializeEndpoints(root, endpoints);
 
         final JsonObject runtimePropsObject = new JsonObject();
         for (Map.Entry<String, Long> entry : runtimeProps.entrySet()) {
@@ -416,6 +425,24 @@ public class MemberStateImpl implements MemberState {
         root.add("inboundNetworkStats", inboundNetworkStats.toJson());
         root.add("outboundNetworkStats", outboundNetworkStats.toJson());
         return root;
+    }
+
+    private void serializeEndpoints(JsonObject root, JsonArray endpoints) {
+        root.add("endpoints", endpoints);
+
+        serializeMap(root, "mapStats", mapStats);
+        serializeMap(root, "multiMapStats", multiMapStats);
+        serializeMap(root, "replicatedMapStats", replicatedMapStats);
+        serializeMap(root, "queueStats", queueStats);
+        serializeMap(root, "listStats", listStats);
+        serializeMap(root, "setStats", setStats);
+        serializeMap(root, "topicStats", topicStats);
+        serializeMap(root, "reliableTopicStats", reliableTopicStats);
+        serializeMap(root, "pnCounterStats", pnCounterStats);
+        serializeMap(root, "executorStats", executorStats);
+        serializeMap(root, "cacheStats", cacheStats);
+        serializeMap(root, "wanStats", wanStats);
+        serializeMap(root, "flakeIdStats", flakeIdGeneratorStats);
     }
 
     private static void serializeMap(JsonObject root, String key, Map<String, ?> map) {
@@ -498,6 +525,16 @@ public class MemberStateImpl implements MemberState {
             LocalQueueStatsImpl stats = new LocalQueueStatsImpl();
             stats.fromJson(next.getValue().asObject());
             queueStats.put(next.getName(), stats);
+        }
+        for (JsonObject.Member next : getObject(json, "listStats")) {
+            LocalCollectionStatsImpl stats = new LocalCollectionStatsImpl();
+            stats.fromJson(next.getValue().asObject());
+            listStats.put(next.getName(), stats);
+        }
+        for (JsonObject.Member next : getObject(json, "setStats")) {
+            LocalCollectionStatsImpl stats = new LocalCollectionStatsImpl();
+            stats.fromJson(next.getValue().asObject());
+            setStats.put(next.getName(), stats);
         }
         for (JsonObject.Member next : getObject(json, "topicStats")) {
             LocalTopicStatsImpl stats = new LocalTopicStatsImpl();
@@ -601,6 +638,8 @@ public class MemberStateImpl implements MemberState {
                 + ", multiMapStats=" + multiMapStats
                 + ", replicatedMapStats=" + replicatedMapStats
                 + ", queueStats=" + queueStats
+                + ", listStats=" + listStats
+                + ", setStats=" + setStats
                 + ", topicStats=" + topicStats
                 + ", reliableTopicStats=" + reliableTopicStats
                 + ", pnCounterStats=" + pnCounterStats

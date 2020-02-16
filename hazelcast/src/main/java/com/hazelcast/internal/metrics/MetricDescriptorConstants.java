@@ -89,6 +89,15 @@ public final class MetricDescriptorConstants {
     public static final String CLUSTER_METRIC_CLUSTER_SERVICE_SIZE = "size";
     // ===[/CLUSTER]====================================================
 
+    // ===[COLLECTION]=======================================================
+    public static final String LIST_PREFIX = "list";
+    public static final String SET_PREFIX = "set";
+    public static final String COLLECTION_METRIC_LAST_ACCESS_TIME = "lastAccessTime";
+    public static final String COLLECTION_METRIC_LAST_UPDATE_TIME = "lastUpdateTime";
+    public static final String COLLECTION_METRIC_NUMBER_OF_HITS = "numberOfHits";
+    public static final String COLLECTION_METRIC_CREATION_TIME = "creationTime";
+    // ===[/COLLECTION]======================================================
+
     // ===[CP SUBSYSTEM]================================================
     public static final String CP_PREFIX_RAFT = "raft";
     public static final String CP_PREFIX_RAFT_GROUP = "raft.group";

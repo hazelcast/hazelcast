@@ -16,12 +16,13 @@
 
 package com.hazelcast.internal.monitor;
 
+import com.hazelcast.collection.LocalCollectionStats;
 import com.hazelcast.collection.LocalQueueStats;
 import com.hazelcast.executor.LocalExecutorStats;
-import com.hazelcast.json.internal.JsonSerializable;
 import com.hazelcast.internal.management.dto.ClientEndPointDTO;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
 import com.hazelcast.internal.management.dto.MXBeansDTO;
+import com.hazelcast.json.internal.JsonSerializable;
 import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.multimap.LocalMultiMapStats;
 import com.hazelcast.replicatedmap.LocalReplicatedMapStats;
@@ -66,6 +67,10 @@ public interface MemberState extends JsonSerializable {
     LocalMultiMapStats getLocalMultiMapStats(String mapName);
 
     LocalQueueStats getLocalQueueStats(String queueName);
+
+    LocalCollectionStats getLocalListStats(String listName);
+
+    LocalCollectionStats getLocalSetStats(String setName);
 
     LocalTopicStats getLocalTopicStats(String topicName);
 

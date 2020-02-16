@@ -16,18 +16,25 @@
 
 package com.hazelcast.collection.impl.list;
 
+import com.hazelcast.collection.LocalCollectionStats;
 import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.CollectionService;
 import com.hazelcast.collection.impl.list.operations.ListReplicationOperation;
 import com.hazelcast.collection.impl.txnlist.TransactionalListProxy;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.internal.metrics.DynamicMetricsProvider;
+import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricDescriptorConstants;
+import com.hazelcast.internal.metrics.MetricsCollectionContext;
+import com.hazelcast.internal.metrics.impl.ProviderHelper;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
-import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.ContextMutexFactory;
+import com.hazelcast.internal.util.MapUtil;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.transaction.impl.Transaction;
 
 import java.util.Map;
 import java.util.UUID;
@@ -36,7 +43,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
 
-public class ListService extends CollectionService {
+public class ListService extends CollectionService implements DynamicMetricsProvider {
 
     public static final String SERVICE_NAME = "hz:impl:listService";
 
@@ -112,5 +119,24 @@ public class ListService extends CollectionService {
         Object splitBrainProtectionName = getOrPutSynchronized(splitBrainProtectionConfigCache, name,
                 splitBrainProtectionConfigCacheMutexFactory, splitBrainProtectionConfigConstructor);
         return splitBrainProtectionName == NULL_OBJECT ? null : (String) splitBrainProtectionName;
+    }
+
+    @Override
+    public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
+        ProviderHelper.provide(descriptor, context, MetricDescriptorConstants.LIST_PREFIX, getStats());
+    }
+
+    @Override
+    public Map<String, LocalCollectionStats> getStats() {
+        Map<String, LocalCollectionStats> listStats = MapUtil.createHashMap(containerMap.size());
+        for (Map.Entry<String, ListContainer> entry : containerMap.entrySet()) {
+            String name = entry.getKey();
+            ListContainer listContainer = entry.getValue();
+            if (listContainer.getConfig().isStatisticsEnabled()) {
+                LocalCollectionStats listStat = getLocalCollectionStats(name);
+                listStats.put(name, listStat);
+            }
+        }
+        return listStats;
     }
 }

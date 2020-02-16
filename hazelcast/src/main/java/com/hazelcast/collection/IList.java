@@ -34,4 +34,14 @@ import java.util.List;
  * @see List
  */
 public interface IList<E> extends List<E>, ICollection<E> {
+
+
+    /**
+     * Returns {@link LocalCollectionStats} for this collection.
+     * LocalCollectionStats is the statistics for this collection.
+     *
+     * @return this collection's local statistics.
+     */
+    LocalCollectionStats getLocalCollectionStats();
+
 }

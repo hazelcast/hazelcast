@@ -22,11 +22,11 @@ import com.hazelcast.collection.impl.collection.operations.CollectionBackupAware
 import com.hazelcast.collection.impl.list.ListContainer;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
 
@@ -71,6 +71,7 @@ public class ListSetOperation extends CollectionBackupAwareOperation implements 
     public void afterRun() throws Exception {
         publishEvent(ItemEventType.REMOVED, (Data) response);
         publishEvent(ItemEventType.ADDED, value);
+        super.afterRun();
     }
 
     @Override

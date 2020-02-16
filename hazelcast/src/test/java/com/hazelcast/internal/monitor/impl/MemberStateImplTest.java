@@ -130,6 +130,8 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         memberState.putLocalMapStats("mapStats", new LocalMapStatsImpl());
         memberState.putLocalMultiMapStats("multiMapStats", new LocalMultiMapStatsImpl());
         memberState.putLocalQueueStats("queueStats", new LocalQueueStatsImpl());
+        memberState.putLocalListStats("listStats", new LocalCollectionStatsImpl());
+        memberState.putLocalSetStats("setStats", new LocalCollectionStatsImpl());
         memberState.putLocalTopicStats("topicStats", new LocalTopicStatsImpl());
         memberState.putLocalReliableTopicStats("reliableTopicStats", new LocalTopicStatsImpl());
         memberState.putLocalPNCounterStats("pnCounterStats", new LocalPNCounterStatsImpl());
@@ -162,6 +164,8 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         assertNotNull(deserialized.getLocalMapStats("mapStats").toString());
         assertNotNull(deserialized.getLocalMultiMapStats("multiMapStats").toString());
         assertNotNull(deserialized.getLocalQueueStats("queueStats").toString());
+        assertNotNull(deserialized.getLocalListStats("listStats").toString());
+        assertNotNull(deserialized.getLocalSetStats("setStats").toString());
         assertNotNull(deserialized.getLocalTopicStats("topicStats").toString());
         assertNotNull(deserialized.getReliableLocalTopicStats("reliableTopicStats").toString());
         assertNotNull(deserialized.getLocalPNCounterStats("pnCounterStats").toString());
