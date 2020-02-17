@@ -152,10 +152,6 @@ public abstract class CardinalityEstimatorAbstractTest extends HazelcastTestSupp
         }
 
         @Override
-        public void destroy() {
-        }
-
-        @Override
         public void write(ObjectDataOutput out, CustomObject object) throws IOException {
             out.writeLong((object.x << Bits.INT_SIZE_IN_BYTES) | object.y);
         }
