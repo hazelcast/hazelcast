@@ -33,7 +33,6 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
-import org.openjdk.jmh.infra.Blackhole;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
@@ -51,6 +50,7 @@ import java.util.concurrent.TimeUnit;
 @Measurement(iterations = 3, time = 1)
 @OperationsPerInvocation(SerializationBenchmark.BATCH_SIZE)
 public class SerializationBenchmark {
+
     static final int BATCH_SIZE = 1_000;
 
     Serializable serializable;
@@ -93,39 +93,39 @@ public class SerializationBenchmark {
     }
 
     @Benchmark
-    public void serializable(Blackhole blackhole) throws Exception {
+    public Object[] serializable() throws Exception {
         byte[] serialized = serializableSerializer.serialize(serializable);
-        blackhole.consume(serializableSerializer.deserialize(serialized));
+        return serializableSerializer.deserialize(serialized);
     }
 
     @Benchmark
-    public void externalizable(Blackhole blackhole) throws Exception {
+    public Object[] externalizable() throws Exception {
         byte[] serialized = externalizableSerializer.serialize(externalizable);
-        blackhole.consume(externalizableSerializer.deserialize(serialized));
+        return externalizableSerializer.deserialize(serialized);
     }
 
     @Benchmark
-    public void dataSerializable(Blackhole blackhole) throws Exception {
+    public Object[] dataSerializable() throws Exception {
         byte[] serialized = dataSerializableSerializer.serialize(dataSerializable);
-        blackhole.consume(dataSerializableSerializer.deserialize(serialized));
+        return dataSerializableSerializer.deserialize(serialized);
     }
 
     @Benchmark
-    public void identifiedDataSerializable(Blackhole blackhole) throws Exception {
+    public Object[] identifiedDataSerializable() throws Exception {
         byte[] serialized = identifiedDataSerializableSerializer.serialize(identifiedDataSerializable);
-        blackhole.consume(identifiedDataSerializableSerializer.deserialize(serialized));
+        return identifiedDataSerializableSerializer.deserialize(serialized);
     }
 
     @Benchmark
-    public void portable(Blackhole blackhole) throws Exception {
+    public Object[] portable() throws Exception {
         byte[] serialized = portableSerializer.serialize(portable);
-        blackhole.consume(portableSerializer.deserialize(serialized));
+        return portableSerializer.deserialize(serialized);
     }
 
     @Benchmark
-    public void stream(Blackhole blackhole) throws Exception {
+    public Object[] stream() throws Exception {
         byte[] serialized = streamSerializer.serialize(object);
-        blackhole.consume(streamSerializer.deserialize(serialized));
+        return streamSerializer.deserialize(serialized);
     }
 
     private static class Serializer {
