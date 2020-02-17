@@ -71,7 +71,7 @@ public abstract class CollectionService implements ManagedService, RemoteService
     protected final SerializationService serializationService;
     protected final IPartitionService partitionService;
 
-    private final ConcurrentMap<String, LocalCollectionStatsImpl> statsMap = new ConcurrentHashMap<>(1000);
+    private final ConcurrentMap<String, LocalCollectionStatsImpl> statsMap = new ConcurrentHashMap<>();
     private final ConstructorFunction<String, LocalCollectionStatsImpl> localListStatsConstructorFunction =
             key -> new LocalCollectionStatsImpl();
 
