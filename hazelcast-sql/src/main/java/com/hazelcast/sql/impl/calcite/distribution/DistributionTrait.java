@@ -36,14 +36,14 @@ import static com.hazelcast.sql.impl.calcite.distribution.DistributionType.ROOT;
  * Distribution trait. Defines how the given relation is distributed in the cluster. We define three principal
  * distribution types:
  * <ul>
- *     <li>{@code DISTRIBUTED} - the relation is distributed between members, and every member contains a subset of
+ *     <li>{@code PARTITIONED} - the relation is distributed between members, and every member contains a subset of
  *     tuples. The relation may have zero, one or several distribution column groups. Every group may have one or
  *     several columns. Most often the relation will have zero or one distribution column groups. Several column
  *     groups may appear during join. E.g. given A(a) and B(b), after doing {@code A JOIN B on a = b}, resulting
  *     relation will have two distribution column groups: {a} and {b}.</li>
  *     <li>{@code REPLICATED} - the full copy of the whole relation exists on every node. Typically this distribution
  *     is used for replicated maps.</li>
- *     <li>{@code SINGLETON} - the whole relation exists only on a single node. This distribution type is mostly used
+ *     <li>{@code ROOT} - the whole relation exists only on a single node. This distribution type is mostly used
  *     for {@link RootPhysicalRel} operator or in case there is only one
  *     member with data in the cluster.</li>
  * </ul>
@@ -110,17 +110,17 @@ public class DistributionTrait implements RelTrait {
             return true;
         }
 
-        // Special handling of DISTRIBUTED-DISTRIBUTED pair.
+        // Special handling of PARTITIONED-PARTITIONED pair.
         if (type == PARTITIONED && targetTrait0.getType() == PARTITIONED) {
-            return satisfiesDistributed(this, targetTrait0);
+            return satisfiesPartitioned(this, targetTrait0);
         }
 
-        // Converting from REPLICATED to SINGLETON is always OK.
+        // Converting from REPLICATED to ROOT is always OK.
         if (type == REPLICATED && targetTrait0.getType() == ROOT) {
             return true;
         }
 
-        // If there are no distribution fields, we may consider SINGLETON as a special case of DISTRIBUTED.
+        // If there are no distribution fields, we may consider ROOT as a special case of PARTITIONED.
         if (type == ROOT && targetTrait0.getType() == PARTITIONED && !targetTrait0.hasFieldGroups()) {
             return true;
         }
@@ -130,18 +130,18 @@ public class DistributionTrait implements RelTrait {
     }
 
     /**
-     * Check if the first DISTRIBUTED trait satisfies target DISTRIBUTED trait.
+     * Check if the first PARTITIONED trait satisfies target PARTITIONED trait.
      *
      * @param currentTrait Current trait.
      * @param targetTrait Target trait.
      * @return {@code True} if satisfies, {@code false} if conversion is required.
      */
-    private static boolean satisfiesDistributed(DistributionTrait currentTrait, DistributionTrait targetTrait) {
+    private static boolean satisfiesPartitioned(DistributionTrait currentTrait, DistributionTrait targetTrait) {
         assert currentTrait.getType() == PARTITIONED;
         assert targetTrait.getType() == PARTITIONED;
 
         if (!targetTrait.hasFieldGroups()) {
-            // Converting from DISTRIBUTED to unknown DISTRIBUTED is always OK.
+            // Converting from PARTITIONED to unknown PARTITIONED is always OK.
             return true;
         } else if (!currentTrait.hasFieldGroups()) {
             // If current distribution doesn't have distribution fields, whilst the other does, conversion if needed.
@@ -150,7 +150,7 @@ public class DistributionTrait implements RelTrait {
             // Otherwise compare every pair of source and target field group.
             for (List<DistributionField> currentGroup : currentTrait.getFieldGroups()) {
                 for (List<DistributionField> targetGroup : targetTrait.getFieldGroups()) {
-                    if (satisfiesDistributed(currentGroup, targetGroup)) {
+                    if (satisfiesPartitioned(currentGroup, targetGroup)) {
                         return true;
                     }
                 }
@@ -174,7 +174,7 @@ public class DistributionTrait implements RelTrait {
      *
      * @return {@code True} if satisfies, {@code false} otherwise.
      */
-    private static boolean satisfiesDistributed(
+    private static boolean satisfiesPartitioned(
         List<DistributionField> currentFields,
         List<DistributionField> targetFields
     ) {

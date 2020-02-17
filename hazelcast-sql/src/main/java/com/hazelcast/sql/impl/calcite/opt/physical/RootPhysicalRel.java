@@ -31,7 +31,7 @@ import java.util.List;
  * Traits:
  * <ul>
  *     <li><b>Collation</b>: inherited from the input</li>
- *     <li><b>Distribution</b>: always SINGLETON, since there is only one node consuming the input</li>
+ *     <li><b>Distribution</b>: always ROOT, since there is only one node consuming the input</li>
  * </ul>
  */
 public class RootPhysicalRel extends SingleRel implements PhysicalRel {

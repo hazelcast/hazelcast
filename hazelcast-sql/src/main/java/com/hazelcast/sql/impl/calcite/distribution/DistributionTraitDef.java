@@ -126,10 +126,10 @@ public class DistributionTraitDef extends RelTraitDef<DistributionTrait> {
             );
         } else {
             // TODO: See question about RelSubset above.
-            // This should be either SINGLETON or DISTRIBUTED, since REPLICATED and ANY types are already handled.
+            // This should be either ROOT or PARTITIONED, since REPLICATED and ANY types are already handled.
             assert currentTrait.getType() == ROOT || currentTrait.getType() == PARTITIONED;
 
-            // Any DISTRIBUTED satisfies DISTRIBUTED without specific fields, so if conversion is required, then
+            // Any PARTITIONED satisfies PARTITIONED without specific fields, so if conversion is required, then
             // we expect distribution fields to exist.
             assert !targetTrait.getFieldGroups().isEmpty();
 
@@ -199,7 +199,7 @@ public class DistributionTraitDef extends RelTraitDef<DistributionTrait> {
      * @return Converted node.
      */
     private static RelNode convertToSingleton(RelOptPlanner planner, RelNode rel, DistributionTrait currentTrait) {
-        // ANY already handler before, SINGLETON and REPLICATED do not require further conversions.
+        // ANY already handler before, ROOT and REPLICATED do not require further conversions.
         assert currentTrait.getType() == PARTITIONED;
 
         RelTraitSet traitSet = OptUtils.traitPlus(planner.emptyTraitSet(), DistributionTrait.ROOT_DIST);

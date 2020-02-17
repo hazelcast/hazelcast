@@ -164,7 +164,7 @@ public final class ProjectPhysicalRule extends AbstractPhysicalRule {
                 assert type == PARTITIONED;
         }
 
-        // If DISTRIBUTED distribution doesn't have distribution fields, then do early exit, since there is nothing to loose.
+        // If PARTITIONED distribution doesn't have distribution fields, then do early exit, since there is nothing to loose.
         if (!physicalInputDist.hasFieldGroups()) {
             return physicalInputDist;
         }

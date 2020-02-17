@@ -52,7 +52,7 @@ public final class AggregateDistribution {
     public static AggregateDistribution of(ImmutableBitSet aggGroupSet, DistributionTrait inputDistribution) {
         switch (inputDistribution.getType()) {
             case ROOT:
-                // Always collocated for SINGLETON, since there is only one stream of data.
+                // Always collocated for ROOT, since there is only one stream of data.
                 return new AggregateDistribution(true, DistributionTrait.ROOT_DIST);
 
             case REPLICATED:

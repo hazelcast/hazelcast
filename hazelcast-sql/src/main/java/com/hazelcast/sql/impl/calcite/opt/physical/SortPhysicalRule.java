@@ -21,7 +21,7 @@ import com.hazelcast.sql.impl.calcite.distribution.DistributionTrait;
 import com.hazelcast.sql.impl.calcite.distribution.DistributionType;
 import com.hazelcast.sql.impl.calcite.opt.OptUtils;
 import com.hazelcast.sql.impl.calcite.opt.logical.SortLogicalRel;
-import com.hazelcast.sql.impl.calcite.opt.physical.exchange.SingletonSortMergeExchangePhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.exchange.RootSingletonSortMergeExchangePhysicalRel;
 import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
@@ -41,9 +41,9 @@ import static com.hazelcast.sql.impl.calcite.distribution.DistributionType.ROOT;
 /**
  * Rule which converts logical sort into it's physical counterpart. There are several forms of physical implementations:
  * <ul>
- *     <li><b>Local</b> - in case the whole input is available locally (SINGLETON, REPLICATED)</li>
+ *     <li><b>Local</b> - in case the whole input is available locally (ROOT, REPLICATED)</li>
  *     <li><b>Two-phase (local + merge)</b> - in case the input is located on several nodes. In this case a
- *     {@link SingletonSortMergeExchangePhysicalRel} is created on top of local sort</li>
+ *     {@link RootSingletonSortMergeExchangePhysicalRel} is created on top of local sort</li>
  * </ul>
  * <p>
  * Local component may be removed altogether in case the input is already sorted on required attributes.
@@ -209,20 +209,20 @@ public final class SortPhysicalRule extends AbstractPhysicalRule {
 
     /**
      * Create distributed sort. Only physical nature of the input is preserved. Collation is taken from the sort,
-     * distribution is always SINGLETON by definition of {@link SingletonSortMergeExchangePhysicalRel}.
+     * distribution is always SINGLETON by definition of {@link RootSingletonSortMergeExchangePhysicalRel}.
      *
      * @param logicalSort Logical sort.
      * @param physicalInput Physical input.
      * @return Physical distributed sort.
      */
-    private static SingletonSortMergeExchangePhysicalRel createDistributedSort(SortLogicalRel logicalSort,
-        RelNode physicalInput) {
+    private static RootSingletonSortMergeExchangePhysicalRel createDistributedSort(SortLogicalRel logicalSort,
+                                                                                   RelNode physicalInput) {
         RelTraitSet traitSet = OptUtils.traitPlus(physicalInput.getTraitSet(),
             logicalSort.getCollation(),
             DistributionTrait.ROOT_DIST
         );
 
-        return new SingletonSortMergeExchangePhysicalRel(
+        return new RootSingletonSortMergeExchangePhysicalRel(
             logicalSort.getCluster(),
             traitSet,
             physicalInput,

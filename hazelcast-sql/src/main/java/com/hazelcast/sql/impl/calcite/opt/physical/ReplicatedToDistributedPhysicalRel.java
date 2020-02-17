@@ -26,7 +26,7 @@ import org.apache.calcite.rel.SingleRel;
 import java.util.List;
 
 /**
- * Special case for REPLICATED -> DISTRIBUTED conversion: original input is filtered by the given hash fields, so that
+ * Special case for REPLICATED -> PARTITIONED conversion: original input is filtered by the given hash fields, so that
  * every member operates on a subset of values.
  */
 public class ReplicatedToDistributedPhysicalRel extends SingleRel implements PhysicalRel {

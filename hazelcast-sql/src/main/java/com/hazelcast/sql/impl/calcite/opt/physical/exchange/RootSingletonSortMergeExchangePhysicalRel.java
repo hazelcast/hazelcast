@@ -32,14 +32,14 @@ import java.util.List;
  * Traits:
  * <ul>
  *     <li><b>Collation</b>: derived from the input, never empty</li>
- *     <li><b>Distribution</b>: SINGLETON</li>
+ *     <li><b>Distribution</b>: ROOT</li>
  * </ul>
  */
-public class SingletonSortMergeExchangePhysicalRel extends AbstractExchangePhysicalRel {
+public class RootSingletonSortMergeExchangePhysicalRel extends AbstractExchangePhysicalRel {
     /** Collation. */
     private final RelCollation collation;
 
-    public SingletonSortMergeExchangePhysicalRel(
+    public RootSingletonSortMergeExchangePhysicalRel(
         RelOptCluster cluster,
         RelTraitSet traitSet,
         RelNode input,
@@ -56,7 +56,7 @@ public class SingletonSortMergeExchangePhysicalRel extends AbstractExchangePhysi
 
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new SingletonSortMergeExchangePhysicalRel(getCluster(), traitSet, sole(inputs), collation);
+        return new RootSingletonSortMergeExchangePhysicalRel(getCluster(), traitSet, sole(inputs), collation);
     }
 
     @Override

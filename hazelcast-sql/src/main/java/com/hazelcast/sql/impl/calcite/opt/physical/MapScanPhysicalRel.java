@@ -36,9 +36,7 @@ import java.util.List;
  * Traits:
  * <ul>
  *     <li><b>Collation</b>: empty, as map is not sorted</li>
- *     <li><b>Distribution</b>: DISTRIBUTED or DISTRIBUTED_PARTITIONED depending on partitioning strategy
- *     and projected fields. If distribution field is present in returned fields, then DISTRIBUTED_PARTITIONED
- *     is used. Otherwise information about concrete distribution is lost, and we use DISTRIBUTED instead</li>
+ *     <li><b>Distribution</b>: PARTITIONED</li>
  * </ul>
  */
 public class MapScanPhysicalRel extends AbstractMapScanPhysicalRel {
