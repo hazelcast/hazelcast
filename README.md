@@ -143,7 +143,7 @@ Now, we will create a managed identity using the command below. Please choose an
 az identity create -g [RESOURCE_NAME] -n [IDENTITY_NAME]
 ```
 
-The output of this command will be similar below. Please keep the [PRINCIPAL_ID] value for later use.
+The output of this command will be similar below. Please keep the `[PRINCIPAL_ID]` value for later use.
 
 ```shell script
 {
@@ -159,13 +159,13 @@ The output of this command will be similar below. Please keep the [PRINCIPAL_ID]
 }
 ```
 
-The last step is to assign `READER` role to our identity. Please run the following command by replacing [PRINCIPAL_ID] from the output of previous command and [RESOURCE_GROUP] with the name of the resource group you created.
+The last step is to assign `READER` role to our identity. Please run the following command by replacing `[PRINCIPAL_ID]` from the output of previous command and `[RESOURCE_GROUP]` with the name of the resource group you created.
 
 ```shell script
 az role assignment create -g [RESOURCE_GROUP] --role Reader --assignee-object-id [PRINCIPAL_ID]
 ``` 
 
-If all commands are run successfully, then our resource group has a managed identity assigned with `READER` role over our resource group. Now, if you create VMs in this resource group then Hazelcast Azure Discovery Plugin will be able to use Azure instance metadata service. You will just need to setup your Hazelcast instances with the minimal configuration as explained in the next section.    
+If all commands are run successfully, then you have a managed identity assigned with `READER` role over your resource group. Now, if you create VMs in this resource group then Hazelcast Azure Discovery Plugin will be able to use Azure instance metadata service. You will just need to setup your Hazelcast instances with the minimal configuration as explained in the next section.    
 
 
 ## Minimal Configuration Example
