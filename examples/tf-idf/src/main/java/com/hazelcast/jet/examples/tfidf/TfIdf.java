@@ -177,7 +177,7 @@ public class TfIdf {
 
     private void go() {
         System.out.println("Creating Jet instance 1");
-        jet = Jet.newJetInstance();
+        jet = Jet.bootstrappedInstance();
         buildInvertedIndex();
         System.out.println("size=" + jet.getMap(INVERTED_INDEX).size());
         new SearchGui(jet.getMap(INVERTED_INDEX), docLines("/stopwords.txt").collect(toSet()));

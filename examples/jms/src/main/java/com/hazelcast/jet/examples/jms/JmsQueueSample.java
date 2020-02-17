@@ -86,7 +86,7 @@ public class JmsQueueSample {
     private void setup() throws Exception {
         broker = new ActiveMQBroker();
         producer = new JmsMessageProducer(INPUT_QUEUE, true);
-        jet = Jet.newJetInstance();
+        jet = Jet.bootstrappedInstance();
     }
 
     private void cleanup() throws Exception {

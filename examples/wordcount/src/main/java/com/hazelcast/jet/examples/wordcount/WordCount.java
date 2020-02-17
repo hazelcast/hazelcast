@@ -90,10 +90,7 @@ public class WordCount {
     }
 
     private void setup() {
-        System.out.println("Creating Jet instance 1");
-        jet = Jet.newJetInstance();
-        System.out.println("Creating Jet instance 2");
-        Jet.newJetInstance();
+        jet = Jet.bootstrappedInstance();
         System.out.println("Loading The Complete Works of William Shakespeare");
         try {
             long[] lineNum = {0};

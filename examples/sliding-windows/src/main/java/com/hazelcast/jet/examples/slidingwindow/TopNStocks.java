@@ -25,7 +25,6 @@ import com.hazelcast.jet.datamodel.KeyedWindowResult;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CancellationException;
 
@@ -87,10 +86,9 @@ public class TopNStocks {
     }
 
     public static void main(String[] args) throws InterruptedException {
-        JetInstance[] instances = new JetInstance[2];
-        Arrays.parallelSetAll(instances, i -> Jet.newJetInstance());
+        JetInstance jet = Jet.bootstrappedInstance();
         try {
-            Job job = instances[0].newJob(buildPipeline());
+            Job job = jet.newJob(buildPipeline());
             SECONDS.sleep(JOB_DURATION);
             job.cancel();
             job.join();

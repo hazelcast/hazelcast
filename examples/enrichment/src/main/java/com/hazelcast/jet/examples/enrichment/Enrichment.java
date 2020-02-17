@@ -244,8 +244,7 @@ public final class Enrichment {
     }
 
     public static void main(String[] args) throws Exception {
-        JetInstance jet = Jet.newJetInstance();
-        Jet.newJetInstance();
+        JetInstance jet = Jet.bootstrappedInstance();
 
         new Enrichment(jet).go();
     }

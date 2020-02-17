@@ -51,9 +51,8 @@ public class TradingVolume {
     }
 
     public static void main(String[] args) {
-        JetInstance jet = Jet.newJetInstance();
+        JetInstance jet = Jet.bootstrappedInstance();
         new TradingVolumeGui(jet.getMap(VOLUME_MAP_NAME));
-        Jet.newJetInstance();
         try {
             jet.newJob(buildPipeline()).join();
         } finally {

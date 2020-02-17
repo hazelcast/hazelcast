@@ -88,7 +88,7 @@ public class FaultTolerance {
         JetInstance instance1 = Jet.newJetInstance();
         JetInstance instance2 = Jet.newJetInstance();
 
-        // create a client and submit the price analyzer DAG
+        // create a client and submit the price analyzer pipeline
         JetInstance client = Jet.newJetClient();
         Job job = client.newJob(buildPipeline(), config);
 

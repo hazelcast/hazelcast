@@ -56,7 +56,7 @@ public final class WindowedCoGroup {
         // low partition count.
         System.setProperty("hazelcast.partition.count", "1");
 
-        JetInstance jet = Jet.newJetInstance();
+        JetInstance jet = Jet.bootstrappedInstance();
         ProducerTask producer = new ProducerTask(jet);
 
         try {

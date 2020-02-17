@@ -94,8 +94,7 @@ public class SessionWindow {
     }
 
     public static void main(String[] args) throws Exception {
-        JetInstance jet = Jet.newJetInstance();
-        Jet.newJetInstance();
+        JetInstance jet = Jet.bootstrappedInstance();
         try {
             jet.newJob(buildPipeline());
             Thread.sleep(JOB_DURATION_MS);

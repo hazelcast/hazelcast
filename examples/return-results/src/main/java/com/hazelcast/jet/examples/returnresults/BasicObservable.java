@@ -48,7 +48,7 @@ public class BasicObservable {
     public static final int TOP = 3;
 
     public static void main(String[] args) {
-        JetInstance jet = Jet.newJetInstance();
+        JetInstance jet = Jet.bootstrappedInstance();
 
         Observable<List<Long>> observable = jet.newObservable();
         observable.addObserver(Observer.of(BasicObservable::printResults));

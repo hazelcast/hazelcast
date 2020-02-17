@@ -85,13 +85,13 @@ public class KafkaSource {
             createKafkaCluster();
             fillTopics();
 
-            JetInstance instance = Jet.newJetInstance();
-            IMap<String, Integer> sinkMap = instance.getMap(SINK_NAME);
+            JetInstance jet = Jet.bootstrappedInstance();
+            IMap<String, Integer> sinkMap = jet.getMap(SINK_NAME);
 
             Pipeline p = buildPipeline();
 
             long start = System.nanoTime();
-            Job job = instance.newJob(p);
+            Job job = jet.newJob(p);
             while (true) {
                 int mapSize = sinkMap.size();
                 System.out.format("Received %d entries in %d milliseconds.%n",

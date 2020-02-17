@@ -110,7 +110,7 @@ public class SalesJsonAnalyzer {
 
         Pipeline p = buildPipeline(sourceDir);
 
-        JetInstance instance = Jet.newJetInstance();
+        JetInstance instance = Jet.bootstrappedInstance();
         try {
             instance.newJob(p).join();
         } finally {

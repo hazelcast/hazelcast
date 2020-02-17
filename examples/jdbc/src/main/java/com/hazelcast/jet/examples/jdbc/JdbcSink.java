@@ -80,8 +80,7 @@ public class JdbcSink {
 
         createTable();
 
-        jet = Jet.newJetInstance();
-        Jet.newJetInstance();
+        jet = Jet.bootstrappedInstance();
 
         IMap<Integer, User> map = jet.getMap(MAP_NAME);
         // populate the source IMap

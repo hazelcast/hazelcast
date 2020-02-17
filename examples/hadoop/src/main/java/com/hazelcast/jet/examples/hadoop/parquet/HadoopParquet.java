@@ -64,7 +64,7 @@ public class HadoopParquet {
     private void go() throws Exception {
         try {
             createParquetFile();
-            JetInstance jet = Jet.newJetInstance();
+            JetInstance jet = Jet.bootstrappedInstance();
 
             Configuration jobConfig = createJobConfig();
             jet.newJob(buildPipeline(jobConfig)).join();

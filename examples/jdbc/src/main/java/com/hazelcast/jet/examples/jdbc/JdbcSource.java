@@ -74,8 +74,7 @@ public class JdbcSource {
         dbDirectory = Files.createTempDirectory(JdbcSource.class.getName()).toString();
         createAndFillTable();
 
-        jet = Jet.newJetInstance();
-        Jet.newJetInstance();
+        jet = Jet.bootstrappedInstance();
     }
 
     private void cleanup() {

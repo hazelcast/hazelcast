@@ -62,8 +62,7 @@ public class StockExchange {
     }
 
     public static void main(String[] args) throws InterruptedException {
-        JetInstance jet = Jet.newJetInstance();
-        Jet.newJetInstance();
+        JetInstance jet = Jet.bootstrappedInstance();
         try {
             Job job = jet.newJob(buildPipeline());
             SECONDS.sleep(JOB_DURATION);

@@ -18,19 +18,14 @@ package com.hazelcast.jet.examples.kafka.json;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.kafka.KafkaSources;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.map.IMap;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.StreamSerializer;
 import kafka.admin.RackAwareMode;
 import kafka.server.KafkaConfig;
 import kafka.server.KafkaServer;
@@ -53,6 +48,7 @@ import java.net.ServerSocket;
 import java.nio.file.Files;
 import java.util.Properties;
 
+import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -79,13 +75,14 @@ public class KafkaJsonSource {
 
     private Pipeline buildPipeline() {
         Pipeline p = Pipeline.create();
-        p.readFrom(KafkaSources.kafka(props(
+        p.readFrom(KafkaSources.<Integer, JsonNode>kafka(props(
                 "bootstrap.servers", BROKER_HOST + ':' + brokerPort,
                 "key.deserializer", IntegerDeserializer.class.getName(),
                 "value.deserializer", JsonDeserializer.class.getName(),
                 "auto.offset.reset", AUTO_OFFSET_RESET), TOPIC))
          .withoutTimestamps()
          .peek()
+         .map(e -> entry(e.getKey(), e.getValue().toString()))
          .writeTo(Sinks.map(SINK_MAP_NAME));
         return p;
     }
@@ -100,15 +97,13 @@ public class KafkaJsonSource {
             createKafkaCluster();
             createAndFillTopic();
 
-            JetConfig jetConfig = getJetConfigWithCustomSerialization();
-            JetInstance jet = Jet.newJetInstance(jetConfig);
-            Jet.newJetInstance(jetConfig);
+            JetInstance jet = Jet.bootstrappedInstance();
 
             long start = System.nanoTime();
 
             Job job = jet.newJob(buildPipeline());
 
-            IMap<String, Integer> sinkMap = jet.getMap(SINK_MAP_NAME);
+            IMap<Integer, String> sinkMap = jet.getMap(SINK_MAP_NAME);
 
             while (true) {
                 int mapSize = sinkMap.size();
@@ -125,40 +120,6 @@ public class KafkaJsonSource {
             Jet.shutdownAll();
             shutdownKafkaCluster();
         }
-    }
-
-    private JetConfig getJetConfigWithCustomSerialization() {
-        JetConfig jetConfig = new JetConfig();
-        SerializerConfig serializerConfig = new SerializerConfig();
-        serializerConfig.setTypeClass(JsonNode.class);
-        serializerConfig.setImplementation(new StreamSerializer<JsonNode>() {
-            private ObjectMapper objectMapper = new ObjectMapper();
-
-            @Override
-            public int getTypeId() {
-                return 1;
-            }
-
-            @Override
-            public void destroy() {
-
-            }
-
-            @Override
-            public void write(ObjectDataOutput objectDataOutput, JsonNode jsonNode) throws IOException {
-                byte[] bytes = objectMapper.writeValueAsBytes(jsonNode);
-                objectDataOutput.write(bytes);
-
-            }
-
-            @Override
-            public JsonNode read(ObjectDataInput objectDataInput) throws IOException {
-                return objectMapper.readValue(objectDataInput.readByteArray(), JsonNode.class);
-            }
-        });
-
-        jetConfig.getHazelcastConfig().getSerializationConfig().addSerializerConfig(serializerConfig);
-        return jetConfig;
     }
 
     private void createAndFillTopic() {

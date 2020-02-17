@@ -140,7 +140,7 @@ public final class GRPCEnrichment {
     }
 
     public static void main(String[] args) throws Exception {
-        JetInstance jet = Jet.newJetInstance();
+        JetInstance jet = Jet.bootstrappedInstance();
 
         new GRPCEnrichment(jet).go();
     }

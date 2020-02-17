@@ -70,8 +70,7 @@ public class AvroSource {
                     AvroSink.class.getSimpleName() + " first to create it.");
             System.exit(0);
         }
-        jet = Jet.newJetInstance();
-        Jet.newJetInstance();
+        jet = Jet.bootstrappedInstance();
     }
 
 }

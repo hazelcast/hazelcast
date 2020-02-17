@@ -74,8 +74,7 @@ public class HadoopWordCount {
 
     public static void executeSample(JobConf jobConf, Path inputPath, Path outputPath) {
         try {
-            JetInstance jet = Jet.newJetInstance();
-            Jet.newJetInstance();
+            JetInstance jet = Jet.bootstrappedInstance();
             System.out.print("\nCounting words from " + inputPath);
             long start = nanoTime();
             Pipeline p = buildPipeline(jobConf, inputPath, outputPath);

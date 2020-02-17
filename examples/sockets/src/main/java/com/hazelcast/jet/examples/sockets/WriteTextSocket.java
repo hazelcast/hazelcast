@@ -47,8 +47,7 @@ public class WriteTextSocket {
         NettyServer nettyServer = new NettyServer(PORT, ConsumerEx.noop(), msg -> COUNTER.incrementAndGet());
         nettyServer.start();
 
-        JetInstance jet = Jet.newJetInstance();
-        Jet.newJetInstance();
+        JetInstance jet = Jet.bootstrappedInstance();
 
         try {
             System.out.println("Populating map...");

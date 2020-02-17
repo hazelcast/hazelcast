@@ -49,8 +49,7 @@ public class StreamTextSocket {
         }, ConsumerEx.noop());
         nettyServer.start();
 
-        JetInstance jet = Jet.newJetInstance();
-        Jet.newJetInstance();
+        JetInstance jet = Jet.bootstrappedInstance();
 
         try {
             Pipeline p = Pipeline.create();

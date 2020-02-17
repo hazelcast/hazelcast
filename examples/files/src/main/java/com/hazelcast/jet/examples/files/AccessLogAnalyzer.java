@@ -80,7 +80,7 @@ public class AccessLogAnalyzer {
 
         Pipeline p = buildPipeline(sourceDir, targetDir);
 
-        JetInstance instance = Jet.newJetInstance();
+        JetInstance instance = Jet.bootstrappedInstance();
         try {
             instance.newJob(p).join();
         } finally {

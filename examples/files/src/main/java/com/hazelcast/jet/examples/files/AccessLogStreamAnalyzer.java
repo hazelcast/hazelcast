@@ -79,7 +79,7 @@ public class AccessLogStreamAnalyzer {
         Path tempDir = Files.createTempDirectory(AccessLogStreamAnalyzer.class.getSimpleName());
         Pipeline p = buildPipeline(tempDir);
 
-        JetInstance instance = Jet.newJetInstance();
+        JetInstance instance = Jet.bootstrappedInstance();
         try {
             instance.newJob(p);
             // job is running in its own threads. Let's generate some random traffic in this thread.

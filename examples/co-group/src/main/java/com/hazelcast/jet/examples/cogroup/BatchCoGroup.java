@@ -129,8 +129,7 @@ public final class BatchCoGroup {
     }
 
     public static void main(String[] args) {
-        JetInstance jet = Jet.newJetInstance();
-        Jet.newJetInstance();
+        JetInstance jet = Jet.bootstrappedInstance();
         new BatchCoGroup(jet).go();
     }
 

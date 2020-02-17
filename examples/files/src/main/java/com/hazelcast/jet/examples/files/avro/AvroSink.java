@@ -69,8 +69,7 @@ public class AvroSink {
     }
 
     private void setup() {
-        jet = Jet.newJetInstance();
-        Jet.newJetInstance();
+        jet = Jet.bootstrappedInstance();
 
         IMap<String, User> map = jet.getMap(MAP_NAME);
         for (int i = 0; i < 100; i++) {

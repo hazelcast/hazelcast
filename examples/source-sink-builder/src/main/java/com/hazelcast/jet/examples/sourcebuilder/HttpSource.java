@@ -135,20 +135,13 @@ public class HttpSource {
         Undertow server = new SystemMonitorHttpService().httpServer();
         server.start();
         try {
-            JetInstance jet = startJet();
+            JetInstance jet = Jet.bootstrappedInstance();
             new SystemMonitorGui(jet.getMap(MAP_NAME));
             runPipeline(jet);
         } finally {
             server.stop();
             Jet.shutdownAll();
         }
-    }
-
-    private static JetInstance startJet() {
-        System.out.println("Creating Jet instance 1");
-        Jet.newJetInstance();
-        System.out.println("Creating Jet instance 2");
-        return Jet.newJetInstance();
     }
 
     private static void runPipeline(JetInstance jet) {

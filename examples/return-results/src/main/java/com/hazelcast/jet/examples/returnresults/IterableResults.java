@@ -57,7 +57,7 @@ public class IterableResults {
 
     public static void main(String[] args) {
         try {
-            JetInstance jet = Jet.newJetInstance();
+            JetInstance jet = Jet.bootstrappedInstance();
 
             loadLines(jet);
 

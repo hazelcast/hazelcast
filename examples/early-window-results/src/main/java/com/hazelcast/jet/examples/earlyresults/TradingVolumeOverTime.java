@@ -69,9 +69,8 @@ public final class TradingVolumeOverTime {
     }
 
     public static void main(String[] args) {
-        JetInstance jet = Jet.newJetInstance();
+        JetInstance jet = Jet.bootstrappedInstance();
         new TradingVolumeGui(jet.getList(VOLUME_LIST_NAME));
-        Jet.newJetInstance();
         try {
             jet.newJob(buildPipeline()).join();
         } finally {

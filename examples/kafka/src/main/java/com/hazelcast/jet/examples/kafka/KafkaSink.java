@@ -19,8 +19,6 @@ package com.hazelcast.jet.examples.kafka;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.config.InstanceConfig;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.kafka.KafkaSinks;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sources;
@@ -49,7 +47,6 @@ import java.nio.file.Files;
 import java.util.Collections;
 import java.util.Properties;
 
-import static java.lang.Runtime.getRuntime;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
@@ -87,24 +84,19 @@ public class KafkaSink {
     }
 
     private void run() throws Exception {
-        JetConfig cfg = new JetConfig();
-        cfg.setInstanceConfig(new InstanceConfig().setCooperativeThreadCount(
-                Math.max(1, getRuntime().availableProcessors() / 2)));
-
         try {
             createKafkaCluster();
 
-            JetInstance instance = Jet.newJetInstance(cfg);
-            Jet.newJetInstance(cfg);
+            JetInstance jet = Jet.bootstrappedInstance();
 
-            IMap<String, Integer> sourceMap = instance.getMap(SOURCE_NAME);
+            IMap<String, Integer> sourceMap = jet.getMap(SOURCE_NAME);
             fillIMap(sourceMap);
 
 
             Pipeline p = buildPipeline();
 
             long start = System.nanoTime();
-            Job job = instance.newJob(p);
+            Job job = jet.newJob(p);
 
             System.out.println("Consuming Topics");
             kafkaConsumer = TestUtils.createConsumer(

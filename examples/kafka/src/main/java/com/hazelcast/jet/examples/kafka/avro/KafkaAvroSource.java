@@ -97,7 +97,7 @@ public class KafkaAvroSource {
             startSchemaRegistryServer();
             createAndFillTopic();
 
-            JetInstance jet = Jet.newJetInstance();
+            JetInstance jet = Jet.bootstrappedInstance();
 
             Job job = jet.newJob(buildPipeline());
             SECONDS.sleep(5);

@@ -54,7 +54,7 @@ public class FutureResults {
     private static final String BOOK_LINES = "bookLines";
 
     public static void main(String[] args) {
-        JetInstance jet = Jet.newJetInstance();
+        JetInstance jet = Jet.bootstrappedInstance();
 
         loadLines(jet);
 

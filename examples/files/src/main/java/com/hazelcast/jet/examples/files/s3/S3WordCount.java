@@ -93,8 +93,7 @@ public class S3WordCount {
         try {
             System.out.println("Uploading books to bucket " + INPUT_BUCKET);
             uploadBooks(PREFIX);
-            JetInstance jet = Jet.newJetInstance();
-            Jet.newJetInstance();
+            JetInstance jet = Jet.bootstrappedInstance();
             System.out.print("\nCounting words from " + INPUT_BUCKET);
             long start = nanoTime();
             Pipeline p = buildPipeline();

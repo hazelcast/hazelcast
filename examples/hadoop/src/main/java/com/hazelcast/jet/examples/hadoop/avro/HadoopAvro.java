@@ -62,9 +62,7 @@ public class HadoopAvro {
 
     public static void executeSample(Configuration configuration) {
         try {
-            JetInstance jet = Jet.newJetInstance();
-            Jet.newJetInstance();
-
+            JetInstance jet = Jet.bootstrappedInstance();
             jet.newJob(buildPipeline(configuration)).join();
         } finally {
             Jet.shutdownAll();
