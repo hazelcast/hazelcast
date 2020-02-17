@@ -5,6 +5,83 @@ issues at https://github.com/hazelcast/hazelcast-jet/issues/<issue number>.
 
 The label in the brackets refer to the respective module.
 
+** Hazelcast Jet 4.0 **
+
+1. New Features
+
+[pipeline-api] Add support for calling a Python user-defined function within a pipeline [#1870]
+[pipeline-api] Enable client to collect the results of a job it submitted through observables [#1729]
+[pipeline-api] Add support for user-defined metrics [#1692]
+[pipeline-api] Add batched version of async mapping using service (previously context) [#1803, #1929]
+[core] Update Jet to use Hazelcast IMDG 4.0 [#1552]
+[core] Add support for the creation of Jet blue/green client (enterprise only) [#1658]
+[core] Add two-phase commit (2PC) support to snapshot mechanism for end-to-end exactly once processing [#1438]
+[core] Add built-in metrics for job-lifecycle and snapshot statistics [#1715]
+[jms] JMS Source now supports at-least-once and exactly-once processing [#1804]
+[kafka] Add exactly-once support to Kafka and File sinks [#1654, #1655]
+[kafka] Add Kafka Connect source [https://github.com/hazelcast/hazelcast-jet-contrib/tree/master/kafka-connect]
+[integration] Add Debezium connector for Change Data Capture [https://github.com/hazelcast/hazelcast-jet-contrib/tree/master/debezium]
+
+2. Enhancements
+
+[pipeline-api] Expose read function on File reader [#1849]
+[pipeline-api] Make empty traversers more efficient [#1700]
+[pipeline-api] Update default parallelism of map/cache sources and sinks to 1 [#1774]
+[pipeline-api] Introduce ability to add Jars in ZIP files as job resources [#1681]
+[pipeline-api] StatefulMapTransform should evict all items on job completion [#1861]
+[core] Improve default logging experience [#1948]
+[core] Add convenience method to simplify building jet configs inline [#1714]
+[core] Parallelize tasklet initialization [#1740]
+[core] Add option to specify unicast routing policy for DAG edges [#1766]
+[hadoop] Support using new Hadoop API in HadoopSources/Sinks [#1636]
+[spring] Add support for mapUsingService to use Spring beans directly [#1642]
+[distribution] Auto import modules in JDK9+ in start script [#1737]
+[jet-cli] Add daemon mode and rolling file logger [#1783]
+[jet-cli] Introduced an option to pick main class from JAR files [#1800]
+[jet-cli] Allow for the selection of an entry class when submitting job from the CLI [#1796]
+[documentation] Enhance Hadoop JARs and Classpath chapter in reference manual [#1830]
+[documentation] Explain how to parametrise jobs when submitting it using jet.sh [#1794]
+[documentation] Document S3 sink behaviour and limitation for streaming jobs [#1795]
+[code-samples] Add examples for various Cloud Object Storage format using Hadoop [#1623]
+[demos] Add H2O ML Model Inference demo [https://github.com/hazelcast/hazelcast-jet-demos/tree/master/h2o-breast-cancer-classification]
+
+3. Fixes
+
+[pipeline-api] Fix inconsistencies with @Nonnull and @Nullable annotations [#1675]
+[pipeline-api] Fail fast when merging of a timestamped and non-timestamped stream [#1776]
+[core] Fix long job start times with a very large graph [#1806, #1825]
+[core] Fix deserialization exception for Object[] when using remote map sink [#1444]
+[core] Change join job operation to not be retried on failure [#1656]
+[core] Fix OperationTimeoutException when join request is sent to non-master node [#1661]
+[core] Fix race in job coordination service [#1680]
+[core] Fix issue in JDBC sink when writing timestamps [#1682]
+[core] Add automatic retry for job related methods when master is going down [#1624]
+[core] Fix "Buffer full" error when saving large snapshots [#1769]
+[core] Fix fragmentation type error in saving snapshots [#1771]
+[core] Fix metrics related warning messages during startup [#1699]
+[core] Fix a bug causing the emission old watermarks [#1879]
+[core] Remove checked exceptions from JobConfig [#1896]
+[kafka] Do not auto-commit to Kafka when not using at-least/ex-once [#1934]
+[jet-cli] Make error messages more descriptive when submitting through command line[#1951]
+[jet-cli] Fix jet.sh submit to not report error messages as NULL [#1717]
+
+4. Breaking Changes
+
+[pipeline-api] Rename "xUsingContext" to "xUsingService" [#1696]
+[pipeline-api] Removed flatMap/filterUsingServiceAsync methods [#1919]
+[pipeline-api] Make ProcessorSupplier.Context available in services [#1891]
+[pipeline-api] Rename Pipeline.drawFrom/drainTo to readFrom/writeTo [#1735]
+[core] Update Jet to Hazelcast 4.0 [#1483, #1552, #1695]
+[core] JobConfig.resourceConfig is now private [#1841]
+[core] Replace JetBoostrap.getInstance() with Jet.bootstrappedInstance() [#1827]
+[core] Introduce non-classpath resource upload mechanism [#1824]
+[core] Add instance-wide lifecycle management to ServiceFactory (previously ContextFactory) [#1787, #1797]
+[core] Avoid nested wildcards in flatMap [#1736]
+[core] Use Context object instead of writer in SinkBuilder [#1785]
+[core] Some options from JMS source and sink are removed to support ex-once processing [#1804]
+[hadoop] Hadoop source/sink now named as HadoopSources.inputFormat/outputFormat()
+[licensing] Move connectors and plugins to the Hazelcast Community License [#1892]
+
 ** Hazelcast Jet 3.2 **
 
 1. New Features
@@ -115,7 +192,6 @@ The label in the brackets refer to the respective module.
 [code-samples] Introduce Tensorflow integration sample [#172]
 [code-samples] Introduce Early Window Results sample [#181]
 
-
 3. Fixes
 
 [core] Support non-smart clients by routing job requests to master [#1129]
@@ -225,50 +301,50 @@ have been removed [#1293]
 
 1. New Features
 
-[core] Add support for configuring a custom classloader per job [770]
+[core] Add support for configuring a custom classloader per job [#770]
 
 2. Enhancements
 
-[pipeline-api] Add a noop sink [827]
-[core] Optimize in memory layout of snapshot data, reducing memory usage by up to 75% [822]
-[core] Update Hazelcast to 3.10-GA [833]
-[core] Idle CPU usage improvements when there's a large number of non-cooperative processors [816]
-[core] Utility methods to load JetConfig from XML file or resource directly [856]
+[pipeline-api] Add a noop sink [#827]
+[core] Optimize in memory layout of snapshot data, reducing memory usage by up to 75% [#822]
+[core] Update Hazelcast to 3.10-GA [#833]
+[core] Idle CPU usage improvements when there's a large number of non-cooperative processors [#816]
+[core] Utility methods to load JetConfig from XML file or resource directly [#856]
 
 3. Fixes
 
-[pipeline-api] Fix generic output type for aggregate operations with a custom mapToOutputFn [823]
-[pipeline-api] SinkBuilder shouldn't call destroyFn if createFn wasn't called [826]
-[core] Don't shrink receive window during lulls which can lead to reduced throughput [798]
+[pipeline-api] Fix generic output type for aggregate operations with a custom mapToOutputFn [#823]
+[pipeline-api] SinkBuilder shouldn't call destroyFn if createFn wasn't called [#826]
+[core] Don't shrink receive window during lulls which can lead to reduced throughput [#798]
 [kafka] Kafka source should handle InterruptException in all cases
-[hadoop] When matching HDFS hostnames against member hostnames, use alternative ways than just reverse DNS [858]
+[hadoop] When matching HDFS hostnames against member hostnames, use alternative ways than just reverse DNS [#858]
 
 ** Hazelcast Jet 0.6 **
 
 1. New Features
 
-[pipeline-api] Windowing support and overhaul of Pipeline API to work with streaming sources [731]
-[pipeline-api] New updating and merging map sinks which update the value in place [621]
-[pipeline-api] Custom sink builder support for Pipeline API [762]
-[core] Improved job lifecycle features such as naming jobs and getting jobs by name [666]
-[core] Ability to restart jobs manually to make use of newly joined members [693]
-[spring] Add support for annotation and XML based spring configuration [757]
+[pipeline-api] Windowing support and overhaul of Pipeline API to work with streaming sources [#731]
+[pipeline-api] New updating and merging map sinks which update the value in place [#621]
+[pipeline-api] Custom sink builder support for Pipeline API [#762]
+[core] Improved job lifecycle features such as naming jobs and getting jobs by name [#666]
+[core] Ability to restart jobs manually to make use of newly joined members [#693]
+[spring] Add support for annotation and XML based spring configuration [#757]
 
 2. Enhancements
 
-[pipeline-api] Predictable vertex names when convering Pipelines to DAG [616]
+[pipeline-api] Predictable vertex names when convering Pipelines to DAG [#616]
 [pipeline-api] Improved AggregateOperations.allOf() to be type-safe
-[pipeline-api] Add support for stateful transform operations in the pipeline API [744]
-[pipeline-api] Add ability to set parallelism and name of each stage separately [731]
-[pipeline-api] Add generic Predicate factory methods [695]
+[pipeline-api] Add support for stateful transform operations in the pipeline API [#744]
+[pipeline-api] Add ability to set parallelism and name of each stage separately [#731]
+[pipeline-api] Add generic Predicate factory methods [#695]
 [core] Support for idle streaming sources through a configurable idle timeout
-       where idle processors are excluded from Watermark coalescing. [660]
-[core] Add support for initializing processors with Hazelcast Managed Context [645]
-[core] Improved watermark coalescing and processing [649]
-[core] Make parallelism information available to Processor.Context [754]
-[core] Include Hazelcast Javadocs in Jet distribution [652]
-[core] Add Java 9 build support and automatic module names [720]
-[core] Add ability to emit file name from file sources [729]
+       where idle processors are excluded from Watermark coalescing. [#660]
+[core] Add support for initializing processors with Hazelcast Managed Context [#645]
+[core] Improved watermark coalescing and processing [#649]
+[core] Make parallelism information available to Processor.Context [#754]
+[core] Include Hazelcast Javadocs in Jet distribution [#652]
+[core] Add Java 9 build support and automatic module names [#720]
+[core] Add ability to emit file name from file sources [#729]
 [core] Several Javadoc improvements
 [java.util.stream] New DistributedStream instances now can work with Pipeline API sources
 [kafka] Kafka version updated to 1.0.0
@@ -276,14 +352,14 @@ have been removed [#1293]
 
 3. Fixes
 
-[core] Avoid race between job cancellation and completion [604]
-[core] Do not send a join request for a job unless Job.join() is explicitly called [628]
-[core] When master node leaves cluster, job would restart even if auto-restart was disabled [683]
-[core] When using map source, returning null in a projection would cause rest of the items to be dropped [669]
-[core] When DAG fails to deserialize on job submission from client, the exception was not returned to user [794]
-[core] Fix for `ClassNotFoundException` when restoring from snapshot when the key class is not on Jet classpath [778]
-[core] Assert that always same item offered to Outbox after a rejection [808]
-[kafka] Kafka sink should ensure that all records are sent before snapshot [611]
+[core] Avoid race between job cancellation and completion [#604]
+[core] Do not send a join request for a job unless Job.join() is explicitly called [#628]
+[core] When master node leaves cluster, job would restart even if auto-restart was disabled [#683]
+[core] When using map source, returning null in a projection would cause rest of the items to be dropped [#669]
+[core] When DAG fails to deserialize on job submission from client, the exception was not returned to user [#794]
+[core] Fix for `ClassNotFoundException` when restoring from snapshot when the key class is not on Jet classpath [#778]
+[core] Assert that always same item offered to Outbox after a rejection [#808]
+[kafka] Kafka sink should ensure that all records are sent before snapshot [#611]
 [kafka/hadoop] Package names reorganized to have better support for module systems
 
 4. Breaking Changes
@@ -304,35 +380,35 @@ suggest to switch to Pipeline API instead of java.util.stream API.
 
 1. New Features
 
-[core] New Pipeline API with support for group by, hash join and co group [497]
-[core] Event journal streaming source for Map and Cache [487]
-[core] Improved Jet job lifecycle management including auto-restart [492]
-[core] Support for in-memory snapshots and at-least and exactly-once processing [500]
+[core] New Pipeline API with support for group by, hash join and co group [#497]
+[core] Event journal streaming source for Map and Cache [#487]
+[core] Improved Jet job lifecycle management including auto-restart [#492]
+[core] Support for in-memory snapshots and at-least and exactly-once processing [#500]
 
 2. Enhancements
 
-[core] Add projection and predicate capability to map reader [490]
-[core] Hazelcast version updated to 3.9 [474]
-[core] InsertWatermarksProcessor will now log late events [551]
-[core] Add preferred local parallelism to all the sources and sinks [552]
-[core] Socket source now uses non-blocking IO [554]
-[core] Add ProcessorMetaSupplier.complete() method to support global cleanup [571]
-[java.util.stream] Support for creating a stream from any source [360]
-[kafka] Add snapshotting support for Kafka reader [500]
-[kafka] Add optional projection function to Kafka reader [534]
-[kafka] Add ability to create own ProducerRecord instances for Kafka writer [588]
+[core] Add projection and predicate capability to map reader [#490]
+[core] Hazelcast version updated to 3.9 [#474]
+[core] InsertWatermarksProcessor will now log late events [#551]
+[core] Add preferred local parallelism to all the sources and sinks [#552]
+[core] Socket source now uses non-blocking IO [#554]
+[core] Add ProcessorMetaSupplier.complete() method to support global cleanup [#571]
+[java.util.stream] Support for creating a stream from any source [#360]
+[kafka] Add snapshotting support for Kafka reader [#500]
+[kafka] Add optional projection function to Kafka reader [#534]
+[kafka] Add ability to create own ProducerRecord instances for Kafka writer [#588]
 
 3. Fixes
 
-[core] Fix NPE when releasing uninitialized ResourceStore  [478]
-[core] Add cache manager in order not to require a dependency on javax.cache [485]
-[core] JetClassLoader should not throw on findResource [549]
-[core] Fix ignored charset in StreamSocketP [553]
-[core] Suppress exception for flow control packet when member has already left cluster [556]
-[core] Kafka source should throw when partition count < global parallelism [559]
-[core] Traversers.traverseStream should close stream when exhausted [560]
-[core] Add missing serializer for Session type [562]
-[hdfs] Make sure proper global cleanup is performed on job cancellation [572]
+[core] Fix NPE when releasing uninitialized ResourceStore  [#478]
+[core] Add cache manager in order not to require a dependency on javax.cache [#485]
+[core] JetClassLoader should not throw on findResource [#549]
+[core] Fix ignored charset in StreamSocketP [#553]
+[core] Suppress exception for flow control packet when member has already left cluster [#556]
+[core] Kafka source should throw when partition count < global parallelism [#559]
+[core] Traversers.traverseStream should close stream when exhausted [#560]
+[core] Add missing serializer for Session type [#562]
+[hdfs] Make sure proper global cleanup is performed on job cancellation [#572]
 
 4. Code Samples Improvements
 
