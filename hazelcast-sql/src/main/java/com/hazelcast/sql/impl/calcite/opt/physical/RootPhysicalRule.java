@@ -24,7 +24,7 @@ import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.rel.RelNode;
 
-import static com.hazelcast.sql.impl.calcite.distribution.DistributionTrait.SINGLETON_DIST;
+import static com.hazelcast.sql.impl.calcite.distribution.DistributionTrait.ROOT_DIST;
 
 /**
  * Rule to convert the logical root node to physical root node.
@@ -44,11 +44,11 @@ public final class RootPhysicalRule extends AbstractPhysicalRule {
         RootLogicalRel logicalRoot = call.rel(0);
         RelNode input = call.rel(1);
 
-        RelNode convertedInput = OptUtils.toPhysicalInput(input, SINGLETON_DIST);
+        RelNode convertedInput = OptUtils.toPhysicalInput(input, ROOT_DIST);
 
         RootPhysicalRel transformedRoot = new RootPhysicalRel(
             logicalRoot.getCluster(),
-            convertedInput.getTraitSet().plus(DistributionTrait.SINGLETON_DIST),
+            convertedInput.getTraitSet().plus(DistributionTrait.ROOT_DIST),
             convertedInput
         );
 

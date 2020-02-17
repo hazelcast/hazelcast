@@ -25,7 +25,7 @@ public enum JoinDistribution {
     /** Replicated distribution. Mapped to {@link DistributionType#REPLICATED}. */
     REPLICATED,
 
-    /** Partitioned distribution. Mapped to {@link DistributionType#DISTRIBUTED}. */
+    /** Partitioned distribution. Mapped to {@link DistributionType#PARTITIONED}. */
     PARTITIONED,
 
     /** No distribution with respect to the given join condition. */

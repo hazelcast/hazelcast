@@ -299,7 +299,7 @@ public final class OptimizerContext {
             RelNode res = program.run(
                 planner,
                 rel,
-                OptUtils.toPhysicalConvention(rel.getTraitSet(), DistributionTrait.SINGLETON_DIST),
+                OptUtils.toPhysicalConvention(rel.getTraitSet(), DistributionTrait.ROOT_DIST),
                 ImmutableList.of(),
                 ImmutableList.of()
             );

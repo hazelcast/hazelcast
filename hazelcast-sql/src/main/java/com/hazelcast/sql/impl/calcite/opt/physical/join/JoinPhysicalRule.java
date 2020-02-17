@@ -39,7 +39,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import static com.hazelcast.sql.impl.calcite.distribution.DistributionTrait.DISTRIBUTED_DIST;
+import static com.hazelcast.sql.impl.calcite.distribution.DistributionTrait.PARTITIONED_UNKNOWN_DIST;
 import static com.hazelcast.sql.impl.calcite.distribution.DistributionTrait.REPLICATED_DIST;
 
 /**
@@ -186,7 +186,7 @@ public final class JoinPhysicalRule extends AbstractPhysicalRule {
         RelOptCluster cluster = left.getCluster();
 
         DistributionTrait distribution = strategy.getResultDistribution() == JoinDistribution.REPLICATED
-            ? REPLICATED_DIST : DISTRIBUTED_DIST;
+            ? REPLICATED_DIST : PARTITIONED_UNKNOWN_DIST;
 
         RelCollation collation = OptUtils.getCollation(leftCollocated);
 
@@ -481,7 +481,7 @@ public final class JoinPhysicalRule extends AbstractPhysicalRule {
                 return REPLICATED_DIST;
 
             case RANDOM:
-                return DISTRIBUTED_DIST;
+                return PARTITIONED_UNKNOWN_DIST;
 
             default:
                 assert joinDistribution == JoinDistribution.PARTITIONED;
@@ -489,7 +489,7 @@ public final class JoinPhysicalRule extends AbstractPhysicalRule {
                 List<DistributionField> leftDistFields = prepareDistributionFieldsEquiJoin(leftJoinKeys, 0);
                 List<DistributionField> rightDistFields = prepareDistributionFieldsEquiJoin(rightJoinKeys, leftFieldCount);
 
-                return DistributionTrait.Builder.ofType(DistributionType.DISTRIBUTED)
+                return DistributionTrait.Builder.ofType(DistributionType.PARTITIONED)
                     .addFieldGroup(leftDistFields)
                     .addFieldGroup(rightDistFields)
                     .build();
@@ -523,7 +523,7 @@ public final class JoinPhysicalRule extends AbstractPhysicalRule {
 
         RelOptCluster cluster = input.getCluster();
 
-        DistributionTrait partitionedDistribution = DistributionTrait.Builder.ofType(DistributionType.DISTRIBUTED)
+        DistributionTrait partitionedDistribution = DistributionTrait.Builder.ofType(DistributionType.PARTITIONED)
             .addFieldGroup(prepareDistributionFieldsEquiJoin(hashFields, 0))
             .build();
 
@@ -598,12 +598,12 @@ public final class JoinPhysicalRule extends AbstractPhysicalRule {
         }
 
         // Singleton is treated as a special case of partitioned distribution.
-        if (type == DistributionType.SINGLETON) {
+        if (type == DistributionType.ROOT) {
             return new InputDistribution(JoinDistribution.RANDOM, null);
         }
 
         // Deal with partitioned distribution. Try to find the matching group.
-        assert type == DistributionType.DISTRIBUTED;
+        assert type == DistributionType.PARTITIONED;
 
         for (List<DistributionField> fields : dist.getFieldGroups()) {
             List<Integer> mappedJoinKeys = mapPartitionedDistributionKeys(joinKeys, fields);

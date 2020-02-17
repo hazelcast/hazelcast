@@ -52,7 +52,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.sql.impl.calcite.distribution.DistributionType.DISTRIBUTED;
+import static com.hazelcast.sql.impl.calcite.distribution.DistributionType.PARTITIONED;
 
 /**
  * Convert logical map scan to either replicated or partitioned physical scan.
@@ -486,7 +486,7 @@ public final class MapScanPhysicalRule extends AbstractPhysicalRule {
         List<DistributionField> distributionFields = getDistributionFields(hazelcastTable);
 
         if (distributionFields.isEmpty()) {
-            return DistributionTrait.DISTRIBUTED_DIST;
+            return DistributionTrait.PARTITIONED_UNKNOWN_DIST;
         } else {
             // Remap internal scan distribution fields to projected fields.
             List<DistributionField> res = new ArrayList<>(distributionFields.size());
@@ -497,13 +497,13 @@ public final class MapScanPhysicalRule extends AbstractPhysicalRule {
                 int projectIndex = projects.indexOf(distributionFieldIndex);
 
                 if (projectIndex == -1) {
-                    return DistributionTrait.DISTRIBUTED_DIST;
+                    return DistributionTrait.PARTITIONED_UNKNOWN_DIST;
                 }
 
                 res.add(new DistributionField(projectIndex, distributionField.getNestedField()));
             }
 
-            return DistributionTrait.Builder.ofType(DISTRIBUTED).addFieldGroup(res).build();
+            return DistributionTrait.Builder.ofType(PARTITIONED).addFieldGroup(res).build();
         }
     }
 

@@ -41,7 +41,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.sql.impl.calcite.distribution.DistributionType.DISTRIBUTED;
+import static com.hazelcast.sql.impl.calcite.distribution.DistributionType.PARTITIONED;
 
 /**
  * This rule converts logical projection into physical projection. Physical projection inherits distribution of the
@@ -148,7 +148,7 @@ public final class ProjectPhysicalRule extends AbstractPhysicalRule {
         DistributionType type = physicalInputDist.getType();
 
         switch (type) {
-            case SINGLETON:
+            case ROOT:
                 // Singleton remains singleton.
                 return physicalInputDist;
 
@@ -161,7 +161,7 @@ public final class ProjectPhysicalRule extends AbstractPhysicalRule {
                 return null;
 
             default:
-                assert type == DISTRIBUTED;
+                assert type == PARTITIONED;
         }
 
         // If DISTRIBUTED distribution doesn't have distribution fields, then do early exit, since there is nothing to loose.
@@ -175,7 +175,7 @@ public final class ProjectPhysicalRule extends AbstractPhysicalRule {
         // an input is partitioned by fields [a, b]. However, when one of this fields are lost during projection,
         // the input is no longer partitioned on any attribute. E.g MEMBER_1([a1, b1]), MEMBER_2([a1, b2]) becomes
         // MEMBER_1([a1]), MEMBER_2([a1]) after projection, so both members may contains the same value.
-        DistributionTrait.Builder builder = DistributionTrait.Builder.ofType(DISTRIBUTED);
+        DistributionTrait.Builder builder = DistributionTrait.Builder.ofType(PARTITIONED);
 
         for (List<DistributionField> fieldGroup : physicalInputDist.getFieldGroups()) {
             boolean valid = true;

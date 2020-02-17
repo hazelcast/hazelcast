@@ -51,22 +51,22 @@ public final class AggregateDistribution {
 
     public static AggregateDistribution of(ImmutableBitSet aggGroupSet, DistributionTrait inputDistribution) {
         switch (inputDistribution.getType()) {
-            case SINGLETON:
+            case ROOT:
                 // Always collocated for SINGLETON, since there is only one stream of data.
-                return new AggregateDistribution(true, DistributionTrait.SINGLETON_DIST);
+                return new AggregateDistribution(true, DistributionTrait.ROOT_DIST);
 
             case REPLICATED:
                 // Always collocated for REPLICATED, since the same stream is present on all members.
                 return new AggregateDistribution(true, DistributionTrait.REPLICATED_DIST);
 
-            case DISTRIBUTED:
+            case PARTITIONED:
                 return ofDistributed(aggGroupSet, inputDistribution.getFieldGroups());
 
             default:
                 // Default (ANY) distribution - not collocated, output is distributed, but distribution columns are unknown.
                 assert inputDistribution.getType() == DistributionType.ANY;
 
-                return new AggregateDistribution(false, DistributionTrait.DISTRIBUTED_DIST);
+                return new AggregateDistribution(false, DistributionTrait.PARTITIONED_UNKNOWN_DIST);
         }
     }
 
@@ -84,14 +84,14 @@ public final class AggregateDistribution {
         for (List<DistributionField> inputFieldGroup : inputFieldGroups) {
             if (isCollocated(aggGroupSet, inputFieldGroup)) {
                 DistributionTrait distribution =
-                    DistributionTrait.Builder.ofType(DistributionType.DISTRIBUTED).addFieldGroup(inputFieldGroup).build();
+                    DistributionTrait.Builder.ofType(DistributionType.PARTITIONED).addFieldGroup(inputFieldGroup).build();
 
                 return new AggregateDistribution(true, distribution);
             }
         }
 
         // No collocated inputs were found. Input distribution is lost.
-        return new AggregateDistribution(false, DistributionTrait.DISTRIBUTED_DIST);
+        return new AggregateDistribution(false, DistributionTrait.PARTITIONED_UNKNOWN_DIST);
     }
 
     /**

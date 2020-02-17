@@ -36,7 +36,7 @@ import java.util.Collection;
 import java.util.List;
 
 import static com.hazelcast.sql.impl.calcite.distribution.DistributionType.REPLICATED;
-import static com.hazelcast.sql.impl.calcite.distribution.DistributionType.SINGLETON;
+import static com.hazelcast.sql.impl.calcite.distribution.DistributionType.ROOT;
 
 /**
  * Rule which converts logical sort into it's physical counterpart. There are several forms of physical implementations:
@@ -181,7 +181,7 @@ public final class SortPhysicalRule extends AbstractPhysicalRule {
     private static boolean requiresDistributedPhase(DistributionTrait inputDist) {
         DistributionType inputDistType = inputDist.getType();
 
-        return !(inputDistType == SINGLETON || inputDistType == REPLICATED);
+        return !(inputDistType == ROOT || inputDistType == REPLICATED);
     }
 
     /**
@@ -219,7 +219,7 @@ public final class SortPhysicalRule extends AbstractPhysicalRule {
         RelNode physicalInput) {
         RelTraitSet traitSet = OptUtils.traitPlus(physicalInput.getTraitSet(),
             logicalSort.getCollation(),
-            DistributionTrait.SINGLETON_DIST
+            DistributionTrait.ROOT_DIST
         );
 
         return new SingletonSortMergeExchangePhysicalRel(

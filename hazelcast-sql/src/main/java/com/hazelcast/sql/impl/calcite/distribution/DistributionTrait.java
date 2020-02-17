@@ -28,9 +28,9 @@ import java.util.Comparator;
 import java.util.List;
 
 import static com.hazelcast.sql.impl.calcite.distribution.DistributionType.ANY;
-import static com.hazelcast.sql.impl.calcite.distribution.DistributionType.DISTRIBUTED;
+import static com.hazelcast.sql.impl.calcite.distribution.DistributionType.PARTITIONED;
 import static com.hazelcast.sql.impl.calcite.distribution.DistributionType.REPLICATED;
-import static com.hazelcast.sql.impl.calcite.distribution.DistributionType.SINGLETON;
+import static com.hazelcast.sql.impl.calcite.distribution.DistributionType.ROOT;
 
 /**
  * Distribution trait. Defines how the given relation is distributed in the cluster. We define three principal
@@ -51,13 +51,13 @@ import static com.hazelcast.sql.impl.calcite.distribution.DistributionType.SINGL
 // TODO: Rework to RelMultipleTrait!!
 public class DistributionTrait implements RelTrait {
     /** Data is distributed between nodes, but actual distribution column is unknown. */
-    public static final DistributionTrait DISTRIBUTED_DIST = Builder.ofType(DISTRIBUTED).build();
+    public static final DistributionTrait PARTITIONED_UNKNOWN_DIST = Builder.ofType(PARTITIONED).build();
 
     /** Data is distributed in replicated map. */
     public static final DistributionTrait REPLICATED_DIST = Builder.ofType(REPLICATED).build();
 
     /** Consume the whole stream on a single node. */
-    public static final DistributionTrait SINGLETON_DIST = Builder.ofType(SINGLETON).build();
+    public static final DistributionTrait ROOT_DIST = Builder.ofType(ROOT).build();
 
     /** Distribution without any restriction. */
     public static final DistributionTrait ANY_DIST =  Builder.ofType(ANY).build();
@@ -111,17 +111,17 @@ public class DistributionTrait implements RelTrait {
         }
 
         // Special handling of DISTRIBUTED-DISTRIBUTED pair.
-        if (type == DISTRIBUTED && targetTrait0.getType() == DISTRIBUTED) {
+        if (type == PARTITIONED && targetTrait0.getType() == PARTITIONED) {
             return satisfiesDistributed(this, targetTrait0);
         }
 
         // Converting from REPLICATED to SINGLETON is always OK.
-        if (type == REPLICATED && targetTrait0.getType() == SINGLETON) {
+        if (type == REPLICATED && targetTrait0.getType() == ROOT) {
             return true;
         }
 
         // If there are no distribution fields, we may consider SINGLETON as a special case of DISTRIBUTED.
-        if (type == SINGLETON && targetTrait0.getType() == DISTRIBUTED && !targetTrait0.hasFieldGroups()) {
+        if (type == ROOT && targetTrait0.getType() == PARTITIONED && !targetTrait0.hasFieldGroups()) {
             return true;
         }
 
@@ -137,8 +137,8 @@ public class DistributionTrait implements RelTrait {
      * @return {@code True} if satisfies, {@code false} if conversion is required.
      */
     private static boolean satisfiesDistributed(DistributionTrait currentTrait, DistributionTrait targetTrait) {
-        assert currentTrait.getType() == DISTRIBUTED;
-        assert targetTrait.getType() == DISTRIBUTED;
+        assert currentTrait.getType() == PARTITIONED;
+        assert targetTrait.getType() == PARTITIONED;
 
         if (!targetTrait.hasFieldGroups()) {
             // Converting from DISTRIBUTED to unknown DISTRIBUTED is always OK.
@@ -189,17 +189,6 @@ public class DistributionTrait implements RelTrait {
         }
 
         return true;
-    }
-
-    /**
-     * Check if input of the distribution is complete, i.e. the whole set of tuples is available locally. This holds
-     * for SINGLETON distribution (follow from it's definition) and for REPLICATED distribution (all data members
-     * has the whole result set).
-     *
-     * @return {@code True} if distribution is complete, {@code false} otherwise.
-     */
-    public boolean isComplete() {
-        return type == SINGLETON || type == REPLICATED;
     }
 
     @Override

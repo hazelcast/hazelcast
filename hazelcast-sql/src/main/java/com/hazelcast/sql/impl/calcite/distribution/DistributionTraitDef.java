@@ -32,9 +32,9 @@ import java.util.List;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.sql.impl.calcite.distribution.DistributionType.ANY;
-import static com.hazelcast.sql.impl.calcite.distribution.DistributionType.DISTRIBUTED;
+import static com.hazelcast.sql.impl.calcite.distribution.DistributionType.PARTITIONED;
 import static com.hazelcast.sql.impl.calcite.distribution.DistributionType.REPLICATED;
-import static com.hazelcast.sql.impl.calcite.distribution.DistributionType.SINGLETON;
+import static com.hazelcast.sql.impl.calcite.distribution.DistributionType.ROOT;
 
 public class DistributionTraitDef extends RelTraitDef<DistributionTrait> {
     public static final DistributionTraitDef INSTANCE = new DistributionTraitDef();
@@ -82,13 +82,13 @@ public class DistributionTraitDef extends RelTraitDef<DistributionTrait> {
             case ANY:
                 return rel;
 
-            case DISTRIBUTED:
+            case PARTITIONED:
                 return convertToDistributed(planner, rel, currentTrait, targetTrait);
 
             case REPLICATED:
                 return convertToReplicated(planner, rel, currentTrait);
 
-            case SINGLETON:
+            case ROOT:
                 return convertToSingleton(planner, rel, currentTrait);
 
             default:
@@ -97,7 +97,7 @@ public class DistributionTraitDef extends RelTraitDef<DistributionTrait> {
     }
 
     /**
-     * Convert to {@link DistributionType#DISTRIBUTED} distribution. Resulting conversion depend on the input distribution.
+     * Convert to {@link DistributionType#PARTITIONED} distribution. Resulting conversion depend on the input distribution.
      *
      * @param planner Planner.
      * @param rel Node.
@@ -107,7 +107,7 @@ public class DistributionTraitDef extends RelTraitDef<DistributionTrait> {
      */
     private static RelNode convertToDistributed(RelOptPlanner planner, RelNode rel, DistributionTrait currentTrait,
         DistributionTrait targetTrait) {
-        assert targetTrait.getType() == DISTRIBUTED;
+        assert targetTrait.getType() == PARTITIONED;
 
         List<Integer> hashFields = getHashFieldsForDistributedInput(targetTrait);
 
@@ -127,7 +127,7 @@ public class DistributionTraitDef extends RelTraitDef<DistributionTrait> {
         } else {
             // TODO: See question about RelSubset above.
             // This should be either SINGLETON or DISTRIBUTED, since REPLICATED and ANY types are already handled.
-            assert currentTrait.getType() == SINGLETON || currentTrait.getType() == DISTRIBUTED;
+            assert currentTrait.getType() == ROOT || currentTrait.getType() == PARTITIONED;
 
             // Any DISTRIBUTED satisfies DISTRIBUTED without specific fields, so if conversion is required, then
             // we expect distribution fields to exist.
@@ -178,7 +178,7 @@ public class DistributionTraitDef extends RelTraitDef<DistributionTrait> {
      * @return Converted node.
      */
     private static RelNode convertToReplicated(RelOptPlanner planner, RelNode rel, DistributionTrait currentTrait) {
-        assert currentTrait.getType() == DISTRIBUTED || currentTrait.getType() == SINGLETON;
+        assert currentTrait.getType() == PARTITIONED || currentTrait.getType() == ROOT;
 
         RelTraitSet traitSet = OptUtils.traitPlus(planner.emptyTraitSet(), DistributionTrait.REPLICATED_DIST);
 
@@ -200,9 +200,9 @@ public class DistributionTraitDef extends RelTraitDef<DistributionTrait> {
      */
     private static RelNode convertToSingleton(RelOptPlanner planner, RelNode rel, DistributionTrait currentTrait) {
         // ANY already handler before, SINGLETON and REPLICATED do not require further conversions.
-        assert currentTrait.getType() == DISTRIBUTED;
+        assert currentTrait.getType() == PARTITIONED;
 
-        RelTraitSet traitSet = OptUtils.traitPlus(planner.emptyTraitSet(), DistributionTrait.SINGLETON_DIST);
+        RelTraitSet traitSet = OptUtils.traitPlus(planner.emptyTraitSet(), DistributionTrait.ROOT_DIST);
 
         int fieldCount = rel.getRowType().getFieldCount();
 

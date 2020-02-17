@@ -30,7 +30,7 @@ public enum DistributionType {
      * Data set is distributed between nodes, i.e. every tuple is located on exactly one node, but tuples are
      * potentially located on all nodes.
      */
-    DISTRIBUTED,
+    PARTITIONED,
 
     /**
      * The whole data set is located on all nodes. That is, if there are N nodes, there will be N copies of the
@@ -39,7 +39,7 @@ public enum DistributionType {
     REPLICATED,
 
     /**
-     * The whole data set is located on exactly one node.
+     * The whole data set is located on the root node.
      */
-    SINGLETON
+    ROOT
 }
