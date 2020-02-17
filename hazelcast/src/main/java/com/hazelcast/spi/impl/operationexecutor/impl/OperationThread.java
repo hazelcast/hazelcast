@@ -24,11 +24,11 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.util.counters.SwCounter;
+import com.hazelcast.internal.util.executor.HazelcastManagedThread;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
-import com.hazelcast.internal.util.executor.HazelcastManagedThread;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.concurrent.TimeUnit;
 
@@ -67,19 +67,19 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
     // All these counters are updated by this OperationThread (so a single writer)
     // and are read by the MetricsRegistry.
     @Probe(name = OPERATION_METRIC_THREAD_COMPLETED_TOTAL_COUNT)
-    private final SwCounter completedTotalCount = newSwCounter();
+    final SwCounter completedTotalCount = newSwCounter();
     @Probe(name = OPERATION_METRIC_THREAD_COMPLETED_PACKET_COUNT)
-    private final SwCounter completedPacketCount = newSwCounter();
+    final SwCounter completedPacketCount = newSwCounter();
     @Probe(name = OPERATION_METRIC_THREAD_COMPLETED_OPERATION_COUNT)
-    private final SwCounter completedOperationCount = newSwCounter();
+    final SwCounter completedOperationCount = newSwCounter();
     @Probe(name = OPERATION_METRIC_THREAD_COMPLETED_PARTITION_SPECIFIC_RUNNABLE_COUNT)
-    private final SwCounter completedPartitionSpecificRunnableCount = newSwCounter();
+    final SwCounter completedPartitionSpecificRunnableCount = newSwCounter();
     @Probe(name = OPERATION_METRIC_THREAD_COMPLETED_RUNNABLE_COUNT)
-    private final SwCounter completedRunnableCount = newSwCounter();
+    final SwCounter completedRunnableCount = newSwCounter();
     @Probe(name = OPERATION_METRIC_THREAD_ERROR_COUNT)
-    private final SwCounter errorCount = newSwCounter();
+    final SwCounter errorCount = newSwCounter();
     @Probe(name = OPERATION_METRIC_THREAD_COMPLETED_OPERATION_BATCH_COUNT)
-    private final SwCounter completedOperationBatchCount = newSwCounter();
+    final SwCounter completedOperationBatchCount = newSwCounter();
 
     private final boolean priority;
     private final NodeExtension nodeExtension;
