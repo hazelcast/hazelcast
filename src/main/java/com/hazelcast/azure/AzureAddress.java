@@ -16,7 +16,8 @@
 package com.hazelcast.azure;
 
 /**
- * Structure that represents the discovery output information.
+ * Structure that represents the discovery output information. It is used to store public and private IP Addresses that
+ * is returned from Azure API.
  */
 final class AzureAddress {
     private final String privateAddress;

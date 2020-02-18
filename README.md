@@ -71,6 +71,7 @@ In your Hazelcast configuration, use the `AzureDiscoveryStrategy` as shown below
         <resource-group>RESOURCE-GROUP-NAME</resource-group>
         <scale-set>SCALE-SET-NAME</scale-set>
         <tag>TAG-NAME=HZLCAST001</tag>
+        <hz-port>5701-5703</hz-port>
       </azure>
     </join>
   </network>
@@ -92,6 +93,7 @@ hazelcast:
         resource-group: RESOURCE-GROUP-NAME
         scale-set: SCALE-SET-NAME
         tag: TAG-NAME=HZLCAST001
+        hz-port: 5701-5703
 ```
 
 You will need to setup [Azure Active Directory Service Principal credentials](https://azure.microsoft.com/en-us/documentation/articles/resource-group-create-service-principal-portal/) for your Azure Subscription for this plugin to work. With the credentials, fill in the placeholder values above.
@@ -105,6 +107,7 @@ You will need to setup [Azure Active Directory Service Principal credentials](ht
 - `resource-group` - *(Optional)* The Azure [resource group](https://azure.microsoft.com/en-us/documentation/articles/resource-group-portal/) name of the cluster. You can find this in the Azure [portal](https://portal.azure.com) or [CLI](https://npmjs.org/azure-cli).
 - `scale-set` - *(Optional)* The Azure [VM scale set](https://docs.microsoft.com/en-us/azure/virtual-machine-scale-sets/overview) name of the cluster. If this setting is configured, the plugin will search for instances over the resources only within this scale set.
 - `tag` - *(Optional)* The key-value pair of the tag on the Hazelcast vm resources. The format should be as `key=value`.
+- `hz-port` - *(Optional)* The port range where Hazelcast is expected to be running. The format should be as "5701" or "5701-5703". The default value is "5701-5703".
 
 **Notes**
 
