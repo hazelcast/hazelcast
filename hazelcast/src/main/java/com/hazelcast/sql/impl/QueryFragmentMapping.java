@@ -20,7 +20,10 @@ package com.hazelcast.sql.impl;
  * Enumeration which defines query mapping.
  */
 public enum QueryFragmentMapping {
-    /** Fragmant should be executed on all data members. */
+    // TODO: We must add another mode when certain fragment is executed only on the given subset of nodes. This is important
+    //  for large topologies, where otherwise a distirbuted exchange will trigger N*N streams, where N is number of participants.
+
+    /** Fragment should be executed on all data members. */
     DATA_MEMBERS(0),
 
     /** Fragment should be executed only on a root member. */

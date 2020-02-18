@@ -50,7 +50,7 @@ public class StripedInbox extends AbstractInbox {
         queues = new ArrayDeque[memberIdx];
 
         for (int i = 0; i < memberIdx; i++) {
-            queues[i] = new ArrayDeque<>(1);
+            queues[i] = new ArrayDeque<>(INITIAL_QUEUE_SIZE);
         }
     }
 
@@ -68,7 +68,13 @@ public class StripedInbox extends AbstractInbox {
     }
 
     public SendBatch poll(int stripe) {
-        return queues[stripe].poll();
+        SendBatch batch = queues[stripe].poll();
+
+        if (batch != null) {
+            enqueuedBatches--;
+        }
+
+        return batch;
     }
 
     @Override

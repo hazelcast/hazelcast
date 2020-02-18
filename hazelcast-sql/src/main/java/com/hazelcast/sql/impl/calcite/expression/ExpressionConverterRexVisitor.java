@@ -119,7 +119,7 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
 
         if (index >= paramsCount) {
             // TODO: Proper exception.
-            throw new HazelcastSqlException(-1, "Insufficient parameters: " + paramsCount);
+            throw HazelcastSqlException.error("Insufficient parameters: " + paramsCount);
         }
 
         return new ParameterExpression(index);

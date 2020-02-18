@@ -104,7 +104,7 @@ public class AbsFunction<T> extends UniCallExpressionWithType<T> {
                 return Math.abs(operandConverter.asDouble(operand));
 
             default:
-                throw new HazelcastSqlException(-1, "Unexpected result type: " + resultType);
+                throw HazelcastSqlException.error("Unexpected result type: " + resultType);
         }
     }
 
@@ -116,7 +116,7 @@ public class AbsFunction<T> extends UniCallExpressionWithType<T> {
      */
     private static DataType inferResultType(DataType operandType) {
         if (!operandType.isNumeric()) {
-            throw new HazelcastSqlException(-1, "Operand is not numeric: " + operandType);
+            throw HazelcastSqlException.error("Operand is not numeric: " + operandType);
         }
 
         if (operandType.getType() == GenericType.VARCHAR) {

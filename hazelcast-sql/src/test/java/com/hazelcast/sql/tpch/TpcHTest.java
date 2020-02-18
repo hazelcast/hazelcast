@@ -874,10 +874,10 @@ public class TpcHTest extends SqlTestSupport {
         OptimizerContext.setOptimizerConfig(OptimizerConfig.builder().setStatisticsEnabled(true).build());
 
         SqlCursorImpl res = (SqlCursorImpl) member.getSqlService().query(sql, args);
-        QueryPlan plan = res.getHandle().getPlan();
+        QueryPlan plan = res.getPlan();
 
         System.out.println(">>> Explain:");
-        for (SqlRow explainRow : res.getHandle().getPlan().getExplain().asCursor()) {
+        for (SqlRow explainRow : res.getPlan().getExplain().asRows()) {
             System.out.println("\t" + explainRow.getColumn(0));
         }
         System.out.println();

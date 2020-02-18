@@ -40,7 +40,7 @@ public class SingleValueAggregateCollector extends AggregateCollector {
             res = operandValue != null ? operandValue : NULL;
         } else {
             // TODO: User need more context here. But how to provide it?
-            throw new HazelcastSqlException(-1, "Multiple values are not allowed for the group.");
+            throw HazelcastSqlException.error("Multiple values are not allowed for the group.");
         }
     }
 

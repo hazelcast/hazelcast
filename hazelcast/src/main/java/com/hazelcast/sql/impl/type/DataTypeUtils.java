@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.type;
 
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.type.accessor.BigDecimalConverter;
 import com.hazelcast.sql.impl.type.accessor.BigIntegerConverter;
@@ -137,7 +136,7 @@ public final class DataTypeUtils {
 
     public static void ensureCanConvertTo(DataType from, DataType to) {
         if (!DataTypeUtils.canConvertTo(from, to)) {
-            throw new HazelcastSqlException(-1, "Cannot convert " + from + " to " + to);
+            throw HazelcastSqlException.error("Cannot convert " + from + " to " + to);
         }
     }
 
@@ -157,7 +156,7 @@ public final class DataTypeUtils {
         DataType type = resolveTypeOrNull(clazz);
 
         if (type == null) {
-            throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Unsupported class: " + clazz.getName());
+            throw HazelcastSqlException.error("Unsupported class: " + clazz.getName());
         }
 
         return type;

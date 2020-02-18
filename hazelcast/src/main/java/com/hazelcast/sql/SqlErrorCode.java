@@ -23,11 +23,20 @@ public final class SqlErrorCode {
     /** Generic error/ */
     public static final int GENERIC = -1;
 
+    /** Query completed successfully. */
+    public static final int OK = 0;
+
     /** Member has left the topology. */
     public static final int MEMBER_LEAVE = 1;
 
     /** Generic parsing error. */
     public static final int PARSING = 2;
+
+    /** Query was cancelled due to user request. */
+    public static final int CANCELLED = 3;
+
+    /** Query was cancelled due to timeout. */
+    public static final int TIMEOUT = 4;
 
     private SqlErrorCode() {
         // No-op.

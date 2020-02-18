@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.exec.agg;
 
-import com.hazelcast.sql.impl.QueryContext;
+import com.hazelcast.sql.impl.QueryFragmentContext;
 import com.hazelcast.sql.impl.exec.AbstractUpstreamAwareExec;
 import com.hazelcast.sql.impl.exec.Exec;
 import com.hazelcast.sql.impl.exec.IterationResult;
@@ -83,7 +83,7 @@ public class AggregateExec extends AbstractUpstreamAwareExec {
     }
 
     @Override
-    protected void setup1(QueryContext ctx) {
+    protected void setup1(QueryFragmentContext ctx) {
         for (AggregateExpression expression : expressions) {
             expression.setup(this);
         }
@@ -94,7 +94,7 @@ public class AggregateExec extends AbstractUpstreamAwareExec {
     }
 
     @Override
-    public IterationResult advance() {
+    public IterationResult advance0() {
         while (true) {
             if (!state.advance()) {
                 return IterationResult.WAIT;

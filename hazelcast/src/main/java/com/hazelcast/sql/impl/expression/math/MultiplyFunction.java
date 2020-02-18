@@ -18,7 +18,6 @@ package com.hazelcast.sql.impl.expression.math;
 
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlDaySecondInterval;
-import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.SqlYearMonthInterval;
 import com.hazelcast.sql.impl.expression.BiCallExpressionWithType;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -141,7 +140,7 @@ public class MultiplyFunction<T> extends BiCallExpressionWithType<T> {
                 return operand1Converter.asDouble(operand1) * operand2Converter.asDouble(operand2);
 
             default:
-                throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Invalid type: " + resultType);
+                throw HazelcastSqlException.error("Invalid type: " + resultType);
         }
     }
 
@@ -178,7 +177,7 @@ public class MultiplyFunction<T> extends BiCallExpressionWithType<T> {
             }
 
             default:
-                throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Invalid type: " + resultType);
+                throw HazelcastSqlException.error("Invalid type: " + resultType);
         }
     }
 }

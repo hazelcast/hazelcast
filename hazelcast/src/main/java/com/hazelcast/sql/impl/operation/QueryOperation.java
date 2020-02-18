@@ -16,13 +16,34 @@
 
 package com.hazelcast.sql.impl.operation;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.sql.SqlService;
 
+import java.io.IOException;
+
 /**
- * Base class for all query operations.
+ * Base class for query operations.
  */
+// TODO: We do not execute these operation as normal operations. Instead, we serialize them to packets with special
+//  flag. May be we do not need to extend the Operation at all, becuase only "callerId" field of that class is used.
 public abstract class QueryOperation extends Operation {
+    /** Epoch watermark which is used to piggyback on normal SQL message to propagate epoch watermark between nodes. */
+    protected long epochWatermark;
+
+    protected QueryOperation() {
+        // No-op.
+    }
+
+    protected QueryOperation(long epochWatermark) {
+        this.epochWatermark = epochWatermark;
+    }
+
+    public long getEpochWatermark() {
+        return epochWatermark;
+    }
+
     @Override
     public String getServiceName() {
         return SqlService.SERVICE_NAME;
@@ -32,4 +53,25 @@ public abstract class QueryOperation extends Operation {
     public void run() throws Exception {
         throw new UnsupportedOperationException("Should not be called.");
     }
+
+    @Override
+    protected final void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+
+        out.writeLong(epochWatermark);
+
+        writeInternal0(out);
+    }
+
+    @Override
+    protected final void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+
+        epochWatermark = in.readLong();
+
+        readInternal0(in);
+    }
+
+    protected abstract void writeInternal0(ObjectDataOutput out) throws IOException;
+    protected abstract void readInternal0(ObjectDataInput in) throws IOException;
 }

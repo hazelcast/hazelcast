@@ -16,27 +16,24 @@
 
 package com.hazelcast.sql.impl;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.sql.impl.worker.QueryWorker;
+import com.hazelcast.sql.impl.state.QueryState;
+import com.hazelcast.sql.impl.worker.QueryWorkerPool;
 
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 /**
- * Context of the running query.
+ * Common context for the query.
  */
 public class QueryContext {
-    /** Extractors updater. */
-    private static final AtomicReferenceFieldUpdater<QueryContext, Extractors> EXTRACTORS_UPDATER =
-        AtomicReferenceFieldUpdater.newUpdater(QueryContext.class, Extractors.class, "extractors");
-
-    /** Current query context. */
-    private static final ThreadLocal<QueryContext> CURRENT = new ThreadLocal<>();
-
     /** Node engine. */
     private final NodeEngine nodeEngine;
+
+    /** Worker pool. */
+    private final QueryWorkerPool workerPool;
+
+    /** Underlying query state. */
+    private final QueryState state;
 
     /** Query ID. */
     private final QueryId queryId;
@@ -44,80 +41,37 @@ public class QueryContext {
     /** Arguments. */
     private final List<Object> arguments;
 
-    /** Current worker. */
-    private final QueryWorker worker;
-
-    /** Root consumer. */
-    private final QueryResultConsumer rootConsumer;
-
-    /** Extractors. */
-    @SuppressWarnings("unused")
-    private volatile Extractors extractors;
-
     public QueryContext(
         NodeEngine nodeEngine,
+        QueryWorkerPool workerPool,
+        QueryState state,
         QueryId queryId,
-        List<Object> arguments,
-        QueryWorker worker,
-        QueryResultConsumer rootConsumer
+        List<Object> arguments
     ) {
         this.nodeEngine = nodeEngine;
+        this.workerPool = workerPool;
+        this.state = state;
         this.queryId = queryId;
         this.arguments = arguments;
-        this.worker = worker;
-        this.rootConsumer = rootConsumer;
     }
 
     public NodeEngine getNodeEngine() {
         return nodeEngine;
     }
 
+    public QueryWorkerPool getWorkerPool() {
+        return workerPool;
+    }
+
     public QueryId getQueryId() {
         return queryId;
     }
 
-    public QueryWorker getWorker() {
-        return worker;
+    public List<Object> getArguments() {
+        return arguments;
     }
 
-    public QueryResultConsumer getRootConsumer() {
-        return rootConsumer;
-    }
-
-    public Object getArgument(int idx) {
-        if (arguments == null || idx >= arguments.size()) {
-            throw new IllegalArgumentException("Argument not found: " + idx);
-        }
-
-        return arguments.get(idx);
-    }
-
-    /**
-     * @return Extractors.
-     */
-    public Extractors getExtractors() {
-        Extractors res = extractors;
-
-        if (res != null) {
-            return res;
-        }
-
-        InternalSerializationService ss = (InternalSerializationService) nodeEngine.getSerializationService();
-
-        res = Extractors.newBuilder(ss).setClassLoader(nodeEngine.getConfigClassLoader()).build();
-
-        if (EXTRACTORS_UPDATER.compareAndSet(this, null, res)) {
-            return res;
-        } else {
-            return extractors;
-        }
-    }
-
-    public static QueryContext getCurrentContext() {
-        return CURRENT.get();
-    }
-
-    public static void setCurrentContext(QueryContext context) {
-        CURRENT.set(context);
+    public void checkCancelled() {
+        state.checkCancelled();
     }
 }

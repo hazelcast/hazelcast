@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.expression.aggregate;
 
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.impl.QueryContext;
+import com.hazelcast.sql.impl.QueryFragmentContext;
 import com.hazelcast.sql.impl.exec.agg.AggregateCollector;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.type.DataType;
@@ -41,7 +41,7 @@ public class AverageAggregateExpression<T> extends AbstractSingleOperandAggregat
     }
 
     @Override
-    public AggregateCollector newCollector(QueryContext ctx) {
+    public AggregateCollector newCollector(QueryFragmentContext ctx) {
         return new AverageAggregateCollector(resType, distinct);
     }
 
@@ -64,7 +64,7 @@ public class AverageAggregateExpression<T> extends AbstractSingleOperandAggregat
                 return DataType.DOUBLE;
 
             default:
-                throw new HazelcastSqlException(-1, "Unsupported operand type: " + operandType);
+                throw HazelcastSqlException.error("Unsupported operand type: " + operandType);
         }
     }
 }

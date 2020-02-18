@@ -21,18 +21,21 @@ import com.hazelcast.sql.impl.QueryFragmentDescriptor;
 import com.hazelcast.sql.impl.QueryFragmentMapping;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryPlan;
+import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.sql.impl.physical.PhysicalNode;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Factory to create query execute operations.
  */
 public class QueryExecuteOperationFactory {
+    /** Service. */
+    private final SqlServiceImpl service;
+
     /** Query plan. */
     private final QueryPlan plan;
 
@@ -45,16 +48,23 @@ public class QueryExecuteOperationFactory {
     /** Local member ID. */
     private final UUID localMemberId;
 
-    /** Deployment offset. */
-    private final int baseDeploymentOffset;
+    /** Timeout. */
+    private final long timeout;
 
-    public QueryExecuteOperationFactory(QueryPlan plan, List<Object> args, QueryId queryId, UUID localMemberId) {
+    public QueryExecuteOperationFactory(
+        SqlServiceImpl service,
+        QueryPlan plan,
+        List<Object> args,
+        QueryId queryId,
+        UUID localMemberId,
+        long timeout
+    ) {
+        this.service = service;
         this.plan = plan;
         this.args = args;
         this.queryId = queryId;
         this.localMemberId = localMemberId;
-
-        baseDeploymentOffset = ThreadLocalRandom.current().nextInt(0, Integer.MAX_VALUE / 2);
+        this.timeout = timeout;
     }
 
     /**
@@ -82,31 +92,30 @@ public class QueryExecuteOperationFactory {
 
                     break;
 
-                default:
+                case DATA_MEMBERS:
                     assert mapping == QueryFragmentMapping.DATA_MEMBERS;
 
                     // Fragment is only deployed on data node. Member IDs will be derived from partition mapping.
-                    node = plan.getPartitionMap().containsKey(targetMemberId) ? fragment.getNode() : null;
+                    node = fragment.getNode();
                     mappedMemberIds = null;
+
+                    break;
+
+                default:
+                    throw new IllegalArgumentException("Unsupported mappimg: " + mapping);
             }
 
-            // At the moment we try to deploy all fragments to a single stripe for NUMA locality.
-            descriptors.add(new QueryFragmentDescriptor(
-                node,
-                mapping,
-                mappedMemberIds,
-                0
-            ));
+            descriptors.add(new QueryFragmentDescriptor(node, mappedMemberIds));
         }
 
         return new QueryExecuteOperation(
-            queryId,
+            service.getEpochWatermark(), queryId,
             plan.getPartitionMap(),
             descriptors,
             plan.getOutboundEdgeMap(),
             plan.getInboundEdgeMap(),
             args,
-            baseDeploymentOffset
+            timeout
         );
     }
 }

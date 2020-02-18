@@ -41,7 +41,7 @@ public class MaterializedInputExec extends AbstractUpstreamAwareExec {
     }
 
     @Override
-    public IterationResult advance() {
+    public IterationResult advance0() {
         while (curPos == rows.size()) {
             // Need to fetch more rows from upstream.
             if (state.isDone()) {

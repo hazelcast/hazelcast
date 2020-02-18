@@ -23,9 +23,6 @@ import com.hazelcast.sql.impl.SqlCursorImpl;
 import java.util.Iterator;
 import java.util.UUID;
 
-/**
- * Client cursor registered on the server.
- */
 public class SqlClientState {
     /** Client ID. */
     private final UUID clientId;

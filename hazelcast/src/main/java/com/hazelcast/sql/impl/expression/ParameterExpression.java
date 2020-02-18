@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.expression;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.sql.impl.QueryContext;
+import com.hazelcast.sql.impl.QueryFragmentContext;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
 import com.hazelcast.sql.impl.type.accessor.Converter;
@@ -52,7 +52,7 @@ public class ParameterExpression<T> implements Expression<T> {
             return cachedValue;
         }
 
-        T value = (T) QueryContext.getCurrentContext().getArgument(index);
+        T value = (T) QueryFragmentContext.getCurrentContext().getArgument(index);
 
         if (value == null) {
             return null;

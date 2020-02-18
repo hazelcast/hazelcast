@@ -44,7 +44,7 @@ public class SqlFetchMessageTask extends AbstractCallableMessageTask<SqlFetchCod
         QueryId queryId = serializationService.toObject(parameters.queryId);
         int pageSize = parameters.pageSize;
 
-        return nodeEngine.getSqlService().fetchClient(endpoint.getUuid(), queryId, pageSize);
+        return nodeEngine.getSqlService().clientFetch(endpoint.getUuid(), queryId, pageSize);
     }
 
     @Override

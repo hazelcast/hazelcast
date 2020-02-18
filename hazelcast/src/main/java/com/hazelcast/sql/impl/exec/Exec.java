@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.exec;
 
-import com.hazelcast.sql.impl.QueryContext;
+import com.hazelcast.sql.impl.QueryFragmentContext;
 import com.hazelcast.sql.impl.row.RowBatch;
 
 /**
@@ -33,12 +33,7 @@ public interface Exec {
      *
      * @param ctx Context.
      */
-    void setup(QueryContext ctx);
-
-    /**
-     * @return Current context.
-     */
-    QueryContext getContext();
+    void setup(QueryFragmentContext ctx);
 
     /**
      * Try advancing executor. Content of the current batch will be changed as a result of this call.

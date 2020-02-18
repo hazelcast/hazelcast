@@ -52,7 +52,7 @@ public class SqlExecuteMessageTask extends AbstractCallableMessageTask<SqlExecut
             params = null;
         }
 
-        QueryId queryId = nodeEngine.getSqlService().queryClient(endpoint.getUuid(), query, params);
+        QueryId queryId = nodeEngine.getSqlService().clientQuery(endpoint.getUuid(), query, params);
 
         return serializationService.toData(queryId);
     }

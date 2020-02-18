@@ -22,7 +22,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.sql.HazelcastSqlTransientException;
+import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.OptimizerStatistics;
 import com.hazelcast.sql.impl.QueryPlan;
@@ -137,7 +137,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             MemberImpl member = nodeEngine.getClusterService().getMember(partMemberId);
 
             if (member == null) {
-                throw new HazelcastSqlTransientException(SqlErrorCode.MEMBER_LEAVE, "Participating member has "
+                throw HazelcastSqlException.error(SqlErrorCode.MEMBER_LEAVE, "Participating member has "
                     + "left the topology: " + partMemberId);
             }
 

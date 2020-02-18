@@ -86,7 +86,7 @@ public class MapIndexScanExec extends AbstractMapScanExec {
     }
 
     @Override
-    public IterationResult advance() {
+    public IterationResult advance0() {
         if (rows == null) {
             rows = new ArrayList<>();
 

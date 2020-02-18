@@ -14,11 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.worker.task;
+package com.hazelcast.sql.impl.state;
 
-/**
- * Marker interface for worker task.
- */
-public interface QueryTask {
-    // No-op.
+import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.SqlRow;
+
+public interface QueryStateRowSource extends Iterable<SqlRow> {
+    /**
+     * @return Whether the row source represents the EXPLAIN query result.
+     */
+    boolean isExplain();
+
+    /**
+     * Notify row source about an error.
+     *
+     * @param error Error.
+     */
+    void onError(HazelcastSqlException error);
 }

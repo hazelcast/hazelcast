@@ -38,7 +38,7 @@ public class SqlCloseMessageTask extends AbstractCallableMessageTask<SqlCloseCod
     protected Object call() throws Exception {
         QueryId queryId = serializationService.toObject(parameters.queryId);
 
-        nodeEngine.getSqlService().closeClient(endpoint.getUuid(), queryId);
+        nodeEngine.getSqlService().clientClose(endpoint.getUuid(), queryId);
 
         return null;
     }

@@ -63,8 +63,7 @@ import com.hazelcast.sql.impl.physical.join.NestedLoopJoinPhysicalNode;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -82,9 +81,6 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
     /** Operation. */
     private final QueryExecuteOperation operation;
 
-    /** Current fragment. */
-    private final QueryFragmentDescriptor currentFragment;
-
     /** Member IDs. */
     private final Collection<UUID> dataMemberIds;
 
@@ -101,19 +97,17 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
     private Exec exec;
 
     /** Inboxes. */
-    private List<AbstractInbox> inboxes = new ArrayList<>(1);
+    private final Map<Integer, AbstractInbox> inboxes = new HashMap<>();
 
     public CreateExecVisitor(
         NodeEngine nodeEngine,
         QueryExecuteOperation operation,
-        QueryFragmentDescriptor currentFragment,
         Collection<UUID> dataMemberIds,
         PartitionIdSet localParts,
         Map<UUID, PartitionIdSet> partitionMap
     ) {
         this.nodeEngine = nodeEngine;
         this.operation = operation;
-        this.currentFragment = currentFragment;
         this.dataMemberIds = dataMemberIds;
         this.localParts = localParts;
         this.partitionMap = partitionMap;
@@ -146,13 +140,10 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
             fragmentMemberCount
         );
 
-        inboxes.add(inbox);
+        inboxes.put(inbox.getEdgeId(), inbox);
 
         // Instantiate executor and put it to stack.
-        ReceiveExec res = new ReceiveExec(
-            node.getId(),
-            inbox
-        );
+        ReceiveExec res = new ReceiveExec(node.getId(), inbox);
 
         push(res);
     }
@@ -172,7 +163,7 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
             sendFragment.getFragmentMembers(dataMemberIds)
         );
 
-        inboxes.add(inbox);
+        inboxes.put(inbox.getEdgeId(), inbox);
 
         // Instantiate executor and put it to stack.
         ReceiveSortMergeExec res = new ReceiveSortMergeExec(
@@ -230,25 +221,18 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
       * @return Outboxes.
       */
      private Outbox[] prepareOutboxes(int edgeId) {
-         int senderFragmentDeploymentOffset = currentFragment.getAbsoluteDeploymentOffset(operation);
-
          int receiveFragmentPos = operation.getInboundEdgeMap().get(edgeId);
          QueryFragmentDescriptor receiveFragment = operation.getFragmentDescriptors().get(receiveFragmentPos);
          Collection<UUID> receiveFragmentMemberIds = receiveFragment.getFragmentMembers(dataMemberIds);
-         int receiveFragmentDeploymentOffset = receiveFragment.getAbsoluteDeploymentOffset(operation);
-
          Outbox[] outboxes = new Outbox[receiveFragmentMemberIds.size()];
 
          int idx = 0;
 
          for (UUID receiveMemberId : receiveFragmentMemberIds) {
              Outbox outbox = new Outbox(
-                 nodeEngine,
                  operation.getQueryId(),
                  edgeId,
-                 senderFragmentDeploymentOffset,
                  receiveMemberId,
-                 receiveFragmentDeploymentOffset,
                  OUTBOX_BATCH_SIZE
              );
 
@@ -439,8 +423,8 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
         return exec;
     }
 
-    public List<AbstractInbox> getInboxes() {
-        return inboxes != null ? inboxes : Collections.emptyList();
+    public Map<Integer, AbstractInbox> getInboxes() {
+        return inboxes;
     }
 
     private Exec pop() {

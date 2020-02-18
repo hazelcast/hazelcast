@@ -16,8 +16,12 @@
 
 package com.hazelcast.sql.impl;
 
+import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlCursor;
+import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.SqlRow;
+import com.hazelcast.sql.impl.state.QueryInitiatorState;
+import com.hazelcast.sql.impl.state.QueryState;
 
 import javax.annotation.Nonnull;
 import java.util.Iterator;
@@ -26,24 +30,43 @@ import java.util.Iterator;
  * Cursor implementation.
  */
 public class SqlCursorImpl implements SqlCursor {
-    /** Handle. */
-    private final QueryHandle handle;
+    /** Query state. */
+    private final QueryState state;
 
-    public SqlCursorImpl(QueryHandle handle) {
-        this.handle = handle;
+    /** Iterator. */
+    private Iterator<SqlRow> iterator;
+
+    public SqlCursorImpl(QueryState state) {
+        this.state = state;
     }
 
     @Override @Nonnull
     public Iterator<SqlRow> iterator() {
-        return handle.getConsumer().iterator();
+        if (iterator == null) {
+            Iterator<SqlRow> iterator0 = getQueryInitiatorState().getRowSource().iterator();
+
+            iterator = iterator0;
+
+            return iterator0;
+        } else {
+            throw HazelcastSqlException.error("Iteartor can be requested only once.");
+        }
     }
 
     @Override
     public void close() {
-        handle.close();
+        state.cancel(HazelcastSqlException.error(SqlErrorCode.CANCELLED, "Query was cancelled by user."));
     }
 
-    public QueryHandle getHandle() {
-        return handle;
+    public QueryId getQueryId() {
+        return getQueryInitiatorState().getQueryId();
+    }
+
+    public QueryPlan getPlan() {
+        return getQueryInitiatorState().getPlan();
+    }
+
+    private QueryInitiatorState getQueryInitiatorState() {
+        return state.getInitiatorState();
     }
 }

@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.expression.aggregate;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.sql.impl.QueryContext;
+import com.hazelcast.sql.impl.QueryFragmentContext;
 import com.hazelcast.sql.impl.exec.agg.AggregateCollector;
 import com.hazelcast.sql.impl.exec.agg.AggregateExec;
 import com.hazelcast.sql.impl.row.Row;
@@ -70,7 +70,7 @@ public abstract class AggregateExpression<T> implements DataSerializable {
      * @param ctx Query context.
      * @return Collector.
      */
-    public abstract AggregateCollector newCollector(QueryContext ctx);
+    public abstract AggregateCollector newCollector(QueryFragmentContext ctx);
 
     /**
      * @return Return type of the expression.

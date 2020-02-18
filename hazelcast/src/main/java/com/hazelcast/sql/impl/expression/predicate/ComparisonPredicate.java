@@ -177,7 +177,7 @@ public class ComparisonPredicate extends BiCallExpression<Boolean> {
             }
 
             default:
-                throw new HazelcastSqlException(-1, "Unsupported result type: " + type);
+                throw HazelcastSqlException.error("Unsupported result type: " + type);
         }
     }
 
@@ -221,7 +221,7 @@ public class ComparisonPredicate extends BiCallExpression<Boolean> {
                 return compare <= 0;
 
             default:
-                throw new HazelcastSqlException(-1, "Unsupported operator: " + type);
+                throw HazelcastSqlException.error("Unsupported operator: " + type);
         }
     }
 

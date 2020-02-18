@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.expression.math;
 
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.BiCallExpressionWithType;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.Row;
@@ -118,7 +117,7 @@ public class RemainderFunction<T> extends BiCallExpressionWithType<T> {
                     float res = operand1Converter.asReal(operand1) % operand2Converter.asReal(operand2);
 
                     if (Float.isInfinite(res)) {
-                        throw new HazelcastSqlException(-1, "Division by zero.");
+                        throw HazelcastSqlException.error("Division by zero.");
                     }
 
                     return res;
@@ -128,17 +127,17 @@ public class RemainderFunction<T> extends BiCallExpressionWithType<T> {
                     double res = operand1Converter.asDouble(operand1) % operand2Converter.asDouble(operand2);
 
                     if (Double.isInfinite(res)) {
-                        throw new HazelcastSqlException(-1, "Division by zero.");
+                        throw HazelcastSqlException.error("Division by zero.");
                     }
 
                     return res;
                 }
 
                 default:
-                    throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Invalid type: " + resultType);
+                    throw HazelcastSqlException.error("Invalid type: " + resultType);
             }
         } catch (ArithmeticException e) {
-            throw new HazelcastSqlException(-1, "Division by zero.");
+            throw HazelcastSqlException.error("Division by zero.");
         }
     }
 }

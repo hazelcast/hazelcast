@@ -16,10 +16,11 @@
 
 package com.hazelcast.sql.impl;
 
+import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.exec.RootExec;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
-import com.hazelcast.sql.SqlRow;
 
 import java.util.ArrayDeque;
 import java.util.Iterator;
@@ -39,19 +40,22 @@ public class QueryResultConsumerImpl implements QueryResultConsumer {
     private final Object mux = new Object();
 
     /** Currently available rows. */
-    private ArrayDeque<Row> rows = new ArrayDeque<>();
+    private final ArrayDeque<Row> rows = new ArrayDeque<>();
+
+    /** Reference to the iterator. */
+    private final InternalIterator iterator = new InternalIterator();
 
     /** Whether we are done. */
     private boolean done;
+
+    /** Error which occurred during query execution. */
+    private HazelcastSqlException doneError;
 
     /** Whether root update already scheduled. */
     private boolean rootScheduled;
 
     /** Query root. */
     private RootExec root;
-
-    /** Iterator. */
-    private InternalIterator iter;
 
     public QueryResultConsumerImpl() {
         this(DFLT_BATCH_SIZE);
@@ -126,22 +130,28 @@ public class QueryResultConsumerImpl implements QueryResultConsumer {
 
     @Override
     public void done() {
-        synchronized (mux) {
-            done = true;
+        onDone(null);
+    }
 
-            mux.notifyAll();
+    @Override
+    public void onError(HazelcastSqlException error) {
+        onDone(error);
+    }
+
+    private void onDone(HazelcastSqlException error) {
+        synchronized (mux) {
+            if (!done) {
+                done = true;
+                doneError = error;
+
+                mux.notifyAll();
+            }
         }
     }
 
     @Override
     public Iterator<SqlRow> iterator() {
-        if (iter != null) {
-            throw new IllegalStateException("Iterator can be opened only once.");
-        }
-
-        iter = new InternalIterator();
-
-        return iter;
+        return iterator;
     }
 
     /**
@@ -191,6 +201,10 @@ public class QueryResultConsumerImpl implements QueryResultConsumer {
                     }
 
                     if (done) {
+                        if (doneError != null) {
+                            throw doneError;
+                        }
+
                         return null;
                     } else {
                         // Schedule root advance if needed.

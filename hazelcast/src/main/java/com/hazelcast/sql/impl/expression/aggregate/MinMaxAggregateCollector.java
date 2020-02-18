@@ -65,7 +65,7 @@ public final class MinMaxAggregateCollector extends AggregateCollector {
         if (val instanceof Comparable) {
             return (Comparable<?>) val;
         } else {
-            throw new HazelcastSqlException(-1, "Value is not comparable: " + val);
+            throw HazelcastSqlException.error("Value is not comparable: " + val);
         }
     }
 }

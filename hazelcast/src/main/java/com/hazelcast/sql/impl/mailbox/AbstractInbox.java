@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.mailbox;
 
 import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.sql.impl.exec.Exec;
 
 import java.util.UUID;
 
@@ -25,16 +24,19 @@ import java.util.UUID;
  * Abstract inbox implementation.
  */
 public abstract class AbstractInbox extends AbstractMailbox {
-    /** Executor which should be notified when data arrives. */
-    private Exec exec;
+    /** Initial size of batch queues. */
+    protected static final int INITIAL_QUEUE_SIZE = 4;
+
+    /** Number of enqueued batches. */
+    protected int enqueuedBatches;
 
     /** Remaining remote sources. */
-    private int remaining;
+    private int remainingSources;
 
-    protected AbstractInbox(QueryId queryId, int edgeId, int remaining) {
+    protected AbstractInbox(QueryId queryId, int edgeId, int remainingSources) {
         super(queryId, edgeId);
 
-        this.remaining = remaining;
+        this.remainingSources = remainingSources;
     }
 
     /**
@@ -43,8 +45,10 @@ public abstract class AbstractInbox extends AbstractMailbox {
     public void onBatch(UUID sourceMemberId, SendBatch batch) {
         onBatch0(sourceMemberId, batch);
 
+        enqueuedBatches++;
+
         if (batch.isLast()) {
-            remaining--;
+            remainingSources--;
         }
     }
 
@@ -54,14 +58,6 @@ public abstract class AbstractInbox extends AbstractMailbox {
      * @return {@code True} if no more incoming batches are expected.
      */
     public boolean closed() {
-        return remaining == 0;
-    }
-
-    public Exec getExec() {
-        return exec;
-    }
-
-    public void setExec(Exec exec) {
-        this.exec = exec;
+        return enqueuedBatches == 0 && remainingSources == 0;
     }
 }

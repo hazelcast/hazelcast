@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.expression.math;
 
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.BiCallExpressionWithType;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.Row;
@@ -42,7 +41,7 @@ public abstract class RoundTruncateFunction<T> extends BiCallExpressionWithType<
         DataType resultType = inferReturnType(operand1.getType());
 
         if (operand2 != null && !operand2.getType().isNumeric()) {
-            throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Operand 2 is not numeric: " + operand2.getType());
+            throw HazelcastSqlException.error("Operand 2 is not numeric: " + operand2.getType());
         }
 
         if (truncate) {
@@ -91,7 +90,7 @@ public abstract class RoundTruncateFunction<T> extends BiCallExpressionWithType<
                 return (T) (Double) value.doubleValue();
 
             default:
-                throw new HazelcastSqlException(-1, "Unexpected result type: " + resultType);
+                throw HazelcastSqlException.error("Unexpected result type: " + resultType);
         }
     }
 
@@ -99,7 +98,7 @@ public abstract class RoundTruncateFunction<T> extends BiCallExpressionWithType<
 
     private static DataType inferReturnType(DataType operand1Type) {
         if (!operand1Type.isNumeric()) {
-            throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Operand 1 is not numeric: " + operand1Type);
+            throw HazelcastSqlException.error("Operand 1 is not numeric: " + operand1Type);
         }
 
         switch (operand1Type.getType()) {

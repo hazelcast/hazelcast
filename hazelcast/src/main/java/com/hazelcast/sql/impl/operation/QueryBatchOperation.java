@@ -16,24 +16,18 @@
 
 package com.hazelcast.sql.impl.operation;
 
-import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.mailbox.SendBatch;
 
 import java.io.IOException;
-import java.util.UUID;
 
 /**
  * Batch operation.
  */
-public class QueryBatchOperation extends QueryOperation {
-    private QueryId queryId;
+public class QueryBatchOperation extends QueryIdAwareOperation {
     private int edgeId;
-    private UUID sourceMemberId;
-    private int sourceDeploymentOffset;
-    private int targetDeploymentOffset;
     private SendBatch batch;
 
     public QueryBatchOperation() {
@@ -41,39 +35,19 @@ public class QueryBatchOperation extends QueryOperation {
     }
 
     public QueryBatchOperation(
+        long epochWatermark,
         QueryId queryId,
         int edgeId,
-        UUID sourceMemberId,
-        int sourceDeploymentOffset,
-        int targetDeploymentOffset,
         SendBatch batch
     ) {
-        this.queryId = queryId;
-        this.edgeId = edgeId;
-        this.sourceMemberId = sourceMemberId;
-        this.sourceDeploymentOffset = sourceDeploymentOffset;
-        this.targetDeploymentOffset = targetDeploymentOffset;
-        this.batch = batch;
-    }
+        super(epochWatermark, queryId);
 
-    public QueryId getQueryId() {
-        return queryId;
+        this.edgeId = edgeId;
+        this.batch = batch;
     }
 
     public int getEdgeId() {
         return edgeId;
-    }
-
-    public UUID getSourceMemberId() {
-        return sourceMemberId;
-    }
-
-    public int getSourceDeploymentOffset() {
-        return sourceDeploymentOffset;
-    }
-
-    public int getTargetDeploymentOffset() {
-        return targetDeploymentOffset;
     }
 
     public SendBatch getBatch() {
@@ -81,26 +55,15 @@ public class QueryBatchOperation extends QueryOperation {
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        queryId.writeData(out);
-
+    protected void writeInternal1(ObjectDataOutput out) throws IOException {
         out.writeInt(edgeId);
-        UUIDSerializationUtil.writeUUID(out, sourceMemberId);
-        out.writeInt(sourceDeploymentOffset);
-        out.writeInt(targetDeploymentOffset);
 
         batch.writeData(out);
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        queryId = new QueryId();
-        queryId.readData(in);
-
+    protected void readInternal1(ObjectDataInput in) throws IOException {
         edgeId = in.readInt();
-        sourceMemberId = UUIDSerializationUtil.readUUID(in);
-        sourceDeploymentOffset = in.readInt();
-        targetDeploymentOffset = in.readInt();
 
         batch = new SendBatch();
         batch.readData(in);

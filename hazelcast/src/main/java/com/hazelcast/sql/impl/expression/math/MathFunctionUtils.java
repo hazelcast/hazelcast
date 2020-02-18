@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.expression.math;
 
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.type.DataType;
 import com.hazelcast.sql.impl.type.DataTypeUtils;
 import com.hazelcast.sql.impl.type.GenericType;
@@ -75,11 +74,11 @@ public final class MathFunctionUtils {
 
     private static DataType inferPlusMinusResultTypeNumeric(DataType type1, DataType type2) {
         if (!type1.isNumeric()) {
-            throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Operand 1 is not numeric.");
+            throw HazelcastSqlException.error("Operand 1 is not numeric.");
         }
 
         if (!type2.isNumeric()) {
-            throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Operand 2 is not numeric.");
+            throw HazelcastSqlException.error("Operand 2 is not numeric.");
         }
 
         DataType biggerType = DataTypeUtils.compare(type1, type2);
@@ -115,7 +114,7 @@ public final class MathFunctionUtils {
                 break;
         }
 
-        throw new HazelcastSqlException(-1, "Data type is not interval: " + intervalType);
+        throw HazelcastSqlException.error("Data type is not interval: " + intervalType);
     }
 
     /**
@@ -153,7 +152,7 @@ public final class MathFunctionUtils {
         // Handle intervals.
         if (type1.getType() == GenericType.INTERVAL_DAY_SECOND || type1.getType() == GenericType.INTERVAL_YEAR_MONTH) {
             if (!type2.isNumeric()) {
-                throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Operand 2 is not numeric.");
+                throw HazelcastSqlException.error("Operand 2 is not numeric.");
             }
 
             return type1;
@@ -166,11 +165,11 @@ public final class MathFunctionUtils {
     private static DataType inferMultiplyResultTypeNumeric(DataType type1, DataType type2) {
         // Only numeric types are allowed at this point.
         if (!type1.isNumeric()) {
-            throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Operand 1 is not numeric.");
+            throw HazelcastSqlException.error("Operand 1 is not numeric.");
         }
 
         if (!type2.isNumeric()) {
-            throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Operand 2 is not numeric.");
+            throw HazelcastSqlException.error("Operand 2 is not numeric.");
         }
 
         switch (type1.getType()) {
@@ -206,7 +205,7 @@ public final class MathFunctionUtils {
         // Handle interval types.
         if (type1.getType() == GenericType.INTERVAL_YEAR_MONTH || type1.getType() == GenericType.INTERVAL_DAY_SECOND) {
             if (!type2.isNumeric()) {
-                throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Operand 2 is not numeric.");
+                throw HazelcastSqlException.error("Operand 2 is not numeric.");
             }
 
             return type1;
@@ -222,11 +221,11 @@ public final class MathFunctionUtils {
         }
 
         if (!type1.isNumeric()) {
-            throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Operand 1 is not numeric.");
+            throw HazelcastSqlException.error("Operand 1 is not numeric.");
         }
 
         if (!type2.isNumeric()) {
-            throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Operand 2 is not numeric.");
+            throw HazelcastSqlException.error("Operand 2 is not numeric.");
         }
 
         if (type1 == DataType.BIT) {
@@ -254,11 +253,11 @@ public final class MathFunctionUtils {
         }
 
         if (!type1.isNumeric()) {
-            throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Operand 1 is not numeric.");
+            throw HazelcastSqlException.error("Operand 1 is not numeric.");
         }
 
         if (!type2.isNumeric()) {
-            throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Operand 2 is not numeric.");
+            throw HazelcastSqlException.error("Operand 2 is not numeric.");
         }
 
         if (type1 == DataType.BIT) {

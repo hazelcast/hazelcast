@@ -575,7 +575,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
                 );
 
             default:
-                throw new HazelcastSqlException(-1, "Unsupported aggregate call: " + aggFunc.getName());
+                throw HazelcastSqlException.error("Unsupported aggregate call: " + aggFunc.getName());
         }
     }
 

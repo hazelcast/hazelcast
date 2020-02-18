@@ -19,14 +19,12 @@ package com.hazelcast.sql.impl;
 import com.hazelcast.sql.impl.exec.RootExec;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
-import com.hazelcast.sql.SqlRow;
-
-import java.util.Iterator;
+import com.hazelcast.sql.impl.state.QueryStateRowSource;
 
 /**
  * Consumer of results.
  */
-public interface QueryResultConsumer {
+public interface QueryResultConsumer extends QueryStateRowSource {
     /**
      * Perform one-time setup.
      *
@@ -56,10 +54,8 @@ public interface QueryResultConsumer {
      */
     void done();
 
-    /**
-     * Open an iterator over results.
-     *
-     * @return Iterator.
-     */
-    Iterator<SqlRow> iterator();
+    @Override
+    default boolean isExplain() {
+        return false;
+    }
 }

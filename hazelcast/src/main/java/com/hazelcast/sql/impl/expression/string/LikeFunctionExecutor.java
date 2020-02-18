@@ -85,7 +85,7 @@ public class LikeFunctionExecutor {
 
         if (escape != null) {
             if (escape.length() != 1) {
-                throw new HazelcastSqlException(-1, "Escape parameter should be a single character: " + escape);
+                throw HazelcastSqlException.error("Escape parameter should be a single character: " + escape);
             }
 
             escapeChar = escape.charAt(0);
@@ -108,7 +108,7 @@ public class LikeFunctionExecutor {
 
             if (patternChar == escapeChar) {
                 if (i == (pattern.length() - 1)) {
-                    throw new HazelcastSqlException(-1, "Escape symbol cannot be located at the end of the pattern.");
+                    throw HazelcastSqlException.error("Escape symbol cannot be located at the end of the pattern.");
                 }
 
                 char nextPatternChar = pattern.charAt(i + 1);
@@ -118,7 +118,7 @@ public class LikeFunctionExecutor {
 
                     i++;
                 } else {
-                    throw new HazelcastSqlException(-1, "Escape should be applied only to '_', '%' or escape symbols.");
+                    throw HazelcastSqlException.error("Escape should be applied only to '_', '%' or escape symbols.");
                 }
             } else if (patternChar == ONE_SQL) {
                 javaPattern.append(ONE_JAVA);

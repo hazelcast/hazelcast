@@ -32,7 +32,7 @@ public abstract class AbstractFilterExec extends AbstractUpstreamAwareExec {
     }
 
     @Override
-    public IterationResult advance() {
+    public IterationResult advance0() {
         while (true) {
             if (!state.advance()) {
                 return IterationResult.WAIT;

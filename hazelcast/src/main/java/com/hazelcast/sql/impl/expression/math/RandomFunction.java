@@ -39,7 +39,7 @@ public class RandomFunction extends UniCallExpression<Double> {
 
     public static RandomFunction create(Expression<?> seedExp) {
         if (seedExp != null && !seedExp.getType().isNumeric()) {
-            throw new HazelcastSqlException(-1, "Operand is not numeric: " + seedExp.getType());
+            throw HazelcastSqlException.error("Operand is not numeric: " + seedExp.getType());
         }
 
         return new RandomFunction(seedExp);

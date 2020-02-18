@@ -48,7 +48,7 @@ public class DoubleFunction extends UniCallExpression<Double> {
         DataType operandType = operand.getType();
 
         if (!operandType.isNumeric()) {
-            throw new HazelcastSqlException(-1, "Operand is not numeric: " + operandType);
+            throw HazelcastSqlException.error("Operand is not numeric: " + operandType);
         }
 
         return new DoubleFunction(operand, type);
@@ -106,7 +106,7 @@ public class DoubleFunction extends UniCallExpression<Double> {
                 return Math.toRadians(valueDouble);
 
             default:
-                throw new HazelcastSqlException(-1, "Unsupported type: " + type);
+                throw HazelcastSqlException.error("Unsupported type: " + type);
         }
     }
 

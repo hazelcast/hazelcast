@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.exec.join;
 
-import com.hazelcast.sql.impl.QueryContext;
+import com.hazelcast.sql.impl.QueryFragmentContext;
 import com.hazelcast.sql.impl.exec.AbstractUpstreamAwareExec;
 import com.hazelcast.sql.impl.exec.Exec;
 import com.hazelcast.sql.impl.exec.IterationResult;
@@ -102,13 +102,13 @@ public class HashJoinExec extends AbstractUpstreamAwareExec {
     }
 
     @Override
-    protected void setup1(QueryContext ctx) {
+    protected void setup1(QueryFragmentContext ctx) {
         rightState.setup(ctx);
     }
 
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
     @Override
-    public IterationResult advance() {
+    public IterationResult advance0() {
         // Build hash table for the right input.
         while (!rightState.isDone()) {
             if (rightState.advance()) {

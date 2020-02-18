@@ -26,7 +26,7 @@ import java.util.UUID;
  */
 public class SingleInbox extends AbstractInbox {
     /** Queue of batches from all remote stripes. */
-    private final ArrayDeque<SendBatch> batches = new ArrayDeque<>();
+    private final ArrayDeque<SendBatch> batches = new ArrayDeque<>(INITIAL_QUEUE_SIZE);
 
     public SingleInbox(QueryId queryId, int edgeId, int remaining) {
         super(queryId, edgeId, remaining);
@@ -34,11 +34,17 @@ public class SingleInbox extends AbstractInbox {
 
     @Override
     public void onBatch0(UUID sourceMemberId, SendBatch batch) {
-        batches.add(batch);
+        batches.addLast(batch);
     }
 
     public SendBatch poll() {
-        return batches.poll();
+        SendBatch batch = batches.pollFirst();
+
+        if (batch != null) {
+            enqueuedBatches--;
+        }
+
+        return batch;
     }
 
     @Override

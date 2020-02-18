@@ -227,7 +227,7 @@ public abstract class Converter {
     public abstract Object convertToSelf(Converter converter, Object val);
 
     protected final HazelcastSqlException cannotConvertImplicit(Object val) {
-        throw new HazelcastSqlException(-1, "Cannot implicitly convert a value to " + getGenericType() + ": " + val);
+        throw HazelcastSqlException.error("Cannot implicitly convert a value to " + getGenericType() + ": " + val);
     }
 
     protected static Converter getConverter(Object val) {

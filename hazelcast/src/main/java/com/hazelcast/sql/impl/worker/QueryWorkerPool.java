@@ -17,7 +17,9 @@
 package com.hazelcast.sql.impl.worker;
 
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.sql.impl.worker.task.QueryTask;
+import com.hazelcast.sql.impl.QueryFragmentExecutable;
+
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Query thread pool.
@@ -47,7 +49,7 @@ public class QueryWorkerPool {
      */
     public void start() {
         for (int i = 0; i < threadCnt; i++) {
-            QueryWorker worker = new QueryWorker(nodeEngine);
+            QueryWorker worker = new QueryWorker(nodeEngine, this);
 
             Thread thread = new Thread(worker);
 
@@ -72,15 +74,11 @@ public class QueryWorkerPool {
     }
 
     /**
-     * Submit a task.
+     * Submit a fragment to be executed.
      *
-     * @param task Task.
+     * @param fragmentExecutable Fragment.
      */
-    public void submit(int stripe, QueryTask task) {
-        workers[stripe].offer(task);
-    }
-
-    public int getThreadCount() {
-        return workers.length;
+    public void submit(QueryFragmentExecutable fragmentExecutable) {
+        workers[ThreadLocalRandom.current().nextInt(workers.length)].submit(fragmentExecutable);
     }
 }

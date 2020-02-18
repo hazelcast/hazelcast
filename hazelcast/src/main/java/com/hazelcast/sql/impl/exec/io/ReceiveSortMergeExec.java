@@ -72,7 +72,7 @@ public class ReceiveSortMergeExec extends AbstractExec {
     }
 
     @Override
-    public IterationResult advance() {
+    public IterationResult advance0() {
         // Try polling inputs.
         if (!pollInputs()) {
             return inbox.closed() ? IterationResult.FETCHED_DONE : IterationResult.WAIT;

@@ -111,7 +111,7 @@ public final class Converters {
         }
 
         if (res == null) {
-            throw new HazelcastSqlException(-1, "Class is not supported by Hazelcast SQL: " + clazz.getName());
+            throw HazelcastSqlException.error("Class is not supported by Hazelcast SQL: " + clazz.getName());
         }
 
         return res;

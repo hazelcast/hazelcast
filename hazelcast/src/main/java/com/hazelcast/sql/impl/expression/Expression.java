@@ -29,6 +29,7 @@ import java.time.OffsetDateTime;
  *
  * @param <T> Return type.
  */
+// TODO: Move all these virtually static methods to a separate utility class.
 public interface Expression<T> extends DataSerializable {
     /**
      * Evaluate the expression.
@@ -126,25 +127,25 @@ public interface Expression<T> extends DataSerializable {
 
     default void ensureCanConvertToBit() {
         if (!canConvertToBit()) {
-            throw new HazelcastSqlException(-1, "Expression cannot be converted to BIT: " + this);
+            throw HazelcastSqlException.error("Expression cannot be converted to BIT: " + this);
         }
     }
 
     default void ensureCanConvertToInt() {
         if (!canConvertToInt()) {
-            throw new HazelcastSqlException(-1, "Expression cannot be converted to INT: " + this);
+            throw HazelcastSqlException.error("Expression cannot be converted to INT: " + this);
         }
     }
 
     default void ensureCanConvertToVarchar() {
         if (!canConvertToVarchar()) {
-            throw new HazelcastSqlException(-1, "Expression cannot be converted to VARCHAR: " + this);
+            throw HazelcastSqlException.error("Expression cannot be converted to VARCHAR: " + this);
         }
     }
 
     default void ensureCanConvertToTimestampWithTimezone() {
         if (!canConvertToTimestampWithTimezone()) {
-            throw new HazelcastSqlException(-1, "Expression cannot be converted to TIMESTAMP_WITH_TIMEZONE: " + this);
+            throw HazelcastSqlException.error("Expression cannot be converted to TIMESTAMP_WITH_TIMEZONE: " + this);
         }
     }
 

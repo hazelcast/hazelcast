@@ -63,4 +63,9 @@ public class UnicastSendExec extends AbstractSendExec {
             return outboxes[outboxIndex];
         }
     }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() +  "{id=" + getId() + '}';
+    }
 }

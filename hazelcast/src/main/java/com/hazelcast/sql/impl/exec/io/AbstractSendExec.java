@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.exec.io;
 
+import com.hazelcast.sql.impl.QueryFragmentContext;
 import com.hazelcast.sql.impl.exec.AbstractUpstreamAwareExec;
 import com.hazelcast.sql.impl.exec.Exec;
 import com.hazelcast.sql.impl.exec.IterationResult;
@@ -43,7 +44,14 @@ public abstract class AbstractSendExec extends AbstractUpstreamAwareExec {
     }
 
     @Override
-    public IterationResult advance() {
+    protected void setup1(QueryFragmentContext ctx) {
+        for (Outbox outbox : outboxes) {
+            outbox.setup(ctx);
+        }
+    }
+
+    @Override
+    public IterationResult advance0() {
         if (done) {
             return IterationResult.FETCHED_DONE;
         }
@@ -73,6 +81,8 @@ public abstract class AbstractSendExec extends AbstractUpstreamAwareExec {
                 done = true;
 
                 for (Outbox outbox : outboxes) {
+                    // TODO: This flush may fail because there is no room for the output. Handle it as a part of backpressure
+                    //  implementation.
                     outbox.flush();
                 }
 

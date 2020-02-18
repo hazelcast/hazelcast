@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.expression.aggregate;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.sql.impl.QueryContext;
+import com.hazelcast.sql.impl.QueryFragmentContext;
 import com.hazelcast.sql.impl.exec.agg.AggregateCollector;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.Row;
@@ -64,7 +64,7 @@ public class DistributedAverageAggregateExpression<T> extends AggregateExpressio
     }
 
     @Override
-    public AggregateCollector newCollector(QueryContext ctx) {
+    public AggregateCollector newCollector(QueryFragmentContext ctx) {
         return new AverageAggregateCollector(resType, false);
     }
 

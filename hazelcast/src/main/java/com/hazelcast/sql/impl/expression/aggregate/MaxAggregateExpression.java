@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.expression.aggregate;
 
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.impl.QueryContext;
+import com.hazelcast.sql.impl.QueryFragmentContext;
 import com.hazelcast.sql.impl.exec.agg.AggregateCollector;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.type.DataType;
@@ -39,14 +39,14 @@ public class MaxAggregateExpression extends AbstractSingleOperandAggregateExpres
         DataType operandType = operand.getType();
 
         if (operandType.getType() == GenericType.LATE) {
-            throw new HazelcastSqlException(-1, "Operand type cannot be resolved: " + operandType);
+            throw HazelcastSqlException.error("Operand type cannot be resolved: " + operandType);
         }
 
         return new MaxAggregateExpression(operand, operandType, distinct);
     }
 
     @Override
-    public AggregateCollector newCollector(QueryContext ctx) {
+    public AggregateCollector newCollector(QueryFragmentContext ctx) {
         return new MinMaxAggregateCollector(false);
     }
 

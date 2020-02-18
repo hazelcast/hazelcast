@@ -18,6 +18,8 @@ package com.hazelcast.sql;
 
 import com.hazelcast.core.HazelcastException;
 
+import java.util.UUID;
+
 /**
  * Exception occurred during SQL query execution.
  */
@@ -28,14 +30,73 @@ public class HazelcastSqlException extends HazelcastException {
     /** Code of the exception. */
     private int code;
 
-    public HazelcastSqlException(int code, String message) {
-        this(code, message, null);
+    /** Originator member ID. */
+    private UUID originatingMemberId;
+
+    public HazelcastSqlException() {
+        // No-op.
     }
 
-    public HazelcastSqlException(int code, String message, Throwable cause) {
+    private HazelcastSqlException(int code, String message, Throwable cause, UUID originatingMemberId) {
         super(message, cause);
 
         this.code = code;
+        this.originatingMemberId = originatingMemberId;
+    }
+
+    /**
+     * Constructs a generic error.
+     *
+     * @param message Error message.
+     * @return Exception object.
+     */
+    public static HazelcastSqlException error(String message) {
+        return error(message, null);
+    }
+
+    /**
+     * Constructs a generic error with the cause.
+     *
+     * @param message Error message.
+     * @return Exception object.
+     */
+    public static HazelcastSqlException error(String message, Throwable cause) {
+        return error(SqlErrorCode.GENERIC, message, cause);
+    }
+
+    /**
+     * Constructs an error with specific code.
+     *
+     * @param code Error code.
+     * @param message Error message.
+     * @return Exception object.
+     */
+    public static HazelcastSqlException error(int code, String message) {
+        return error(code, message, null);
+    }
+
+    /**
+     * Constructs and error with specific code and cause.
+     *
+     * @param code Code.
+     * @param message Message.
+     * @param cause Cause.
+     * @return Exception object.
+     */
+    public static HazelcastSqlException error(int code, String message, Throwable cause) {
+        return new HazelcastSqlException(code, message, cause, null);
+    }
+
+    /**
+     * Constructs an error which occurred on a remote member.
+     *
+     * @param code Code.
+     * @param message Message.
+     * @param originatingMemberId Originating member ID.
+     * @return Exception object.
+     */
+    public static HazelcastSqlException remoteError(int code, String message, UUID originatingMemberId) {
+        return new HazelcastSqlException(code, message, null, originatingMemberId);
     }
 
     /**
@@ -44,4 +105,10 @@ public class HazelcastSqlException extends HazelcastException {
     public int getCode() {
         return code;
     }
+
+    public UUID getOriginatingMemberId() {
+        return originatingMemberId;
+    }
+
+    // TODO: Override getMessage to output the code and originating member ID
 }

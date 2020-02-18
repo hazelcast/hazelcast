@@ -87,7 +87,7 @@ public class SignFunction extends UniCallExpressionWithType<Number> {
                 return Math.signum(operandConverter.asDouble(operandValue));
 
             default:
-                throw new HazelcastSqlException(-1, "Unexpected type: " + resultType);
+                throw HazelcastSqlException.error("Unexpected type: " + resultType);
         }
     }
 
@@ -99,7 +99,7 @@ public class SignFunction extends UniCallExpressionWithType<Number> {
      */
     private static DataType inferResultType(DataType operandType) {
         if (!operandType.isNumeric()) {
-            throw new HazelcastSqlException(-1, "Operand is not numeric: " + operandType);
+            throw HazelcastSqlException.error("Operand is not numeric: " + operandType);
         }
 
         switch (operandType.getType()) {

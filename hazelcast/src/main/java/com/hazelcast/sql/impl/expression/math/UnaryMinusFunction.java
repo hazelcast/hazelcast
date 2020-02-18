@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.expression.math;
 
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.UniCallExpressionWithType;
 import com.hazelcast.sql.impl.row.Row;
@@ -106,7 +105,7 @@ public class UnaryMinusFunction<T> extends UniCallExpressionWithType<T> {
                 return -operandConverter.asDouble(operandValue);
 
             default:
-                throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Invalid type: " + resultType);
+                throw HazelcastSqlException.error("Invalid type: " + resultType);
         }
     }
 
@@ -118,7 +117,7 @@ public class UnaryMinusFunction<T> extends UniCallExpressionWithType<T> {
      */
     private static DataType inferResultType(DataType operandType) {
         if (!operandType.isNumeric()) {
-            throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Operand is not numeric: " + operandType);
+            throw HazelcastSqlException.error("Operand is not numeric: " + operandType);
         }
 
         switch (operandType.getType()) {

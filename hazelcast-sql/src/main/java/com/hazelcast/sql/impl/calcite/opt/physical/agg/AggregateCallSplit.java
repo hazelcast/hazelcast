@@ -62,7 +62,7 @@ public final class AggregateCallSplit {
         for (AggregateCall call : calls) {
             if (call.isDistinct()) {
                 // TODO: Add support for distinct aggregates
-                throw new HazelcastSqlException(-1, "Distinct aggregates are not supported: " + call);
+                throw HazelcastSqlException.error("Distinct aggregates are not supported: " + call);
             }
 
             SqlKind kind = call.getAggregation().getKind();
@@ -152,7 +152,7 @@ public final class AggregateCallSplit {
                     break;
 
                 default:
-                    throw new HazelcastSqlException(-1, "Unsupported operation: " + kind);
+                    throw HazelcastSqlException.error("Unsupported operation: " + kind);
             }
         }
 

@@ -71,7 +71,7 @@ public class MapScanExec extends AbstractMapScanExec {
 
     @SuppressWarnings("unchecked")
     @Override
-    public IterationResult advance() {
+    public IterationResult advance0() {
         if (rows == null) {
             rows = new ArrayList<>();
 

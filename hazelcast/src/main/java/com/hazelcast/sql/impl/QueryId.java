@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl;
 
-import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -28,9 +27,12 @@ import java.util.UUID;
 /**
  * Cluster-wide unique query ID.
  */
-public class QueryId implements DataSerializable {
-    /** Member ID. */
-    private UUID memberId;
+public final class QueryId implements DataSerializable {
+    /** Member ID: most significant bits */
+    private long memberIdHigh;
+
+    /** Member ID: lest significant bits. */
+    private long memberIdLow;
 
     /** Local ID: most significant bits. */
     private long localHigh;
@@ -38,14 +40,19 @@ public class QueryId implements DataSerializable {
     /** Local ID: least significant bits. */
     private long localLow;
 
+    /**  */
+    private long epoch;
+
     public QueryId() {
         // No-op.
     }
 
-    public QueryId(UUID memberId, long localHigh, long localLow) {
-        this.memberId = memberId;
+    private QueryId(long memberIdHigh, long memberIdLow, long localHigh, long localLow, long epoch) {
+        this.memberIdHigh = memberIdHigh;
+        this.memberIdLow = memberIdLow;
         this.localHigh = localHigh;
         this.localLow = localLow;
+        this.epoch = epoch;
     }
 
     /**
@@ -54,28 +61,46 @@ public class QueryId implements DataSerializable {
      * @param memberId Member ID.
      * @return Query ID.
      */
-    public static QueryId create(UUID memberId) {
+    public static QueryId create(UUID memberId, long epoch) {
         UUID qryId = UuidUtil.newUnsecureUUID();
 
-        return new QueryId(memberId, qryId.getMostSignificantBits(), qryId.getLeastSignificantBits());
+        return new QueryId(
+            memberId.getMostSignificantBits(),
+            memberId.getLeastSignificantBits(),
+            qryId.getMostSignificantBits(),
+            qryId.getLeastSignificantBits(),
+            epoch
+        );
+    }
+
+    public UUID getMemberId() {
+        return new UUID(memberIdHigh, memberIdLow);
     }
 
     private UUID getLocalId() {
         return new UUID(localHigh, localLow);
     }
 
+    public long getEpoch() {
+        return epoch;
+    }
+
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        UUIDSerializationUtil.writeUUID(out, memberId);
+        out.writeLong(memberIdHigh);
+        out.writeLong(memberIdLow);
         out.writeLong(localHigh);
         out.writeLong(localLow);
+        out.writeLong(epoch);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        memberId = UUIDSerializationUtil.readUUID(in);
+        memberIdHigh = in.readLong();
+        memberIdLow = in.readLong();
         localHigh = in.readLong();
         localLow = in.readLong();
+        epoch = in.readLong();
     }
 
     @Override
@@ -90,22 +115,24 @@ public class QueryId implements DataSerializable {
 
         QueryId other = (QueryId) o;
 
-        return localHigh == other.localHigh && localLow == other.localLow
-            && memberId != null ? memberId.equals(other.memberId) : other.memberId == null;
+        return memberIdHigh == other.memberIdHigh && memberIdLow == other.memberIdLow
+            && localHigh == other.localHigh && localLow == other.localLow && epoch == other.epoch;
     }
 
     @Override
     public int hashCode() {
-        int result = memberId != null ? memberId.hashCode() : 0;
+        int result = (int) (memberIdHigh ^ (memberIdHigh >>> 32));
 
+        result = 31 * result + (int) (memberIdLow ^ (memberIdLow >>> 32));
         result = 31 * result + (int) (localHigh ^ (localHigh >>> 32));
         result = 31 * result + (int) (localLow ^ (localLow >>> 32));
+        result = 31 * result + (int) (epoch ^ (epoch >>> 32));
 
         return result;
     }
 
     @Override
     public String toString() {
-        return "QueryId {memberId=" + memberId + ", id=" + getLocalId() + '}';
+        return "QueryId {memberId=" + getMemberId() + ", localId=" + getLocalId() + ", epoch=" + epoch + '}';
     }
 }

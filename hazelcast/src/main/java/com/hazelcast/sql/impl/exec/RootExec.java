@@ -16,10 +16,9 @@
 
 package com.hazelcast.sql.impl.exec;
 
-import com.hazelcast.sql.impl.QueryContext;
+import com.hazelcast.sql.impl.QueryFragmentContext;
 import com.hazelcast.sql.impl.QueryResultConsumer;
 import com.hazelcast.sql.impl.row.RowBatch;
-import com.hazelcast.sql.impl.worker.task.AdvanceRootQueryTask;
 
 /**
  * Root executor which consumes results from the upstream stages and pass them to target consumer.
@@ -33,14 +32,14 @@ public class RootExec extends AbstractUpstreamAwareExec {
     }
 
     @Override
-    protected void setup1(QueryContext ctx) {
+    protected void setup1(QueryFragmentContext ctx) {
         consumer = ctx.getRootConsumer();
 
         consumer.setup(this);
     }
 
     @Override
-    public IterationResult advance() {
+    public IterationResult advance0() {
         while (true) {
             // Advance if needed.
             if (!state.advance()) {
@@ -67,12 +66,10 @@ public class RootExec extends AbstractUpstreamAwareExec {
     }
 
     /**
-     * Reschedule execution of this root node to fetch more data to the user.
+     * Reschedule execution of this root node to fetch more data for the user.
      */
     public void reschedule() {
-        AdvanceRootQueryTask task = new AdvanceRootQueryTask(this);
-
-        ctx.getWorker().offer(task);
+        ctx.reschedule();
     }
 
     @Override

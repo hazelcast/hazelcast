@@ -19,7 +19,6 @@ package com.hazelcast.sql.impl.expression.math;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.CastExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.UniCallExpressionWithType;
@@ -129,7 +128,7 @@ public abstract class FloorCeilFunction<T> extends UniCallExpressionWithType<T> 
             }
 
             default:
-                throw new HazelcastSqlException(-1, "Unexpected type: " + resultType);
+                throw HazelcastSqlException.error("Unexpected type: " + resultType);
         }
     }
 
@@ -160,7 +159,7 @@ public abstract class FloorCeilFunction<T> extends UniCallExpressionWithType<T> 
      */
     private static DataType inferResultType(DataType operandType) {
         if (!operandType.isNumeric()) {
-            throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Operand is not numeric: " + operandType);
+            throw HazelcastSqlException.error("Operand is not numeric: " + operandType);
         }
 
         switch (operandType.getType()) {

@@ -47,6 +47,6 @@ public final class SqlYearMonthIntervalConverter extends Converter {
             return val;
         }
 
-        throw new HazelcastSqlException(-1, "Value cannot be converted to " + SqlYearMonthInterval.class + ": " + val);
+        throw HazelcastSqlException.error("Value cannot be converted to " + SqlYearMonthInterval.class + ": " + val);
     }
 }

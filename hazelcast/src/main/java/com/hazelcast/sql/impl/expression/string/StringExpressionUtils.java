@@ -34,7 +34,7 @@ public final class StringExpressionUtils {
         }
 
         if (search.isEmpty()) {
-            throw new HazelcastSqlException(-1, "Invalid operand: search cannot be empty.");
+            throw HazelcastSqlException.error("Invalid operand: search cannot be empty.");
         }
 
         return source.replace(search, replacement);
@@ -81,7 +81,7 @@ public final class StringExpressionUtils {
         int endPos = startPos + length;
 
         if (endPos < startPos) {
-            throw new HazelcastSqlException(-1, "End position is less than start position.");
+            throw HazelcastSqlException.error("End position is less than start position.");
         }
 
         if (startPos > sourceLength || endPos < 1) {

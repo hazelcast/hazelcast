@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.exec;
 
-import com.hazelcast.sql.impl.QueryContext;
+import com.hazelcast.sql.impl.QueryFragmentContext;
 import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.RowBatch;
 
@@ -25,7 +25,7 @@ import com.hazelcast.sql.impl.row.RowBatch;
  */
 public abstract class AbstractExec implements Exec {
     /** Global query context. */
-    protected QueryContext ctx;
+    protected QueryFragmentContext ctx;
 
     /** ID of the executor. */
     private final int id;
@@ -40,28 +40,32 @@ public abstract class AbstractExec implements Exec {
     }
 
     @Override
-    public final void setup(QueryContext ctx) {
+    public final void setup(QueryFragmentContext ctx) {
         this.ctx = ctx;
 
         setup0(ctx);
     }
 
     @Override
-    public final QueryContext getContext() {
-        return ctx;
+    public final IterationResult advance() {
+        checkCancelled();
+
+        return advance0();
     }
 
-    @Override
-    public IterationResult advance() {
-        return null;
-    }
+    /**
+     * Internal advance routine.
+     *
+     * @return Iteration result.
+     */
+    protected abstract IterationResult advance0();
 
     @Override
     public boolean canReset() {
         return false;
     }
 
-    protected void setup0(QueryContext ctx) {
+    protected void setup0(QueryFragmentContext ctx) {
         // No-op.
     }
 
@@ -89,4 +93,8 @@ public abstract class AbstractExec implements Exec {
     }
 
     protected abstract RowBatch currentBatch0();
+
+    protected void checkCancelled() {
+        ctx.checkCancelled();
+    }
 }

@@ -47,6 +47,6 @@ public final class SqlDaySecondIntervalConverter extends Converter {
             return val;
         }
 
-        throw new HazelcastSqlException(-1, "Value cannot be converted to " + SqlDaySecondInterval.class + ": " + val);
+        throw HazelcastSqlException.error("Value cannot be converted to " + SqlDaySecondInterval.class + ": " + val);
     }
 }

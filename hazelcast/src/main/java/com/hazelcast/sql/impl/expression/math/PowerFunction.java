@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.expression.math;
 
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.BiCallExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.Row;
@@ -37,11 +36,11 @@ public class PowerFunction extends BiCallExpression<Double> {
 
     public static PowerFunction create(Expression<?> first, Expression<?> second) {
         if (!first.getType().isNumeric()) {
-            throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Operand 1 is not numeric: " + first.getType());
+            throw HazelcastSqlException.error("Operand 1 is not numeric: " + first.getType());
         }
 
         if (!second.getType().isNumeric()) {
-            throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Operand 2 is not numeric: " + second.getType());
+            throw HazelcastSqlException.error("Operand 2 is not numeric: " + second.getType());
         }
 
         return new PowerFunction(first, second);

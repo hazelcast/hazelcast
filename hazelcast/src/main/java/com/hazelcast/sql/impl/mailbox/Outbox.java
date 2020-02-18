@@ -18,8 +18,9 @@ package com.hazelcast.sql.impl.mailbox;
 
 import com.hazelcast.cluster.Member;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.sql.HazelcastSqlTransientException;
+import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlErrorCode;
+import com.hazelcast.sql.impl.QueryFragmentContext;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.sql.impl.operation.QueryBatchOperation;
@@ -34,20 +35,14 @@ import java.util.UUID;
  * Outbox which sends data to a single remote stripe.
  */
 public class Outbox extends AbstractMailbox {
-    /** Node engine. */
-    private final NodeEngine nodeEngine;
-
-    /** Source deployment offset. */
-    private final int sourceDeploymentOffset;
-
     /** Target member ID. */
     private final UUID targetMemberId;
 
-    /** Target deployment offset. */
-    private final int targetDeploymentOffset;
-
     /** Batch size. */
     private final int batchSize;
+
+    /** SQL service. */
+    private SqlServiceImpl sqlService;
 
     /** Target member. */
     private Member targetMember;
@@ -56,28 +51,43 @@ public class Outbox extends AbstractMailbox {
     private List<Row> batch;
 
     public Outbox(
-        NodeEngine nodeEngine,
         QueryId queryId,
         int edgeId,
-        int sourceDeploymentOffset,
         UUID targetMemberId,
-        int targetDeploymentOffset,
         int batchSize
     ) {
         super(queryId, edgeId);
 
-        this.nodeEngine = nodeEngine;
-        this.sourceDeploymentOffset = sourceDeploymentOffset;
         this.targetMemberId = targetMemberId;
-        this.targetDeploymentOffset = targetDeploymentOffset;
         this.batchSize = batchSize;
+    }
+
+    public void setup(QueryFragmentContext context) {
+        NodeEngine nodeEngine = context.getNodeEngine();
+
+        sqlService = nodeEngine.getSqlService();
+
+        targetMember = nodeEngine.getClusterService().getMember(targetMemberId);
+
+        if (targetMember == null) {
+            throw HazelcastSqlException.error(SqlErrorCode.MEMBER_LEAVE,
+                "Outbox target member has left topology: " + targetMemberId);
+        }
     }
 
     public UUID getTargetMemberId() {
         return targetMemberId;
     }
 
-    /**
+    /**boolean success = false;
+
+        try {
+
+        } catch (Exception e) {
+            throw HazelcastSqlException.error(SqlErrorCode.MEMBER_LEAVE,
+                "Failed to send data batch to member: " + targetMemberId
+            );
+        }
      * Accept a row.
      *
      * @param row Row.
@@ -117,23 +127,16 @@ public class Outbox extends AbstractMailbox {
         }
 
         QueryBatchOperation op = new QueryBatchOperation(
-            queryId,
+            sqlService.getEpochWatermark(), queryId,
             getEdgeId(),
-            nodeEngine.getLocalMember().getUuid(),
-            sourceDeploymentOffset,
-            targetDeploymentOffset,
             new SendBatch(batch0, last)
         );
 
-        try {
-            if (targetMember == null) {
-                targetMember = nodeEngine.getClusterService().getMember(targetMemberId);
-            }
+        boolean success = sqlService.sendRequest(op, targetMember.getAddress());
 
-            ((SqlServiceImpl) nodeEngine.getSqlService()).sendRequest(op, targetMember.getAddress());
-        } catch (Exception e) {
-            throw new HazelcastSqlTransientException(SqlErrorCode.MEMBER_LEAVE,
-                "Failed to send data batch to member: " + this);
+        if (!success) {
+            throw HazelcastSqlException.error(SqlErrorCode.MEMBER_LEAVE,
+                "Failed to send data batch to member: " + targetMemberId);
         }
 
         batch = null;
@@ -144,7 +147,6 @@ public class Outbox extends AbstractMailbox {
         return "Outbox {queryId=" + queryId
             + ", edgeId=" + getEdgeId()
             + ", targetMemberId=" + targetMemberId
-            + ", targetDeploymentOffset=" + targetDeploymentOffset
             + '}';
     }
 }

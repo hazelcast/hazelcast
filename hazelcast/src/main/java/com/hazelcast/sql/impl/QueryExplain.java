@@ -16,13 +16,11 @@
 
 package com.hazelcast.sql.impl;
 
-import com.hazelcast.sql.SqlCursor;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.physical.RootPhysicalNode;
 import com.hazelcast.sql.impl.row.HeapRow;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -40,7 +38,7 @@ public final class QueryExplain {
         this.elements = elements;
     }
 
-    public SqlCursor asCursor() {
+    public List<SqlRow> asRows() {
         List<SqlRow> rows = new ArrayList<>(elements.size());
 
         for (QueryExplainElement element : elements) {
@@ -52,7 +50,7 @@ public final class QueryExplain {
             rows.add(row);
         }
 
-        return new Cursor(rows);
+        return rows;
     }
 
     public String getSql() {
@@ -89,27 +87,5 @@ public final class QueryExplain {
         res.append(element.getExplain());
 
         return res.toString();
-    }
-
-    /**
-     * Cursor to iterate over EXPLAIN rows.
-     */
-    private static final class Cursor implements SqlCursor {
-        /** Rows. */
-        private final List<SqlRow> rows;
-
-        private Cursor(List<SqlRow> rows) {
-            this.rows = rows;
-        }
-
-        @Override
-        public Iterator<SqlRow> iterator() {
-            return rows.iterator();
-        }
-
-        @Override
-        public void close() {
-            // No-op.
-        }
     }
 }

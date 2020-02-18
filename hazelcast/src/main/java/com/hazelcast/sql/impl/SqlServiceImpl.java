@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.config.SqlConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.nio.Connection;
@@ -30,22 +31,36 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlCursor;
+import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.SqlQuery;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.client.SqlClientPage;
 import com.hazelcast.sql.impl.client.SqlClientQueryRegistry;
+import com.hazelcast.sql.impl.exec.Exec;
+import com.hazelcast.sql.impl.mailbox.AbstractInbox;
 import com.hazelcast.sql.impl.operation.QueryBatchOperation;
+import com.hazelcast.sql.impl.operation.QueryCancelOperation;
+import com.hazelcast.sql.impl.operation.QueryCheckOperation;
+import com.hazelcast.sql.impl.operation.QueryCheckResponseOperation;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperationFactory;
+import com.hazelcast.sql.impl.operation.QueryIdAwareOperation;
 import com.hazelcast.sql.impl.operation.QueryOperation;
+import com.hazelcast.sql.impl.physical.visitor.CreateExecVisitor;
+import com.hazelcast.sql.impl.state.QueryCancelInfo;
+import com.hazelcast.sql.impl.state.QueryState;
+import com.hazelcast.sql.impl.state.QueryStateRegistry;
+import com.hazelcast.sql.impl.state.QueryStateRegistryImpl;
+import com.hazelcast.sql.impl.state.QueryStateRegistryUpdater;
+import com.hazelcast.sql.impl.state.QueryStateRowSource;
 import com.hazelcast.sql.impl.worker.QueryWorkerPool;
-import com.hazelcast.sql.impl.worker.task.ProcessBatchQueryTask;
-import com.hazelcast.sql.impl.worker.task.StartFragmentQueryTask;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -53,7 +68,11 @@ import java.util.function.Consumer;
 /**
  * Proxy for SQL service. Backed by either Calcite-based or no-op implementation.
  */
+@SuppressWarnings({"checkstyle:ClassFanOutComplexity", "checkstyle:ClassDataAbstractionCoupling"})
 public class SqlServiceImpl implements SqlService, ManagedService, ClientAwareService, Consumer<Packet> {
+    /** Default state check frequency. */
+    public static final long STATE_CHECK_FREQUENCY = 2000L;
+
     /** Calcite optimizer class name. */
     private static final String OPTIMIZER_CLASS = "com.hazelcast.sql.impl.calcite.CalciteSqlOptimizer";
 
@@ -66,7 +85,13 @@ public class SqlServiceImpl implements SqlService, ManagedService, ClientAwareSe
     /** Query optimizer. */
     private final SqlOptimizer optimizer;
 
-    /** Currently active cursors. */
+    /** Registry of running queries. */
+    private volatile QueryStateRegistry stateRegistry;
+
+    /** State registry updater. */
+    private volatile QueryStateRegistryUpdater stateRegistryUpdater;
+
+    /** Currently active client cursors. */
     private final SqlClientQueryRegistry clientRegistry;
 
     /** Logger. */
@@ -94,13 +119,26 @@ public class SqlServiceImpl implements SqlService, ManagedService, ClientAwareSe
 
     @Override
     public SqlCursor query(SqlQuery query) {
+        // Validate SQL.
         String sql = query.getSql();
-        List<Object> params = query.getParameters();
 
         if (sql == null || sql.isEmpty()) {
             throw new HazelcastException("SQL cannot be null or empty.");
         }
 
+        // Prepare parameters.
+        List<Object> args0;
+
+        if (query.getParameters().isEmpty()) {
+            args0 = Collections.emptyList();
+        } else {
+            args0 = new ArrayList<>(query.getParameters());
+        }
+
+        QueryPlan plan;
+        QueryExplain explain;
+
+        // Get plan.
         if (isExplain(sql)) {
             String unwrappedSql = unwrapExplain(sql);
 
@@ -108,89 +146,169 @@ public class SqlServiceImpl implements SqlService, ManagedService, ClientAwareSe
                 throw new HazelcastException("SQL to be explained cannot be empty.");
             }
 
-            QueryPlan plan = getPlan(unwrappedSql, query.getParameters());
+            plan = getPlan(unwrappedSql, query.getParameters());
 
-            return plan.getExplain().asCursor();
-        }
-
-        QueryPlan plan = getPlan(sql, query.getParameters());
-
-        List<Object> args0;
-
-        if (params.isEmpty()) {
-            args0 = Collections.emptyList();
+            explain = plan.getExplain();
         } else {
-            args0 = new ArrayList<>(params);
+            plan = getPlan(sql, query.getParameters());
+
+            explain = null;
         }
 
-        QueryHandle handle = execute0(plan, args0);
+        // Execute.
+        QueryState state = query0(
+            plan,
+            args0,
+            query.getTimeout(),
+            explain
+        );
 
-        return new SqlCursorImpl(handle);
+        return new SqlCursorImpl(state);
+    }
+
+    /**
+     * Internal query execution routine.
+     *
+     * @return Query state.
+     */
+    private QueryState query0(
+        QueryPlan plan,
+        List<Object> args,
+        long timeout,
+        QueryExplain explain
+    ) {
+        assert args != null;
+
+        if (plan.getParameterCount() > args.size()) {
+            throw HazelcastSqlException.error("Not enough parameters [expected=" + plan.getParameterCount()
+                + ", actual=" + args.size() + ']');
+        }
+
+        // Register the query.
+        UUID localMemberId = nodeEngine.getLocalMember().getUuid();
+
+        QueryResultConsumerImpl consumer;
+        QueryStateRowSource rowSource;
+
+        if (explain != null) {
+            consumer = null;
+
+            rowSource = new QueryExplainRowSource(explain);
+        } else {
+            consumer = new QueryResultConsumerImpl();
+
+            rowSource = consumer;
+        }
+
+        QueryState state = stateRegistry.onInitiatorQueryStarted(
+            timeout,
+            plan,
+            rowSource,
+            explain != null
+        );
+
+        if (explain != null) {
+            return state;
+        }
+
+        try {
+            // Start execution on local member.
+            QueryExecuteOperationFactory operationFactory = new QueryExecuteOperationFactory(
+                this,
+                plan,
+                args,
+                state.getQueryId(),
+                localMemberId,
+                timeout
+            );
+
+            QueryExecuteOperation localOp = operationFactory.create(localMemberId).setRootConsumer(consumer);
+
+            localOp.setCallerUuid(nodeEngine.getLocalMember().getUuid());
+
+            handleQueryExecuteOperation(localOp);
+
+            // Start execution on remote members.
+            for (int i = 0; i < plan.getDataMemberIds().size(); i++) {
+                UUID memberId = plan.getDataMemberIds().get(i);
+
+                if (memberId.equals(localMemberId)) {
+                    continue;
+                }
+
+                QueryExecuteOperation remoteOp = operationFactory.create(memberId);
+                Address address = plan.getDataMemberAddresses().get(i);
+
+                if (!sendRequest(remoteOp, address)) {
+                    throw HazelcastSqlException.error(SqlErrorCode.MEMBER_LEAVE,
+                        "Failed to send query start request to member address: " + address);
+                }
+            }
+
+            return state;
+        } catch (Exception e) {
+            state.cancel(e);
+
+            throw e;
+        }
     }
 
     public QueryPlan getPlan(String sql, List<Object> params) {
         return optimizer.prepare(sql, params.size());
     }
 
-    /**
-     * Internal query execution routine.
-     *
-     * @param plan Plan.
-     * @param args Arguments.
-     * @return Result.
-     */
-    private QueryHandle execute0(QueryPlan plan, List<Object> args) {
-        assert args != null;
-
-        if (plan.getParameterCount() > args.size()) {
-            throw new HazelcastSqlException(-1, "Not enough parameters [expected=" + plan.getParameterCount()
-                + ", actual=" + args.size() + ']');
-        }
-
-        QueryId queryId = QueryId.create(nodeEngine.getLocalMember().getUuid());
-
-        QueryResultConsumer consumer = new QueryResultConsumerImpl();
-
-        UUID localMemberId = nodeEngine.getLocalMember().getUuid();
-
-        QueryExecuteOperationFactory operationFactory = new QueryExecuteOperationFactory(
-            plan,
-            args,
-            queryId,
-            localMemberId
+    public void cancelQuery(QueryState state, QueryCancelInfo cancelInfo) {
+        QueryCancelOperation operation = new QueryCancelOperation(
+            stateRegistry.getEpochLowWatermark(),
+            state.getQueryId(),
+            cancelInfo
         );
 
-        // Start execution on local member.
-        QueryExecuteOperation localOp = operationFactory.create(localMemberId).setRootConsumer(consumer);
+        if (state.isInitiator()) {
+            for (UUID memberId : state.getParticipantsWithoutInitiator()) {
+                MemberImpl member = nodeEngine.getClusterService().getMember(memberId);
 
-        handleQueryExecuteOperation(localOp);
-
-        // Start execution on remote members.
-        for (int i = 0; i < plan.getDataMemberIds().size(); i++) {
-            UUID memberId = plan.getDataMemberIds().get(i);
-
-            if (memberId.equals(localMemberId)) {
-                continue;
+                if (member != null) {
+                    sendRequest(operation, member.getAddress());
+                }
             }
+        } else {
+            UUID initiatorMemberId = state.getQueryId().getMemberId();
 
-            QueryExecuteOperation remoteOp = operationFactory.create(memberId);
-            Address address = plan.getDataMemberAddresses().get(i);
+            MemberImpl member = nodeEngine.getClusterService().getMember(initiatorMemberId);
 
-            sendRequest(remoteOp, address);
+            if (member != null) {
+                sendRequest(operation, member.getAddress());
+            }
+        }
+    }
+
+    public void checkQuery(UUID targetMemberId, Collection<QueryId> queryIds) {
+        MemberImpl targetMember = nodeEngine.getClusterService().getMember(targetMemberId);
+
+        if (targetMember == null) {
+            // Since the member has left, queries will be cleared up on the next registry update.
+            return;
         }
 
-        return new QueryHandle(queryId, plan, consumer);
+        QueryCheckOperation operation = new QueryCheckOperation(stateRegistry.getEpochLowWatermark(), queryIds);
+
+        sendRequest(operation, targetMember.getAddress());
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    public void sendRequest(QueryOperation operation, Address address) {
+    public boolean sendRequest(QueryOperation operation, Address address) {
         assert operation != null;
         assert address != null;
+
+        operation.setCallerUuid(nodeEngine.getLocalMember().getUuid());
 
         boolean local = address.equals(nodeEngine.getThisAddress());
 
         if (local) {
             handleQueryOperation(operation);
+
+            return true;
         } else {
             InternalSerializationService serializationService =
                 (InternalSerializationService) nodeEngine.getSerializationService();
@@ -203,17 +321,16 @@ public class SqlServiceImpl implements SqlService, ManagedService, ClientAwareSe
 
             Connection connection = endpointManager.getConnection(address);
 
-            boolean res = endpointManager.transmit(packet, connection);
-
-            // TODO: Proper handling.
-            if (!res) {
-                throw new HazelcastException("Failed to send an operation to remote node.");
-            }
+            return endpointManager.transmit(packet, connection);
         }
     }
 
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
+        stateRegistry = new QueryStateRegistryImpl(nodeEngine, this, nodeEngine.getLocalMember().getUuid());
+        stateRegistryUpdater = new QueryStateRegistryUpdater(stateRegistry, STATE_CHECK_FREQUENCY);
+
+        stateRegistryUpdater.start();
         workerPool.start();
     }
 
@@ -225,6 +342,8 @@ public class SqlServiceImpl implements SqlService, ManagedService, ClientAwareSe
     @Override
     public void shutdown(boolean terminate) {
         workerPool.shutdown();
+        stateRegistryUpdater.stop();
+        // TODO: Should we clear the state registry somehow?
     }
 
     public NodeEngine getNodeEngine() {
@@ -258,64 +377,179 @@ public class SqlServiceImpl implements SqlService, ManagedService, ClientAwareSe
 
     @Override
     public void accept(Packet packet) {
-        QueryOperation op = nodeEngine.toObject(packet);
+        QueryIdAwareOperation op = nodeEngine.toObject(packet);
 
         handleQueryOperation(op);
     }
 
     private void handleQueryOperation(QueryOperation operation) {
+        // Update epoch watermark for the given member.
+        stateRegistry.setEpochLowWatermarkForMember(operation.getCallerUuid(), operation.getEpochWatermark());
+
         if (operation instanceof QueryExecuteOperation) {
             handleQueryExecuteOperation((QueryExecuteOperation) operation);
         } else if (operation instanceof QueryBatchOperation) {
             handleQueryBatchOperation((QueryBatchOperation) operation);
+        } else if (operation instanceof QueryCancelOperation) {
+            handleQueryCancelOperation((QueryCancelOperation) operation);
+        } else if (operation instanceof QueryCheckOperation) {
+            handleQueryCheckOperation((QueryCheckOperation) operation);
+        } else if (operation instanceof QueryCheckResponseOperation) {
+            handleQueryCheckResponseOperation((QueryCheckResponseOperation) operation);
         }
     }
 
     private void handleQueryExecuteOperation(QueryExecuteOperation operation) {
+        // Get or create query state.
+        QueryState state = stateRegistry.onDistributedQueryStarted(operation.getQueryId());
+
+        if (state == null) {
+            // Rare situation when query start request arrived after query cancel and the epoch is advanced enough that
+            // we know for sure that the query should not start at all.
+            return;
+        }
+
+        // Define the context.
+        QueryContext context = new QueryContext(
+            nodeEngine,
+            workerPool,
+            state,
+            operation.getQueryId(),
+            operation.getArguments()
+        );
+
+        List<QueryFragmentExecutable> fragmentExecutables = new ArrayList<>(operation.getFragmentDescriptors().size());
+
         for (QueryFragmentDescriptor fragmentDescriptor : operation.getFragmentDescriptors()) {
             // Skip unrelated fragments.
             if (fragmentDescriptor.getNode() == null) {
                 continue;
             }
 
-            int deploymentOffset = fragmentDescriptor.getAbsoluteDeploymentOffset(operation);
-            int thread = getThreadFromDeploymentOffset(deploymentOffset);
-
-            StartFragmentQueryTask task = new StartFragmentQueryTask(
+            // Create executors and inboxes.
+            CreateExecVisitor visitor = new CreateExecVisitor(
+                nodeEngine,
                 operation,
-                fragmentDescriptor,
+                operation.getPartitionMapping().keySet(),
+                operation.getPartitionMapping().get(nodeEngine.getLocalMember().getUuid()),
+                operation.getPartitionMapping()
+            );
+
+            fragmentDescriptor.getNode().visit(visitor);
+
+            Exec exec = visitor.getExec();
+
+            Map<Integer, AbstractInbox> inboxes = visitor.getInboxes();
+
+            // Create fragment context.
+            QueryFragmentContext fragmentContext = new QueryFragmentContext(
+                context,
                 operation.getRootConsumer()
             );
 
-            workerPool.submit(thread, task);
+            // Assemble all necessary information into a fragment executable.
+            QueryFragmentExecutable fragmentExecutable = new QueryFragmentExecutable(state, exec, inboxes, fragmentContext);
+
+            fragmentContext.setFragmentExecutable(fragmentExecutable);
+
+            fragmentExecutables.add(fragmentExecutable);
+        }
+
+        // Initialize the distributed state.
+        state.getDistributedState().onStart(fragmentExecutables, operation.getTimeout());
+
+        // Schedule initial processing of fragments.
+        for (QueryFragmentExecutable fragmentExecutable : fragmentExecutables) {
+            fragmentExecutable.schedule(workerPool);
         }
     }
 
     private void handleQueryBatchOperation(QueryBatchOperation operation) {
-        ProcessBatchQueryTask task = new ProcessBatchQueryTask(
-            operation.getQueryId(),
-            operation.getEdgeId(),
-            operation.getSourceMemberId(),
-            operation.getSourceDeploymentOffset(),
-            operation.getTargetDeploymentOffset(),
-            operation.getBatch()
-        );
+        QueryState state = stateRegistry.onDistributedQueryStarted(operation.getQueryId());
 
-        int thread = getThreadFromDeploymentOffset(operation.getTargetDeploymentOffset());
+        if (state == null) {
+            // Received stale batch, no-op.
+            return;
+        }
 
-        workerPool.submit(thread, task);
+        QueryFragmentExecutable fragmentExecutable = state.getDistributedState().onBatch(operation);
+
+        if (fragmentExecutable != null) {
+            // Fragment is scheduled if the query is already initialized.
+            fragmentExecutable.schedule(workerPool);
+        }
     }
 
-    /**
-     * Resolve target thread from deployment ID.
-     *
-     * @param absoluteDeploymentOffset Absolute deployment offset.
-     * @return Resolved thread.
-     */
-    private int getThreadFromDeploymentOffset(int absoluteDeploymentOffset) {
-        assert absoluteDeploymentOffset >= 0;
+    private void handleQueryCancelOperation(QueryCancelOperation operation) {
+        // TODO: This is currently executed in IO thread, need to move to some other pool.
+        QueryId queryId = operation.getQueryId();
 
-        return absoluteDeploymentOffset % workerPool.getThreadCount();
+        QueryState state = stateRegistry.getState(queryId);
+
+        if (state == null) {
+            // Query already completed.
+            return;
+        }
+
+        QueryCancelInfo cancelInfo = operation.getCancelInfo();
+
+        // We pass originating member ID here instead to caller ID to preserve the causality:
+        // in the "participant1 -> co4ordinator -> participant2" flow, the second participant
+        // get the ID of participant1.
+        HazelcastSqlException error = HazelcastSqlException.remoteError(
+            cancelInfo.getErrorCode(),
+            cancelInfo.getErrorMessage(),
+            cancelInfo.getOriginatingMemberId()
+        );
+
+        state.cancel(error);
+    }
+
+    private void handleQueryCheckOperation(QueryCheckOperation operation) {
+        // TODO: This is currently executed in IO thread, need to move to some other pool.
+        ArrayList<QueryId> inactiveQueryIds = new ArrayList<>(operation.getQueryIds().size());
+
+        for (QueryId queryId : operation.getQueryIds()) {
+            boolean active = stateRegistry.getState(queryId) != null;
+
+            if (!active) {
+                inactiveQueryIds.add(queryId);
+            }
+        }
+
+        MemberImpl member = nodeEngine.getClusterService().getMember(operation.getCallerUuid());
+
+        if (member == null) {
+            return;
+        }
+
+        QueryCheckResponseOperation responseOperation = new QueryCheckResponseOperation(
+            stateRegistry.getEpochLowWatermark(),
+            inactiveQueryIds
+        );
+
+        sendRequest(responseOperation, member.getAddress());
+    }
+
+    private void handleQueryCheckResponseOperation(QueryCheckResponseOperation operation) {
+        // TODO: This is currently execute in IO thread, need to move to some other pool.
+        if (operation.getInactiveQueryIds().isEmpty()) {
+            return;
+        }
+
+        HazelcastSqlException error = HazelcastSqlException.remoteError(
+            SqlErrorCode.GENERIC,
+            "Query is no longer active on coordinator.",
+            operation.getCallerUuid()
+        );
+
+        for (QueryId queryId : operation.getInactiveQueryIds()) {
+            QueryState state = stateRegistry.getState(queryId);
+
+            if (state != null) {
+                state.cancel(error);
+            }
+        }
     }
 
     /**
@@ -323,30 +557,34 @@ public class SqlServiceImpl implements SqlService, ManagedService, ClientAwareSe
      *
      * @param clientId Client ID.
      * @param sql SQL.
-     * @param args Arguments.
+     * @param params Parameters.
      * @return Query ID,
      */
-    public QueryId queryClient(UUID clientId, String sql, Object... args) {
-        SqlCursorImpl res = (SqlCursorImpl) query(sql, args);
+    public QueryId clientQuery(UUID clientId, String sql, Object... params) {
+        SqlCursorImpl res = (SqlCursorImpl) query(sql, params);
 
-        QueryId queryId = res.getHandle().getQueryId();
+        QueryId queryId = res.getQueryId();
 
         clientRegistry.execute(clientId, queryId, res);
 
         return queryId;
     }
 
-    public SqlClientPage fetchClient(UUID clientId, QueryId queryId, int pageSize) {
+    public SqlClientPage clientFetch(UUID clientId, QueryId queryId, int pageSize) {
         return clientRegistry.fetch(clientId, queryId, pageSize);
     }
 
-    public void closeClient(UUID clientId, QueryId queryId) {
+    public void clientClose(UUID clientId, QueryId queryId) {
         clientRegistry.close(clientId, queryId);
     }
 
     @Override
     public void clientDisconnected(UUID clientUuid) {
         clientRegistry.onClientDisconnected(clientUuid);
+    }
+
+    public long getEpochWatermark() {
+        return stateRegistry.getEpochLowWatermark();
     }
 
     private static boolean isExplain(String sql) {

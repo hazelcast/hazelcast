@@ -44,7 +44,7 @@ public class SortPhysicalNode extends UniInputPhysicalNode {
 
         for (Expression<?> expression : expressions) {
             if (expression.getType().getType() == GenericType.LATE) {
-                throw new HazelcastSqlException(-1, "Expression type cannot be resolved: " + expression);
+                throw HazelcastSqlException.error("Expression type cannot be resolved: " + expression);
             }
         }
 

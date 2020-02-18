@@ -20,7 +20,7 @@ import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.query.impl.getters.Extractors;
-import com.hazelcast.sql.impl.QueryContext;
+import com.hazelcast.sql.impl.QueryFragmentContext;
 import com.hazelcast.sql.impl.SqlUtils;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.KeyValueExtractorExpression;
@@ -81,7 +81,7 @@ public abstract class AbstractMapScanExec extends AbstractExec implements KeyVal
     }
 
     @Override
-    protected final void setup0(QueryContext ctx) {
+    protected final void setup0(QueryFragmentContext ctx) {
         serializationService = (InternalSerializationService) ctx.getNodeEngine().getSerializationService();
         extractors = createExtractors();
 

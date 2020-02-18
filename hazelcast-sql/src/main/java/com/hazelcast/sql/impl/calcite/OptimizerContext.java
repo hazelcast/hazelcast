@@ -195,7 +195,7 @@ public final class OptimizerContext {
 
             node = parser.parseStmt();
         } catch (Exception e) {
-            throw new HazelcastSqlException(SqlErrorCode.PARSING, e.getMessage(), e);
+            throw HazelcastSqlException.error(SqlErrorCode.PARSING, e.getMessage(), e);
         }
 
         return validator.validate(node);

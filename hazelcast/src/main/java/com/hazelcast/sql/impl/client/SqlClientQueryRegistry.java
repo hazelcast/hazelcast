@@ -72,7 +72,7 @@ public class SqlClientQueryRegistry {
         SqlClientState clientCursor = getClientCursor(clientId, queryId);
 
         if (clientCursor == null) {
-            throw new HazelcastSqlException(-1, "Cursor not found (closed?): " + queryId);
+            throw HazelcastSqlException.error("Cursor not found (closed?): " + queryId);
         }
 
         Iterator<SqlRow> iterator = clientCursor.getIterator();

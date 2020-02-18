@@ -14,49 +14,52 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl;
+package com.hazelcast.sql.impl.state;
+
+import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.sql.impl.QueryPlan;
 
 /**
- * Handle to running query.
+ * Query state which is specific to the initiator node only.
  */
-public class QueryHandle {
+public class QueryInitiatorState {
     /** Query ID. */
     private final QueryId queryId;
 
     /** Plan. */
     private final QueryPlan plan;
 
-    /** Consumer. */
-    private final QueryResultConsumer consumer;
+    /** Iteartor. */
+    private final QueryStateRowSource rowSource;
 
-    public QueryHandle(QueryId queryId, QueryPlan plan, QueryResultConsumer consumer) {
+    /** Query timeout. */
+    private final long timeout;
+
+    public QueryInitiatorState(
+        QueryId queryId,
+        QueryPlan plan,
+        QueryStateRowSource rowSource,
+        long timeout
+    ) {
         this.queryId = queryId;
         this.plan = plan;
-        this.consumer = consumer;
+        this.rowSource = rowSource;
+        this.timeout = timeout;
     }
 
-    /**
-     * @return Query ID.
-     */
     public QueryId getQueryId() {
         return queryId;
     }
 
-    /**
-     * @return Plan which is used for this query run.
-     */
     public QueryPlan getPlan() {
         return plan;
     }
 
-    /**
-     * Close the handle.
-     */
-    public void close() {
-        // TODO: Implement me. Should trigger cancel.
+    public QueryStateRowSource getRowSource() {
+        return rowSource;
     }
 
-    public QueryResultConsumer getConsumer() {
-        return consumer;
+    public long getTimeout() {
+        return timeout;
     }
 }

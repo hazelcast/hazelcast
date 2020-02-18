@@ -20,7 +20,6 @@ import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
 import com.hazelcast.sql.impl.physical.PhysicalNode;
 
 import java.io.IOException;
@@ -37,17 +36,8 @@ public class QueryFragmentDescriptor implements DataSerializable {
     /** Physical node. */
     private PhysicalNode node;
 
-    /** Mapping. */
-    private QueryFragmentMapping mapping;
-
     /** IDs of mapped nodes. May be null if nodes could be inherited from the context. */
     private List<UUID> mappedMemberIds;
-
-    /**
-     * Offset of the first stripe of this fragment. We use it to determine the data thread where the
-     * fragment deployments are going to be executed.
-     */
-    private int deploymentOffset;
 
     public QueryFragmentDescriptor() {
         // No-op.
@@ -55,36 +45,23 @@ public class QueryFragmentDescriptor implements DataSerializable {
 
     public QueryFragmentDescriptor(
         PhysicalNode node,
-        QueryFragmentMapping mapping,
-        List<UUID> mappedMemberIds,
-        int deploymentOffset
+        List<UUID> mappedMemberIds
     ) {
         this.node = node;
-        this.mapping = mapping;
         this.mappedMemberIds = mappedMemberIds;
-        this.deploymentOffset = deploymentOffset;
     }
 
     public PhysicalNode getNode() {
         return node;
     }
 
-    public QueryFragmentMapping getMapping() {
-        return mapping;
-    }
-
     public List<UUID> getMappedMemberIds() {
         return mappedMemberIds != null ? mappedMemberIds : Collections.emptyList();
-    }
-
-    public int getAbsoluteDeploymentOffset(QueryExecuteOperation operation) {
-        return operation.getBaseDeploymentOffset() + deploymentOffset;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(node);
-        out.writeInt(mapping.getId());
 
         List<UUID> mappedMemberIds0 = getMappedMemberIds();
 
@@ -93,14 +70,11 @@ public class QueryFragmentDescriptor implements DataSerializable {
         for (UUID mappedMemberId : mappedMemberIds0) {
             UUIDSerializationUtil.writeUUID(out, mappedMemberId);
         }
-
-        out.writeInt(deploymentOffset);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         node = in.readObject();
-        mapping = QueryFragmentMapping.getById(in.readInt());
 
         int mappedMemberIdsSize = in.readInt();
 
@@ -111,8 +85,6 @@ public class QueryFragmentDescriptor implements DataSerializable {
                 mappedMemberIds.add(UUIDSerializationUtil.readUUID(in));
             }
         }
-
-        deploymentOffset = in.readInt();
     }
 
     /**
@@ -122,11 +94,9 @@ public class QueryFragmentDescriptor implements DataSerializable {
      * @return Members participating in the given fragment.
      */
     public Collection<UUID> getFragmentMembers(Collection<UUID> dataMemberIds) {
-        if (mapping == QueryFragmentMapping.ROOT) {
-            return getMappedMemberIds();
+        if (mappedMemberIds != null) {
+            return mappedMemberIds;
         } else {
-            assert mapping == QueryFragmentMapping.DATA_MEMBERS;
-
             return dataMemberIds;
         }
     }

@@ -28,7 +28,7 @@ public final class EmptyScanExec extends AbstractExec {
     }
 
     @Override
-    public IterationResult advance() {
+    public IterationResult advance0() {
         return IterationResult.FETCHED_DONE;
     }
 

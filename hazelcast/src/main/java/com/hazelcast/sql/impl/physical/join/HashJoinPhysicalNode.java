@@ -59,13 +59,13 @@ public class HashJoinPhysicalNode extends AbstractJoinPhysicalNode {
         // TODO: Fail only if both sides have unresolved types. Otherwise perform coercion during join.
         for (Integer leftHashKey : leftHashKeys) {
             if (left.getSchema().getType(leftHashKey).getType() == GenericType.LATE) {
-                throw new HazelcastSqlException(-1, "Column type cannot be resolved: " + leftHashKey);
+                throw HazelcastSqlException.error("Column type cannot be resolved: " + leftHashKey);
             }
         }
 
         for (Integer rightHashKey : rightHashKeys) {
             if (right.getSchema().getType(rightHashKey).getType() == GenericType.LATE) {
-                throw new HazelcastSqlException(-1, "Column type cannot be resolved: " + (leftHashKeys.size() + rightHashKey));
+                throw HazelcastSqlException.error("Column type cannot be resolved: " + (leftHashKeys.size() + rightHashKey));
             }
         }
 

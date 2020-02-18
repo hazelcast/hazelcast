@@ -18,7 +18,6 @@ package com.hazelcast.sql.impl.calcite.expression;
 
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlDaySecondInterval;
-import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.SqlYearMonthInterval;
 import com.hazelcast.sql.impl.calcite.operators.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.expression.CallOperator;
@@ -270,7 +269,7 @@ public final class ExpressionConverterUtils {
                 break;
         }
 
-        throw new HazelcastSqlException(-1, "Unsupported operator: " + operator);
+        throw HazelcastSqlException.error("Unsupported operator: " + operator);
     }
 
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:MethodLength", "checkstyle:ReturnCount"})
@@ -480,7 +479,7 @@ public final class ExpressionConverterUtils {
                 return CaseExpression.create(operands);
 
             default:
-                throw new HazelcastSqlException(SqlErrorCode.GENERIC, "Unsupported operator: " + operator);
+                throw HazelcastSqlException.error("Unsupported operator: " + operator);
         }
     }
 
@@ -538,7 +537,7 @@ public final class ExpressionConverterUtils {
                 return convertLiteralSymbol(literal);
 
             default:
-                throw new HazelcastSqlException(-1, "Unsupported literal: " + literal);
+                throw HazelcastSqlException.error("Unsupported literal: " + literal);
         }
     }
 
@@ -722,12 +721,12 @@ public final class ExpressionConverterUtils {
                     break;
 
                 default:
-                    throw new HazelcastSqlException(-1, "Unsupported literal symbol: " + literal);
+                    throw HazelcastSqlException.error("Unsupported literal symbol: " + literal);
             }
 
             return new DatePartUnitConstantExpression(unit0);
         }
 
-        throw new HazelcastSqlException(-1, "Unsupported literal symbol: " + literal);
+        throw HazelcastSqlException.error("Unsupported literal symbol: " + literal);
     }
 }
