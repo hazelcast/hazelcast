@@ -35,6 +35,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.spi.properties.ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -113,12 +114,12 @@ public class FencedLockLongAwaitTest extends HazelcastRaftTestSupport {
 
         assertTrueEventually(() -> {
             LockService service = getNodeEngineImpl(instance).getService(LockService.SERVICE_NAME);
-            assertEquals(2, service.getLiveOperations(lock.getGroupId()).size());
-        });
+            assertEquals(2, service.getLiveOperations(groupId).size());
+        }, 30);
 
         assertTrueAllTheTime(() -> {
             LockService service = getNodeEngineImpl(instance).getService(LockService.SERVICE_NAME);
-            assertEquals(2, service.getLiveOperations(lock.getGroupId()).size());
+            assertEquals(2, service.getLiveOperations(groupId).size());
         }, callTimeoutSeconds + 5);
 
         lock.unlock();
@@ -128,6 +129,36 @@ public class FencedLockLongAwaitTest extends HazelcastRaftTestSupport {
 
         f1.get();
         f2.get();
+    }
+
+    @Test(timeout = 300000)
+    public void when_tryLockTimeoutPassesDuringLostMajority_then_operationTimeoutIsReceived() throws Exception {
+        HazelcastInstance apInstance = factory.newHazelcastInstance(createConfig(groupSize, groupSize));
+        FencedLock lock = apInstance.getCPSubsystem().getLock(proxyName);
+
+        lock.lock();
+
+        Future<Object> future = spawn(() -> lock.tryLock(callTimeoutSeconds + 5, SECONDS));
+
+        HazelcastInstance leader = getLeaderInstance(instances, groupId);
+
+        assertTrueEventually(() -> {
+            LockService service = getNodeEngineImpl(leader).getService(LockService.SERVICE_NAME);
+            assertEquals(1, service.getLiveOperations(groupId).size());
+        });
+
+        for (HazelcastInstance instance : instances) {
+            if (instance != leader) {
+                instance.getLifecycleService().terminate();
+            }
+        }
+
+        try {
+            future.get();
+            fail();
+        } catch (ExecutionException e) {
+            assertTrue(e.getCause() instanceof OperationTimeoutException);
+        }
     }
 
     @Override

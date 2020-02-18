@@ -37,6 +37,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.scheduledexecutor.TaskUtils.named;
+import static com.hazelcast.test.Accessors.getPartitionService;
 import static java.lang.String.valueOf;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
@@ -53,15 +54,33 @@ public class ScheduledExecutorServiceSlowTest extends ScheduledExecutorServiceTe
         double expectedResult = 169.4;
 
         HazelcastInstance[] instances = createClusterWithCount(2);
-        ICountDownLatch runsCountLatch = instances[0].getCPSubsystem().getCountDownLatch("runsCountLatchName");
-        runsCountLatch.trySetCount(1);
+
+        ICountDownLatch initCountLatch = instances[0].getCPSubsystem().getCountDownLatch("initCountLatchName");
+        initCountLatch.trySetCount(1);
+
+        ICountDownLatch waitCountLatch = instances[0].getCPSubsystem().getCountDownLatch("waitCountLatchName");
+        waitCountLatch.trySetCount(1);
+
+        ICountDownLatch doneCountLatch = instances[0].getCPSubsystem().getCountDownLatch("doneCountLatchName");
+        doneCountLatch.trySetCount(1);
 
         IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
         IScheduledFuture<Double> future = executorService.schedule(
-                new ICountdownLatchCallableTask("runsCountLatchName", 15000), delay, SECONDS);
+                new ICountdownLatchCallableTask(initCountLatch.getName(), waitCountLatch.getName(), doneCountLatch.getName()), delay, SECONDS);
+
+        assertOpenEventually(initCountLatch);
+
+        int sleepPeriod = 10000;
+        long start = System.currentTimeMillis();
+        new Thread(() -> {
+            sleepAtLeastMillis(sleepPeriod);
+            waitCountLatch.countDown();
+        }).start();
 
         double result = future.get();
 
+        assertTrue(System.currentTimeMillis() - start > sleepPeriod);
+        assertTrue(doneCountLatch.await(0, SECONDS));
         assertEquals(expectedResult, result, 0);
         assertTrue(future.isDone());
         assertFalse(future.isCancelled());

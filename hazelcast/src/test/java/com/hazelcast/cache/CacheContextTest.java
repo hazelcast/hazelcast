@@ -44,6 +44,7 @@ import javax.cache.spi.CachingProvider;
 import java.io.Serializable;
 
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 

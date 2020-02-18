@@ -18,10 +18,10 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
 import com.hazelcast.internal.eviction.ExpiredKey;
-import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.LocalMapStats;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -34,6 +34,8 @@ import org.junit.runner.RunWith;
 
 import java.util.Collections;
 
+import static com.hazelcast.test.Accessors.getOperationService;
+import static com.hazelcast.test.Accessors.getPartitionService;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)

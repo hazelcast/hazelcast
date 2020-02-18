@@ -127,6 +127,7 @@ import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
 import static com.hazelcast.spi.properties.ClusterProperty.DISCOVERY_SPI_ENABLED;
 import static com.hazelcast.spi.properties.ClusterProperty.DISCOVERY_SPI_PUBLIC_IP_ENABLED;
 import static com.hazelcast.spi.properties.ClusterProperty.GRACEFUL_SHUTDOWN_MAX_WAIT;
+import static com.hazelcast.spi.properties.ClusterProperty.LOGGING_ENABLE_DETAILS;
 import static com.hazelcast.spi.properties.ClusterProperty.LOGGING_TYPE;
 import static com.hazelcast.spi.properties.ClusterProperty.SHUTDOWNHOOK_ENABLED;
 import static com.hazelcast.spi.properties.ClusterProperty.SHUTDOWNHOOK_POLICY;
@@ -210,7 +211,8 @@ public class Node {
         this.version = MemberVersion.of(buildInfo.getVersion());
 
         String loggingType = properties.getString(LOGGING_TYPE);
-        loggingService = new LoggingServiceImpl(config.getClusterName(), loggingType, buildInfo);
+        boolean detailsEnabled = properties.getBoolean(LOGGING_ENABLE_DETAILS);
+        loggingService = new LoggingServiceImpl(config.getClusterName(), loggingType, buildInfo, detailsEnabled);
         MetricsConfigHelper.overrideMemberMetricsConfig(staticConfig, getLogger(MetricsConfigHelper.class));
 
         checkAdvancedNetworkConfig(config);

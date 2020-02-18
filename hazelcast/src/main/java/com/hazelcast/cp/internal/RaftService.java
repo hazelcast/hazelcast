@@ -1287,7 +1287,8 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         if (event.getReplicaIndex() > getBackupCount()) {
             return null;
         }
-        return new UnsafeStateReplicationOp(unsafeModeStates[event.getPartitionId()]);
+        UnsafeModePartitionState state = unsafeModeStates[event.getPartitionId()];
+        return state.commitIndex() == 0 ? null : new UnsafeStateReplicationOp(state);
     }
 
     @Override

@@ -34,6 +34,7 @@ import org.junit.runner.RunWith;
 import java.util.Collection;
 
 import static com.hazelcast.client.impl.management.ManagementCenterService.MC_CLIENT_MODE_PROP;
+import static com.hazelcast.test.Accessors.getClientEngineImpl;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)

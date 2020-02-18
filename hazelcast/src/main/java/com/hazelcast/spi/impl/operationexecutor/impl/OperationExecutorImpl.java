@@ -386,9 +386,10 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
     @Override
     public void executeOnPartitionThreads(Runnable task) {
         checkNotNull(task, "task can't be null");
+        boolean priority = task instanceof UrgentSystemOperation;
 
         for (OperationThread partitionThread : partitionThreads) {
-            partitionThread.queue.add(task, true);
+            partitionThread.queue.add(task, priority);
         }
     }
 

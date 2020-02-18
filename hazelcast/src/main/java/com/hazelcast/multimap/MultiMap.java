@@ -220,6 +220,8 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
 
     /**
      * Returns the number of key-value pairs in the multimap.
+     * If the multimap contains more than <tt>Integer.MAX_VALUE</tt> elements,
+     * returns <tt>Integer.MAX_VALUE</tt>.
      *
      * @return the number of key-value pairs in the multimap
      */

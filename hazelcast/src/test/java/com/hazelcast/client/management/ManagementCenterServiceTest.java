@@ -63,6 +63,7 @@ import static com.hazelcast.config.MaxSizePolicy.PER_NODE;
 import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
 import static com.hazelcast.internal.management.events.EventMetadata.EventType.WAN_SYNC_STARTED;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.test.Accessors.getNode;
 import static java.util.Arrays.stream;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;

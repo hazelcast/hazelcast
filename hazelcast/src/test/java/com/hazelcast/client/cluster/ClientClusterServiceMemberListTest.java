@@ -37,6 +37,7 @@ import java.util.Set;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.LITE_MEMBER_SELECTOR;
+import static com.hazelcast.test.Accessors.getNode;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static junit.framework.Assert.assertEquals;

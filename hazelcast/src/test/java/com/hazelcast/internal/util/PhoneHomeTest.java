@@ -35,6 +35,7 @@ import java.lang.management.RuntimeMXBean;
 import java.util.Map;
 import java.util.UUID;
 
+import static com.hazelcast.test.Accessors.getNode;
 import static java.lang.System.getenv;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

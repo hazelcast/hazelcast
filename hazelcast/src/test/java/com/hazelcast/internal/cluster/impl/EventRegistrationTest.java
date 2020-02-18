@@ -35,13 +35,12 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
-import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.util.Collections.synchronizedList;
 import static org.junit.Assert.assertEquals;
 

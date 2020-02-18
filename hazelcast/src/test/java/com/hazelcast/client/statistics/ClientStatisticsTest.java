@@ -53,6 +53,7 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.client.impl.statistics.ClientStatisticsService.split;
 import static com.hazelcast.client.impl.statistics.ClientStatisticsService.unescapeSpecialCharacters;
+import static com.hazelcast.test.Accessors.getClientEngineImpl;
 import static java.lang.String.format;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;

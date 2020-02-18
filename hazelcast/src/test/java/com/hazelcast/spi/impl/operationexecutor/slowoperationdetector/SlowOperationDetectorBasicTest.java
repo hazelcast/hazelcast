@@ -19,8 +19,8 @@ package com.hazelcast.spi.impl.operationexecutor.slowoperationdetector;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
-import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
@@ -37,6 +37,8 @@ import static com.hazelcast.spi.impl.operationservice.Operation.GENERIC_PARTITIO
 import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_OPERATION_THREAD_COUNT;
 import static com.hazelcast.spi.properties.ClusterProperty.SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS;
 import static com.hazelcast.spi.properties.ClusterProperty.SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS;
+import static com.hazelcast.test.Accessors.getOperationService;
+import static com.hazelcast.test.Accessors.getPartitionService;
 import static java.lang.String.valueOf;
 
 @RunWith(HazelcastParallelClassRunner.class)

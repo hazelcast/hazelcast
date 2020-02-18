@@ -31,6 +31,7 @@ import org.junit.runner.RunWith;
 import java.util.Collection;
 import java.util.UUID;
 
+import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)

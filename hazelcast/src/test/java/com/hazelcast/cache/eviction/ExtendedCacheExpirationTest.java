@@ -41,6 +41,7 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.test.Accessors.getNode;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertNull;
 

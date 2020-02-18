@@ -39,6 +39,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static com.hazelcast.cp.internal.session.AbstractProxySessionManager.NO_SESSION_ID;
 import static com.hazelcast.cp.lock.FencedLock.INVALID_FENCE;
 import static com.hazelcast.internal.util.ThreadUtil.getThreadId;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;

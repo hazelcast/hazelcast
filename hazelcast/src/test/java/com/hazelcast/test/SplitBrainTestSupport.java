@@ -234,7 +234,7 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
         List<Address> addressesToBlock = new ArrayList<>(instancesToBlock.length);
         for (HazelcastInstance hz : instancesToBlock) {
             if (isInstanceActive(hz)) {
-                addressesToBlock.add(getAddress(hz));
+                addressesToBlock.add(Accessors.getAddress(hz));
                 // block communication from these instances to the new address
                 FirewallingNetworkingService networkingService = getFireWalledNetworkingService(hz);
                 FirewallingNetworkingService.FirewallingEndpointManager endpointManager =
@@ -317,12 +317,12 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
     }
 
     private static FirewallingNetworkingService getFireWalledNetworkingService(HazelcastInstance hz) {
-        Node node = getNode(hz);
+        Node node = Accessors.getNode(hz);
         return (FirewallingNetworkingService) node.getNetworkingService();
     }
 
     private static FirewallingNetworkingService.FirewallingEndpointManager getFireWalledEndpointManager(HazelcastInstance hz) {
-        Node node = getNode(hz);
+        Node node = Accessors.getNode(hz);
         return (FirewallingNetworkingService.FirewallingEndpointManager)
                 node.getNetworkingService().getEndpointManager(MEMBER);
     }
@@ -368,7 +368,7 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
                 throw new AssertionError("Could not get original field from HazelcastInstanceProxy: " + e.getMessage());
             }
         } else if (isInstanceOf(instance, HazelcastInstanceImpl.class)) {
-            return getNode(instance).getState() == NodeState.ACTIVE;
+            return Accessors.getNode(instance).getState() == NodeState.ACTIVE;
         }
         throw new AssertionError("Unsupported HazelcastInstance type: " + instance.getClass().getName());
     }
@@ -376,8 +376,8 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
     public static void blockCommunicationBetween(HazelcastInstance h1, HazelcastInstance h2) {
         FirewallingNetworkingService.FirewallingEndpointManager cm1 = getFireWalledEndpointManager(h1);
         FirewallingNetworkingService.FirewallingEndpointManager cm2 = getFireWalledEndpointManager(h2);
-        Node node1 = getNode(h1);
-        Node node2 = getNode(h2);
+        Node node1 = Accessors.getNode(h1);
+        Node node2 = Accessors.getNode(h2);
         cm1.blockNewConnection(node2.getThisAddress());
         cm2.blockNewConnection(node1.getThisAddress());
         cm1.closeActiveConnection(node2.getThisAddress());
@@ -387,15 +387,15 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
     public static void unblockCommunicationBetween(HazelcastInstance h1, HazelcastInstance h2) {
         FirewallingNetworkingService.FirewallingEndpointManager cm1 = getFireWalledEndpointManager(h1);
         FirewallingNetworkingService.FirewallingEndpointManager cm2 = getFireWalledEndpointManager(h2);
-        Node node1 = getNode(h1);
-        Node node2 = getNode(h2);
+        Node node1 = Accessors.getNode(h1);
+        Node node2 = Accessors.getNode(h2);
         cm1.unblock(node2.getThisAddress());
         cm2.unblock(node1.getThisAddress());
     }
 
     private static void unblacklistJoinerBetween(HazelcastInstance h1, HazelcastInstance h2) {
-        Node h1Node = getNode(h1);
-        Node h2Node = getNode(h2);
+        Node h1Node = Accessors.getNode(h1);
+        Node h2Node = Accessors.getNode(h2);
         h1Node.getJoiner().unblacklist(h2Node.getThisAddress());
         h2Node.getJoiner().unblacklist(h1Node.getThisAddress());
     }

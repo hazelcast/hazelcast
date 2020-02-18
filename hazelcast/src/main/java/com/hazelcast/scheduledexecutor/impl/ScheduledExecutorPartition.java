@@ -70,7 +70,7 @@ public class ScheduledExecutorPartition extends AbstractScheduledExecutorContain
             map.put(container.getName(), container.prepareForReplication());
         }
 
-        return new ReplicationOperation(map);
+        return map.isEmpty() ? null : new ReplicationOperation(map);
     }
 
     @Override

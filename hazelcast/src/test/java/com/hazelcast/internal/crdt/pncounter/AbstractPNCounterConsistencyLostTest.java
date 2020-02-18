@@ -16,13 +16,15 @@
 
 package com.hazelcast.internal.crdt.pncounter;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.core.ConsistencyLostException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.instance.impl.TestUtil;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;
+
+import static com.hazelcast.test.Accessors.getNode;
 
 /**
  * Base test for testing behaviour of {@link ConsistencyLostException} in the case of CRDTs.

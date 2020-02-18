@@ -34,6 +34,7 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.internal.adapter.ICacheDataStructureAdapter;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheManager;
+import com.hazelcast.internal.nearcache.impl.NearCachingHook;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingHandler;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask;
 import com.hazelcast.internal.nio.Connection;
@@ -469,9 +470,9 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
                                   NearCachingHook<K, V> nearCachingHook, long startNanos) {
         try {
             super.callPutAllSync(entriesPerPartition, expiryPolicyData, nearCachingHook, startNanos);
-            nearCachingHook.afterRemoteCall();
+            nearCachingHook.onRemoteCallSuccess();
         } catch (Throwable t) {
-            nearCachingHook.onFailure();
+            nearCachingHook.onRemoteCallFailure();
             throw rethrow(t);
         }
     }
@@ -506,7 +507,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         }
 
         @Override
-        public void afterRemoteCall() {
+        public void onRemoteCallSuccess() {
             for (int i = 0; i < keyValueId.size(); i += 3) {
                 Object nearCacheKey = keyValueId.get(i);
                 Object nearCacheValue = keyValueId.get(i + 1);
@@ -527,7 +528,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         }
 
         @Override
-        public void onFailure() {
+        public void onRemoteCallFailure() {
             for (int i = 0; i < keyValueId.size(); i += 3) {
                 invalidateNearCache(keyValueId.get(i));
             }
@@ -555,15 +556,15 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         }
 
         @Override
-        public void afterRemoteCall() {
+        public void onRemoteCallSuccess() {
             for (Object nearCacheKey : nearCacheKeys) {
                 invalidateNearCache(nearCacheKey);
             }
         }
 
         @Override
-        public void onFailure() {
-            afterRemoteCall();
+        public void onRemoteCallFailure() {
+            onRemoteCallSuccess();
         }
     }
 

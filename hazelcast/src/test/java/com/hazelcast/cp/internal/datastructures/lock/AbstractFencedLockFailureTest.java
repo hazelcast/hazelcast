@@ -49,6 +49,7 @@ import static com.hazelcast.cp.internal.session.AbstractProxySessionManager.NO_S
 import static com.hazelcast.cp.lock.FencedLock.INVALID_FENCE;
 import static com.hazelcast.internal.util.ThreadUtil.getThreadId;
 import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;

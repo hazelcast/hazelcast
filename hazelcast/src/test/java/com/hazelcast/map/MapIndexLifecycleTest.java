@@ -56,6 +56,9 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
+import static com.hazelcast.test.Accessors.getNode;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
+import static com.hazelcast.test.Accessors.getOperationService;
 import static java.util.Arrays.copyOfRange;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;

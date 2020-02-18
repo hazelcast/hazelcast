@@ -16,14 +16,12 @@
 
 package com.hazelcast.client;
 
-
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.collection.IQueue;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.map.IMap;
-import com.hazelcast.topic.Message;
-import com.hazelcast.collection.IQueue;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationparker.impl.OperationParkerImpl;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationRegistry;
@@ -34,6 +32,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.topic.Message;
 import com.hazelcast.topic.ReliableMessageListener;
 import org.junit.After;
 import org.junit.Test;
@@ -43,6 +42,7 @@ import org.junit.runner.RunWith;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

@@ -31,8 +31,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.hazelcast.spi.impl.operationservice.InvocationBuilder.DEFAULT_CALL_TIMEOUT;
 import static com.hazelcast.spi.impl.operationservice.InvocationBuilder.DEFAULT_TRY_COUNT;
 import static com.hazelcast.spi.impl.operationservice.InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS;
-import static com.hazelcast.test.HazelcastTestSupport.getAddress;
-import static com.hazelcast.test.HazelcastTestSupport.getOperationService;
+import static com.hazelcast.test.Accessors.getAddress;
+import static com.hazelcast.test.Accessors.getOperationService;
 
 public class CompletableFutureTestUtil {
 

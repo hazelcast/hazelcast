@@ -44,6 +44,7 @@ import static com.hazelcast.spi.properties.ClusterProperty.BACKPRESSURE_MAX_CONC
 import static com.hazelcast.spi.properties.ClusterProperty.BACKPRESSURE_SYNCWINDOW;
 import static com.hazelcast.spi.properties.ClusterProperty.OPERATION_BACKUP_TIMEOUT_MILLIS;
 import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
+import static com.hazelcast.test.Accessors.getOperationService;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.junit.Assert.assertEquals;
 

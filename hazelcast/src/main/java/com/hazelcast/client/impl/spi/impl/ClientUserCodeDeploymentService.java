@@ -49,7 +49,7 @@ public class ClientUserCodeDeploymentService {
     private final ClientUserCodeDeploymentConfig clientUserCodeDeploymentConfig;
     private final ClassLoader configClassLoader;
     //List<Map.Entry> is used instead of Map to comply with generated code of client protocol
-    private final List<Map.Entry<String, byte[]>> classDefinitionList = new ArrayList<Map.Entry<String, byte[]>>();
+    private final List<Map.Entry<String, byte[]>> classDefinitionList = new ArrayList<>();
 
     public ClientUserCodeDeploymentService(ClientUserCodeDeploymentConfig clientUserCodeDeploymentConfig,
                                            ClassLoader configClassLoader) {
@@ -75,7 +75,7 @@ public class ClientUserCodeDeploymentService {
                     throw new ClassNotFoundException(resource);
                 }
                 byte[] bytes = toByteArray(is);
-                classDefinitionList.add(new AbstractMap.SimpleEntry<String, byte[]>(className, bytes));
+                classDefinitionList.add(new AbstractMap.SimpleEntry<>(className, bytes));
             } catch (IOException e) {
                 ignore(e);
             } finally {
@@ -112,7 +112,7 @@ public class ClientUserCodeDeploymentService {
                 }
                 byte[] classDefinition = readClassDefinition(inputStream, os);
                 inputStream.closeEntry();
-                classDefinitionList.add(new AbstractMap.SimpleEntry<String, byte[]>(className, classDefinition));
+                classDefinitionList.add(new AbstractMap.SimpleEntry<>(className, classDefinition));
             } while (true);
         } finally {
             closeResource(inputStream);

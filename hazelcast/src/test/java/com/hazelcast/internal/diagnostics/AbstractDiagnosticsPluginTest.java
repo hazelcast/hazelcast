@@ -27,6 +27,7 @@ import java.io.PrintWriter;
 import java.lang.reflect.Field;
 
 import static com.hazelcast.internal.nio.IOUtil.deleteQuietly;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 
 public class AbstractDiagnosticsPluginTest extends HazelcastTestSupport {
 

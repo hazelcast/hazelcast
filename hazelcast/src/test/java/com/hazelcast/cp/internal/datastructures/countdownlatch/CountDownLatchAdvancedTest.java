@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getSnapshotEntry;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;

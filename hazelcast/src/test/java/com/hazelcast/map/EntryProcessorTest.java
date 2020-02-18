@@ -28,6 +28,7 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonValue;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.MultipleEntryWithPredicateOperation;
@@ -37,7 +38,6 @@ import com.hazelcast.map.listener.EntryRemovedListener;
 import com.hazelcast.map.listener.EntryUpdatedListener;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder.EntryObject;
@@ -87,6 +87,7 @@ import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.map.EntryProcessorTest.ApplyCountAwareIndexedTestPredicate.PREDICATE_APPLY_COUNT;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static org.junit.Assert.assertEquals;
@@ -250,7 +251,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
 
         // make sure there are no entries left
-        IMap<String, TestData> map2 = newPrimary.getMap("test");
+        IMap<String, TestData> map2 = newPrimary.getMap(MAP_NAME);
         Map<String, Boolean> executedEntries = map2.executeOnEntries(new TestLoggingEntryProcessor());
         assertEquals(0, executedEntries.size());
     }
@@ -285,7 +286,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
 
         // make sure there are no entries left
-        IMap<String, TestData> map2 = newPrimary.getMap("test");
+        IMap<String, TestData> map2 = newPrimary.getMap(MAP_NAME);
         Map<String, Boolean> executedEntries = map2.executeOnEntries(new TestLoggingEntryProcessor());
         assertEquals(0, executedEntries.size());
     }
@@ -483,7 +484,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
                 instance2.shutdown();
                 newPrimary = instance1;
             }
-            IMap<String, TestData> map2 = newPrimary.getMap("test");
+            IMap<String, TestData> map2 = newPrimary.getMap(MAP_NAME);
             assertFalse(map2.containsKey("a"));
         } finally {
             instance1.shutdown();

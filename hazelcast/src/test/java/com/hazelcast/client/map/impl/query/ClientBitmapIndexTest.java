@@ -65,6 +65,7 @@ import static com.hazelcast.query.Predicates.equal;
 import static com.hazelcast.query.Predicates.in;
 import static com.hazelcast.query.Predicates.notEqual;
 import static com.hazelcast.query.Predicates.or;
+import static com.hazelcast.test.Accessors.getAllIndexes;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 

@@ -19,15 +19,16 @@ package com.hazelcast.internal.crdt.pncounter;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.internal.monitor.LocalPNCounterStats;
+import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.internal.util.FutureUtil;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 
 /**

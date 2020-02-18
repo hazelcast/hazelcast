@@ -52,6 +52,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.regex.Pattern;
 
 import static com.hazelcast.cache.CacheUtil.getDistributedObjectName;
+import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 

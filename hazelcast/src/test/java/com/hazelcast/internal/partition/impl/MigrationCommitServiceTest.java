@@ -57,6 +57,11 @@ import static com.hazelcast.internal.partition.MigrationEndpoint.SOURCE;
 import static com.hazelcast.internal.partition.TestPartitionUtils.getDefaultReplicaVersions;
 import static com.hazelcast.internal.partition.TestPartitionUtils.getPartitionReplicaVersionsView;
 import static com.hazelcast.internal.partition.impl.MigrationCommitTest.resetInternalMigrationListener;
+import static com.hazelcast.test.Accessors.getAddress;
+import static com.hazelcast.test.Accessors.getNode;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
+import static com.hazelcast.test.Accessors.getOperationService;
+import static com.hazelcast.test.Accessors.getPartitionService;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -373,7 +378,7 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
 
         for (HazelcastInstance instance : instances) {
             TestMigrationAwareService service = getNodeEngineImpl(instance)
-                    .getService(TestMigrationAwareService.SERVICE_NAME);
+                                                         .getService(TestMigrationAwareService.SERVICE_NAME);
 
             service.clearEvents();
         }

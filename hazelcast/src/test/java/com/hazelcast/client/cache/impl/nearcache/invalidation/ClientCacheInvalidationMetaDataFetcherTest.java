@@ -52,6 +52,7 @@ import static com.hazelcast.cache.CacheTestSupport.createClientCachingProvider;
 import static com.hazelcast.cache.impl.ICacheService.SERVICE_NAME;
 import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.internal.util.RandomPicker.getInt;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.lang.Integer.MAX_VALUE;
 import static org.junit.Assert.assertEquals;
 

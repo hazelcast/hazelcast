@@ -17,31 +17,23 @@
 package com.hazelcast.test;
 
 import classloading.ThreadLocalLeakTestUtils;
-import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.collection.ISet;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.instance.BuildInfoProvider;
-import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
-import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.instance.impl.TestUtil;
-import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
-import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.nio.EndpointManager;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.partition.IPartition;
-import com.hazelcast.internal.partition.IPartitionService;
-import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.impl.PartitionServiceState;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -49,26 +41,17 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.map.IMap;
-import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
-import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionService;
-import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationparker.impl.OperationParkerImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.jitter.JitterRule;
 import com.hazelcast.test.metrics.MetricsRule;
-import com.hazelcast.test.starter.HazelcastStarter;
 import junit.framework.AssertionFailedError;
 import org.junit.After;
 import org.junit.Assume;
@@ -84,7 +67,6 @@ import java.lang.reflect.Modifier;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -107,7 +89,6 @@ import static com.hazelcast.internal.partition.TestPartitionUtils.getPartitionSe
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.OsHelper.isLinux;
 import static com.hazelcast.test.TestEnvironment.isRunningCompatibilityTest;
-import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
 import static java.lang.Integer.getInteger;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
@@ -297,108 +278,13 @@ public abstract class HazelcastTestSupport {
     // ########## implementation getter ##########
     // ###########################################
 
-    public static Node getNode(HazelcastInstance hz) {
-        return TestUtil.getNode(hz);
-    }
-
-    public static HazelcastInstanceImpl getHazelcastInstanceImpl(HazelcastInstance hz) {
-        return TestUtil.getHazelcastInstanceImpl(hz);
-    }
-
-    public static NodeEngineImpl getNodeEngineImpl(HazelcastInstance hz) {
-        return getNode(hz).getNodeEngine();
-    }
-
-    public static ClientEngineImpl getClientEngineImpl(HazelcastInstance instance) {
-        return (ClientEngineImpl) getNode(instance).getClientEngine();
-    }
-
-    public static EndpointManager getEndpointManager(HazelcastInstance hz) {
-        return getNode(hz).getEndpointManager();
-    }
-
-    public static ClusterService getClusterService(HazelcastInstance hz) {
-        return getNode(hz).getClusterService();
-    }
-
-    public static InternalPartitionService getPartitionService(HazelcastInstance hz) {
-        return getNode(hz).getPartitionService();
-    }
-
-    public static InternalSerializationService getSerializationService(HazelcastInstance hz) {
-        return getNode(hz).getSerializationService();
-    }
-
-    public static OperationServiceImpl getOperationService(HazelcastInstance hz) {
-        return getNodeEngineImpl(hz).getOperationService();
-    }
-
-    public static OperationServiceImpl getOperationServiceImpl(HazelcastInstance hz) {
-        return getNodeEngineImpl(hz).getOperationService();
-    }
-
-    public static MetricsRegistry getMetricsRegistry(HazelcastInstance hz) {
-        return getNodeEngineImpl(hz).getMetricsRegistry();
-    }
-
-    public static Address getAddress(HazelcastInstance hz) {
-        return getClusterService(hz).getThisAddress();
-    }
-
-    public static Address[] getAddresses(HazelcastInstance[] instances) {
-        Address[] addresses = new Address[instances.length];
-        for (int i = 0; i < addresses.length; i++) {
-            addresses[i] = getAddress(instances[i]);
-        }
-        return addresses;
-    }
-
-    public static Address getAddress(HazelcastInstance hz, EndpointQualifier qualifier) {
-        return new Address(getClusterService(hz).getLocalMember().getSocketAddress(qualifier));
-    }
-
     public static Packet toPacket(HazelcastInstance local, HazelcastInstance remote, Operation operation) {
-        InternalSerializationService serializationService = getSerializationService(local);
-        EndpointManager endpointManager = getEndpointManager(local);
+        InternalSerializationService serializationService = Accessors.getSerializationService(local);
+        EndpointManager endpointManager = Accessors.getEndpointManager(local);
 
         return new Packet(serializationService.toBytes(operation), operation.getPartitionId())
                 .setPacketType(Packet.Type.OPERATION)
-                .setConn(endpointManager.getConnection(getAddress(remote)));
-    }
-
-    /**
-     * Returns the partition ID from a non-partitioned Hazelcast data
-     * structures like {@link ISet}.
-     * <p>
-     * The partition ID is read via reflection from the internal
-     * {@code partitionId} field. This is needed to support proxied
-     * Hazelcast instances from {@link HazelcastStarter}.
-     *
-     * @param hazelcastDataStructure the Hazelcast data structure instance
-     * @return the partition ID of that data structure
-     */
-    public static int getPartitionIdViaReflection(Object hazelcastDataStructure) {
-        try {
-            return (Integer) getFieldValueReflectively(hazelcastDataStructure, "partitionId");
-        } catch (IllegalAccessException e) {
-            throw new AssertionError("Cannot retrieve partitionId field from class "
-                    + hazelcastDataStructure.getClass().getName());
-        }
-    }
-
-    public static HazelcastInstance getFirstBackupInstance(HazelcastInstance[] instances, int partitionId) {
-        return getBackupInstance(instances, partitionId, 1);
-    }
-
-    public static HazelcastInstance getBackupInstance(HazelcastInstance[] instances, int partitionId, int replicaIndex) {
-        InternalPartition partition = getPartitionService(instances[0]).getPartition(partitionId);
-        Address backupAddress = partition.getReplicaAddress(replicaIndex);
-        for (HazelcastInstance instance : instances) {
-            if (instance.getCluster().getLocalMember().getAddress().equals(backupAddress)) {
-                return instance;
-            }
-        }
-        throw new AssertionError("Could not find backup member for partition " + partitionId);
+                .setConn(endpointManager.getConnection(Accessors.getAddress(remote)));
     }
 
     // #####################################
@@ -701,7 +587,7 @@ public abstract class HazelcastTestSupport {
         Cluster cluster = instance.getCluster();
         int memberCount = cluster.getMembers().size();
 
-        InternalPartitionService internalPartitionService = getPartitionService(instance);
+        InternalPartitionService internalPartitionService = Accessors.getPartitionService(instance);
         int partitionCount = internalPartitionService.getPartitionCount();
 
         if (partitionCount < memberCount) {
@@ -719,7 +605,7 @@ public abstract class HazelcastTestSupport {
     public static int getPartitionId(HazelcastInstance hz) {
         warmUpPartitions(hz);
 
-        InternalPartitionService partitionService = getPartitionService(hz);
+        InternalPartitionService partitionService = Accessors.getPartitionService(hz);
         for (IPartition partition : partitionService.getPartitions()) {
             if (partition.isLocal()) {
                 return partition.getPartitionId();
@@ -742,14 +628,14 @@ public abstract class HazelcastTestSupport {
         if (h1 == null || h2 == null) {
             return;
         }
-        Node n1 = getNode(h1);
-        Node n2 = getNode(h2);
+        Node n1 = Accessors.getNode(h1);
+        Node n2 = Accessors.getNode(h2);
         suspectMember(n1, n2);
         suspectMember(n2, n1);
     }
 
     public static void suspectMember(HazelcastInstance source, HazelcastInstance target) {
-        suspectMember(getNode(source), getNode(target));
+        suspectMember(Accessors.getNode(source), Accessors.getNode(target));
     }
 
     public static void suspectMember(Node suspectingNode, Node suspectedNode) {
@@ -785,7 +671,7 @@ public abstract class HazelcastTestSupport {
     }
 
     public static boolean isInstanceInSafeState(HazelcastInstance instance) {
-        Node node = getNode(instance);
+        Node node = Accessors.getNode(instance);
         if (node == null) {
             return true;
         }
@@ -870,7 +756,7 @@ public abstract class HazelcastTestSupport {
             }
             final PartitionServiceState state = getPartitionServiceState(node);
             if (state != PartitionServiceState.SAFE) {
-                nonSafeStates.put(getAddress(node), state);
+                nonSafeStates.put(Accessors.getAddress(node), state);
             }
         }
 
@@ -878,7 +764,7 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void assertNodeStarted(HazelcastInstance instance) {
-        NodeExtension nodeExtension = getNode(instance).getNodeExtension();
+        NodeExtension nodeExtension = Accessors.getNode(instance).getNodeExtension();
         assertTrue(nodeExtension.isStartCompleted());
     }
 
@@ -1175,7 +1061,7 @@ public abstract class HazelcastTestSupport {
 
     public static void assertMasterAddress(Address masterAddress, HazelcastInstance... instances) {
         for (HazelcastInstance instance : instances) {
-            assertEquals(masterAddress, getNode(instance).getMasterAddress());
+            assertEquals(masterAddress, Accessors.getNode(instance).getMasterAddress());
         }
     }
 
@@ -1557,7 +1443,7 @@ public abstract class HazelcastTestSupport {
     }
 
     private static OperationParkerImpl getOperationParkingService(HazelcastInstance instance) {
-        return (OperationParkerImpl) getNodeEngineImpl(instance).getOperationParker();
+        return (OperationParkerImpl) Accessors.getNodeEngineImpl(instance).getOperationParker();
     }
 
     public static void assertThatIsNotMultithreadedTest() {
@@ -1691,22 +1577,22 @@ public abstract class HazelcastTestSupport {
 
     protected Object readFromMapBackup(HazelcastInstance instance, String mapName, Object key, int replicaIndex) {
         try {
-            NodeEngine nodeEngine = getNode(instance).getNodeEngine();
-            SerializationService ss = getNode(instance).getSerializationService();
+            NodeEngine nodeEngine = Accessors.getNode(instance).getNodeEngine();
+            SerializationService ss = Accessors.getNode(instance).getSerializationService();
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
 
             MapOperation get = getMapOperationProvider(instance, mapName).createGetOperation(mapName, ss.toData(key));
             get.setPartitionId(partitionId);
             get.setReplicaIndex(replicaIndex);
 
-            return getNode(instance).getNodeEngine().getOperationService().invokeOnPartition(get).get();
+            return Accessors.getNode(instance).getNodeEngine().getOperationService().invokeOnPartition(get).get();
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
     }
 
     protected MapOperationProvider getMapOperationProvider(HazelcastInstance instance, String mapName) {
-        MapService mapService = getNodeEngineImpl(instance).getService(MapService.SERVICE_NAME);
+        MapService mapService = Accessors.getNodeEngineImpl(instance).getService(MapService.SERVICE_NAME);
         return mapService.getMapServiceContext().getMapOperationProvider(mapName);
     }
 
@@ -1763,49 +1649,6 @@ public abstract class HazelcastTestSupport {
         ByteOrder configuredByteOrder = serializationService.getByteOrder();
         assumeTrue(format("Assumed configured byte order %s, but was %s", assumedByteOrder, configuredByteOrder),
                 configuredByteOrder.equals(assumedByteOrder));
-    }
-
-    /**
-     * Obtains a list of {@link Indexes} for the given map local to the node
-     * associated with it.
-     * <p>
-     * There may be more than one indexes instance associated with a map if its
-     * indexes are partitioned.
-     *
-     * @param map the map to obtain the indexes for.
-     * @return the obtained indexes list.
-     */
-    public static List<Indexes> getAllIndexes(IMap map) {
-        MapProxyImpl mapProxy = (MapProxyImpl) map;
-        String mapName = mapProxy.getName();
-        NodeEngine nodeEngine = mapProxy.getNodeEngine();
-        IPartitionService partitionService = nodeEngine.getPartitionService();
-        MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
-
-        Indexes maybeGlobalIndexes = mapContainer.getIndexes();
-        if (maybeGlobalIndexes != null) {
-            return Collections.singletonList(maybeGlobalIndexes);
-        }
-
-        PartitionContainer[] partitionContainers = mapServiceContext.getPartitionContainers();
-        List<Indexes> allIndexes = new ArrayList<>();
-        for (PartitionContainer partitionContainer : partitionContainers) {
-            IPartition partition = partitionService.getPartition(partitionContainer.getPartitionId());
-            if (!partition.isLocal()) {
-                continue;
-            }
-
-            Indexes partitionIndexes = partitionContainer.getIndexes().get(mapName);
-            if (partitionIndexes == null) {
-                continue;
-            }
-            assert !partitionIndexes.isGlobal();
-            allIndexes.add(partitionIndexes);
-        }
-
-        return allIndexes;
     }
 
     /**

@@ -46,6 +46,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
+import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.fail;
 
 public class ExecutorServiceTestSupport extends HazelcastTestSupport {

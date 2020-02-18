@@ -31,6 +31,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Set;
 
+import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.ReflectionsHelper.REFLECTIONS;
 import static java.lang.reflect.Modifier.isAbstract;
 import static org.junit.Assert.assertEquals;

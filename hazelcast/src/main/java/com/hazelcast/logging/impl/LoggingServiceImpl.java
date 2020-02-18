@@ -48,14 +48,16 @@ public class LoggingServiceImpl implements LoggingService {
     private final ConstructorFunction<String, ILogger> loggerConstructor = DefaultLogger::new;
 
     private final LoggerFactory loggerFactory;
+    private final boolean detailsEnabled;
     private final String versionMessage;
 
     private volatile MemberImpl thisMember = new MemberImpl();
     private volatile String thisAddressString = "[LOCAL] ";
     private volatile Level minLevel = Level.OFF;
 
-    public LoggingServiceImpl(String clusterName, String loggingType, BuildInfo buildInfo) {
+    public LoggingServiceImpl(String clusterName, String loggingType, BuildInfo buildInfo, boolean detailsEnabled) {
         this.loggerFactory = Logger.newLoggerFactory(loggingType);
+        this.detailsEnabled = detailsEnabled;
         JetBuildInfo jetBuildInfo = buildInfo.getJetBuildInfo();
         versionMessage = "[" + clusterName + "] ["
                 + (jetBuildInfo != null ?  jetBuildInfo.getVersion() : buildInfo.getVersion()) + "] ";
@@ -170,13 +172,15 @@ public class LoggingServiceImpl implements LoggingService {
         public void log(Level level, String message, Throwable thrown) {
             boolean loggable = logger.isLoggable(level);
             if (loggable || level.intValue() >= minLevel.intValue()) {
-                String address = thisAddressString;
-                String logMessage = (address != null ? address : "") + versionMessage + message;
+                if (detailsEnabled) {
+                    String address = thisAddressString;
+                    message = (address != null ? address : "") + versionMessage + message;
+                }
                 if (loggable) {
-                    logger.log(level, logMessage, thrown);
+                    logger.log(level, message, thrown);
                 }
                 if (listeners.size() > 0) {
-                    LogRecord logRecord = new LogRecord(level, logMessage);
+                    LogRecord logRecord = new LogRecord(level, message);
                     logRecord.setThrown(thrown);
                     logRecord.setLoggerName(name);
                     logRecord.setSourceClassName(name);

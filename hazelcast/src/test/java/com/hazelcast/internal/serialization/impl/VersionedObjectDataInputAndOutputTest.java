@@ -41,7 +41,7 @@ public class VersionedObjectDataInputAndOutputTest {
     @Test
     public void testVersionOnInput() {
         ObjectDataInputStream input = new ObjectDataInputStream(new ByteArrayInputStream(new byte[]{}), iss);
-        Version version = Versions.V3_8;
+        Version version = Versions.V4_0;
 
         input.setVersion(version);
         assertEquals(version, input.getVersion());
@@ -50,7 +50,7 @@ public class VersionedObjectDataInputAndOutputTest {
     @Test
     public void testVersionOnOutput() {
         ObjectDataOutputStream output = new ObjectDataOutputStream(new ByteArrayOutputStream(16), iss);
-        Version version = Versions.V3_8;
+        Version version = Versions.V4_0;
 
         output.setVersion(version);
         assertEquals(version, output.getVersion());

@@ -29,6 +29,7 @@ import org.junit.Test;
 import java.util.UUID;
 
 import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.getBaseConfig;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.mockito.Mockito.mock;
 
 public abstract class AbstractInvalidatorTest extends HazelcastTestSupport {

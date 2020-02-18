@@ -16,17 +16,19 @@
 
 package com.hazelcast.internal.usercodedeployment;
 
-import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.config.UserCodeDeploymentConfig;
+import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.internal.usercodedeployment.impl.ClassData;
 import com.hazelcast.internal.usercodedeployment.impl.ClassDataProvider;
 import com.hazelcast.internal.usercodedeployment.impl.ClassLocator;
 import com.hazelcast.internal.usercodedeployment.impl.ClassSource;
 import com.hazelcast.internal.util.filter.Filter;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.spi.impl.NodeEngine;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -65,11 +67,11 @@ public final class UserCodeDeploymentService implements ManagedService {
         enabled = config.isEnabled();
     }
 
-    public void defineClass(String name, byte[] classDefinition) {
+    public void defineClasses(List<Map.Entry<String, byte[]>> classDefinitions) {
         if (!enabled) {
             throw new IllegalStateException("User Code Deployment is not enabled.");
         }
-        locator.defineClassFromClient(name, classDefinition);
+        locator.defineClassesFromClient(classDefinitions);
     }
 
     // called by operations sent by other members

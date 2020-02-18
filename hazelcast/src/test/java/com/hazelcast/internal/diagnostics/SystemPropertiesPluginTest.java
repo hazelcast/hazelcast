@@ -27,6 +27,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Properties;
 
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)

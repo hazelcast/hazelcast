@@ -230,8 +230,9 @@ public abstract class AbstractBlockingService<W extends WaitKey, R extends Block
 
     @Override
     public final void populate(LiveOperations liveOperations) {
+        long now = Clock.currentTimeMillis();
         for (RR registry : registries.values()) {
-            registry.populate(liveOperations);
+            registry.populate(liveOperations, now);
         }
     }
 

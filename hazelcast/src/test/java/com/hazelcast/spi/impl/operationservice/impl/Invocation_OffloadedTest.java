@@ -18,8 +18,8 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.spi.impl.operationservice.CallStatus;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.spi.impl.operationservice.CallStatus;
 import com.hazelcast.spi.impl.operationservice.Offload;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -34,6 +34,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.test.Accessors.getOperationService;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -52,7 +53,7 @@ public class Invocation_OffloadedTest extends HazelcastTestSupport {
 
         HazelcastInstance[] cluster = instanceFactory.newInstances(config, 1);
 
-        localOperationService = getOperationServiceImpl(cluster[0]);
+        localOperationService = getOperationService(cluster[0]);
     }
 
     @Test(expected = ExpectedRuntimeException.class)

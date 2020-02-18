@@ -16,25 +16,26 @@
 
 package com.hazelcast.spi.impl.operationparker.impl;
 
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.BlockingOperation;
 import com.hazelcast.spi.impl.operationservice.CallsPerMember;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.internal.util.UuidUtil;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.spi.impl.operationservice.OperationAccessor.setCallId;
 import static com.hazelcast.spi.impl.operationservice.OperationAccessor.setCallerAddress;
+import static com.hazelcast.test.Accessors.getNode;
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;

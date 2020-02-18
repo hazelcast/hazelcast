@@ -47,6 +47,7 @@ import static com.hazelcast.config.NearCacheConfig.DEFAULT_SERIALIZE_KEYS;
 import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.createNearCacheConfig;
 import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.getBaseConfig;
 import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.getMapNearCacheManager;
+import static com.hazelcast.test.Accessors.getSerializationService;
 
 /**
  * Basic Near Cache tests for {@link IMap} on Hazelcast members.

@@ -45,6 +45,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static com.hazelcast.instance.impl.TestUtil.terminateInstance;
 import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
 import static com.hazelcast.internal.partition.InternalPartition.MAX_REPLICA_COUNT;
+import static com.hazelcast.test.Accessors.getNode;
 import static org.hamcrest.Matchers.empty;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;

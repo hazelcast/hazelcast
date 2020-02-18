@@ -50,6 +50,7 @@ import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGING;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.lang.String.format;
 import static javax.cache.expiry.Duration.ONE_HOUR;
 import static org.junit.Assert.assertEquals;
@@ -260,7 +261,8 @@ public class CacheExpirationManagerTest extends AbstractExpirationManagerTest {
 
     @Override
     protected ExpirationManager newExpirationManager(HazelcastInstance node) {
-        return new ExpirationManager(new CacheClearExpiredRecordsTask(getPartitionSegments(node), getNodeEngineImpl(node)), getNodeEngineImpl(node));
+        return new ExpirationManager(new CacheClearExpiredRecordsTask(getPartitionSegments(node), getNodeEngineImpl(node)),
+                getNodeEngineImpl(node));
     }
 
     @Override
@@ -277,7 +279,7 @@ public class CacheExpirationManagerTest extends AbstractExpirationManagerTest {
 
     protected CachePartitionSegment[] getPartitionSegments(HazelcastInstance instance) {
         return ((CacheService) getNodeEngineImpl(instance)
-                .getService(CacheService.SERVICE_NAME))
+                                        .getService(CacheService.SERVICE_NAME))
                 .getPartitionSegments();
     }
 

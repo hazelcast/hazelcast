@@ -30,6 +30,8 @@ import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import java.security.Permission;
 import java.util.Map;
 
+import static com.hazelcast.internal.util.MapUtil.toIntSize;
+
 /**
  * Client Protocol Task for handling messages with type ID:
  * {@link com.hazelcast.client.impl.protocol.codec.MultiMapMessageType#MULTIMAP_SIZE}
@@ -48,11 +50,11 @@ public class MultiMapSizeMessageTask
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
-        int total = 0;
+        long total = 0;
         for (Object obj : map.values()) {
             total += (Integer) obj;
         }
-        return total;
+        return toIntSize(total);
     }
 
     @Override

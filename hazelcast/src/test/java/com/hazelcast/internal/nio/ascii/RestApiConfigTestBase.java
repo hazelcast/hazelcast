@@ -33,7 +33,7 @@ import static com.hazelcast.config.RestEndpointGroup.HEALTH_CHECK;
 import static com.hazelcast.config.RestEndpointGroup.HOT_RESTART;
 import static com.hazelcast.config.RestEndpointGroup.WAN;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
-import static com.hazelcast.test.HazelcastTestSupport.getAddress;
+import static com.hazelcast.test.Accessors.getAddress;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 

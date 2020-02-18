@@ -34,6 +34,7 @@ import javax.cache.Caching;
 import javax.cache.spi.CachingProvider;
 
 import static com.hazelcast.cache.HazelcastCachingProvider.propertiesByInstanceItself;
+import static com.hazelcast.test.Accessors.getNode;
 
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)

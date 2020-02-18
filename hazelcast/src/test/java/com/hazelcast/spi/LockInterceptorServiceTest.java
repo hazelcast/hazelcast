@@ -23,13 +23,13 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.locksupport.LockProxySupport;
 import com.hazelcast.internal.locksupport.LockStoreInfo;
 import com.hazelcast.internal.locksupport.LockSupportService;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.DistributedObjectNamespace;
 import com.hazelcast.internal.services.LockInterceptorService;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.util.ConstructorFunction;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -46,6 +46,8 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
+import static com.hazelcast.test.Accessors.getSerializationService;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)

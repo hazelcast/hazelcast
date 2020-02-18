@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.nearcache.impl.invalidation;
 
-
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
@@ -38,6 +37,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 

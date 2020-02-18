@@ -206,7 +206,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
         MultiMapConfig multiMapConfig = nodeEngine.getConfig().findMultiMapConfig(name);
         checkMultiMapConfig(multiMapConfig, nodeEngine.getSplitBrainMergePolicyProvider());
 
-        return new ObjectMultiMapProxy(multiMapConfig, this, nodeEngine, name);
+        return new MultiMapProxyImpl(multiMapConfig, this, nodeEngine, name);
     }
 
     @Override

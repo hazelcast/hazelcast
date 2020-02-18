@@ -38,6 +38,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.test.Accessors.getClusterService;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.hamcrest.Matchers.hasItem;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;

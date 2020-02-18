@@ -37,6 +37,9 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.test.Accessors.getAddress;
+import static com.hazelcast.test.Accessors.getClusterService;
+import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.SplitBrainTestSupport.blockCommunicationBetween;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;

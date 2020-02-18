@@ -30,6 +30,7 @@ import org.junit.runner.RunWith;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;

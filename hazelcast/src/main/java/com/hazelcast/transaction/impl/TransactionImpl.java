@@ -16,16 +16,16 @@
 
 package com.hazelcast.transaction.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.util.FutureUtil.ExceptionHandler;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.cluster.Address;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions;
@@ -295,8 +295,10 @@ public class TransactionImpl implements Transaction {
                 waitWithDeadline(futures, Long.MAX_VALUE, MILLISECONDS, RETHROW_TRANSACTION_EXCEPTION);
                 state = COMMITTED;
                 transactionManagerService.commitCount.inc();
+                transactionLog.onCommitSuccess();
             } catch (Throwable e) {
                 state = COMMIT_FAILED;
+                transactionLog.onCommitFailure();
                 throw rethrow(e, TransactionException.class);
             } finally {
                 purgeBackupLogs();

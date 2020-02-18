@@ -17,12 +17,13 @@
 package com.hazelcast.internal.monitor.impl;
 
 import com.hazelcast.cache.impl.CacheStatisticsImpl;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hotrestart.BackupTaskState;
 import com.hazelcast.hotrestart.BackupTaskStatus;
-import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.management.TimedMemberState;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
 import com.hazelcast.internal.management.dto.AdvancedNetworkStatsDTO;
@@ -31,12 +32,11 @@ import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
 import com.hazelcast.internal.monitor.HotRestartState;
 import com.hazelcast.internal.monitor.NodeState;
 import com.hazelcast.internal.monitor.WanSyncState;
-import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.internal.util.Clock;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
 import com.hazelcast.wan.impl.WanSyncStatus;
@@ -54,6 +54,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static com.hazelcast.config.HotRestartClusterDataRecoveryPolicy.FULL_RECOVERY_ONLY;
+import static com.hazelcast.test.Accessors.getHazelcastInstanceImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;

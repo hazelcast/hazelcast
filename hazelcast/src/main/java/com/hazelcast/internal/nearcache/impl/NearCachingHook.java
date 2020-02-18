@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.cache.impl.nearcache;
+package com.hazelcast.internal.nearcache.impl;
 
 
 import com.hazelcast.internal.serialization.Data;
+
+import javax.annotation.Nullable;
 
 /**
  * Hook to be used by near cache enabled proxy objects.
@@ -35,18 +37,18 @@ public interface NearCachingHook<K, V> {
         }
 
         @Override
-        public void afterRemoteCall() {
+        public void onRemoteCallSuccess() {
         }
 
         @Override
-        public void onFailure() {
+        public void onRemoteCallFailure() {
 
         }
     };
 
-    void beforeRemoteCall(K key, Data keyData, V value, Data valueData);
+    void beforeRemoteCall(K key, Data keyData, @Nullable V value, @Nullable Data valueData);
 
-    void afterRemoteCall();
+    void onRemoteCallSuccess();
 
-    void onFailure();
+    void onRemoteCallFailure();
 }

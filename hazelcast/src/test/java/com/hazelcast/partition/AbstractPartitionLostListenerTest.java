@@ -16,18 +16,18 @@
 
 package com.hazelcast.partition;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.PartitionReplicaVersionsView;
 import com.hazelcast.internal.partition.impl.ReplicaFragmentSyncInfo;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.services.ServiceNamespace;
-import com.hazelcast.internal.partition.IPartition;
+import com.hazelcast.internal.util.scheduler.ScheduledEntry;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.internal.util.scheduler.ScheduledEntry;
 import org.junit.After;
 import org.junit.Before;
 
@@ -44,6 +44,7 @@ import static com.hazelcast.internal.partition.TestPartitionUtils.getAllReplicaA
 import static com.hazelcast.internal.partition.TestPartitionUtils.getOngoingReplicaSyncRequests;
 import static com.hazelcast.internal.partition.TestPartitionUtils.getOwnedReplicaVersions;
 import static com.hazelcast.internal.partition.TestPartitionUtils.getScheduledReplicaSyncRequests;
+import static com.hazelcast.test.Accessors.getNode;
 import static junit.framework.TestCase.assertNotNull;
 
 @SuppressWarnings("WeakerAccess")

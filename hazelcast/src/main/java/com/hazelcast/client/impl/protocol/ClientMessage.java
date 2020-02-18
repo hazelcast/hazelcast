@@ -436,11 +436,7 @@ public final class ClientMessage implements OutboundFrame {
         }
 
         public int getSize() {
-            if (content == null) {
-                return SIZE_OF_FRAME_LENGTH_AND_FLAGS;
-            } else {
-                return SIZE_OF_FRAME_LENGTH_AND_FLAGS + content.length;
-            }
+            return SIZE_OF_FRAME_LENGTH_AND_FLAGS + content.length;
         }
 
         @Override

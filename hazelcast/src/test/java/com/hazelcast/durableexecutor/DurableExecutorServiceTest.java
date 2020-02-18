@@ -56,6 +56,9 @@ import java.util.function.Consumer;
 
 import static com.hazelcast.durableexecutor.impl.DurableExecutorServiceHelper.getDurableExecutorContainer;
 import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
+import static com.hazelcast.test.Accessors.getNode;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
+import static com.hazelcast.test.Accessors.getPartitionService;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -121,7 +124,7 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
         assertTrueEventually(() -> {
             for (int i = 0; i < NODE_COUNT; i++) {
                 DistributedDurableExecutorService internalService = getNodeEngineImpl(instances[i])
-                        .getService(DistributedDurableExecutorService.SERVICE_NAME);
+                                                                             .getService(DistributedDurableExecutorService.SERVICE_NAME);
                 boolean allEmpty = true;
                 StringBuilder failMessage = new StringBuilder();
                 for (int partitionId = 0;

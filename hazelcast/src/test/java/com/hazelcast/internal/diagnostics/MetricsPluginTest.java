@@ -31,6 +31,7 @@ import org.junit.runner.RunWith;
 
 import static com.hazelcast.internal.metrics.MetricTarget.DIAGNOSTICS;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 

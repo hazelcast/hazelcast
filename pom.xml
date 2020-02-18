@@ -84,8 +84,7 @@
 
         <log4j.version>1.2.17</log4j.version>
 
-        <!--- This is the last log4j2 version working with Java 6 -->
-        <log4j2.version>2.3</log4j2.version>
+        <log4j2.version>2.13.0</log4j2.version>
         <slf4j.api.version>1.7.25</slf4j.api.version>
 
         <jackson.version>2.9.7</jackson.version>
@@ -120,7 +119,7 @@
         <atomikos.version>3.9.3</atomikos.version>
         <!-- Additional JVM system arguments -->
         <extraVmArgs/>
-        <vmHeapSettings>-Xms512m -Xmx2G -XX:MaxPermSize=1024M</vmHeapSettings>
+        <vmHeapSettings>-Xms512m -Xmx2G</vmHeapSettings>
         <!-- Java 9+ module system args to be appended during surefire/failsafe executions. -->
         <javaModuleArgs/>
     </properties>
@@ -468,7 +467,7 @@
         <profile>
             <id>LOCAL</id>
             <properties>
-                <vmHeapSettings>-Xms128m -Xmx16G -XX:MaxPermSize=128M</vmHeapSettings>
+                <vmHeapSettings>-Xms128m -Xmx16G</vmHeapSettings>
             </properties>
             <build>
                 <plugins>
@@ -540,7 +539,7 @@
         <profile>
             <id>test-coverage-Local</id>
             <properties>
-                <vmHeapSettings>-Xms128m -Xmx16G -XX:MaxPermSize=128M</vmHeapSettings>
+                <vmHeapSettings>-Xms128m -Xmx16G</vmHeapSettings>
             </properties>
             <build>
                 <plugins>
@@ -1048,7 +1047,7 @@
             <!-- for compatibility testing -->
             <id>generate-compatibility-samples</id>
             <properties>
-                <vmHeapSettings>-Xms128m -Xmx16G -XX:MaxPermSize=128M</vmHeapSettings>
+                <vmHeapSettings>-Xms128m -Xmx16G</vmHeapSettings>
             </properties>
             <build>
                 <plugins>

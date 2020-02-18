@@ -26,6 +26,8 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 
 import java.util.Collection;
 
+import static com.hazelcast.test.Accessors.getBackupInstance;
+import static com.hazelcast.test.Accessors.getPartitionIdViaReflection;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 

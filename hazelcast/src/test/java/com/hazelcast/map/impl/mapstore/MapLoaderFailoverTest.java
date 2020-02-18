@@ -35,6 +35,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.config.MapStoreConfig.InitialLoadMode.LAZY;
 import static com.hazelcast.test.TimeConstants.MINUTE;
@@ -152,12 +153,14 @@ public class MapLoaderFailoverTest extends HazelcastTestSupport {
         // we do this workaround since the goal of the test is to verify
         // that loadAll() eventually loads all records even if a node
         // dies in the middle of loading
-        Object getResult = asyncVal.get();
-        if (getResult == null) {
-            getResult = map.get(1);
-        }
+        AtomicReference<Object> resultRef = new AtomicReference<>(asyncVal.get());
+        assertTrueEventually(() -> {
+            if (resultRef.get() == null) {
+                resultRef.set(map.get(1));
+            }
 
-        assertEquals(1, getResult);
+            assertEquals(1, resultRef.get());
+        });
         assertSizeEventually(MAP_STORE_ENTRY_COUNT, map);
         assertTrue(mapLoader.getLoadedValueCount() >= MAP_STORE_ENTRY_COUNT);
         assertEquals(2, mapLoader.getLoadAllKeysInvocations());
