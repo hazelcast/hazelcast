@@ -46,8 +46,8 @@ import java.util.concurrent.TimeUnit;
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @Fork(value = 1, warmups = 0)
-@Warmup(iterations = 3, time = 1)
-@Measurement(iterations = 3, time = 1)
+@Warmup(iterations = 2)
+@Measurement(iterations = 2)
 @OperationsPerInvocation(SerializationBenchmark.BATCH_SIZE)
 public class SerializationBenchmark {
 
