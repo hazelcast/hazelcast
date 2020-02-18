@@ -37,8 +37,11 @@ final class DefaultPartitionReplicaInterceptor implements PartitionReplicaInterc
             partitionService.getReplicaManager().cancelReplicaSync(partitionId);
         }
 
+        //RU_COMPAT_4_0
         if (partitionService.isLocalMemberMaster()) {
             partitionService.getPartitionStateManager().incrementVersion();
         }
+
+        partitionService.getPartitionStateManager().updateStamp();
     }
 }

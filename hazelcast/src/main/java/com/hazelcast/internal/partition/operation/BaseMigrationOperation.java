@@ -19,7 +19,9 @@ package com.hazelcast.internal.partition.operation;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationAwareService;
@@ -37,12 +39,14 @@ import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
+import com.hazelcast.version.Version;
 
 import java.io.IOException;
 import java.util.List;
@@ -51,7 +55,7 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.readLi
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeList;
 
 abstract class BaseMigrationOperation extends AbstractPartitionOperation
-        implements MigrationCycleOperation, PartitionAwareOperation {
+        implements MigrationCycleOperation, PartitionAwareOperation, Versioned {
 
     protected MigrationInfo migrationInfo;
     protected boolean success;
@@ -79,7 +83,6 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
      */
     @Override
     public final void beforeRun() {
-
         try {
             onMigrationStart();
             verifyNodeStarted();
@@ -87,11 +90,26 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
             verifyMigrationParticipant();
             verifyClusterState();
             applyCompletedMigrations();
-            verifyPartitionStateVersion();
+            if (isLegacyMigration()) {
+                //RU_COMPAT_4_0
+                verifyPartitionStateVersion();
+            } else {
+                verifyPartitionVersion();
+            }
         } catch (Exception e) {
             onMigrationComplete();
             throw e;
         }
+    }
+
+    //RU_COMPAT_4_0
+    protected final boolean isLegacyMigration() {
+        Version clusterVersion = getNodeEngine().getClusterService().getClusterVersion();
+        return isLegacyMigration(clusterVersion);
+    }
+
+    protected static boolean isLegacyMigration(Version clusterVersion) {
+        return clusterVersion.isUnknownOrLessOrEqual(Versions.V4_0);
     }
 
     /** Verifies that the node startup is completed. */
@@ -109,8 +127,14 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
             return;
         }
         InternalPartitionServiceImpl partitionService = getService();
-        if (!partitionService.applyCompletedMigrations(completedMigrations, migrationInfo.getMaster())) {
-            throw new PartitionStateVersionMismatchException(partitionStateVersion, partitionService.getPartitionStateVersion());
+        if (isLegacyMigration()) {
+            //RU_COMPAT_4_0
+            if (!partitionService.applyCompletedMigrationsLegacy(completedMigrations, migrationInfo.getMaster())) {
+                throw new PartitionStateVersionMismatchException(partitionStateVersion,
+                        partitionService.getPartitionStateManager().getVersion());
+            }
+        } else if (!partitionService.applyCompletedMigrations(completedMigrations, migrationInfo.getMaster())) {
+            throw new PartitionStateVersionMismatchException("Failed to apply completed migrations! Migration: " + migrationInfo);
         }
         if (partitionService.getMigrationManager().isFinalizingMigrationRegistered(migrationInfo.getPartitionId())) {
             // There's a pending migration finalization operation in the queue.
@@ -123,10 +147,24 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
         }
     }
 
-    /** Verifies that the sent partition state version matches the local version or this node is master. */
-    private void verifyPartitionStateVersion() {
+    /** Verifies that the sent partition version matches the local version or this node is master. */
+    private void verifyPartitionVersion() {
         InternalPartitionService partitionService = getService();
-        int localPartitionStateVersion = partitionService.getPartitionStateVersion();
+        int localVersion = partitionService.getPartition(getPartitionId()).version();
+        int expectedVersion = migrationInfo.getInitialPartitionVersion();
+        if (expectedVersion != localVersion) {
+            if (getNodeEngine().getThisAddress().equals(migrationInfo.getMaster())) {
+                return;
+            }
+
+            // this is expected when cluster member list changes during migration
+            throw new PartitionStateVersionMismatchException(expectedVersion, localVersion);
+        }
+    }
+
+    private void verifyPartitionStateVersion() {
+        InternalPartitionServiceImpl partitionService = getService();
+        int localPartitionStateVersion = partitionService.getPartitionStateManager().getVersion();
         if (partitionStateVersion != localPartitionStateVersion) {
             if (getNodeEngine().getThisAddress().equals(migrationInfo.getMaster())) {
                 return;
@@ -144,6 +182,9 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
         Address masterAddress = nodeEngine.getMasterAddress();
 
         if (!migrationInfo.getMaster().equals(masterAddress)) {
+            if (!nodeEngine.isRunning()) {
+                throw new HazelcastInstanceNotActiveException();
+            }
             throw new IllegalStateException("Migration initiator is not master node! => " + toString());
         }
 
@@ -215,7 +256,7 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
     void setActiveMigration() {
         InternalPartitionServiceImpl partitionService = getService();
         MigrationManager migrationManager = partitionService.getMigrationManager();
-        MigrationInfo currentActiveMigration = migrationManager.setActiveMigration(migrationInfo);
+        MigrationInfo currentActiveMigration = migrationManager.addActiveMigration(migrationInfo);
         if (currentActiveMigration != null) {
             if (migrationInfo.equals(currentActiveMigration)) {
                 migrationInfo = currentActiveMigration;
@@ -324,7 +365,9 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeObject(migrationInfo);
-        out.writeInt(partitionStateVersion);
+        if (isLegacyMigration(out.getVersion())) {
+            out.writeInt(partitionStateVersion);
+        }
         writeList(completedMigrations, out);
     }
 
@@ -332,7 +375,9 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         migrationInfo = in.readObject();
-        partitionStateVersion = in.readInt();
+        if (isLegacyMigration(in.getVersion())) {
+            partitionStateVersion = in.readInt();
+        }
         completedMigrations = readList(in);
     }
 

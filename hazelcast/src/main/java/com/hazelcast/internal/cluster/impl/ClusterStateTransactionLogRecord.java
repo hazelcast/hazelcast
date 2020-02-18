@@ -19,6 +19,7 @@ package com.hazelcast.internal.cluster.impl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.cluster.impl.operations.CommitClusterStateOp;
 import com.hazelcast.internal.cluster.impl.operations.LockClusterStateOp;
 import com.hazelcast.internal.cluster.impl.operations.RollbackClusterStateOp;
@@ -26,6 +27,7 @@ import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.transaction.impl.TargetAwareTransactionLogRecord;
 
@@ -38,7 +40,7 @@ import java.util.UUID;
  * @see ClusterState
  * @see Cluster#changeClusterState(ClusterState, com.hazelcast.transaction.TransactionOptions)
  */
-public class ClusterStateTransactionLogRecord implements TargetAwareTransactionLogRecord {
+public class ClusterStateTransactionLogRecord implements TargetAwareTransactionLogRecord, Versioned {
 
     ClusterStateChange stateChange;
     Address initiator;
@@ -46,7 +48,7 @@ public class ClusterStateTransactionLogRecord implements TargetAwareTransactionL
     UUID txnId;
     long leaseTime;
     int memberListVersion;
-    int partitionStateVersion;
+    long partitionStateStamp;
     boolean isTransient;
 
     public ClusterStateTransactionLogRecord() {
@@ -54,7 +56,7 @@ public class ClusterStateTransactionLogRecord implements TargetAwareTransactionL
 
     public ClusterStateTransactionLogRecord(ClusterStateChange stateChange, Address initiator, Address target,
                                             UUID txnId, long leaseTime, int memberListVersion,
-                                            int partitionStateVersion, boolean isTransient) {
+                                            long partitionStateStamp, boolean isTransient) {
         this.memberListVersion = memberListVersion;
         Preconditions.checkNotNull(stateChange);
         Preconditions.checkNotNull(initiator);
@@ -67,7 +69,7 @@ public class ClusterStateTransactionLogRecord implements TargetAwareTransactionL
         this.target = target;
         this.txnId = txnId;
         this.leaseTime = leaseTime;
-        this.partitionStateVersion = partitionStateVersion;
+        this.partitionStateStamp = partitionStateStamp;
         this.isTransient = isTransient;
     }
 
@@ -78,7 +80,7 @@ public class ClusterStateTransactionLogRecord implements TargetAwareTransactionL
 
     @Override
     public Operation newPrepareOperation() {
-        return new LockClusterStateOp(stateChange, initiator, txnId, leaseTime, memberListVersion, partitionStateVersion);
+        return new LockClusterStateOp(stateChange, initiator, txnId, leaseTime, memberListVersion, partitionStateStamp);
     }
 
     @Override
@@ -103,7 +105,11 @@ public class ClusterStateTransactionLogRecord implements TargetAwareTransactionL
         out.writeObject(target);
         UUIDSerializationUtil.writeUUID(out, txnId);
         out.writeLong(leaseTime);
-        out.writeInt(partitionStateVersion);
+        if (out.getVersion().isGreaterOrEqual(Versions.V4_1)) {
+            out.writeLong(partitionStateStamp);
+        } else {
+            out.writeInt((int) partitionStateStamp);
+        }
         out.writeBoolean(isTransient);
         out.writeInt(memberListVersion);
     }
@@ -115,7 +121,11 @@ public class ClusterStateTransactionLogRecord implements TargetAwareTransactionL
         target = in.readObject();
         txnId = UUIDSerializationUtil.readUUID(in);
         leaseTime = in.readLong();
-        partitionStateVersion = in.readInt();
+        if (in.getVersion().isGreaterOrEqual(Versions.V4_1)) {
+            partitionStateStamp = in.readLong();
+        } else {
+            partitionStateStamp = in.readInt();
+        }
         isTransient = in.readBoolean();
         memberListVersion = in.readInt();
     }

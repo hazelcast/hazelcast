@@ -53,8 +53,8 @@ public class LocalMapStatsProviderTest extends HazelcastTestSupport {
             mcs.getTimedMemberStateJson();
 
             //check partition migration triggered or not
-            int partitionStateVersion = getNode(instance).getPartitionService().getPartitionStateVersion();
-            assertEquals(0, partitionStateVersion);
+            long partitionStateStamp = getNode(instance).getPartitionService().getPartitionStateStamp();
+            assertEquals(0, partitionStateStamp);
         }, 5);
     }
 }
