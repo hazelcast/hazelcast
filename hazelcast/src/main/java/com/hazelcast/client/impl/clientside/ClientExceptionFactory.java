@@ -48,13 +48,13 @@ import com.hazelcast.durableexecutor.StaleTaskIdException;
 import com.hazelcast.flakeidgen.impl.NodeIdOutOfRangeException;
 import com.hazelcast.internal.cluster.impl.ConfigMismatchException;
 import com.hazelcast.internal.cluster.impl.VersionMismatchException;
+import com.hazelcast.internal.util.AddressUtil;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.ReachedMaxSizeException;
 import com.hazelcast.memory.NativeOutOfMemoryError;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.query.QueryException;
-import com.hazelcast.splitbrainprotection.SplitBrainProtectionException;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.scheduledexecutor.DuplicateTaskException;
@@ -69,11 +69,11 @@ import com.hazelcast.spi.exception.ServiceNotFoundException;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.exception.WrongTargetException;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionException;
 import com.hazelcast.topic.TopicOverloadException;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionTimedOutException;
-import com.hazelcast.internal.util.AddressUtil;
 import com.hazelcast.wan.WanQueueFullException;
 
 import javax.cache.CacheException;
@@ -107,6 +107,11 @@ import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.LEADER
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.LOCK_ACQUIRE_LIMIT_REACHED_EXCEPTION;
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.LOCK_OWNERSHIP_LOST_EXCEPTION;
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.NOT_LEADER_EXCEPTION;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.NO_CLASS_DEF_FOUND_ERROR;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.NO_SUCH_FIELD_ERROR;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.NO_SUCH_FIELD_EXCEPTION;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.NO_SUCH_METHOD_ERROR;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.NO_SUCH_METHOD_EXCEPTION;
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.SESSION_EXPIRED_EXCEPTION;
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.STALE_APPEND_REQUEST_EXCEPTION;
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.VERSION_MISMATCH_EXCEPTION;
@@ -681,8 +686,12 @@ public class ClientExceptionFactory {
             }
         });
         register(NOT_LEADER_EXCEPTION, NotLeaderException.class, (message, cause) -> new NotLeaderException(null, null, null));
-        register(VERSION_MISMATCH_EXCEPTION, VersionMismatchException.class,
-                ((message, cause) -> new VersionMismatchException(message)));
+        register(VERSION_MISMATCH_EXCEPTION, VersionMismatchException.class, ((message, cause) -> new VersionMismatchException(message)));
+        register(NO_SUCH_METHOD_ERROR, NoSuchMethodError.class, ((message, cause) -> new NoSuchMethodError(message)));
+        register(NO_SUCH_METHOD_EXCEPTION, NoSuchMethodException.class, ((message, cause) -> new NoSuchMethodException(message)));
+        register(NO_SUCH_FIELD_ERROR, NoSuchFieldError.class, ((message, cause) -> new NoSuchFieldError(message)));
+        register(NO_SUCH_FIELD_EXCEPTION, NoSuchFieldException.class, ((message, cause) -> new NoSuchFieldException(message)));
+        register(NO_CLASS_DEF_FOUND_ERROR, NoClassDefFoundError.class, ((message, cause) -> new NoClassDefFoundError(message)));
     }
 
     public Throwable createException(ClientMessage clientMessage) {
