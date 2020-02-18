@@ -152,8 +152,13 @@ import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.NATIVE
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.NEGATIVE_ARRAY_SIZE;
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.NOT_LEADER_EXCEPTION;
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.NOT_SERIALIZABLE;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.NO_CLASS_DEF_FOUND_ERROR;
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.NO_DATA_MEMBER;
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.NO_SUCH_ELEMENT;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.NO_SUCH_FIELD_ERROR;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.NO_SUCH_FIELD_EXCEPTION;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.NO_SUCH_METHOD_ERROR;
+import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.NO_SUCH_METHOD_EXCEPTION;
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.NULL_POINTER;
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.OPERATION_TIMEOUT;
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.OUT_OF_MEMORY_ERROR;
@@ -301,8 +306,12 @@ public class ClientExceptionFactory {
         register(LEADER_DEMOTED_EXCEPTION, LeaderDemotedException.class, (message, cause) -> new LeaderDemotedException(null, null));
         register(STALE_APPEND_REQUEST_EXCEPTION, StaleAppendRequestException.class, (message, cause) -> new StaleAppendRequestException(null));
         register(NOT_LEADER_EXCEPTION, NotLeaderException.class, (message, cause) -> new NotLeaderException(null, null, null));
-        register(VERSION_MISMATCH_EXCEPTION, VersionMismatchException.class,
-                ((message, cause) -> new VersionMismatchException(message)));
+        register(VERSION_MISMATCH_EXCEPTION, VersionMismatchException.class, ((message, cause) -> new VersionMismatchException(message)));
+        register(NO_SUCH_METHOD_ERROR, NoSuchMethodError.class, ((message, cause) -> new NoSuchMethodError(message)));
+        register(NO_SUCH_METHOD_EXCEPTION, NoSuchMethodException.class, ((message, cause) -> new NoSuchMethodException(message)));
+        register(NO_SUCH_FIELD_ERROR, NoSuchFieldError.class, ((message, cause) -> new NoSuchFieldError(message)));
+        register(NO_SUCH_FIELD_EXCEPTION, NoSuchFieldException.class, ((message, cause) -> new NoSuchFieldException(message)));
+        register(NO_CLASS_DEF_FOUND_ERROR, NoClassDefFoundError.class, ((message, cause) -> new NoClassDefFoundError(message)));
     }
 
     public Throwable createException(ClientMessage clientMessage) {
