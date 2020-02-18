@@ -23,14 +23,8 @@ final class Utils {
     private Utils() {
     }
 
-    static boolean isBlank(final CharSequence cs) {
-        int strLen = cs == null ? 0 : cs.length();
-        for (int i = 0; i < strLen; i++) {
-            if (!Character.isWhitespace(cs.charAt(i))) {
-                return false;
-            }
-        }
-        return true;
+    static boolean isBlank(final String string) {
+        return string == null || string.trim().length() == 0;
     }
 
     static boolean isAllBlank(final String... values) {

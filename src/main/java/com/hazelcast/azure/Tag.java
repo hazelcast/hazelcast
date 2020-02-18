@@ -15,6 +15,8 @@
 
 package com.hazelcast.azure;
 
+import com.hazelcast.config.InvalidConfigurationException;
+
 /**
  * Represents a Azure Tag (key and value).
  */
@@ -28,7 +30,7 @@ final class Tag {
     Tag(String spec) {
         String[] labelParts = spec.trim().split("\\s*=\\s*");
         if (labelParts.length != 2) {
-            throw new IllegalArgumentException(String.format("Invalid tag specification: '%s'", spec));
+            throw new InvalidConfigurationException(String.format("Invalid tag specification: '%s'", spec));
         }
         this.key = labelParts[0];
         this.value = labelParts[1];

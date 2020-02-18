@@ -16,21 +16,17 @@
 package com.hazelcast.azure;
 
 
-import com.hazelcast.config.InvalidConfigurationException;
-
 import java.util.Collection;
-import java.util.concurrent.Callable;
 import java.util.logging.Logger;
 
 import static com.hazelcast.azure.Utils.isAllBlank;
-import static com.hazelcast.azure.Utils.isAllNotBlank;
 import static com.hazelcast.azure.Utils.isBlank;
 
 /**
  * Responsible for fetching the discovery information from Azure APIs.
  */
 class AzureClient {
-    private static final Logger LOGGER = Logger.getLogger(AzureDiscoveryStrategy.class.getSimpleName());
+    private static final Logger LOGGER = Logger.getLogger(AzureClient.class.getSimpleName());
 
     private static final int RETRIES = 2;
 
@@ -38,40 +34,26 @@ class AzureClient {
     private final AzureComputeApi azureComputeApi;
     private final AzureAuthenticator azureAuthenticator;
 
-    private final String tenantId;
-    private final String clientId;
-    private final String clientSecret;
-    private final String subscriptionId;
-    private final String resourceGroup;
-    private final String scaleSet;
+    private final AzureConfig azureConfig;
     private final Tag tag;
-
     private final boolean hasSMIRight;
+
+    private String subscriptionId;
+    private String resourceGroup;
+    private String scaleSet;
 
     AzureClient(AzureMetadataApi azureMetadataApi, AzureComputeApi azureComputeApi,
                 AzureAuthenticator azureAuthenticator, AzureConfig azureConfig) {
         this.azureMetadataApi = azureMetadataApi;
         this.azureComputeApi = azureComputeApi;
         this.azureAuthenticator = azureAuthenticator;
+        this.azureConfig = azureConfig;
 
-        this.tenantId = azureConfig.getTenantId();
-        this.clientId = azureConfig.getClientId();
-        this.clientSecret = azureConfig.getClientSecret();
-        this.hasSMIRight = hasSMIRight(tenantId, clientId, clientSecret);
+        this.hasSMIRight = isAllBlank(azureConfig.getTenantId(), azureConfig.getClientId(), azureConfig.getClientSecret());
         this.subscriptionId = subscriptionIdFromConfigOrMetadataApi(azureConfig);
         this.resourceGroup = resourceGroupFromConfigOrMetadataApi(azureConfig);
         this.scaleSet = scaleSetFromConfigOrMetadataApi(azureConfig);
         this.tag = azureConfig.getTag();
-    }
-
-    private boolean hasSMIRight(String tenantId, String clientId, String clientSecret) {
-        boolean hasSMIRight = isAllBlank(tenantId, clientId, clientSecret);
-        if (!hasSMIRight && !isAllNotBlank(tenantId, clientId, clientSecret)) {
-            //All 3 property must be defined & not empty
-            throw new InvalidConfigurationException("Invalid Azure Discovery config: "
-                    + "All of tenantId, clientId & clientSecret must defined or none");
-        }
-        return hasSMIRight;
     }
 
     private String subscriptionIdFromConfigOrMetadataApi(final AzureConfig azureConfig) {
@@ -79,38 +61,23 @@ class AzureClient {
             return azureConfig.getSubscriptionId();
         }
         LOGGER.finest("Property 'subscriptionId' not configured, fetching from the VM metadata service");
-        return RetryUtils.retry(new Callable<String>() {
-            @Override
-            public String call() {
-                return azureMetadataApi.subscriptionId();
-            }
-        }, RETRIES);
+        return RetryUtils.retry(() -> azureMetadataApi.subscriptionId(), RETRIES);
     }
 
     private String resourceGroupFromConfigOrMetadataApi(final AzureConfig azureConfig) {
-        if (!isBlank(azureConfig.getResourceGroup()) || azureConfig.isClient()) {
+        if (!isBlank(azureConfig.getResourceGroup())) {
             return azureConfig.getResourceGroup();
         }
         LOGGER.finest("Property 'resourceGroup' not configured, fetching from the VM metadata service");
-        return RetryUtils.retry(new Callable<String>() {
-            @Override
-            public String call() {
-                return azureMetadataApi.resourceGroupName();
-            }
-        }, RETRIES);
+        return RetryUtils.retry(() -> azureMetadataApi.resourceGroupName(), RETRIES);
     }
 
     private String scaleSetFromConfigOrMetadataApi(final AzureConfig azureConfig) {
-        if (!isBlank(azureConfig.getScaleSet()) || azureConfig.isClient()) {
+        if (!isBlank(azureConfig.getScaleSet())) {
             return azureConfig.getScaleSet();
         }
         LOGGER.finest("Property 'scaleSet' not configured, fetching from the VM metadata service");
-        return RetryUtils.retry(new Callable<String>() {
-            @Override
-            public String call() {
-                return azureMetadataApi.scaleSet();
-            }
-        }, RETRIES);
+        return RetryUtils.retry(() -> azureMetadataApi.scaleSet(), RETRIES);
     }
 
     Collection<AzureAddress> getAddresses() {
@@ -130,10 +97,19 @@ class AzureClient {
         if (hasSMIRight) {
             return azureMetadataApi.accessToken();
         } else {
-            return azureAuthenticator.refreshAccessToken(tenantId, clientId, clientSecret);
+            return azureAuthenticator.refreshAccessToken(azureConfig.getTenantId(), azureConfig.getClientId(),
+                    azureConfig.getClientSecret());
         }
     }
 
+    /**
+     * This method creates an availability zone string by joining Azure Location and Zone properties because availability zones
+     * are defined in locations in Azure environment.
+     *
+     * @see <a href="https://docs.microsoft.com/en-us/azure/availability-zones/az-overview">Availability Zones in Azure</a>
+     *
+     * @return Availability zone string in "LOCATION-ZONE" format
+     */
     String getAvailabilityZone() {
         String zone = azureMetadataApi.availabilityZone();
         if (isBlank(zone)) {

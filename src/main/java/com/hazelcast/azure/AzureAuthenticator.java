@@ -44,8 +44,8 @@ class AzureAuthenticator {
 
     String refreshAccessToken(String tenantId, String clientId, String clientSecret) {
         try {
-            String extractAccessToken = callService(urlFor(tenantId), body(clientId, clientSecret));
-            return extractAccessToken(extractAccessToken);
+            String accessTokenJson = callService(urlFor(tenantId), body(clientId, clientSecret));
+            return extractAccessToken(accessTokenJson);
         } catch (Exception e) {
             throw new HazelcastException("Error while fetching access token from Azure API", e);
         }
@@ -64,7 +64,7 @@ class AzureAuthenticator {
         return RestClient.create(url).withBody(body).get();
     }
 
-    private String extractAccessToken(String extractAccessToken) {
-        return Json.parse(extractAccessToken).asObject().get("access_token").asString();
+    private String extractAccessToken(String accessTokenJson) {
+        return Json.parse(accessTokenJson).asObject().get("access_token").asString();
     }
 }

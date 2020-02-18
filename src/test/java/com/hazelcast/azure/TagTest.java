@@ -15,6 +15,7 @@
 
 package com.hazelcast.azure;
 
+import com.hazelcast.config.InvalidConfigurationException;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -46,7 +47,7 @@ public class TagTest {
         assertEquals("value", result.getValue());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void invalidTag() {
         // given
         String tag = "key";

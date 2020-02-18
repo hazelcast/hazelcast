@@ -15,11 +15,10 @@
 
 package com.hazelcast.azure;
 
-
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.discovery.AbstractDiscoveryStrategy;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
@@ -34,7 +33,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.azure.AzureProperties.CLIENT;
 import static com.hazelcast.azure.AzureProperties.CLIENT_ID;
 import static com.hazelcast.azure.AzureProperties.CLIENT_SECRET;
 import static com.hazelcast.azure.AzureProperties.PORT;
@@ -43,7 +41,8 @@ import static com.hazelcast.azure.AzureProperties.SCALE_SET;
 import static com.hazelcast.azure.AzureProperties.SUBSCRIPTION_ID;
 import static com.hazelcast.azure.AzureProperties.TAG;
 import static com.hazelcast.azure.AzureProperties.TENANT_ID;
-
+import static com.hazelcast.azure.Utils.isAllBlank;
+import static com.hazelcast.azure.Utils.isAllNotBlank;
 
 /**
  * Azure implementation of {@link DiscoveryStrategy}
@@ -79,35 +78,27 @@ public class AzureDiscoveryStrategy extends AbstractDiscoveryStrategy {
         this.portRange = createAzureConfig().getHzPort();
     }
 
-    private static DiscoveryNode createDiscoveryNode(AzureAddress azureAddress, int port)
-            throws UnknownHostException {
-        Address privateAddress = new Address(azureAddress.getPrivateAddress(), port);
-        Address publicAddress = new Address(azureAddress.getPublicAddress(), port);
-        return new SimpleDiscoveryNode(privateAddress, publicAddress);
-    }
-
-    private static void logAzureAddresses(Collection<AzureAddress> azureAddresses) {
-        if (LOGGER.isFinestEnabled()) {
-            StringBuilder stringBuilder = new StringBuilder("Found the following Azure instances: ");
-            for (AzureAddress azureAddress : azureAddresses) {
-                stringBuilder.append(String.format("%s, ", azureAddress));
-            }
-            LOGGER.finest(stringBuilder.toString());
-        }
-    }
-
     private AzureConfig createAzureConfig() {
-        return AzureConfig.builder()
-                .setClient((Boolean) getOrDefault(CLIENT.getDefinition(), CLIENT.getDefaultValue()))
-                .setTenantId(getOrNull(TENANT_ID))
-                .setClientId(getOrNull(CLIENT_ID))
-                .setClientSecret(getOrNull(CLIENT_SECRET))
-                .setSubscriptionId(getOrNull(SUBSCRIPTION_ID))
-                .setResourceGroup(getOrNull(RESOURCE_GROUP))
-                .setScaleSet(getOrNull(SCALE_SET))
-                .setTag(tagOrNull(TAG))
-                .setHzPort(new PortRange((String) getOrDefault(PORT.getDefinition(), PORT.getDefaultValue())))
-                .build();
+        AzureConfig azureConfig = AzureConfig.builder().setTenantId(getOrNull(TENANT_ID))
+                                             .setClientId(getOrNull(CLIENT_ID))
+                                             .setClientSecret(getOrNull(CLIENT_SECRET))
+                                             .setSubscriptionId(getOrNull(SUBSCRIPTION_ID))
+                                             .setResourceGroup(getOrNull(RESOURCE_GROUP))
+                                             .setScaleSet(getOrNull(SCALE_SET))
+                                             .setTag(tagOrNull(TAG))
+                                             .setHzPort(
+                                                     new PortRange((String) getOrDefault(PORT.getDefinition(),
+                                                             PORT.getDefaultValue())))
+                                             .build();
+        String tenantId = azureConfig.getTenantId();
+        String clientId = azureConfig.getClientId();
+        String clientSecret = azureConfig.getClientSecret();
+        if (!(isAllBlank(tenantId, clientId, clientSecret) || isAllNotBlank(tenantId, clientId, clientSecret))) {
+            //All 3 property must be defined & not empty
+            throw new InvalidConfigurationException("Invalid Azure Discovery config: "
+                    + "All of tenantId, clientId & clientSecret must defined or none");
+        }
+        return azureConfig;
     }
 
     private Tag tagOrNull(AzureProperties azureProperties) {
@@ -120,14 +111,6 @@ public class AzureDiscoveryStrategy extends AbstractDiscoveryStrategy {
 
     private String getOrNull(AzureProperties azureProperties) {
         return getOrNull(azureProperties.getDefinition());
-    }
-
-    @Override
-    public Map<String, String> discoverLocalMetadata() {
-        if (memberMetadata.isEmpty()) {
-            memberMetadata.put(PartitionGroupMetaData.PARTITION_GROUP_ZONE, azureClient.getAvailabilityZone());
-        }
-        return memberMetadata;
     }
 
     @Override
@@ -146,5 +129,30 @@ public class AzureDiscoveryStrategy extends AbstractDiscoveryStrategy {
             LOGGER.warning("Cannot discover nodes, returning empty list", e);
             return Collections.emptyList();
         }
+    }
+
+    private static void logAzureAddresses(Collection<AzureAddress> azureAddresses) {
+        if (LOGGER.isFinestEnabled()) {
+            StringBuilder stringBuilder = new StringBuilder("Found the following Azure instances: ");
+            for (AzureAddress azureAddress : azureAddresses) {
+                stringBuilder.append(String.format("%s, ", azureAddress));
+            }
+            LOGGER.finest(stringBuilder.toString());
+        }
+    }
+
+    private static DiscoveryNode createDiscoveryNode(AzureAddress azureAddress, int port)
+            throws UnknownHostException {
+        Address privateAddress = new Address(azureAddress.getPrivateAddress(), port);
+        Address publicAddress = new Address(azureAddress.getPublicAddress(), port);
+        return new SimpleDiscoveryNode(privateAddress, publicAddress);
+    }
+
+    @Override
+    public Map<String, String> discoverLocalMetadata() {
+        if (memberMetadata.isEmpty()) {
+            memberMetadata.put(PartitionGroupMetaData.PARTITION_GROUP_ZONE, azureClient.getAvailabilityZone());
+        }
+        return memberMetadata;
     }
 }

@@ -37,7 +37,7 @@ public class AzureClientTest {
     private static final String SCALE_SET = "scale-set-1";
     private static final Tag TAG = new Tag("key-1", "value-1");
     private static final String ACCESS_TOKEN = "access-token";
-    private static final String ZONE = "us-east1-b";
+    private static final String ZONE = "1";
 
     private static final List<AzureAddress> ADDRESSES = asList(
             new AzureAddress("10.240.0.2", "35.207.0.219"),

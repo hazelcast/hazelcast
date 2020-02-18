@@ -52,22 +52,6 @@ class AzureComputeApi {
         this.endpoint = endpoint;
     }
 
-    private static JsonObject toJsonObject(JsonValue jsonValue) {
-        if (jsonValue == null || jsonValue.isNull()) {
-            return new JsonObject();
-        } else {
-            return jsonValue.asObject();
-        }
-    }
-
-    private static JsonArray toJsonArray(JsonValue jsonValue) {
-        if (jsonValue == null || jsonValue.isNull()) {
-            return new JsonArray();
-        } else {
-            return jsonValue.asArray();
-        }
-    }
-
     Collection<AzureAddress> instances(String subscriptionId, String resourceGroup, String scaleSet,
                                        Tag tag, String accessToken) {
         String privateIpResponse = RestClient
@@ -95,6 +79,53 @@ class AzureComputeApi {
         return addresses;
     }
 
+    private String urlForPrivateIpList(String subscriptionId, String resourceGroup, String scaleSet) {
+        if (isBlank(scaleSet)) {
+            return String.format("%s/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Network"
+                    + "/networkInterfaces?api-version=%s", endpoint, subscriptionId, resourceGroup, API_VERSION);
+        } else {
+            return String.format("%s/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Compute"
+                            + "/virtualMachineScaleSets/%s/networkInterfaces?api-version=%s",
+                    endpoint, subscriptionId, resourceGroup, scaleSet, API_VERSION_SCALE_SET);
+        }
+    }
+
+    private Map<String, AzureNetworkInterface> parsePrivateIpResponse(String response) {
+        Map<String, AzureNetworkInterface> interfaces = new HashMap<String, AzureNetworkInterface>();
+
+        for (JsonValue item : toJsonArray(Json.parse(response).asObject().get("value"))) {
+            Set<Tag> tagList = new HashSet<>();
+            JsonObject tags = toJsonObject(item.asObject().get("tags"));
+            for (String key : tags.asObject().names()) {
+                tagList.add(new Tag(key, tags.asObject().getString(key, null)));
+            }
+
+            JsonObject properties = item.asObject().get("properties").asObject();
+            if (properties.get("virtualMachine") != null) {
+                for (JsonValue ipConfiguration : toJsonArray(properties.get("ipConfigurations"))) {
+                    JsonObject ipProps = ipConfiguration.asObject().get("properties").asObject();
+                    String privateIp = ipProps.getString("privateIPAddress", null);
+                    String publicIpId = toJsonObject(ipProps.get("publicIPAddress")).getString("id", null);
+                    if (!isBlank(publicIpId)) {
+                        interfaces.put(publicIpId, new AzureNetworkInterface(privateIp, publicIpId, tagList));
+                    }
+                }
+            }
+        }
+        return interfaces;
+    }
+
+    private String urlForPublicIpList(String subscriptionId, String resourceGroup, String scaleSet) {
+        if (isBlank(scaleSet)) {
+            return String.format("%s/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Network"
+                    + "/publicIPAddresses?api-version=%s", endpoint, subscriptionId, resourceGroup, API_VERSION);
+        } else {
+            return String.format("%s/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Compute"
+                            + "/virtualMachineScaleSets/%s/publicIPAddresses?api-version=%s",
+                    endpoint, subscriptionId, resourceGroup, scaleSet, API_VERSION_SCALE_SET);
+        }
+    }
+
     private Map<String, String> parsePublicIpResponse(String response) {
         Map<String, String> publicIps = new HashMap<String, String>();
 
@@ -109,51 +140,19 @@ class AzureComputeApi {
         return publicIps;
     }
 
-    private Map<String, AzureNetworkInterface> parsePrivateIpResponse(String response) {
-        Map<String, AzureNetworkInterface> interfaces = new HashMap<String, AzureNetworkInterface>();
-
-        for (JsonValue item : toJsonArray(Json.parse(response).asObject().get("value"))) {
-            String id = item.asObject().getString("id", null);
-            Set<Tag> tagList = new HashSet<Tag>(1);
-            JsonObject tags = toJsonObject(item.asObject().get("tags"));
-            for (String key : tags.asObject().names()) {
-                tagList.add(new Tag(key, tags.asObject().getString(key, null)));
-            }
-
-            JsonObject properties = item.asObject().get("properties").asObject();
-            if (properties.get("virtualMachine") != null) {
-                for (JsonValue ipConfiguration : toJsonArray(properties.get("ipConfigurations"))) {
-                    JsonObject ipProps = ipConfiguration.asObject().get("properties").asObject();
-                    String privateIp = ipProps.getString("privateIPAddress", null);
-                    String publicIpId = toJsonObject(ipProps.get("publicIPAddress")).getString("id", null);
-                    if (!isBlank(publicIpId)) {
-                        interfaces.put(publicIpId, new AzureNetworkInterface(id, privateIp, publicIpId, tagList));
-                    }
-                }
-            }
-        }
-        return interfaces;
-    }
-
-    private String urlForPrivateIpList(String subscriptionId, String resourceGroup, String scaleSet) {
-        if (isBlank(scaleSet)) {
-            return String.format("%s/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Network"
-                    + "/networkInterfaces?api-version=%s", endpoint, subscriptionId, resourceGroup, API_VERSION);
+    private static JsonArray toJsonArray(JsonValue jsonValue) {
+        if (jsonValue == null || jsonValue.isNull()) {
+            return new JsonArray();
         } else {
-            return String.format("%s/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Compute"
-                            + "/virtualMachineScaleSets/%s/networkInterfaces?api-version=%s",
-                    endpoint, subscriptionId, resourceGroup, scaleSet, API_VERSION_SCALE_SET);
+            return jsonValue.asArray();
         }
     }
 
-    private String urlForPublicIpList(String subscriptionId, String resourceGroup, String scaleSet) {
-        if (isBlank(scaleSet)) {
-            return String.format("%s/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Network"
-                    + "/publicIPAddresses?api-version=%s", endpoint, subscriptionId, resourceGroup, API_VERSION);
+    private static JsonObject toJsonObject(JsonValue jsonValue) {
+        if (jsonValue == null || jsonValue.isNull()) {
+            return new JsonObject();
         } else {
-            return String.format("%s/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Compute"
-                            + "/virtualMachineScaleSets/%s/publicIPAddresses?api-version=%s",
-                    endpoint, subscriptionId, resourceGroup, scaleSet, API_VERSION_SCALE_SET);
+            return jsonValue.asObject();
         }
     }
 }

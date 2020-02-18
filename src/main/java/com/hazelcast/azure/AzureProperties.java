@@ -19,7 +19,6 @@ import com.hazelcast.config.properties.PropertyDefinition;
 import com.hazelcast.config.properties.PropertyTypeConverter;
 import com.hazelcast.config.properties.SimplePropertyDefinition;
 
-import static com.hazelcast.config.properties.PropertyTypeConverter.BOOLEAN;
 import static com.hazelcast.config.properties.PropertyTypeConverter.STRING;
 
 /**
@@ -27,37 +26,51 @@ import static com.hazelcast.config.properties.PropertyTypeConverter.STRING;
  */
 enum AzureProperties {
 
-    CLIENT("client", BOOLEAN, true, false),
     /**
-     * The constant TENANT_ID.
+     * The tenant-id of the Azure account. This property should be provided with <code>client-id<code/>
+     * and <code>client-secret</code>. If none of them are provided, then the authentication is tried to be done using
+     * Azure VM instance metadata service.
      */
     TENANT_ID("tenant-id", STRING, true),
 
     /**
-     * The constant SUBSCRIPTION_ID.
-     */
-    SUBSCRIPTION_ID("subscription-id", STRING, true),
-
-    /**
-     * The constant CLIENT_ID.
+     * The client-id of the Azure account. This property should be provided with <code>tenant-id<code/>
+     * and <code>client-secret</code>. If none of them are provided, then the authentication is tried to be done using
+     * Azure VM instance metadata service.
      */
     CLIENT_ID("client-id", STRING, true),
 
     /**
-     * The constant CLIENT_SECRET.
+     * The client-secret of the Azure account. This property should be provided with <code>tenant-id<code/>
+     * and <code>client-id</code>. If none of them are provided, then the authentication is tried to be done using
+     * Azure VM instance metadata service.
      */
     CLIENT_SECRET("client-secret", STRING, true),
 
     /**
+     * ID of the Azure subscription that VMs/SM Scale Set created.
+     * If not specified, then the <code>subscription-id</code> is taken from the Azure VM instance metadata service.
+     * Instances connecting outside of Azure or from a different resource group should define the correct
+     * <code>subscription-id</code>
+     */
+    SUBSCRIPTION_ID("subscription-id", STRING, true),
+
+    /**
      * Name of the Azure resource group that VMs/SM Scale Set created.
-     * If not specified, then the "resource-group" is than from the Azure VM instance.
-     * Clients connecting outside of Azure or from a different resource group should define the correct
-     * "resource-group"
+     * If not specified, then the <code>resource-group</code> is taken from the Azure VM instance metadata service.
+     * Instances connecting outside of Azure or from a different resource group should define the correct
+     * <code>resource-group</code>
      */
     RESOURCE_GROUP("resource-group", STRING, true),
 
     /**
-     * The constant CLIENT_SECRET.
+     * Name of the Azure VM scale set that VMs are created.
+     * If not specified, then the <code>scale-set</code> is taken from the Azure VM instance metadata service.
+     * Instances connecting outside of Azure or from a different resource group should define the correct
+     * <code>scale-set</code>.
+     * <p>
+     * Please note that the discovery will be performed only in this scale-set when this property
+     * has a value.
      */
     SCALE_SET("scale-set", STRING, true),
 

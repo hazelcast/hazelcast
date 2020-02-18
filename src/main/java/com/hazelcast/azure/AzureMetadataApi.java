@@ -37,7 +37,7 @@ class AzureMetadataApi {
 
     AzureMetadataApi() {
         this.endpoint = METADATA_ENDPOINT;
-        this.metadata = new HashMap<String, String>();
+        this.metadata = new HashMap<>();
     }
 
     /**
@@ -46,24 +46,6 @@ class AzureMetadataApi {
     AzureMetadataApi(String endpoint, Map<String, String> metadata) {
         this.endpoint = endpoint;
         this.metadata = metadata;
-    }
-
-    private void fillMetadata() {
-        if (metadata.isEmpty()) {
-            String urlString = String.format("%s/metadata/instance/compute?api-version=%s", endpoint, API_VERSION);
-            String response = callGet(urlString);
-            JsonObject jsonObject = Json.parse(response).asObject();
-            for (String property : jsonObject.names()) {
-                if (jsonObject.get(property).isString()) {
-                    metadata.put(property, jsonObject.get(property).asString());
-                }
-            }
-        }
-    }
-
-    private String getMetadataProperty(String property) {
-        fillMetadata();
-        return metadata.get(property);
     }
 
     String subscriptionId() {
@@ -90,6 +72,24 @@ class AzureMetadataApi {
         return getMetadataProperty("vmScaleSetName");
     }
 
+    private String getMetadataProperty(String property) {
+        fillMetadata();
+        return metadata.get(property);
+    }
+
+    private void fillMetadata() {
+        if (metadata.isEmpty()) {
+            String urlString = String.format("%s/metadata/instance/compute?api-version=%s", endpoint, API_VERSION);
+            String response = callGet(urlString);
+            JsonObject jsonObject = Json.parse(response).asObject();
+            for (String property : jsonObject.names()) {
+                if (jsonObject.get(property).isString()) {
+                    metadata.put(property, jsonObject.get(property).asString());
+                }
+            }
+        }
+    }
+
     String accessToken() {
         String urlString = String.format("%s/metadata/identity/oauth2/token?api-version=%s&resource=%s", endpoint,
                 API_VERSION, RESOURCE);
@@ -97,14 +97,14 @@ class AzureMetadataApi {
         return extractAccessToken(accessTokenResponse);
     }
 
-    private String extractAccessToken(String accessTokenResponse) {
-        return Json.parse(accessTokenResponse).asObject().get("access_token").asString();
-    }
-
     private String callGet(String urlString) {
         return RestClient.create(urlString)
-                .withHeader("Metadata", "true")
-                .get();
+                         .withHeader("Metadata", "true")
+                         .get();
+    }
+
+    private String extractAccessToken(String accessTokenResponse) {
+        return Json.parse(accessTokenResponse).asObject().get("access_token").asString();
     }
 
 }

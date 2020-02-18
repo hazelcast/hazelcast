@@ -20,7 +20,6 @@ package com.hazelcast.azure;
  * listed in {@link AzureProperties}.
  */
 final class AzureConfig {
-    private boolean client;
     private String tenantId;
     private String clientId;
     private String clientSecret;
@@ -35,10 +34,6 @@ final class AzureConfig {
 
     static Builder builder() {
         return new Builder();
-    }
-
-    boolean isClient() {
-        return client;
     }
 
     String getTenantId() {
@@ -79,11 +74,6 @@ final class AzureConfig {
 
         private Builder() {
             this.config = new AzureConfig();
-        }
-
-        Builder setClient(boolean client) {
-            this.config.client = client;
-            return this;
         }
 
         Builder setTenantId(String tenantId) {
