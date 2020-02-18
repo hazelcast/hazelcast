@@ -19,8 +19,6 @@ package com.hazelcast.durableexecutor;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ManagedContext;
-import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.executor.ExecutorServiceTestSupport;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -46,16 +44,13 @@ public class DurableSpecificSetupTest extends ExecutorServiceTestSupport {
     @Test
     public void managedContext_mustInitializeRunnable() throws Exception {
         final AtomicBoolean initialized = new AtomicBoolean();
-        Config config = new Config()
+        Config config = smallInstanceConfig()
                 .addDurableExecutorConfig(new DurableExecutorConfig("test").setPoolSize(1))
-                .setManagedContext(new ManagedContext() {
-                    @Override
-                    public Object initialize(Object obj) {
-                        if (obj instanceof RunnableWithManagedContext) {
-                            initialized.set(true);
-                        }
-                        return obj;
+                .setManagedContext(obj -> {
+                    if (obj instanceof RunnableWithManagedContext) {
+                        initialized.set(true);
                     }
+                    return obj;
                 });
         DurableExecutorService executor = createHazelcastInstance(config).getDurableExecutorService("test");
         executor.submit(new RunnableWithManagedContext()).get();
@@ -65,7 +60,7 @@ public class DurableSpecificSetupTest extends ExecutorServiceTestSupport {
     @Test
     public void operationTimeoutConfigProp() throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        Config config = new Config();
+        Config config = smallInstanceConfig();
         int timeoutSeconds = 3;
         config.setProperty(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), String.valueOf(SECONDS.toMillis(timeoutSeconds)));
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);
@@ -80,17 +75,6 @@ public class DurableSpecificSetupTest extends ExecutorServiceTestSupport {
     static class RunnableWithManagedContext implements Runnable, Serializable {
         @Override
         public void run() {
-        }
-    }
-
-    static class EmptyRunnable implements Runnable, Serializable, PartitionAware {
-        @Override
-        public void run() {
-        }
-
-        @Override
-        public Object getPartitionKey() {
-            return "key";
         }
     }
 }
