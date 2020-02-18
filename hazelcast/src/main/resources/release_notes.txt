@@ -1,5 +1,12 @@
 This document lists the new features, enhancements, fixed issues and, removed or deprecated features for 3.10.x releases. The numbers in the square brackets refer to the issues in Hazelcast's GitHub repositories.
 
+====  3.10.7 ====
+
+1. Fixes
+
+* Fixed an issue where the Near Cache invalidation was not
+working properly when used with Transactional Map. [#16617]
+
 ==== 3.10.6 ====
 
 1. Enhancements 
