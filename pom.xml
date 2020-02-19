@@ -507,18 +507,35 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <argLine>
-                                ${argLine}
-                                -Dhazelcast.test.defaultTestTimeoutInSeconds=600
-                            </argLine>
-                            <forkCount combine.self="override">1</forkCount>
-                            <groups combine.self="override">
-                                com.hazelcast.test.annotation.NightlyTest,
-                                com.hazelcast.test.annotation.SlowTest
-                            </groups>
-                            <excludedGroups combine.self="override" />
-                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>serial-tests</id>
+                                <goals>
+                                    <goal>test</goal>
+                                </goals>
+                                <configuration>
+                                    <skip combine.self="override">true</skip>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>regular-tests</id>
+                                <goals>
+                                    <goal>test</goal>
+                                </goals>
+                                <configuration>
+                                    <argLine>
+                                        ${argLine}
+                                        -Dhazelcast.test.defaultTestTimeoutInSeconds=600
+                                    </argLine>
+                                    <forkCount combine.self="override">1</forkCount>
+                                    <groups combine.self="override">
+                                        com.hazelcast.test.annotation.NightlyTest,
+                                        com.hazelcast.test.annotation.SlowTest
+                                    </groups>
+                                    <excludedGroups combine.self="override" />
+                                </configuration>
+                            </execution>
+                        </executions>
                     </plugin>
                 </plugins>
             </build>
@@ -542,12 +559,32 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <argLine>@{argLine}</argLine>
-                            <excludedGroups combine.self="override">
-                                com.hazelcast.jet.test.IgnoredForCoverage
-                            </excludedGroups>
-                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>serial-tests</id>
+                                <goals>
+                                    <goal>test</goal>
+                                </goals>
+                                <configuration>
+                                    <argLine>@{argLine}</argLine>
+                                    <excludedGroups combine.self="override">
+                                        com.hazelcast.test.annotation.SlowTest,com.hazelcast.test.annotation.NightlyTest,com.hazelcast.jet.test.IgnoredForCoverage
+                                    </excludedGroups>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>regular-tests</id>
+                                <goals>
+                                    <goal>test</goal>
+                                </goals>
+                                <configuration>
+                                    <argLine>@{argLine}</argLine>
+                                    <excludedGroups>
+                                        com.hazelcast.jet.test.SerialTest,com.hazelcast.test.annotation.SlowTest,com.hazelcast.test.annotation.NightlyTest,com.hazelcast.jet.test.IgnoredForCoverage
+                                    </excludedGroups>
+                                </configuration>
+                            </execution>
+                        </executions>
                     </plugin>
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
