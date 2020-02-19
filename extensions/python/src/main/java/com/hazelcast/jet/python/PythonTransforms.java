@@ -85,7 +85,7 @@ public final class PythonTransforms {
     ) {
         return s -> s
                 .mapUsingServiceAsyncBatched(PythonService.factory(cfg), Integer.MAX_VALUE, PythonService::sendRequest)
-                .setName("mapUsingPython");
+                .setName("mapUsingPythonBatch");
     }
 
     /**
@@ -107,6 +107,6 @@ public final class PythonTransforms {
         return s -> s
                 .groupingKey(keyFn)
                 .mapUsingServiceAsyncBatched(PythonService.factory(cfg), Integer.MAX_VALUE, PythonService::sendRequest)
-                .setName("mapUsingPython");
+                .setName("mapUsingPythonBatch");
     }
 }

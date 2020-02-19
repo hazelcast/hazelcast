@@ -93,6 +93,7 @@ import java.util.StringJoiner;
  * under the {@code com.hazelcast.jet.python} log category. This includes
  * all the output from launched subprocesses.
  *
+ * @since 4.0
  */
 public class PythonServiceConfig implements Serializable {
     private static final String HANDLER_FUNCTION_DEFAULT = "transform_list";
@@ -142,6 +143,7 @@ public class PythonServiceConfig implements Serializable {
      * If all you need to deploy to Jet is in a single file, you can call {@link
      * #setHandlerFile} instead.
      */
+    @Nonnull
     public PythonServiceConfig setBaseDir(@Nonnull String baseDir) {
         if (handlerFile != null) {
             throw new IllegalArgumentException(
@@ -174,6 +176,7 @@ public class PythonServiceConfig implements Serializable {
      * #setHandlerFunction handler function}. If your Python work is in more
      * than one file, call {@link #setBaseDir} instead.
      */
+    @Nonnull
     public PythonServiceConfig setHandlerFile(@Nonnull String handlerFile) {
         if (baseDir != null) {
             throw new IllegalStateException(
@@ -204,6 +207,7 @@ public class PythonServiceConfig implements Serializable {
     /**
      * Returns the {@linkplain #setHandlerModule handler module} name.
      * */
+    @Nullable
     public String handlerModule() {
         return handlerModule;
     }
@@ -212,6 +216,7 @@ public class PythonServiceConfig implements Serializable {
      * Sets the name of the Python module that has the function that
      * transforms Jet pipeline data.
      */
+    @Nonnull
     public PythonServiceConfig setHandlerModule(@Nonnull String handlerModule) {
         if (handlerFile != null) {
             throw new IllegalStateException(
@@ -225,6 +230,7 @@ public class PythonServiceConfig implements Serializable {
      * Returns the name of the {@linkplain #setHandlerFunction handler
      * function}. The default value is {@code transform_list}.
      */
+    @Nonnull
     public String handlerFunction() {
         return handlerFunction;
     }
@@ -238,6 +244,7 @@ public class PythonServiceConfig implements Serializable {
      * transforming each item in the input list. There must be a strict
      * one-to-one match between the input and output lists.
      */
+    @Nonnull
     public PythonServiceConfig setHandlerFunction(@Nonnull String handlerFunction) {
         this.handlerFunction = requireNonBlank(handlerFunction, "handlerFunction");
         return this;

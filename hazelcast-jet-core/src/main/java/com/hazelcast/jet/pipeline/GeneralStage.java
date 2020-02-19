@@ -99,7 +99,7 @@ public interface GeneralStage<T> extends Stage {
      * This sample takes a stream of sentences and outputs a stream of
      * individual words in them:
      * <pre>{@code
-     * stage.map(sentence -> traverseArray(sentence.split("\\W+")))
+     * stage.flatMap(sentence -> traverseArray(sentence.split("\\W+")))
      * }</pre>
      *
      * @param flatMapFn a stateless flatmapping function, whose result type is
