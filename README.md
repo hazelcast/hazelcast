@@ -118,58 +118,36 @@ You will need to setup [Azure Active Directory Service Principal credentials](ht
 
 The only requirement is that every VM can access each other either by private or public IP address. Also, the resources should have the managed identity with correct access roles in order to use instance metadata service.
 
-## Setting up Azure Manage Identities for Resource Groups 
+If you don't setup the correct access roles on Azure environment and try to use plugin without `client-id`, `client-secret`, and `tenant-id` settings, then you will see an exception similar below:
 
-In order to use Azure instance metadata service, you need to configure managed identities with correct access roles. Below, you can find Azure CLI commands to setup a resource group with a managed identity.
-
-Firstly, you should login to Azure before using Azure CLI:
-
-```shell script
-az login
-```   
-
-You need a Azure [location](https://azure.microsoft.com/en-gb/global-infrastructure/locations/) to run your resources. Please run the following command to see the available location names:
-
-```shell script
-az account list-locations -o table
 ```
-
-Then you can create a resource group with the following command. Please choose a resource name and replace it with `[RESOURCE_NAME]`. For `[LOCATION]` parameter, please use the location name you would like to run your resource in.    
-
-```shell script
-az group create --name [RESOURCE_NAME] --location [LOCATION]
-``` 
-
-Now, we will create a managed identity using the command below. Please choose an identity name and replace it with `[IDENTITY_NAME]`. For `[RESOURCE_NAME]` parameter, use the resource name that you created in the previous step.
-
-```shell script
-az identity create -g [RESOURCE_NAME] -n [IDENTITY_NAME]
+WARNING: Cannot discover nodes, returning empty list
+com.hazelcast.azure.RestClientException: Failure in executing REST call
+        at com.hazelcast.azure.RestClient.call(RestClient.java:106)
+        at com.hazelcast.azure.RestClient.get(RestClient.java:69)
+        at com.hazelcast.azure.AzureMetadataApi.callGet(AzureMetadataApi.java:107)
+        at com.hazelcast.azure.AzureMetadataApi.accessToken(AzureMetadataApi.java:96)
+        at com.hazelcast.azure.AzureClient.fetchAccessToken(AzureClient.java:131)
+        at com.hazelcast.azure.AzureClient.getAddresses(AzureClient.java:118)
+        at com.hazelcast.azure.AzureDiscoveryStrategy.discoverNodes(AzureDiscoveryStrategy.java:136)
+        at com.hazelcast.spi.discovery.impl.DefaultDiscoveryService.discoverNodes(DefaultDiscoveryService.java:71)
+        at com.hazelcast.internal.cluster.impl.DiscoveryJoiner.getPossibleAddresses(DiscoveryJoiner.java:69)
+        at com.hazelcast.internal.cluster.impl.DiscoveryJoiner.getPossibleAddressesForInitialJoin(DiscoveryJoiner.java:58)
+        at com.hazelcast.internal.cluster.impl.TcpIpJoiner.joinViaPossibleMembers(TcpIpJoiner.java:136)
+        at com.hazelcast.internal.cluster.impl.TcpIpJoiner.doJoin(TcpIpJoiner.java:96)
+        at com.hazelcast.internal.cluster.impl.AbstractJoiner.join(AbstractJoiner.java:137)
+        at com.hazelcast.instance.impl.Node.join(Node.java:796)
+        at com.hazelcast.instance.impl.Node.start(Node.java:451)
+        at com.hazelcast.instance.impl.HazelcastInstanceImpl.<init>(HazelcastInstanceImpl.java:122)
+        at com.hazelcast.instance.impl.HazelcastInstanceFactory.constructHazelcastInstance(HazelcastInstanceFactory.java:241)
+        at com.hazelcast.instance.impl.HazelcastInstanceFactory.newHazelcastInstance(HazelcastInstanceFactory.java:220)
+        at com.hazelcast.instance.impl.HazelcastInstanceFactory.newHazelcastInstance(HazelcastInstanceFactory.java:158)
+        at com.hazelcast.core.Hazelcast.newHazelcastInstance(Hazelcast.java:91)
+        at com.hazelcast.core.server.HazelcastMemberStarter.main(HazelcastMemberStarter.java:46)
+Caused by: com.hazelcast.azure.RestClientException: Failure executing: GET at: http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https://management.azure.com. Message: {"error":"invalid_request","error_description":"Identity not found"},
+        at com.hazelcast.azure.RestClient.call(RestClient.java:101)
+        ... 20 more
 ```
-
-The output of this command will be similar below. Please keep the `[PRINCIPAL_ID]` value for later use.
-
-```shell script
-{
-  "canDelegate": null,
-  "id": "/subscriptions/aaaaaaa-bbbb-cccc-dddd-eeeeeeeeee/resourceGroups/[RESOURCE_GROUP]/providers/Microsoft.Authorization/roleAssignments/xxxxxxxx-yyyy-zzzz-tttt-uuuuuuuuuuuu",
-  "name": "xxxxxxxx-yyyy-zzzz-tttt-uuuuuuuuuuuu",
-  "principalId": "[PRINCIPAL_ID]",
-  "principalType": "ServicePrincipal",
-  "resourceGroup": "[RESOURCE_GROUP]",
-  "roleDefinitionId": "/subscriptions/aaaaaaa-bbbb-cccc-dddd-eeeeeeeeee/providers/Microsoft.Authorization/roleDefinitions/xxxxxxxx-yyyy-zzzz-tttt-kkkkkkkkkkk",
-  "scope": "/subscriptions/aaaaaaa-bbbb-cccc-dddd-eeeeeeeeee/resourceGroups/[RESOURCE_GROUP]",
-  "type": "Microsoft.Authorization/roleAssignments"
-}
-```
-
-The last step is to assign `READER` role to our identity. Please run the following command by replacing `[PRINCIPAL_ID]` from the output of previous command and `[RESOURCE_GROUP]` with the name of the resource group you created.
-
-```shell script
-az role assignment create -g [RESOURCE_GROUP] --role Reader --assignee-object-id [PRINCIPAL_ID]
-``` 
-
-If all commands are run successfully, then you have a managed identity assigned with `READER` role over your resource group. Now, if you create VMs in this resource group then Hazelcast Azure Discovery Plugin will be able to use Azure instance metadata service. You will just need to setup your Hazelcast instances with the minimal configuration as explained in the next section.    
-
 
 ## Minimal Configuration Example
 
