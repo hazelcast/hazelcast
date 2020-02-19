@@ -1,245 +1,157 @@
 /*
- * Copyright (c) 2016, Microsoft Corporation. All Rights Reserved.
+ * Copyright 2020 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Hazelcast Community License (the "License"); you may not use
+ * this file except in compliance with the License. You may obtain a copy of the
+ * License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
  */
+
 package com.hazelcast.azure;
 
-import com.google.common.collect.ImmutableMap;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.partitiongroup.PartitionGroupMetaData;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.microsoft.azure.Page;
-import com.microsoft.azure.PagedList;
-import com.microsoft.azure.management.compute.PowerState;
-import com.microsoft.azure.management.compute.VirtualMachine;
-import com.microsoft.azure.management.compute.VirtualMachineInstanceView;
-import com.microsoft.azure.management.compute.VirtualMachines;
-import com.microsoft.azure.management.compute.implementation.ComputeManager;
-import com.microsoft.azure.management.network.NetworkInterface;
-import com.microsoft.azure.management.network.NicIPConfiguration;
-import com.microsoft.azure.management.network.PublicIPAddress;
-import com.microsoft.rest.RestException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import static com.hazelcast.azure.ComputeManagerHelper.getComputeManager;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertFalse;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(fullyQualifiedNames = {
-        "com.microsoft.windowsazure.core.*",
-        "com.microsoft.azure.management.compute.*",
-        "com.microsoft.azure.management.network.*",
-        "com.hazelcast.azure.ComputeManagerHelper"
-})
-public class AzureDiscoveryStrategyTest extends HazelcastTestSupport {
+@RunWith(MockitoJUnitRunner.class)
+public class AzureDiscoveryStrategyTest {
+    private static final String ZONE = "us-east1-a";
+    private static final int PORT1 = 5701;
+    private static final int PORT2 = 5702;
 
-    private Map<String, Comparable> properties;
-    private ArrayList<VirtualMachine> virtualMachines;
-    private ComputeManager computeManager = mock(ComputeManager.class);
-    private VirtualMachines vms = mock(VirtualMachines.class);
+    @Mock
+    private AzureClient azureClient;
 
-    {
-        properties = new HashMap<String, Comparable>();
-        properties.put("client-id", "test-value");
-        properties.put("client-secret", "test-value");
-        properties.put("subscription-id", "test-value");
-        properties.put("cluster-id", "cluster000");
-        properties.put("tenant-id", "test-value");
-        properties.put("group-name", "test-value");
-        virtualMachines = new ArrayList<VirtualMachine>();
-    }
-
-    private final int FAULT_DOMAIN_ID = 2099;
+    private AzureDiscoveryStrategy azureDiscoveryStrategy;
 
     @Before
-    public void setup() {
-        PowerMockito.mockStatic(ComputeManagerHelper.class);
-        Mockito.when(getComputeManager(properties)).thenReturn(computeManager);
-        when(computeManager.virtualMachines()).thenReturn(vms);
-    }
-
-    private void buildFakeVmList(int count) {
-        virtualMachines.clear();
-        for (int i = 0; i < count; i++) {
-            createVMWithIp(i, null);
-        }
-        PagedList<VirtualMachine> machinesPage = new PagedList<VirtualMachine>() {
-            @Override
-            public Page<VirtualMachine> nextPage(String s) throws RestException {
-                return null;
-            }
-        };
-        machinesPage.addAll(virtualMachines);
-        when(vms.listByResourceGroup(eq("test-value"))).thenReturn(machinesPage);
-    }
-
-    private void buildFakeVm(int count, String ip) {
-        virtualMachines.clear();
-        createVMWithIp(count, ip);
-        PagedList<VirtualMachine> machinesPage = new PagedList<VirtualMachine>() {
-            @Override
-            public Page<VirtualMachine> nextPage(String s) throws RestException {
-                return null;
-            }
-        };
-        machinesPage.addAll(virtualMachines);
-        when(vms.listByResourceGroup(eq("test-value"))).thenReturn(machinesPage);
-    }
-
-    private void createVMWithIp(int i, String ipAddress) {
-        VirtualMachine vm = mock(VirtualMachine.class);
-        when(vm.tags()).thenReturn(ImmutableMap.of(properties.get("cluster-id").toString(), "5701"));
-        VirtualMachineInstanceView vmInstance = mock(VirtualMachineInstanceView.class);
-        when(vm.instanceView()).thenReturn(vmInstance);
-        when(vm.powerState()).thenReturn(PowerState.RUNNING);
-        when(vmInstance.platformFaultDomain()).thenReturn(FAULT_DOMAIN_ID);
-
-        NetworkInterface networkInterface = mock(NetworkInterface.class);
-        when(vm.getPrimaryNetworkInterface()).thenReturn(networkInterface);
-        NicIPConfiguration ipConfiguration = mock(NicIPConfiguration.class);
-        when(networkInterface.ipConfigurations()).thenReturn(ImmutableMap.of("nic-name", ipConfiguration));
-        when(ipConfiguration.privateIPAddress()).thenReturn("10.0.5." + i);
-
-        PublicIPAddress publicIPAddress = mock(PublicIPAddress.class);
-        when(ipConfiguration.getPublicIPAddress()).thenReturn(publicIPAddress);
-        if (ipAddress == null) {
-            when(publicIPAddress.ipAddress()).thenReturn("44.18.12." + i);
-        } else {
-            when(publicIPAddress.ipAddress()).thenReturn(ipAddress);
-        }
-
-        virtualMachines.add(vm);
-    }
-
-    private void testDiscoverNodesMocked(int vmCount) {
-        testDiscoverNodesMockedWithSkip(vmCount, -1);
-    }
-
-    private void testDiscoverNodesMockedWithSkip(int vmCount, int skipIndex) {
-
-        AzureDiscoveryStrategyFactory factory = new AzureDiscoveryStrategyFactory();
-        AzureDiscoveryStrategy strategy = (AzureDiscoveryStrategy) factory.newDiscoveryStrategy(null, null, properties);
-
-        strategy.start();
-        Iterator<DiscoveryNode> nodes = strategy.discoverNodes().iterator();
-
-        assertNotNull(nodes);
-
-        ArrayList<DiscoveryNode> nodeList = new ArrayList<DiscoveryNode>();
-        while (nodes.hasNext()) {
-            DiscoveryNode node = nodes.next();
-            nodeList.add(node);
-        }
-
-        assertEquals(vmCount, nodeList.size());
-
-        for (int i = 0; i < nodeList.size(); i++) {
-            int ipSuffix = i;
-
-            if (skipIndex != -1 && i >= skipIndex) {
-                ipSuffix += 1;
-            }
-
-            assertEquals("10.0.5." + ipSuffix, nodeList.get(i).getPrivateAddress().getHost());
-            assertEquals(5701, nodeList.get(i).getPrivateAddress().getPort());
-
-            assertEquals("44.18.12." + ipSuffix, nodeList.get(i).getPublicAddress().getHost());
-            assertEquals(5701, nodeList.get(i).getPublicAddress().getPort());
-        }
+    public void setUp() {
+        Map<String, Comparable> properties = new HashMap<String, Comparable>();
+        properties.put("hz-port", String.format("%s-%s", PORT1, PORT2));
+        azureDiscoveryStrategy = new AzureDiscoveryStrategy(properties, azureClient);
     }
 
     @Test
-    public void testDiscoverNodesMocked255() {
-        buildFakeVmList(255);
-        testDiscoverNodesMocked(255);
+    public void discoverLocalMetadata() {
+        // given
+        given(azureClient.getAvailabilityZone()).willReturn(ZONE);
+
+        // when
+        Map<String, String> result1 = azureDiscoveryStrategy.discoverLocalMetadata();
+        Map<String, String> result2 = azureDiscoveryStrategy.discoverLocalMetadata();
+
+        // then
+        assertEquals(ZONE, result1.get(PartitionGroupMetaData.PARTITION_GROUP_ZONE));
+        assertEquals(ZONE, result2.get(PartitionGroupMetaData.PARTITION_GROUP_ZONE));
+        verify(azureClient).getAvailabilityZone();
     }
 
     @Test
-    public void testDiscoverNodesMetadata() {
-        AzureDiscoveryStrategyFactory factory = new AzureDiscoveryStrategyFactory();
-        AzureDiscoveryStrategy strategy = (AzureDiscoveryStrategy) factory.newDiscoveryStrategy(null, null, properties);
-        strategy.start();
-        String localIp = strategy.getLocalHostAddress();
-        buildFakeVm(0, localIp);
-        strategy.discoverNodes();
+    public void newValidProperties() {
+        // given
+        Map<String, Comparable> properties = new HashMap<String, Comparable>();
+        properties.put("subscription-id", "subscription-id-1");
+        properties.put("resource-group", "resource-group-1");
+        properties.put("scale-set", "scale-set-1");
+        properties.put("tag", "tag-1=value-1");
 
-        assertEquals(strategy.discoverLocalMetadata().get(PartitionGroupMetaData.PARTITION_GROUP_ZONE),
-                Integer.toString(FAULT_DOMAIN_ID));
+        // when
+        new AzureDiscoveryStrategy(properties);
+
+        // then
+        // no exception
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void newInvalidPortRangeProperty() {
+        // given
+        Map<String, Comparable> properties = new HashMap<String, Comparable>();
+        properties.put("hz-port", "invalid");
+
+        // when
+        new AzureDiscoveryStrategy(properties);
+
+        // then
+        // throw exception
     }
 
     @Test
-    public void testDiscoverNodesMocked3() {
-        buildFakeVmList(3);
-        testDiscoverNodesMocked(3);
+    public void discoverNodes() {
+        // given
+        AzureAddress azureAddress1 = new AzureAddress("192.168.1.15", "38.146.24.2");
+        AzureAddress azureAddress2 = new AzureAddress("192.168.1.16", "38.146.28.15");
+        given(azureClient.getAddresses()).willReturn(asList(azureAddress1, azureAddress2));
+
+        // when
+        Iterable<DiscoveryNode> nodes = azureDiscoveryStrategy.discoverNodes();
+
+        // then
+        Iterator<DiscoveryNode> iter = nodes.iterator();
+
+        DiscoveryNode node1 = iter.next();
+        assertEquals(azureAddress1.getPrivateAddress(), node1.getPrivateAddress().getHost());
+        assertEquals(azureAddress1.getPublicAddress(), node1.getPublicAddress().getHost());
+        assertEquals(PORT1, node1.getPrivateAddress().getPort());
+
+        DiscoveryNode node2 = iter.next();
+        assertEquals(azureAddress1.getPrivateAddress(), node2.getPrivateAddress().getHost());
+        assertEquals(azureAddress1.getPublicAddress(), node2.getPublicAddress().getHost());
+        assertEquals(PORT2, node2.getPrivateAddress().getPort());
+
+        DiscoveryNode node3 = iter.next();
+        assertEquals(azureAddress2.getPrivateAddress(), node3.getPrivateAddress().getHost());
+        assertEquals(azureAddress2.getPublicAddress(), node3.getPublicAddress().getHost());
+        assertEquals(PORT1, node3.getPrivateAddress().getPort());
+
+        DiscoveryNode node4 = iter.next();
+        assertEquals(azureAddress2.getPrivateAddress(), node4.getPrivateAddress().getHost());
+        assertEquals(azureAddress2.getPublicAddress(), node4.getPublicAddress().getHost());
+        assertEquals(PORT2, node4.getPrivateAddress().getPort());
     }
 
     @Test
-    public void testDiscoverNodesMocked1() {
-        buildFakeVmList(1);
-        testDiscoverNodesMocked(1);
+    public void discoverNodesEmpty() {
+        // given
+        given(azureClient.getAddresses()).willReturn(new ArrayList<AzureAddress>());
+
+        // when
+        Iterable<DiscoveryNode> nodes = azureDiscoveryStrategy.discoverNodes();
+
+        // then
+        assertFalse(nodes.iterator().hasNext());
     }
 
     @Test
-    public void testDiscoverNodesMocked_0() {
-        buildFakeVmList(0);
-        testDiscoverNodesMocked(0);
-    }
+    public void discoverNodesException() {
+        // given
+        given(azureClient.getAddresses()).willThrow(new RuntimeException("Error while checking Azure instances"));
 
-    @Test
-    public void testFaultDomainIsSet() {
-        buildFakeVmList(0);
-        testDiscoverNodesMocked(0);
-    }
+        // when
+        Iterable<DiscoveryNode> nodes = azureDiscoveryStrategy.discoverNodes();
 
-    @Test
-    public void testDiscoverNodesStoppedVM() {
-        buildFakeVmList(4);
-        VirtualMachine vmToTurnOff = virtualMachines.remove(2);
-        // turn off the vm
-        when(vmToTurnOff.powerState()).thenReturn(PowerState.DEALLOCATED);
-        VirtualMachineInstanceView vmiw = mock(VirtualMachineInstanceView.class);
-        when(vmToTurnOff.instanceView()).thenReturn(vmiw);
-        when(vmiw.platformFaultDomain()).thenReturn(FAULT_DOMAIN_ID);
-
-        // should only recognize 3 hazelcast instances now
-        testDiscoverNodesMockedWithSkip(3, 2);
-    }
-
-    @Test
-    public void testDiscoverNodesUntaggedVM() {
-        buildFakeVmList(6);
-        VirtualMachine vmToUntag = virtualMachines.get(3);
-
-        // retag vm
-        HashMap<String, String> newTags = new HashMap<String, String>();
-        newTags.put("INVALID_TAG", "INVALID_PORT");
-        when(vmToUntag.tags()).thenReturn(newTags);
-
-        // should only recognize 5 hazelcast instances now
-        testDiscoverNodesMockedWithSkip(5, 3);
+        // then
+        assertFalse(nodes.iterator().hasNext());
     }
 }

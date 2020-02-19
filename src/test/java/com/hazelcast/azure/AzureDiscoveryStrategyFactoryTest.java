@@ -1,117 +1,54 @@
 /*
- * Copyright (c) 2016, Microsoft Corporation. All Rights Reserved.
+ * Copyright 2020 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Hazelcast Community License (the "License"); you may not use
+ * this file except in compliance with the License. You may obtain a copy of the
+ * License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
  */
+
 package com.hazelcast.azure;
 
-import com.hazelcast.azure.AzureProperties;
-import com.hazelcast.azure.AzureDiscoveryStrategy;
-import com.hazelcast.azure.AzureDiscoveryStrategyFactory;
-
 import com.hazelcast.config.Config;
-import com.hazelcast.config.InvalidConfigurationException;
+import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.XmlConfigBuilder;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.config.properties.PropertyDefinition;
-import org.junit.After;
+import com.hazelcast.spi.discovery.DiscoveryStrategy;
+import com.hazelcast.spi.discovery.impl.DefaultDiscoveryService;
+import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
-import java.io.ByteArrayInputStream;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Collection;
+import java.io.InputStream;
+import java.util.Iterator;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import static com.hazelcast.util.StringUtil.stringToBytes;
-
-@RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
-public class AzureDiscoveryStrategyFactoryTest extends HazelcastTestSupport {
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testNewDiscoveryFactory() throws Exception {
-
-        Map<String, Comparable> properties = new HashMap<String, Comparable>();
-        properties.put("client-id", "test-value");
-        properties.put("client-secret", "test-value");
-        properties.put("subscription-id", "test-value");
-        properties.put("cluster-id", "test-value");
-        properties.put("group-name", "test-value");
-
-        AzureDiscoveryStrategyFactory factory = new AzureDiscoveryStrategyFactory();
-        factory.newDiscoveryStrategy(null, null, properties);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testMissingConfigValue() throws Exception {
-
-        Map<String, Comparable> properties = new HashMap<String, Comparable>();
-        properties.put("client-id", "test-value");
-        properties.put("client-secret", "test-value");
-        properties.put("subscription-id", "test-value");
-        properties.put("cluster-id", "test-value");
-        properties.put("group-name", "test-value");
-
-        AzureDiscoveryStrategyFactory factory = new AzureDiscoveryStrategyFactory();
-        // should recognize tenant-id is missing
-        factory.newDiscoveryStrategy(null, null, properties);
-    }
+public class AzureDiscoveryStrategyFactoryTest {
 
     @Test
-    public void testPropertyDefintions() {
-        AzureDiscoveryStrategyFactory factory = new AzureDiscoveryStrategyFactory();
-        Collection<PropertyDefinition> properties = factory.getConfigurationProperties();
-
-        assertTrue(properties.contains(AzureProperties.CLIENT_ID));
-        assertTrue(properties.contains(AzureProperties.TENANT_ID));
-        assertTrue(properties.contains(AzureProperties.SUBSCRIPTION_ID));
-        assertTrue(properties.contains(AzureProperties.CLIENT_SECRET));
-        assertTrue(properties.contains(AzureProperties.CLUSTER_ID));
-        assertTrue(properties.contains(AzureProperties.GROUP_NAME));
+    public void validConfiguration() {
+        DiscoveryStrategy strategy = createStrategy("test-azure-config.xml");
+        assertTrue(strategy instanceof AzureDiscoveryStrategy);
     }
 
-    @Test
-    public void testGetConfigurationProperties() {
-
-        Map<String, Comparable> properties = new HashMap<String, Comparable>();
-        properties.put("client-id", "test-value");
-        properties.put("client-secret", "test-value");
-        properties.put("subscription-id", "test-value");
-        properties.put("cluster-id", "test-value");
-        properties.put("tenant-id", "test-value");
-        properties.put("group-name", "test-value");
-
-        AzureDiscoveryStrategyFactory factory = new AzureDiscoveryStrategyFactory();
-
-        for (PropertyDefinition def : factory.getConfigurationProperties()) {
-            // test each proprety actually maps to those defined above
-            assertTrue(AzureProperties.getOrNull(def, properties) != null);
-        }
-        
+    @Test(expected = RuntimeException.class)
+    public void invalidConfiguration() {
+        createStrategy("test-azure-config-invalid.xml");
     }
 
-    @Test
-    public void testgetDiscoveryStrategyType() {
-        AzureDiscoveryStrategyFactory factory = new AzureDiscoveryStrategyFactory();
-        assertEquals(factory.getDiscoveryStrategyType(), AzureDiscoveryStrategy.class);
+    private static DiscoveryStrategy createStrategy(String xmlFileName) {
+        final InputStream xmlResource = AzureDiscoveryStrategyFactoryTest.class.getClassLoader().getResourceAsStream(xmlFileName);
+        Config config = new XmlConfigBuilder(xmlResource).build();
+
+        DiscoveryConfig discoveryConfig = config.getNetworkConfig().getJoin().getDiscoveryConfig();
+        DiscoveryServiceSettings settings = new DiscoveryServiceSettings().setDiscoveryConfig(discoveryConfig);
+        DefaultDiscoveryService service = new DefaultDiscoveryService(settings);
+        Iterator<DiscoveryStrategy> strategies = service.getDiscoveryStrategies().iterator();
+        return strategies.next();
     }
 }
