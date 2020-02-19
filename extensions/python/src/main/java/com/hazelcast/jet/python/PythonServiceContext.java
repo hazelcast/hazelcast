@@ -93,6 +93,16 @@ class PythonServiceContext {
                         .start();
                 Thread stdoutLoggingThread = logStdOut(logger, initProcess, "python-init");
                 initProcess.waitFor();
+                if (initProcess.exitValue() != 0) {
+                    try {
+                        destroy();
+                    } catch (Exception e) {
+                        logger.warning("Cleanup failed with exception", e);
+                    }
+                    throw new Exception(
+                            "Initialization script finished with non-zero exit code: " + initProcess.exitValue()
+                    );
+                }
                 stdoutLoggingThread.join();
             }
             makeFilesReadOnly(runtimeBaseDir);
@@ -115,6 +125,9 @@ class PythonServiceContext {
                         .start();
                 logStdOut(logger, cleanupProcess, "python-cleanup-" + cleanupProcess);
                 cleanupProcess.waitFor();
+                if (cleanupProcess.exitValue() != 0) {
+                    logger.warning("Cleanup script finished with non-zero exit code: " + cleanupProcess.exitValue());
+                }
             }
         } catch (Exception e) {
             throw new JetException("PythonService cleanup failed: " + e, e);
