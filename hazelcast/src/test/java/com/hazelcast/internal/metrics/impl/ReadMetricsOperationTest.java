@@ -68,7 +68,6 @@ public class ReadMetricsOperationTest extends HazelcastTestSupport {
             MetricsResultSet metricsResultSet = new MetricsResultSet(ringbufferSlice.nextSequence(), ringbufferSlice.elements());
             nextSequence.set(metricsResultSet.nextSequence());
 
-            boolean mapMetric = false;
             List<Map.Entry<Long, byte[]>> collections = metricsResultSet.collections();
             MetricKeyConsumer metricConsumer = new MetricKeyConsumer();
             for (Map.Entry<Long, byte[]> entry : collections) {

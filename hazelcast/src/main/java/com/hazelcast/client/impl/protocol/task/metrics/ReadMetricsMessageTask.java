@@ -18,43 +18,32 @@ package com.hazelcast.client.impl.protocol.task.metrics;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MCReadMetricsCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
+import com.hazelcast.client.impl.protocol.task.AbstractTargetMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.metrics.impl.MetricsService;
 import com.hazelcast.internal.metrics.managementcenter.ConcurrentArrayRingbuffer;
 import com.hazelcast.internal.metrics.managementcenter.ReadMetricsOperation;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
-public class ReadMetricsMessageTask extends AbstractInvocationMessageTask<MCReadMetricsCodec.RequestParameters> {
+public class ReadMetricsMessageTask extends AbstractTargetMessageTask<MCReadMetricsCodec.RequestParameters> {
 
     public ReadMetricsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected InvocationBuilder getInvocationBuilder(Operation op) {
-        return nodeEngine.getOperationService().createInvocationBuilder(getServiceName(),
-                op, nodeEngine.getThisAddress());
+    protected UUID getTargetUuid() {
+        return parameters.uuid;
     }
 
     @Override
     protected Operation prepareOperation() {
-        // readMetrics requests are sent to member identified by address, but we want it by member UUID.
-        // After a member restart, the address remains, but UUID changes. If the local member has different
-        // UUID from the intended one, fail.
-        if (!parameters.uuid.equals(nodeEngine.getLocalMember().getUuid())) {
-            // do not throw RetryableException here
-            throw new IllegalArgumentException(
-                    "Requested metrics for member " + parameters.uuid
-                            + ", but local member is " + nodeEngine.getLocalMember().getUuid()
-            );
-        }
         return new ReadMetricsOperation(parameters.fromSequence);
     }
 
