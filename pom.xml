@@ -49,6 +49,7 @@
     </scm>
 
     <developers>
+        <!--Community Contributors-->
         <developer>
             <id>sedouard</id>
             <name>Steven Edouard</name>
@@ -68,7 +69,8 @@
         <developer>
             <id>gokhanoner</id>
             <name>Gokhan Oner</name>
-            <email>gokhan@hazelcast.com</email>
+            <email>gokhanoner@gmail.com</email>
+            <url>https://github.com/gokhanoner</url>
         </developer>
     </developers>
 
