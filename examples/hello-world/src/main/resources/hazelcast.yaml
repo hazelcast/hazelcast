@@ -1,8 +1,5 @@
 hazelcast:
-  properties:
-    hazelcast.logging.type: log4j
-  group:
-    name: jet
+  cluster-name: jet
   network:
     join:
       multicast:

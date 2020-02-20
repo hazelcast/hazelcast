@@ -1,8 +1,5 @@
 hazelcast:
-  properties:
-    hazelcast.logging.type: log4j
-  group:
-    name: jet
+  cluster-name: jet
   network:
     join:
       multicast:
@@ -12,8 +9,8 @@ hazelcast:
         enabled: true
         member-list:
           - 127.0.0.1
-  event-journal:
-    map:
-      source:
+  map:
+    source:
+      event-journal:
         enabled: true
         capacity: 100000

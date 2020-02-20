@@ -41,7 +41,6 @@ public class CacheJournalSource {
     private static final String SINK_NAME = "list";
 
     public static void main(String[] args) throws Exception {
-        System.setProperty("hazelcast.logging.type", "log4j");
         JetConfig jetConfig = getJetConfig();
         JetInstance jet = Jet.newJetInstance(jetConfig);
         Jet.newJetInstance(jetConfig);

@@ -45,8 +45,6 @@ public class RemoteCacheJournalSource {
     private static final String SINK_NAME = "list";
 
     public static void main(String[] args) throws Exception {
-        System.setProperty("hazelcast.logging.type", "log4j");
-
         Config hzConfig = getConfig();
         HazelcastInstance remoteHz = startRemoteHzCluster(hzConfig);
         JetInstance localJet = startLocalJetCluster();

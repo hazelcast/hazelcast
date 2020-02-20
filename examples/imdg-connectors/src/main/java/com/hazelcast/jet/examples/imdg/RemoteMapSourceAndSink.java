@@ -38,7 +38,6 @@ public class RemoteMapSourceAndSink {
     private static final int ITEM_COUNT = 10;
 
     public static void main(String[] args) throws Exception {
-        System.setProperty("hazelcast.logging.type", "log4j");
         JetInstance localJet = Jet.newJetInstance();
         try {
             HazelcastInstance externalHz = startExternalHazelcast();

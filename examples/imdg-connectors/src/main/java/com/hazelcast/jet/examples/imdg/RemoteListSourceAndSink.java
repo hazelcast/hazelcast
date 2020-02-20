@@ -42,7 +42,6 @@ public class RemoteListSourceAndSink {
     private static final String LIST_2 = "list-2";
 
     public static void main(String[] args) throws Exception {
-        System.setProperty("hazelcast.logging.type", "log4j");
         JetInstance localJet = Jet.newJetInstance();
         try {
             HazelcastInstance externalHz = startExternalHazelcast();

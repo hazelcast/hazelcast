@@ -130,7 +130,6 @@ public class MapSourceAndSinks {
     }
 
     public static void main(String[] args) throws Exception {
-        System.setProperty("hazelcast.logging.type", "log4j");
         JetInstance jet = Jet.newJetInstance();
         new MapSourceAndSinks(jet).go();
     }

@@ -116,7 +116,7 @@ public class TfIdfJdkStreams {
 
     static Stream<Entry<String, String>> docLines(String name) {
         try {
-            return Files.lines(Paths.get(TfIdfJdkStreams.class.getResource("books/" + name).toURI()))
+            return Files.lines(Paths.get(TfIdfJdkStreams.class.getResource("/books/" + name).toURI()))
                         .map(String::toLowerCase)
                         .map(line -> entry(name, line));
         } catch (IOException | URISyntaxException e) {

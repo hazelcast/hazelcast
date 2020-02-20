@@ -37,7 +37,6 @@ public class CacheSourceAndSink {
     private static final String SINK_NAME = "sink";
 
     public static void main(String[] args) throws Exception {
-        System.setProperty("hazelcast.logging.type", "log4j");
         JetConfig config = new JetConfig();
 
         // Unlike with IMap, ICache names must be explicitly configured before using

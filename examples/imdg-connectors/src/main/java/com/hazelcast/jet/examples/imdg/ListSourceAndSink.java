@@ -40,7 +40,6 @@ public class ListSourceAndSink {
     private static final String RESULT_LIST = "resultList";
 
     public static void main(String[] args) throws Exception {
-        System.setProperty("hazelcast.logging.type", "log4j");
         JetInstance jet = Jet.newJetInstance();
 
         try {
