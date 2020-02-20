@@ -30,6 +30,7 @@ import com.hazelcast.spi.properties.HazelcastProperty;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -86,13 +87,16 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
         this.client = invocationService.client;
         this.logger = invocationService.invocationLogger;
 
-
         HazelcastProperties properties = client.getProperties();
-        int responseThreadCount = properties.getInteger(RESPONSE_THREAD_COUNT);
-        if (responseThreadCount < 0) {
-            throw new IllegalArgumentException(RESPONSE_THREAD_COUNT.getName() + " can't be smaller than 0");
-        }
         this.responseThreadsDynamic = properties.getBoolean(RESPONSE_THREAD_DYNAMIC);
+        int responseThreadCount = properties.getInteger(RESPONSE_THREAD_COUNT);
+        if (responseThreadCount ==-1) {
+            logger.warning("Enabling FJ Response Handler");
+            responseHandler = new FJResponseHandler();
+            this.responseThreads = new ResponseThread[0];
+            return;
+        }
+
         logger.info("Running with " + responseThreadCount + " response threads, dynamic=" + responseThreadsDynamic);
         this.responseThreads = new ResponseThread[responseThreadCount];
         for (int k = 0; k < responseThreads.length; k++) {
@@ -217,6 +221,14 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
             if (!started.get() && started.compareAndSet(false, true)) {
                 start();
             }
+        }
+    }
+
+    final class FJResponseHandler implements Consumer<ClientMessage>{
+
+        @Override
+        public void accept(ClientMessage response) {
+            ForkJoinPool.commonPool().execute(() -> process(response));
         }
     }
 
