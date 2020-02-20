@@ -80,6 +80,7 @@ public class ReceiveSortMergeExec extends AbstractExec {
         if (!inputsAvailable) {
             // Some nodes haven't sent their inputs yet, so we cannot proceed.
             // TODO: Something is really wrong here: why we ever return "FETCHED_DONE" if some inputs are not available?
+            //  It seems that the whole rewrite of the operator is needed.
             return inbox.closed() ? IterationResult.FETCHED_DONE : IterationResult.WAIT;
         }
 
