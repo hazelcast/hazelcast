@@ -38,6 +38,9 @@ public final class SqlErrorCode {
     /** Query was cancelled due to timeout. */
     public static final int TIMEOUT = 4;
 
+    /** Out of memory condition. */
+    public static final int OUT_OF_MEMORY = 5;
+
     private SqlErrorCode() {
         // No-op.
     }

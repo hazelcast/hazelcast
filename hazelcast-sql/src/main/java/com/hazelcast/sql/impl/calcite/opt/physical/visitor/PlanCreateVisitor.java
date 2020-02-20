@@ -88,8 +88,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
  /**
@@ -97,11 +99,17 @@ import java.util.UUID;
  */
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:classfanoutcomplexity", "rawtypes"})
 public class PlanCreateVisitor implements PhysicalRelVisitor {
+    /** ID of query coordinator. */
+    private final UUID localMemberId;
+
     /** Partition mapping. */
     private final Map<UUID, PartitionIdSet> partMap;
 
     /** Data member IDs. */
     private final List<UUID> dataMemberIds;
+
+    /** Data members in a form of set. */
+    private final Set<UUID> dataMemberIdsSet;
 
     /** Data member addresses. */
     private final List<Address> dataMemberAddresses;
@@ -114,9 +122,6 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
     /** Number of parameters. */
     private final int paramsCount;
-
-    /** Whether physical rel should be saved in the plan. */
-    private final boolean savePhysicalRel;
 
     /** Optimizer statistics. */
     private final OptimizerStatistics stats;
@@ -134,28 +139,32 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     private RootPhysicalRel rootPhysicalRel;
 
     public PlanCreateVisitor(
+        UUID localMemberId,
         Map<UUID, PartitionIdSet> partMap,
         List<UUID> dataMemberIds,
         List<Address> dataMemberAddresses,
         Map<PhysicalRel, List<Integer>> relIdMap,
         String sql,
         int paramsCount,
-        boolean savePhysicalRel,
         OptimizerStatistics stats
     ) {
+        this.localMemberId = localMemberId;
         this.partMap = partMap;
         this.dataMemberIds = dataMemberIds;
         this.dataMemberAddresses = dataMemberAddresses;
         this.relIdMap = relIdMap;
         this.sql = sql;
         this.paramsCount = paramsCount;
-        this.savePhysicalRel = savePhysicalRel;
         this.stats = stats;
+
+        dataMemberIdsSet = new HashSet<>(dataMemberIds);
     }
 
     public QueryPlan getPlan() {
+        // Calculate edges.
         Map<Integer, Integer> outboundEdgeMap = new HashMap<>();
         Map<Integer, Integer> inboundEdgeMap = new HashMap<>();
+        Map<Integer, Integer> inboundEdgeMemberCountMap = new HashMap<>();
 
         for (int i = 0; i < fragments.size(); i++) {
             QueryFragment fragment = fragments.get(i);
@@ -169,9 +178,12 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             if (fragment.getInboundEdges() != null) {
                 for (Integer inboundEdge : fragment.getInboundEdges()) {
                     inboundEdgeMap.put(inboundEdge, i);
+                    inboundEdgeMemberCountMap.put(inboundEdge, fragment.getMapping().getMemberCount());
                 }
             }
         }
+
+        // Calculate edge
 
         assert rootPhysicalRel != null;
 
@@ -184,10 +196,10 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             fragments,
             outboundEdgeMap,
             inboundEdgeMap,
+            inboundEdgeMemberCountMap,
             paramsCount,
             explain,
-            stats,
-            savePhysicalRel ? Collections.singleton(rootPhysicalRel) : null
+            stats
         );
     }
 
@@ -202,7 +214,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             upstreamNode
         );
 
-        addFragment(rootNode, QueryFragmentMapping.ROOT);
+        addFragment(rootNode, QueryFragmentMapping.staticMapping(Collections.singleton(localMemberId)));
     }
 
     @Override
@@ -210,7 +222,6 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         List<String> fieldPaths = getScanFieldPaths(rel);
 
         PhysicalNodeSchema schemaBefore = getScanSchemaBeforeProject(rel);
-        PhysicalNodeSchema schemaAfter = getScanSchemaAfterProject(rel, schemaBefore);
 
         MapScanPhysicalNode scanNode = new MapScanPhysicalNode(
             pollId(rel),
@@ -218,8 +229,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             fieldPaths,
             schemaBefore.getTypes(),
             rel.getProjects(),
-            convertFilter(schemaBefore, rel.getFilter()),
-            schemaAfter
+            convertFilter(schemaBefore, rel.getFilter())
         );
 
         pushUpstream(scanNode);
@@ -230,7 +240,6 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         List<String> fieldPaths = getScanFieldPaths(rel);
 
         PhysicalNodeSchema schemaBefore = getScanSchemaBeforeProject(rel);
-        PhysicalNodeSchema schemaAfter = getScanSchemaAfterProject(rel, schemaBefore);
 
         MapIndexScanPhysicalNode scanNode = new MapIndexScanPhysicalNode(
             pollId(rel),
@@ -240,8 +249,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             rel.getProjects(),
             rel.getIndex().getName(),
             rel.getIndexFilter(),
-            convertFilter(schemaBefore, rel.getRemainderFilter()),
-            schemaAfter
+            convertFilter(schemaBefore, rel.getRemainderFilter())
         );
 
         pushUpstream(scanNode);
@@ -252,7 +260,6 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         List<String> fieldPaths = getScanFieldPaths(rel);
 
         PhysicalNodeSchema schemaBefore = getScanSchemaBeforeProject(rel);
-        PhysicalNodeSchema schemaAfter = getScanSchemaAfterProject(rel, schemaBefore);
 
         ReplicatedMapScanPhysicalNode scanNode = new ReplicatedMapScanPhysicalNode(
             pollId(rel),
@@ -260,8 +267,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             fieldPaths,
             schemaBefore.getTypes(),
             rel.getProjects(),
-            convertFilter(schemaBefore, rel.getFilter()),
-            schemaAfter
+            convertFilter(schemaBefore, rel.getFilter())
         );
 
         pushUpstream(scanNode);
@@ -312,13 +318,13 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             new FieldHashFunction(rel.getHashFields())
         );
 
-        addFragment(sendNode, QueryFragmentMapping.DATA_MEMBERS);
+        addFragment(sendNode, QueryFragmentMapping.staticMapping(dataMemberIdsSet));
 
         // Create receiver.
         ReceivePhysicalNode receiveNode = new ReceivePhysicalNode(
             id,
             edge,
-            sendNode.getSchema()
+            sendNode.getSchema().getTypes()
         );
 
         pushUpstream(receiveNode);
@@ -340,13 +346,13 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             edge
         );
 
-        addFragment(sendNode, QueryFragmentMapping.DATA_MEMBERS);
+        addFragment(sendNode, QueryFragmentMapping.staticMapping(dataMemberIdsSet));
 
         // Create receiver.
         ReceivePhysicalNode receiveNode = new ReceivePhysicalNode(
             id,
             edge,
-            sendNode.getSchema()
+            sendNode.getSchema().getTypes()
         );
 
         pushUpstream(receiveNode);
@@ -373,15 +379,15 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             AllFieldsHashFunction.INSTANCE
         );
 
-        addFragment(sendNode, QueryFragmentMapping.DATA_MEMBERS);
+        addFragment(sendNode, QueryFragmentMapping.staticMapping(dataMemberIdsSet));
 
         // Create a receiver and push it to stack.
         ReceiveSortMergePhysicalNode receiveNode = new ReceiveSortMergePhysicalNode(
             id,
             edge,
+            sendNode.getSchema().getTypes(),
             sortNode.getExpressions(),
-            sortNode.getAscs(),
-            sendNode.getSchema()
+            sortNode.getAscs()
         );
 
         pushUpstream(receiveNode);
@@ -658,37 +664,27 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         return expression.accept(converter);
     }
 
-     private static PhysicalNodeSchema getScanSchemaAfterProject(AbstractScanRel rel, PhysicalNodeSchema schemaBeforeProject) {
-         List<DataType> types = new ArrayList<>(rel.getProjects().size());
+    private static PhysicalNodeSchema getScanSchemaBeforeProject(AbstractScanRel rel) {
+        HazelcastTable table = rel.getTableUnwrapped();
 
-         for (int project : rel.getProjects()) {
-             types.add(schemaBeforeProject.getType(project));
-         }
+        List<DataType> types = new ArrayList<>();
 
-         return new PhysicalNodeSchema(types);
-     }
+        for (String fieldName : rel.getTable().getRowType().getFieldNames()) {
+            types.add(table.getFieldType(fieldName));
+        }
 
-     private static PhysicalNodeSchema getScanSchemaBeforeProject(AbstractScanRel rel) {
-         HazelcastTable table = rel.getTableUnwrapped();
+        return new PhysicalNodeSchema(types);
+    }
 
-         List<DataType> types = new ArrayList<>();
+    private static List<String> getScanFieldPaths(AbstractScanRel rel) {
+        HazelcastTable table = rel.getTableUnwrapped();
 
-         for (String fieldName : rel.getTable().getRowType().getFieldNames()) {
-             types.add(table.getFieldType(fieldName));
-         }
+        List<String> paths = new ArrayList<>();
 
-         return new PhysicalNodeSchema(types);
-     }
+        for (String fieldName : rel.getTable().getRowType().getFieldNames()) {
+            paths.add(table.getFieldPath(fieldName));
+        }
 
-     private static List<String> getScanFieldPaths(AbstractScanRel rel) {
-         HazelcastTable table = rel.getTableUnwrapped();
-
-         List<String> paths = new ArrayList<>();
-
-         for (String fieldName : rel.getTable().getRowType().getFieldNames()) {
-             paths.add(table.getFieldPath(fieldName));
-         }
-
-         return paths;
+        return paths;
      }
 }

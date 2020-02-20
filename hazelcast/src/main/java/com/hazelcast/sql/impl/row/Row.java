@@ -18,6 +18,9 @@ package com.hazelcast.sql.impl.row;
 
 import com.hazelcast.sql.SqlRow;
 
+import java.util.Collections;
+import java.util.List;
+
 /**
  * Single row.
  */
@@ -25,6 +28,11 @@ public interface Row extends RowBatch, SqlRow {
     @Override
     default Row getRow(int idx) {
         return this;
+    }
+
+    @Override
+    default List<Row> getRows() {
+        return Collections.singletonList(this);
     }
 
     @Override

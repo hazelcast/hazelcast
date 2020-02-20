@@ -152,13 +152,13 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
         // Create the plan.
         PlanCreateVisitor visitor = new PlanCreateVisitor(
+            nodeEngine.getLocalMember().getUuid(),
             partMap,
             dataMemberIds,
             dataMemberAddresses,
             relIdMap,
             sql,
             paramsCount,
-            context.getConfig().isSavePhysicalRel(),
             stats
         );
 

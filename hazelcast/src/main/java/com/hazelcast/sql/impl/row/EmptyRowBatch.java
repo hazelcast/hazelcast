@@ -16,6 +16,9 @@
 
 package com.hazelcast.sql.impl.row;
 
+import java.util.Collections;
+import java.util.List;
+
 /**
  * Empty row batch.
  */
@@ -30,6 +33,11 @@ public final class EmptyRowBatch implements RowBatch {
     @Override
     public Row getRow(int idx) {
         throw new UnsupportedOperationException("Should not be called.");
+    }
+
+    @Override
+    public List<Row> getRows() {
+        return Collections.emptyList();
     }
 
     @Override

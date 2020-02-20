@@ -21,7 +21,6 @@ import com.hazelcast.sql.impl.exec.AbstractUpstreamAwareExec;
 import com.hazelcast.sql.impl.exec.Exec;
 import com.hazelcast.sql.impl.exec.IterationResult;
 import com.hazelcast.sql.impl.mailbox.Outbox;
-import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
 
 /**
@@ -30,9 +29,6 @@ import com.hazelcast.sql.impl.row.RowBatch;
 public abstract class AbstractSendExec extends AbstractUpstreamAwareExec {
     /** Registered outboxes. */
     protected final Outbox[] outboxes;
-
-    /** Row which pending send. */
-    private Row pendingRow;
 
     /** Done flag. */
     private boolean done;
@@ -56,48 +52,63 @@ public abstract class AbstractSendExec extends AbstractUpstreamAwareExec {
             return IterationResult.FETCHED_DONE;
         }
 
-        if (pendingRow != null) {
-            if (pushRow(pendingRow)) {
-                pendingRow = null;
-            } else {
-                return IterationResult.WAIT;
-            }
+        // Try finalizing the previous batch.
+        if (!pushPendingBatch()) {
+            return IterationResult.WAIT;
+        }
+
+        // Stop if state is exhausted.
+        if (state.isDone()) {
+            done = true;
+
+            return IterationResult.FETCHED_DONE;
         }
 
         while (true) {
+            // Try shifting the state.
             if (!state.advance()) {
                 return IterationResult.WAIT;
             }
 
-            for (Row upstreamRow : state) {
-                if (!pushRow(upstreamRow)) {
-                    pendingRow = upstreamRow;
+            // Push batch to outboxes.
+            RowBatch batch = state.consumeBatch();
 
-                    return IterationResult.WAIT;
+            boolean last = state.isDone();
+
+            boolean pushed = pushBatch(batch, last);
+
+            if (pushed) {
+                if (last) {
+                    // Pushed the very last batch, done.
+                    done = true;
+
+                    return IterationResult.FETCHED_DONE;
+                } else {
+                    // More batches to follow, repeat the loop.
+                    continue;
                 }
             }
 
-            if (state.isDone()) {
-                done = true;
-
-                for (Outbox outbox : outboxes) {
-                    // TODO: This flush may fail because there is no room for the output. Handle it as a part of backpressure
-                    //  implementation.
-                    outbox.flush();
-                }
-
-                return IterationResult.FETCHED_DONE;
-            }
+            // Failed to push batch to all outboxes due to backpressure.
+            return IterationResult.WAIT;
         }
     }
 
     /**
-     * Push the current row to the outbox.
+     * Push pending batches if needed.
      *
-     * @param row Row.
-     * @return {@code True} if pushed successfully, {@code false}
+     * @return {@code True} if there are no more pending batches.
      */
-    protected abstract boolean pushRow(Row row);
+    protected abstract boolean pushPendingBatch();
+
+    /**
+     * Push the current row batch to the outbox.
+     *
+     * @param batch Row batch.
+     * @param last Whether this is the last batch.
+     * @return {@code True} if the batch was accepted by all inboxes.
+     */
+    protected abstract boolean pushBatch(RowBatch batch, boolean last);
 
     @Override
     public RowBatch currentBatch0() {

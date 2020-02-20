@@ -19,7 +19,6 @@ package com.hazelcast.sql.impl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -46,6 +45,9 @@ public class QueryPlan {
     /** Inbound edge mapping (from edge ID to owning fragment position). */
     private final Map<Integer, Integer> inboundEdgeMap;
 
+    /** Map from inbound edge ID to number of members which will write into it. */
+    private final Map<Integer, Integer> inboundEdgeMemberCountMap;
+
     /** Number of parameters. */
     private final int parameterCount;
 
@@ -55,9 +57,6 @@ public class QueryPlan {
     /** Optimizer statistics. */
     private final OptimizerStatistics stats;
 
-    /** Optional attachments. */
-    private final Collection<Object> attachments;
-
     public QueryPlan(
         Map<UUID, PartitionIdSet> partMap,
         List<UUID> dataMemberIds,
@@ -65,10 +64,10 @@ public class QueryPlan {
         List<QueryFragment> fragments,
         Map<Integer, Integer> outboundEdgeMap,
         Map<Integer, Integer> inboundEdgeMap,
+        Map<Integer, Integer> inboundEdgeMemberCountMap,
         int parameterCount,
         QueryExplain explain,
-        OptimizerStatistics stats,
-        Collection<Object> attachments
+        OptimizerStatistics stats
     ) {
         this.partMap = partMap;
         this.dataMemberIds = dataMemberIds;
@@ -76,10 +75,10 @@ public class QueryPlan {
         this.fragments = fragments;
         this.outboundEdgeMap = outboundEdgeMap;
         this.inboundEdgeMap = inboundEdgeMap;
+        this.inboundEdgeMemberCountMap = inboundEdgeMemberCountMap;
         this.parameterCount = parameterCount;
         this.explain = explain;
         this.stats = stats;
-        this.attachments = attachments;
     }
 
     public Map<UUID, PartitionIdSet> getPartitionMap() {
@@ -106,6 +105,10 @@ public class QueryPlan {
         return inboundEdgeMap;
     }
 
+    public Map<Integer, Integer> getInboundEdgeMemberCountMap() {
+        return inboundEdgeMemberCountMap;
+    }
+
     public int getParameterCount() {
         return parameterCount;
     }
@@ -116,18 +119,5 @@ public class QueryPlan {
 
     public OptimizerStatistics getStatistics() {
         return stats;
-    }
-
-    @SuppressWarnings("unchecked")
-    public <T> T getAttachment(Class<T> cls) {
-        if (attachments != null) {
-            for (Object attachment : attachments) {
-                if (attachment != null && cls.isAssignableFrom(attachment.getClass())) {
-                    return (T) attachment;
-                }
-            }
-        }
-
-        return null;
     }
 }

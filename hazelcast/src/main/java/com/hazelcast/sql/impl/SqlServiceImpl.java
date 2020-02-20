@@ -38,12 +38,16 @@ import com.hazelcast.sql.impl.client.SqlClientPage;
 import com.hazelcast.sql.impl.client.SqlClientQueryRegistry;
 import com.hazelcast.sql.impl.exec.Exec;
 import com.hazelcast.sql.impl.mailbox.AbstractInbox;
+import com.hazelcast.sql.impl.mailbox.Outbox;
+import com.hazelcast.sql.impl.mailbox.SendBatch;
+import com.hazelcast.sql.impl.memory.GlobalMemoryReservationManager;
 import com.hazelcast.sql.impl.operation.QueryBatchOperation;
 import com.hazelcast.sql.impl.operation.QueryCancelOperation;
 import com.hazelcast.sql.impl.operation.QueryCheckOperation;
 import com.hazelcast.sql.impl.operation.QueryCheckResponseOperation;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperationFactory;
+import com.hazelcast.sql.impl.operation.QueryFlowControlOperation;
 import com.hazelcast.sql.impl.operation.QueryIdAwareOperation;
 import com.hazelcast.sql.impl.operation.QueryOperation;
 import com.hazelcast.sql.impl.physical.visitor.CreateExecVisitor;
@@ -52,13 +56,13 @@ import com.hazelcast.sql.impl.state.QueryState;
 import com.hazelcast.sql.impl.state.QueryStateRegistry;
 import com.hazelcast.sql.impl.state.QueryStateRegistryImpl;
 import com.hazelcast.sql.impl.state.QueryStateRegistryUpdater;
-import com.hazelcast.sql.impl.state.QueryStateRowSource;
 import com.hazelcast.sql.impl.worker.QueryWorkerPool;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -94,6 +98,9 @@ public class SqlServiceImpl implements SqlService, ManagedService, ClientAwareSe
     /** Currently active client cursors. */
     private final SqlClientQueryRegistry clientRegistry;
 
+    /** Global memory manager. */
+    private final GlobalMemoryReservationManager memoryManager;
+
     /** Logger. */
     private final ILogger logger;
 
@@ -115,6 +122,8 @@ public class SqlServiceImpl implements SqlService, ManagedService, ClientAwareSe
         workerPool = new QueryWorkerPool(nodeEngine, cfg.getThreadCount());
 
         clientRegistry = new SqlClientQueryRegistry(nodeEngine);
+
+        memoryManager = new GlobalMemoryReservationManager(cfg.getMaxMemory());
     }
 
     @Override
@@ -184,46 +193,46 @@ public class SqlServiceImpl implements SqlService, ManagedService, ClientAwareSe
                 + ", actual=" + args.size() + ']');
         }
 
-        // Register the query.
+        // Handle explain.
         UUID localMemberId = nodeEngine.getLocalMember().getUuid();
 
-        QueryResultConsumerImpl consumer;
-        QueryStateRowSource rowSource;
-
         if (explain != null) {
-            consumer = null;
-
-            rowSource = new QueryExplainRowSource(explain);
-        } else {
-            consumer = new QueryResultConsumerImpl();
-
-            rowSource = consumer;
+            return stateRegistry.onInitiatorQueryStarted(
+                timeout,
+                plan,
+                null,
+                new QueryExplainRowSource(explain),
+                true
+            );
         }
+
+        // Prepare mappings.
+        QueryExecuteOperationFactory operationFactory = new QueryExecuteOperationFactory(
+            plan,
+            args,
+            timeout,
+            memoryManager.getMemoryPressure(),
+            getEpochWatermark()
+        );
+
+        IdentityHashMap<QueryFragment, Collection<UUID>> fragmentMappings = operationFactory.prepareFragmentMappings();
+
+        // Register the state.
+        QueryResultConsumerImpl consumer = new QueryResultConsumerImpl();
 
         QueryState state = stateRegistry.onInitiatorQueryStarted(
             timeout,
             plan,
-            rowSource,
-            explain != null
+            fragmentMappings,
+            consumer,
+            false
         );
-
-        if (explain != null) {
-            return state;
-        }
 
         try {
             // Start execution on local member.
-            QueryExecuteOperationFactory operationFactory = new QueryExecuteOperationFactory(
-                this,
-                plan,
-                args,
-                state.getQueryId(),
-                localMemberId,
-                timeout
-            );
+            QueryExecuteOperation localOp = operationFactory.create(state.getQueryId(), fragmentMappings, localMemberId);
 
-            QueryExecuteOperation localOp = operationFactory.create(localMemberId).setRootConsumer(consumer);
-
+            localOp.setRootConsumer(consumer);
             localOp.setCallerUuid(nodeEngine.getLocalMember().getUuid());
 
             handleQueryExecuteOperation(localOp);
@@ -236,7 +245,7 @@ public class SqlServiceImpl implements SqlService, ManagedService, ClientAwareSe
                     continue;
                 }
 
-                QueryExecuteOperation remoteOp = operationFactory.create(memberId);
+                QueryExecuteOperation remoteOp = operationFactory.create(state.getQueryId(), fragmentMappings, memberId);
                 Address address = plan.getDataMemberAddresses().get(i);
 
                 if (!sendRequest(remoteOp, address)) {
@@ -296,14 +305,24 @@ public class SqlServiceImpl implements SqlService, ManagedService, ClientAwareSe
         sendRequest(operation, targetMember.getAddress());
     }
 
+    public boolean sendRequest(QueryOperation operation, UUID memberId) {
+        MemberImpl member = nodeEngine.getClusterService().getMember(memberId);
+
+        if (member == null) {
+            return false;
+        }
+
+        return sendRequest(operation, member.getAddress());
+    }
+
     @SuppressWarnings({"rawtypes", "unchecked"})
-    public boolean sendRequest(QueryOperation operation, Address address) {
+    public boolean sendRequest(QueryOperation operation, Address memberAddress) {
         assert operation != null;
-        assert address != null;
+        assert memberAddress != null;
 
         operation.setCallerUuid(nodeEngine.getLocalMember().getUuid());
 
-        boolean local = address.equals(nodeEngine.getThisAddress());
+        boolean local = memberAddress.equals(nodeEngine.getThisAddress());
 
         if (local) {
             handleQueryOperation(operation);
@@ -319,7 +338,7 @@ public class SqlServiceImpl implements SqlService, ManagedService, ClientAwareSe
 
             EndpointManager endpointManager = nodeEngine.getNode().getEndpointManager();
 
-            Connection connection = endpointManager.getConnection(address);
+            Connection connection = endpointManager.getConnection(memberAddress);
 
             return endpointManager.transmit(packet, connection);
         }
@@ -392,6 +411,8 @@ public class SqlServiceImpl implements SqlService, ManagedService, ClientAwareSe
             handleQueryBatchOperation((QueryBatchOperation) operation);
         } else if (operation instanceof QueryCancelOperation) {
             handleQueryCancelOperation((QueryCancelOperation) operation);
+        } else if (operation instanceof QueryFlowControlOperation) {
+            handleQueryFlowControlOperation((QueryFlowControlOperation) operation);
         } else if (operation instanceof QueryCheckOperation) {
             handleQueryCheckOperation((QueryCheckOperation) operation);
         } else if (operation instanceof QueryCheckResponseOperation) {
@@ -430,7 +451,6 @@ public class SqlServiceImpl implements SqlService, ManagedService, ClientAwareSe
             CreateExecVisitor visitor = new CreateExecVisitor(
                 nodeEngine,
                 operation,
-                operation.getPartitionMapping().keySet(),
                 operation.getPartitionMapping().get(nodeEngine.getLocalMember().getUuid()),
                 operation.getPartitionMapping()
             );
@@ -440,6 +460,7 @@ public class SqlServiceImpl implements SqlService, ManagedService, ClientAwareSe
             Exec exec = visitor.getExec();
 
             Map<Integer, AbstractInbox> inboxes = visitor.getInboxes();
+            Map<Integer, Map<UUID, Outbox>> outboxes = visitor.getOutboxes();
 
             // Create fragment context.
             QueryFragmentContext fragmentContext = new QueryFragmentContext(
@@ -448,7 +469,13 @@ public class SqlServiceImpl implements SqlService, ManagedService, ClientAwareSe
             );
 
             // Assemble all necessary information into a fragment executable.
-            QueryFragmentExecutable fragmentExecutable = new QueryFragmentExecutable(state, exec, inboxes, fragmentContext);
+            QueryFragmentExecutable fragmentExecutable = new QueryFragmentExecutable(
+                state,
+                exec,
+                inboxes,
+                outboxes,
+                fragmentContext
+            );
 
             fragmentContext.setFragmentExecutable(fragmentExecutable);
 
@@ -465,6 +492,11 @@ public class SqlServiceImpl implements SqlService, ManagedService, ClientAwareSe
     }
 
     private void handleQueryBatchOperation(QueryBatchOperation operation) {
+        SendBatch batch = operation.getBatch();
+
+//        System.out.println(">>> BATCH       : " + operation.getCallerUuid() + " => " + nodeEngine.getLocalMember().getUuid()
+//            + " => (" + batch.getRows().size() + ", " + batch.isLast() + ", " + batch.getRemainingMemory() + ")");
+
         QueryState state = stateRegistry.onDistributedQueryStarted(operation.getQueryId());
 
         if (state == null) {
@@ -472,7 +504,7 @@ public class SqlServiceImpl implements SqlService, ManagedService, ClientAwareSe
             return;
         }
 
-        QueryFragmentExecutable fragmentExecutable = state.getDistributedState().onBatch(operation);
+        QueryFragmentExecutable fragmentExecutable = state.getDistributedState().onOperation(operation);
 
         if (fragmentExecutable != null) {
             // Fragment is scheduled if the query is already initialized.
@@ -503,6 +535,24 @@ public class SqlServiceImpl implements SqlService, ManagedService, ClientAwareSe
         );
 
         state.cancel(error);
+    }
+
+    private void handleQueryFlowControlOperation(QueryFlowControlOperation operation) {
+//        System.out.println(">>> FLOW CONTROL: " + operation.getCallerUuid() + " => "
+//            + nodeEngine.getLocalMember().getUuid() + " => " + operation.getRemainingMemory());
+
+        QueryState state = stateRegistry.getState(operation.getQueryId());
+
+        if (state == null) {
+            return;
+        }
+
+        QueryFragmentExecutable fragmentExecutable = state.getDistributedState().onOperation(operation);
+
+        if (fragmentExecutable != null) {
+            // Fragment is scheduled if the query is already initialized.
+            fragmentExecutable.schedule(workerPool);
+        }
     }
 
     private void handleQueryCheckOperation(QueryCheckOperation operation) {

@@ -22,8 +22,10 @@ import com.hazelcast.sql.impl.QueryFragment;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryPlan;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Set;
 import java.util.UUID;
 
@@ -62,6 +64,7 @@ public final class QueryState {
         boolean initiator,
         long initiatorTimeout,
         QueryPlan initiatorPlan,
+        IdentityHashMap<QueryFragment, Collection<UUID>> initiatorFragmentMappings,
         QueryStateRowSource initiatorRowSource
     ) {
         // Set common state.
@@ -74,6 +77,7 @@ public final class QueryState {
             initiatorState = new QueryInitiatorState(
                 queryId,
                 initiatorPlan,
+                initiatorFragmentMappings,
                 initiatorRowSource,
                 initiatorTimeout
             );
@@ -88,6 +92,7 @@ public final class QueryState {
         QueryStateCompletionCallback completionCallback,
         long initiatorTimeout,
         QueryPlan initiatorPlan,
+        IdentityHashMap<QueryFragment, Collection<UUID>> initiatorFragmentMappings,
         QueryStateRowSource initiatorRowSource
     ) {
         return new QueryState(
@@ -98,6 +103,7 @@ public final class QueryState {
             true,
             initiatorTimeout,
             initiatorPlan,
+            initiatorFragmentMappings,
             initiatorRowSource
         );
     }
@@ -120,6 +126,7 @@ public final class QueryState {
             completionCallback,
             false,
             -1,
+            null,
             null,
             null
         );
@@ -300,24 +307,10 @@ public final class QueryState {
         assert isInitiator();
         assert queryId.getMemberId().equals(localMemberId);
 
-        QueryPlan plan = initiatorState.getPlan();
-
         Set<UUID> res = new HashSet<>();
 
-        for (QueryFragment fragment : plan.getFragments()) {
-            switch (fragment.getMapping()) {
-                case ROOT:
-                    // Root fragment is always executed on initiator, and semantics of this methos excludes initiator.
-                    break;
-
-                case DATA_MEMBERS:
-                    res.addAll(plan.getPartitionMap().keySet());
-
-                    break;
-
-                default:
-                    throw new IllegalArgumentException("Unsupported mapping: " + fragment.getMapping());
-            }
+        for (Collection<UUID> fragmentMembersIds : initiatorState.getFragmentMappings().values()) {
+            res.addAll(fragmentMembersIds);
         }
 
         // Remove initiator.

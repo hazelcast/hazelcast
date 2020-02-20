@@ -16,8 +16,13 @@
 
 package com.hazelcast.sql.impl.state;
 
+import com.hazelcast.sql.impl.QueryFragment;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryPlan;
+
+import java.util.Collection;
+import java.util.IdentityHashMap;
+import java.util.UUID;
 
 /**
  * Query state which is specific to the initiator node only.
@@ -29,6 +34,9 @@ public class QueryInitiatorState {
     /** Plan. */
     private final QueryPlan plan;
 
+    /** Mappings. */
+    private final IdentityHashMap<QueryFragment, Collection<UUID>> fragmentMappings;
+
     /** Iteartor. */
     private final QueryStateRowSource rowSource;
 
@@ -38,11 +46,13 @@ public class QueryInitiatorState {
     public QueryInitiatorState(
         QueryId queryId,
         QueryPlan plan,
+        IdentityHashMap<QueryFragment, Collection<UUID>> fragmentMappings,
         QueryStateRowSource rowSource,
         long timeout
     ) {
         this.queryId = queryId;
         this.plan = plan;
+        this.fragmentMappings = fragmentMappings;
         this.rowSource = rowSource;
         this.timeout = timeout;
     }
@@ -53,6 +63,10 @@ public class QueryInitiatorState {
 
     public QueryPlan getPlan() {
         return plan;
+    }
+
+    public IdentityHashMap<QueryFragment, Collection<UUID>> getFragmentMappings() {
+        return fragmentMappings;
     }
 
     public QueryStateRowSource getRowSource() {

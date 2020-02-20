@@ -23,12 +23,13 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.type.DataType;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Base class to scan a map.
  */
-public abstract class AbstractMapScanPhysicalNode extends ZeroInputPhysicalNode implements PhysicalNode {
+public abstract class AbstractMapScanPhysicalNode extends ZeroInputPhysicalNode {
     /** Map name. */
     protected String mapName;
 
@@ -44,9 +45,6 @@ public abstract class AbstractMapScanPhysicalNode extends ZeroInputPhysicalNode 
     /** Filter. */
     protected Expression<Boolean> filter;
 
-    /** Physical node schema. */
-    protected transient PhysicalNodeSchema schema;
-
     protected AbstractMapScanPhysicalNode() {
         // No-op.
     }
@@ -57,8 +55,7 @@ public abstract class AbstractMapScanPhysicalNode extends ZeroInputPhysicalNode 
         List<String> fieldNames,
         List<DataType> fieldTypes,
         List<Integer> projects,
-        Expression<Boolean> filter,
-        PhysicalNodeSchema schema
+        Expression<Boolean> filter
     ) {
         super(id);
 
@@ -67,7 +64,6 @@ public abstract class AbstractMapScanPhysicalNode extends ZeroInputPhysicalNode 
         this.fieldTypes = fieldTypes;
         this.projects = projects;
         this.filter = filter;
-        this.schema = schema;
     }
 
     public String getMapName() {
@@ -91,8 +87,14 @@ public abstract class AbstractMapScanPhysicalNode extends ZeroInputPhysicalNode 
     }
 
     @Override
-    public PhysicalNodeSchema getSchema() {
-        return schema;
+    public PhysicalNodeSchema getSchema0() {
+        List<DataType> types = new ArrayList<>(projects.size());
+
+        for (Integer project : projects) {
+            types.add(fieldTypes.get(project));
+        }
+
+        return new PhysicalNodeSchema(types);
     }
 
     @Override

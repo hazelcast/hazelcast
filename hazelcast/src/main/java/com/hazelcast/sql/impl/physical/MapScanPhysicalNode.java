@@ -37,10 +37,9 @@ public class MapScanPhysicalNode extends AbstractMapScanPhysicalNode {
         List<String> fieldNames,
         List<DataType> fieldTypes,
         List<Integer> projects,
-        Expression<Boolean> filter,
-        PhysicalNodeSchema schema
+        Expression<Boolean> filter
     ) {
-        super(id, mapName, fieldNames, fieldTypes, projects, filter, schema);
+        super(id, mapName, fieldNames, fieldTypes, projects, filter);
     }
 
     @Override

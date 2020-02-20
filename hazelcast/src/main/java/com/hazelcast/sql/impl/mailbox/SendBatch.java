@@ -16,29 +16,37 @@
 
 package com.hazelcast.sql.impl.mailbox;
 
-import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.sql.impl.row.Row;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 public class SendBatch implements DataSerializable {
     /** Rows being transferred. */
     private List<Row> rows;
 
+    /** Remaining memory on the receiver side before it is blocked. */
+    private long remainingMemory;
+
     /** Left batch marker. */
     private boolean last;
+
+    /** ID of sending member. */
+    private transient UUID senderId;
 
     public SendBatch() {
         // No-op.
     }
 
-    public SendBatch(List<Row> rows, boolean last) {
+    public SendBatch(List<Row> rows, long remainingMemory, boolean last) {
         this.rows = rows;
+        this.remainingMemory = remainingMemory;
         this.last = last;
     }
 
@@ -46,8 +54,20 @@ public class SendBatch implements DataSerializable {
         return rows;
     }
 
+    public long getRemainingMemory() {
+        return remainingMemory;
+    }
+
     public boolean isLast() {
         return last;
+    }
+
+    public UUID getSenderId() {
+        return senderId;
+    }
+
+    public void setSenderId(UUID senderId) {
+        this.senderId = senderId;
     }
 
     @Override
@@ -59,6 +79,7 @@ public class SendBatch implements DataSerializable {
         }
 
         out.writeBoolean(last);
+        out.writeLong(remainingMemory);
     }
 
     @SuppressWarnings("Duplicates")
@@ -77,5 +98,12 @@ public class SendBatch implements DataSerializable {
         }
 
         last = in.readBoolean();
+        remainingMemory = in.readLong();
+    }
+
+    @Override
+    public String toString() {
+        return "SendBatch{senderId=" + senderId + ", last=" + last + ", remainingMemory=" + remainingMemory
+                   + ", rowCount=" + rows.size() + ", rows=" + rows + '}';
     }
 }

@@ -16,35 +16,46 @@
 
 package com.hazelcast.sql.impl;
 
+import java.util.Collection;
+import java.util.UUID;
+
 /**
- * Enumeration which defines query mapping.
+ * Fragment mapping: static or dynamic.
  */
-public enum QueryFragmentMapping {
-    // TODO: We must add another mode when certain fragment is executed only on the given subset of nodes. This is important
-    //  for large topologies, where otherwise a distirbuted exchange will trigger N*N streams, where N is number of participants.
+public final class QueryFragmentMapping {
+    /** Static mapping: member IDs. */
+    private final Collection<UUID> staticMemberIds;
 
-    /** Fragment should be executed on all data members. */
-    DATA_MEMBERS(0),
+    /** Dynamic mapping: member count. */
+    private final int dynamicMemberCount;
 
-    /** Fragment should be executed only on a root member. */
-    ROOT(1);
-
-    private final int id;
-
-    QueryFragmentMapping(int id) {
-        this.id = id;
+    private QueryFragmentMapping(Collection<UUID> staticMemberIds, int dynamicMemberCount) {
+        this.staticMemberIds = staticMemberIds;
+        this.dynamicMemberCount = dynamicMemberCount;
     }
 
-    public int getId() {
-        return id;
+    public static QueryFragmentMapping staticMapping(Collection<UUID> staticMemberIds) {
+        return new QueryFragmentMapping(staticMemberIds, 0);
     }
 
-    public static QueryFragmentMapping getById(final int id) {
-        for (QueryFragmentMapping type : values()) {
-            if (type.id == id) {
-                return type;
-            }
-        }
-        return null;
+    // TODO: Make sure to fallback to dynamic approach when there are too many members
+    public static QueryFragmentMapping dynamicMapping(int dynamicMemberCount) {
+        return new QueryFragmentMapping(null, dynamicMemberCount);
+    }
+
+    public boolean isStatic() {
+        return staticMemberIds != null;
+    }
+
+    public Collection<UUID> getStaticMemberIds() {
+        return staticMemberIds;
+    }
+
+    public int getDynamicMemberCount() {
+        return dynamicMemberCount;
+    }
+
+    public int getMemberCount() {
+        return isStatic() ? staticMemberIds.size() : dynamicMemberCount;
     }
 }

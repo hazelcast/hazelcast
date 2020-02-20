@@ -56,7 +56,7 @@ public class ProjectPhysicalNode extends UniInputPhysicalNode {
     }
 
     @Override
-    public PhysicalNodeSchema getSchema() {
+    public PhysicalNodeSchema getSchema0() {
         List<DataType> types = new ArrayList<>(projects.size());
 
         for (Expression project : projects) {

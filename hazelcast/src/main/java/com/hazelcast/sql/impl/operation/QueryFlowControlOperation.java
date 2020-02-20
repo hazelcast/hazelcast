@@ -19,48 +19,42 @@ package com.hazelcast.sql.impl.operation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.sql.impl.mailbox.SendBatch;
 
 import java.io.IOException;
 
 /**
- * Batch operation.
+ * Flow control operation which allows for remote sender to proceed with sending.
  */
-public class QueryBatchOperation extends QueryDataExchangeOperation {
-    private SendBatch batch;
+public class QueryFlowControlOperation extends QueryDataExchangeOperation {
+    /** Amount of memory available on the receiver. */
+    private long remainingMemory;
 
-    public QueryBatchOperation() {
+    public QueryFlowControlOperation() {
         // No-op.
     }
 
-    public QueryBatchOperation(
-        long epochWatermark,
-        QueryId queryId,
-        int edgeId,
-        SendBatch batch
-    ) {
+    public QueryFlowControlOperation(long epochWatermark, QueryId queryId, int edgeId, long remainingMemory) {
         super(epochWatermark, queryId, edgeId);
 
-        this.batch = batch;
+        this.remainingMemory = remainingMemory;
     }
 
-    public SendBatch getBatch() {
-        return batch;
+    public long getRemainingMemory() {
+        return remainingMemory;
     }
 
     @Override
     public boolean isInbound() {
-        return true;
+        return false;
     }
 
     @Override
     protected void writeInternal2(ObjectDataOutput out) throws IOException {
-        batch.writeData(out);
+        out.writeLong(remainingMemory);
     }
 
     @Override
     protected void readInternal2(ObjectDataInput in) throws IOException {
-        batch = new SendBatch();
-        batch.readData(in);
+        remainingMemory = in.readLong();
     }
 }

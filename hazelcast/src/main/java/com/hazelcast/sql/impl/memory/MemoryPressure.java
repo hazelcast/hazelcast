@@ -14,31 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.physical;
-
-import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.sql.impl.physical.visitor.PhysicalNodeVisitor;
+package com.hazelcast.sql.impl.memory;
 
 /**
- * Physical node.
+ * Estimated memory pressure which system experiences at the moment.
  */
-public interface PhysicalNode extends DataSerializable {
-    /**
-     * @return ID of the node.
-     */
-    int getId();
-
-    /**
-     * Visit the node.
-     *
-     * @param visitor Visitor.
-     */
-    void visit(PhysicalNodeVisitor visitor);
-
-    /**
-     * Get schema associated with the node.
-     *
-     * @return Schema.
-     */
-    PhysicalNodeSchema getSchema();
+public enum MemoryPressure {
+    HIGH, MEDIUM, LOW
 }

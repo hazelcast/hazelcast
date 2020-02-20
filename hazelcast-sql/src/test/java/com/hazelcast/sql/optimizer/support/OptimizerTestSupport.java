@@ -80,7 +80,7 @@ public abstract class OptimizerTestSupport {
      * @return Result.
      */
     protected Result optimize(String sql, HazelcastSchema schema) {
-        OptimizerConfig config = OptimizerConfig.builder().setSavePhysicalRel(true).build();
+        OptimizerConfig config = OptimizerConfig.builder().build();
 
         OptimizerContext context = OptimizerContext.create(schema, 1, config);
 

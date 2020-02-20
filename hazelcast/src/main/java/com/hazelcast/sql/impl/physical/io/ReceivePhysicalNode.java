@@ -16,13 +16,16 @@
 
 package com.hazelcast.sql.impl.physical.io;
 
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.physical.PhysicalNodeSchema;
 import com.hazelcast.sql.impl.physical.visitor.PhysicalNodeVisitor;
 import com.hazelcast.sql.impl.physical.ZeroInputPhysicalNode;
+import com.hazelcast.sql.impl.type.DataType;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -32,18 +35,18 @@ public class ReceivePhysicalNode extends ZeroInputPhysicalNode implements EdgeAw
     /** Edge ID. */
     private int edgeId;
 
-    /** Schema. */
-    private transient PhysicalNodeSchema schema;
+    /** Field types. */
+    private List<DataType> fieldTypes;
 
     public ReceivePhysicalNode() {
         // No-op.
     }
 
-    public ReceivePhysicalNode(int id, int edgeId, PhysicalNodeSchema schema) {
+    public ReceivePhysicalNode(int id, int edgeId, List<DataType> fieldTypes) {
         super(id);
 
         this.edgeId = edgeId;
-        this.schema = schema;
+        this.fieldTypes = fieldTypes;
     }
 
     @Override
@@ -62,18 +65,20 @@ public class ReceivePhysicalNode extends ZeroInputPhysicalNode implements EdgeAw
     }
 
     @Override
-    public PhysicalNodeSchema getSchema() {
-        return schema;
+    public PhysicalNodeSchema getSchema0() {
+        return new PhysicalNodeSchema(fieldTypes);
     }
 
     @Override
     public void writeData0(ObjectDataOutput out) throws IOException {
         out.writeInt(edgeId);
+        SerializationUtil.writeList(fieldTypes, out);
     }
 
     @Override
     public void readData0(ObjectDataInput in) throws IOException {
         edgeId = in.readInt();
+        fieldTypes = SerializationUtil.readList(in);
     }
 
     @Override

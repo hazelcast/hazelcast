@@ -55,6 +55,7 @@ import com.hazelcast.sql.impl.physical.ReplicatedToPartitionedPhysicalNode;
 import com.hazelcast.sql.impl.physical.RootPhysicalNode;
 import com.hazelcast.sql.impl.physical.SortPhysicalNode;
 import com.hazelcast.sql.impl.physical.io.BroadcastSendPhysicalNode;
+import com.hazelcast.sql.impl.physical.io.EdgeAwarePhysicalNode;
 import com.hazelcast.sql.impl.physical.io.ReceivePhysicalNode;
 import com.hazelcast.sql.impl.physical.io.ReceiveSortMergePhysicalNode;
 import com.hazelcast.sql.impl.physical.io.UnicastSendPhysicalNode;
@@ -73,16 +74,13 @@ import java.util.UUID;
  @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "ClassFanOutComplexity"})
 public class CreateExecVisitor implements PhysicalNodeVisitor {
     // TODO: Understand how to calculate it properly. It should not be hardcoded.
-    private static final int OUTBOX_BATCH_SIZE = 1024;
+    private static final int OUTBOX_BATCH_SIZE = 512 * 1024;
 
     /** Node engine. */
     private final NodeEngine nodeEngine;
 
     /** Operation. */
     private final QueryExecuteOperation operation;
-
-    /** Member IDs. */
-    private final Collection<UUID> dataMemberIds;
 
     /** Partitions owned by this data node. */
     private final PartitionIdSet localParts;
@@ -99,16 +97,17 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
     /** Inboxes. */
     private final Map<Integer, AbstractInbox> inboxes = new HashMap<>();
 
+    /** Outboxes. */
+    private Map<Integer, Map<UUID, Outbox>> outboxes = new HashMap<>();
+
     public CreateExecVisitor(
         NodeEngine nodeEngine,
         QueryExecuteOperation operation,
-        Collection<UUID> dataMemberIds,
         PartitionIdSet localParts,
         Map<UUID, PartitionIdSet> partitionMap
     ) {
         this.nodeEngine = nodeEngine;
         this.operation = operation;
-        this.dataMemberIds = dataMemberIds;
         this.localParts = localParts;
         this.partitionMap = partitionMap;
     }
@@ -131,13 +130,16 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
         int sendFragmentPos = operation.getOutboundEdgeMap().get(edgeId);
         QueryFragmentDescriptor sendFragment = operation.getFragmentDescriptors().get(sendFragmentPos);
 
-        int fragmentMemberCount = sendFragment.getFragmentMembers(dataMemberIds).size();
+        int fragmentMemberCount = sendFragment.getMappedMemberIds().size();
 
         // Create and register inbox.
         SingleInbox inbox = new SingleInbox(
             operation.getQueryId(),
             node.getEdgeId(),
-            fragmentMemberCount
+            sendFragment.getNode().getSchema().getRowWidth(),
+            nodeEngine.getSqlService(),
+            fragmentMemberCount,
+            operation.getEdgeCreditMap().get(edgeId)
         );
 
         inboxes.put(inbox.getEdgeId(), inbox);
@@ -160,7 +162,10 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
         StripedInbox inbox = new StripedInbox(
             operation.getQueryId(),
             edgeId,
-            sendFragment.getFragmentMembers(dataMemberIds)
+            node.getSchema().getRowWidth(),
+            nodeEngine.getSqlService(),
+            sendFragment.getMappedMemberIds(),
+            operation.getEdgeCreditMap().get(edgeId)
         );
 
         inboxes.put(inbox.getEdgeId(), inbox);
@@ -178,7 +183,7 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
 
     @Override
     public void onUnicastSendNode(UnicastSendPhysicalNode node) {
-        Outbox[] outboxes = prepareOutboxes(node.getEdgeId());
+        Outbox[] outboxes = prepareOutboxes(node);
 
         int[] partitionOutboxIndexes = new int[localParts.getPartitionCount()];
 
@@ -205,7 +210,7 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
 
     @Override
     public void onBroadcastSendNode(BroadcastSendPhysicalNode node) {
-        Outbox[] outboxes = prepareOutboxes(node.getEdgeId());
+        Outbox[] outboxes = prepareOutboxes(node);
 
         exec = new BroadcastSendExec(
             node.getId(),
@@ -215,31 +220,42 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
     }
 
      /**
-      * Prepare outboxes for the given edge ID.
+      * Prepare outboxes for the given sender node.
       *
-      * @param edgeId Edge ID.
+      * @param node Node.
       * @return Outboxes.
       */
-     private Outbox[] prepareOutboxes(int edgeId) {
+     private Outbox[] prepareOutboxes(EdgeAwarePhysicalNode node) {
+         int edgeId = node.getEdgeId();
+         int rowWidth = node.getSchema().getRowWidth();
+
          int receiveFragmentPos = operation.getInboundEdgeMap().get(edgeId);
          QueryFragmentDescriptor receiveFragment = operation.getFragmentDescriptors().get(receiveFragmentPos);
-         Collection<UUID> receiveFragmentMemberIds = receiveFragment.getFragmentMembers(dataMemberIds);
-         Outbox[] outboxes = new Outbox[receiveFragmentMemberIds.size()];
+         Collection<UUID> receiveFragmentMemberIds = receiveFragment.getMappedMemberIds();
 
-         int idx = 0;
+         Outbox[] res = new Outbox[receiveFragmentMemberIds.size()];
+
+         int i = 0;
+
+         Map<UUID, Outbox> edgeOutboxes = new HashMap<>();
+         outboxes.put(edgeId, edgeOutboxes);
 
          for (UUID receiveMemberId : receiveFragmentMemberIds) {
              Outbox outbox = new Outbox(
                  operation.getQueryId(),
                  edgeId,
+                 rowWidth,
                  receiveMemberId,
-                 OUTBOX_BATCH_SIZE
+                 OUTBOX_BATCH_SIZE,
+                 operation.getEdgeCreditMap().get(edgeId)
              );
 
-             outboxes[idx++] = outbox;
+             edgeOutboxes.put(receiveMemberId, outbox);
+
+             res[i++] = outbox;
          }
 
-         return outboxes;
+         return res;
      }
 
     @SuppressWarnings("rawtypes")
@@ -425,6 +441,10 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
 
     public Map<Integer, AbstractInbox> getInboxes() {
         return inboxes;
+    }
+
+    public Map<Integer, Map<UUID, Outbox>> getOutboxes() {
+         return outboxes;
     }
 
     private Exec pop() {

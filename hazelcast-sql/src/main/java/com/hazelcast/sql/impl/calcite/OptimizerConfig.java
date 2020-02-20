@@ -20,19 +20,11 @@ package com.hazelcast.sql.impl.calcite;
  * Optimizer configuration.
  */
 public final class OptimizerConfig {
-    /** Whether physical rel should be saved in the plan. */
-    private final boolean savePhysicalRel;
-
     /** Whether optimizer statistics should be collected. */
     private final boolean statisticsEnabled;
 
-    private OptimizerConfig(boolean savePhysicalRel, boolean statisticsEnabled) {
-        this.savePhysicalRel = savePhysicalRel;
+    private OptimizerConfig(boolean statisticsEnabled) {
         this.statisticsEnabled = statisticsEnabled;
-    }
-
-    public boolean isSavePhysicalRel() {
-        return savePhysicalRel;
     }
 
     public boolean isStatisticsEnabled() {
@@ -44,17 +36,10 @@ public final class OptimizerConfig {
     }
 
     public static final class Builder {
-        private boolean savePhysicalRel;
         private boolean statisticsEnabled;
 
         private Builder() {
             // No-op.
-        }
-
-        public Builder setSavePhysicalRel(boolean savePhysicalRel) {
-            this.savePhysicalRel = savePhysicalRel;
-
-            return this;
         }
 
         public Builder setStatisticsEnabled(boolean statisticsEnabled) {
@@ -64,7 +49,7 @@ public final class OptimizerConfig {
         }
 
         public OptimizerConfig build() {
-            return new OptimizerConfig(savePhysicalRel, statisticsEnabled);
+            return new OptimizerConfig(statisticsEnabled);
         }
     }
 }

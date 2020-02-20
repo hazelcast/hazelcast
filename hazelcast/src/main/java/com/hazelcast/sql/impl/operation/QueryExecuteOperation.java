@@ -49,6 +49,9 @@ public class QueryExecuteOperation extends QueryIdAwareOperation {
     /** Inbound edge mapping (from edge ID to owning fragment position). */
     private Map<Integer, Integer> inboundEdgeMap;
 
+    /** Map from edge ID to initial credits assigned to senders. */
+    private Map<Integer, Long> edgeCreditMap;
+
     /** Arguments. */
     private List<Object> arguments;
 
@@ -69,6 +72,7 @@ public class QueryExecuteOperation extends QueryIdAwareOperation {
         List<QueryFragmentDescriptor> fragmentDescriptors,
         Map<Integer, Integer> outboundEdgeMap,
         Map<Integer, Integer> inboundEdgeMap,
+        Map<Integer, Long> edgeCreditMap,
         List<Object> arguments,
         long timeout
     ) {
@@ -79,6 +83,7 @@ public class QueryExecuteOperation extends QueryIdAwareOperation {
         this.fragmentDescriptors = fragmentDescriptors;
         this.outboundEdgeMap = outboundEdgeMap;
         this.inboundEdgeMap = inboundEdgeMap;
+        this.edgeCreditMap = edgeCreditMap;
         this.arguments = arguments;
         this.timeout = timeout;
     }
@@ -97,6 +102,10 @@ public class QueryExecuteOperation extends QueryIdAwareOperation {
 
     public Map<Integer, Integer> getInboundEdgeMap() {
         return inboundEdgeMap;
+    }
+
+    public Map<Integer, Long> getEdgeCreditMap() {
+        return edgeCreditMap;
     }
 
     public List<Object> getArguments() {
@@ -147,6 +156,13 @@ public class QueryExecuteOperation extends QueryIdAwareOperation {
         for (Map.Entry<Integer, Integer> entry : inboundEdgeMap.entrySet()) {
             out.writeInt(entry.getKey());
             out.writeInt(entry.getValue());
+        }
+
+        out.writeInt(edgeCreditMap.size());
+
+        for (Map.Entry<Integer, Long> entry : edgeCreditMap.entrySet()) {
+            out.writeInt(entry.getKey());
+            out.writeLong(entry.getValue());
         }
 
         // Write arguments.
@@ -202,6 +218,14 @@ public class QueryExecuteOperation extends QueryIdAwareOperation {
 
         for (int i = 0; i < inboundEdgeMapSize; i++) {
             inboundEdgeMap.put(in.readInt(), in.readInt());
+        }
+
+        int edgeCreditMapSize = in.readInt();
+
+        edgeCreditMap = new HashMap<>(edgeCreditMapSize);
+
+        for (int i = 0; i < edgeCreditMapSize; i++) {
+            edgeCreditMap.put(in.readInt(), in.readLong());
         }
 
         // Read arguments.

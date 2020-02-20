@@ -51,11 +51,6 @@ public class ReplicatedToPartitionedPhysicalNode extends UniInputPhysicalNode {
     }
 
     @Override
-    public PhysicalNodeSchema getSchema() {
-        return upstream.getSchema();
-    }
-
-    @Override
     public void writeData1(ObjectDataOutput out) throws IOException {
         out.writeObject(hashFunction);
     }

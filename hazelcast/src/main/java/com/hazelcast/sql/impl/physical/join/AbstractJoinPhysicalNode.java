@@ -79,7 +79,7 @@ public abstract class AbstractJoinPhysicalNode extends BiInputPhysicalNode {
     }
 
     @Override
-    public PhysicalNodeSchema getSchema() {
+    public PhysicalNodeSchema getSchema0() {
         return PhysicalNodeSchema.combine(left.getSchema(), right.getSchema());
     }
 

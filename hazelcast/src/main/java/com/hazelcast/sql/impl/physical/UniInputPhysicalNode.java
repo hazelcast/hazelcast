@@ -44,17 +44,8 @@ public abstract class UniInputPhysicalNode extends AbstractPhysicalNode {
     }
 
     @Override
-    public final int getInputCount() {
-        return 1;
-    }
-
-    @Override
-    public final PhysicalNode getInput(int i) {
-        if (i == 0) {
-            return upstream;
-        }
-
-        throw new IllegalArgumentException("Illegal input index: " + i);
+    protected PhysicalNodeSchema getSchema0() {
+        return upstream.getSchema();
     }
 
     @Override

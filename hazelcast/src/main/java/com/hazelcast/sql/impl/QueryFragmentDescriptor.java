@@ -25,8 +25,6 @@ import com.hazelcast.sql.impl.physical.PhysicalNode;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 import java.util.UUID;
 
 /**
@@ -36,17 +34,15 @@ public class QueryFragmentDescriptor implements DataSerializable {
     /** Physical node. */
     private PhysicalNode node;
 
-    /** IDs of mapped nodes. May be null if nodes could be inherited from the context. */
-    private List<UUID> mappedMemberIds;
+    /** IDs of mapped nodes. */
+    // TODO: This collection may take big size when sent over a wire. Try to avoid it's serialization.
+    private Collection<UUID> mappedMemberIds;
 
     public QueryFragmentDescriptor() {
         // No-op.
     }
 
-    public QueryFragmentDescriptor(
-        PhysicalNode node,
-        List<UUID> mappedMemberIds
-    ) {
+    public QueryFragmentDescriptor(PhysicalNode node, Collection<UUID> mappedMemberIds) {
         this.node = node;
         this.mappedMemberIds = mappedMemberIds;
     }
@@ -55,19 +51,17 @@ public class QueryFragmentDescriptor implements DataSerializable {
         return node;
     }
 
-    public List<UUID> getMappedMemberIds() {
-        return mappedMemberIds != null ? mappedMemberIds : Collections.emptyList();
+    public Collection<UUID> getMappedMemberIds() {
+        return mappedMemberIds;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(node);
 
-        List<UUID> mappedMemberIds0 = getMappedMemberIds();
+        out.writeInt(mappedMemberIds.size());
 
-        out.writeInt(mappedMemberIds0.size());
-
-        for (UUID mappedMemberId : mappedMemberIds0) {
+        for (UUID mappedMemberId : mappedMemberIds) {
             UUIDSerializationUtil.writeUUID(out, mappedMemberId);
         }
     }
@@ -84,20 +78,6 @@ public class QueryFragmentDescriptor implements DataSerializable {
             for (int i = 0; i < mappedMemberIdsSize; i++) {
                 mappedMemberIds.add(UUIDSerializationUtil.readUUID(in));
             }
-        }
-    }
-
-    /**
-     * Get members participating in the given fragment.
-     *
-     * @param dataMemberIds Data member IDs.
-     * @return Members participating in the given fragment.
-     */
-    public Collection<UUID> getFragmentMembers(Collection<UUID> dataMemberIds) {
-        if (mappedMemberIds != null) {
-            return mappedMemberIds;
-        } else {
-            return dataMemberIds;
         }
     }
 }

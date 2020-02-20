@@ -16,9 +16,12 @@
 
 package com.hazelcast.sql.impl.state;
 
+import com.hazelcast.sql.impl.QueryFragment;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryPlan;
 
+import java.util.Collection;
+import java.util.IdentityHashMap;
 import java.util.UUID;
 
 /**
@@ -33,6 +36,7 @@ public interface QueryStateRegistry {
     QueryState onInitiatorQueryStarted(
         long initiatorTimeout,
         QueryPlan initatorPlan,
+        IdentityHashMap<QueryFragment, Collection<UUID>> initiatorFragmentMappings,
         QueryStateRowSource initiatorRowSource,
         boolean isExplain
     );

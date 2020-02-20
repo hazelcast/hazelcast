@@ -95,8 +95,16 @@ public class UpstreamState implements Iterable<Row> {
         upstream.setup(ctx);
     }
 
-    public RowBatch getCurrentBatch() {
-        return currentBatch;
+    public RowBatch consumeBatch() {
+        if (currentBatchPos != 0) {
+            throw new IllegalStateException("Batch can be consumed only as a whole.");
+        }
+
+        RowBatch batch = currentBatch;
+
+        currentBatchPos = batch.getRows().size();
+
+        return batch;
     }
 
     /**

@@ -21,101 +21,148 @@ import com.hazelcast.sql.impl.QueryFragmentDescriptor;
 import com.hazelcast.sql.impl.QueryFragmentMapping;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryPlan;
-import com.hazelcast.sql.impl.SqlServiceImpl;
+import com.hazelcast.sql.impl.memory.MemoryPressure;
 import com.hazelcast.sql.impl.physical.PhysicalNode;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Factory to create query execute operations.
  */
 public class QueryExecuteOperationFactory {
-    /** Service. */
-    private final SqlServiceImpl service;
+    private static final int SMALL_TOPOLOGY_THRESHOLD = 8;
+    private static final int MEDIUM_TOPOLOGY_THRESHOLD = 16;
 
-    /** Query plan. */
+    private static final int LOW_PRESSURE_CREDIT = 1024 * 1024;
+    private static final int MEDIUM_PRESSURE_CREDIT = 512 * 1024;
+    private static final int HIGH_PRESSURE_CREDIT = 256 * 1024;
+
     private final QueryPlan plan;
-
-    /** Arguments. */
     private final List<Object> args;
-
-    /** Query ID. */
-    private final QueryId queryId;
-
-    /** Local member ID. */
-    private final UUID localMemberId;
-
-    /** Timeout. */
     private final long timeout;
+    private final MemoryPressure memoryPressure;
+    private final long epochWatermark;
 
     public QueryExecuteOperationFactory(
-        SqlServiceImpl service,
         QueryPlan plan,
         List<Object> args,
-        QueryId queryId,
-        UUID localMemberId,
-        long timeout
+        long timeout,
+        MemoryPressure memoryPressure,
+        long epochWatermark
     ) {
-        this.service = service;
         this.plan = plan;
         this.args = args;
-        this.queryId = queryId;
-        this.localMemberId = localMemberId;
         this.timeout = timeout;
+        this.memoryPressure = memoryPressure;
+        this.epochWatermark = epochWatermark;
     }
 
-    /**
-     * Create query execute operation for the given member.
-     *
-     * @param targetMemberId Target member ID.
-     * @return Operation.
-     */
-    public QueryExecuteOperation create(UUID targetMemberId) {
+    public IdentityHashMap<QueryFragment, Collection<UUID>> prepareFragmentMappings() {
+        IdentityHashMap<QueryFragment, Collection<UUID>> mappings = new IdentityHashMap<>();
+
+        for (QueryFragment fragment : plan.getFragments()) {
+            QueryFragmentMapping mapping = fragment.getMapping();
+
+            if (mapping.isStatic()) {
+                mappings.put(fragment, mapping.getStaticMemberIds());
+            } else {
+                List<UUID> dataMemberIds = plan.getDataMemberIds();
+                Set<UUID> memberIds = new HashSet<>(mapping.getDynamicMemberCount());
+
+                int start = ThreadLocalRandom.current().nextInt(dataMemberIds.size());
+
+                for (int i = 0; i < mapping.getDynamicMemberCount(); i++) {
+                    int index = (start + i) % dataMemberIds.size();
+
+                    memberIds.add(dataMemberIds.get(index));
+                }
+
+                mappings.put(fragment, memberIds);
+            }
+
+        }
+
+        return mappings;
+    }
+
+    public QueryExecuteOperation create(
+        QueryId queryId,
+        IdentityHashMap<QueryFragment, Collection<UUID>> fragmentMappings,
+        UUID targetMemberId
+    ) {
         List<QueryFragment> fragments = plan.getFragments();
 
+        // Prepare descriptors.
         List<QueryFragmentDescriptor> descriptors = new ArrayList<>(fragments.size());
 
         for (QueryFragment fragment : fragments) {
-            QueryFragmentMapping mapping = fragment.getMapping();
-
-            PhysicalNode node;
-            List<UUID> mappedMemberIds;
-
-            switch (mapping) {
-                case ROOT:
-                    // Fragment is only deployed on local node.
-                    node = targetMemberId.equals(localMemberId) ? fragment.getNode() : null;
-                    mappedMemberIds = Collections.singletonList(localMemberId);
-
-                    break;
-
-                case DATA_MEMBERS:
-                    assert mapping == QueryFragmentMapping.DATA_MEMBERS;
-
-                    // Fragment is only deployed on data node. Member IDs will be derived from partition mapping.
-                    node = fragment.getNode();
-                    mappedMemberIds = null;
-
-                    break;
-
-                default:
-                    throw new IllegalArgumentException("Unsupported mappimg: " + mapping);
-            }
+            Collection<UUID> mappedMemberIds = fragmentMappings.get(fragment);
+            PhysicalNode node = mappedMemberIds.contains(targetMemberId) ? fragment.getNode() : null;
 
             descriptors.add(new QueryFragmentDescriptor(node, mappedMemberIds));
         }
 
+        // Prepare initial edge credits.
+        Map<Integer, Integer> inboundEdgeMemberCountMap = plan.getInboundEdgeMemberCountMap();
+
+        Map<Integer, Long> edgeCreditMap = new HashMap<>(inboundEdgeMemberCountMap.size());
+
+        for (Map.Entry<Integer, Integer> entry : inboundEdgeMemberCountMap.entrySet()) {
+            edgeCreditMap.put(entry.getKey(), getCredit(entry.getValue()));
+        }
+
         return new QueryExecuteOperation(
-            service.getEpochWatermark(), queryId,
+            epochWatermark,
+            queryId,
             plan.getPartitionMap(),
             descriptors,
             plan.getOutboundEdgeMap(),
             plan.getInboundEdgeMap(),
+            edgeCreditMap,
             args,
             timeout
         );
+    }
+
+    // TODO: This is a very dumb heuristic based on presumed memory pressure and particpating member count
+    private long getCredit(int memberCount) {
+        MemoryPressure memoryPressure0;
+
+        if (memberCount <= SMALL_TOPOLOGY_THRESHOLD) {
+            // Small topology. Do not adjust memory pressure.
+            memoryPressure0 = memoryPressure;
+        } else if (memberCount <= MEDIUM_TOPOLOGY_THRESHOLD) {
+            // Medium topology. Treat LOW as MEDIUM.
+            memoryPressure0 = memoryPressure == MemoryPressure.LOW ? MemoryPressure.MEDIUM : memoryPressure;
+        } else {
+            // Large topology. Tread everything as HIGH.
+            memoryPressure0 = MemoryPressure.HIGH;
+        }
+
+        switch (memoryPressure0) {
+            case LOW:
+                // 1Mb
+                return LOW_PRESSURE_CREDIT;
+
+            case MEDIUM:
+                // 512Kb
+                return MEDIUM_PRESSURE_CREDIT;
+
+            case HIGH:
+                // 256Kb
+                return HIGH_PRESSURE_CREDIT;
+
+            default:
+                throw new IllegalStateException("Invalid memory pressure: " + memoryPressure0);
+        }
     }
 }

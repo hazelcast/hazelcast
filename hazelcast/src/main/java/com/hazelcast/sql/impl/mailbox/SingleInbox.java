@@ -17,9 +17,9 @@
 package com.hazelcast.sql.impl.mailbox;
 
 import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.sql.impl.SqlServiceImpl;
 
 import java.util.ArrayDeque;
-import java.util.UUID;
 
 /**
  * AbstractInbox which merges batches from all the nodes into a single stream.
@@ -28,21 +28,26 @@ public class SingleInbox extends AbstractInbox {
     /** Queue of batches from all remote stripes. */
     private final ArrayDeque<SendBatch> batches = new ArrayDeque<>(INITIAL_QUEUE_SIZE);
 
-    public SingleInbox(QueryId queryId, int edgeId, int remaining) {
-        super(queryId, edgeId, remaining);
+    public SingleInbox(
+        QueryId queryId,
+        int edgeId,
+        int rowWidth,
+        SqlServiceImpl service,
+        int remainingSources,
+        long maxMemory
+    ) {
+        super(queryId, edgeId, rowWidth, service, remainingSources, maxMemory);
     }
 
     @Override
-    public void onBatch0(UUID sourceMemberId, SendBatch batch) {
+    public void onBatchReceived0(SendBatch batch) {
         batches.addLast(batch);
     }
 
     public SendBatch poll() {
         SendBatch batch = batches.pollFirst();
 
-        if (batch != null) {
-            enqueuedBatches--;
-        }
+        onBatchPolled(batch);
 
         return batch;
     }

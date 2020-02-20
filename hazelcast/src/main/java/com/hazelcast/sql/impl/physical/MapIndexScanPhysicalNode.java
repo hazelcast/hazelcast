@@ -49,10 +49,9 @@ public class MapIndexScanPhysicalNode extends AbstractMapScanPhysicalNode {
         List<Integer> projects,
         String indexName,
         IndexFilter indexFilter,
-        Expression<Boolean> remainderFilter,
-        PhysicalNodeSchema schema
+        Expression<Boolean> remainderFilter
     ) {
-        super(id, mapName, fieldNames, fieldTypes, projects, remainderFilter, schema);
+        super(id, mapName, fieldNames, fieldTypes, projects, remainderFilter);
 
         this.indexName = indexName;
         this.indexFilter = indexFilter;

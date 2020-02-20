@@ -16,12 +16,14 @@
 
 package com.hazelcast.sql.impl.physical.io;
 
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.physical.PhysicalNodeSchema;
-import com.hazelcast.sql.impl.physical.visitor.PhysicalNodeVisitor;
 import com.hazelcast.sql.impl.physical.ZeroInputPhysicalNode;
+import com.hazelcast.sql.impl.physical.visitor.PhysicalNodeVisitor;
+import com.hazelcast.sql.impl.type.DataType;
 
 import java.io.IOException;
 import java.util.List;
@@ -35,13 +37,14 @@ public class ReceiveSortMergePhysicalNode extends ZeroInputPhysicalNode implemen
     /** Edge iD. */
     private int edgeId;
 
+    /** Field types. */
+    private List<DataType> fieldTypes;
+
     /** Expressions to be used for sorting. */
     private List<Expression> expressions;
 
     /** Sort directions. */
     private List<Boolean> ascs;
-
-    private transient PhysicalNodeSchema schema;
 
     public ReceiveSortMergePhysicalNode() {
         // No-op.
@@ -50,16 +53,16 @@ public class ReceiveSortMergePhysicalNode extends ZeroInputPhysicalNode implemen
     public ReceiveSortMergePhysicalNode(
         int id,
         int edgeId,
+        List<DataType> fieldTypes,
         List<Expression> expressions,
-        List<Boolean> ascs,
-        PhysicalNodeSchema schema
+        List<Boolean> ascs
     ) {
         super(id);
 
         this.edgeId = edgeId;
+        this.fieldTypes = fieldTypes;
         this.expressions = expressions;
         this.ascs = ascs;
-        this.schema = schema;
     }
 
     public List<Expression> getExpressions() {
@@ -86,13 +89,14 @@ public class ReceiveSortMergePhysicalNode extends ZeroInputPhysicalNode implemen
     }
 
     @Override
-    public PhysicalNodeSchema getSchema() {
-        return schema;
+    public PhysicalNodeSchema getSchema0() {
+        return new PhysicalNodeSchema(fieldTypes);
     }
 
     @Override
     public void writeData0(ObjectDataOutput out) throws IOException {
         out.writeInt(edgeId);
+        SerializationUtil.writeList(fieldTypes, out);
         out.writeObject(expressions);
         out.writeObject(ascs);
     }
@@ -100,6 +104,7 @@ public class ReceiveSortMergePhysicalNode extends ZeroInputPhysicalNode implemen
     @Override
     public void readData0(ObjectDataInput in) throws IOException {
         edgeId = in.readInt();
+        fieldTypes = SerializationUtil.readList(in);
         expressions = in.readObject();
         ascs = in.readObject();
     }

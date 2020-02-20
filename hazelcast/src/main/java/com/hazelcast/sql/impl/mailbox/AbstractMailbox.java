@@ -28,9 +28,13 @@ public abstract class AbstractMailbox {
     /** Edge ID. */
     protected final int edgeId;
 
-    public AbstractMailbox(QueryId queryId, int edgeId) {
+    /** Width of a single row in bytes. */
+    protected final int rowWidth;
+
+    public AbstractMailbox(QueryId queryId, int edgeId, int rowWidth) {
         this.queryId = queryId;
         this.edgeId = edgeId;
+        this.rowWidth = rowWidth;
     }
 
     public QueryId getQueryId() {

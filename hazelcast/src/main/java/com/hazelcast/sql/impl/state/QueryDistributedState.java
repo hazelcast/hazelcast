@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.state;
 
 import com.hazelcast.sql.impl.QueryFragmentExecutable;
-import com.hazelcast.sql.impl.operation.QueryBatchOperation;
+import com.hazelcast.sql.impl.operation.QueryDataExchangeOperation;
 
 import java.util.HashMap;
 import java.util.List;
@@ -31,7 +31,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 public class QueryDistributedState {
     /** Pending batches. */
-    private final ConcurrentLinkedDeque<QueryBatchOperation> pendingBatches = new ConcurrentLinkedDeque<>();
+    private final ConcurrentLinkedDeque<QueryDataExchangeOperation> pendingOperations = new ConcurrentLinkedDeque<>();
 
     /** Lock to prevent conflicts on initialization and batch arrival. */
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
@@ -65,8 +65,8 @@ public class QueryDistributedState {
             // Unwind pending batches if needed.
             boolean hadPendingBatches = false;
 
-            for (QueryBatchOperation pendingBatch : pendingBatches) {
-                onBatch0(pendingBatch);
+            for (QueryDataExchangeOperation pendingOperation : pendingOperations) {
+                onOperation0(pendingOperation);
 
                 if (!hadPendingBatches) {
                     hadPendingBatches = true;
@@ -74,21 +74,21 @@ public class QueryDistributedState {
             }
 
             if (hadPendingBatches) {
-                pendingBatches.clear();
+                pendingOperations.clear();
             }
         } finally {
             lock.writeLock().unlock();
         }
     }
 
-    public QueryFragmentExecutable onBatch(QueryBatchOperation batch) {
+    public QueryFragmentExecutable onOperation(QueryDataExchangeOperation operation) {
         lock.readLock().lock();
 
         try {
             if (initializedState != null) {
-                return onBatch0(batch);
+                return onOperation0(operation);
             } else {
-                pendingBatches.add(batch);
+                pendingOperations.add(operation);
 
                 return null;
             }
@@ -97,14 +97,14 @@ public class QueryDistributedState {
         }
     }
 
-    private QueryFragmentExecutable onBatch0(QueryBatchOperation batch) {
+    private QueryFragmentExecutable onOperation0(QueryDataExchangeOperation operation) {
         assert initializedState != null;
 
-        QueryFragmentExecutable fragment = initializedState.getFragment(batch.getEdgeId());
+        QueryFragmentExecutable fragment = initializedState.getFragment(operation.isInbound(), operation.getEdgeId());
 
-        assert fragment != null;
+        assert fragment != null : operation;
 
-        fragment.addBatch(batch);
+        fragment.addOperation(operation);
 
         return fragment;
     }
@@ -121,8 +121,8 @@ public class QueryDistributedState {
     }
 
     private static final class InitializedState {
-        /** Inboxes created for the query. */
-        private final Map<Integer, QueryFragmentExecutable> inboxEdgeToFragment = new HashMap<>();
+        private final Map<Integer, QueryFragmentExecutable> inboundEdgeToFragment = new HashMap<>();
+        private final Map<Integer, QueryFragmentExecutable> outboundEdgeToFragment = new HashMap<>();
 
         /** Number of remaining fragments. */
         private final AtomicInteger remainingFragmentCount;
@@ -133,7 +133,15 @@ public class QueryDistributedState {
         private InitializedState(List<QueryFragmentExecutable> fragmentExecutables, long timeout) {
             for (QueryFragmentExecutable fragmentExecutable : fragmentExecutables) {
                 for (Integer inboxEdgeId : fragmentExecutable.getInboxEdgeIds()) {
-                    inboxEdgeToFragment.putIfAbsent(inboxEdgeId, fragmentExecutable);
+                    QueryFragmentExecutable oldFragmentExecutable = inboundEdgeToFragment.put(inboxEdgeId, fragmentExecutable);
+
+                    assert oldFragmentExecutable == null || fragmentExecutable == oldFragmentExecutable;
+                }
+
+                for (Integer outboxEdgeId : fragmentExecutable.getOutboxEdgeIds()) {
+                    QueryFragmentExecutable oldFragmentExecutable = outboundEdgeToFragment.put(outboxEdgeId, fragmentExecutable);
+
+                    assert oldFragmentExecutable == null || fragmentExecutable == oldFragmentExecutable;
                 }
             }
 
@@ -146,8 +154,12 @@ public class QueryDistributedState {
             return remainingFragmentCount.decrementAndGet() == 0;
         }
 
-        private QueryFragmentExecutable getFragment(int edgeId) {
-            return inboxEdgeToFragment.get(edgeId);
+        private QueryFragmentExecutable getFragment(boolean inbound, int edgeId) {
+            if (inbound) {
+                return inboundEdgeToFragment.get(edgeId);
+            } else {
+                return outboundEdgeToFragment.get(edgeId);
+            }
         }
 
         private long getTimeout() {

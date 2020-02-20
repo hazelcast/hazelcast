@@ -27,9 +27,12 @@ import java.util.List;
  */
 public class PhysicalNodeSchema {
     private final List<DataType> types;
+    private final int rowWidth;
 
     public PhysicalNodeSchema(List<DataType> types) {
         this.types = Collections.unmodifiableList(types);
+
+        rowWidth = calculateRowWidth(types);
     }
 
     public static PhysicalNodeSchema combine(PhysicalNodeSchema schema1, PhysicalNodeSchema schema2) {
@@ -48,5 +51,19 @@ public class PhysicalNodeSchema {
 
     public List<DataType> getTypes() {
         return types;
+    }
+
+    public int getRowWidth() {
+        return rowWidth;
+    }
+
+    private static int calculateRowWidth(List<DataType> types) {
+        int res = 0;
+
+        for (DataType type : types) {
+            res += type.getType().getEstimatedSize();
+        }
+
+        return res;
     }
 }

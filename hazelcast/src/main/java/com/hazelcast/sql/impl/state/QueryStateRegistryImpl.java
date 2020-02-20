@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.state;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.sql.impl.QueryFragment;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryPlan;
 import com.hazelcast.sql.impl.SqlServiceImpl;
@@ -27,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -74,6 +76,7 @@ public class QueryStateRegistryImpl implements QueryStateRegistry {
     public QueryState onInitiatorQueryStarted(
         long initiatorTimeout,
         QueryPlan initiatorPlan,
+        IdentityHashMap<QueryFragment, Collection<UUID>> initiatorFragmentMappings,
         QueryStateRowSource initiatorRowSource,
         boolean isExplain
     ) {
@@ -85,6 +88,7 @@ public class QueryStateRegistryImpl implements QueryStateRegistry {
                 null,
                 initiatorTimeout,
                 initiatorPlan,
+                null,
                 initiatorRowSource
             );
         }
@@ -103,6 +107,7 @@ public class QueryStateRegistryImpl implements QueryStateRegistry {
             completionCallback,
             initiatorTimeout,
             initiatorPlan,
+            initiatorFragmentMappings,
             initiatorRowSource
         );
 
@@ -127,6 +132,7 @@ public class QueryStateRegistryImpl implements QueryStateRegistry {
                 completionCallback,
                 initiatorTimeout,
                 initiatorPlan,
+                initiatorFragmentMappings,
                 initiatorRowSource
             );
 

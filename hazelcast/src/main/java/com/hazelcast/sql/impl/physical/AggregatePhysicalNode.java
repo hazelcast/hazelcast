@@ -82,7 +82,7 @@ public class AggregatePhysicalNode extends UniInputPhysicalNode {
 
     @SuppressWarnings("rawtypes")
     @Override
-    public PhysicalNodeSchema getSchema() {
+    public PhysicalNodeSchema getSchema0() {
         List<DataType> types = new ArrayList<>(groupKey.size() + expressions.size());
 
         PhysicalNodeSchema upstreamSchema = upstream.getSchema();

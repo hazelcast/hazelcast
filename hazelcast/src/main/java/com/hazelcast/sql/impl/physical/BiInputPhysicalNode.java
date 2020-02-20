@@ -52,22 +52,6 @@ public abstract class BiInputPhysicalNode extends AbstractPhysicalNode {
     }
 
     @Override
-    public final int getInputCount() {
-        return 2;
-    }
-
-    @Override
-    public final PhysicalNode getInput(int i) {
-        if (i == 0) {
-            return left;
-        } else if (i == 1) {
-            return right;
-        }
-
-        throw new IllegalArgumentException("Illegal input index: " + i);
-    }
-
-    @Override
     public final void visit(PhysicalNodeVisitor visitor) {
         right.visit(visitor);
         left.visit(visitor);

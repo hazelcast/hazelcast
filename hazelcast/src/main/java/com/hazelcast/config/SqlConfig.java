@@ -20,14 +20,21 @@ package com.hazelcast.config;
  * SQL service configuration.
  */
 public class SqlConfig {
-    /** Default number of data threads. */
+    /** Default thread count. */
     public static final int DFLT_THREAD_COUNT = Runtime.getRuntime().availableProcessors();
+
+    // TODO: Evaluate this default carefully.
+    /** Default max memory. */
+    public static final long DFLT_MAX_MEMORY = Runtime.getRuntime().maxMemory() / 2;
 
     /** Number of threads which will execute SQL queries. */
     private int threadCount = DFLT_THREAD_COUNT;
 
+    /** Max memory in bytes for SQL processing. */
+    private long maxMemory = DFLT_MAX_MEMORY;
+
     /**
-     * Get the number of threads responsible for data processing.
+     * Gets the number of threads responsible for data processing.
      *
      * @return Number of threads responsible for data processing.
      */
@@ -36,7 +43,7 @@ public class SqlConfig {
     }
 
     /**
-     * Set the number of threads responsible for data processing.
+     * Sets the number of threads responsible for data processing.
      *
      * @param threadCount Number of threads responsible for data processing.
      * @return This instance for chaining.
@@ -46,8 +53,35 @@ public class SqlConfig {
         return this;
     }
 
+    /**
+     * Gets the maximum amount of memory in bytes SQL engine is allowed to use for query processing. When the threshold is
+     * reached, the engine may attempt to spill intermediate results to disk, or to cancel the query.
+     * <p>
+     * Defaults to {@link #DFLT_MAX_MEMORY}.
+     *
+     * @return Maximum amount of memory in bytes. Zero or negative value means no limit.
+     */
+    public long getMaxMemory() {
+        return maxMemory;
+    }
+
+    /**
+     * Set the maximum amount of memory in bytes SQL engine is allowed to use for query processing. When the threshold is
+     * reached, the engine may attempt to spill intermediate results to disk, or to cancel the query.
+     * <p>
+     * Defaults to {@link #DFLT_MAX_MEMORY}.
+     *
+     * @param maxMemory Maximum amount of memory in bytes. Zero or negative value means no limit.
+     * @return This instance for chaining.
+     */
+    public SqlConfig setMaxMemory(long maxMemory) {
+        this.maxMemory = maxMemory;
+
+        return this;
+    }
+
     @Override
     public String toString() {
-        return "SqlConfig{threadCount=" + threadCount + '}';
+        return "SqlConfig{threadCount=" + threadCount + ", maxMemory=" + maxMemory + '}';
     }
 }

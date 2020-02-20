@@ -33,6 +33,7 @@ import java.util.List;
 /**
  * Executor which receives entries from multiple sources and merge them into a single sorted stream.
  */
+@SuppressWarnings("rawtypes")
 public class ReceiveSortMergeExec extends AbstractExec {
     /** AbstractInbox to consume results from. */
     private final StripedInbox inbox;
@@ -63,7 +64,7 @@ public class ReceiveSortMergeExec extends AbstractExec {
         this.expressions = expressions;
 
         // TODO: If there is only one input edge, then normal ReceiveExec should be used instead, since everything is already
-        //  sorted.
+        //  sorted. This should be a part of partition pruning.
 
         stripes = new List[inbox.getStripeCount()];
         stripesDone = new boolean[inbox.getStripeCount()];
@@ -74,14 +75,25 @@ public class ReceiveSortMergeExec extends AbstractExec {
     @Override
     public IterationResult advance0() {
         // Try polling inputs.
-        if (!pollInputs()) {
+        pollInputs();
+
+        if (!inputsAvailable) {
+            // Some nodes haven't sent their inputs yet, so we cannot proceed.
+            // TODO: Something is really wrong here: why we ever return "FETCHED_DONE" if some inputs are not available?
             return inbox.closed() ? IterationResult.FETCHED_DONE : IterationResult.WAIT;
         }
 
         // All inputs available, sort as much as possible.
         prepareBatch();
 
-        return inbox.closed() ? IterationResult.FETCHED_DONE : IterationResult.FETCHED;
+        if (inbox.closed()) {
+            return IterationResult.FETCHED_DONE;
+        } else {
+            // Apply backpressure.
+            inbox.sendFlowControl();
+
+            return IterationResult.FETCHED;
+        }
     }
 
     @Override
@@ -91,12 +103,10 @@ public class ReceiveSortMergeExec extends AbstractExec {
 
     /**
      * Try polling inputs so that at least one batch is available everywhere.
-     *
-     * @return {@code True} if all batches are available.
      */
-    private boolean pollInputs() {
+    private void pollInputs() {
         if (inputsAvailable) {
-            return true;
+            return;
         }
 
         boolean res = true;
@@ -108,6 +118,8 @@ public class ReceiveSortMergeExec extends AbstractExec {
 
             List<Row> stripeRows = stripes[i];
 
+            // TODO: This implementation is inefficient: we take only one batch from the inbox. What we should do
+            //  instead is poll all available batches from queue!
             if (stripeRows == null) {
                 while (true) {
                     SendBatch stripeBatch = inbox.poll(i);
@@ -137,8 +149,6 @@ public class ReceiveSortMergeExec extends AbstractExec {
         if (res) {
             inputsAvailable = true;
         }
-
-        return res;
     }
 
     /**
@@ -202,7 +212,7 @@ public class ReceiveSortMergeExec extends AbstractExec {
     private SortKey prepareSortKey(Row row, int stripe) {
         List<Object> key = new ArrayList<>(expressions.size());
 
-        for (Expression expression : expressions) {
+        for (Expression<?> expression : expressions) {
             key.add(expression.eval(row));
         }
 

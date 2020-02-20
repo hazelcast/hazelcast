@@ -17,8 +17,10 @@
 package com.hazelcast.sql.impl.mailbox;
 
 import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.sql.impl.SqlServiceImpl;
+import com.hazelcast.sql.impl.operation.QueryFlowControlOperation;
 
-import java.util.UUID;
+import java.util.Collection;
 
 /**
  * Abstract inbox implementation.
@@ -33,26 +35,88 @@ public abstract class AbstractInbox extends AbstractMailbox {
     /** Remaining remote sources. */
     private int remainingSources;
 
-    protected AbstractInbox(QueryId queryId, int edgeId, int remainingSources) {
-        super(queryId, edgeId);
+    /** Parent service. */
+    private final SqlServiceImpl service;
 
+    /** Backpressure control. */
+    private final InboxBackpressure backpressure;
+
+    protected AbstractInbox(
+        QueryId queryId,
+        int edgeId,
+        int rowWidth,
+        SqlServiceImpl service,
+        int remainingSources,
+        long maxMemory
+    ) {
+        super(queryId, edgeId, rowWidth);
+
+        this.service = service;
         this.remainingSources = remainingSources;
+
+        backpressure = new InboxBackpressure(maxMemory);
     }
 
     /**
      * Handle batch arrival. Always invoked from the worker.
      */
-    public void onBatch(UUID sourceMemberId, SendBatch batch) {
-        onBatch0(sourceMemberId, batch);
+    public void onBatchReceived(SendBatch batch) {
+        onBatchReceived0(batch);
 
+        // Track done condition
         enqueuedBatches++;
 
         if (batch.isLast()) {
             remainingSources--;
         }
+
+        // Track backpressure.
+        backpressure.onBatchAdded(
+            batch.getSenderId(),
+            batch.isLast(),
+            batch.getRemainingMemory(),
+            batch.getRows().size() * rowWidth
+        );
     }
 
-    protected abstract void onBatch0(UUID sourceMemberId, SendBatch batch);
+    protected abstract void onBatchReceived0(SendBatch batch);
+
+    protected void onBatchPolled(SendBatch batch) {
+        if (batch == null) {
+            return;
+        }
+
+        // Track done condition
+        enqueuedBatches--;
+
+        // Track backpressure.
+        backpressure.onBatchRemoved(batch.getSenderId(), batch.isLast(), batch.getRows().size() * rowWidth);
+    }
+
+    public void sendFlowControl() {
+        Collection<InboxBackpressureState> states = backpressure.getPending();
+
+        if (states.isEmpty()) {
+            return;
+        }
+
+        long epochWatermark = service.getEpochWatermark();
+
+        for (InboxBackpressureState state : states) {
+            QueryFlowControlOperation operation = new QueryFlowControlOperation(
+                epochWatermark,
+                queryId,
+                edgeId,
+                state.getLocalMemory()
+            );
+
+            state.setShouldSend(false);
+
+            service.sendRequest(operation, state.getMemberId());
+        }
+
+        backpressure.clearPending();
+    }
 
     /**
      * @return {@code True} if no more incoming batches are expected.

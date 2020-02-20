@@ -28,6 +28,9 @@ public abstract class AbstractPhysicalNode implements PhysicalNode {
     /** ID. */
     protected int id;
 
+    /** Cached schema. */
+    private transient PhysicalNodeSchema schema;
+
     protected AbstractPhysicalNode() {
         // No-op.
     }
@@ -40,6 +43,17 @@ public abstract class AbstractPhysicalNode implements PhysicalNode {
     public int getId() {
         return id;
     }
+
+    @Override
+    public final PhysicalNodeSchema getSchema() {
+        if (schema == null) {
+            schema = getSchema0();
+        }
+
+        return schema;
+    }
+
+    protected abstract PhysicalNodeSchema getSchema0();
 
     @Override
     public final void writeData(ObjectDataOutput out) throws IOException {

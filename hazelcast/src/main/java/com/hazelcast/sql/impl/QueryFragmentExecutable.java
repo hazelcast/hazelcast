@@ -19,12 +19,18 @@ package com.hazelcast.sql.impl;
 import com.hazelcast.sql.impl.exec.Exec;
 import com.hazelcast.sql.impl.exec.IterationResult;
 import com.hazelcast.sql.impl.mailbox.AbstractInbox;
+import com.hazelcast.sql.impl.mailbox.Outbox;
+import com.hazelcast.sql.impl.mailbox.SendBatch;
 import com.hazelcast.sql.impl.operation.QueryBatchOperation;
+import com.hazelcast.sql.impl.operation.QueryDataExchangeOperation;
+import com.hazelcast.sql.impl.operation.QueryFlowControlOperation;
+import com.hazelcast.sql.impl.operation.QueryOperation;
 import com.hazelcast.sql.impl.state.QueryState;
 import com.hazelcast.sql.impl.worker.QueryWorkerPool;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -42,14 +48,17 @@ public class QueryFragmentExecutable {
     /** Inboxes. */
     private final Map<Integer, AbstractInbox> inboxes;
 
+    /** Outboxes. */
+    private final Map<Integer, Map<UUID, Outbox>> outboxes;
+
     /** Context. */
     private final QueryFragmentContext fragmentContext;
 
-    /** Batches to be processed. */
-    private final ConcurrentLinkedDeque<QueryBatchOperation> batches = new ConcurrentLinkedDeque<>();
+    /** Operations to be processed. */
+    private final ConcurrentLinkedDeque<QueryDataExchangeOperation> operations = new ConcurrentLinkedDeque<>();
 
     /** Batch count which we used instead aof batches.size() (which is O(N)) to prevent starvation. */
-    private final AtomicInteger batchCount = new AtomicInteger();
+    private final AtomicInteger operationCount = new AtomicInteger();
 
     /** Schedule flag. */
     private final AtomicBoolean scheduled = new AtomicBoolean();
@@ -64,16 +73,22 @@ public class QueryFragmentExecutable {
         QueryState state,
         Exec exec,
         Map<Integer, AbstractInbox> inboxes,
+        Map<Integer, Map<UUID, Outbox>> outboxes,
         QueryFragmentContext fragmentContext
     ) {
         this.state = state;
         this.exec = exec;
         this.inboxes = inboxes;
+        this.outboxes = outboxes;
         this.fragmentContext = fragmentContext;
     }
 
     public Collection<Integer> getInboxEdgeIds() {
         return inboxes.keySet();
+    }
+
+    public Collection<Integer> getOutboxEdgeIds() {
+        return outboxes.keySet();
     }
 
     /**
@@ -84,13 +99,11 @@ public class QueryFragmentExecutable {
     }
 
     /**
-     * Schedule fragment execution due to arrival of a new batch.
-     *
-     * @param batch Task.
+     * Add operation to be processed.
      */
-    public void addBatch(QueryBatchOperation batch) {
-        batchCount.incrementAndGet();
-        batches.addLast(batch);
+    public void addOperation(QueryDataExchangeOperation operation) {
+        operationCount.incrementAndGet();
+        operations.addLast(operation);
     }
 
     public void run(QueryWorkerPool workerPool) {
@@ -112,24 +125,43 @@ public class QueryFragmentExecutable {
             try {
                 // Feed all batches to relevant inboxes first. Set the upper boundary on the number of batches to avoid
                 // starvation when batches arrive quicker than we are able to process them.
-                int maxBatchCount = batchCount.get();
+                int maxOperationCount = operationCount.get();
                 int processedBatchCount = 0;
 
-                QueryBatchOperation batch;
+                QueryOperation operation;
 
-                while ((batch = batches.pollFirst()) != null) {
-                    AbstractInbox inbox = inboxes.get(batch.getEdgeId());
+                while ((operation = operations.pollFirst()) != null) {
+                    if (operation instanceof QueryBatchOperation) {
+                        QueryBatchOperation operation0 = (QueryBatchOperation) operation;
 
-                    assert inbox != null;
+                        AbstractInbox inbox = inboxes.get(operation0.getEdgeId());
+                        assert inbox != null;
 
-                    inbox.onBatch(batch.getCallerUuid(), batch.getBatch());
+                        SendBatch batch = operation0.getBatch();
 
-                    if (++processedBatchCount >= maxBatchCount) {
+                        batch.setSenderId(operation0.getCallerUuid());
+
+                        inbox.onBatchReceived(batch);
+                    } else {
+                        assert operation instanceof QueryFlowControlOperation;
+
+                        QueryFlowControlOperation operation0 = (QueryFlowControlOperation) operation;
+
+                        Map<UUID, Outbox> edgeOutboxes = outboxes.get(operation0.getEdgeId());
+                        assert edgeOutboxes != null;
+
+                        Outbox outbox = edgeOutboxes.get(operation.getCallerUuid());
+                        assert outbox != null;
+
+                        outbox.onFlowControl(operation0.getRemainingMemory());
+                    }
+
+                    if (++processedBatchCount >= maxOperationCount) {
                         break;
                     }
                 }
 
-                batchCount.addAndGet(-1 * processedBatchCount);
+                operationCount.addAndGet(-1 * processedBatchCount);
 
                 IterationResult res = exec.advance();
 
@@ -162,7 +194,7 @@ public class QueryFragmentExecutable {
         scheduled.lazySet(false);
 
         // If new tasks arrived concurrently, reschedule the fragment again.
-        if (!batches.isEmpty() && !completed) {
+        if (!operations.isEmpty() && !completed) {
             schedule0(workerPool);
         }
     }

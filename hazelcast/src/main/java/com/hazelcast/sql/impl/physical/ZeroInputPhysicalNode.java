@@ -27,14 +27,4 @@ public abstract class ZeroInputPhysicalNode extends AbstractPhysicalNode {
     protected ZeroInputPhysicalNode(int id) {
         super(id);
     }
-
-    @Override
-    public final int getInputCount() {
-        return 0;
-    }
-
-    @Override
-    public final PhysicalNode getInput(int i) {
-        throw new IllegalArgumentException("The node has no inputs.");
-    }
 }

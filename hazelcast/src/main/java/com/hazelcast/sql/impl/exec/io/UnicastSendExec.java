@@ -21,6 +21,13 @@ import com.hazelcast.sql.impl.exec.Exec;
 import com.hazelcast.sql.impl.mailbox.Outbox;
 import com.hazelcast.sql.impl.physical.hash.HashFunction;
 import com.hazelcast.sql.impl.row.Row;
+import com.hazelcast.sql.impl.row.RowBatch;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Unicast sender.
@@ -31,6 +38,12 @@ public class UnicastSendExec extends AbstractSendExec {
 
     /** Contains index of partition outboxes. */
     private final int[] partitionOutboxIndexes;
+
+    /** Pending states. */
+    private final Map<Integer, State> pendingStates = new HashMap<>();
+
+    /** Whether pending batch is the last one. */
+    private boolean pendingLast;
 
     public UnicastSendExec(
         int id,
@@ -46,21 +59,88 @@ public class UnicastSendExec extends AbstractSendExec {
     }
 
     @Override
-    protected boolean pushRow(Row row) {
-        Outbox outbox = resolveOutbox(row);
+    protected boolean pushPendingBatch() {
+        if (pendingStates.isEmpty() && !pendingLast) {
+            // Last batch must be flushed forcefully, this is why we proceed to push even of there are no pending states.
+            return true;
+        }
 
-        return outbox.onRow(row);
+        return push0();
     }
 
-    private Outbox resolveOutbox(Row row) {
+    @Override
+    protected boolean pushBatch(RowBatch batch, boolean last) {
+        assert pendingStates.isEmpty();
+
+        // Split batch rows by destinations.
+        for (Row row : batch.getRows()) {
+            int outboxIndex = resolveOutboxIndex(row);
+
+            State state = pendingStates.get(outboxIndex);
+
+            if (state == null) {
+                state = new State();
+
+                pendingStates.put(outboxIndex, state);
+            }
+
+            state.addRow(row);
+        }
+
+        // Send data to destinations.
+        pendingLast = last;
+
+        return push0();
+    }
+
+    private boolean push0() {
+        // Send flush markers to outboxes without pending state.
+        boolean res = true;
+
+        if (pendingLast) {
+            for (int i = 0; i < outboxes.length; i++) {
+                Outbox outbox = outboxes[i];
+
+                if (pendingStates.containsKey(i)) {
+                    continue;
+                }
+
+                if (!outbox.flushLastIfNeeded()) {
+                    res = false;
+                }
+            }
+        }
+
+        // FLush pending states.
+        Iterator<Map.Entry<Integer, State>> iterator = pendingStates.entrySet().iterator();
+
+        while (iterator.hasNext()) {
+            Map.Entry<Integer, State> entry = iterator.next();
+
+            int outboxIndex = entry.getKey();
+            State state = entry.getValue();
+
+            int rowCount = outboxes[outboxIndex].onRowBatch(state.rows, state.position, pendingLast);
+
+            if (state.advancePosition(rowCount)) {
+                iterator.remove();
+            } else {
+                res = false;
+            }
+        }
+
+        return res;
+    }
+
+    private int resolveOutboxIndex(Row row) {
         if (outboxes.length == 1) {
-            return outboxes[0];
+            return 0;
         } else {
             int hash = hashFunction.getHash(row);
             int part = HashUtil.hashToIndex(hash, partitionOutboxIndexes.length);
             int outboxIndex = partitionOutboxIndexes[part];
 
-            return outboxes[outboxIndex];
+            return outboxIndex;
         }
     }
 
@@ -68,4 +148,35 @@ public class UnicastSendExec extends AbstractSendExec {
     public String toString() {
         return getClass().getSimpleName() +  "{id=" + getId() + '}';
     }
+
+    private static class State {
+        private List<Row> rows;
+        private int position;
+
+        public void addRow(Row row) {
+            if (rows == null) {
+                // TODO: Avoid these constant reallocations!
+                rows = new ArrayList<>();
+            }
+
+            rows.add(row);
+        }
+
+        public List<Row> getRows() {
+            return rows;
+        }
+
+        public int getPosition() {
+            return position;
+        }
+
+        public boolean advancePosition(int delta) {
+            int position0 = position + delta;
+
+            position = position0;
+
+            return position0 == rows.size();
+        }
+    }
+
 }
