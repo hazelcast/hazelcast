@@ -16,9 +16,11 @@
 
 package com.hazelcast.jet.impl.operation;
 
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.JobCoordinationService;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -27,6 +29,7 @@ import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isRestartableException;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.stackTraceToString;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.spi.impl.operationservice.ExceptionAction.THROW_EXCEPTION;
 
@@ -73,7 +76,22 @@ public abstract class AsyncOperation extends Operation implements IdentifiedData
             final JetService service = getService();
             service.getLiveOperationRegistry().deregister(this);
         } finally {
-            sendResponse(value);
+            try {
+                sendResponse(value);
+            } catch (Exception e) {
+                Throwable ex = peel(e);
+                if (value instanceof Throwable && ex instanceof HazelcastSerializationException) {
+                    // Sometimes exceptions are not serializable, for example on
+                    // https://github.com/hazelcast/hazelcast-jet/issues/1995.
+                    // When sending exception as a response and the serialization fails,
+                    // the response will not be sent and the operation will hang.
+                    // To prevent this from happening, replace the exception with
+                    // another exception that can be serialized.
+                    sendResponse(new JetException(stackTraceToString(ex)));
+                } else {
+                    throw e;
+                }
+            }
         }
     }
 

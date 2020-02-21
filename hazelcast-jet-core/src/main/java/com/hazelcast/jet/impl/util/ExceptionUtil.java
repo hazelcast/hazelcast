@@ -40,6 +40,8 @@ import com.hazelcast.spi.exception.TargetNotMemberException;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.List;
@@ -188,6 +190,13 @@ public final class ExceptionUtil {
     @Nonnull
     public static <T extends Throwable> RuntimeException sneakyThrow(@Nonnull Throwable t) throws T {
         throw (T) t;
+    }
+
+    @Nonnull
+    public static String stackTraceToString(Throwable t) {
+        StringWriter sw = new StringWriter();
+        t.printStackTrace(new PrintWriter(sw));
+        return sw.toString();
     }
 
     /**

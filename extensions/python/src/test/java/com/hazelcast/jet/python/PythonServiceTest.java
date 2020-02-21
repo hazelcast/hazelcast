@@ -51,6 +51,10 @@ public class PythonServiceTest extends SimpleTestInClusterSupport {
             "def handle(input_list):\n" +
             "    return ['echo-%s' % i for i in input_list]\n";
 
+    private static final String FAILING_FUNCTION
+            = "def handle(input_list):\n"
+            + "    assert 1 == 2\n";
+
     private File baseDir;
 
     @BeforeClass
@@ -261,6 +265,54 @@ public class PythonServiceTest extends SimpleTestInClusterSupport {
                 .setBaseDir(baseDir.toString())
                 .setHandlerModule("echo")
                 .setHandlerFunction("notExistsFunction");
+        Pipeline p = Pipeline.create();
+        StreamStage<String> stage = p.readFrom(TestSources.items("1")).addTimestamps(x -> 0, 0);
+
+        // When
+        stage.apply(mapUsingPython(cfg)).setLocalParallelism(2)
+                .writeTo(Sinks.logger());
+
+        // Then
+        try {
+            instance().newJob(p).join();
+            fail();
+        } catch (CompletionException ex) {
+            // expected
+        }
+    }
+
+    @Test
+    public void batchStage_mapUsingPythonException() throws IOException {
+        // Given
+        installFileToBaseDir(FAILING_FUNCTION, "failing.py");
+        PythonServiceConfig cfg = new PythonServiceConfig()
+                .setBaseDir(baseDir.toString())
+                .setHandlerModule("failing")
+                .setHandlerFunction("handle");
+        Pipeline p = Pipeline.create();
+        BatchStage<String> stage = p.readFrom(TestSources.items("1"));
+
+        // When
+        stage.apply(mapUsingPythonBatch(cfg)).setLocalParallelism(2)
+                .writeTo(Sinks.logger());
+
+        // Then
+        try {
+            instance().newJob(p).join();
+            fail();
+        } catch (CompletionException ex) {
+            // expected
+        }
+    }
+
+    @Test
+    public void streamStage_mapUsingPythonException() throws IOException {
+        // Given
+        installFileToBaseDir(FAILING_FUNCTION, "failing.py");
+        PythonServiceConfig cfg = new PythonServiceConfig()
+                .setBaseDir(baseDir.toString())
+                .setHandlerModule("failing")
+                .setHandlerFunction("handle");
         Pipeline p = Pipeline.create();
         StreamStage<String> stage = p.readFrom(TestSources.items("1")).addTimestamps(x -> 0, 0);
 

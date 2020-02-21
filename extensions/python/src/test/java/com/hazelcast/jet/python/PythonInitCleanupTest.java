@@ -32,7 +32,6 @@ import java.util.concurrent.CompletionException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -195,7 +194,6 @@ public class PythonInitCleanupTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    @Ignore("https://github.com/hazelcast/hazelcast-jet/issues/1995")
     public void cleanupExecutedIfPythonFailed() throws IOException {
         // Given
         installFileToBaseDir(FAILING_FUNCTION, "failing.py");
