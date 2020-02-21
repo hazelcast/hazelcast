@@ -52,7 +52,7 @@ import static junit.framework.TestCase.fail;
 public class TpcHTest extends SqlTestSupport {
     // TODO: Externalize data location.
     private static final String DATA_DIR = "/home/devozerov/code/tpch/2.18.0_rc2/dbgen";
-    private static final int DOWNSCALE = 100;
+    private static final int DOWNSCALE = 10;
 
     private static TestHazelcastInstanceFactory factory;
     private static HazelcastInstance member;

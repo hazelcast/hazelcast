@@ -116,7 +116,7 @@ public final class LogicalRules {
             SortLogicalRule.INSTANCE,
             JoinLogicalRule.INSTANCE
 
-            // TODO: Transitive closures
+            // TODO: Transitive closures: (a.a=b.b) AND (a=1) -> (a.a=b.b) AND (a=1) AND (b=1) -> pushdown to two tables, not one
         );
     }
 
