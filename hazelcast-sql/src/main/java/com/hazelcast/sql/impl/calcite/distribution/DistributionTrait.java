@@ -66,6 +66,11 @@ public class DistributionTrait implements RelTrait {
     private final DistributionType type;
 
     /** Distribution fields. */
+    // TODO: VO: We use List<List> at the moment because there might be several distribution columns PLUS and equivalent
+    //  group of columns. E.g. JOIN a.a1=b.b1 AND a.a2=b.b2 - if the relation is partitioned on [a1, a2], then it is also
+    //  partitioned on [b1, b2]. IMO we should not encode the equality this way. Instead, it should be encoded inside
+    //  physical operator itself, and distribution should be normalized to only a single list of columns. This will simplify
+    //  planning complexity.
     private final List<List<DistributionField>> fieldGroups;
 
     public DistributionTrait(DistributionType type, List<List<DistributionField>> fieldGroups) {

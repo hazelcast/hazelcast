@@ -215,8 +215,12 @@ public final class SortPhysicalRule extends AbstractPhysicalRule {
      * @param physicalInput Physical input.
      * @return Physical distributed sort.
      */
-    private static RootSingletonSortMergeExchangePhysicalRel createDistributedSort(SortLogicalRel logicalSort,
-                                                                                   RelNode physicalInput) {
+    private static RootSingletonSortMergeExchangePhysicalRel createDistributedSort(
+        SortLogicalRel logicalSort,
+        RelNode physicalInput
+    ) {
+        // TODO: Do not use root here. Instead, we should set either PARTITIONED with 1 node or possible REPLICTED.
+        //  The latter one should be investigated thoroughly: in principle
         RelTraitSet traitSet = OptUtils.traitPlus(physicalInput.getTraitSet(),
             logicalSort.getCollation(),
             DistributionTrait.ROOT_DIST
