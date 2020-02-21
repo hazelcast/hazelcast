@@ -59,6 +59,21 @@ Make sure you have the `hazelcast-gcp.jar` dependency in your classpath. Then, y
 </hazelcast>
 ```
 
+#### YAML Configuration
+
+```yml
+hazelcast:
+  network:
+    join:
+      multicast:
+        enabled: false
+      gcp:
+        enabled: false
+        zones: us-east1-a,us-east1-b
+        label: application=hazelcast
+        hz-port: 5701-5708
+```
+
 #### Java-based Configuration
 
 ```java
@@ -89,6 +104,15 @@ When using `ZONE_AWARE` configuration, backups are created in the other availabi
 
 ```xml
 <partition-group enabled="true" group-type="ZONE_AWARE" />
+```
+
+#### YAML Configuration
+
+```yml
+hazelcast:
+  partition-group:
+    enabled: true
+    group-type: ZONE-AWARE
 ```
 
 #### Java-based Configuration
@@ -130,6 +154,20 @@ Following are example declarative and programmatic configuration snippets.
 </hazelcast-client>
 ```
 
+#### YAML Configuration
+
+```yml
+hazelcast:
+  network:
+    gcp:
+      enabled: true
+      private-key-path: /home/name/service/account/key.json
+      projects: project-1,project-2
+      zones: us-east1-a,us-east1-b
+      label: application=hazelcast
+      hz-port: 5701-5708
+      use-public-ip: true
+```
 #### Java-based Configuration
 
 ```java
