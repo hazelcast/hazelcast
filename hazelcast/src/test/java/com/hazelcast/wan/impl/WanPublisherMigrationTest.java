@@ -36,7 +36,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.wan.WanEvent;
+import com.hazelcast.wan.WanEventChanged;
 import com.hazelcast.wan.WanMigrationAwarePublisher;
 import com.hazelcast.wan.WanPublisher;
 import org.junit.After;
@@ -202,12 +202,12 @@ public class WanPublisherMigrationTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void publishReplicationEvent(WanEvent eventObject) {
+        public void publishReplicationEvent(WanEventChanged eventObject) {
 
         }
 
         @Override
-        public void publishReplicationEventBackup(WanEvent eventObject) {
+        public void publishReplicationEventBackup(WanEventChanged eventObject) {
 
         }
 

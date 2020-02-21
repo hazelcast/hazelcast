@@ -54,8 +54,8 @@ public interface WanPublisher<T> {
 
     /**
      * Performs pre-publication checks (e.g. enforcing invariants).
-     * Invoked before {@link #publishReplicationEvent(WanEvent)}
-     * and {@link #publishReplicationEventBackup(WanEvent)}.
+     * Invoked before {@link #publishReplicationEvent(WanEventChanged)}
+     * and {@link #publishReplicationEventBackup(WanEventChanged)}.
      */
     void doPrepublicationChecks();
 
@@ -64,12 +64,12 @@ public interface WanPublisher<T> {
      *
      * @param eventObject the replication event
      */
-    void publishReplicationEvent(WanEvent<T> eventObject);
+    void publishReplicationEvent(WanEventChanged<T> eventObject);
 
     /**
      * Publish the {@code eventObject} WAN replication event backup.
      *
      * @param eventObject the replication backup event
      */
-    void publishReplicationEventBackup(WanEvent<T> eventObject);
+    void publishReplicationEventBackup(WanEventChanged<T> eventObject);
 }

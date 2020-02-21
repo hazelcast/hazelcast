@@ -16,7 +16,7 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.wan.WanEvent;
+import com.hazelcast.wan.WanEventChanged;
 import com.hazelcast.wan.WanPublisher;
 
 import java.io.Serializable;
@@ -38,12 +38,12 @@ public class DummyWanPublisher implements WanPublisher, Serializable {
     }
 
     @Override
-    public void publishReplicationEvent(WanEvent eventObject) {
+    public void publishReplicationEvent(WanEventChanged eventObject) {
 
     }
 
     @Override
-    public void publishReplicationEventBackup(WanEvent eventObject) {
+    public void publishReplicationEventBackup(WanEventChanged eventObject) {
 
     }
 

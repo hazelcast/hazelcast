@@ -24,7 +24,7 @@ import javax.annotation.Nullable;
  *
  * @param <T> type of event data
  */
-public interface WanEvent<T> {
+public interface WanEventChanged<T> {
     /**
      * Returns the service name on which this event occurred.
      *

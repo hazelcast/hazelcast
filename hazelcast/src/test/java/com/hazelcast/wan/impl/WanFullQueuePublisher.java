@@ -18,7 +18,7 @@ package com.hazelcast.wan.impl;
 
 import com.hazelcast.config.AbstractWanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
-import com.hazelcast.wan.WanEvent;
+import com.hazelcast.wan.WanEventChanged;
 import com.hazelcast.wan.WanPublisher;
 import com.hazelcast.wan.WanQueueFullException;
 
@@ -34,11 +34,11 @@ public class WanFullQueuePublisher implements WanPublisher {
     }
 
     @Override
-    public void publishReplicationEvent(WanEvent event) {
+    public void publishReplicationEvent(WanEventChanged event) {
     }
 
     @Override
-    public void publishReplicationEventBackup(WanEvent event) {
+    public void publishReplicationEventBackup(WanEventChanged event) {
     }
 
     @Override

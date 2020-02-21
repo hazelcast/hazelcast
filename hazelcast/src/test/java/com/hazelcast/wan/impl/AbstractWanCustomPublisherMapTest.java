@@ -35,7 +35,7 @@ import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.wan.WanEvent;
+import com.hazelcast.wan.WanEventChanged;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -266,14 +266,14 @@ public class AbstractWanCustomPublisherMapTest extends HazelcastTestSupport {
     }
 
     private void assertTotalQueueSize(final int expectedQueueSize) {
-        Queue<WanEvent<Object>> eventQueue1 = getWanReplicationImpl(instance1).getEventQueue();
-        Queue<WanEvent<Object>> eventQueue2 = getWanReplicationImpl(instance2).getEventQueue();
+        Queue<WanEventChanged<Object>> eventQueue1 = getWanReplicationImpl(instance1).getEventQueue();
+        Queue<WanEventChanged<Object>> eventQueue2 = getWanReplicationImpl(instance2).getEventQueue();
         assertTrueEventually(() -> assertEquals(expectedQueueSize, eventQueue1.size() + eventQueue2.size()));
     }
 
     private void assertQueueContents(int expectedQueueSize, IMap<?, ?> map) {
-        Queue<WanEvent<Object>> eventQueue1 = getWanReplicationImpl(instance1).getEventQueue();
-        Queue<WanEvent<Object>> eventQueue2 = getWanReplicationImpl(instance2).getEventQueue();
+        Queue<WanEventChanged<Object>> eventQueue1 = getWanReplicationImpl(instance1).getEventQueue();
+        Queue<WanEventChanged<Object>> eventQueue2 = getWanReplicationImpl(instance2).getEventQueue();
         assertTrueEventually(() -> assertEquals(expectedQueueSize, eventQueue1.size() + eventQueue2.size()));
 
         HashMap<Object, Object> actualMap = new HashMap<>();

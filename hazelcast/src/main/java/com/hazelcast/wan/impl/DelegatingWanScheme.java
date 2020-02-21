@@ -19,7 +19,7 @@ package com.hazelcast.wan.impl;
 import com.hazelcast.internal.monitor.LocalWanPublisherStats;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
 import com.hazelcast.internal.services.ServiceNamespace;
-import com.hazelcast.wan.WanEvent;
+import com.hazelcast.wan.WanEventChanged;
 import com.hazelcast.wan.WanMigrationAwarePublisher;
 import com.hazelcast.wan.WanPublisher;
 
@@ -94,7 +94,7 @@ public final class DelegatingWanScheme {
      * Publishes a replication event to all publishers to which this publisher
      * delegates.
      */
-    public void publishReplicationEvent(WanEvent event) {
+    public void publishReplicationEvent(WanEventChanged event) {
         for (WanPublisher publisher : publishers.values()) {
             publisher.publishReplicationEvent(event);
         }
@@ -104,7 +104,7 @@ public final class DelegatingWanScheme {
      * Publishes a backup replication event to all publishers to which this
      * publisher delegates.
      */
-    public void publishReplicationEventBackup(WanEvent event) {
+    public void publishReplicationEventBackup(WanEventChanged event) {
         for (WanPublisher publisher : publishers.values()) {
             publisher.publishReplicationEventBackup(event);
         }

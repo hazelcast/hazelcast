@@ -20,7 +20,7 @@ import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.discovery.DiscoveryNode;
-import com.hazelcast.wan.WanEvent;
+import com.hazelcast.wan.WanEventChanged;
 import com.hazelcast.wan.WanPublisherState;
 import com.hazelcast.wan.WanPublisher;
 
@@ -169,7 +169,7 @@ public class WanBatchPublisherConfig extends AbstractWanPublisherConfig {
     /**
      * Returns {@code true} if key-based coalescing is configured for this WAN
      * publisher.
-     * When enabled, only the latest {@link WanEvent}
+     * When enabled, only the latest {@link WanEventChanged}
      * of a key is sent to target.
      *
      * @see WanBatchPublisherConfig#isSnapshotEnabled()
@@ -180,7 +180,7 @@ public class WanBatchPublisherConfig extends AbstractWanPublisherConfig {
 
     /**
      * Sets if key-based coalescing is configured for this WAN publisher.
-     * When enabled, only the latest {@link WanEvent}
+     * When enabled, only the latest {@link WanEventChanged}
      * of a key is sent to target.
      *
      * @return this config
