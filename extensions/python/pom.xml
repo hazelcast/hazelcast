@@ -137,12 +137,6 @@
     </profiles>
 
     <dependencies>
-        <dependency>
-            <groupId>com.hazelcast.jet</groupId>
-            <artifactId>hazelcast-jet-core</artifactId>
-            <version>${project.parent.version}</version>
-            <scope>provided</scope>
-        </dependency>
         <!-- Generated gRPC code uses an annotation which was renamed in Java 11 -->
         <dependency>
             <groupId>javax.annotation</groupId>
