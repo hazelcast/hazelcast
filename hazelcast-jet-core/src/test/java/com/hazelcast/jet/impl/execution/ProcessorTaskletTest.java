@@ -183,6 +183,7 @@ public class ProcessorTaskletTest {
 
         // When
         callUntil(tasklet, NO_PROGRESS);
+        callUntil(tasklet, NO_PROGRESS);
 
         // Then
         assertTrue("Expected: nullaryProcessCallCountdown<=0, was " + processor.nullaryProcessCallCountdown,

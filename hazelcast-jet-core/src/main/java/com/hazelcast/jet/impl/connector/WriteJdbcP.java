@@ -20,54 +20,65 @@ import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.internal.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.internal.util.concurrent.IdleStrategy;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
+import javax.sql.CommonDataSource;
+import javax.sql.DataSource;
+import javax.sql.XAConnection;
+import javax.sql.XADataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.SQLNonTransientException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
+import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
+import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Use {@link SinkProcessors#writeJdbcP}.
  */
-public final class WriteJdbcP<T> implements Processor {
+public final class WriteJdbcP<T> extends XaSinkProcessorBase {
 
     private static final IdleStrategy IDLER =
-            new BackoffIdleStrategy(0, 0, SECONDS.toNanos(1), SECONDS.toNanos(10));
+            new BackoffIdleStrategy(0, 0, SECONDS.toNanos(1), SECONDS.toNanos(3));
     private static final int BATCH_LIMIT = 50;
 
-    private final SupplierEx<? extends Connection> newConnectionFn;
+    private final CommonDataSource dataSource;
     private final BiConsumerEx<? super PreparedStatement, ? super T> bindFn;
     private final String updateQuery;
 
     private ILogger logger;
+    private XAConnection xaConnection;
     private Connection connection;
     private PreparedStatement statement;
-    private List<T> itemList = new ArrayList<>();
     private int idleCount;
     private boolean supportsBatch;
     private int batchCount;
 
     private WriteJdbcP(
             @Nonnull String updateQuery,
-            @Nonnull SupplierEx<? extends Connection> newConnectionFn,
-            @Nonnull BiConsumerEx<? super PreparedStatement, ? super T> bindFn
+            @Nonnull CommonDataSource dataSource,
+            @Nonnull BiConsumerEx<? super PreparedStatement, ? super T> bindFn,
+            boolean exactlyOnce
     ) {
+        super(exactlyOnce ? EXACTLY_ONCE : AT_LEAST_ONCE);
         this.updateQuery = updateQuery;
-        this.newConnectionFn = newConnectionFn;
+        this.dataSource = dataSource;
         this.bindFn = bindFn;
     }
 
@@ -76,46 +87,73 @@ public final class WriteJdbcP<T> implements Processor {
      */
     public static <T> ProcessorMetaSupplier metaSupplier(
             @Nonnull String updateQuery,
-            @Nonnull SupplierEx<? extends Connection> newConnectionFn,
-            @Nonnull BiConsumerEx<? super PreparedStatement, ? super T> bindFn
+            @Nonnull SupplierEx<? extends CommonDataSource> dataSourceSupplier,
+            @Nonnull BiConsumerEx<? super PreparedStatement, ? super T> bindFn,
+            boolean exactlyOnce
     ) {
-        checkSerializable(newConnectionFn, "newConnectionFn");
+        checkSerializable(dataSourceSupplier, "newConnectionFn");
         checkSerializable(bindFn, "bindFn");
 
-        return ProcessorMetaSupplier.preferLocalParallelismOne(() ->
-                new WriteJdbcP<>(updateQuery, newConnectionFn, bindFn));
+        return ProcessorMetaSupplier.preferLocalParallelismOne(
+                new ProcessorSupplier() {
+                    private transient CommonDataSource dataSource;
+
+                    @Override
+                    public void init(@Nonnull Context context) {
+                        dataSource = dataSourceSupplier.get();
+                    }
+
+                    @Nonnull @Override
+                    public Collection<? extends Processor> get(int count) {
+                        return IntStream.range(0, count)
+                                        .mapToObj(i -> new WriteJdbcP<>(updateQuery, dataSource, bindFn, exactlyOnce))
+                                        .collect(Collectors.toList());
+                    }
+                });
     }
 
     @Override
-    public void init(@Nonnull Outbox outbox, @Nonnull Context context) {
+    public void init(@Nonnull Outbox outbox, @Nonnull Context context) throws Exception {
+        super.init(outbox, context);
         logger = context.logger();
         connectAndPrepareStatement();
     }
 
     @Override
+    public boolean tryProcess() {
+        if (!reconnectIfNecessary()) {
+            return false;
+        }
+        return super.tryProcess();
+    }
+
+    @Override
     public void process(int ordinal, @Nonnull Inbox inbox) {
-        inbox.drainTo(itemList);
-        while (!itemList.isEmpty()) {
-            if (!reconnectIfNecessary()) {
-                continue;
+        if (!reconnectIfNecessary()
+                || snapshotUtility.activeTransaction() == null) {
+            return;
+        }
+        try {
+            for (Object item : inbox) {
+                @SuppressWarnings("unchecked")
+                T castItem = (T) item;
+                bindFn.accept(statement, castItem);
+                addBatchOrExecute();
             }
-            try {
-                for (T item : itemList) {
-                    bindFn.accept(statement, item);
-                    addBatchOrExecute();
-                }
-                executeBatch();
+            executeBatch();
+            if (!snapshotUtility.usesTransactionLifecycle()) {
                 connection.commit();
-                itemList.clear();
-                idleCount = 0;
-            } catch (Exception e) {
-                if (e instanceof SQLNonTransientException ||
-                        e.getCause() instanceof SQLNonTransientException) {
-                    throw ExceptionUtil.rethrow(e);
-                } else {
-                    logger.warning("Exception during update", e.getCause());
-                    idleCount++;
-                }
+            }
+            idleCount = 0;
+            inbox.clear();
+        } catch (SQLException e) {
+            if (e instanceof SQLNonTransientException
+                    || e.getCause() instanceof SQLNonTransientException
+                    || snapshotUtility.usesTransactionLifecycle()) {
+                throw ExceptionUtil.rethrow(e);
+            } else {
+                logger.warning("Exception during update", e);
+                idleCount++;
             }
         }
     }
@@ -126,24 +164,45 @@ public final class WriteJdbcP<T> implements Processor {
     }
 
     @Override
-    public boolean isCooperative() {
-        return false;
-    }
-
-    @Override
-    public void close() {
+    public void close() throws Exception {
+        super.close();
         closeWithLogging(statement);
+        if (xaConnection != null) {
+            xaConnection.close();
+        }
         closeWithLogging(connection);
     }
 
     private boolean connectAndPrepareStatement() {
         try {
-            connection = newConnectionFn.get();
+            if (snapshotUtility.usesTransactionLifecycle()) {
+                if (!(dataSource instanceof XADataSource)) {
+                    throw new JetException("When using exactly-once, the dataSource must implement "
+                            + XADataSource.class.getName());
+                }
+                xaConnection = ((XADataSource) dataSource).getXAConnection();
+                connection = xaConnection.getConnection();
+                // we never ignore errors in ex-once mode
+                assert idleCount == 0 : "idleCount=" + idleCount;
+                setXaResource(xaConnection.getXAResource());
+            } else if (dataSource instanceof DataSource) {
+                connection = ((DataSource) dataSource).getConnection();
+            } else if (dataSource instanceof XADataSource) {
+                logger.warning("Using " + XADataSource.class.getName() + " when no XA transactions are needed");
+                XAConnection xaConnection = ((XADataSource) dataSource).getXAConnection();
+                connection = xaConnection.getConnection();
+            } else {
+                throw new JetException("The dataSource implements neither " + DataSource.class.getName() + " nor "
+                        + XADataSource.class.getName());
+            }
             connection.setAutoCommit(false);
             supportsBatch = connection.getMetaData().supportsBatchUpdates();
             statement = connection.prepareStatement(updateQuery);
-        } catch (Exception e) {
-            logger.warning("Exception during connecting and preparing the statement", e);
+        } catch (SQLException e) {
+            if (snapshotUtility.usesTransactionLifecycle()) {
+                throw ExceptionUtil.rethrow(e);
+            }
+            logger.warning("Exception when connecting and preparing the statement", e);
             idleCount++;
             return false;
         }
@@ -157,14 +216,12 @@ public final class WriteJdbcP<T> implements Processor {
         }
         statement.addBatch();
         if (++batchCount == BATCH_LIMIT) {
-            statement.executeBatch();
-            batchCount = 0;
+            executeBatch();
         }
-
     }
 
     private void executeBatch() throws SQLException {
-        if (supportsBatch) {
+        if (supportsBatch && batchCount > 0) {
             statement.executeBatch();
             batchCount = 0;
         }
@@ -174,9 +231,11 @@ public final class WriteJdbcP<T> implements Processor {
         if (idleCount == 0) {
             return true;
         }
+        assert !snapshotUtility.usesTransactionLifecycle() : "attempt to reconnect in XA mode";
         IDLER.idle(idleCount);
 
-        close();
+        closeWithLogging(statement);
+        closeWithLogging(connection);
 
         return connectAndPrepareStatement();
     }
@@ -188,7 +247,7 @@ public final class WriteJdbcP<T> implements Processor {
         try {
             closeable.close();
         } catch (Exception e) {
-            logger.warning("Exception during closing " + closeable, e);
+            logger.warning("Exception when closing " + closeable + ", ignoring it: " + e, e);
         }
     }
 }

@@ -124,6 +124,13 @@ public abstract class TwoPhaseSnapshotCommitUtility<TXN_ID extends TransactionId
     }
 
     /**
+     * Delegate handling of {@link Processor#tryProcess()} to this method.
+     */
+    public boolean tryProcess() {
+        return true;
+    }
+
+    /**
      * Returns the active transaction that can be used to store an item or
      * query the source. It's null in case when a transaction is not available
      * now. In that case the processor should back off and retry later.

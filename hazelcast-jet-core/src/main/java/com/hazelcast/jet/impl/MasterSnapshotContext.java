@@ -257,7 +257,7 @@ class MasterSnapshotContext {
 
             // start the phase 2
             Function<ExecutionPlan, Operation> factory = plan -> new SnapshotPhase2Operation(
-                    mc.jobId(), mc.executionId(), snapshotId, isSuccess && !SnapshotFlags.isExportOnly(snapshotFlags));
+                    mc.jobId(), executionId, snapshotId, isSuccess && !SnapshotFlags.isExportOnly(snapshotFlags));
             mc.invokeOnParticipants(factory,
                     responses2 -> mc.coordinationService().submitToCoordinatorThread(() ->
                             onSnapshotPhase2Complete(mergedResult.getError(), responses2, executionId, snapshotId,

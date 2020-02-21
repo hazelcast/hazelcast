@@ -204,7 +204,9 @@ public interface Processor {
     /**
      * This method will be called periodically and only when the current batch
      * of items in the inbox has been exhausted. It can be used to produce
-     * output in the absence of input or to do general maintenance work.
+     * output in the absence of input or to do general maintenance work. If the
+     * job restores state from a snapshot, this method is called for the first
+     * time after {@link #finishSnapshotRestore()}.
      * <p>
      * If the call returns {@code false}, it will be called again before
      * proceeding to call any other <em>processing method</em>. Default

@@ -215,6 +215,7 @@ public class ProcessorTaskletTest_Snapshots {
         outstreams.add(outstream1);
 
         ProcessorTasklet tasklet = createTasklet(EXACTLY_ONCE);
+        processor.itemsToEmitInTryProcess = 1;
 
         // When
         callUntil(tasklet, DONE);
@@ -222,6 +223,7 @@ public class ProcessorTaskletTest_Snapshots {
         // Then
         assertEquals(asList("finishRestore", DONE_ITEM), outstream1.getBuffer());
         assertEquals(singletonList(DONE_ITEM), getSnapshotBufferValues());
+        assertEquals(0, processor.tryProcessCount);
     }
 
     @Test

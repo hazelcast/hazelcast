@@ -114,6 +114,12 @@ public class TransactionPoolSnapshotUtility<TXN_ID extends TransactionId, RES ex
         return poolSize;
     }
 
+    @Override
+    public boolean tryProcess() {
+        ensureTransactions();
+        return true;
+    }
+
     @Nullable @Override
     public RES activeTransaction() {
         ensureTransactions();
@@ -140,7 +146,7 @@ public class TransactionPoolSnapshotUtility<TXN_ID extends TransactionId, RES ex
         // back "our" transactions, that is those where index%parallelism =
         // ourIndex
         for (
-                int index = procContext().totalParallelism() + procContext().globalProcessorIndex();
+                int index = procContext().globalProcessorIndex();
                 index < procContext().totalParallelism() * TXN_PROBING_FACTOR;
                 index += procContext().totalParallelism()
         ) {

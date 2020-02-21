@@ -28,10 +28,10 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.test.TestInbox;
 import com.hazelcast.jet.core.test.TestOutbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
-import com.hazelcast.jet.impl.JobProxy;
+import com.hazelcast.jet.impl.connector.SinkStressTestUtil;
 import com.hazelcast.jet.kafka.KafkaSinks;
 import com.hazelcast.jet.pipeline.Pipeline;
-import com.hazelcast.jet.pipeline.SourceBuilder;
+import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -49,18 +49,16 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static java.util.Collections.singletonMap;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static java.util.stream.Collectors.joining;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -197,82 +195,44 @@ public class WriteKafkaPTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void test_transactional_withRestarts_graceful() {
-        test_transactional_withRestarts(true);
+    public void test_transactional_withRestarts_graceful_exOnce() {
+        test_transactional_withRestarts(true, true);
     }
 
     @Test
-    public void test_transactional_withRestarts_forceful() {
-        test_transactional_withRestarts(false);
+    public void test_transactional_withRestarts_forceful_exOnce() {
+        test_transactional_withRestarts(false, true);
     }
 
-    private void test_transactional_withRestarts(boolean graceful) {
-        int numItems = 1000;
-        Pipeline p = Pipeline.create();
+    @Test
+    public void test_transactional_withRestarts_graceful_atLeastOnce() {
+        test_transactional_withRestarts(false, false);
+    }
+
+    @Test
+    public void test_transactional_withRestarts_forceful_atLeastOnce() {
+        test_transactional_withRestarts(false, false);
+    }
+
+    private void test_transactional_withRestarts(boolean graceful, boolean exactlyOnce) {
         String topicLocal = topic;
-        p.readFrom(SourceBuilder.stream("src", procCtx -> new int[1])
-                                .fillBufferFn((ctx, buf) -> {
-                                    if (ctx[0] < numItems) {
-                                        buf.add(ctx[0]++);
-                                        sleepMillis(10);
-                                    }
-                                })
-                                .createSnapshotFn(ctx -> ctx[0])
-                                .restoreSnapshotFn((ctx, state) -> ctx[0] = state.get(0))
-                                .build())
-         .withoutTimestamps()
-         .map(String::valueOf)
-         .setLocalParallelism(1)
-         // produce to a single partition to have the items sorted
-         .writeTo(KafkaSinks.kafka(properties).toRecordFn(v -> new ProducerRecord<>(topicLocal, 0, null, v)).build())
-         .setLocalParallelism(1);
+        Sink<Integer> sink = KafkaSinks.<Integer>kafka(properties)
+                .toRecordFn(v -> new ProducerRecord<>(topicLocal, 0, null, v.toString()))
+                .exactlyOnce(exactlyOnce)
+                .build();
 
-        JobConfig config = new JobConfig()
-                .setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE)
-                .setSnapshotIntervalMillis(50);
-        JobProxy job = (JobProxy) instance().newJob(p, config);
-
-        try {
-            KafkaConsumer<String, String> consumer = kafkaTestSupport.createConsumer(topic);
-            long endTime = System.nanoTime() + SECONDS.toNanos(120);
-            StringBuilder actualSinkContents = new StringBuilder();
-
-            int actualCount = 0;
-            String expected = IntStream.range(0, numItems).mapToObj(Integer::toString).collect(joining("\n")) + '\n';
-            // We'll restart once, then restart again after a short sleep (possibly during initialization), then restart
-            // again and then assert some output so that the test isn't constantly restarting without any progress
-            for (;;) {
-                assertJobStatusEventually(job, RUNNING);
-                job.restart(graceful);
-                assertJobStatusEventually(job, RUNNING);
-                sleepMillis(ThreadLocalRandom.current().nextInt(400));
-                job.restart(graceful);
-                try {
-                    ConsumerRecords<String, String> records;
-                    for (int countThisRound = 0;
-                         countThisRound < 100 && !(records = consumer.poll(Duration.ofSeconds(5))).isEmpty();
-                    ) {
-                        for (ConsumerRecord<String, String> record : records) {
-                            actualSinkContents.append(record.value()).append('\n');
-                            actualCount++;
-                            countThisRound++;
-                        }
-                    }
-
-                    logger.info("number of committed items in the sink so far: " + actualCount);
-                    assertEquals(expected, actualSinkContents.toString());
-                    // if content matches, break the loop. Otherwise restart and try again
-                    break;
-                } catch (AssertionError e) {
-                    if (System.nanoTime() >= endTime) {
-                        throw e;
+        try (KafkaConsumer<String, String> consumer = kafkaTestSupport.createConsumer(topic)) {
+            List<Integer> actualSinkContents = new ArrayList<>();
+            SinkStressTestUtil.test_withRestarts(instance(), logger, sink, graceful, exactlyOnce, () -> {
+                for (ConsumerRecords<String, String> records;
+                     !(records = consumer.poll(Duration.ofMillis(10))).isEmpty();
+                ) {
+                    for (ConsumerRecord<String, String> record : records) {
+                        actualSinkContents.add(Integer.parseInt(record.value()));
                     }
                 }
-            }
-        } finally {
-            // We have to remove the job before bringing down Kafka broker because
-            // the producer can get stuck otherwise.
-            ditchJob(job, instances());
+                return actualSinkContents;
+            });
         }
     }
 

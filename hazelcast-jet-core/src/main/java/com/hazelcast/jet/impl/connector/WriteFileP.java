@@ -136,6 +136,11 @@ public final class WriteFileP<T> implements Processor {
     }
 
     @Override
+    public boolean tryProcess() {
+        return utility.tryProcess();
+    }
+
+    @Override
     public void process(int ordinal, @Nonnull Inbox inbox) {
         // roll file on date change
         if (dateFormatter != null && !currentTimeFormatted().equals(lastFileDate)) {

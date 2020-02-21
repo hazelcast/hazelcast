@@ -54,7 +54,7 @@ public interface Job {
 
     /**
      * Returns the configuration this job was submitted with. Changes made to the
-     * returned config object will not have any affect.
+     * returned config object will not have any effect.
      */
     @Nonnull
     JobConfig getConfig();
@@ -88,11 +88,11 @@ public interface Job {
      * Returns a snapshot of the current values of all job-specific metrics.
      * <p>
      * While the job is running the metric values are updated periodically
-     * (see {@link MetricsConfig#setCollectionFrequencySeconds metrics
-     * collection interval}), assuming
-     * that both {@link MetricsConfig#setEnabled global metrics collection}
-     * and {@link JobConfig#isMetricsEnabled() per job metrics collection}
-     * are enabled. Otherwise empty metrics will be returned.
+     * (see {@linkplain MetricsConfig#setCollectionFrequencySeconds metrics
+     * collection frequency}), assuming that both {@linkplain
+     * MetricsConfig#setEnabled global metrics collection} and {@linkplain
+     * JobConfig#setMetricsEnabled per-job metrics collection} are enabled.
+     * Otherwise empty metrics will be returned.
      * <p>
      * Keep in mind that the collections may occur at different times on
      * each member, metrics from various members aren't from the same instant.

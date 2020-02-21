@@ -433,7 +433,7 @@ public class JobRepository {
             jobResults.values().stream().sorted(comparing(JobResult::getCompletionTime).reversed())
                       .skip(maxNoResults)
                       .map(JobResult::getJobId)
-                      .collect(Collectors.toSet())
+                      .collect(Collectors.toList())
                       .forEach(id -> {
                           jobMetrics.delete(id);
                           jobResults.delete(id);

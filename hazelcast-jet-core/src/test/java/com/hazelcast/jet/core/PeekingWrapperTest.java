@@ -99,7 +99,7 @@ public class PeekingWrapperTest {
     }
 
     @Test
-    public void when_peekInputWithPeekingProcessor_supplier() throws Exception {
+    public void when_peekInputWithPeekingProcessorSupplier() throws Exception {
         // Given
         SupplierEx<Processor> wrappedSupplier = procSupplier(TestPeekRemoveProcessor.class);
         peekP = (toStringFn == null
@@ -112,9 +112,22 @@ public class PeekingWrapperTest {
     }
 
     @Test
-    public void when_peekInputWithPollingProcessor_supplier() throws Exception {
+    public void when_peekInputWithPollingProcessorSupplier() throws Exception {
         // Given
         SupplierEx<Processor> passThroughPSupplier = procSupplier(TestPollProcessor.class);
+        peekP = (toStringFn == null
+                ? peekInputP(passThroughPSupplier)
+                : peekInputP(toStringFn, shouldLogFn, passThroughPSupplier)
+        ).get();
+
+        // When+Then
+        assertPeekInput();
+    }
+
+    @Test
+    public void when_peekInputWithIteratingProcessorSupplier() throws Exception {
+        // Given
+        SupplierEx<Processor> passThroughPSupplier = procSupplier(TestIteratingProcessor.class);
         peekP = (toStringFn == null
                 ? peekInputP(passThroughPSupplier)
                 : peekInputP(toStringFn, shouldLogFn, passThroughPSupplier)
@@ -352,15 +365,15 @@ public class PeekingWrapperTest {
     }
 
     /**
-     * A processor that will pass through inbox to outbox using inbox.peek() + inbox.remove()
+     * A processor that will process the inbox using inbox.peek() +
+     * inbox.remove().
      */
     static class TestPeekRemoveProcessor extends TestProcessor {
         @Override
         public void process(int ordinal, @Nonnull Inbox inbox) {
             for (Object o; (o = inbox.peek()) != null; ) {
-                assertNotNull("Inbox returned null object", o);
                 assertEquals("second peek didn't return the same object", inbox.peek(), o);
-                assertEquals("remove didn't return the same object", inbox.poll(), o);
+                inbox.remove();
             }
             assertNull(inbox.peek());
             try {
@@ -377,16 +390,32 @@ public class PeekingWrapperTest {
     }
 
     /**
-     * A processor that will pass through inbox to outbox using inbox.poll()
+     * A processor that will process the inbox using inbox.poll().
      */
     static class TestPollProcessor extends TestProcessor {
         @Override
         public void process(int ordinal, @Nonnull Inbox inbox) {
-            for (Object o; (o = inbox.poll()) != null; ) {
+            while (inbox.poll() != null) {
+            }
+        }
+
+        @Override
+        public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
+            return true;
+        }
+    }
+
+    /**
+     * A processor that will process the inbox using inbox.iterator() +
+     * inbox.clear().
+     */
+    static class TestIteratingProcessor extends TestProcessor {
+        @Override
+        public void process(int ordinal, @Nonnull Inbox inbox) {
+            for (Object o : inbox) {
                 assertNotNull("Inbox returned null object", o);
             }
-
-            assertNull(inbox.poll());
+            inbox.clear();
         }
 
         @Override

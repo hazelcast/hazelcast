@@ -35,9 +35,8 @@ import com.hazelcast.topic.ITopic;
 
 import javax.annotation.Nonnull;
 import javax.jms.ConnectionFactory;
+import javax.sql.CommonDataSource;
 import java.nio.charset.Charset;
-import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.SQLNonTransientException;
@@ -912,16 +911,16 @@ public final class Sinks {
      * not an instance of {@code javax.jms.Message}, the sink wraps {@code
      * item.toString()} into a {@link javax.jms.TextMessage}.
      *
+     * @param queueName the name of the queue
      * @param factorySupplier supplier to obtain JMS connection factory
-     * @param name            the name of the queue
      */
     @Nonnull
     public static <T> Sink<T> jmsQueue(
-            @Nonnull SupplierEx<ConnectionFactory> factorySupplier,
-            @Nonnull String name
+            @Nonnull String queueName,
+            @Nonnull SupplierEx<ConnectionFactory> factorySupplier
     ) {
         return Sinks.<T>jmsQueueBuilder(factorySupplier)
-                .destinationName(name)
+                .destinationName(queueName)
                 .build();
     }
 
@@ -929,20 +928,32 @@ public final class Sinks {
      * Returns a builder object that offers a step-by-step fluent API to build
      * a custom JMS queue sink for the Pipeline API. See javadoc for {@link
      * JmsSinkBuilder} methods for more details.
-     * <p>
-     * Behavior on job restart: the processor is stateless. Items are written
-     * in auto-acknowledge mode. If the job is restarted, duplicate events can
-     * occur, giving you at-least-once guarantee. If you need exactly-once
-     * behavior, you must ensure idempotence on the consumer end.
-     * <p>
-     * IO failures should be handled by the JMS provider. If any JMS operation
-     * throws an exception, the job will fail. Most of the providers offer a
-     * configuration parameter to enable auto-reconnection, refer to provider
-     * documentation for details.
-     * <p>
-     * The default local parallelism for this processor is 4 (or less if less CPUs
-     * are available).
      *
+     * <p>In <b>exactly-once mode</b> the processor uses two-phase XA
+     * transactions to guarantee exactly-once delivery. The transaction is
+     * committed after all processors finished processing the items and stored
+     * all data to the snapshot. Processor is also able to finish the commit
+     * after a restart, should the job fail mid-way of the commit process. This
+     * mode significantly increases latency because produced messages are
+     * visible only after they are committed; if you want to avoid it, you can
+     * reduce the guarantee just for this sink. To do so call {@link
+     * JmsSinkBuilder#exactlyOnce(boolean) exactlyOnce(false)} on the returned
+     * builder.
+     *
+     * <p>In at-least-once mode or when the guarantee is off, the produced
+     * records are acknowledged immediately. We use transactions to produce
+     * messages in batches, but those transactions have very short duration.
+     *
+     * <p>IO failures should be handled by the JMS provider. If any JMS
+     * operation throws an exception, the job will fail. Most of the providers
+     * offer a configuration parameter to enable auto-reconnection, refer to
+     * provider documentation for details.
+     *
+     * <p>The default local parallelism for this processor is 1.
+     *
+     * @param factorySupplier supplier to obtain JMS connection factory. For
+     *      exactly-once the factory must implement {@link
+     *      javax.jms.XAConnectionFactory}
      * @param <T> type of the items the sink accepts
      */
     @Nonnull
@@ -951,22 +962,27 @@ public final class Sinks {
     }
 
     /**
-     * Convenience for {@link #jmsTopicBuilder(SupplierEx)}. Creates a
-     * connection without any authentication parameters and uses non-transacted
-     * sessions with {@code Session.AUTO_ACKNOWLEDGE} mode. If a received item
-     * is not an instance of {@code javax.jms.Message}, the sink wraps {@code
-     * item.toString()} into a {@link javax.jms.TextMessage}.
+     * Shortcut for:
+     * <pre>{@code
+     *      jmsTopicBuilder(factorySupplier)
+     *                 .destinationName(topicName)
+     *                 .build();
+     * }</pre>
      *
-     * @param factorySupplier supplier to obtain JMS connection factory
-     * @param name            the name of the queue
+     * See {@link #jmsTopicBuilder(SupplierEx)} for more details.
+     *
+     * @param topicName the name of the queue
+     * @param factorySupplier supplier to obtain JMS connection factory. For
+     *      exactly-once the factory must implement {@link
+     *      javax.jms.XAConnectionFactory}
      */
     @Nonnull
     public static <T> Sink<T> jmsTopic(
-            @Nonnull SupplierEx<ConnectionFactory> factorySupplier,
-            @Nonnull String name
+            @Nonnull String topicName,
+            @Nonnull SupplierEx<ConnectionFactory> factorySupplier
     ) {
         return Sinks.<T>jmsTopicBuilder(factorySupplier)
-                .destinationName(name)
+                .destinationName(topicName)
                 .build();
     }
 
@@ -974,19 +990,28 @@ public final class Sinks {
      * Returns a builder object that offers a step-by-step fluent API to build
      * a custom JMS topic sink for the Pipeline API. See javadoc on {@link
      * JmsSinkBuilder} methods for more details.
-     * <p>
-     * Behavior on job restart: the processor is stateless. Items are written
-     * in auto-acknowledge mode. If the job is restarted, duplicate events can
-     * occur, giving you at-least-once guarantee. If you need exactly-once
-     * behavior, you must ensure idempotence on the consumer end.
-     * <p>
-     * IO failures should be handled by the JMS provider. If any JMS operation
-     * throws an exception, the job will fail. Most of the providers offer a
-     * configuration parameter to enable auto-reconnection, refer to provider
-     * documentation for details.
-     * <p>
-     * The default local parallelism for this processor is 4 (or less if less CPUs
-     * are available).
+     *
+     * <p>In <b>exactly-once mode</b> the processor uses two-phase XA
+     * transactions to guarantee exactly-once delivery. The transaction is
+     * committed after all processors finished processing the items and stored
+     * all data to the snapshot. Processor is also able to finish the commit
+     * after a restart, should the job fail mid-way of the commit process. This
+     * mode significantly increases latency because produced messages are
+     * visible only after they are committed; if you want to avoid it, you can
+     * reduce the guarantee just for this sink. To do so call {@link
+     * JmsSinkBuilder#exactlyOnce(boolean) exactlyOnce(false)} on the returned
+     * builder.
+     *
+     * <p>In at-least-once mode or when the guarantee is off, the produced
+     * records are acknowledged immediately. We use transactions to produce
+     * messages in batches, but those transactions have very short duration.
+     *
+     * <p>IO failures should be handled by the JMS provider. If any JMS
+     * operation throws an exception, the job will fail. Most of the providers
+     * offer a configuration parameter to enable auto-reconnection, refer to
+     * provider documentation for details.
+     *
+     * <p>The default local parallelism for this processor is 1.
      *
      * @param <T> type of the items the sink accepts
      */
@@ -996,69 +1021,115 @@ public final class Sinks {
     }
 
     /**
-     * Returns a sink that connects to the specified database using the given
-     * {@code newConnectionFn}, prepares a statement using the given {@code
-     * updateQuery} and inserts/updates the items.
-     * <p>
-     * The {@code updateQuery} should contain a parametrized query. The {@code
-     * bindFn} will receive a {@code PreparedStatement} created for this query
-     * and should bind parameters to it. It should not execute the query,
-     * call commit or any other method.
-     * <p>
-     * The records will be committed after each batch of records and a batch
-     * mode will be used (if the driver supports it). Auto-commit will be
-     * disabled on the connection.
-     * <p>
-     * Example:<pre>{@code
-     *     p.writeTo(Sinks.jdbc(
-     *             "REPLACE into table (id, name) values(?, ?)",
-     *             () -> return DriverManager.getConnection("jdbc:..."),
-     *             (stmt, item) -> {
-     *                 stmt.setInt(1, item.id);
-     *                 stmt.setInt(2, item.name);
-     *             }
-     *     ));
+     * A shortcut for:
+     * <pre>{@code
+     *     Sinks.<T>jdbcBuilder()
+     *             .updateQuery(updateQuery)
+     *             .dataSourceSupplier(dataSourceSupplier)
+     *             .bindFn(bindFn)
+     *             .build();
      * }</pre>
-     * <p>
-     * In case of an {@link SQLException} the processor will automatically try
-     * to reconnect and the job won't fail, except for the {@link
-     * SQLNonTransientException} subclass. The default local parallelism for
-     * this sink is 1.
-     * <p>
-     * No state is saved to snapshot for this sink. After the job is restarted,
-     * the items will likely be duplicated, providing an <i>at-least-once</i>
-     * guarantee. For this reason you should not use {@code INSERT} statement
-     * which can fail on duplicate primary key. Rather use an
-     * <em>insert-or-update</em> statement that can tolerate duplicate writes.
      *
-     * @param updateQuery the SQL query which will do the insert/update
-     * @param newConnectionFn the supplier of database connection
-     * @param bindFn the function to set the parameters of the statement for
-     *                 each item received
-     * @param <T> type of the items the sink accepts
+     * See {@link #jdbcBuilder()} for more information.
      */
     @Nonnull
     public static <T> Sink<T> jdbc(
             @Nonnull String updateQuery,
-            @Nonnull SupplierEx<Connection> newConnectionFn,
+            @Nonnull SupplierEx<? extends CommonDataSource> dataSourceSupplier,
             @Nonnull BiConsumerEx<PreparedStatement, T> bindFn
     ) {
-        return Sinks.fromProcessor("jdbcSink",
-                SinkProcessors.writeJdbcP(updateQuery, newConnectionFn, bindFn));
+        return Sinks.<T>jdbcBuilder()
+                .updateQuery(updateQuery)
+                .dataSourceSupplier(dataSourceSupplier)
+                .bindFn(bindFn)
+                .build();
     }
 
     /**
-     * Convenience for {@link Sinks#jdbc(String, SupplierEx,
-     * BiConsumerEx)}. The connection will be created from {@code
-     * connectionUrl}.
+     * A shortcut for:
+     * <pre>{@code
+     *     jdbcBuilder(updateQuery, bindFn)
+     *              .jdbcUrl(jdbcUrl)
+     *              .build()
+     * }</pre>
+     *
+     * See {@link #jdbcBuilder()} for more information.
      */
     @Nonnull
     public static <T> Sink<T> jdbc(
             @Nonnull String updateQuery,
-            @Nonnull String connectionUrl,
+            @Nonnull String jdbcUrl,
             @Nonnull BiConsumerEx<PreparedStatement, T> bindFn
     ) {
-        return Sinks.jdbc(updateQuery, () -> DriverManager.getConnection(connectionUrl), bindFn);
+        return Sinks.<T>jdbcBuilder()
+                .updateQuery(updateQuery)
+                .jdbcUrl(jdbcUrl)
+                .bindFn(bindFn)
+                .build();
+    }
+
+    /**
+     * Returns a builder to build a sink that connects to a JDBC database,
+     * prepares an SQL statement and executes it for each item. On the returned
+     * builder you must specify a connection (either using a {@linkplain
+     * JdbcSinkBuilder#jdbcUrl(String) JDBC URL} or using a {@linkplain
+     * JdbcSinkBuilder#dataSourceSupplier(SupplierEx) datasource}), the
+     * {@linkplain JdbcSinkBuilder#updateQuery(String) SQL statement} and a
+     * {@linkplain JdbcSinkBuilder#bindFn(BiConsumerEx) bind function}.
+     * <p>
+     * <b>Example</b>
+     *
+     * <pre>{@code
+     * stage.writeTo(Sinks.<Entry<Integer, String>>jdbcBuilder()
+     *     .updateQuery("INSET INTO table (key, value) VALUES(?, ?)")
+     *     .bindFn((stmt, item) -> {
+     *         stmt.setInt(1, item.getKey());
+     *         stmt.setString(2, item.getValue());
+     *     })
+     *     .jdbcUrl("jdbc:...")
+     *     .build());
+     * }</pre>
+     * <p>
+     * <b>Commit behavior</b>
+     * <p>
+     * The commit behavior depends on the job guarantee:<ul>
+     *     <li><b>Exactly-once:</b> XA transactions will be used to commit the
+     *     work in phase two of the snapshot, that is after all other vertices
+     *     in the job have performed the snapshot. Very small state will be
+     *     saved to snapshot.
+     *
+     *     <li><b>At-least-once or no guarantee:</b> Records will be committed
+     *     in batches. A batch is created from records that are readily available
+     *     at the sink.
+     * </ul>
+     * <p>
+     * If the job is in exactly-once mode, the overhead in the database and the
+     * output latency are higher. This is caused by the fact that Jet will not
+     * commit the transaction until the next snapshot occurs and the number of
+     * uncommitted records in the transactions can be very high. Latency is
+     * high because the changes are visible only after the transactions are
+     * committed. Configure the snapshot interval accordingly.
+     * <p>
+     * If your driver doesn't support XA transactions or if you want to avoid
+     * the performance or latency penalty, you can decrease the guarantee just
+     * for this sink by calling {@link JdbcSinkBuilder#exactlyOnce(boolean)
+     * exactlyOnce(false)} on the returned builder.
+     * <p>
+     * <b>Notes</b>
+     * <p>
+     * In non-XA mode, in case of an {@link SQLException} the processor will
+     * transparently reconnect and the job won't fail, except for an {@link
+     * SQLNonTransientException} subclass. In XA mode the job will fail
+     * immediately.
+     * <p>
+     * The default local parallelism for this sink is 1.
+     *
+     * @param <T> type of the items the sink accepts
+     * @since 4.0
+     */
+    @Nonnull
+    public static <T> JdbcSinkBuilder<T> jdbcBuilder() {
+        return new JdbcSinkBuilder<>();
     }
 
     /**

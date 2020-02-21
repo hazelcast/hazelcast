@@ -17,25 +17,19 @@
 package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.function.SupplierEx;
-import com.hazelcast.test.annotation.NightlyTest;
-import com.rabbitmq.jms.admin.RMQConnectionFactory;
+import org.apache.activemq.ActiveMQConnectionFactory;
+import org.apache.activemq.junit.EmbeddedActiveMQBroker;
 import org.junit.ClassRule;
-import org.junit.experimental.categories.Category;
-import org.testcontainers.containers.RabbitMQContainer;
 
 import javax.jms.ConnectionFactory;
 
-@Category(NightlyTest.class)
-public class JmsIntegrationTest_RabbitMQ extends JmsIntegrationTestBase {
+public class JmsSourceIntegrationTest_ActiveMQ extends JmsSourceIntegrationTestBase {
 
     @ClassRule
-    public static RabbitMQContainer container = new RabbitMQContainer("rabbitmq:3.8");
+    public static EmbeddedActiveMQBroker broker = new EmbeddedActiveMQBroker();
 
-    private static final SupplierEx<ConnectionFactory> FACTORY_SUPPLIER = () -> {
-        RMQConnectionFactory f = new RMQConnectionFactory();
-        f.setUri(container.getAmqpUrl());
-        return f;
-    };
+    private static final SupplierEx<ConnectionFactory> FACTORY_SUPPLIER =
+            () -> new ActiveMQConnectionFactory(broker.getVmURL());
 
     @Override
     protected SupplierEx<ConnectionFactory> getConnectionFactory() {

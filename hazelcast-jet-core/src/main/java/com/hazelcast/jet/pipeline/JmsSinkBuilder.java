@@ -19,9 +19,12 @@ package com.hazelcast.jet.pipeline;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
+import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.impl.connector.WriteJmsP;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.Message;
@@ -42,6 +45,7 @@ public final class JmsSinkBuilder<T> {
     private final SupplierEx<ConnectionFactory> factorySupplier;
     private final boolean isTopic;
 
+    private boolean exactlyOnce = true;
     private FunctionEx<ConnectionFactory, Connection> connectionFn;
     private BiFunctionEx<Session, T, Message> messageFn;
 
@@ -65,7 +69,8 @@ public final class JmsSinkBuilder<T> {
      * @param username   the username, Default value is {@code null}
      * @param password   the password, Default value is {@code null}
      */
-    public JmsSinkBuilder<T> connectionParams(String username, String password) {
+    @Nonnull
+    public JmsSinkBuilder<T> connectionParams(@Nullable String username, @Nullable String password) {
         this.username = username;
         this.password = password;
         return this;
@@ -78,7 +83,8 @@ public final class JmsSinkBuilder<T> {
      * ConnectionFactory#createConnection(username, password)} to create the
      * connection. See {@link #connectionParams(String, String)}.
      */
-    public JmsSinkBuilder<T> connectionFn(@Nonnull FunctionEx<ConnectionFactory, Connection> connectionFn) {
+    @Nonnull
+    public JmsSinkBuilder<T> connectionFn(@Nullable FunctionEx<ConnectionFactory, Connection> connectionFn) {
         checkSerializable(connectionFn, "connectionFn");
         this.connectionFn = connectionFn;
         return this;
@@ -87,6 +93,7 @@ public final class JmsSinkBuilder<T> {
     /**
      * Sets the name of the destination.
      */
+    @Nonnull
     public JmsSinkBuilder<T> destinationName(@Nonnull String destinationName) {
         this.destinationName = destinationName;
         return this;
@@ -99,15 +106,40 @@ public final class JmsSinkBuilder<T> {
      * item.toString()} into a {@link javax.jms.TextMessage}, unless the item
      * is already an instance of {@code javax.jms.Message}.
      */
-    public JmsSinkBuilder<T> messageFn(BiFunctionEx<Session, T, Message> messageFn) {
+    @Nonnull
+    public JmsSinkBuilder<T> messageFn(@Nullable BiFunctionEx<Session, T, Message> messageFn) {
         checkSerializable(messageFn, "messageFn");
         this.messageFn = messageFn;
         return this;
     }
 
     /**
+     * Enables or disables the exactly-once behavior of the sink using
+     * two-phase commit of state snapshots. If enabled, the {@linkplain
+     * JobConfig#setProcessingGuarantee(ProcessingGuarantee) processing
+     * guarantee} of the job must be set to {@linkplain
+     * ProcessingGuarantee#EXACTLY_ONCE exactly-once}, otherwise the sink's
+     * guarantee will match that of the job. In other words, sink's
+     * guarantee cannot be higher than job's, but can be lower to avoid the
+     * additional overhead.
+     *
+     * <p>The default value is true.
+     *
+     * @param enable If true, sink's guarantee will match the job
+     *      guarantee. If false, sink's guarantee will be at-least-once
+     *      even if job's is exactly-once
+     * @return this instance for fluent API
+     */
+    @Nonnull
+    public JmsSinkBuilder<T> exactlyOnce(boolean enable) {
+        this.exactlyOnce = enable;
+        return this;
+    }
+
+    /**
      * Creates and returns the JMS {@link Sink} with the supplied components.
      */
+    @Nonnull
     public Sink<T> build() {
         String usernameLocal = username;
         String passwordLocal = password;
@@ -128,7 +160,7 @@ public final class JmsSinkBuilder<T> {
         SupplierEx<ConnectionFactory> factorySupplierLocal = factorySupplier;
         SupplierEx<Connection> newConnectionFn = () -> connectionFnLocal.apply(factorySupplierLocal.get());
         return Sinks.fromProcessor(sinkName(),
-                WriteJmsP.supplier(destinationName, newConnectionFn, messageFn, isTopic));
+                WriteJmsP.supplier(destinationName, exactlyOnce, newConnectionFn, messageFn, isTopic));
     }
 
     private String sinkName() {

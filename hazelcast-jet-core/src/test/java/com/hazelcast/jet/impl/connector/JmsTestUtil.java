@@ -19,11 +19,16 @@ package com.hazelcast.jet.impl.connector;
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.JMSException;
+import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
+import javax.jms.TextMessage;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.test.HazelcastTestSupport.spawn;
+import static java.util.Collections.synchronizedList;
 import static javax.jms.Session.AUTO_ACKNOWLEDGE;
 
 final class JmsTestUtil {
@@ -45,5 +50,29 @@ final class JmsTestUtil {
             }
             return res;
         }
+    }
+
+    static List<Object> consumeMessages(ConnectionFactory cf, String destinationName, boolean isQueue, int expectedCount)
+            throws JMSException {
+        Connection connection = cf.createConnection();
+        connection.start();
+
+        List<Object> messages = synchronizedList(new ArrayList<>());
+        spawn(() -> {
+            try (Session session = connection.createSession(false, AUTO_ACKNOWLEDGE);
+                 MessageConsumer consumer = session.createConsumer(
+                         isQueue ? session.createQueue(destinationName) : session.createTopic(destinationName))
+            ) {
+                int count = 0;
+                while (count < expectedCount) {
+                    messages.add(((TextMessage) consumer.receive()).getText());
+                    count++;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw sneakyThrow(e);
+            }
+        });
+        return messages;
     }
 }

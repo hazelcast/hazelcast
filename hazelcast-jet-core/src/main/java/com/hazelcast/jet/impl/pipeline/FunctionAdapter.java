@@ -40,6 +40,7 @@ import com.hazelcast.jet.pipeline.JoinClause;
 import javax.annotation.Nonnull;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -239,6 +240,22 @@ public class FunctionAdapter {
             return wrapped.isEmpty();
         }
 
+        @Nonnull @Override
+        public Iterator<Object> iterator() {
+            Iterator<Object> iterator = wrapped.iterator();
+            return new Iterator<Object>() {
+                @Override
+                public boolean hasNext() {
+                    return iterator.hasNext();
+                }
+
+                @Override
+                public Object next() {
+                    return unwrapPayload(iterator.next());
+                }
+            };
+        }
+
         @Override
         public Object peek() {
             return unwrapPayload(wrapped.peek());
@@ -252,6 +269,11 @@ public class FunctionAdapter {
         @Override
         public void remove() {
             wrapped.remove();
+        }
+
+        @Override
+        public void clear() {
+            wrapped.clear();
         }
 
         @Override

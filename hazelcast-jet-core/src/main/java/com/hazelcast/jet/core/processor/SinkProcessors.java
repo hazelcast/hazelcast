@@ -27,8 +27,8 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.impl.connector.HazelcastWriters;
-import com.hazelcast.jet.impl.connector.WriteFileP;
 import com.hazelcast.jet.impl.connector.WriteBufferedP;
+import com.hazelcast.jet.impl.connector.WriteFileP;
 import com.hazelcast.jet.impl.connector.WriteJdbcP;
 import com.hazelcast.jet.impl.connector.WriteJmsP;
 import com.hazelcast.jet.pipeline.Sinks;
@@ -39,12 +39,14 @@ import javax.annotation.Nullable;
 import javax.jms.Connection;
 import javax.jms.Message;
 import javax.jms.Session;
+import javax.sql.CommonDataSource;
 import java.io.BufferedWriter;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.nio.charset.Charset;
 import java.sql.PreparedStatement;
 
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 
@@ -299,10 +301,11 @@ public final class SinkProcessors {
     @Nonnull
     public static <T> ProcessorMetaSupplier writeJmsQueueP(
             @Nonnull String queueName,
+            boolean exactlyOnce,
             @Nonnull SupplierEx<? extends Connection> newConnectionFn,
             @Nonnull BiFunctionEx<? super Session, ? super T, ? extends Message> messageFn
     ) {
-        return WriteJmsP.supplier(queueName, newConnectionFn, messageFn, false);
+        return WriteJmsP.supplier(queueName, exactlyOnce, newConnectionFn, messageFn, false);
     }
 
     /**
@@ -311,23 +314,27 @@ public final class SinkProcessors {
     @Nonnull
     public static <T> ProcessorMetaSupplier writeJmsTopicP(
             @Nonnull String topicName,
+            boolean exactlyOnce,
             @Nonnull SupplierEx<? extends Connection> newConnectionFn,
             @Nonnull BiFunctionEx<? super Session, ? super T, ? extends Message> messageFn
     ) {
-        return WriteJmsP.supplier(topicName, newConnectionFn, messageFn, true);
+        return WriteJmsP.supplier(topicName, exactlyOnce, newConnectionFn, messageFn, true);
     }
 
     /**
-     * Returns a supplier of processors for {@link
-     * Sinks#jdbc(String, SupplierEx, BiConsumerEx)}.
+     * Returns a supplier of processors for {@link Sinks#jdbcBuilder()}.
      */
     @Nonnull
     public static <T> ProcessorMetaSupplier writeJdbcP(
             @Nonnull String updateQuery,
-            @Nonnull SupplierEx<? extends java.sql.Connection> newConnectionFn,
-            @Nonnull BiConsumerEx<? super PreparedStatement, ? super T> bindFn
+            @Nonnull SupplierEx<? extends CommonDataSource> dataSourceSupplier,
+            @Nonnull BiConsumerEx<? super PreparedStatement, ? super T> bindFn,
+            boolean exactlyOnce
     ) {
-        return WriteJdbcP.metaSupplier(updateQuery, newConnectionFn, bindFn);
+        checkNotNull(updateQuery, "updateQuery");
+        checkNotNull(dataSourceSupplier, "dataSourceSupplier");
+        checkNotNull(bindFn, "bindFn");
+        return WriteJdbcP.metaSupplier(updateQuery, dataSourceSupplier, bindFn, exactlyOnce);
     }
 
     /**

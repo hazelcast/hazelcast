@@ -161,6 +161,7 @@ public class ProcessorTaskletTest_Blocking {
 
         // When
         callUntil(tasklet, NO_PROGRESS);
+        callUntil(tasklet, NO_PROGRESS);
 
         // Then
         assertTrue(processor.nullaryProcessCallCount > 0);
