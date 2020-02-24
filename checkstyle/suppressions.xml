@@ -57,6 +57,7 @@
     <suppress checks="Header" files="com[\\/]hazelcast[\\/]internal[\\/]util[\\/]collection[\\/]LongHashSetTest"/>
     <suppress checks="Header" files="com[\\/]hazelcast[\\/]internal[\\/]util[\\/]collection[\\/]IntHashSetTest"/>
     <suppress checks="Header" files="com[\\/]hazelcast[\\/]internal[\\/]util[\\/]collection[\\/]Long2LongHashMapTest"/>
+    <suppress checks="Header" files="com[\\/]hazelcast[\\/]internal[\\/]util[\\/]graph[\\/]BronKerboschCliqueFinder"/>
 
     <!-- Exclude internal, implementation and template packages from JavaDoc checks -->
     <suppress checks="Javadoc(Package|Method|Type|Variable)" files="com[\\/]hazelcast[\\/]internal[\\/]"/>
