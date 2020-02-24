@@ -1343,7 +1343,13 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node n : childElements(node)) {
             String key = cleanNodeName(n);
             String value = getTextContent(n).trim();
-            config.setProperty(key, value);
+            if (key.equals("shouldusedns")) {
+            	config.setProperty("shouldUseDns", value);
+            }else if (key.equals("serviceurl.default")) {
+            	config.setProperty("serviceUrl.default", value);
+            } else {
+            	config.setProperty(key, value);
+            }
         }
     }
 

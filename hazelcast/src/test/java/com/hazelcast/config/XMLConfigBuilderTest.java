@@ -407,6 +407,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "            <eureka enabled=\"true\">\n"
                 + "                <use-public-ip>true</use-public-ip>\n"
                 + "                <namespace>hazelcast</namespace>\n"
+                + "                <shouldUseDns>false</shouldUseDns>\n"
+                + "				   <serviceUrl.default>http://localhost:8082/eureka</serviceUrl.default>\n"
                 + "            </eureka>\n"
                 + "        </join>\n"
                 + "    </network>"
