@@ -23,6 +23,7 @@ import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
 import org.apache.avro.Schema;
+import org.apache.avro.Schema.Parser;
 import org.apache.avro.generic.GenericRecord;
 
 public class Avro {
@@ -40,10 +41,11 @@ public class Avro {
         String schemaString = "{\"type\":\"record\",\"name\":\"Person\"," +
                 "\"namespace\":\"datamodel\",\"fields\":[{" +
                 "\"name\":\"id\",\"type\":\"int\"}]}";
+        Schema schema = new Parser().parse(schemaString);
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.<GenericRecord>list("inputList"))
          .writeTo(AvroSinks.files("/home/jet/output",
-                 () -> new Schema.Parser().parse(schemaString)));
+                 schema));
         //end::s2[]
     }
 }

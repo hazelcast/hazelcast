@@ -75,12 +75,13 @@ public final class AvroProcessors {
     @Nonnull
     public static <D> ProcessorMetaSupplier writeFilesP(
             @Nonnull String directoryName,
-            @Nonnull SupplierEx<Schema> schemaSupplier,
+            @Nonnull Schema schema,
             @Nonnull SupplierEx<DatumWriter<D>> datumWriterSupplier
     ) {
+        String jsonSchema = schema.toString();
         return preferLocalParallelismOne(WriteBufferedP.<DataFileWriter<D>, D>supplier(
                         context -> createWriter(Paths.get(directoryName), context.globalProcessorIndex(),
-                                schemaSupplier, datumWriterSupplier),
+                                jsonSchema, datumWriterSupplier),
                         DataFileWriter::append,
                         DataFileWriter::flush,
                         DataFileWriter::close
@@ -93,15 +94,17 @@ public final class AvroProcessors {
                     + "because we'll fail later when trying to create the file.")
     private static <D> DataFileWriter<D> createWriter(
             Path directory, int globalIndex,
-            SupplierEx<Schema> schemaSupplier,
+            String jsonSchema,
             SupplierEx<DatumWriter<D>> datumWriterSupplier
     ) throws IOException {
+        Schema.Parser parser = new Schema.Parser();
+        Schema schema = parser.parse(jsonSchema);
+
         directory.toFile().mkdirs();
 
         Path file = directory.resolve(String.valueOf(globalIndex));
-
         DataFileWriter<D> writer = new DataFileWriter<>(datumWriterSupplier.get());
-        writer.create(schemaSupplier.get(), file.toFile());
+        writer.create(schema, file.toFile());
         return writer;
     }
 }

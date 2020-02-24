@@ -45,10 +45,9 @@ public class SalesCsvAnalyzer {
         Pipeline p = Pipeline.create();
 
         BatchSource<SalesRecordLine> source = Sources.filesBuilder(sourceDir)
-                                                     .glob("*.csv")
-                                                     .build(path -> Files.lines(path)
-                                                                         .skip(1)
-                                                                         .map(SalesRecordLine::parse));
+             .glob("*.csv")
+             .build(path -> Files.lines(path).skip(1).map(SalesRecordLine::parse));
+
         p.readFrom(source)
          .filter(record -> record.getPrice() < 30)
          .groupingKey(SalesRecordLine::getPaymentType)

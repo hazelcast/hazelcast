@@ -80,7 +80,7 @@ public class AvroSinkTest extends JetTestSupport {
     public void testReflectWriter() throws IOException {
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.list(list))
-         .writeTo(AvroSinks.files(directory.getPath(), User::classSchema, User.class));
+         .writeTo(AvroSinks.files(directory.getPath(), User.class, User.classSchema()));
 
         jet.newJob(p).join();
 
@@ -92,7 +92,7 @@ public class AvroSinkTest extends JetTestSupport {
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.list(list))
          .map(user -> new SpecificUser(user.getName(), user.getFavoriteNumber()))
-         .writeTo(AvroSinks.files(directory.getPath(), SpecificUser::getClassSchema, SpecificUser.class));
+         .writeTo(AvroSinks.files(directory.getPath(), SpecificUser.class, SpecificUser.getClassSchema()));
 
         jet.newJob(p).join();
 
@@ -104,7 +104,7 @@ public class AvroSinkTest extends JetTestSupport {
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.list(list))
          .map(AvroSinkTest::toRecord)
-         .writeTo(AvroSinks.files(directory.getPath(), User::classSchema));
+         .writeTo(AvroSinks.files(directory.getPath(), User.classSchema()));
 
         jet.newJob(p).join();
 

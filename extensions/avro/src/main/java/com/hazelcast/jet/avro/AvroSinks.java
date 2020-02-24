@@ -58,45 +58,45 @@ public final class AvroSinks {
      *
      * @param directoryName directory to create the files in. Will be created
      *                      if it doesn't exist. Must be the same on all members.
-     * @param schemaSupplier the record schema supplier
+     * @param schema the record schema
      * @param datumWriterSupplier the record writer supplier
      * @param <R> the type of the record
      */
     @Nonnull
     public static <R> Sink<R> files(
             @Nonnull String directoryName,
-            @Nonnull SupplierEx<Schema> schemaSupplier,
+            @Nonnull Schema schema,
             @Nonnull SupplierEx<DatumWriter<R>> datumWriterSupplier
     ) {
 
         return Sinks.fromProcessor("avroFilesSink(" + directoryName + ')',
-                AvroProcessors.writeFilesP(directoryName, schemaSupplier, datumWriterSupplier));
+                AvroProcessors.writeFilesP(directoryName, schema, datumWriterSupplier));
     }
 
     /**
-     * Convenience for {@link #files(String, SupplierEx,
+     * Convenience for {@link #files(String, Schema,
      * SupplierEx)} which uses either {@link SpecificDatumWriter} or
      * {@link ReflectDatumWriter} depending on the supplied {@code recordClass}.
      */
     @Nonnull
     public static <R> Sink<R> files(
             @Nonnull String directoryName,
-            @Nonnull SupplierEx<Schema> schemaSupplier,
-            @Nonnull Class<R> recordClass
+            @Nonnull Class<R> recordClass,
+            @Nonnull Schema schema
     ) {
-        return files(directoryName, schemaSupplier, () -> SpecificRecord.class.isAssignableFrom(recordClass) ?
+        return files(directoryName, schema, () -> SpecificRecord.class.isAssignableFrom(recordClass) ?
                 new SpecificDatumWriter<>(recordClass) : new ReflectDatumWriter<>(recordClass));
     }
 
     /**
-     * Convenience for {@link #files(String, SupplierEx,
+     * Convenience for {@link #files(String, Schema,
      * SupplierEx)} which uses {@link GenericDatumWriter}.
      */
     @Nonnull
     public static Sink<IndexedRecord> files(
             @Nonnull String directoryName,
-            @Nonnull SupplierEx<Schema> schemaSupplier
+            @Nonnull Schema schema
     ) {
-        return files(directoryName, schemaSupplier, GenericDatumWriter::new);
+        return files(directoryName, schema, GenericDatumWriter::new);
     }
 }
