@@ -68,7 +68,7 @@ hazelcast:
       multicast:
         enabled: false
       gcp:
-        enabled: false
+        enabled: true
         zones: us-east1-a,us-east1-b
         label: application=hazelcast
         hz-port: 5701-5708
@@ -157,7 +157,7 @@ Following are example declarative and programmatic configuration snippets.
 #### YAML Configuration
 
 ```yml
-hazelcast:
+hazelcast-client:
   network:
     gcp:
       enabled: true
