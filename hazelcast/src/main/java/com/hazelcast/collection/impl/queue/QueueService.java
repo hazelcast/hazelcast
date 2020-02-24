@@ -49,6 +49,7 @@ import com.hazelcast.internal.services.TransactionalService;
 import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.ContextMutexFactory;
+import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.internal.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.internal.util.scheduler.EntryTaskSchedulerFactory;
 import com.hazelcast.logging.ILogger;
@@ -103,7 +104,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     private static final Object NULL_OBJECT = new Object();
 
     private final ConcurrentMap<String, QueueContainer> containerMap = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, LocalQueueStatsImpl> statsMap = new ConcurrentHashMap<>(1000);
+    private final ConcurrentMap<String, LocalQueueStatsImpl> statsMap = MapUtil.createConcurrentHashMap(10);
     private final ConstructorFunction<String, LocalQueueStatsImpl> localQueueStatsConstructorFunction =
         key -> new LocalQueueStatsImpl();
 

@@ -31,6 +31,7 @@ import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
@@ -70,7 +71,7 @@ public class LocalMapStatsProvider {
     private final MapServiceContext mapServiceContext;
     private final MapNearCacheManager mapNearCacheManager;
     private final IPartitionService partitionService;
-    private final ConcurrentMap<String, LocalMapStatsImpl> statsMap = new ConcurrentHashMap<>(1000);
+    private final ConcurrentMap<String, LocalMapStatsImpl> statsMap = MapUtil.createConcurrentHashMap(10);
     private final ConstructorFunction<String, LocalMapStatsImpl> constructorFunction =
             key -> new LocalMapStatsImpl();
 

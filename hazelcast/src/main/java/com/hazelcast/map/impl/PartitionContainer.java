@@ -48,8 +48,8 @@ public class PartitionContainer {
     private final int partitionId;
     private final MapService mapService;
     private final ContextMutexFactory contextMutexFactory = new ContextMutexFactory();
-    private final ConcurrentMap<String, RecordStore> maps = new ConcurrentHashMap<>(1000);
-    private final ConcurrentMap<String, Indexes> indexes = new ConcurrentHashMap<>(10);
+    private final ConcurrentMap<String, RecordStore> maps = MapUtil.createConcurrentHashMap(10);
+    private final ConcurrentMap<String, Indexes> indexes = MapUtil.createConcurrentHashMap(10);
     private final ConstructorFunction<String, RecordStore> recordStoreConstructor
             = name -> {
         RecordStore recordStore = createRecordStore(name);

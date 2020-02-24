@@ -34,7 +34,7 @@ import static com.hazelcast.query.impl.AbstractIndex.NULL;
  */
 public class UnorderedIndexStore extends BaseSingleValueIndexStore {
 
-    private final ConcurrentMap<Comparable, Map<Data, QueryableEntry>> recordMap = new ConcurrentHashMap<>(1000);
+    private final ConcurrentMap<Comparable, Map<Data, QueryableEntry>> recordMap = new ConcurrentHashMap<>();
     private final IndexFunctor<Comparable, QueryableEntry> addFunctor;
     private final IndexFunctor<Comparable, Data> removeFunctor;
 
