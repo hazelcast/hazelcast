@@ -93,8 +93,8 @@
         <maven.spotbugs.plugin.version>3.1.12.2</maven.spotbugs.plugin.version>
         <maven.checkstyle.plugin.version>3.1.0</maven.checkstyle.plugin.version>
         <checkstyle.headerLocation>${maven.multiModuleProjectDirectory}/checkstyle/ClassHeader.txt</checkstyle.headerLocation>
-        <maven.sonar.plugin.version>3.3.0.603</maven.sonar.plugin.version>
-        <maven.jacoco.plugin.version>0.7.9</maven.jacoco.plugin.version>
+        <maven.sonar.plugin.version>3.6.0.1398</maven.sonar.plugin.version>
+        <maven.jacoco.plugin.version>0.8.4</maven.jacoco.plugin.version>
 
         <!-- optional dependencies (required for building, but don't become module's transitive deps) -->
         <jms.api.version>2.0.1</jms.api.version>
@@ -550,8 +550,15 @@
                         <version>${maven.jacoco.plugin.version}</version>
                         <executions>
                             <execution>
+                                <id>prepare-agent</id>
                                 <goals>
                                     <goal>prepare-agent</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>report</id>
+                                <goals>
+                                    <goal>report</goal>
                                 </goals>
                             </execution>
                         </executions>
