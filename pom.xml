@@ -28,7 +28,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <jdk.version>1.8</jdk.version>
-        <hazelcast.version>4.0-SNAPSHOT</hazelcast.version>
+        <hazelcast.version>4.0</hazelcast.version>
 
         <junit.version>4.12</junit.version>
         <mockito.version>1.10.19</mockito.version>
