@@ -20,10 +20,9 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.task.BlockingMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobConfigCodec;
 import com.hazelcast.jet.impl.operation.GetJobConfigOperation;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 public class JetGetJobConfigMessageTask extends AbstractJetMessageTask<JetGetJobConfigCodec.RequestParameters, Data>
@@ -40,11 +39,9 @@ public class JetGetJobConfigMessageTask extends AbstractJetMessageTask<JetGetJob
         return new GetJobConfigOperation(parameters.jobId);
     }
 
-
     @Override
     protected Object processResponseBeforeSending(Object response) {
-        SerializationService serializationService = nodeEngine.getSerializationService();
-        return serializationService.toData(response);
+        return toData(response);
     }
 
     @Override
@@ -56,5 +53,4 @@ public class JetGetJobConfigMessageTask extends AbstractJetMessageTask<JetGetJob
     public Object[] getParameters() {
         return new Object[0];
     }
-
 }

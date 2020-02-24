@@ -19,10 +19,9 @@ package com.hazelcast.jet.impl.client.protocol.task;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobSummaryListCodec;
 import com.hazelcast.jet.impl.operation.GetJobSummaryListOperation;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 public class JetGetJobSummaryListMessageTask
@@ -41,8 +40,7 @@ public class JetGetJobSummaryListMessageTask
 
     @Override
     protected Object processResponseBeforeSending(Object response) {
-        SerializationService serializationService = nodeEngine.getSerializationService();
-        return serializationService.toData(response);
+        return toData(response);
     }
 
     @Override
