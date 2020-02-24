@@ -107,7 +107,7 @@ You will need to setup [Azure Active Directory Service Principal credentials](ht
 - `resource-group` - *(Optional)* The Azure [resource group](https://azure.microsoft.com/en-us/documentation/articles/resource-group-portal/) name of the cluster. You can find this in the Azure [portal](https://portal.azure.com) or [CLI](https://npmjs.org/azure-cli).
 - `scale-set` - *(Optional)* The Azure [VM scale set](https://docs.microsoft.com/en-us/azure/virtual-machine-scale-sets/overview) name of the cluster. If this setting is configured, the plugin will search for instances over the resources only within this scale set.
 - `tag` - *(Optional)* The key-value pair of the tag on the Hazelcast vm resources. The format should be as `key=value`.
-- `hz-port` - *(Optional)* The port range where Hazelcast is expected to be running. The format should be as "5701" or "5701-5703". The default value is "5701-5703".
+- `hz-port` - *(Optional)* The port range where Hazelcast is expected to be running. The format should be as `5701` or `5701-5703`. The default value is "5701-5703".
 
 **Notes**
 
@@ -183,6 +183,13 @@ For more information please read: http://docs.hazelcast.org/docs/3.7/manual/html
 ```xml
 <partition-group enabled="true" group-type="ZONE_AWARE" />
 ```
+
+# Using the Plugin with Public IP Addresses
+
+If you would like to use Azure Discovery Plugin to discover Hazelcast instances using public IPs, please note that you need to set the following two configurations:
+
+- Configure `public-address` property in Hazelcast member configuration. See this property details [here](https://docs.hazelcast.org/docs/latest/manual/html-single/#public-address).
+- Set `hazelcast.discovery.public.ip.enabled` system property to `true`. It enables the discovery joiner to use public IPs.   
 
 # Automated Deployment
 
