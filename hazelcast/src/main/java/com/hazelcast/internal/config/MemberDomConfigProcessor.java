@@ -1332,7 +1332,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     private void updateConfig(AliasedDiscoveryConfig config, Node node) {
         NamedNodeMap attributes = node.getAttributes();
         for (int a = 0; a < attributes.getLength(); a++) {
-            Node att = attributes.item(a);            
+            Node att = attributes.item(a);
             String value = getTextContent(att).trim();
             if ("enabled".equals(lowerCaseInternal(att.getNodeName()))) {
                 config.setEnabled(getBooleanValue(value));
@@ -1342,14 +1342,14 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
         LowercaseHandler lowerCaseHandler = new LowercaseHandler();
         for (Node n : childElements(node)) {
-        	lowerCaseHandler.put(n.getLocalName(), "eureka".equals(n.getParentNode().getLocalName()));
+            lowerCaseHandler.put(n.getLocalName(), "eureka".equals(n.getParentNode().getLocalName()));
             String key = cleanNodeName(n);
             String value = getTextContent(n).trim();
             String normalKey = lowerCaseHandler.get(key);
-            if(normalKey != null) {
-            	config.setProperty(normalKey, value);
+            if (normalKey != null) {
+                config.setProperty(normalKey, value);
             } else {
-            	config.setProperty(key, value);
+                config.setProperty(key, value);
             }
         }
     }
