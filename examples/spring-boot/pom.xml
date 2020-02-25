@@ -20,7 +20,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>hazelcast-jet-examples-spring</artifactId>
+    <artifactId>hazelcast-jet-examples-spring-boot</artifactId>
 
     <parent>
         <artifactId>hazelcast-jet-examples</artifactId>
@@ -28,12 +28,19 @@
         <version>4.1-SNAPSHOT</version>
     </parent>
 
-    <properties>
-        <spring.version>4.3.26.RELEASE</spring.version>
-        <hsqldb.version>2.3.2</hsqldb.version>
-        <dbh2.version>1.4.187</dbh2.version>
-    </properties>
-
+    <!-- adding SpringBoot POM -->
+    <!-- http://docs.spring.io/spring-boot/docs/current/reference/html/using-boot-build-systems.html#using-boot-maven-without-a-parent-->
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-parent</artifactId>
+                <type>pom</type>
+                <scope>import</scope>
+                <version>1.4.3.RELEASE</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <dependency>
@@ -42,41 +49,17 @@
             <version>${project.version}</version>
         </dependency>
 
-        <!-- Spring Core -->
         <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-core</artifactId>
-            <version>${spring.version}</version>
+            <groupId>com.hazelcast.jet.examples</groupId>
+            <artifactId>hazelcast-jet-examples-spring</artifactId>
+            <version>${project.version}</version>
         </dependency>
 
-        <!-- Spring Context -->
+        <!-- Spring Boot -->
         <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-context</artifactId>
-            <version>${spring.version}</version>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
-
-        <!-- Spring JDBC -->
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-jdbc</artifactId>
-            <version>${spring.version}</version>
-        </dependency>
-
-        <!-- HyperSQL DB -->
-        <dependency>
-            <groupId>org.hsqldb</groupId>
-            <artifactId>hsqldb</artifactId>
-            <version>${hsqldb.version}</version>
-        </dependency>
-
-        <!-- H2 DB -->
-        <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
-            <version>${dbh2.version}</version>
-        </dependency>
-
     </dependencies>
 
 </project>

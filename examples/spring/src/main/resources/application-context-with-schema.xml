@@ -24,9 +24,9 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
 		http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
 		http://www.hazelcast.com/schema/spring
-		http://www.hazelcast.com/schema/spring/hazelcast-spring-3.12.xsd
+		http://www.hazelcast.com/schema/spring/hazelcast-spring-4.0.xsd
 		http://www.hazelcast.com/schema/jet-spring
-		http://www.hazelcast.com/schema/jet-spring/hazelcast-jet-spring-3.3.xsd
+		http://www.hazelcast.com/schema/jet-spring/hazelcast-jet-spring-4.1.xsd
 		http://www.springframework.org/schema/context
         http://www.springframework.org/schema/context/spring-context.xsd">
 
@@ -36,7 +36,7 @@
         <hz:config>
             <!-- below line is necessary to enable @SpringAware annotation -->
             <hz:spring-aware/>
-            <hz:group name="jet" password="jet-pass"/>
+            <hz:cluster-name>jet</hz:cluster-name>
             <hz:network port="5701" port-auto-increment="false">
                 <hz:join>
                     <hz:multicast enabled="false"/>
@@ -56,7 +56,7 @@
     </jet:instance>
 
     <jet:client id="client" depends-on="instance">
-        <jet:group name="jet"/>
+        <jet:cluster-name>jet</jet:cluster-name>
     </jet:client>
 
     <jet:map instance-ref="instance" name="my-map" id="my-map-bean"/>

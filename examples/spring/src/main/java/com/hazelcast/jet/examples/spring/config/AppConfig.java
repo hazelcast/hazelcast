@@ -22,7 +22,6 @@ import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.spring.context.SpringManagedContext;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -36,7 +35,6 @@ import javax.sql.DataSource;
  * Spring Context annotation-based configuration class
  */
 @Configuration
-@SpringBootApplication
 @ComponentScan({"com.hazelcast.jet.examples.spring"})
 public class AppConfig {
 

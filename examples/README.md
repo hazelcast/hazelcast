@@ -173,7 +173,7 @@ samples using the Core API.
     running
 - [File Sink](files/src/main/java/com/hazelcast/jet/examples/files/AccessLogAnalyzer.java)
   - variant with [Avro serialization](files/src/main/java/com/hazelcast/jet/examples/files/avro/AvroSink.java)
-- [Amazon AWS S3 Source and Sink](/files/src/main/java/com/hazelcast/jet/examples/files/s3/S3WordCount.java)
+- [Amazon AWS S3 Source and Sink](files/src/main/java/com/hazelcast/jet/examples/files/s3/S3WordCount.java)
 - [Hadoop Source and Sink](hadoop/src/main/java/com/hazelcast/jet/examples/hadoop/HadoopWordCount.java)
     - variant with [Avro serialization](hadoop/src/main/java/com/hazelcast/jet/examples/hadoop/avro/HadoopAvro.java)
     - variant with [Parquet format](hadoop/src/main/java/com/hazelcast/jet/examples/hadoop/parquet/HadoopParquet.java)
@@ -209,4 +209,4 @@ samples using the Core API.
   as a Spring bean using Jet's XML Schema for Spring Configuration
   - XML-based dependency injection into a Jet Processor
 - [Spring Boot App that Runs a Jet
-  Job](spring/src/main/java/com/hazelcast/jet/examples/spring/SpringBootSample.java)
+  Job](spring-boot/src/main/java/com/hazelcast/jet/examples/spring/SpringBootSample.java)

@@ -24,6 +24,7 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.s3.S3Sinks;
 import com.hazelcast.jet.s3.S3Sources;
+import software.amazon.awssdk.core.SdkSystemSetting;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 
@@ -90,6 +91,8 @@ public class S3WordCount {
     }
 
     public static void main(String[] args) throws IOException {
+        System.setProperty(SdkSystemSetting.AWS_ACCESS_KEY_ID.property(), "");
+        System.setProperty(SdkSystemSetting.AWS_SECRET_ACCESS_KEY.property(), "");
         try {
             System.out.println("Uploading books to bucket " + INPUT_BUCKET);
             uploadBooks(PREFIX);

@@ -16,10 +16,10 @@ Inside the method annotated with `@Bean` you can create and configure
 an xml file too. Here you have 2 choices:
  
  - using spring core bean definitions.
- ([application-context.xml](/src/main/resources/application-context.xml))
+ ([application-context.xml](src/main/resources/application-context.xml))
             
- - using Hazelcast Jet provided schema for bean definitions.
- ([application-context-with-schema.xml](/src/main/resources/application-context-with-schema.xml))
+   - using Hazelcast Jet provided schema for bean definitions.
+     ([application-context-with-schema.xml](src/main/resources/application-context-with-schema.xml))
 
     You should have hazelcast-jet-spring.jar in your classpath 
     to use Hazelcast Jet bean definitions. You will have 
@@ -33,11 +33,10 @@ an xml file too. Here you have 2 choices:
 
 ## Spring Boot Integration
 
-You can integrate Hazelcast Jet with Spring Boot easily.
-The approach is very similar to the programmatic configuration.
-You need to have a 
+You can integrate Hazelcast Jet with Spring Boot easily. The approach is
+very similar to the programmatic configuration. You need to have a
 [config class](src/main/java/com/hazelcast/jet/examples/spring/config/AppConfig.java)
-which has `@SpringBootApplication` annotation. 
+which you will use to start the spring application.
 
 ```java
 @RestController

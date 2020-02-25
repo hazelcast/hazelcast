@@ -35,6 +35,8 @@ import org.springframework.web.bind.annotation.RestController;
  * <p>
  * Job uses a custom source implementation which has {@link com.hazelcast.spring.context.SpringAware}
  * annotation. This enables spring to auto-wire beans to created processors.
+ *
+ * Submit the job via `http://localhost:8080/submitJob` and observe the output.
  */
 @RestController
 public class SpringBootSample {
@@ -57,6 +59,5 @@ public class SpringBootSample {
                 .addClass(CustomSourceP.class);
         instance.newJob(pipeline, jobConfig).join();
     }
-
 
 }

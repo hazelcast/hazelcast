@@ -23,7 +23,7 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
 		http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
 		http://www.hazelcast.com/schema/spring
-		http://www.hazelcast.com/schema/spring/hazelcast-spring-3.10.xsd
+		http://www.hazelcast.com/schema/spring/hazelcast-spring-4.0.xsd
 		http://www.springframework.org/schema/context
         http://www.springframework.org/schema/context/spring-context.xsd">
 
@@ -36,7 +36,7 @@
                     <hz:config>
                         <!-- below line is necessary to enable @SpringAware annotation -->
                         <hz:spring-aware/>
-                        <hz:group name="jet" password="jet-pass"/>
+                        <hz:cluster-name>jet</hz:cluster-name>
                         <hz:network port="5701" port-auto-increment="false">
                             <hz:join>
                                 <hz:multicast enabled="false"/>
@@ -71,11 +71,7 @@
     <bean id="client" class="com.hazelcast.jet.Jet" factory-method="newJetClient">
         <constructor-arg>
             <bean class="com.hazelcast.client.config.ClientConfig">
-                <property name="groupConfig">
-                    <bean class="com.hazelcast.config.GroupConfig">
-                        <property name="name" value="jet"/>
-                    </bean>
-                </property>
+                <property name="clusterName" value="jet"/>
             </bean>
         </constructor-arg>
     </bean>
