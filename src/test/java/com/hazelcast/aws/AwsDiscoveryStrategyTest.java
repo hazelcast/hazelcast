@@ -55,7 +55,7 @@ public class AwsDiscoveryStrategyTest
     public void useCurrentRegion() {
         // given
         AwsDiscoveryStrategy awsDiscoveryStrategy = spy(new AwsDiscoveryStrategy(Collections.emptyMap(), null, mockClient));
-        doReturn("us-east-1").when(awsDiscoveryStrategy).getCurrentRegion(10, 3);
+        doReturn("us-east-1").when(awsDiscoveryStrategy).getCurrentRegion(10, 3, 10);
         // when
         AwsConfig awsConfig = awsDiscoveryStrategy.getAwsConfig();
 

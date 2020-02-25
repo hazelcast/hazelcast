@@ -106,7 +106,7 @@ public class AwsDiscoveryStrategy
         String region = getOrDefault(REGION.getDefinition(), null);
         //to prevent unnecessary metadata call when region is set
         if (region == null) {
-            region = getCurrentRegion(connectionTimeoutSeconds, connectionRetries);
+            region = getCurrentRegion(connectionTimeoutSeconds, connectionRetries, readTimeoutSeconds);
             getLogger().info("Region not set, using the current region: " + region);
         }
 
@@ -127,8 +127,9 @@ public class AwsDiscoveryStrategy
         return config;
     }
 
-    String getCurrentRegion(int connectionTimeoutSeconds, int connectionRetries) {
-        String availabilityZone = MetadataUtil.getAvailabilityZone(connectionTimeoutSeconds, connectionRetries);
+    String getCurrentRegion(int connectionTimeoutSeconds, int connectionRetries, int readTimeoutSeconds) {
+        String availabilityZone =
+                MetadataUtil.getAvailabilityZone(connectionTimeoutSeconds, connectionRetries, readTimeoutSeconds);
         return availabilityZone.substring(0, availabilityZone.length() - 1);
     }
 

@@ -105,7 +105,7 @@ public final class MetadataUtil {
      * @return The content of the HTTP response, as a String. NOTE: This is NEVER null.
      */
     public static String retrieveMetadataFromURI(final String uri, final int connectTimeoutInSeconds,
-                                                 int retries, final int readTimeoutInSeconds) {
+                                                 final int retries, final int readTimeoutInSeconds) {
         return RetryUtils.retry(new Callable<String>() {
             @Override
             public String call() {
@@ -114,8 +114,8 @@ public final class MetadataUtil {
         }, retries);
     }
 
-    public static String getAvailabilityZone(int connectionTimeoutSeconds, int connectionRetries) {
+    public static String getAvailabilityZone(int connectionTimeoutSeconds, int connectionRetries, int readTimeoutSeconds) {
         String uri = INSTANCE_METADATA_URI.concat(AVAILABILITY_ZONE_URI);
-        return retrieveMetadataFromURI(uri, connectionTimeoutSeconds, connectionRetries);
+        return retrieveMetadataFromURI(uri, connectionTimeoutSeconds, connectionRetries, readTimeoutSeconds);
     }
 }
