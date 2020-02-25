@@ -98,6 +98,14 @@ public final class DomConfigHelper {
         }
         return StringUtil.lowerCaseInternal(nodeName);
     }
+    
+    public static String cleanNodeName(final Node node, final boolean shouldLowercase) {
+        final String nodeName = node.getLocalName();
+        if (nodeName == null) {
+            throw new HazelcastException("Local node name is null for " + node);
+        }
+        return shouldLowercase ? StringUtil.lowerCaseInternal(nodeName) : nodeName;
+    }
 
     public static String getTextContent(final Node node, boolean domLevel3) {
         if (node != null) {

@@ -1340,17 +1340,10 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 config.setProperty("connection-timeout-seconds", value);
             }
         }
-        LowercaseHandler lowerCaseHandler = new LowercaseHandler();
-        for (Node n : childElements(node)) {
-            lowerCaseHandler.put(n.getLocalName(), "eureka".equals(n.getParentNode().getLocalName()));
-            String key = cleanNodeName(n);
+        for (Node n : childElements(node)) {            
+            String key = cleanNodeName(n, "eureka".equals(n.getParentNode().getLocalName()));
             String value = getTextContent(n).trim();
-            String normalKey = lowerCaseHandler.get(key);
-            if (normalKey != null) {
-                config.setProperty(normalKey, value);
-            } else {
-                config.setProperty(key, value);
-            }
+            config.setProperty(key, value);
         }
     }
 
