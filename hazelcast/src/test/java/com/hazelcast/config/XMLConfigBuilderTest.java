@@ -408,7 +408,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "                <use-public-ip>true</use-public-ip>\n"
                 + "                <namespace>hazelcast</namespace>\n"
                 + "                <shouldUseDns>false</shouldUseDns>\n"
-                + "				   <serviceUrl.default>http://localhost:8082/eureka</serviceUrl.default>\n"
+                + "                <serviceUrl.default>http://localhost:8082/eureka</serviceUrl.default>\n"
                 + "            </eureka>\n"
                 + "        </join>\n"
                 + "    </network>"
@@ -421,6 +421,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertTrue(eurekaConfig.isEnabled());
         assertTrue(eurekaConfig.isUsePublicIp());
         assertEquals("hazelcast", eurekaConfig.getProperty("namespace"));
+        assertEquals("false", eurekaConfig.getProperty("shouldUseDns"));
     }
 
     @Override
