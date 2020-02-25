@@ -441,7 +441,10 @@ public class TaskletExecutionService {
                     e = new IllegalStateException("cancellationFuture should be completed exceptionally");
                 }
                 exception(e);
-                blockingFutures.forEach(f -> f.cancel(true));
+                // Don't interrupt the threads. We require that they do not block for too long,
+                // interrupting them might make the termination faster, but can also cause
+                // troubles, for example as in https://github.com/hazelcast/hazelcast-jet/issues/1946
+                blockingFutures.forEach(f -> f.cancel(false));
             }));
         }
 
