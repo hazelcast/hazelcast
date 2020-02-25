@@ -72,12 +72,21 @@
                             <include>com.hazelcast.jet:*</include>
                             <include>com.hazelcast:*</include>
                             <include>info.picocli:picocli</include>
+                            <include>io.github.classgraph:classgraph</include>
                         </includes>
                     </artifactSet>
                     <relocations>
                         <relocation>
                             <pattern>picocli.</pattern>
                             <shadedPattern>com.hazelcast.jet.picocli.</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>io.github.classgraph.</pattern>
+                            <shadedPattern>com.hazelcast.jet.io.github.classgraph.</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>nonapi.io.github.classgraph.</pattern>
+                            <shadedPattern>com.hazelcast.jet.nonapi.io.github.classgraph.</shadedPattern>
                         </relocation>
                     </relocations>
                     <transformers>

@@ -22,6 +22,8 @@ import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.impl.util.ReflectionUtils;
+import com.hazelcast.jet.impl.util.ReflectionUtils.Resources;
 import com.hazelcast.jet.pipeline.ServiceFactory;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
@@ -151,9 +153,9 @@ public class JobConfig implements IdentifiedDataSerializable {
      *
      * @return {@code this} instance for fluent API
      * @see InstanceConfig#setScaleUpDelayMillis
-     *        Configuring the scale-up delay
+     * Configuring the scale-up delay
      * @see #setProcessingGuarantee
-     *        Enabling/disabling snapshots
+     * Enabling/disabling snapshots
      */
     public JobConfig setAutoScaling(boolean enabled) {
         this.autoScaling = enabled;
@@ -220,11 +222,11 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Adds the given classes to the Jet job's classpath. They will be
-     * accessible to all the code attached to the underlying pipeline or DAG,
-     * but not to any other code. (An important example is the {@code IMap} data
-     * source, which can instantiate only the classes from the Jet instance's
-     * classpath.)
+     * Adds the given classes and recursively all their nested classes to the
+     * Jet job's classpath. They will be accessible to all the code attached
+     * to the underlying pipeline or DAG, but not to any other code.
+     * (An important example is the {@code IMap} data source, which can
+     * instantiate only the classes from the Jet instance's classpath.)
      * <p>
      * See also {@link #addJar} and {@link #addClasspathResource}.
      *
@@ -238,11 +240,39 @@ public class JobConfig implements IdentifiedDataSerializable {
     @Nonnull
     @SuppressWarnings("rawtypes")
     public JobConfig addClass(@Nonnull Class... classes) {
-        checkNotNull(classes, "Classes can not be null");
-        for (Class<?> clazz : classes) {
+        ReflectionUtils.nestedClassesOf(classes).forEach(clazz -> {
             ResourceConfig cfg = new ResourceConfig(clazz);
             resourceConfigs.put(cfg.getId(), cfg);
-        }
+        });
+        return this;
+    }
+
+    /**
+     * Adds recursively all the classes and resources in given packages
+     * to the Jet job's classpath. They will be accessible to all the
+     * code attached to the underlying pipeline or DAG, but not to any
+     * other code. (An important example is the {@code IMap} data source,
+     * which can instantiate only the classes from the Jet instance's
+     * classpath.)
+     * <p>
+     * See also {@link #addJar} and {@link #addClasspathResource}.
+     *
+     * @implNote Backing storage for this method is an {@link IMap} with a
+     * default backup count of 1. When adding big files as a resource, size
+     * the cluster accordingly in terms of memory, since each file will hav
+     * copies inside the cluster(primary + backup replica).
+     *
+     * @return {@code this} instance for fluent API
+     */
+    @Nonnull
+    public JobConfig addPackage(@Nonnull String... packages) {
+        checkNotNull(packages, "Packages cannot be null");
+        Resources resources = ReflectionUtils.resourcesOf(packages);
+        resources.classes().forEach(clazz -> {
+            ResourceConfig cfg = new ResourceConfig(clazz);
+            resourceConfigs.put(cfg.getId(), cfg);
+        });
+        resources.nonClasses().forEach(this::addClasspathResource);
         return this;
     }
 
@@ -945,7 +975,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      * set to {@link ProcessingGuarantee#NONE}.
      *
      * @param initialSnapshotName the snapshot name given to {@link
-     *       Job#exportSnapshot(String)}
+     *                            Job#exportSnapshot(String)}
      * @return {@code this} instance for fluent API
      * @since 3.0
      */

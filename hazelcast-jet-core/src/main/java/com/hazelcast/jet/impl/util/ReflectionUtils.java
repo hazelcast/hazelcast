@@ -16,24 +16,34 @@
 
 package com.hazelcast.jet.impl.util;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.github.classgraph.ClassGraph;
+import io.github.classgraph.ClassInfo;
+import io.github.classgraph.ScanResult;
+
+import javax.annotation.Nonnull;
 import java.lang.reflect.Field;
+import java.net.URL;
+import java.util.Collection;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Stream;
+
+import static java.util.Arrays.stream;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
+import static java.util.stream.Stream.concat;
 
 public final class ReflectionUtils {
-    private ReflectionUtils() {
 
+    private ReflectionUtils() {
     }
 
     public static <T> T readStaticFieldOrNull(String classname, String fieldName) {
         try {
             Class<?> clazz = Class.forName(classname);
             return readStaticField(clazz, fieldName);
-        } catch (ClassNotFoundException e) {
-            return null;
-        } catch (NoSuchFieldException e) {
-            return null;
-        } catch (IllegalAccessException e) {
-            return null;
-        } catch (SecurityException e) {
+        } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException | SecurityException e) {
             return null;
         }
     }
@@ -45,5 +55,74 @@ public final class ReflectionUtils {
             field.setAccessible(true);
         }
         return (T) field.get(null);
+    }
+
+    @Nonnull
+    @SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE", justification =
+            "False positive on try-with-resources as of JDK11")
+    public static Collection<Class<?>> nestedClassesOf(Class<?>... classes) {
+        String[] packageNames = stream(classes).map(ReflectionUtils::toPackageName).toArray(String[]::new);
+        try (ScanResult scanResult = new ClassGraph()
+                .whitelistPackages(packageNames)
+                .enableClassInfo()
+                .ignoreClassVisibility()
+                .scan()) {
+            Set<String> classNames = stream(classes).map(Class::getName).collect(toSet());
+            return concat(
+                    stream(classes),
+                    scanResult.getAllClasses()
+                              .stream()
+                              .filter(classInfo -> classNames.contains(classInfo.getName()))
+                              .flatMap(classInfo -> classInfo.getInnerClasses().stream())
+                              .map(ClassInfo::loadClass)
+            ).collect(toList());
+        }
+    }
+
+    private static String toPackageName(Class<?> clazz) {
+        return Optional.ofNullable(clazz.getPackage().getName()).orElse("");
+    }
+
+    @Nonnull
+    @SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE", justification =
+            "False positive on try-with-resources as of JDK11")
+    public static Resources resourcesOf(String... packages) {
+        String[] paths = stream(packages).map(ReflectionUtils::toPath).toArray(String[]::new);
+        try (ScanResult scanResult = new ClassGraph()
+                .whitelistPackages(packages)
+                .whitelistPaths(paths)
+                .enableClassInfo()
+                .ignoreClassVisibility()
+                .scan()) {
+            Collection<Class<?>> classes = scanResult.getAllClasses()
+                                                     .stream()
+                                                     .map(ClassInfo::loadClass)
+                                                     .collect(toList());
+            Collection<URL> nonClasses = scanResult.getAllResources().nonClassFilesOnly().getURLs();
+            return new Resources(classes, nonClasses);
+        }
+    }
+
+    private static String toPath(String packageName) {
+        return packageName.replace('.', '/');
+    }
+
+    public static final class Resources {
+
+        private final Collection<Class<?>> classes;
+        private final Collection<URL> nonClasses;
+
+        private Resources(Collection<Class<?>> classes, Collection<URL> nonClasses) {
+            this.classes = classes;
+            this.nonClasses = nonClasses;
+        }
+
+        public Stream<Class<?>> classes() {
+            return classes.stream();
+        }
+
+        public Stream<URL> nonClasses() {
+            return nonClasses.stream();
+        }
     }
 }

@@ -16,12 +16,25 @@
 
 package com.hazelcast.jet.impl.util;
 
+import com.hazelcast.jet.impl.util.ReflectionUtils.Resources;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.net.URL;
+import java.util.Collection;
+import java.util.List;
+
+import static java.util.stream.Collectors.toList;
+import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.hasToString;
+import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 public class ReflectionUtilsTest {
@@ -50,9 +63,51 @@ public class ReflectionUtilsTest {
         assertEquals("staticPublicFieldContent", field);
     }
 
+    @Test
+    public void when_nestedClassesOf_then_returnsAllNestedClasses() throws ClassNotFoundException {
+        // When
+        Collection<Class<?>> classes = ReflectionUtils.nestedClassesOf(OuterClass.class);
+
+        // Then
+        assertThat(classes, hasSize(3));
+        assertThat(classes, containsInAnyOrder(
+                OuterClass.class,
+                OuterClass.NestedClass.class,
+                Class.forName("com.hazelcast.jet.impl.util.ReflectionUtilsTest$OuterClass$1")
+        ));
+    }
+
+    @Test
+    public void when_resourcesOf_then_returnsAllResources() throws ClassNotFoundException {
+        // When
+        Resources resources = ReflectionUtils.resourcesOf(OuterClass.class.getPackage().getName());
+
+        // Then
+        Collection<Class<?>> classes = resources.classes().collect(toList());
+        assertThat(classes, hasSize(greaterThan(3)));
+        assertThat(classes, hasItem(OuterClass.class));
+        assertThat(classes, hasItem(OuterClass.NestedClass.class));
+        assertThat(classes, hasItem(Class.forName("com.hazelcast.jet.impl.util.ReflectionUtilsTest$OuterClass$1")));
+
+        List<URL> nonClasses = resources.nonClasses().collect(toList());
+        assertThat(nonClasses, hasSize(1));
+        assertThat(nonClasses, hasItem(hasToString(containsString("package.properties"))));
+    }
+
+    @SuppressWarnings("unused")
     public static final class MyClass {
         public static String staticPublicField = "staticPublicFieldContent";
         private static String staticPrivateField = "staticPrivateFieldContent";
     }
 
+    @SuppressWarnings("unused")
+    private static class OuterClass {
+        private void method() {
+            new Object() {
+            };
+        }
+
+        private static class NestedClass {
+        }
+    }
 }
