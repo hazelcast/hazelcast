@@ -16,9 +16,12 @@
 
 package com.hazelcast.internal.management;
 
+import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
-import com.hazelcast.client.impl.management.ManagementCenterService;
+import com.hazelcast.client.impl.protocol.codec.MCRunScriptCodec;
+import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
@@ -26,6 +29,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+
 import org.hamcrest.CoreMatchers;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -74,14 +78,7 @@ public class ScriptingProtectionTest extends HazelcastTestSupport {
 
     @Test
     public void testDefaultValue() throws Exception {
-        testInternal(null, getScriptingEnabledDefaultValue());
-    }
-
-    /**
-     * @return true if the scripting should be enabled by default
-     */
-    protected boolean getScriptingEnabledDefaultValue() {
-        return false;
+        testInternal(null, false);
     }
 
     /**
@@ -100,14 +97,15 @@ public class ScriptingProtectionTest extends HazelcastTestSupport {
 
         try {
             HazelcastInstance hz = config != null ? factory.newHazelcastInstance(config) : factory.newHazelcastInstance();
-            HazelcastInstance client = factory.newHazelcastClient();
-            ManagementCenterService mcs = ((HazelcastClientProxy) client).client.getManagementCenterService();
             if (!expectEnabled) {
                 expectedException.expect(ExecutionException.class);
                 expectedException.expectCause(CoreMatchers.instanceOf(AccessControlException.class));
             }
-            assertEquals(SCRIPT_RETURN_VAL,
-                mcs.runScript(hz.getCluster().getLocalMember(), ENGINE, SCRIPT).get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS));
+            HazelcastInstance client = factory.newHazelcastClient();
+            Object result = runScript(
+                    client,
+                    hz.getCluster().getLocalMember()).get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
+            assertEquals(SCRIPT_RETURN_VAL, result);
         } finally {
             factory.shutdownAll();
         }
@@ -117,5 +115,20 @@ public class ScriptingProtectionTest extends HazelcastTestSupport {
         Config config = new Config();
         config.getManagementCenterConfig().setScriptingEnabled(scriptingEnabled);
         return config;
+    }
+
+    private ClientDelegatingFuture<Object> runScript(HazelcastInstance client, Member member) {
+        ClientInvocation invocation = new ClientInvocation(
+                ((HazelcastClientProxy) client).client,
+                MCRunScriptCodec.encodeRequest(ENGINE, SCRIPT),
+                null,
+                member.getUuid()
+        );
+
+        return new ClientDelegatingFuture<>(
+                invocation.invoke(),
+                ((HazelcastClientProxy) client).client.getSerializationService(),
+                clientMessage -> MCRunScriptCodec.decodeResponse(clientMessage).result
+        );
     }
 }
