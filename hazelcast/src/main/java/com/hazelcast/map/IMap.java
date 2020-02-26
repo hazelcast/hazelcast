@@ -864,6 +864,57 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
                                 long maxIdle, @Nonnull TimeUnit maxIdleUnit);
 
     /**
+     * Asynchronously puts the given map entry in the map store
+     * <pre>{@code
+     *     CompletionStage<Void> future = map.putAllAsync(map);
+     *     // do some other stuff, when ready wait for completion
+     *     future.toCompletableFuture.get();
+     * }</pre>
+     * {@code CompletionStage.toCompletableFuture.get()} will block until the actual map.putAll(map) operation completes
+     * You can also register further computation stages to be invoked upon
+     * completion of the {@code CompletionStage} via any of {@link CompletionStage}
+     * methods:
+     * <pre>{@code
+     *      CompletionStage<Void> future = map.putAllAsync(map);
+     *      future.thenRunAsync(() -> System.out.println("All the entries are added"));
+     * }</pre>
+     *  {@inheritDoc}
+     * <p>
+     * No atomicity guarantees are given. It could be that in case of failure
+     * some of the key/value-pairs get written, while others are not.
+     *
+     * <p><b>Interactions with the map store</b>
+     * <p>
+     * For each element not found in memory
+     * {@link MapLoader#load(Object)} is invoked to load the value from
+     * the map store backing the map, which may come at a significant
+     * performance cost. Exceptions thrown by load fail the operation
+     * and are propagated to the caller. The elements which were added
+     * before the exception was thrown will remain in the map, the rest
+     * will not be added.
+     * <p>
+     * If write-through persistence mode is configured,
+     * {@link MapStore#store(Object, Object)} is invoked for each element
+     * before the element is added in memory, which may come at a
+     * significant performance cost. Exceptions thrown by store fail the
+     * operation and are propagated to the caller. The elements which
+     * were added before the exception was thrown will remain in the map,
+     * the rest will not be added.
+     * <p>
+     * If write-behind persistence mode is configured with
+     * write-coalescing turned off,
+     * {@link com.hazelcast.map.ReachedMaxSizeException} may be thrown
+     * if the write-behind queue has reached its per-node maximum
+     * capacity.
+     * @param map the map entry
+     * @return CompletionStage on which client code can block waiting for the
+     * operation to complete or register callbacks to be invoked
+     * upon putAll operation completion
+     * @see CompletionStage
+     */
+    CompletionStage<Void> putAllAsync(@Nonnull Map<? extends K, ? extends V> map);
+
+    /**
      * Asynchronously puts the given key and value.
      * The entry lives forever.
      * Similar to the put operation except that set
@@ -1057,6 +1108,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
     CompletionStage<Void> setAsync(@Nonnull K key, @Nonnull V value,
                                    long ttl, @Nonnull TimeUnit ttlUnit,
                                    long maxIdle, @Nonnull TimeUnit maxIdleUnit);
+
+
 
     /**
      * Asynchronously removes the given key, returning an {@link CompletionStage}
@@ -2553,6 +2606,20 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      */
     <R> Map<K, R> executeOnKeys(@Nonnull Set<K> keys,
                                 @Nonnull EntryProcessor<K, V, R> entryProcessor);
+
+    /**
+     * Async version of {@link #executeOnKeys}.
+     * @param keys the keys to execute the entry processor on. Can be empty, in
+     *             that case it's a local no-op
+     * @param entryProcessor the processor to process the keys
+     * @param <R> return type for entry processor
+     * @return CompletionStage on which client code can block waiting for the
+     * operation to complete or register callbacks to be invoked
+     * upon set operation completion
+     * @see CompletionStage
+     */
+    <R> CompletionStage<Map<K, R>> submitToKeys(@Nonnull Set<K> keys,
+                               @Nonnull EntryProcessor<K, V, R> entryProcessor);
 
     /**
      * Applies the user defined {@code EntryProcessor} to the entry mapped by the {@code key}.
