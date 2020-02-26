@@ -33,7 +33,7 @@
         <!-- needed for CheckStyle -->
         <main.basedir>${project.parent.basedir}</main.basedir>
 
-        <bndlib.version>1.50.0</bndlib.version>
+        <bndlib.version>2.0.0.20130123-133441</bndlib.version>
     </properties>
 
     <build>
