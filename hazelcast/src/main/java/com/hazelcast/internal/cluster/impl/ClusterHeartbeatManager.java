@@ -283,7 +283,7 @@ public class ClusterHeartbeatManager {
             }
         } else {
             MemberImpl master = clusterService.getMember(clusterService.getMasterAddress());
-            if (clusterService.getMembershipManager().isMemberSuspected(master.getAddress(), master.getUuid())) {
+            if (clusterService.getMembershipManager().isMemberSuspected(master)) {
                 logger.fine("Not sending heartbeat complaint for " + senderMembersViewMetadata
                         + " to suspected master: " + master.getAddress());
                 return;
@@ -378,6 +378,7 @@ public class ClusterHeartbeatManager {
      *
      * @param member    the member sending the heartbeat
      * @param timestamp the timestamp when the heartbeat was created
+     * @return          true if the heartbeat is processed, false if it is ignored.
      */
     public boolean onHeartbeat(MemberImpl member, long timestamp) {
         if (member == null) {
@@ -401,7 +402,7 @@ public class ClusterHeartbeatManager {
         heartbeatFailureDetector.heartbeat(member, clusterClock.getClusterTime());
 
         MembershipManager membershipManager = clusterService.getMembershipManager();
-        membershipManager.clearMemberSuspicion(member.getAddress(), member.getUuid(), "Valid heartbeat");
+        membershipManager.clearMemberSuspicion(member, "Valid heartbeat");
         nodeEngine.getSplitBrainProtectionService().onHeartbeat(member, timestamp);
 
         return true;
@@ -512,7 +513,7 @@ public class ClusterHeartbeatManager {
      * @return if the member has been removed
      */
     private boolean suspectMemberIfNotHeartBeating(long now, Member member) {
-        if (clusterService.getMembershipManager().isMemberSuspected(member.getAddress(), member.getUuid())) {
+        if (clusterService.getMembershipManager().isMemberSuspected((MemberImpl) member)) {
             return true;
         }
 
@@ -552,7 +553,7 @@ public class ClusterHeartbeatManager {
                     continue;
                 }
 
-                if (membershipManager.isMemberSuspected(member.getAddress(), member.getUuid())) {
+                if (membershipManager.isMemberSuspected((MemberImpl) member)) {
                     continue;
                 }
 
@@ -618,7 +619,7 @@ public class ClusterHeartbeatManager {
         }
         try {
             MembersViewMetadata membersViewMetadata = clusterService.getMembershipManager().createLocalMembersViewMetadata();
-            Collection<MemberInfo> suspectedMembers;
+            Collection<MemberInfo> suspectedMembers = Collections.emptySet();
             if (clusterService.getMembershipManager().isPartialDisconnectionDetectionEnabled()
                     && !clusterService.isMaster() && target.getAddress().equals(clusterService.getMasterAddress())) {
                 suspectedMembers = clusterService.getMembershipManager()
@@ -626,8 +627,6 @@ public class ClusterHeartbeatManager {
                                                  .stream()
                                                  .map(MemberInfo::new)
                                                  .collect(toSet());
-            } else {
-                suspectedMembers = Collections.emptySet();
             }
 
             long clusterTime = clusterClock.getClusterTime();

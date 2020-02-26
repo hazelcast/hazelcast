@@ -19,6 +19,7 @@ package com.hazelcast.internal.cluster.impl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
@@ -318,14 +319,14 @@ public class MembershipFailureTest extends HazelcastTestSupport {
         MembershipManager membershipManager = getNode(slave1).getClusterService().getMembershipManager();
         assertTrueEventually(() -> {
             Member localMember = slave2.getCluster().getLocalMember();
-            assertTrue(membershipManager.isMemberSuspected(localMember.getAddress(), localMember.getUuid()));
+            assertTrue(membershipManager.isMemberSuspected((MemberImpl) localMember));
         });
 
         resetPacketFiltersFrom(slave2);
 
         assertTrueEventually(() -> {
             Member localMember = slave2.getCluster().getLocalMember();
-            assertFalse(membershipManager.isMemberSuspected(localMember.getAddress(), localMember.getUuid()));
+            assertFalse(membershipManager.isMemberSuspected((MemberImpl) localMember));
         });
     }
 

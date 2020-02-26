@@ -71,10 +71,7 @@ import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.CLUSTER_EXE
 import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.MEMBERSHIP_EVENT_EXECUTOR_NAME;
 import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.SERVICE_NAME;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.ASYNC_EXECUTOR;
-import static com.hazelcast.spi.properties.ClusterProperty.HEARTBEAT_INTERVAL_SECONDS;
 import static com.hazelcast.spi.properties.ClusterProperty.MASTERSHIP_CLAIM_TIMEOUT_SECONDS;
-import static com.hazelcast.spi.properties.ClusterProperty.MAX_NO_HEARTBEAT_SECONDS;
-import static com.hazelcast.spi.properties.ClusterProperty.PARTIAL_MEMBER_DISCONNECTION_RESOLUTION_ALGORITHM_TIMEOUT_SECONDS;
 import static com.hazelcast.spi.properties.ClusterProperty.PARTIAL_MEMBER_DISCONNECTION_RESOLUTION_HEARTBEAT_COUNT;
 import static java.lang.Math.min;
 import static java.lang.String.format;
@@ -124,25 +121,11 @@ public class MembershipManager {
         this.clusterServiceLock = clusterServiceLock;
         this.nodeEngine = node.getNodeEngine();
         this.logger = node.getLogger(getClass());
-
         this.mastershipClaimTimeoutSeconds = node.getProperties().getInteger(MASTERSHIP_CLAIM_TIMEOUT_SECONDS);
-
         int partialDisconnectionResolutionHeartbeatCount = node.getProperties().getInteger(
                 PARTIAL_MEMBER_DISCONNECTION_RESOLUTION_HEARTBEAT_COUNT);
         this.partialDisconnectionDetectionEnabled = partialDisconnectionResolutionHeartbeatCount > 0;
-        long heartbeatIntervalMs = SECONDS.toMillis(node.getProperties().getInteger(HEARTBEAT_INTERVAL_SECONDS));
-        long partialDisconnectivityDetectionIntervalMs =
-                partialDisconnectionResolutionHeartbeatCount * heartbeatIntervalMs;
-        long heartbeatTimeoutMs = SECONDS.toMillis(node.getProperties().getInteger(MAX_NO_HEARTBEAT_SECONDS));
-
-        if (!partialDisconnectionDetectionEnabled) {
-            partialDisconnectivityDetectionIntervalMs = Long.MAX_VALUE;
-        } else if (heartbeatTimeoutMs < partialDisconnectivityDetectionIntervalMs) {
-            partialDisconnectivityDetectionIntervalMs = heartbeatTimeoutMs;
-        }
-
-        this.partialDisconnectionHandler = new PartialDisconnectionHandler(partialDisconnectivityDetectionIntervalMs,
-                node.getProperties().getInteger(PARTIAL_MEMBER_DISCONNECTION_RESOLUTION_ALGORITHM_TIMEOUT_SECONDS));
+        this.partialDisconnectionHandler = new PartialDisconnectionHandler(node.getProperties());
 
         registerThisMember();
     }
@@ -504,38 +487,30 @@ public class MembershipManager {
         return new HashSet<>(suspectedMembers);
     }
 
-    boolean isMemberSuspected(Address address, UUID uuid) {
-        for (MemberImpl suspectedMember : suspectedMembers) {
-            if (suspectedMember.getAddress().equals(address) && suspectedMember.getUuid().equals(uuid)) {
-                return true;
-            }
-        }
-
-        return false;
+    boolean isMemberSuspected(MemberImpl member) {
+        return suspectedMembers.contains(member);
     }
 
-    boolean clearMemberSuspicion(Address address, UUID uuid, String reason) {
+    boolean clearMemberSuspicion(MemberImpl member, String reason) {
         clusterServiceLock.lock();
         try {
-            if (!isMemberSuspected(address, uuid)) {
+            if (!isMemberSuspected(member)) {
                  return true;
             }
 
             MemberMap memberMap = getMemberMap();
             Address masterAddress = clusterService.getMasterAddress();
-            if (memberMap.isBeforeThan(address, masterAddress)) {
+            if (memberMap.isBeforeThan(member.getAddress(), masterAddress)) {
                 if (logger.isFineEnabled()) {
-                    logger.fine("Not removing suspicion of " + address + " since it is before than current master "
+                    logger.fine("Not removing suspicion of " + member + " since it is before than current master "
                             + masterAddress + " in member list.");
                 }
 
                 return false;
             }
 
-            boolean removed = suspectedMembers.removeIf(
-                    suspectedMember -> suspectedMember.getAddress().equals(address) && suspectedMember.getUuid().equals(uuid));
-            if (removed && logger.isInfoEnabled()) {
-                logger.info("Removed suspicion from " + address + ". Reason: " + reason);
+            if (suspectedMembers.remove(member)) {
+                logger.info("Removed suspicion of " + member + ". Reason: " + reason);
             }
         } finally {
             clusterServiceLock.unlock();
@@ -841,7 +816,7 @@ public class MembershipManager {
         }
 
         for (MemberImpl m : memberMap.headMemberSet(getLocalMember(), false)) {
-            if (!isMemberSuspected(m.getAddress(), m.getUuid())) {
+            if (!isMemberSuspected(m)) {
                 return false;
             }
         }
@@ -869,7 +844,7 @@ public class MembershipManager {
             // if it is not certain if a member has accepted the mastership claim, its response will be ignored
 
             Future<MembersView> future = futures.get(member);
-            if (isMemberSuspected(address, member.getUuid())) {
+            if (isMemberSuspected(new MemberImpl(member.getAddress(), member.getVersion(), false, member.getUuid()))) {
                 if (logger.isFineEnabled()) {
                     logger.fine(member + " is excluded because suspected");
                 }
@@ -918,7 +893,6 @@ public class MembershipManager {
 
         long mastershipClaimTimeout = SECONDS.toMillis(mastershipClaimTimeoutSeconds);
         while (clusterService.isJoined()) {
-
             boolean done = true;
             for (Entry<MemberInfo, Future<MembersView>> e : new ArrayList<>(futures.entrySet())) {
                 MemberInfo member = e.getKey();
@@ -945,8 +919,9 @@ public class MembershipManager {
                     // we couldn't learn MembersView of 'address'. It will be removed from the cluster.
                     EmptyStatement.ignore(ignored);
                 } catch (TimeoutException ignored) {
-                    MemberInfo memberInfo = latestMembersView.getMember(address);
-                    if (mastershipClaimTimeout > 0 && !isMemberSuspected(address, member.getUuid()) && memberInfo != null) {
+                    MemberInfo latestMemberInfo = latestMembersView.getMember(address);
+                    MemberImpl memberImpl = new MemberImpl(member.getAddress(), member.getVersion(), false, member.getUuid());
+                    if (mastershipClaimTimeout > 0 && !isMemberSuspected(memberImpl) && latestMemberInfo != null) {
                         // we don't suspect from 'address' and we need to learn its response
                         done = false;
 
@@ -954,7 +929,7 @@ public class MembershipManager {
                         // We will retry our claim to member until it explicitly rejects or accepts our claim.
                         // We can't just rely on invocation retries, because if connection is dropped while
                         // our claim is on the wire, invocation won't get any response and will eventually timeout.
-                        futures.put(member, invokeFetchMembersViewOp(address, memberInfo.getUuid()));
+                        futures.put(latestMemberInfo, invokeFetchMembersViewOp(address, latestMemberInfo.getUuid()));
                     }
                 }
 
@@ -975,7 +950,7 @@ public class MembershipManager {
         for (MemberInfo member : membersView.getMembers()) {
             Address memberAddress = member.getAddress();
             if (!(node.getThisAddress().equals(memberAddress)
-                    || isMemberSuspected(memberAddress, member.getUuid())
+                    || isMemberSuspected(new MemberImpl(member.getAddress(), member.getVersion(), false, member.getUuid()))
                     || futures.containsKey(member))) {
                 // this is a new member for us. lets ask its members view
                 if (logger.isFineEnabled()) {
@@ -1268,15 +1243,15 @@ public class MembershipManager {
             return false;
         } else if (!clusterService.isMaster()) {
             if (suspectedMemberInfos.size() > 0) {
-                logger.severe("This not is not master but received suspected members: " + suspectedMemberInfos + " from "
+                logger.warning("This not is not master but received suspected members: " + suspectedMemberInfos + " from "
                         + sender);
             }
             return false;
         } else if (getLocalMember().equals(sender)) {
-            logger.severe("Received suspected members: " + suspectedMemberInfos + " from itself.");
+            logger.warning("Received suspected members: " + suspectedMemberInfos + " from itself.");
             return false;
         } else if (suspectedMemberInfos.contains(new MemberInfo(getLocalMember()))) {
-            logger.severe("Received suspected members: " + suspectedMemberInfos + " from " + sender + " contains this member!");
+            logger.warning("Received suspected members: " + suspectedMemberInfos + " from " + sender + " contains this member!");
             return false;
         } else if (clusterService.getClusterJoinManager().isMastershipClaimInProgress()) {
             if (suspectedMemberInfos.size() > 0 && logger.isFineEnabled()) {
@@ -1297,8 +1272,8 @@ public class MembershipManager {
             return;
         }
 
+        clusterServiceLock.lock();
         try {
-            clusterServiceLock.lock();
             if (partialDisconnectionHandler.shouldResolvePartialDisconnections(timestamp)) {
                 Map<MemberImpl, Set<MemberImpl>> disconnections = partialDisconnectionHandler.reset();
                 nodeEngine.getExecutionService().execute(ASYNC_EXECUTOR, new ResolvePartialDisconnectionsTask(disconnections));
@@ -1401,9 +1376,19 @@ public class MembershipManager {
                 Collection<MemberImpl> membersToRemove = partialDisconnectionHandler.resolve(disconnections);
                 clusterServiceLock.lock();
                 try {
+                    if (!clusterService.isMaster()) {
+                        if (suspectedMembers.size() > 0) {
+                            logger.warning("Won't remove partially disconnected members: " + membersToRemove
+                                    + " because I am no longer the master!");
+                        }
+
+                        return;
+                    }
+
                     for (MemberImpl member : membersToRemove) {
                         if (getMember(member.getAddress(), member.getUuid()) == null) {
-                            logger.warning("Won't remove partially disconnected members: " + membersToRemove);
+                            logger.warning("Won't remove partially disconnected members: " + membersToRemove + " because "
+                                    + member + " is not in the cluster member list anymore!");
                             return;
                         }
                     }
@@ -1416,14 +1401,23 @@ public class MembershipManager {
                 } finally {
                     clusterServiceLock.unlock();
                 }
-            } catch (Exception e) {
-                logger.severe("Partial disconnection resolution algorithm failed.", e);
-                clusterServiceLock.lock();
-                try {
-                    partialDisconnectionHandler.reset();
-                } finally {
-                    clusterServiceLock.unlock();
+            } catch (TimeoutException e) {
+                if (logger.isFineEnabled()) {
+                    logger.severe("Partial disconnection resolution algorithm timed out!");
                 }
+                resetPartialDisconnectionHandler();
+            } catch (Exception e) {
+                logger.severe("Partial disconnection resolution algorithm failed!", e);
+                resetPartialDisconnectionHandler();
+            }
+        }
+
+        private void resetPartialDisconnectionHandler() {
+            clusterServiceLock.lock();
+            try {
+                partialDisconnectionHandler.reset();
+            } finally {
+                clusterServiceLock.unlock();
             }
         }
     }

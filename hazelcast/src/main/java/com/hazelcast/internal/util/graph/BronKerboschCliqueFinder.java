@@ -22,9 +22,10 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+
+import static java.util.Objects.requireNonNull;
 
 public class BronKerboschCliqueFinder<V> {
 
@@ -41,16 +42,11 @@ public class BronKerboschCliqueFinder<V> {
      * @param unit    the time unit of the timeout argument
      */
     public BronKerboschCliqueFinder(Graph<V> graph, long timeout, TimeUnit unit) {
-        this.graph = Objects.requireNonNull(graph, "Graph cannot be null");
-        if (timeout == 0L) {
-            this.nanos = Long.MAX_VALUE;
-        } else {
-            this.nanos = unit.toNanos(timeout);
+        this.graph = requireNonNull(graph, "Graph cannot be null");
+        if (timeout < 1L) {
+            throw new IllegalArgumentException("Invalid timeout, must be positive!");
         }
-        if (this.nanos < 1L) {
-            throw new IllegalArgumentException("Invalid timeout, must be positive");
-        }
-        this.timeLimitReached = false;
+        this.nanos = unit.toNanos(timeout);
     }
 
     /**
@@ -59,7 +55,7 @@ public class BronKerboschCliqueFinder<V> {
      * @param graph the input graph; must be "simple".
      */
     public BronKerboschCliqueFinder(Graph<V> graph) {
-        this(graph, 0L, TimeUnit.SECONDS);
+        this(graph, Long.MAX_VALUE, TimeUnit.NANOSECONDS);
     }
 
     /**
@@ -91,11 +87,6 @@ public class BronKerboschCliqueFinder<V> {
         }
 
         maximumCliques = new ArrayList<>();
-
-        // [basri] Our Graph impl is already a simple graph.
-        //            if (!GraphTests.isSimple(graph)) {
-        //                throw new IllegalArgumentException("Graph must be simple");
-        //            }
 
         long nanosTimeLimit;
         try {
