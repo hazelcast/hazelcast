@@ -61,12 +61,12 @@ public final class ReflectionUtils {
     @SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE", justification =
             "False positive on try-with-resources as of JDK11")
     public static Collection<Class<?>> nestedClassesOf(Class<?>... classes) {
-        String[] packageNames = stream(classes).map(ReflectionUtils::toPackageName).toArray(String[]::new);
-        try (ScanResult scanResult = new ClassGraph()
-                .whitelistPackages(packageNames)
+        ClassGraph classGraph = new ClassGraph()
                 .enableClassInfo()
-                .ignoreClassVisibility()
-                .scan()) {
+                .ignoreClassVisibility();
+        stream(classes).map(Class::getClassLoader).distinct().forEach(classGraph::addClassLoader);
+        stream(classes).map(ReflectionUtils::toPackageName).distinct().forEach(classGraph::whitelistPackages);
+        try (ScanResult scanResult = classGraph.scan()) {
             Set<String> classNames = stream(classes).map(Class::getName).collect(toSet());
             return concat(
                     stream(classes),
@@ -80,7 +80,7 @@ public final class ReflectionUtils {
     }
 
     private static String toPackageName(Class<?> clazz) {
-        return Optional.ofNullable(clazz.getPackage().getName()).orElse("");
+        return Optional.ofNullable(clazz.getPackage()).map(Package::getName).orElse("");
     }
 
     @Nonnull
@@ -88,12 +88,12 @@ public final class ReflectionUtils {
             "False positive on try-with-resources as of JDK11")
     public static Resources resourcesOf(String... packages) {
         String[] paths = stream(packages).map(ReflectionUtils::toPath).toArray(String[]::new);
-        try (ScanResult scanResult = new ClassGraph()
+        ClassGraph classGraph = new ClassGraph()
                 .whitelistPackages(packages)
                 .whitelistPaths(paths)
                 .enableClassInfo()
-                .ignoreClassVisibility()
-                .scan()) {
+                .ignoreClassVisibility();
+        try (ScanResult scanResult = classGraph.scan()) {
             Collection<Class<?>> classes = scanResult.getAllClasses()
                                                      .stream()
                                                      .map(ClassInfo::loadClass)

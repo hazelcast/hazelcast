@@ -77,7 +77,7 @@ public abstract class AbstractDeploymentTest extends SimpleTestInClusterSupport 
 
         JobConfig jobConfig = new JobConfig();
         URL classUrl = this.getClass().getResource("/cp1/");
-        URLClassLoader urlClassLoader = new URLClassLoader(new URL[] {classUrl}, null);
+        URLClassLoader urlClassLoader = new URLClassLoader(new URL[]{classUrl}, null);
         Class<?> appearance = urlClassLoader.loadClass("com.sample.pojo.person.Person$Appereance");
         jobConfig.addClass(appearance);
 
@@ -92,7 +92,7 @@ public abstract class AbstractDeploymentTest extends SimpleTestInClusterSupport 
 
         JobConfig jobConfig = new JobConfig();
         URL classUrl = this.getClass().getResource("/cp1/");
-        URLClassLoader urlClassLoader = new URLClassLoader(new URL[] {classUrl}, null);
+        URLClassLoader urlClassLoader = new URLClassLoader(new URL[]{classUrl}, null);
         Class<?> appearanceClz = urlClassLoader.loadClass("com.sample.pojo.person.Person$Appereance");
         jobConfig.addClass(appearanceClz);
 
@@ -102,6 +102,20 @@ public abstract class AbstractDeploymentTest extends SimpleTestInClusterSupport 
         if (LoadClassesIsolated.assertionErrorInClose != null) {
             throw LoadClassesIsolated.assertionErrorInClose;
         }
+    }
+
+    @Test
+    public void testDeployment_whenAddClass_thenNestedClassesAreAddedAsWell() throws Throwable {
+        DAG dag = new DAG();
+        dag.newVertex("executes lambda from a nested class", NestedClassIsLoaded::new);
+
+        JobConfig jobConfig = new JobConfig();
+        URL classUrl = this.getClass().getResource("/cp1/");
+        URLClassLoader urlClassLoader = new URLClassLoader(new URL[]{classUrl}, null);
+        Class<?> worker = urlClassLoader.loadClass("com.sample.lambda.Worker");
+        jobConfig.addClass(worker);
+
+        executeAndPeel(getJetInstance().newJob(dag, jobConfig));
     }
 
     @Test
@@ -266,7 +280,7 @@ public abstract class AbstractDeploymentTest extends SimpleTestInClusterSupport 
 
     @Test
     public void testDeployment_whenAttachMoreFilesAndDirs_thenAllAvailableOnMembers() throws Throwable {
-                Pipeline pipeline = Pipeline.create();
+        Pipeline pipeline = Pipeline.create();
         String dirToAttach1 = Paths.get(this.getClass().getResource("/nested/folder").toURI()).toString();
         String dirToAttach2 = Paths.get(this.getClass().getResource("/nested/folder1").toURI()).toString();
         String fileToAttach1 = Paths.get(getClass().getResource("/deployment/resource.txt").toURI()).toString();
@@ -308,7 +322,6 @@ public abstract class AbstractDeploymentTest extends SimpleTestInClusterSupport 
 
         executeAndPeel(getJetInstance().newJob(dag, jobConfig));
     }
-
 
     static class MyJobClassLoaderFactory implements JobClassLoaderFactory {
 

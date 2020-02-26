@@ -222,11 +222,12 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Adds the given classes and recursively all their nested classes to the
-     * Jet job's classpath. They will be accessible to all the code attached
-     * to the underlying pipeline or DAG, but not to any other code.
-     * (An important example is the {@code IMap} data source, which can
-     * instantiate only the classes from the Jet instance's classpath.)
+     * Adds the given classes and recursively all their nested
+     * (inner & anonymous) classes to the Jet job's classpath. They will be
+     * accessible to all the code attached to the underlying pipeline or DAG,
+     * but not to any other code. (An important example is the {@code IMap}
+     * data source, which can instantiate only the classes from the Jet
+     * instance's classpath.)
      * <p>
      * See also {@link #addJar} and {@link #addClasspathResource}.
      *
@@ -259,7 +260,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      *
      * @implNote Backing storage for this method is an {@link IMap} with a
      * default backup count of 1. When adding big files as a resource, size
-     * the cluster accordingly in terms of memory, since each file will hav
+     * the cluster accordingly in terms of memory, since each file will have
      * copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API

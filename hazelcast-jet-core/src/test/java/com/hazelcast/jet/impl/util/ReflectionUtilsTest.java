@@ -27,6 +27,7 @@ import java.util.List;
 
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasSize;
@@ -69,11 +70,12 @@ public class ReflectionUtilsTest {
         Collection<Class<?>> classes = ReflectionUtils.nestedClassesOf(OuterClass.class);
 
         // Then
-        assertThat(classes, hasSize(3));
         assertThat(classes, containsInAnyOrder(
                 OuterClass.class,
                 OuterClass.NestedClass.class,
-                Class.forName("com.hazelcast.jet.impl.util.ReflectionUtilsTest$OuterClass$1")
+                OuterClass.NestedClass.DeeplyNestedClass.class,
+                Class.forName(OuterClass.class.getName() + "$1"),
+                Class.forName(OuterClass.NestedClass.DeeplyNestedClass.class.getName() + "$1")
         ));
     }
 
@@ -87,11 +89,12 @@ public class ReflectionUtilsTest {
         assertThat(classes, hasSize(greaterThan(3)));
         assertThat(classes, hasItem(OuterClass.class));
         assertThat(classes, hasItem(OuterClass.NestedClass.class));
-        assertThat(classes, hasItem(Class.forName("com.hazelcast.jet.impl.util.ReflectionUtilsTest$OuterClass$1")));
+        assertThat(classes, hasItem(OuterClass.NestedClass.DeeplyNestedClass.class));
+        assertThat(classes, hasItem(Class.forName(OuterClass.class.getName() + "$1")));
+        assertThat(classes, hasItem(Class.forName(OuterClass.NestedClass.DeeplyNestedClass.class.getName() + "$1")));
 
         List<URL> nonClasses = resources.nonClasses().collect(toList());
-        assertThat(nonClasses, hasSize(1));
-        assertThat(nonClasses, hasItem(hasToString(containsString("package.properties"))));
+        assertThat(nonClasses, contains(hasToString(containsString("package.properties"))));
     }
 
     @SuppressWarnings("unused")
@@ -108,6 +111,14 @@ public class ReflectionUtilsTest {
         }
 
         private static class NestedClass {
+
+            private static class DeeplyNestedClass {
+
+                private void method() {
+                    new Object() {
+                    };
+                }
+            }
         }
     }
 }
