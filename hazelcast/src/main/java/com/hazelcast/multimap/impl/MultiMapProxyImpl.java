@@ -21,13 +21,14 @@ import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.multimap.LocalMultiMapStats;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.multimap.impl.operations.EntrySetResponse;
 import com.hazelcast.multimap.impl.operations.MultiMapResponse;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.InitializingObject;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 
@@ -90,6 +91,20 @@ public class MultiMapProxyImpl<K, V>
                 }
             }
         }
+    }
+
+    @Override
+    public void putAll(@Nonnull Map<? extends Object, Collection> m) {
+        //TODO: add contains check
+        putAllInternal(m, null);
+    }
+
+    @Override
+    public InternalCompletableFuture<Void> putAllAsync(@Nonnull Map<? extends Object, Collection> m) {
+        //TODO: add contains check
+        InternalCompletableFuture<Void> future = new InternalCompletableFuture<>();
+        putAllInternal(m, future);
+        return future;
     }
 
     @Override

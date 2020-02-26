@@ -20,6 +20,7 @@ import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.LocalMapStats;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -57,6 +58,31 @@ import java.util.concurrent.TimeUnit;
  */
 @SuppressWarnings("checkstyle:methodcount")
 public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
+
+    /**
+     * Stores a Map in the multimap synchronously.
+     * <p>
+     * This method performs a bulk put into a MultiMap
+     * by partitions similar to Map.putAllAsync
+     *
+     * @param m the map to be stored
+     */
+    void putAll(@Nonnull Map<?, Collection> m);
+
+    /**
+     * Stores a Map in the multimap aynchronously.
+     * <p>
+     * This method performs a bulk put into a MultiMap
+     * by partitions similar to Map.putAllAsync.
+     * <p>
+     * <b>Warning:</b> The Map and result of the put cannot be fetched
+     * from the Future.
+     * @param m the map to be stored
+     * @return a void Future
+     */
+    //FIXME:should be narrowly generic, but as it were, MultiMapProxySupport is not genericized. Another alternative is to pass in MultiMapValue
+    InternalCompletableFuture<Void> putAllAsync(@Nonnull Map<? extends Object, Collection> m);
+
     /**
      * Stores a key-value pair in the multimap.
      * <p>

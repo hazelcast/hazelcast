@@ -56,6 +56,7 @@ import com.hazelcast.map.impl.ListenerAdapter;
 import com.hazelcast.multimap.LocalMultiMapStats;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
 import com.hazelcast.spi.impl.UnmodifiableLazySet;
 
@@ -65,6 +66,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -89,6 +91,20 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
 
     public ClientMultiMapProxy(String serviceName, String name, ClientContext context) {
         super(serviceName, name, context);
+    }
+
+    @Override
+    public void putAll(@Nonnull Map<?, Collection> m) {
+        //TODO: check for m instance and-or content
+        //TODO: implement
+    }
+
+    @Override
+    public InternalCompletableFuture<Void> putAllAsync(@Nonnull Map<?, Collection> m) {
+        //TODO: check for m instance and-or content
+        InternalCompletableFuture<Void> future = new InternalCompletableFuture<>();
+        //TODO: implement
+        return future;
     }
 
     @Override
