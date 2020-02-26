@@ -570,6 +570,12 @@ public final class ClusterProperty {
     public static final HazelcastProperty LOGGING_TYPE
             = new HazelcastProperty("hazelcast.logging.type", "jdk");
 
+    /**
+     * Controls whether cluster name, ip and version should be included in all log messages
+     */
+    public static final HazelcastProperty LOGGING_ENABLE_DETAILS
+            = new HazelcastProperty("hazelcast.logging.details.enabled", true);
+
     public static final HazelcastProperty ENABLE_JMX
             = new HazelcastProperty("hazelcast.jmx", false);
     public static final HazelcastProperty JMX_UPDATE_INTERVAL_SECONDS
