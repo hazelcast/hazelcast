@@ -153,30 +153,27 @@ public class MemberInfo implements IdentifiedDataSerializable {
     }
 
     @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((address == null) ? 0 : address.hashCode());
-        return result;
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        MemberInfo that = (MemberInfo) o;
+
+        if (!address.equals(that.address)) {
+            return false;
+        }
+        return uuid != null ? uuid.equals(that.uuid) : that.uuid == null;
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        MemberInfo other = (MemberInfo) obj;
-        if (address == null) {
-            return other.address == null;
-        } else {
-            return address.equals(other.address);
-        }
+    public int hashCode() {
+        int result = address.hashCode();
+        result = 31 * result + (uuid != null ? uuid.hashCode() : 0);
+        return result;
     }
 
     @Override
