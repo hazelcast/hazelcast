@@ -40,7 +40,7 @@
         <maven.bundle.plugin.version>4.2.1</maven.bundle.plugin.version>
         <maven.jar.plugin.version>3.2.0</maven.jar.plugin.version>
         <maven.gpg.plugin.version>1.6</maven.gpg.plugin.version>
-        <maven.javadoc.plugin.version>2.9</maven.javadoc.plugin.version>
+        <maven.javadoc.plugin.version>3.1.1</maven.javadoc.plugin.version>
 
         <maven.surefire.plugin.version>2.18.1</maven.surefire.plugin.version>
         <maven.checkstyle.plugin.version>2.15</maven.checkstyle.plugin.version>
