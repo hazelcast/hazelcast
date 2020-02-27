@@ -451,10 +451,6 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         putAllInternal(map, null);
     }
 
-    /**
-     * This version does not support batching. Don't mutate the given map until the
-     * future completes.
-     */
     // used by jet
     @Override
     public InternalCompletableFuture<Void> putAllAsync(@Nonnull Map<? extends K, ? extends V> map) {
