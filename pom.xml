@@ -48,7 +48,7 @@
         <maven.sonar.plugin.version>3.3.0.603</maven.sonar.plugin.version>
         <maven.jacoco.plugin.version>0.7.9</maven.jacoco.plugin.version>
         <jsr107.api.version>1.0.0</jsr107.api.version>
-        <bytebuddy.version>1.6.12</bytebuddy.version>
+        <bytebuddy.version>1.10.8</bytebuddy.version>
     </properties>
     <licenses>
         <license>
