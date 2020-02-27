@@ -37,7 +37,7 @@
         <maven.compiler.plugin.version>2.5.1</maven.compiler.plugin.version>
         <maven.animal.sniffer.plugin.version>1.14</maven.animal.sniffer.plugin.version>
         <maven.source.plugin.version>2.2.1</maven.source.plugin.version>
-        <maven.bundle.plugin.version>2.3.7</maven.bundle.plugin.version>
+        <maven.bundle.plugin.version>4.2.1</maven.bundle.plugin.version>
         <maven.jar.plugin.version>2.4</maven.jar.plugin.version>
         <maven.gpg.plugin.version>1.6</maven.gpg.plugin.version>
         <maven.javadoc.plugin.version>2.9</maven.javadoc.plugin.version>
