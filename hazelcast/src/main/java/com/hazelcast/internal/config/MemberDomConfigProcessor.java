@@ -1340,7 +1340,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 config.setProperty("connection-timeout-seconds", value);
             }
         }
-        for (Node n : childElements(node)) {            
+        for (Node n : childElements(node)) {
             String key = cleanNodeName(n, !"eureka".equals(n.getParentNode().getLocalName()));
             String value = getTextContent(n).trim();
             config.setProperty(key, value);
