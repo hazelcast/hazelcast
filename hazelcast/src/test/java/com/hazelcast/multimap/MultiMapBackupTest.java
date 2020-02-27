@@ -29,8 +29,11 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import static com.hazelcast.multimap.MultiMapTestUtil.getBackupMultiMap;
 import static org.junit.Assert.assertEquals;
@@ -50,54 +53,82 @@ public class MultiMapBackupTest extends HazelcastTestSupport {
     private TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
 
     @Test
-    public void testBackups() {
+    public void testBackupsPutAll() {
+        Consumer<MultiMap<Integer, Integer>> c = (o) -> {
+            Map<Integer, Collection<? extends Integer>> expectedMultiMap = new HashMap<>();
+            for (int i = 0; i < KEY_COUNT; i++) {
+                Collection<Integer> coll = new ArrayList<>();
+                for (int j = 0; j < VALUE_COUNT; j++) {
+                    coll.add(i + j);
+                }
+                expectedMultiMap.put(i, coll);
+            }
+            o.putAllAsync(expectedMultiMap);
+        };
+        testBackupsTemplate(MULTI_MAP_NAME, 3, 3, KEY_COUNT, VALUE_COUNT, c);
+    }
+
+    @Test
+    public void testBackupsPut() {
+        Consumer<MultiMap<Integer, Integer>> c = (o) -> {
+            for (int i = 0; i < KEY_COUNT; i++) {
+                for (int j = 0; j < VALUE_COUNT; j++) {
+                    o.put(i, i + j);
+                }
+            }
+        };
+
+        testBackupsTemplate(MULTI_MAP_NAME, BACKUP_COUNT, 2, KEY_COUNT, VALUE_COUNT, c);
+    }
+
+    public void testBackupsTemplate(String multiMapName, int backupCount, int asyncBackupCount,
+                                    int keyCount, int valueCount, Consumer c) {
+        int totalBackupCount = backupCount + asyncBackupCount;
         Config config = new Config();
-        config.getMultiMapConfig(MULTI_MAP_NAME)
-                .setBackupCount(BACKUP_COUNT)
-                .setAsyncBackupCount(0);
+        config.getMultiMapConfig(multiMapName)
+                .setBackupCount(backupCount)
+                .setAsyncBackupCount(asyncBackupCount);
 
         HazelcastInstance hz = factory.newHazelcastInstance(config);
-        MultiMap<Integer, Integer> multiMap = hz.getMultiMap(MULTI_MAP_NAME);
-        for (int i = 0; i < KEY_COUNT; i++) {
-            for (int j = 0; j < VALUE_COUNT; j++) {
-                multiMap.put(i, i + j);
-            }
-        }
+        MultiMap<Integer, Integer> multiMap = hz.getMultiMap(multiMapName);
+        c.accept(multiMap);
 
         // scale up
-        LOGGER.info("Scaling up to " + (BACKUP_COUNT + 1) + " members...");
-        for (int backupCount = 1; backupCount <= BACKUP_COUNT; backupCount++) {
+        LOGGER.info("Scaling up to " + (totalBackupCount + 1) + " members...");
+        for (int bc = 1; bc <= totalBackupCount; bc++) {
             factory.newHazelcastInstance(config);
             waitAllForSafeState(factory.getAllHazelcastInstances());
-            assertEquals(backupCount + 1, factory.getAllHazelcastInstances().iterator().next().getCluster().getMembers().size());
+            assertEquals(bc + 1, factory.getAllHazelcastInstances().iterator().next().getCluster().getMembers().size());
 
-            assertMultiMapBackups(backupCount);
+            assertMultiMapBackups(multiMapName, totalBackupCount, asyncBackupCount, keyCount, valueCount);
         }
 
         // scale down
         LOGGER.info("Scaling down to 1 member...");
-        for (int backupCount = BACKUP_COUNT - 1; backupCount > 0; backupCount--) {
+        for (int bc = totalBackupCount - 1; bc > 0; bc--) {
             factory.getAllHazelcastInstances().iterator().next().shutdown();
             waitAllForSafeState(factory.getAllHazelcastInstances());
-            assertEquals(backupCount + 1, factory.getAllHazelcastInstances().iterator().next().getCluster().getMembers().size());
+            assertEquals(bc + 1, factory.getAllHazelcastInstances().iterator().next().getCluster().getMembers().size());
 
-            assertMultiMapBackups(backupCount);
+            assertMultiMapBackups(multiMapName, totalBackupCount, asyncBackupCount, keyCount, valueCount);
         }
     }
 
-    private void assertMultiMapBackups(int backupCount) {
+    private void assertMultiMapBackups(String multiMapName, int backupCount, int asyncBackupCount,
+                                       int keyCount, int valueCount) {
+        int totalBackupCount = backupCount + asyncBackupCount;
         HazelcastInstance[] instances = factory.getAllHazelcastInstances().toArray(new HazelcastInstance[0]);
-        LOGGER.info("Testing " + backupCount + " backups on " + instances.length + " members");
+        LOGGER.info("Testing " + totalBackupCount + " backups on " + instances.length + " members");
 
-        Map<Integer, Collection<Integer>> backupCollection = getBackupMultiMap(instances, MULTI_MAP_NAME);
-        assertEqualsStringFormat("expected %d items in backupCollection, but found %d", KEY_COUNT, backupCollection.size());
-        for (int key = 0; key < KEY_COUNT; key++) {
+        Map<Integer, Collection<Integer>> backupCollection = getBackupMultiMap(instances, multiMapName);
+        assertEqualsStringFormat("expected %d items in backupCollection, but found %d", keyCount, backupCollection.size());
+        for (int key = 0; key < keyCount; key++) {
             assertTrue("backupCollection should contain key " + key, backupCollection.containsKey(key));
 
             Collection<Integer> values = backupCollection.get(key);
-            assertEquals("backupCollection for " + key + " should have " + VALUE_COUNT + " values " + values,
-                    VALUE_COUNT, values.size());
-            for (int i = 0; i < VALUE_COUNT; i++) {
+            assertEquals("backupCollection for " + key + " should have " + valueCount + " values " + values,
+                    valueCount, values.size());
+            for (int i = 0; i < valueCount; i++) {
                 assertTrue("backupCollection for " + key + " should contain value " + (key + i), values.contains(key + i));
             }
         }
