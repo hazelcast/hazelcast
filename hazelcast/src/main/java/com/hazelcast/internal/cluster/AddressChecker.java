@@ -14,18 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.impl.protocol.task;
+package com.hazelcast.internal.cluster;
+
+import com.hazelcast.cluster.Address;
 
 /**
- * Interface for all client message tasks to implement
+ * Interface for trust checks based on source {@link Address}.
  */
-public interface MessageTask extends Runnable {
+public interface AddressChecker {
 
     /**
-     * Returns {@code true} if current task is a management one and should be protected by additional access checks (e.g. the
-     * client source address).
+     * Returns {@code true} if the code is trusted.
      *
-     * @return {@code true} when the task is a protected management task; {@code false} otherwise
+     * @param address The {@link Address} to be checked.
+     * @return {@code true} when trusted; false otherwise
      */
-    boolean isManagementTask();
+    boolean isTrusted(Address address);
 }

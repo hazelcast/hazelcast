@@ -75,4 +75,9 @@ public class PromoteToCPMemberMessageTask extends AbstractAsyncMessageTask<Reque
     public Object[] getParameters() {
         return new Object[0];
     }
+
+    @Override
+    public boolean isManagementTask() {
+        return true;
+    }
 }

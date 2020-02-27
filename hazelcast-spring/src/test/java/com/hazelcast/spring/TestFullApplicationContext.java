@@ -1056,6 +1056,9 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         ManagementCenterConfig managementCenterConfig = config.getManagementCenterConfig();
         assertNotNull(managementCenterConfig);
         assertTrue(managementCenterConfig.isScriptingEnabled());
+        Set<String> tis = managementCenterConfig.getTrustedInterfaces();
+        assertEquals(1, tis.size());
+        assertEquals("10.1.2.*", tis.iterator().next());
     }
 
     @Test

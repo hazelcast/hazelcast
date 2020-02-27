@@ -103,4 +103,9 @@ public class AddWanBatchPublisherConfigMessageTask extends AbstractCallableMessa
                 parameters.queueCapacity, parameters.batchSize, parameters.batchMaxDelayMillis,
                 parameters.responseTimeoutMillis, parameters.ackType, parameters.queueFullBehavior};
     }
+
+    @Override
+    public boolean isManagementTask() {
+        return true;
+    }
 }

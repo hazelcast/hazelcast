@@ -75,4 +75,9 @@ public class RemoveCPMemberMessageTask extends AbstractAsyncMessageTask<RequestP
     public Object[] getParameters() {
         return new Object[] { parameters.cpMemberUuid };
     }
+
+    @Override
+    public boolean isManagementTask() {
+        return true;
+    }
 }

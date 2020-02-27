@@ -20,10 +20,9 @@ import java.util.Properties;
 
 import javax.security.auth.callback.CallbackHandler;
 
-
 /**
- * ICredentialsFactory is used to create {@link Credentials} objects to be used
- * during node authentication before connection is accepted by the master node.
+ * ICredentialsFactory is used to create {@link Credentials} objects to be used during node authentication before connection is
+ * accepted by the master node.
  */
 public interface ICredentialsFactory {
 

@@ -79,4 +79,9 @@ public class ClearWanQueuesMessageTask extends AbstractInvocationMessageTask<Req
     public Object[] getParameters() {
         return new Object[] {parameters.wanPublisherId, parameters.wanReplicationName};
     }
+
+    @Override
+    public boolean isManagementTask() {
+        return true;
+    }
 }

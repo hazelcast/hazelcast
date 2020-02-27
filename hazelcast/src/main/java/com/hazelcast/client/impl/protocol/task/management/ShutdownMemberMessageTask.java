@@ -71,4 +71,9 @@ public class ShutdownMemberMessageTask extends AbstractCallableMessageTask<Reque
     public Object[] getParameters() {
         return new Object[0];
     }
+
+    @Override
+    public boolean isManagementTask() {
+        return true;
+    }
 }

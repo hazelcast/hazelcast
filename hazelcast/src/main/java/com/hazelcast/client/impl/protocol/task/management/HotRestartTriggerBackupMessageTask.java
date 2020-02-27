@@ -95,4 +95,9 @@ public class HotRestartTriggerBackupMessageTask
     public Object[] getParameters() {
         return new Object[0];
     }
+
+    @Override
+    public boolean isManagementTask() {
+        return true;
+    }
 }

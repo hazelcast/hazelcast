@@ -175,10 +175,11 @@ public class ConfigXmlGenerator {
     }
 
     private void managementCenterXmlGenerator(XmlGenerator gen, Config config) {
-        if (config.getManagementCenterConfig() != null) {
-            ManagementCenterConfig mcConfig = config.getManagementCenterConfig();
+        ManagementCenterConfig mcConfig = config.getManagementCenterConfig();
+        if (mcConfig != null) {
             gen.open("management-center",
                     "scripting-enabled", mcConfig.isScriptingEnabled());
+            trustedInterfacesXmlGenerator(gen, mcConfig.getTrustedInterfaces());
             gen.close();
         }
     }
@@ -1216,14 +1217,18 @@ public class ConfigXmlGenerator {
                 .node("multicast-timeout-seconds", mcConfig.getMulticastTimeoutSeconds())
                 .node("multicast-time-to-live", mcConfig.getMulticastTimeToLive());
 
-        if (!mcConfig.getTrustedInterfaces().isEmpty()) {
+        trustedInterfacesXmlGenerator(gen, mcConfig.getTrustedInterfaces());
+        gen.close();
+    }
+
+    private static void trustedInterfacesXmlGenerator(XmlGenerator gen, Set<String> trustedInterfaces) {
+        if (!trustedInterfaces.isEmpty()) {
             gen.open("trusted-interfaces");
-            for (String trustedInterface : mcConfig.getTrustedInterfaces()) {
+            for (String trustedInterface : trustedInterfaces) {
                 gen.node("interface", trustedInterface);
             }
             gen.close();
         }
-        gen.close();
     }
 
     private static void tcpConfigXmlGenerator(XmlGenerator gen, JoinConfig join) {
