@@ -864,7 +864,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
                                 long maxIdle, @Nonnull TimeUnit maxIdleUnit);
 
     /**
-     * Asynchronously puts the given map entry in the map store
+     * Asynchronously puts the given map entry in the map store.
+     * This version doesn't support batching. Don't mutate the given map until the future completes.
      * <pre>{@code
      *     CompletionStage<Void> future = map.putAllAsync(map);
      *     // do some other stuff, when ready wait for completion
@@ -1108,8 +1109,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
     CompletionStage<Void> setAsync(@Nonnull K key, @Nonnull V value,
                                    long ttl, @Nonnull TimeUnit ttlUnit,
                                    long maxIdle, @Nonnull TimeUnit maxIdleUnit);
-
-
 
     /**
      * Asynchronously removes the given key, returning an {@link CompletionStage}
