@@ -82,4 +82,9 @@ public class RunScriptMessageTask extends AbstractInvocationMessageTask<RequestP
                 parameters.engine
         };
     }
+
+    @Override
+    public boolean isManagementTask() {
+        return true;
+    }
 }

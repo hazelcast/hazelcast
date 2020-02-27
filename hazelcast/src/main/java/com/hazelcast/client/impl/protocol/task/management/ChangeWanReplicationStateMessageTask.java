@@ -83,4 +83,9 @@ public class ChangeWanReplicationStateMessageTask extends AbstractInvocationMess
     public Object[] getParameters() {
         return new Object[] {parameters.wanReplicationName, parameters.wanPublisherId, parameters.newState};
     }
+
+    @Override
+    public boolean isManagementTask() {
+        return true;
+    }
 }

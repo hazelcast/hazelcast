@@ -79,4 +79,9 @@ public class GetThreadDumpMessageTask extends AbstractInvocationMessageTask<Requ
     public Object[] getParameters() {
         return new Object[]{parameters.dumpDeadLocks};
     }
+
+    @Override
+    public boolean isManagementTask() {
+        return true;
+    }
 }

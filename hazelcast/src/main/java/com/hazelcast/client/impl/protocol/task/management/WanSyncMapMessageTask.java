@@ -101,4 +101,9 @@ public class WanSyncMapMessageTask extends AbstractCallableMessageTask<RequestPa
                 parameters.mapName
         };
     }
+
+    @Override
+    public boolean isManagementTask() {
+        return true;
+    }
 }

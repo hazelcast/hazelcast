@@ -102,7 +102,14 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
     @Override
     public final void run() {
         try {
-            if (requiresAuthentication() && !endpoint.isAuthenticated()) {
+            Address address = connection.getEndPoint();
+            if (isManagementTask() && !clientEngine.getManagementTasksChecker().isTrusted(address)) {
+                String message = "The client address " + address + " is not allowed for management task "
+                        + getClass().getName();
+                logger.info(message);
+                sendClientMessage(new AuthenticationException(message));
+                connection.close(message, null);
+            } else if (requiresAuthentication() && !endpoint.isAuthenticated()) {
                 handleAuthenticationFailure();
             } else {
                 initializeAndProcessMessage();
@@ -336,4 +343,15 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
 
         return peel(t);
     }
+
+
+    /**
+     * The default implementation returns false. Child classes which implements a logic related to a management operation should
+     * override it and return true so the proper access control mechanism is used.
+     */
+    @Override
+    public boolean isManagementTask() {
+        return false;
+    }
+
 }

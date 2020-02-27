@@ -72,4 +72,9 @@ public class MatchMCConfigMessageTask extends AbstractCallableMessageTask<Reques
     public Object[] getParameters() {
         return new Object[]{parameters.eTag};
     }
+
+    @Override
+    public boolean isManagementTask() {
+        return true;
+    }
 }
