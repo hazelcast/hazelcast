@@ -26,6 +26,7 @@ import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.TestProcessors;
 import com.hazelcast.jet.test.SerialTest;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -37,7 +38,7 @@ import org.junit.runner.RunWith;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(SerialTest.class)
+@Category({SerialTest.class, SlowTest.class})
 public class MulticastDiscoveryTest extends JetTestSupport {
 
     private static final String UNABLE_TO_CONNECT_MESSAGE = "Unable to connect";

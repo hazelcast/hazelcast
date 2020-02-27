@@ -17,51 +17,71 @@
 package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.JetTestSupport;
-import org.apache.log4j.AppenderSkeleton;
-import org.apache.log4j.Logger;
-import org.apache.log4j.spi.LoggingEvent;
+import com.hazelcast.jet.test.SerialTest;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.junit.experimental.categories.Category;
 
-import java.util.List;
-
-import static org.mockito.Mockito.atMost;
-import static org.mockito.Mockito.verify;
-
-@RunWith(MockitoJUnitRunner.class)
+@Category(SerialTest.class)
 public class LoggerSinkTest extends JetTestSupport {
 
-    @Mock AppenderSkeleton appender;
-    @Captor ArgumentCaptor<LoggingEvent> logCaptor;
+    private static final String HAZELCAST_LOGGING_TYPE = "hazelcast.logging.type";
+    private static final String HAZELCAST_LOGGING_CLASS = "hazelcast.logging.class";
+
+    private String prevLoggingType;
+    private String prevLoggingClass;
+
+    @Before
+    public void setup() {
+        prevLoggingType = System.getProperty(HAZELCAST_LOGGING_TYPE);
+        prevLoggingClass = System.getProperty(HAZELCAST_LOGGING_CLASS);
+
+        System.clearProperty(HAZELCAST_LOGGING_TYPE);
+        System.setProperty(HAZELCAST_LOGGING_CLASS, MockLoggingFactory.class.getCanonicalName());
+    }
 
     @Test
     public void loggerSink() {
         // Given
-        JetInstance jet = createJetMember();
+        JetConfig jetConfig = new JetConfig();
+        JetInstance jet = createJetMember(jetConfig);
         String srcName = randomName();
-        Logger.getRootLogger().addAppender(appender);
+
         jet.getList(srcName).add(0);
+
         Pipeline p = Pipeline.create();
 
         // When
         p.readFrom(Sources.<Integer>list(srcName))
          .map(i -> i + "-shouldBeSeenOnTheSystemOutput")
          .writeTo(Sinks.logger());
+
         jet.newJob(p).join();
-        verify(appender, atMost(1000)).doAppend(logCaptor.capture());
 
         // Then
-        List<LoggingEvent> allValues = logCaptor.getAllValues();
-        boolean match = allValues
-                .stream()
-                .map(LoggingEvent::getRenderedMessage)
-                .anyMatch(message -> message.contains("0-shouldBeSeenOnTheSystemOutput"));
-        Assert.assertTrue(match);
+        Assert.assertTrue("no message containing '0-shouldBeSeenOnTheSystemOutput' was found",
+                MockLoggingFactory.capturedMessages
+                        .stream()
+                        .anyMatch(message -> message.contains("0-shouldBeSeenOnTheSystemOutput"))
+        );
     }
+
+    @After
+    public void after() {
+        if (prevLoggingType == null) {
+            System.clearProperty(HAZELCAST_LOGGING_TYPE);
+        } else {
+            System.setProperty(HAZELCAST_LOGGING_TYPE, prevLoggingType);
+        }
+        if (prevLoggingClass == null) {
+            System.clearProperty(HAZELCAST_LOGGING_CLASS);
+        } else {
+            System.setProperty(HAZELCAST_LOGGING_CLASS, prevLoggingClass);
+        }
+    }
+
 }
