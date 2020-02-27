@@ -34,8 +34,8 @@
         <mockito.version>1.10.19</mockito.version>
         <log4j.version>1.2.12</log4j.version>
 
+        <maven.animal.sniffer.plugin.version>1.18</maven.animal.sniffer.plugin.version>
         <maven.compiler.plugin.version>3.8.1</maven.compiler.plugin.version>
-        <maven.animal.sniffer.plugin.version>1.14</maven.animal.sniffer.plugin.version>
         <maven.source.plugin.version>2.2.1</maven.source.plugin.version>
         <maven.bundle.plugin.version>4.2.1</maven.bundle.plugin.version>
         <maven.jar.plugin.version>3.2.0</maven.jar.plugin.version>
@@ -94,13 +94,13 @@
                 <configuration>
                     <signature>
                         <groupId>org.codehaus.mojo.signature</groupId>
-                        <artifactId>java16</artifactId>
+                        <artifactId>java18</artifactId>
                         <version>1.0</version>
                     </signature>
                 </configuration>
                 <executions>
                     <execution>
-                        <id>source-java6-check</id>
+                        <id>source-java8-check</id>
                         <phase>compile</phase>
                         <goals>
                             <goal>check</goal>
