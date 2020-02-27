@@ -329,6 +329,19 @@ public final class Preconditions {
     }
 
     /**
+     * Tests whether the supplied expression is {@code true}.
+     *
+     * @param expression   the expression tested to see if it is {@code true}.
+     * @param errorMessage the exception message.
+     * @throws java.lang.UnsupportedOperationException if the supplied expression is {@code false}.
+     */
+    public static void checkTrueUnsupportedOperation(boolean expression, String errorMessage) {
+        if (!expression) {
+            throw new UnsupportedOperationException(errorMessage);
+        }
+    }
+
+    /**
      * Check if iterator has next element. If not throw NoSuchElementException
      *
      * @param iterator
