@@ -110,5 +110,9 @@ public class HazelcastSqlException extends HazelcastException {
         return originatingMemberId;
     }
 
-    // TODO: Override getMessage to output the code and originating member ID
+    @Override
+    public String getMessage() {
+        // TODO: Override getMessage to output originating member ID as well.
+        return super.getMessage() + " (error code " + code + ')';
+    }
 }

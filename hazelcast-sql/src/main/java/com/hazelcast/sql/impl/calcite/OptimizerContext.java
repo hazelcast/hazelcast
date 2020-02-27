@@ -42,6 +42,7 @@ import com.hazelcast.sql.impl.calcite.opt.physical.join.JoinPhysicalRule;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.sql.impl.calcite.schema.SchemaUtils;
 import com.hazelcast.sql.impl.calcite.statistics.StatisticProvider;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.schema.SqlSchemaResolver;
 import org.apache.calcite.adapter.java.JavaTypeFactory;
 import org.apache.calcite.avatica.util.Casing;
@@ -194,11 +195,11 @@ public final class OptimizerContext {
             SqlParser parser = SqlParser.create(sql, parserConfig.build());
 
             node = parser.parseStmt();
+
+            return validator.validate(node);
         } catch (Exception e) {
             throw HazelcastSqlException.error(SqlErrorCode.PARSING, e.getMessage(), e);
         }
-
-        return validator.validate(node);
     }
 
     /**

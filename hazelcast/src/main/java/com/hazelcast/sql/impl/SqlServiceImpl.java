@@ -72,6 +72,7 @@ import java.util.function.Consumer;
 /**
  * Proxy for SQL service. Backed by either Calcite-based or no-op implementation.
  */
+// TODO: Stop (do not propagate cancel!) all queries on member stop.
 @SuppressWarnings({"checkstyle:ClassFanOutComplexity", "checkstyle:ClassDataAbstractionCoupling"})
 public class SqlServiceImpl implements SqlService, ManagedService, ClientAwareService, Consumer<Packet> {
     /** Default state check frequency. */
