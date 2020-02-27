@@ -69,6 +69,7 @@ import com.hazelcast.transaction.impl.Transaction;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.EventListener;
 import java.util.HashMap;
@@ -95,13 +96,14 @@ import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static java.lang.Thread.currentThread;
+import static java.util.Collections.EMPTY_MAP;
 
 @SuppressWarnings({"checkstyle:classfanoutcomplexity", "checkstyle:methodcount"})
 public class MultiMapService implements ManagedService, RemoteService, FragmentedMigrationAwareService,
-                                        EventPublishingService<EventData, EntryListener>, TransactionalService,
-                                        StatisticsAwareService<LocalMultiMapStats>,
-                                        SplitBrainProtectionAwareService, SplitBrainHandlerService, LockInterceptorService<Data>,
-                                        DynamicMetricsProvider {
+        EventPublishingService<EventData, EntryListener>, TransactionalService,
+        StatisticsAwareService<LocalMultiMapStats>,
+        SplitBrainProtectionAwareService, SplitBrainHandlerService, LockInterceptorService<Data>,
+        DynamicMetricsProvider {
 
     public static final String SERVICE_NAME = "hz:impl:multiMapService";
 
@@ -124,13 +126,13 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
     private final ContextMutexFactory splitBrainProtectionConfigCacheMutexFactory = new ContextMutexFactory();
     private final ConstructorFunction<String, Object> splitBrainProtectionConfigConstructor =
             new ConstructorFunction<String, Object>() {
-        @Override
-        public Object createNew(String name) {
-            MultiMapConfig multiMapConfig = nodeEngine.getConfig().findMultiMapConfig(name);
-            String splitBrainProtectionName = multiMapConfig.getSplitBrainProtectionName();
-            return splitBrainProtectionName == null ? NULL_OBJECT : splitBrainProtectionName;
-        }
-    };
+                @Override
+                public Object createNew(String name) {
+                    MultiMapConfig multiMapConfig = nodeEngine.getConfig().findMultiMapConfig(name);
+                    String splitBrainProtectionName = multiMapConfig.getSplitBrainProtectionName();
+                    return splitBrainProtectionName == null ? NULL_OBJECT : splitBrainProtectionName;
+                }
+            };
 
     public MultiMapService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -184,9 +186,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
     @Override
     public void shutdown(boolean terminate) {
         reset();
-        for (int i = 0; i < partitionContainers.length; i++) {
-            partitionContainers[i] = null;
-        }
+        Arrays.fill(partitionContainers, null);
     }
 
     public MultiMapContainer getOrCreateCollectionContainer(int partitionId, String name) {
@@ -258,28 +258,28 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
     }
 
     public UUID addListener(String name,
-                              @Nonnull EventListener listener,
-                              Data key,
-                              boolean includeValue) {
+                            @Nonnull EventListener listener,
+                            Data key,
+                            boolean includeValue) {
         EventService eventService = nodeEngine.getEventService();
         MultiMapEventFilter filter = new MultiMapEventFilter(includeValue, key);
         return eventService.registerListener(SERVICE_NAME, name, filter, listener).getId();
     }
 
     public CompletableFuture<UUID> addListenerAsync(String name,
-                                                   @Nonnull EventListener listener,
-                                                   Data key,
-                                                   boolean includeValue) {
+                                                    @Nonnull EventListener listener,
+                                                    Data key,
+                                                    boolean includeValue) {
         EventService eventService = nodeEngine.getEventService();
         MultiMapEventFilter filter = new MultiMapEventFilter(includeValue, key);
         return eventService.registerListenerAsync(SERVICE_NAME, name, filter, listener)
-                           .thenApplyAsync(EventRegistration::getId, CALLER_RUNS);
+                .thenApplyAsync(EventRegistration::getId, CALLER_RUNS);
     }
 
     public UUID addLocalListener(String name,
-                              @Nonnull EventListener listener,
-                              Data key,
-                              boolean includeValue) {
+                                 @Nonnull EventListener listener,
+                                 Data key,
+                                 boolean includeValue) {
         EventService eventService = nodeEngine.getEventService();
         MultiMapEventFilter filter = new MultiMapEventFilter(includeValue, key);
         return eventService.registerLocalListener(SERVICE_NAME, name, filter, listener).getId();
@@ -298,9 +298,6 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
     @Override
     public Collection<ServiceNamespace> getAllServiceNamespaces(PartitionReplicationEvent event) {
         MultiMapPartitionContainer partitionContainer = partitionContainers[event.getPartitionId()];
-        if (partitionContainer == null) {
-            return null;
-        }
         return partitionContainer.getAllNamespaces(event.getReplicaIndex());
     }
 
@@ -316,18 +313,17 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
     @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
         MultiMapPartitionContainer partitionContainer = partitionContainers[event.getPartitionId()];
-        if (partitionContainer == null) {
-            return null;
-        }
         return prepareReplicationOperation(event, partitionContainer.getAllNamespaces(event.getReplicaIndex()));
     }
 
     @Override
-    public Operation prepareReplicationOperation(PartitionReplicationEvent event, Collection<ServiceNamespace> namespaces) {
-        MultiMapPartitionContainer partitionContainer = partitionContainers[event.getPartitionId()];
-        if (partitionContainer == null) {
+    public Operation prepareReplicationOperation(PartitionReplicationEvent event,
+                                                 Collection<ServiceNamespace> namespaces) {
+        if (namespaces.isEmpty()) {
             return null;
         }
+
+        MultiMapPartitionContainer partitionContainer = partitionContainers[event.getPartitionId()];
 
         int replicaIndex = event.getReplicaIndex();
         Map<String, Map<Data, MultiMapValue>> map = createHashMap(namespaces.size());
@@ -489,12 +485,19 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
 
     @Override
     public Map<String, LocalMultiMapStats> getStats() {
-        Map<String, LocalMultiMapStats> multiMapStats = new HashMap<>();
-        for (MultiMapPartitionContainer partitionContainer : partitionContainers) {
-            if (partitionContainer != null) {
-                for (String name : partitionContainer.containerMap.keySet()) {
+        Map<String, LocalMultiMapStats> multiMapStats = EMPTY_MAP;
+
+        for (int i = 0; i < partitionContainers.length; i++) {
+            MultiMapPartitionContainer container = partitionContainers[i];
+            if (!container.containerMap.isEmpty()) {
+                for (String name : container.containerMap.keySet()) {
                     if (!multiMapStats.containsKey(name)
-                        && partitionContainer.getMultiMapContainer(name, false).config.isStatisticsEnabled()) {
+                            && container.getMultiMapContainer(name, false).config.isStatisticsEnabled()) {
+
+                        if (multiMapStats == EMPTY_MAP) {
+                            multiMapStats = new HashMap<>();
+                        }
+
                         multiMapStats.put(name, createStats(name));
                     }
                 }
@@ -554,7 +557,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
     }
 
     private class Merger extends
-                         AbstractContainerMerger<MultiMapContainer, Collection<Object>, MultiMapMergeTypes<Object, Object>> {
+            AbstractContainerMerger<MultiMapContainer, Collection<Object>, MultiMapMergeTypes<Object, Object>> {
 
         Merger(MultiMapContainerCollector collector) {
             super(collector, nodeEngine);

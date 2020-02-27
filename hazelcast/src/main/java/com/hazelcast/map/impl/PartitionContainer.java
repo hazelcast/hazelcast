@@ -16,27 +16,28 @@
 
 package com.hazelcast.map.impl;
 
-import com.hazelcast.internal.locksupport.LockSupportService;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.eviction.ExpirationManager;
-import com.hazelcast.map.impl.operation.MapClearExpiredOperation;
-import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.query.impl.Indexes;
-import com.hazelcast.spi.impl.executionservice.ExecutionService;
-import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.internal.services.ObjectNamespace;
-import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.internal.services.ServiceNamespace;
+import com.hazelcast.internal.locksupport.LockSupportService;
 import com.hazelcast.internal.partition.IPartitionService;
-import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.internal.services.ObjectNamespace;
+import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.ContextMutexFactory;
+import com.hazelcast.map.impl.operation.MapClearExpiredOperation;
+import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
+import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
 
 import javax.annotation.Nullable;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -51,10 +52,10 @@ public class PartitionContainer {
     private final ConcurrentMap<String, Indexes> indexes = new ConcurrentHashMap<>(10);
     private final ConstructorFunction<String, RecordStore> recordStoreConstructor
             = name -> {
-                RecordStore recordStore = createRecordStore(name);
-                recordStore.startLoading();
-                return recordStore;
-            };
+        RecordStore recordStore = createRecordStore(name);
+        recordStore.startLoading();
+        return recordStore;
+    };
     private final ConstructorFunction<String, RecordStore> recordStoreConstructorSkipLoading
             = this::createRecordStore;
 
@@ -116,19 +117,26 @@ public class PartitionContainer {
     }
 
     public Collection<RecordStore> getAllRecordStores() {
-        return maps.values();
+        return maps.isEmpty() ? Collections.emptyList() : maps.values();
     }
 
     public Collection<ServiceNamespace> getAllNamespaces(int replicaIndex) {
-        Collection<ServiceNamespace> namespaces = new HashSet<>();
+        if (maps.isEmpty()) {
+            return Collections.emptyList();
+        }
 
+        Collection<ServiceNamespace> namespaces = Collections.EMPTY_LIST;
         for (RecordStore recordStore : maps.values()) {
             MapContainer mapContainer = recordStore.getMapContainer();
             MapConfig mapConfig = mapContainer.getMapConfig();
+
             if (mapConfig.getTotalBackupCount() < replicaIndex) {
                 continue;
             }
 
+            if (namespaces == Collections.EMPTY_LIST) {
+                namespaces = new LinkedList<>();
+            }
             namespaces.add(mapContainer.getObjectNamespace());
         }
 

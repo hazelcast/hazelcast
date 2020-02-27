@@ -29,12 +29,13 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.internal.util.Clock;
-import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -135,6 +136,10 @@ public class CacheSerializationTest extends HazelcastTestSupport {
 
                 int replicaIndex = 1;
                 Collection<ServiceNamespace> namespaces = segment.getAllNamespaces(replicaIndex);
+                if (CollectionUtil.isEmpty(namespaces)) {
+                    continue;
+                }
+
                 CacheReplicationOperation operation = new CacheReplicationOperation();
                 operation.prepare(segment, namespaces, replicaIndex);
                 Data serialized = service.toData(operation);

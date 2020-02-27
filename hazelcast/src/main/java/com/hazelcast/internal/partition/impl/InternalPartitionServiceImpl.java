@@ -76,7 +76,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -982,7 +981,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
 
     @Override
     public List<Integer> getMemberPartitions(Address target) {
-        List<Integer> ownedPartitions = new LinkedList<>();
+        List<Integer> ownedPartitions = new ArrayList<>();
         for (int i = 0; i < partitionCount; i++) {
             final Address owner = getPartitionOwner(i);
             if (target.equals(owner)) {
