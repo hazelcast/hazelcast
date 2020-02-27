@@ -451,7 +451,6 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         putAllInternal(map, null);
     }
 
-    // used by jet
     @Override
     public InternalCompletableFuture<Void> putAllAsync(@Nonnull Map<? extends K, ? extends V> map) {
         checkNotNull(map, "Null argument map is not allowed");

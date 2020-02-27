@@ -1549,9 +1549,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         }
     }
 
-    /**
-     * Async version of {@link #executeOnKeys}.
-     */
+    @Override
     public <R> InternalCompletableFuture<Map<K, R>> submitToKeys(@Nonnull Set<K> keys,
                                                                  @Nonnull EntryProcessor<K, V, R> entryProcessor) {
         checkNotNull(keys, NULL_KEY_IS_NOT_ALLOWED);
@@ -1603,7 +1601,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         putAllInternal(m, null);
     }
 
-    // used by Jet
+    @Override
     public InternalCompletableFuture<Void> putAllAsync(@Nonnull Map<? extends K, ? extends V> m) {
         InternalCompletableFuture<Void> future = new InternalCompletableFuture<>();
         putAllInternal(m, future);
