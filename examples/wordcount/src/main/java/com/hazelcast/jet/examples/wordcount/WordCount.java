@@ -30,6 +30,7 @@ import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
@@ -72,18 +73,20 @@ public class WordCount {
     /**
      * This code illustrates a few more things about Jet, new in 0.5. See comments.
      */
-    private void go() {
+    private void go() throws Exception {
         try {
             setup();
-            System.out.print("\nCounting words... ");
+            System.out.println("\nCounting words... ");
             long start = System.nanoTime();
             Pipeline p = buildPipeline();
             Observable<Entry<String, Long>> observable = jet.getObservable(COUNTS);
-            observable.toFuture(s -> s.collect(toMap(Entry::getKey, Entry::getValue)))
-                    .thenApply(WordCount::checkResults)
-                    .thenAccept(WordCount::printResults);
+            CompletableFuture<Map<String, Long>> f
+                    = observable.toFuture(s -> s.collect(toMap(Entry::getKey, Entry::getValue)));
             jet.newJob(p).join();
-            System.out.print("done in " + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start) + " milliseconds.");
+            System.out.println("done in " + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start) + " milliseconds.");
+            Map<String, Long> results = f.get();
+            checkResults(results);
+            printResults(results);
         } finally {
             Jet.shutdownAll();
         }
