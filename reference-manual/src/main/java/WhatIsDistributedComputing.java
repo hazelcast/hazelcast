@@ -34,10 +34,9 @@ import static com.hazelcast.jet.Traversers.traverseArray;
 public class WhatIsDistributedComputing {
     static void s1() {
         //tag::s1[]
-        Pattern delimiter = Pattern.compile("\\W+");
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.<Long, String>map("book-lines"))
-         .flatMap(e -> traverseArray(delimiter.split(e.getValue().toLowerCase())))
+         .flatMap(e -> traverseArray(e.getValue().toLowerCase().split("\\W+")))
          .filter(word -> !word.isEmpty())
          .groupingKey(wholeItem())
          .aggregate(AggregateOperations.counting())
@@ -46,8 +45,8 @@ public class WhatIsDistributedComputing {
     }
 
     static void s2() {
-        List<String> lines = new ArrayList<>();
         //tag::s2[]
+        List<String> lines = someExistingList();
         Map<String, Long> counts =
                 lines.stream()
                      .flatMap(line -> Arrays.stream(line.toLowerCase().split("\\W+")))
