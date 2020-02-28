@@ -119,4 +119,14 @@ public class ClientTopicTest {
         assertTrue(latch.await(20, TimeUnit.SECONDS));
         assertTrue(receivedMessages.containsAll(messages));
     }
+
+    @Test(expected = NullPointerException.class)
+    public void testPublishAllException() {
+        ITopic<Integer> topic = client.getTopic(randomString());
+        Collection<Integer> messages = new ArrayList<>();
+        messages.add(1);
+        messages.add(null);
+        messages.add(3);
+        topic.publishAll(messages);
+    }
 }

@@ -132,7 +132,7 @@ public class TopicTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testTopicPublishingAllMember() {
+    public void testTopicPublishingAll() {
         final int nodeCount = 3;
         final String randomName = "testTopicPublishinAllgMember" + generateRandomString(5);
 
@@ -181,6 +181,26 @@ public class TopicTest extends HazelcastTestSupport {
                 assertEquals(nodeCount, count3.get());
             }
         });
+    }
+
+
+    @Test(expected = NullPointerException.class)
+    public void testTopicPublishingAllException() {
+        final int nodeCount = 1;
+        final String randomName = "testTopicPublishingAllException" + generateRandomString(5);
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
+        HazelcastInstance[] instances = factory.newInstances();
+
+        Collection<Integer> messages = new ArrayList<>();
+        messages.add(1);
+        messages.add(null);
+        messages.add(3);
+
+        for (int i = 0; i < nodeCount; i++) {
+            HazelcastInstance instance = instances[i];
+            instance.getTopic(randomName).publishAll(messages);
+        }
     }
 
     @Test
