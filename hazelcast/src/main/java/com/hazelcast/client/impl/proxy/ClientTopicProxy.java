@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.impl.proxy;
 
-import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.TopicAddMessageListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.TopicPublishCodec;
@@ -34,7 +33,6 @@ import com.hazelcast.topic.impl.DataAwareMessage;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
-import java.util.Optional;
 import java.util.UUID;
 
 import static com.hazelcast.internal.util.Preconditions.checkNoNullInside;
