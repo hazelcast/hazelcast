@@ -16,6 +16,7 @@
 
 package com.hazelcast.query.impl.predicates;
 
+import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.internal.json.NonTerminalJsonValue;
 import com.hazelcast.nio.ObjectDataInput;
@@ -31,7 +32,10 @@ import com.hazelcast.query.impl.getters.AbstractJsonGetter;
 import com.hazelcast.query.impl.getters.MultiResult;
 
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -134,10 +138,25 @@ public abstract class AbstractPredicate<K, V> implements Predicate<K, V>, Identi
             } else if (entryAttributeType != null) {
                 return entryAttributeType.getConverter().convert(givenAttributeValue);
             } else {
+                TypeConverter tc = inferTypeConverter(entryAttributeClass);
+                if (tc != null) {
+                    return tc.convert(givenAttributeValue);
+                }
                 throw new QueryException("Unknown attribute type: " + givenAttributeValue.getClass().getName()
                         + " for attribute: " + attributeName);
             }
         }
+    }
+    
+    private static final Map<Class<?>, TypeConverter> inferTypeList = new HashMap<>();
+
+    static {
+        inferTypeList.put(LocalDate.class, AttributeType.LOCALDATE.getConverter());
+        inferTypeList.put(LocalDateTime.class, AttributeType.LOCALDATE_TIME.getConverter());
+    }
+
+    private TypeConverter inferTypeConverter(Class<?> clz) {
+        return inferTypeList.get(clz);
     }
 
     private Object readAttributeValue(Map.Entry entry) {

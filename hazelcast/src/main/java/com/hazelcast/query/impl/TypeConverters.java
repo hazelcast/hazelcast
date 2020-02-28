@@ -16,15 +16,17 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.core.TypeConverter;
-import com.hazelcast.nio.serialization.Portable;
+import static com.hazelcast.query.impl.AbstractIndex.NULL;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Date;
 
-import static com.hazelcast.query.impl.AbstractIndex.NULL;
+import com.hazelcast.core.TypeConverter;
+import com.hazelcast.nio.serialization.Portable;
 
 public final class TypeConverters {
 
@@ -47,6 +49,8 @@ public final class TypeConverters {
     public static final TypeConverter NULL_CONVERTER = new IdentityConverter();
     public static final TypeConverter UUID_CONVERTER = new UUIDConverter();
     public static final TypeConverter PORTABLE_CONVERTER = new PortableConverter();
+    public static final TypeConverter LOCALDATE_CONVERTER = new LocalDateConverter();
+    public static final TypeConverter LOCALDATE_TIME_CONVERTER = new LocalDateTimeConverter();
 
     private TypeConverters() {
     }
@@ -93,6 +97,32 @@ public final class TypeConverters {
                 return new java.sql.Date(number.longValue());
             }
             throw new IllegalArgumentException("Cannot convert [" + value + "] to java.sql.Date");
+        }
+
+    }
+    
+    static class LocalDateConverter extends BaseTypeConverter {
+
+        @Override
+        Comparable convertInternal(Comparable value) {
+            if (value instanceof LocalDate) {
+                return value;
+            }
+            return LocalDateHelper.toLocalDate((String)value);
+//            throw new IllegalArgumentException("Cannot convert [" + value + "] to java.time.LocalDate");
+        }
+
+    }
+    
+    static class LocalDateTimeConverter extends BaseTypeConverter {
+
+        @Override
+        Comparable convertInternal(Comparable value) {
+            if (value instanceof LocalDateTime) {
+                return value;
+            }
+            return LocalDateHelper.toLocalDateTime((String)value);
+//            throw new IllegalArgumentException("Cannot convert [" + value + "] to java.time.LocalDate");
         }
 
     }
