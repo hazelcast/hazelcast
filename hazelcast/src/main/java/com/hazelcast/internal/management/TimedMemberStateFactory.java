@@ -16,17 +16,25 @@
 
 package com.hazelcast.internal.management;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import java.util.function.ToLongFunction;
+
+import javax.annotation.Nonnull;
+
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.client.Client;
 import com.hazelcast.client.impl.statistics.ClientStatistics;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.impl.MemberImpl;
-import com.hazelcast.collection.LocalCollectionStats;
 import com.hazelcast.collection.LocalQueueStats;
-import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
-import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ManagementCenterConfig;
@@ -73,17 +81,6 @@ import com.hazelcast.topic.LocalTopicStats;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 import com.hazelcast.wan.impl.WanReplicationService;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
-import java.util.function.ToLongFunction;
-
-import javax.annotation.Nonnull;
 
 import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
@@ -268,10 +265,6 @@ public class TimedMemberStateFactory {
                 count = handleMultimap(memberState, count, config, ((MultiMapService) service).getStats());
             } else if (service instanceof QueueService) {
                 count = handleQueue(memberState, count, config, ((QueueService) service).getStats());
-            } else if (service instanceof ListService) {
-                count = handleList(memberState, count, config, ((ListService) service).getStats());
-            } else if (service instanceof SetService) {
-                count = handleSet(memberState, count, config, ((SetService) service).getStats());
             } else if (service instanceof TopicService) {
                 count = handleTopic(memberState, count, config, ((TopicService) service).getStats());
             } else if (service instanceof ReliableTopicService) {
@@ -394,30 +387,6 @@ public class TimedMemberStateFactory {
             if (config.findQueueConfig(name).isStatisticsEnabled()) {
                 LocalQueueStats stats = entry.getValue();
                 memberState.putLocalQueueStats(name, stats);
-                ++count;
-            }
-        }
-        return count;
-    }
-
-    private int handleList(MemberStateImpl memberState, int count, Config config, Map<String, LocalCollectionStats> lists) {
-        for (Map.Entry<String, LocalCollectionStats> entry : lists.entrySet()) {
-            String name = entry.getKey();
-            if (config.findListConfig(name).isStatisticsEnabled()) {
-                LocalCollectionStats stats = entry.getValue();
-                memberState.putLocalListStats(name, stats);
-                ++count;
-            }
-        }
-        return count;
-    }
-
-    private int handleSet(MemberStateImpl memberState, int count, Config config, Map<String, LocalCollectionStats> sets) {
-        for (Map.Entry<String, LocalCollectionStats> entry : sets.entrySet()) {
-            String name = entry.getKey();
-            if (config.findListConfig(name).isStatisticsEnabled()) {
-                LocalCollectionStats stats = entry.getValue();
-                memberState.putLocalSetStats(name, stats);
                 ++count;
             }
         }

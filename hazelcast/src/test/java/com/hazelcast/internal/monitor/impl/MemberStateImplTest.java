@@ -16,6 +16,15 @@
 
 package com.hazelcast.internal.monitor.impl;
 
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.UUID;
+
 import com.hazelcast.cache.impl.CacheStatisticsImpl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
@@ -43,15 +52,6 @@ import com.hazelcast.wan.impl.WanSyncStatus;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.UUID;
 
 import static com.hazelcast.config.HotRestartClusterDataRecoveryPolicy.FULL_RECOVERY_ONLY;
 import static com.hazelcast.test.Accessors.getHazelcastInstanceImpl;
@@ -130,8 +130,6 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         memberState.putLocalMapStats("mapStats", new LocalMapStatsImpl());
         memberState.putLocalMultiMapStats("multiMapStats", new LocalMultiMapStatsImpl());
         memberState.putLocalQueueStats("queueStats", new LocalQueueStatsImpl());
-        memberState.putLocalListStats("listStats", new LocalCollectionStatsImpl());
-        memberState.putLocalSetStats("setStats", new LocalCollectionStatsImpl());
         memberState.putLocalTopicStats("topicStats", new LocalTopicStatsImpl());
         memberState.putLocalReliableTopicStats("reliableTopicStats", new LocalTopicStatsImpl());
         memberState.putLocalPNCounterStats("pnCounterStats", new LocalPNCounterStatsImpl());
@@ -164,8 +162,6 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         assertNotNull(deserialized.getLocalMapStats("mapStats").toString());
         assertNotNull(deserialized.getLocalMultiMapStats("multiMapStats").toString());
         assertNotNull(deserialized.getLocalQueueStats("queueStats").toString());
-        assertNotNull(deserialized.getLocalListStats("listStats").toString());
-        assertNotNull(deserialized.getLocalSetStats("setStats").toString());
         assertNotNull(deserialized.getLocalTopicStats("topicStats").toString());
         assertNotNull(deserialized.getReliableLocalTopicStats("reliableTopicStats").toString());
         assertNotNull(deserialized.getLocalPNCounterStats("pnCounterStats").toString());

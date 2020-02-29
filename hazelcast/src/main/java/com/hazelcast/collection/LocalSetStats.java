@@ -16,26 +16,11 @@
 
 package com.hazelcast.collection;
 
-import com.hazelcast.instance.LocalInstanceStats;
 import com.hazelcast.internal.monitor.MemberState;
 
 /**
- * Local collections statistics to be used by {@link MemberState} implementations.
+ * Local Set statistics to be used by {@link MemberState} implementations.
+ * Derived from {@link LocalCollectionStats} so it can be extended with {@link ISet} specific metrics.
  */
-public interface LocalCollectionStats extends LocalInstanceStats {
-
-    /**
-     * Returns the last access (read) time of the list.
-     *
-     * @return last access (read) time of the list.
-     */
-    long getLastAccessTime();
-
-    /**
-     * Returns the last update time of the list.
-     *
-     * @return last update time of the list.
-     */
-    long getLastUpdateTime();
-
+public interface LocalSetStats extends LocalCollectionStats {
 }

@@ -16,7 +16,17 @@
 
 package com.hazelcast.collection.impl.collection;
 
-import com.hazelcast.collection.ICollection;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.Future;
+
+import javax.annotation.Nonnull;
+
 import com.hazelcast.collection.ItemListener;
 import com.hazelcast.collection.impl.collection.operations.CollectionAddAllOperation;
 import com.hazelcast.collection.impl.collection.operations.CollectionAddOperation;
@@ -44,24 +54,13 @@ import com.hazelcast.spi.impl.UnmodifiableLazyList;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.Future;
-
-import javax.annotation.Nonnull;
-
 import static com.hazelcast.internal.config.ConfigValidator.checkCollectionConfig;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
 import static java.util.Collections.singleton;
 
 public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> extends AbstractDistributedObject<S>
-        implements InitializingObject, ICollection<E> {
+        implements InitializingObject {
 
     protected final String name;
     protected final int partitionId;

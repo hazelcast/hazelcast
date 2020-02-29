@@ -18,10 +18,10 @@ package com.hazelcast.internal.jmx.suppliers;
 
 import com.hazelcast.collection.IList;
 import com.hazelcast.collection.LocalCollectionStats;
-import com.hazelcast.internal.monitor.impl.LocalCollectionStatsImpl;
+import com.hazelcast.internal.monitor.impl.LocalListStatsImpl;
 
 /**
- * Implementation of {@link StatsSupplier} for {@link LocalCollectionStats}
+ * Implementation of {@link StatsSupplier} for {@link IList}
  */
 public class LocalListStatsSupplier implements StatsSupplier<LocalCollectionStats> {
 
@@ -33,7 +33,7 @@ public class LocalListStatsSupplier implements StatsSupplier<LocalCollectionStat
 
     @Override
     public LocalCollectionStats getEmpty() {
-        return new LocalCollectionStatsImpl();
+        return new LocalListStatsImpl();
     }
 
     @Override

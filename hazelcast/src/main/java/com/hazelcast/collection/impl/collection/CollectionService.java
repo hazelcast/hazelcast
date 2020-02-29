@@ -16,10 +16,19 @@
 
 package com.hazelcast.collection.impl.collection;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.collection.ItemEvent;
 import com.hazelcast.collection.ItemListener;
-import com.hazelcast.collection.LocalCollectionStats;
 import com.hazelcast.collection.impl.collection.operations.CollectionMergeOperation;
 import com.hazelcast.collection.impl.collection.operations.CollectionOperation;
 import com.hazelcast.collection.impl.common.DataAwareItemEvent;
@@ -37,9 +46,7 @@ import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.internal.services.RemoteService;
 import com.hazelcast.internal.services.SplitBrainHandlerService;
 import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
-import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.internal.services.TransactionalService;
-import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
@@ -51,29 +58,18 @@ import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.CollectionMergeTypes;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingValue;
 
 public abstract class CollectionService implements ManagedService, RemoteService, EventPublishingService<CollectionEvent,
         ItemListener<Data>>, TransactionalService, MigrationAwareService, SplitBrainProtectionAwareService,
-        SplitBrainHandlerService, StatisticsAwareService<LocalCollectionStats> {
+        SplitBrainHandlerService {
 
     protected final NodeEngine nodeEngine;
     protected final SerializationService serializationService;
     protected final IPartitionService partitionService;
 
-    private final ConcurrentMap<String, LocalCollectionStatsImpl> statsMap = new ConcurrentHashMap<>();
-    private final ConstructorFunction<String, LocalCollectionStatsImpl> localListStatsConstructorFunction =
-            key -> new LocalCollectionStatsImpl();
+    protected ConcurrentMap<String, LocalCollectionStatsImpl> statsMap = new ConcurrentHashMap<>();
+    protected ConstructorFunction<String, LocalCollectionStatsImpl> localCollectionStatsConstructorFunction;
 
     private final ILogger logger;
 
@@ -212,9 +208,7 @@ public abstract class CollectionService implements ManagedService, RemoteService
         return new Merger(collector);
     }
 
-    public LocalCollectionStatsImpl getLocalCollectionStats(String name) {
-        return ConcurrencyUtil.getOrPutIfAbsent(statsMap, name, localListStatsConstructorFunction);
-    }
+    public abstract LocalCollectionStatsImpl getLocalCollectionStats(String name);
 
     private class Merger extends AbstractContainerMerger<CollectionContainer, Collection<Object>, CollectionMergeTypes<Object>> {
 

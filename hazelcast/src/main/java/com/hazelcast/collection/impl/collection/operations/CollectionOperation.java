@@ -16,6 +16,9 @@
 
 package com.hazelcast.collection.impl.collection.operations;
 
+import java.io.IOException;
+import java.util.Collection;
+
 import com.hazelcast.cluster.Address;
 import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
@@ -40,9 +43,6 @@ import com.hazelcast.spi.impl.operationservice.NamedOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
-
-import java.io.IOException;
-import java.util.Collection;
 
 public abstract class CollectionOperation extends Operation
         implements NamedOperation, PartitionAwareOperation, IdentifiedDataSerializable {
@@ -143,7 +143,6 @@ public abstract class CollectionOperation extends Operation
 
     protected void updateStatsForReadOnlyOperation() {
         getLocalCollectionStats().setLastAccessTime(Clock.currentTimeMillis());
-        getLocalCollectionStats().incrementNumberOfHits();
     }
 
     protected void updateStatsForMutableOperation() {

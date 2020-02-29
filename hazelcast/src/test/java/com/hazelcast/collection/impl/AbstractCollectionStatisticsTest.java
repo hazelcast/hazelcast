@@ -20,7 +20,6 @@ import com.hazelcast.collection.LocalCollectionStats;
 import com.hazelcast.test.HazelcastTestSupport;
 
 import static java.lang.String.format;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public abstract class AbstractCollectionStatisticsTest extends HazelcastTestSupport {
@@ -56,16 +55,6 @@ public abstract class AbstractCollectionStatisticsTest extends HazelcastTestSupp
                     lastUpdateTime, previousUpdateTime, lastUpdateTime - previousUpdateTime),
                     lastUpdateTime > previousUpdateTime);
             previousUpdateTime = lastUpdateTime;
-        });
-    }
-
-    protected void assertNumberOfHitsIncremented() {
-        assertTrueEventually(() -> {
-            long numberOfHits = localCollectionStats.getNumberOfHits();
-            assertEquals(
-                    format("Expected the numberOfHits %d to be incremented since the previousNumberOfHits %s", numberOfHits, previousNumberOfHits),
-                    numberOfHits, previousNumberOfHits + 1);
-            previousNumberOfHits = numberOfHits;
         });
     }
 }

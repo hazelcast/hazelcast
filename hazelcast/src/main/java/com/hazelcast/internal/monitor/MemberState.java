@@ -16,7 +16,10 @@
 
 package com.hazelcast.internal.monitor;
 
-import com.hazelcast.collection.LocalCollectionStats;
+import java.util.Collection;
+import java.util.Map;
+import java.util.UUID;
+
 import com.hazelcast.collection.LocalQueueStats;
 import com.hazelcast.executor.LocalExecutorStats;
 import com.hazelcast.internal.management.dto.ClientEndPointDTO;
@@ -27,10 +30,6 @@ import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.multimap.LocalMultiMapStats;
 import com.hazelcast.replicatedmap.LocalReplicatedMapStats;
 import com.hazelcast.topic.LocalTopicStats;
-
-import java.util.Collection;
-import java.util.Map;
-import java.util.UUID;
 
 /**
  * Local statistics for a Hazelcast member.
@@ -67,10 +66,6 @@ public interface MemberState extends JsonSerializable {
     LocalMultiMapStats getLocalMultiMapStats(String mapName);
 
     LocalQueueStats getLocalQueueStats(String queueName);
-
-    LocalCollectionStats getLocalListStats(String listName);
-
-    LocalCollectionStats getLocalSetStats(String setName);
 
     LocalTopicStats getLocalTopicStats(String topicName);
 

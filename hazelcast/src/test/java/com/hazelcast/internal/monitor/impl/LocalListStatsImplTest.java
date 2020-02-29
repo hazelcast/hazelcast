@@ -31,7 +31,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class LocalCollectionStatsImplTest {
+public class LocalListStatsImplTest {
 
     @Test
     public void testDefaultConstructor() {
@@ -40,7 +40,6 @@ public class LocalCollectionStatsImplTest {
         assertTrue(localListStats.getCreationTime() > 0);
         assertEquals(123456, localListStats.getLastUpdateTime());
         assertEquals(654321, localListStats.getLastAccessTime());
-        assertEquals(1, localListStats.getNumberOfHits());
     }
 
     @Test
@@ -57,20 +56,18 @@ public class LocalCollectionStatsImplTest {
         LocalCollectionStatsImpl localListStats = createTestStats();
 
         JsonObject serialized = localListStats.toJson();
-        LocalCollectionStatsImpl deserialized = new LocalCollectionStatsImpl();
+        LocalCollectionStatsImpl deserialized = new LocalListStatsImpl();
         deserialized.fromJson(serialized);
 
-        assertTrue(localListStats.getCreationTime() > 0);
-        assertEquals(123456, localListStats.getLastUpdateTime());
-        assertEquals(654321, localListStats.getLastAccessTime());
-        assertEquals(1, localListStats.getNumberOfHits());
+        assertTrue(deserialized.getCreationTime() > 0);
+        assertEquals(123456, deserialized.getLastUpdateTime());
+        assertEquals(654321, deserialized.getLastAccessTime());
     }
 
     private LocalCollectionStatsImpl createTestStats() {
-        LocalCollectionStatsImpl localListStats = new LocalCollectionStatsImpl();
+        LocalCollectionStatsImpl localListStats = new LocalListStatsImpl();
         localListStats.setLastUpdateTime(123456);
         localListStats.setLastAccessTime(654321);
-        localListStats.incrementNumberOfHits();
         return localListStats;
     }
 }

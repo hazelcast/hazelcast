@@ -16,7 +16,12 @@
 
 package com.hazelcast.collection.impl.set;
 
-import com.hazelcast.collection.LocalCollectionStats;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
+import com.hazelcast.collection.LocalSetStats;
 import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.CollectionService;
 import com.hazelcast.collection.impl.set.operations.SetReplicationOperation;
@@ -28,7 +33,10 @@ import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricDescriptorConstants;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.impl.ProviderHelper;
+import com.hazelcast.internal.monitor.impl.LocalSetStatsImpl;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
+import com.hazelcast.internal.services.StatisticsAwareService;
+import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.ContextMutexFactory;
 import com.hazelcast.internal.util.MapUtil;
@@ -36,14 +44,9 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.transaction.impl.Transaction;
 
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
 
-public class SetService extends CollectionService implements DynamicMetricsProvider {
+public class SetService extends CollectionService implements DynamicMetricsProvider , StatisticsAwareService<LocalSetStats> {
 
     public static final String SERVICE_NAME = "hz:impl:setService";
 
@@ -65,6 +68,7 @@ public class SetService extends CollectionService implements DynamicMetricsProvi
 
     public SetService(NodeEngine nodeEngine) {
         super(nodeEngine);
+        localCollectionStatsConstructorFunction = key -> new LocalSetStatsImpl();
     }
 
     @Override
@@ -123,20 +127,25 @@ public class SetService extends CollectionService implements DynamicMetricsProvi
 
     @Override
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
-        ProviderHelper.provide(descriptor, context, MetricDescriptorConstants.LIST_PREFIX, getStats());
+        ProviderHelper.provide(descriptor, context, MetricDescriptorConstants.SET_PREFIX, getStats());
     }
 
     @Override
-    public Map<String, LocalCollectionStats> getStats() {
-        Map<String, LocalCollectionStats> listStats = MapUtil.createHashMap(containerMap.size());
+    public Map<String, LocalSetStats> getStats() {
+        Map<String, LocalSetStats> setStats = MapUtil.createHashMap(containerMap.size());
         for (Map.Entry<String, SetContainer> entry : containerMap.entrySet()) {
             String name = entry.getKey();
             SetContainer setContainer = entry.getValue();
             if (setContainer.getConfig().isStatisticsEnabled()) {
-                LocalCollectionStats listStat = getLocalCollectionStats(name);
-                listStats.put(name, listStat);
+                LocalSetStats setStat = getLocalCollectionStats(name);
+                setStats.put(name, setStat);
             }
         }
-        return listStats;
+        return setStats;
+    }
+
+    @Override
+    public LocalSetStatsImpl getLocalCollectionStats(String name) {
+        return (LocalSetStatsImpl) ConcurrencyUtil.getOrPutIfAbsent(statsMap, name, localCollectionStatsConstructorFunction);
     }
 }

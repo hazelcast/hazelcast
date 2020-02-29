@@ -16,9 +16,9 @@
 
 package com.hazelcast.collection;
 
-import com.hazelcast.config.SplitBrainProtectionConfig;
-
 import java.util.List;
+
+import com.hazelcast.config.SplitBrainProtectionConfig;
 
 /**
  * Concurrent, distributed implementation of {@link List}.
@@ -37,11 +37,11 @@ public interface IList<E> extends List<E>, ICollection<E> {
 
 
     /**
-     * Returns {@link LocalCollectionStats} for this collection.
+     * Returns {@link LocalListStats} for this collection.
      * LocalCollectionStats is the statistics for this collection.
      *
      * @return this collection's local statistics.
      */
-    LocalCollectionStats getLocalCollectionStats();
+    LocalListStats getLocalCollectionStats();
 
 }

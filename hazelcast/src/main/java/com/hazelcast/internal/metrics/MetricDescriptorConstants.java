@@ -89,15 +89,6 @@ public final class MetricDescriptorConstants {
     public static final String CLUSTER_METRIC_CLUSTER_SERVICE_SIZE = "size";
     // ===[/CLUSTER]====================================================
 
-    // ===[COLLECTION]=======================================================
-    public static final String LIST_PREFIX = "list";
-    public static final String SET_PREFIX = "set";
-    public static final String COLLECTION_METRIC_LAST_ACCESS_TIME = "lastAccessTime";
-    public static final String COLLECTION_METRIC_LAST_UPDATE_TIME = "lastUpdateTime";
-    public static final String COLLECTION_METRIC_NUMBER_OF_HITS = "numberOfHits";
-    public static final String COLLECTION_METRIC_CREATION_TIME = "creationTime";
-    // ===[/COLLECTION]======================================================
-
     // ===[CP SUBSYSTEM]================================================
     public static final String CP_PREFIX_RAFT = "raft";
     public static final String CP_PREFIX_RAFT_GROUP = "raft.group";
@@ -196,6 +187,13 @@ public final class MetricDescriptorConstants {
     public static final String HOTRESTART_METRIC_GC_LIVE_VALUES = "liveValues";
     public static final String HOTRESTART_METRIC_GC_LIVE_TOMBSTONES = "liveTombstones";
     // ===[/HOT-RESTART]================================================
+
+    // ===[LIST]=======================================================
+    public static final String LIST_PREFIX = "list";
+    public static final String LIST_METRIC_LAST_ACCESS_TIME = "lastAccessTime";
+    public static final String LIST_METRIC_LAST_UPDATE_TIME = "lastUpdateTime";
+    public static final String LIST_METRIC_CREATION_TIME = "creationTime";
+    // ===[/LIST]======================================================
 
     // ===[MAP]=========================================================
     public static final String MAP_PREFIX = "map";
@@ -496,6 +494,13 @@ public final class MetricDescriptorConstants {
     public static final String RUNTIME_FULL_METRIC_AVAILABLE_PROCESSORS = "runtime.availableProcessors";
     public static final String RUNTIME_FULL_METRIC_UPTIME = "runtime.uptime";
     // ===[/RUNTIME]====================================================
+
+    // ===[SET]=======================================================
+    public static final String SET_PREFIX = "set";
+    public static final String SET_METRIC_LAST_ACCESS_TIME = "lastAccessTime";
+    public static final String SET_METRIC_LAST_UPDATE_TIME = "lastUpdateTime";
+    public static final String SET_METRIC_CREATION_TIME = "creationTime";
+    // ===[/SET]======================================================
 
     // ===[TCP]=========================================================
     public static final String TCP_PREFIX = "tcp";

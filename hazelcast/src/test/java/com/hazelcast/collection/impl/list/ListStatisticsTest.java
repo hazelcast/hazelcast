@@ -16,20 +16,21 @@
 
 package com.hazelcast.collection.impl.list;
 
+import java.util.Arrays;
+
 import com.hazelcast.collection.IList;
 import com.hazelcast.collection.impl.AbstractCollectionStatisticsTest;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Arrays;
-
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ListStatisticsTest extends AbstractCollectionStatisticsTest {
 
     private IList<String> list;
@@ -42,7 +43,6 @@ public class ListStatisticsTest extends AbstractCollectionStatisticsTest {
         localCollectionStats = list.getLocalCollectionStats();
         previousAccessTime = localCollectionStats.getLastAccessTime();
         previousUpdateTime = localCollectionStats.getLastUpdateTime();
-        previousNumberOfHits = localCollectionStats.getNumberOfHits();
     }
 
     @Test
@@ -50,7 +50,6 @@ public class ListStatisticsTest extends AbstractCollectionStatisticsTest {
         assertNotEqualsStringFormat("Expected the creationTime not to be %d, but was %d", 0L, localCollectionStats.getCreationTime());
         assertEqualsStringFormat("Expected the lastAccessTime to be %d, but was %d", 0L, localCollectionStats.getLastAccessTime());
         assertEqualsStringFormat("Expected the lastUpdateTime to be %d, but was %d", 0L, localCollectionStats.getLastUpdateTime());
-        assertEqualsStringFormat("Expected the numberOfHits to be %d, but was %d", 0L, localCollectionStats.getNumberOfHits());
 
         // an add operation updates the lastAccessTime and lastUpdateTime
         sleepMillis(10);
@@ -69,28 +68,24 @@ public class ListStatisticsTest extends AbstractCollectionStatisticsTest {
         list.get(0);
         assertNewLastAccessTime();
         assertSameLastUpdateTime();
-        assertNumberOfHitsIncremented();
 
         // a contains operation updates the lastAccessTime, but not the lastUpdateTime
         sleepMillis(10);
         list.contains("element1");
         assertNewLastAccessTime();
         assertSameLastUpdateTime();
-        assertNumberOfHitsIncremented();
 
         // an indexOf operation updates the lastAccessTime, but not the lastUpdateTime
         sleepMillis(10);
         list.indexOf("element1");
         assertNewLastAccessTime();
         assertSameLastUpdateTime();
-        assertNumberOfHitsIncremented();
 
         // an isEmpty operation updates the lastAccessTime, but not the lastUpdateTime
         sleepMillis(10);
         list.isEmpty();
         assertNewLastAccessTime();
         assertSameLastUpdateTime();
-        assertNumberOfHitsIncremented();
 
         // a remove operation updates the lastAccessTime and lastUpdateTime
         sleepMillis(10);
@@ -115,14 +110,12 @@ public class ListStatisticsTest extends AbstractCollectionStatisticsTest {
         list.size();
         assertNewLastAccessTime();
         assertSameLastUpdateTime();
-        assertNumberOfHitsIncremented();
 
         // a subList operation updates the lastAccessTime, but not the lastUpdateTime
         sleepMillis(10);
         list.subList(0, 1);
         assertNewLastAccessTime();
         assertSameLastUpdateTime();
-        assertNumberOfHitsIncremented();
 
         // a clear operation updates the lastAccessTime and the lastUpdateTime
         sleepMillis(10);

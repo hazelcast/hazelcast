@@ -16,9 +16,9 @@
 
 package com.hazelcast.collection;
 
-import com.hazelcast.config.SplitBrainProtectionConfig;
-
 import java.util.Set;
+
+import com.hazelcast.config.SplitBrainProtectionConfig;
 
 /**
  * Concurrent, distributed implementation of {@link Set}
@@ -44,6 +44,6 @@ public interface ISet<E> extends Set<E>, ICollection<E> {
      *
      * @return this collection's local statistics.
      */
-    LocalCollectionStats getLocalCollectionStats();
+    LocalSetStats getLocalCollectionStats();
 
 }

@@ -16,8 +16,15 @@
 
 package com.hazelcast.internal.monitor.impl;
 
+import java.net.UnknownHostException;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.UUID;
+
 import com.hazelcast.cluster.Address;
-import com.hazelcast.collection.LocalCollectionStats;
 import com.hazelcast.collection.LocalQueueStats;
 import com.hazelcast.executor.LocalExecutorStats;
 import com.hazelcast.instance.EndpointQualifier;
@@ -46,14 +53,6 @@ import com.hazelcast.multimap.LocalMultiMapStats;
 import com.hazelcast.replicatedmap.LocalReplicatedMapStats;
 import com.hazelcast.topic.LocalTopicStats;
 
-import java.net.UnknownHostException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.UUID;
-
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.JsonUtil.getArray;
 import static com.hazelcast.internal.util.JsonUtil.getObject;
@@ -72,8 +71,6 @@ public class MemberStateImpl implements MemberState {
     private Map<String, LocalMapStats> mapStats = new HashMap<>();
     private Map<String, LocalMultiMapStats> multiMapStats = new HashMap<>();
     private Map<String, LocalQueueStats> queueStats = new HashMap<>();
-    private Map<String, LocalCollectionStats> listStats = new HashMap<>();
-    private Map<String, LocalCollectionStats> setStats = new HashMap<>();
     private Map<String, LocalTopicStats> topicStats = new HashMap<>();
     private Map<String, LocalTopicStats> reliableTopicStats = new HashMap<>();
     private Map<String, LocalPNCounterStats> pnCounterStats = new HashMap<>();
@@ -120,16 +117,6 @@ public class MemberStateImpl implements MemberState {
     @Override
     public LocalQueueStats getLocalQueueStats(String queueName) {
         return queueStats.get(queueName);
-    }
-
-    @Override
-    public LocalCollectionStats getLocalListStats(String listName) {
-        return listStats.get(listName);
-    }
-
-    @Override
-    public LocalCollectionStats getLocalSetStats(String setName) {
-        return setStats.get(setName);
     }
 
     @Override
@@ -226,14 +213,6 @@ public class MemberStateImpl implements MemberState {
 
     public void putLocalQueueStats(String name, LocalQueueStats localQueueStats) {
         queueStats.put(name, localQueueStats);
-    }
-
-    public void putLocalListStats(String name, LocalCollectionStats localListStats) {
-        listStats.put(name, localListStats);
-    }
-
-    public void putLocalSetStats(String name, LocalCollectionStats localSetStats) {
-        setStats.put(name, localSetStats);
     }
 
     public void putLocalReplicatedMapStats(String name, LocalReplicatedMapStats localReplicatedMapStats) {
@@ -434,8 +413,6 @@ public class MemberStateImpl implements MemberState {
         serializeMap(root, "multiMapStats", multiMapStats);
         serializeMap(root, "replicatedMapStats", replicatedMapStats);
         serializeMap(root, "queueStats", queueStats);
-        serializeMap(root, "listStats", listStats);
-        serializeMap(root, "setStats", setStats);
         serializeMap(root, "topicStats", topicStats);
         serializeMap(root, "reliableTopicStats", reliableTopicStats);
         serializeMap(root, "pnCounterStats", pnCounterStats);
@@ -525,16 +502,6 @@ public class MemberStateImpl implements MemberState {
             LocalQueueStatsImpl stats = new LocalQueueStatsImpl();
             stats.fromJson(next.getValue().asObject());
             queueStats.put(next.getName(), stats);
-        }
-        for (JsonObject.Member next : getObject(json, "listStats")) {
-            LocalCollectionStatsImpl stats = new LocalCollectionStatsImpl();
-            stats.fromJson(next.getValue().asObject());
-            listStats.put(next.getName(), stats);
-        }
-        for (JsonObject.Member next : getObject(json, "setStats")) {
-            LocalCollectionStatsImpl stats = new LocalCollectionStatsImpl();
-            stats.fromJson(next.getValue().asObject());
-            setStats.put(next.getName(), stats);
         }
         for (JsonObject.Member next : getObject(json, "topicStats")) {
             LocalTopicStatsImpl stats = new LocalTopicStatsImpl();
@@ -638,8 +605,6 @@ public class MemberStateImpl implements MemberState {
                 + ", multiMapStats=" + multiMapStats
                 + ", replicatedMapStats=" + replicatedMapStats
                 + ", queueStats=" + queueStats
-                + ", listStats=" + listStats
-                + ", setStats=" + setStats
                 + ", topicStats=" + topicStats
                 + ", reliableTopicStats=" + reliableTopicStats
                 + ", pnCounterStats=" + pnCounterStats
