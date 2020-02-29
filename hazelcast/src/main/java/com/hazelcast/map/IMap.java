@@ -39,6 +39,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
 
 /**
  * Concurrent, distributed, observable and queryable map.
@@ -70,6 +71,28 @@ import java.util.concurrent.TimeUnit;
  * {@code entrySet}, return an <b>immutable</b> collection clone of the values.
  * The collection is <b>NOT</b> backed by the map, so changes to the map are
  * <b>NOT</b> reflected in the collection.</li>
+ * <li>Since Hazelcast is compiled with Java 1.6, we can't override default
+ * methods introduced in later Java versions, nor can we add documentation
+ * to them. Methods, including but not limited to {@code computeIfPresent},
+ * may behave incorrectly if the value passed to the update function is
+ * modified in-place and returned as a result of the invocation.
+ * You should create a new value instance and return it as a result.
+ * <p>
+ * For example, following code fragment will behave incorrectly and will
+ * enter an infinite loop:
+ * <pre>
+ * map.computeIfPresent("key", (key, value) -&gt; {
+ *     value.setSomeAttribute("newAttributeValue");
+ *     return value;
+ * });
+ * </pre>
+ * It should be replaced with:
+ * <pre>
+ * map.computeIfPresent("key", (key, value) -&gt; {
+ *     return new ObjectWithSomeAttribute("newAttributeValue");
+ * });
+ * </pre>
+ * </li>
  * <li>Be careful while using default interface method implementations from
  * {@link ConcurrentMap} and {@link Map}. Under the hood they are typically
  * implemented as a sequence of more primitive map operations, therefore the
@@ -2843,4 +2866,24 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @since 3.11
      */
     boolean setTtl(@Nonnull K key, long ttl, @Nonnull TimeUnit timeunit);
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p> </p>
+     * <p>
+     *     If the supplied {@code remappingFunction} is a lambda, anonymous class or an inner class,
+     *     it would be executed locally (e.g. on the client). Same would happen if it is not serializable.
+     *     This may result in multiple round-trips between the client and the server and possibly a livelock.
+     *</p>
+     * <p>
+     *     Otherwise (i.e. if it is a top-level or a member class, and it is serializable), the function would be sent
+     *     to the server which owns the key. This results in a single remote call. Also, the function would have exclusive
+     *     access to the map entry during its execution.
+     *     Note that in this case, the function class must be deployed on all the servers (either physically
+     *     or via user-code-deployment)
+     * </p>
+     */
+    V computeIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction);
+
 }

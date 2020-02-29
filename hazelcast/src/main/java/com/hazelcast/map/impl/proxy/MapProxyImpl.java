@@ -23,6 +23,7 @@ import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.ClassMetadataUtil;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.map.EntryProcessor;
@@ -30,6 +31,7 @@ import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.QueryCache;
+import com.hazelcast.map.impl.BiFunctionExecutingEntryProcessor;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.iterator.MapPartitionIterator;
@@ -1031,22 +1033,40 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     public V computeIfPresent(K key,
                                BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(key, NULL_BIFUNCTION_IS_NOT_ALLOWED);
+
+        if (ClassMetadataUtil.isClassStaticAndSerializable(remappingFunction.getClass())) {
+            try {
+                BiFunctionExecutingEntryProcessor<K, V> ep = new BiFunctionExecutingEntryProcessor<>(remappingFunction);
+                return executeOnKey(key, ep);
+            } catch (IllegalStateException e) {
+                return computeIfPresentLocally(key, remappingFunction);
+            }
+        } else {
+            return computeIfPresentLocally(key, remappingFunction);
+        }
+    }
+
+
+    private V computeIfPresentLocally(K key,
+                                      BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
 
         while (true) {
-            Data oldValueData = toData(getInternal(key));
-            if (oldValueData == null) {
+            Data oldValueAsData = toData(getInternal(key));
+            if (oldValueAsData == null) {
                 return null;
             }
 
-            V oldValueClone = toObject(oldValueData);
+            V oldValueClone = toObject(oldValueAsData);
             V newValue = remappingFunction.apply(key, oldValueClone);
             if (newValue != null) {
-                if (replaceInternal(key, oldValueData, toData(newValue))) {
+                if (replaceInternal(key, oldValueAsData, toData(newValue))) {
                     return newValue;
                 }
-            } else if (removeInternal(key, oldValueData)) {
+            } else if (removeInternal(key, oldValueAsData)) {
                 return null;
             }
         }
     }
+
 }

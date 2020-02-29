@@ -76,7 +76,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -210,39 +209,6 @@ public class BasicMapTest extends HazelcastTestSupport {
         assertEquals(map.putIfAbsent("key1", "valueX"), "value1");
         assertEquals(map.get("key1"), "value1");
         assertEquals(map.size(), 2);
-    }
-
-    @Test
-    public void testComputeIfPresent() {
-        final IMap<String, AtomicBoolean> map = getInstance().getMap("testComputeIfPresent");
-
-        map.put("presentKey", new AtomicBoolean(false));
-        AtomicBoolean value = map.computeIfPresent("presentKey", (key, oldValue) -> new AtomicBoolean(true));
-        assertNotNull(value);
-        assertTrue(value.get());
-
-        map.computeIfPresent("absentKey", (s, oldValue) -> {
-            fail("should not be called");
-            return new AtomicBoolean(true);
-        });
-
-        value = map.computeIfPresent("presentKey", (key, oldValue) -> null);
-        assertNull(value);
-        assertNull(map.get("presentKey"));
-    }
-
-    @Test
-    public void testComputeIfPresentWithInPlaceModification() {
-        final IMap<String, AtomicBoolean> map = getInstance().getMap("testComputeIfPresent");
-        map.put("presentKey", new AtomicBoolean(true));
-        AtomicBoolean newValue = map.computeIfPresent("presentKey", (k, o) -> {
-                o.set(false);
-                return o;
-            }
-        );
-        assertNotNull(newValue);
-        assertFalse(newValue.get());
-        assertFalse(map.get("presentKey").get());
     }
 
     @Test
