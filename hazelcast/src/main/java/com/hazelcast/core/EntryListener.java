@@ -23,6 +23,7 @@ import com.hazelcast.map.listener.EntryEvictedListener;
 import com.hazelcast.map.listener.EntryExpiredListener;
 import com.hazelcast.map.listener.EntryRemovedListener;
 import com.hazelcast.map.listener.EntryUpdatedListener;
+import com.hazelcast.map.listener.EntryLoadedListener;
 import com.hazelcast.map.listener.MapClearedListener;
 import com.hazelcast.map.listener.MapEvictedListener;
 
@@ -48,6 +49,7 @@ public interface EntryListener<K, V>
         EntryRemovedListener<K, V>,
         EntryEvictedListener<K, V>,
         EntryExpiredListener<K, V>,
+        EntryLoadedListener<K, V>,
         MapClearedListener,
         MapEvictedListener {
 
