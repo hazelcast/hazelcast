@@ -1031,17 +1031,13 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
     @Override
     public V computeIfPresent(K key,
-                               BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+                              BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(key, NULL_BIFUNCTION_IS_NOT_ALLOWED);
 
         if (ClassMetadataUtil.isClassStaticAndSerializable(remappingFunction.getClass())) {
-            try {
-                BiFunctionExecutingEntryProcessor<K, V> ep = new BiFunctionExecutingEntryProcessor<>(remappingFunction);
-                return executeOnKey(key, ep);
-            } catch (IllegalStateException e) {
-                return computeIfPresentLocally(key, remappingFunction);
-            }
+            BiFunctionExecutingEntryProcessor<K, V> ep = new BiFunctionExecutingEntryProcessor<>(remappingFunction);
+            return executeOnKey(key, ep);
         } else {
             return computeIfPresentLocally(key, remappingFunction);
         }

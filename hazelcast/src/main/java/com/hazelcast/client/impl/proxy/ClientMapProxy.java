@@ -1995,12 +1995,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
         checkNotNull(key, NULL_BIFUNCTION_IS_NOT_ALLOWED);
 
         if (ClassMetadataUtil.isClassStaticAndSerializable(remappingFunction.getClass())) {
-            try {
-                BiFunctionExecutingEntryProcessor<K, V> ep = new BiFunctionExecutingEntryProcessor<>(remappingFunction);
-                return executeOnKeyInternal(key, ep);
-            } catch (IllegalStateException e) {
-                return computeIfPresentLocally(key, remappingFunction);
-            }
+            BiFunctionExecutingEntryProcessor<K, V> ep = new BiFunctionExecutingEntryProcessor<>(remappingFunction);
+            return executeOnKeyInternal(key, ep);
         } else {
             return computeIfPresentLocally(key, remappingFunction);
         }
