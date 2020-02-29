@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.util.executor;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -32,17 +33,18 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
+import static com.hazelcast.internal.util.FutureUtil.checkAllDone;
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
+import static com.hazelcast.test.HazelcastTestSupport.assertStartsWith;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
-import static com.hazelcast.internal.util.FutureUtil.checkAllDone;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -57,8 +59,9 @@ public class CachedExecutorServiceDelegateTest {
 
     @Before
     public void setup() {
+        final ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat("hz.hzName.test.thread-%d").build();
         cachedExecutorService = new NamedThreadPoolExecutor("test", 0, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS,
-                new SynchronousQueue<>(), Executors.defaultThreadFactory());
+                new SynchronousQueue<>(), threadFactory);
     }
 
     @After
@@ -185,6 +188,19 @@ public class CachedExecutorServiceDelegateTest {
 
         assertOpenEventually(latch);
     }
+
+    @Test
+    public void execute_threadNameShouldContainExecutorName() {
+        ManagedExecutorService executorService = newManagedExecutorService();
+        final String expectedThreadNamePrefix = "hz.hzName." + NAME + ".thread-";
+        final CountDownLatch latch = new CountDownLatch(1);
+        executorService.execute(() -> {
+            assertStartsWith(expectedThreadNamePrefix, Thread.currentThread().getName());
+            latch.countDown();
+        });
+        assertOpenEventually(latch);
+    }
+
 
     @Test(expected = RejectedExecutionException.class)
     public void execute_rejected_whenShutdown() {

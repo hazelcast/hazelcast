@@ -155,6 +155,35 @@ public class StringUtilTest extends HazelcastTestSupport {
         }
     }
 
+    @Test(expected = NullPointerException.class)
+    public void testCsvReplaceSection_whenCsvIsNull_ShouldThrowNPE() {
+        StringUtil.csvReplaceSection(null, ',', 0, "foo");
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testCsvReplaceSection_whenReplacementIsNull_ShouldThrowNPE() {
+        StringUtil.csvReplaceSection("foo", ',', 0, null);
+    }
+
+    @Test
+    public void testCsvReplaceSection() {
+        // Separator is special regex character
+        assertEquals("text", StringUtil.csvReplaceSection("foo,bar,baz", '.', 0, "text"));
+        assertEquals("foo.bar.baz", StringUtil.csvReplaceSection("foo.bar.baz", '.', -1, "text"));
+        assertEquals("foo.bar.baz", StringUtil.csvReplaceSection("foo.bar.baz", '.', 10, "text"));
+        assertEquals("text.bar.baz", StringUtil.csvReplaceSection("foo.bar.baz", '.', 0, "text"));
+        assertEquals("foo.text.baz", StringUtil.csvReplaceSection("foo.bar.baz", '.', 1, "text"));
+        assertEquals("foo.bar.text", StringUtil.csvReplaceSection("foo.bar.baz", '.', 2, "text"));
+
+        // Separator is normal character
+        assertEquals("text", StringUtil.csvReplaceSection("foo.bar.baz", ',', 0, "text"));
+        assertEquals("foo,bar,baz", StringUtil.csvReplaceSection("foo,bar,baz", ',', -1, "text"));
+        assertEquals("foo,bar,baz", StringUtil.csvReplaceSection("foo,bar,baz", ',', 10, "text"));
+        assertEquals("text,bar,baz", StringUtil.csvReplaceSection("foo,bar,baz", ',', 0, "text"));
+        assertEquals("foo,text,baz", StringUtil.csvReplaceSection("foo,bar,baz", ',', 1, "text"));
+        assertEquals("foo,bar,text", StringUtil.csvReplaceSection("foo,bar,baz", ',', 2, "text"));
+    }
+
     private String[] arr(String... strings) {
         return strings;
     }

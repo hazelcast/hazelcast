@@ -16,7 +16,12 @@
 
 package com.hazelcast.internal.util;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.StringUtil.csvReplaceSection;
 
 /**
  * Utility class to manipulate and query thread ID.
@@ -24,6 +29,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 public final class ThreadUtil {
 
     private static final ThreadLocal<Long> THREAD_LOCAL = new ThreadLocal<Long>();
+    private static final Pattern THREAD_POOL_NAME_PATTERN = Pattern.compile("^hz\\.\\w+\\.(\\w+)\\.thread-\\d+$");
 
     private ThreadUtil() {
     }
@@ -81,6 +87,23 @@ public final class ThreadUtil {
      */
     public static String createThreadPoolName(String hzName, String poolName) {
         return createThreadName(hzName, poolName) + ".thread-";
+    }
+
+    /**
+     * Updates the current thread name if matches pattern hz.hzName.poolName.thread-id to hz.hzName.targetPoolName.thread-id
+     *
+     * @param targetPoolName the target name of the pool
+     * @return the original thread name
+     * @throws java.lang.IllegalArgumentException if targetPoolName is null or empty
+     */
+    public static String updateCurrentThreadPoolName(String targetPoolName) {
+        checkHasText(targetPoolName, "pool name can't be empty");
+        final String currentThreadName = Thread.currentThread().getName();
+        final Matcher matcher = THREAD_POOL_NAME_PATTERN.matcher(currentThreadName);
+        if (matcher.matches()) {
+            Thread.currentThread().setName(csvReplaceSection(currentThreadName, '.', 2, targetPoolName));
+        }
+        return currentThreadName;
     }
 
     public static void assertRunningOnPartitionThread() {

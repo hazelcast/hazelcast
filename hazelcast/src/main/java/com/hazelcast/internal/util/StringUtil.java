@@ -27,6 +27,7 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.lang.Character.isLetter;
 import static java.lang.Character.isLowerCase;
 import static java.lang.Character.toLowerCase;
@@ -387,5 +388,34 @@ public final class StringUtil {
         return (str1 == null || str2 == null)
                 ? false
                 : (str1 == str2 || lowerCaseInternal(str1).equals(lowerCaseInternal(str2)));
+    }
+
+    /**
+     * Return the CSV with its sectionIdx-th section updated to the replacement value, if such section exists
+     *
+     * @param csv input CSV
+     * @param sep the separator character
+     * @param sectionIdx the index of the section to be replaced (start from 0)
+     * @param replacement the replacement string
+     * @return the updated CSV if replacement is possible, otherwise existing input CSV
+     * @throws NullPointerException if input CSV or replacement is null
+     */
+    public static String csvReplaceSection(String csv, char sep, int sectionIdx, String replacement) {
+        checkNotNull(csv, "csv can't be empty");
+        checkNotNull(replacement, "replacement can't be null");
+        if (sectionIdx < 0) {
+            return csv;
+        }
+        final StringBuilder sepRegexBuilder = new StringBuilder();
+        if (".$|()[{^?*+\\".indexOf(sep) > -1) {
+            sepRegexBuilder.append('\\');
+        }
+        sepRegexBuilder.append(sep);
+        final String[] sections = csv.split(sepRegexBuilder.toString(), -1);
+        if (sections.length > sectionIdx) {
+            sections[sectionIdx] = replacement;
+            return String.join(String.valueOf(sep), sections);
+        }
+        return csv;
     }
 }

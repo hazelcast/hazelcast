@@ -24,6 +24,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static org.junit.Assert.assertEquals;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ThreadUtilTest extends HazelcastTestSupport {
@@ -31,5 +33,33 @@ public class ThreadUtilTest extends HazelcastTestSupport {
     @Test
     public void testConstructor() {
         assertUtilityConstructor(ThreadUtil.class);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testUpdateCurrentThreadPoolName_whenTargetPoolNameIsNull_ShouldThrowException() {
+        ThreadUtil.updateCurrentThreadPoolName(null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testUpdateCurrentThreadPoolName_whenTargetPoolNameIsEmpty_ShouldThrowException() {
+        ThreadUtil.updateCurrentThreadPoolName("");
+    }
+
+    @Test
+    public void testUpdateCurrentThreadPoolName_whenCurrentThreadNameDoesNotMatchPatternWithPoolName_ShouldNotUpdate() {
+        Thread.currentThread().setName("threadName");
+        assertEquals("threadName", ThreadUtil.updateCurrentThreadPoolName("targetPoolName"));
+        assertEquals("threadName", Thread.currentThread().getName());
+
+        Thread.currentThread().setName("hz.hzName.thread-1");
+        assertEquals("hz.hzName.thread-1", ThreadUtil.updateCurrentThreadPoolName("targetPoolName"));
+        assertEquals("hz.hzName.thread-1", Thread.currentThread().getName());
+    }
+
+    @Test
+    public void testUpdateCurrentThreadPoolName_whenCurrentThreadNameMatchesPatternWithPoolName_ShouldUpdate() {
+        Thread.currentThread().setName("hz.hzName.poolName.thread-1");
+        assertEquals("hz.hzName.poolName.thread-1", ThreadUtil.updateCurrentThreadPoolName("targetPoolName"));
+        assertEquals("hz.hzName.targetPoolName.thread-1", Thread.currentThread().getName());
     }
 }

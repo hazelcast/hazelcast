@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.util.executor;
 
+import com.hazelcast.internal.util.ThreadUtil;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Collection;
@@ -104,7 +105,7 @@ public final class CachedExecutorServiceDelegate implements ExecutorService, Man
         if (shutdown.get()) {
             throw new RejectedExecutionException("Executor[" + name + "] was shut down.");
         }
-        if (!taskQ.offer(command)) {
+        if (!taskQ.offer(new ThreadPoolNameCommandDecorator(command))) {
             throw new RejectedExecutionException("Executor[" + name + "] is overloaded!");
         }
         addNewWorkerIfRequired();
@@ -236,6 +237,25 @@ public final class CachedExecutorServiceDelegate implements ExecutorService, Man
                 }
             } finally {
                 lock.unlock();
+            }
+        }
+    }
+
+    private class ThreadPoolNameCommandDecorator implements Runnable {
+
+        private final Runnable delegate;
+
+        ThreadPoolNameCommandDecorator(final Runnable delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public void run() {
+            final String originalThreadName = ThreadUtil.updateCurrentThreadPoolName(name);
+            try {
+                delegate.run();
+            } finally {
+                Thread.currentThread().setName(originalThreadName);
             }
         }
     }
