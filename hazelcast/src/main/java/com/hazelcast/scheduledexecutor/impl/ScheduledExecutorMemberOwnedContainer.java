@@ -75,7 +75,9 @@ public class ScheduledExecutorMemberOwnedContainer
 
     private void acquireMemberPartitionLockIfNeeded() {
         while (!memberPartitionLock.compareAndSet(false, true)) {
-            Thread.yield();
+            if (!ThreadOnSpinWaitJDK8Adapter.onSpinWaitOrNothing()) {
+                Thread.yield();
+            }
         }
     }
 
