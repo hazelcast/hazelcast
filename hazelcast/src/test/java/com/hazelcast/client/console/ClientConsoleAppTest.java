@@ -14,18 +14,19 @@
  * limitations under the License.
  */
 
-package com.hazelcast.console;
+package com.hazelcast.client.console;
 
+import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.config.Config;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.hamcrest.CoreMatchers;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
@@ -36,15 +37,17 @@ import java.io.UnsupportedEncodingException;
 import static org.junit.Assert.*;
 
 /**
- * Tests for demo console application.
+ * Tests for demo client console application.
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
-public class ConsoleAppTest extends HazelcastTestSupport {
+public class ClientConsoleAppTest extends HazelcastTestSupport {
 
     private static final PrintStream systemOutOrig = System.out;
 
     private static ByteArrayOutputStream baos;
+
+    private  HazelcastInstance hazelcastInstance;
 
     @BeforeClass
     public static void beforeClass() {
@@ -64,11 +67,17 @@ public class ConsoleAppTest extends HazelcastTestSupport {
     @Before
     public void before() {
         resetSystemOut();
+        hazelcastInstance = Hazelcast.newHazelcastInstance(new Config());
+    }
+
+    @After
+    public void after() {
+        hazelcastInstance.shutdown();
     }
 
     @Test
     public void executeOnKey() {
-        ConsoleApp consoleApp = new ConsoleApp(createHazelcastInstance());
+        ClientConsoleApp consoleApp = new ClientConsoleApp(HazelcastClient.newHazelcastClient(new ClientConfig()));
         for (int i = 0; i < 100; i++) {
             consoleApp.handleCommand(String.format("executeOnKey message%d key%d", i, i));
             assertTextInSystemOut("message" + i);
@@ -80,10 +89,11 @@ public class ConsoleAppTest extends HazelcastTestSupport {
      */
     @Test
     public void mapPut() {
-        HazelcastInstance hz = createHazelcastInstance();
+        HazelcastInstance hz = HazelcastClient.newHazelcastClient(new ClientConfig());
+        ClientConsoleApp consoleApp = new ClientConsoleApp(hz);
+
         IMap<String, String> map = hz.getMap("default");
 
-        ConsoleApp consoleApp = new ConsoleApp(hz);
         assertEquals("Unexpected map size", 0, map.size());
 
         consoleApp.handleCommand("m.put putTestKey testValue");
@@ -103,8 +113,8 @@ public class ConsoleAppTest extends HazelcastTestSupport {
      */
     @Test
     public void mapRemove() {
-        HazelcastInstance hz = createHazelcastInstance();
-        ConsoleApp consoleApp = new ConsoleApp(hz);
+        HazelcastInstance hz = HazelcastClient.newHazelcastClient(new ClientConfig());
+        ClientConsoleApp consoleApp = new ClientConsoleApp(hz);
         IMap<String, String> map = hz.getMap("default");
         map.put("a", "valueOfA");
         map.put("b", "valueOfB");
@@ -120,8 +130,8 @@ public class ConsoleAppTest extends HazelcastTestSupport {
      */
     @Test
     public void mapDelete() {
-        HazelcastInstance hz = createHazelcastInstance();
-        ConsoleApp consoleApp = new ConsoleApp(hz);
+        HazelcastInstance hz = HazelcastClient.newHazelcastClient(new ClientConfig());
+        ClientConsoleApp consoleApp = new ClientConsoleApp(hz);
         IMap<String, String> map = hz.getMap("default");
         map.put("a", "valueOfA");
         map.put("b", "valueOfB");
@@ -137,8 +147,8 @@ public class ConsoleAppTest extends HazelcastTestSupport {
      */
     @Test
     public void mapGet() {
-        HazelcastInstance hz = createHazelcastInstance();
-        ConsoleApp consoleApp = new ConsoleApp(hz);
+        HazelcastInstance hz = HazelcastClient.newHazelcastClient(new ClientConfig());
+        ClientConsoleApp consoleApp = new ClientConsoleApp(hz);
         hz.<String, String>getMap("default").put("testGetKey", "testGetValue");
         consoleApp.handleCommand("m.get testGetKey");
         assertTextInSystemOut("testGetValue");
@@ -149,8 +159,8 @@ public class ConsoleAppTest extends HazelcastTestSupport {
      */
     @Test
     public void mapPutMany() {
-        HazelcastInstance hz = createHazelcastInstance();
-        ConsoleApp consoleApp = new ConsoleApp(hz);
+        HazelcastInstance hz = HazelcastClient.newHazelcastClient(new ClientConfig());
+        ClientConsoleApp consoleApp = new ClientConsoleApp(hz);
         IMap<String, ?> map = hz.getMap("default");
         consoleApp.handleCommand("m.putmany 100 8 1000");
         assertEquals("Unexpected map size", 100, map.size());
