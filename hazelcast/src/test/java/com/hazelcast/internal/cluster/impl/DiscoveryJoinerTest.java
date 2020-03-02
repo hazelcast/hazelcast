@@ -109,7 +109,7 @@ public class DiscoveryJoinerTest {
         String hostAddress = node.getThisAddress().getInetAddress().getHostAddress();
         node.config.getNetworkConfig().getJoin().getTcpIpConfig().setRequiredMember(hostAddress);
 
-        List<DiscoveryNode> nodes = new ArrayList<DiscoveryNode>();
+        List<DiscoveryNode> nodes = new ArrayList<>();
         nodes.add(new SimpleDiscoveryNode(node.getThisAddress(), node.getThisAddress()));
 
         DiscoveryJoiner joiner = new DiscoveryJoiner(node, service, true);

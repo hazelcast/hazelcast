@@ -63,9 +63,9 @@ public class ClusterRollingRestartTest extends HazelcastTestSupport {
 
     @Test
     public void test_rollingRestart() {
-        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
-        final int nodeCount = 3;
-        final HazelcastInstance[] instances = new HazelcastInstance[nodeCount];
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        int nodeCount = 3;
+        HazelcastInstance[] instances = new HazelcastInstance[nodeCount];
         instances[0] = factory.newHazelcastInstance();
 
         if (partitionAssignmentType == PartitionAssignmentType.DURING_STARTUP) {

@@ -26,3 +26,6 @@ from minimal-json project (https://github.com/ralfstx/minimal-json).
 
 The class com.hazelcast.instance.impl.MobyNames contains code originating
 from The Moby Project (https://github.com/moby/moby).
+
+The class com.hazelcast.internal.util.graph.BronKerboschCliqueFinder contains code
+originating from The JGraphT Project (https://github.com/jgrapht/jgrapht).
