@@ -248,15 +248,13 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     }
 
     private void handleMap(HttpPostCommand command, String uri) {
+        uri = StringUtil.stripTrailingSlash(uri);
         int indexEnd = uri.indexOf('/', URI_MAPS.length());
         if (indexEnd == -1) {
             throw new HttpBadRequestException("Missing map name");
         }
         String mapName = uri.substring(URI_MAPS.length(), indexEnd);
         String key = uri.substring(indexEnd + 1);
-        if (key.charAt(key.length() - 1) == '/') {
-            key = key.substring(0, key.length() - 1);
-        }
         byte[] data = command.getData();
         textCommandService.put(mapName, key, new RestValue(data, command.getContentType()), -1);
         command.send200();
