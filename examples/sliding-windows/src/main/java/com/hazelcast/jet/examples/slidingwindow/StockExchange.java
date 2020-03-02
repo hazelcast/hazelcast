@@ -19,6 +19,8 @@ package com.hazelcast.jet.examples.slidingwindow;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.examples.tradesource.Trade;
+import com.hazelcast.jet.examples.tradesource.TradeGenerator;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.WindowDefinition;
@@ -45,13 +47,14 @@ public class StockExchange {
     private static final int SLIDING_WINDOW_LENGTH_MILLIS = 3_000;
     private static final int SLIDE_STEP_MILLIS = 500;
     private static final int TRADES_PER_SEC = 3_000;
+    private static final int MAX_LAG = 1000;
     private static final int NUMBER_OF_TICKERS = 10;
     private static final int JOB_DURATION = 15;
 
     private static Pipeline buildPipeline() {
         Pipeline p = Pipeline.create();
 
-        p.readFrom(TradeGenerator.tradeSource(NUMBER_OF_TICKERS, TRADES_PER_SEC))
+        p.readFrom(TradeGenerator.tradeSource(NUMBER_OF_TICKERS, TRADES_PER_SEC, MAX_LAG))
          .withNativeTimestamps(3000)
          .groupingKey(Trade::getTicker)
          .window(WindowDefinition.sliding(SLIDING_WINDOW_LENGTH_MILLIS, SLIDE_STEP_MILLIS))

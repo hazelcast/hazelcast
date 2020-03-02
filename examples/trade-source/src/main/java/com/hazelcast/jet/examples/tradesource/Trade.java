@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.examples.slidingwindow;
+package com.hazelcast.jet.examples.tradesource;
 
 import java.io.Serializable;
 

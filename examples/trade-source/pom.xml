@@ -19,20 +19,12 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>hazelcast-jet-examples-sliding-windows</artifactId>
+    <artifactId>hazelcast-jet-examples-trade-source</artifactId>
 
     <parent>
         <groupId>com.hazelcast.jet.examples</groupId>
         <artifactId>hazelcast-jet-examples</artifactId>
         <version>4.1-SNAPSHOT</version>
     </parent>
-
-    <dependencies>
-        <dependency>
-            <groupId>com.hazelcast.jet.examples</groupId>
-            <artifactId>hazelcast-jet-examples-trade-source</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-    </dependencies>
 
 </project>

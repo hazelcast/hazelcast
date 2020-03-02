@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.examples.rollingaggregation;
+package com.hazelcast.jet.examples.tradesource;
 
+import com.hazelcast.jet.accumulator.LongLongAccumulator;
 import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.pipeline.SourceBuilder.TimestampedSourceBuffer;
 import com.hazelcast.jet.pipeline.StreamSource;
@@ -23,37 +24,51 @@ import com.hazelcast.jet.pipeline.StreamSource;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 
 public final class TradeGenerator {
-
-    private static final long NASDAQLISTED_ROWCOUNT = 3170;
+    private static final int LOT = 100;
+    private static final int PRICE_UNITS_PER_CENT = 100;
+    private static final int NO_TIMEOUT = 0;
 
     private final List<String> tickers;
     private final long emitPeriodNanos;
     private final long startTimeMillis;
     private final long startTimeNanos;
     private final long endTimeNanos;
+    private final int maxLag;
+    private final Map<String, LongLongAccumulator> pricesAndTrends;
+
     private long scheduledTimeNanos;
 
-    private TradeGenerator(long numTickers, int tradesPerSec, long timeoutSeconds) {
+    private TradeGenerator(long numTickers, int tradesPerSec, int maxLag, long timeoutSeconds) {
         this.tickers = loadTickers(numTickers);
+        this.maxLag = maxLag;
+        this.pricesAndTrends = tickers.stream()
+                .collect(toMap(t -> t, t -> new LongLongAccumulator(500, 10)));
         this.emitPeriodNanos = SECONDS.toNanos(1) / tradesPerSec;
         this.startTimeNanos = this.scheduledTimeNanos = System.nanoTime();
-        this.endTimeNanos = startTimeNanos + SECONDS.toNanos(timeoutSeconds);
+        this.endTimeNanos = timeoutSeconds <= 0 ? Long.MAX_VALUE :
+                startTimeNanos + SECONDS.toNanos(timeoutSeconds);
         this.startTimeMillis = System.currentTimeMillis();
     }
 
-    public static StreamSource<Trade> tradeSource(int numTickers, int tradesPerSec, long timeoutSeconds) {
+    public static StreamSource<Trade> tradeSource(int numTickers, int tradesPerSec, int maxLag) {
+        return tradeSource(numTickers, tradesPerSec, maxLag, NO_TIMEOUT);
+    }
+
+    public static StreamSource<Trade> tradeSource(int numTickers, int tradesPerSec, int maxLag, long timeoutSeconds) {
         return SourceBuilder
                 .timestampedStream("trade-source",
-                        x -> new TradeGenerator(numTickers, tradesPerSec, timeoutSeconds))
+                        x -> new TradeGenerator(numTickers, tradesPerSec, maxLag, timeoutSeconds))
                 .fillBufferFn(TradeGenerator::generateTrades)
                 .build();
     }
@@ -66,8 +81,13 @@ public final class TradeGenerator {
         long nowNanos = System.nanoTime();
         while (scheduledTimeNanos <= nowNanos) {
             String ticker = tickers.get(rnd.nextInt(tickers.size()));
-            long tradeTimeMillis = startTimeMillis + NANOSECONDS.toMillis(scheduledTimeNanos - startTimeNanos);
-            Trade trade = new Trade(tradeTimeMillis, ticker, 1, rnd.nextInt(5000));
+            LongLongAccumulator priceAndDelta = pricesAndTrends.get(ticker);
+            int price = (int) (priceAndDelta.get1() / PRICE_UNITS_PER_CENT);
+            priceAndDelta.add1(priceAndDelta.get2());
+            priceAndDelta.add2(rnd.nextLong(101) - 50);
+            long tradeTimeNanos = scheduledTimeNanos - rnd.nextLong(maxLag);
+            long tradeTimeMillis = startTimeMillis + NANOSECONDS.toMillis(tradeTimeNanos - startTimeNanos);
+            Trade trade = new Trade(tradeTimeMillis, ticker, rnd.nextInt(10) * LOT, price);
             buf.add(trade, tradeTimeMillis);
             scheduledTimeNanos += emitPeriodNanos;
             if (scheduledTimeNanos > nowNanos) {
@@ -79,21 +99,12 @@ public final class TradeGenerator {
 
     private static List<String> loadTickers(long numTickers) {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(
-                TradeGenerator.class.getResourceAsStream("/nasdaqlisted.txt"), UTF_8))
-        ) {
-            final List<String> result = new ArrayList<>();
-            final long strideLength = NASDAQLISTED_ROWCOUNT / numTickers;
-            int rowCount = 0;
-            for (String line; (line = reader.readLine()) != null; ) {
-                if (++rowCount % strideLength != 0) {
-                    continue;
-                }
-                result.add(line.substring(0, line.indexOf('|')));
-                if (result.size() == numTickers) {
-                    break;
-                }
-            }
-            return result;
+                TradeGenerator.class.getResourceAsStream("/nasdaqlisted.txt"), UTF_8))) {
+            return reader.lines()
+                    .skip(1)
+                    .limit(numTickers)
+                    .map(l -> l.split("\\|")[0])
+                    .collect(toList());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

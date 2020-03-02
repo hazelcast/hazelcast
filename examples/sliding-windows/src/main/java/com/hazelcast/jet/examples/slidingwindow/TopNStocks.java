@@ -22,6 +22,8 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.datamodel.KeyedWindowResult;
+import com.hazelcast.jet.examples.tradesource.Trade;
+import com.hazelcast.jet.examples.tradesource.TradeGenerator;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 
@@ -59,6 +61,7 @@ import static java.util.stream.Collectors.joining;
 public class TopNStocks {
 
     private static final int JOB_DURATION = 15;
+    private static final int MAX_LAG = 1000;
 
     private static Pipeline buildPipeline() {
         Pipeline p = Pipeline.create();
@@ -71,7 +74,7 @@ public class TopNStocks {
                 topN(5, comparingValue.reversed()),
                 TopNResult::new);
 
-        p.readFrom(TradeGenerator.tradeSource(500, 6_000))
+        p.readFrom(TradeGenerator.tradeSource(500, 6_000, MAX_LAG, JOB_DURATION))
          .withNativeTimestamps(1_000)
          .groupingKey(Trade::getTicker)
          .window(sliding(10_000, 1_000))

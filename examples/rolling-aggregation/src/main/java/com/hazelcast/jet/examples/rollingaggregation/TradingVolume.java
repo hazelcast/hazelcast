@@ -18,18 +18,19 @@ package com.hazelcast.jet.examples.rollingaggregation;
 
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.examples.tradesource.Trade;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 
 import static com.hazelcast.jet.aggregate.AggregateOperations.summingLong;
-import static com.hazelcast.jet.examples.rollingaggregation.TradeGenerator.tradeSource;
+import static com.hazelcast.jet.examples.tradesource.TradeGenerator.tradeSource;
 
 /**
  * Showcases the Rolling Aggregation operator of the Pipeline API.
  * <p>
  * The sample Jet pipeline uses a mock data source that generates random
  * trade events. It calculates for each stock the rolling sum of the amount
- * of money that changed hands trading it (i.e., the current traded volume
+ * of stock that changed hands trading it (i.e., the current traded volume
  * on that stock). The sample also starts a GUI window that visualizes the
  * rising traded volume of all stocks.
  */
@@ -37,15 +38,16 @@ public class TradingVolume {
 
     private static final String VOLUME_MAP_NAME = "volume-by-stock";
     private static final int TRADES_PER_SEC = 3_000;
+    private static final int MAX_LAG = 1000;
     private static final int NUMBER_OF_TICKERS = 20;
     private static final int DURATION_SECONDS = 60;
 
     private static Pipeline buildPipeline() {
         Pipeline p = Pipeline.create();
-        p.readFrom(tradeSource(NUMBER_OF_TICKERS, TRADES_PER_SEC, DURATION_SECONDS))
+        p.readFrom(tradeSource(NUMBER_OF_TICKERS, TRADES_PER_SEC, MAX_LAG, DURATION_SECONDS))
          .withoutTimestamps()
          .groupingKey(Trade::getTicker)
-         .rollingAggregate(summingLong(Trade::getPrice))
+         .rollingAggregate(summingLong(Trade::getQuantity))
          .writeTo(Sinks.map(VOLUME_MAP_NAME));
         return p;
     }

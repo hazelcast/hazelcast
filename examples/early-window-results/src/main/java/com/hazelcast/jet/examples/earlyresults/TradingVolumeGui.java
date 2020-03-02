@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.examples.earlyresults.support;
+package com.hazelcast.jet.examples.earlyresults;
 
 import com.hazelcast.collection.IList;
 import com.hazelcast.collection.ItemEvent;
@@ -32,6 +32,8 @@ import org.jfree.data.category.DefaultCategoryDataset;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static javax.swing.WindowConstants.EXIT_ON_CLOSE;
 
@@ -44,9 +46,8 @@ public final class TradingVolumeGui {
     private static final int WINDOW_Y = 100;
     private static final int WINDOW_WIDTH = 1200;
     private static final int WINDOW_HEIGHT = 650;
-    private static final int TIME_RANGE = 60;
     private static final int Y_RANGE_UPPER_INITIAL = 3000;
-    private static final double SCALE_Y = 1_000_000;
+    private static final double SCALE_Y = 1_000;
 
     private final IList<WindowResult<Long>> volumeList;
     private final boolean[] finalResultFlags = new boolean[60];
@@ -66,21 +67,24 @@ public final class TradingVolumeGui {
         DefaultCategoryDataset dataset = new DefaultCategoryDataset();
         CategoryPlot plot = createChartFrame(dataset);
         plot.getRangeAxis().setRange(0, Y_RANGE_UPPER_INITIAL);
-        for (Long ts = 2L; ts <= 60; ts += 2) {
-            dataset.addValue(0L, "", ts);
+        for (long ts = 0L; ts <= 60; ts += 2) {
+            dataset.addValue(0L, "", new Long(ts));
         }
+        AtomicLong first = new AtomicLong(-1L);
         ItemAddedListener<WindowResult<Long>> itemListener = tse -> EventQueue.invokeLater(() -> {
-            Long x = tse.end() / 1_000;
+            if (first.get() < 0) {
+                first.set(tse.end());
+            }
+            long x = TimeUnit.MILLISECONDS.toSeconds(tse.end() - first.get());
             double y = tse.result() / SCALE_Y;
             int col = dataset.getColumnIndex(x);
             if (col < finalResultFlags.length) {
-                boolean finalResultReceived = finalResultFlags[col];
-                if (finalResultReceived) {
+                if (finalResultFlags[col]) {
                     return;
                 }
                 finalResultFlags[col] = !tse.isEarly();
             }
-            dataset.addValue(y, "", x);
+            dataset.addValue(y, "", new Long(x));
         });
         volumeList.addItemListener(itemListener, true);
     }
