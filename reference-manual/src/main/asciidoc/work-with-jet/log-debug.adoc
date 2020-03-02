@@ -124,7 +124,7 @@ There is a wide range of metrics and statistics provided by IMDG:
 {hz-refman}#getting-member-statistics[IMDG Reference Manual])
 * executor statistics (see {hz-refman}#executor-statistics[IMDG Reference Manual])
 * partition related statistics (state, migration, replication)
-* garbage collection statistics (see {hz-javadoc}/memory/GarbageCollectorStats.html[IMDG API Docs])
+* garbage collection statistics
 * memory statistics for the JVM which current IMDG member belongs to (total
 physical/free OS memory, max/committed/used/free heap memory and
 max/committed/used/free native memory)
@@ -137,7 +137,7 @@ max/committed/used/free native memory)
 
 [cols="3,2"]
 |===
-|Names|Main tags
+|Names|Extra tags
 
 | **blockingWorkerCount**: Number of non-cooperative workers employed.
 
