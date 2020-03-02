@@ -39,7 +39,7 @@ dependency:
 <dependency>
     <groupId>com.hazelcast.jet</groupId>
     <artifactId>hazelcast-jet</artifactId>
-    <version>3.2</version>
+    <version>4.0</version>
 </dependency>
 ```
 
@@ -192,7 +192,7 @@ Maven snippet:
     <dependency>
         <groupId>com.hazelcast.jet</groupId>
         <artifactId>hazelcast-jet</artifactId>
-        <version>4.0-SNAPSHOT</version>
+        <version>4.1-SNAPSHOT</version>
     </dependency>
 </dependencies>
 ```
