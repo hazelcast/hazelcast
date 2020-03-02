@@ -21,7 +21,6 @@ import com.hazelcast.internal.services.ServiceNamespace;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 // read and updated only by partition threads
 final class PartitionReplicaVersions {
@@ -86,7 +85,7 @@ final class PartitionReplicaVersions {
         return fragmentVersions;
     }
 
-    void retainNamespaces(Set<ServiceNamespace> namespaces) {
+    void retainNamespaces(Collection<ServiceNamespace> namespaces) {
         fragmentVersionsMap.keySet().retainAll(namespaces);
     }
 
