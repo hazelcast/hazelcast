@@ -29,6 +29,7 @@ import com.hazelcast.sql.impl.calcite.expression.ExpressionConverterRexVisitor;
 import com.hazelcast.sql.impl.calcite.operators.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.calcite.opt.AbstractScanRel;
 import com.hazelcast.sql.impl.calcite.opt.ExplainCreator;
+import com.hazelcast.sql.impl.calcite.opt.physical.FetchPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.FilterPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.MapIndexScanPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.MapScanPhysicalRel;
@@ -41,7 +42,7 @@ import com.hazelcast.sql.impl.calcite.opt.physical.RootPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.SortPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.agg.AggregatePhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.BroadcastExchangePhysicalRel;
-import com.hazelcast.sql.impl.calcite.opt.physical.exchange.RootSingletonSortMergeExchangePhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.exchange.SortMergeExchangePhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.UnicastExchangePhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.join.HashJoinPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.join.NestedLoopJoinPhysicalRel;
@@ -58,6 +59,9 @@ import com.hazelcast.sql.impl.expression.aggregate.MinAggregateExpression;
 import com.hazelcast.sql.impl.expression.aggregate.SingleValueAggregateExpression;
 import com.hazelcast.sql.impl.expression.aggregate.SumAggregateExpression;
 import com.hazelcast.sql.impl.physical.AggregatePhysicalNode;
+import com.hazelcast.sql.impl.physical.FetchOffsetFieldTypeProvider;
+import com.hazelcast.sql.impl.physical.FetchPhysicalNode;
+import com.hazelcast.sql.impl.physical.FieldTypeProvider;
 import com.hazelcast.sql.impl.physical.FilterPhysicalNode;
 import com.hazelcast.sql.impl.physical.MapIndexScanPhysicalNode;
 import com.hazelcast.sql.impl.physical.MapScanPhysicalNode;
@@ -291,11 +295,16 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             ascs.add(!direction.isDescending());
         }
 
+        Expression fetch = convertExpression(FetchOffsetFieldTypeProvider.INSTANCE, rel.fetch);
+        Expression offset = convertExpression(FetchOffsetFieldTypeProvider.INSTANCE, rel.offset);
+
         SortPhysicalNode sortNode = new SortPhysicalNode(
             pollId(rel),
             upstreamNode,
             expressions,
-            ascs
+            ascs,
+            fetch,
+            offset
         );
 
         pushUpstream(sortNode);
@@ -359,7 +368,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     }
 
     @Override
-    public void onSingletonSortMergeExchange(RootSingletonSortMergeExchangePhysicalRel rel) {
+    public void onSortMergeExchange(SortMergeExchangePhysicalRel rel) {
         // Get upstream node. It should be sort node.
         PhysicalNode upstreamNode = pollSingleUpstream();
 
@@ -387,7 +396,9 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             edge,
             sendNode.getSchema().getTypes(),
             sortNode.getExpressions(),
-            sortNode.getAscs()
+            sortNode.getAscs(),
+            sortNode.getFetch(),
+            sortNode.getOffset()
         );
 
         pushUpstream(receiveNode);
@@ -533,6 +544,23 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
          pushUpstream(node);
      }
 
+     @Override
+     public void onFetch(FetchPhysicalRel rel) {
+         PhysicalNode input = pollSingleUpstream();
+
+         Expression fetch = convertExpression(FetchOffsetFieldTypeProvider.INSTANCE, rel.getFetch());
+         Expression offset = convertExpression(FetchOffsetFieldTypeProvider.INSTANCE, rel.getOffset());
+
+         FetchPhysicalNode node = new FetchPhysicalNode(
+             pollId(rel),
+             input,
+             fetch,
+             offset
+         );
+
+         pushUpstream(node);
+     }
+
      public static AggregateExpression convertAggregateCall(AggregateCall aggCall, PhysicalNodeSchema upstreamSchema) {
         SqlAggFunction aggFunc = aggCall.getAggregation();
         List<Integer> argList = aggCall.getArgList();
@@ -658,8 +686,12 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         return (Expression<Boolean>) convertedExpression;
     }
 
-    private Expression convertExpression(PhysicalNodeSchema schema, RexNode expression) {
-        ExpressionConverterRexVisitor converter = new ExpressionConverterRexVisitor(schema, paramsCount);
+    private Expression convertExpression(FieldTypeProvider fieldTypeProvider, RexNode expression) {
+        if (expression == null) {
+            return null;
+        }
+
+        ExpressionConverterRexVisitor converter = new ExpressionConverterRexVisitor(fieldTypeProvider, paramsCount);
 
         return expression.accept(converter);
     }

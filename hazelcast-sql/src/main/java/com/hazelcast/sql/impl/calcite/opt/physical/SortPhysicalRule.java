@@ -21,7 +21,8 @@ import com.hazelcast.sql.impl.calcite.distribution.DistributionTrait;
 import com.hazelcast.sql.impl.calcite.distribution.DistributionType;
 import com.hazelcast.sql.impl.calcite.opt.OptUtils;
 import com.hazelcast.sql.impl.calcite.opt.logical.SortLogicalRel;
-import com.hazelcast.sql.impl.calcite.opt.physical.exchange.RootSingletonSortMergeExchangePhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.exchange.SortMergeExchangePhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.exchange.UnicastExchangePhysicalRel;
 import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
@@ -30,9 +31,11 @@ import org.apache.calcite.rel.RelCollation;
 import org.apache.calcite.rel.RelCollationTraitDef;
 import org.apache.calcite.rel.RelFieldCollation;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rex.RexNode;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import static com.hazelcast.sql.impl.calcite.distribution.DistributionType.REPLICATED;
@@ -43,7 +46,7 @@ import static com.hazelcast.sql.impl.calcite.distribution.DistributionType.ROOT;
  * <ul>
  *     <li><b>Local</b> - in case the whole input is available locally (ROOT, REPLICATED)</li>
  *     <li><b>Two-phase (local + merge)</b> - in case the input is located on several nodes. In this case a
- *     {@link RootSingletonSortMergeExchangePhysicalRel} is created on top of local sort</li>
+ *     {@link SortMergeExchangePhysicalRel} is created on top of local sort</li>
  * </ul>
  * <p>
  * Local component may be removed altogether in case the input is already sorted on required attributes.
@@ -82,57 +85,29 @@ public final class SortPhysicalRule extends AbstractPhysicalRule {
     private Collection<RelNode> getTransforms(SortLogicalRel logicalSort, RelNode convertedInput) {
         List<RelNode> res = new ArrayList<>(1);
 
-        boolean singleMember = HazelcastRelOptCluster.isSingleMember();
-
         for (RelNode physicalInput : OptUtils.getPhysicalRelsFromSubset(convertedInput)) {
+            // Add local sorting if needed.
+            boolean requiresLocalSort = requiresLocalSort(
+                logicalSort.getCollation(),
+                physicalInput.getTraitSet().getTrait(RelCollationTraitDef.INSTANCE)
+            );
+
+            RelNode rel;
+
+            if (requiresLocalSort) {
+                rel = createLocalSort(logicalSort, physicalInput);
+            } else {
+                rel = createLocalNoSort(physicalInput, logicalSort.fetch, logicalSort.offset);
+            }
+
+            // Add merge phase if needed.
             DistributionTrait physicalInputDist = OptUtils.getDistribution(physicalInput);
 
-            boolean requiresLocalPhase = requiresLocalPhase(logicalSort.getCollation(), physicalInput);
-            boolean requiresDistributedPhase = requiresDistributedPhase(physicalInputDist);
-
-            RelNode rel;
-
-            if (requiresDistributedPhase && !singleMember) {
-                RelNode relInput;
-
-                if (requiresLocalPhase) {
-                    // Both distributed and local phases are needed.
-                    relInput = createLocalSort(logicalSort, physicalInput);
-                } else {
-                    // Only distributed phase is needed, since input is already sorted locally.
-                    relInput = physicalInput;
-                }
-
-                rel = createDistributedSort(logicalSort, relInput);
-            } else {
-                if (requiresLocalPhase) {
-                    // Only local sorting is needed.
-                    rel = createLocalSort(logicalSort, physicalInput);
-                } else {
-                    // The best case - sorting is eliminated completely.
-                    rel = physicalInput;
-                }
+            if (requiresMerge(physicalInputDist)) {
+                rel = createMerge(rel, logicalSort);
             }
 
-            res.add(rel);
-        }
-
-        // If no physical inputs were found, declare desired transformation on the input.
-        if (res.isEmpty()) {
-            boolean requiresLocalPhase = requiresLocalPhase(logicalSort.getCollation(), convertedInput);
-
-            RelNode rel;
-
-            if (requiresLocalPhase) {
-                rel = createLocalSort(logicalSort, convertedInput);
-            } else {
-                rel = convertedInput;
-            }
-
-            if (!singleMember) {
-                rel = createDistributedSort(logicalSort, rel);
-            }
-
+            // Add to the list of transformations.
             res.add(rel);
         }
 
@@ -142,12 +117,12 @@ public final class SortPhysicalRule extends AbstractPhysicalRule {
     /**
      * Check if local sorting phase is needed. It could be avoided iff sort collation is a prefix of input collation.
      *
-     * @param sortCollation Sort collation.
-     * @param input Input.
      * @return {@code True} if local sorting is needed, {@code false} otherwise.
      */
-    private static boolean requiresLocalPhase(RelCollation sortCollation, RelNode input) {
-        RelCollation inputCollation = input.getTraitSet().getTrait(RelCollationTraitDef.INSTANCE);
+    private static boolean requiresLocalSort(RelCollation sortCollation, RelCollation inputCollation) {
+        if (sortCollation.getFieldCollations().isEmpty()) {
+            return false;
+        }
 
         List<RelFieldCollation> sortFields = sortCollation.getFieldCollations();
         List<RelFieldCollation> inputFields = inputCollation.getFieldCollations();
@@ -178,19 +153,13 @@ public final class SortPhysicalRule extends AbstractPhysicalRule {
      * @param inputDist Input distribution.
      * @return {@code True} if distributed sorting is needed.
      */
-    private static boolean requiresDistributedPhase(DistributionTrait inputDist) {
+    private static boolean requiresMerge(DistributionTrait inputDist) {
         DistributionType inputDistType = inputDist.getType();
 
-        return !(inputDistType == ROOT || inputDistType == REPLICATED);
+        // TODO: Single member check should be generalized, taking in count pruning as well.
+        return !(inputDistType == ROOT || inputDistType == REPLICATED || HazelcastRelOptCluster.isSingleMember());
     }
 
-    /**
-     * Create local sort. Input traits are preserved except of collation, which is taken from the logical sort.
-     *
-     * @param logicalSort Logical sort.
-     * @param physicalInput Physical input.
-     * @return Local sort.
-     */
     private static SortPhysicalRel createLocalSort(SortLogicalRel logicalSort, RelNode physicalInput) {
         // Input traits are propagated, but new collation is used.
         RelTraitSet traitSet = OptUtils.traitPlus(physicalInput.getTraitSet(),
@@ -207,30 +176,63 @@ public final class SortPhysicalRule extends AbstractPhysicalRule {
         );
     }
 
-    /**
-     * Create distributed sort. Only physical nature of the input is preserved. Collation is taken from the sort,
-     * distribution is always SINGLETON by definition of {@link RootSingletonSortMergeExchangePhysicalRel}.
-     *
-     * @param logicalSort Logical sort.
-     * @param physicalInput Physical input.
-     * @return Physical distributed sort.
-     */
-    private static RootSingletonSortMergeExchangePhysicalRel createDistributedSort(
-        SortLogicalRel logicalSort,
-        RelNode physicalInput
-    ) {
-        // TODO: Do not use root here. Instead, we should set either PARTITIONED with 1 node or possible REPLICTED.
-        //  The latter one should be investigated thoroughly: in principle
+    private RelNode createLocalNoSort(RelNode input, RexNode fetch, RexNode offset) {
+        if (fetch == null) {
+            assert offset == null;
+
+            return input;
+        } else {
+            return new FetchPhysicalRel(
+                input.getCluster(),
+                input.getTraitSet(),
+                input,
+                fetch,
+                offset
+            );
+        }
+    }
+
+    private static RelNode createMerge(RelNode physicalInput, SortLogicalRel logicalSort) {
+        // TODO: Do not use root here? Instead, we should set either PARTITIONED with 1 node or possibly REPLICATED?
         RelTraitSet traitSet = OptUtils.traitPlus(physicalInput.getTraitSet(),
             logicalSort.getCollation(),
             DistributionTrait.ROOT_DIST
         );
 
-        return new RootSingletonSortMergeExchangePhysicalRel(
-            logicalSort.getCluster(),
-            traitSet,
-            physicalInput,
-            logicalSort.getCollation()
-        );
+        boolean fetchOnly = logicalSort.getCollation().getFieldCollations().isEmpty();
+
+        if (fetchOnly) {
+            // Perform merge without sorting.
+            RelNode rel = new UnicastExchangePhysicalRel(
+                logicalSort.getCluster(),
+                traitSet,
+                physicalInput,
+                Collections.emptyList()
+            );
+
+            boolean limit = logicalSort.fetch != null;
+
+            if (limit) {
+                rel = new FetchPhysicalRel(
+                    logicalSort.getCluster(),
+                    rel.getTraitSet(),
+                    rel,
+                    logicalSort.fetch,
+                    logicalSort.offset
+                );
+            }
+
+            return rel;
+        } else {
+            // Perform merge with sorting.
+            return new SortMergeExchangePhysicalRel(
+                logicalSort.getCluster(),
+                traitSet,
+                physicalInput,
+                logicalSort.getCollation(),
+                logicalSort.fetch,
+                logicalSort.offset
+            );
+        }
     }
 }

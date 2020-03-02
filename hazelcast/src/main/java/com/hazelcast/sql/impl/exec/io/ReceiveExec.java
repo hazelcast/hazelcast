@@ -66,8 +66,6 @@ public class ReceiveExec extends AbstractExec {
 
             return IterationResult.FETCHED_DONE;
         } else {
-            inbox.sendFlowControl();
-
             return IterationResult.FETCHED;
         }
     }

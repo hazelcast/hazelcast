@@ -18,61 +18,29 @@ package com.hazelcast.sql.impl.physical;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.physical.visitor.PhysicalNodeVisitor;
-import com.hazelcast.sql.impl.type.GenericType;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Objects;
 
 @SuppressWarnings("rawtypes")
-public class SortPhysicalNode extends UniInputPhysicalNode {
-    /** Expressions. */
-    private List<Expression> expressions;
-
-    /** Sort orders. */
-    private List<Boolean> ascs;
-
+public class FetchPhysicalNode extends UniInputPhysicalNode {
     /** Limit. */
     private Expression fetch;
 
     /** Offset. */
     private Expression offset;
 
-    public SortPhysicalNode() {
+    public FetchPhysicalNode() {
         // No-op.
     }
 
-    public SortPhysicalNode(
-        int id,
-        PhysicalNode upstream,
-        List<Expression> expressions,
-        List<Boolean> ascs,
-        Expression fetch,
-        Expression offset
-    ) {
+    public FetchPhysicalNode(int id, PhysicalNode upstream, Expression fetch, Expression offset) {
         super(id, upstream);
 
-        for (Expression<?> expression : expressions) {
-            if (expression.getType().getType() == GenericType.LATE) {
-                throw HazelcastSqlException.error("Expression type cannot be resolved: " + expression);
-            }
-        }
-
-        this.expressions = expressions;
-        this.ascs = ascs;
         this.fetch = fetch;
         this.offset = offset;
-    }
-
-    public List<Expression> getExpressions() {
-        return expressions;
-    }
-
-    public List<Boolean> getAscs() {
-        return ascs;
     }
 
     public Expression getFetch() {
@@ -85,28 +53,24 @@ public class SortPhysicalNode extends UniInputPhysicalNode {
 
     @Override
     public void visit0(PhysicalNodeVisitor visitor) {
-        visitor.onSortNode(this);
+        visitor.onFetchNode(this);
     }
 
     @Override
     public void writeData1(ObjectDataOutput out) throws IOException {
-        out.writeObject(expressions);
-        out.writeObject(ascs);
         out.writeObject(fetch);
         out.writeObject(offset);
     }
 
     @Override
     public void readData1(ObjectDataInput in) throws IOException {
-        expressions = in.readObject();
-        ascs = in.readObject();
         fetch = in.readObject();
         offset = in.readObject();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, expressions, ascs, fetch, offset, upstream);
+        return Objects.hash(id, fetch, offset, upstream);
     }
 
     @Override
@@ -119,15 +83,15 @@ public class SortPhysicalNode extends UniInputPhysicalNode {
             return false;
         }
 
-        SortPhysicalNode that = (SortPhysicalNode) o;
+        FetchPhysicalNode that = (FetchPhysicalNode) o;
 
-        return id == that.id && expressions.equals(that.expressions) && ascs.equals(that.ascs)
-            && Objects.equals(fetch, that.fetch) && Objects.equals(offset, that.offset) && upstream.equals(that.upstream);
+        return id == that.id && Objects.equals(fetch, that.fetch) && Objects.equals(offset, that.offset)
+                   && upstream.equals(that.upstream);
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{id=" + id + ", expressions=" + expressions + ", ascs=" + ascs
-            + ", fetch=" + fetch + ", offset=" + offset + ", upstream=" + upstream + '}';
+        return getClass().getSimpleName() + "{id=" + id + ", fetch=" + fetch + ", offset=" + offset
+                   + ", upstream=" + upstream + '}';
     }
 }

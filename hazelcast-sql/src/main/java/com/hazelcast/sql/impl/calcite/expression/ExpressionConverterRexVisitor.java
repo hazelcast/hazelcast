@@ -20,7 +20,7 @@ import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ParameterExpression;
-import com.hazelcast.sql.impl.physical.PhysicalNodeSchema;
+import com.hazelcast.sql.impl.physical.FieldTypeProvider;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexCorrelVariable;
 import org.apache.calcite.rex.RexDynamicParam;
@@ -47,13 +47,13 @@ import java.util.List;
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity", "rawtypes"})
 public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
     /** Schema of the node. */
-    private final PhysicalNodeSchema schema;
+    private final FieldTypeProvider fieldTypeProvider;
 
     /** Parameters. */
     private final int paramsCount;
 
-    public ExpressionConverterRexVisitor(PhysicalNodeSchema schema, int paramsCount) {
-        this.schema = schema;
+    public ExpressionConverterRexVisitor(FieldTypeProvider fieldTypeProvider, int paramsCount) {
+        this.fieldTypeProvider = fieldTypeProvider;
         this.paramsCount = paramsCount;
     }
 
@@ -61,7 +61,7 @@ public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
     public Expression visitInputRef(RexInputRef inputRef) {
         int index = inputRef.getIndex();
 
-        return ColumnExpression.create(index, schema.getType(index));
+        return ColumnExpression.create(index, fieldTypeProvider.getType(index));
     }
 
     @Override

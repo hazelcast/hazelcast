@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.opt.physical.visitor;
 
+import com.hazelcast.sql.impl.calcite.opt.physical.FetchPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.agg.AggregatePhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.FilterPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.MapIndexScanPhysicalRel;
@@ -28,7 +29,7 @@ import com.hazelcast.sql.impl.calcite.opt.physical.ReplicatedToDistributedPhysic
 import com.hazelcast.sql.impl.calcite.opt.physical.RootPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.SortPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.BroadcastExchangePhysicalRel;
-import com.hazelcast.sql.impl.calcite.opt.physical.exchange.RootSingletonSortMergeExchangePhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.exchange.SortMergeExchangePhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.UnicastExchangePhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.join.HashJoinPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.join.NestedLoopJoinPhysicalRel;
@@ -68,7 +69,7 @@ public abstract class PhysicalRelVisitorAdapter implements PhysicalRelVisitor {
     }
 
     @Override
-    public void onSingletonSortMergeExchange(RootSingletonSortMergeExchangePhysicalRel rel) {
+    public void onSortMergeExchange(SortMergeExchangePhysicalRel rel) {
         onNode(rel);
     }
 
@@ -109,6 +110,11 @@ public abstract class PhysicalRelVisitorAdapter implements PhysicalRelVisitor {
 
     @Override
     public void onMaterializedInput(MaterializedInputPhysicalRel rel) {
+        onNode(rel);
+    }
+
+    @Override
+    public void onFetch(FetchPhysicalRel rel) {
         onNode(rel);
     }
 

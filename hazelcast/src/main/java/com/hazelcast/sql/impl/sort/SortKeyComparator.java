@@ -60,6 +60,6 @@ public class SortKeyComparator implements Comparator<SortKey> {
             }
         }
 
-        return Long.compare(o1.getIdx(), o2.getIdx());
+        return Long.compare(o1.getIndex(), o2.getIndex());
     }
 }

@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.physical.visitor;
 
 import com.hazelcast.sql.impl.physical.AggregatePhysicalNode;
+import com.hazelcast.sql.impl.physical.FetchPhysicalNode;
 import com.hazelcast.sql.impl.physical.FilterPhysicalNode;
 import com.hazelcast.sql.impl.physical.MapIndexScanPhysicalNode;
 import com.hazelcast.sql.impl.physical.MapScanPhysicalNode;
@@ -53,4 +54,5 @@ public interface PhysicalNodeVisitor {
     void onHashJoinNode(HashJoinPhysicalNode node);
     void onMaterializedInputNode(MaterializedInputPhysicalNode node);
     void onReplicatedToPartitionedNode(ReplicatedToPartitionedPhysicalNode node);
+    void onFetchNode(FetchPhysicalNode node);
 }

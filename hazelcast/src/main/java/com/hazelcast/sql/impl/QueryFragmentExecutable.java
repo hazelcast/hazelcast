@@ -165,6 +165,13 @@ public class QueryFragmentExecutable {
 
                 IterationResult res = exec.advance();
 
+                // Send flow control messages if needed.
+                if (res != IterationResult.FETCHED_DONE) {
+                    for (AbstractInbox inbox : inboxes.values()) {
+                        inbox.sendFlowControl();
+                    }
+                }
+
                 // If executor finished, notify the state.
                 if (res == IterationResult.FETCHED_DONE) {
                     completed = true;

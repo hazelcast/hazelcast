@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql.impl.exec;
 
+import com.hazelcast.sql.impl.QueryFragmentContext;
+import com.hazelcast.sql.impl.exec.fetch.Fetch;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.ListRowBatch;
 import com.hazelcast.sql.impl.row.Row;
@@ -30,6 +32,7 @@ import java.util.TreeMap;
 /**
  * Executor which sorts rows from the upstream operator.
  */
+@SuppressWarnings("rawtypes")
 public class SortExec extends AbstractUpstreamAwareExec {
     /** Expressions. */
     private final List<Expression> expressions;
@@ -37,18 +40,37 @@ public class SortExec extends AbstractUpstreamAwareExec {
     /** Map with sorted result. */
     private final TreeMap<SortKey, Row> map;
 
+    /** Fetch processor. */
+    private final Fetch fetch;
+
     /** Resulting batch. */
     private RowBatch res;
 
     /** Index for unique elements. */
     private long idx;
 
-    public SortExec(int id, Exec upstream, List<Expression> expressions, List<Boolean> ascs) {
+    public SortExec(
+        int id,
+        Exec upstream,
+        List<Expression> expressions,
+        List<Boolean> ascs,
+        Expression fetch,
+        Expression offset
+    ) {
         super(id, upstream);
 
         this.expressions = expressions;
 
         map = new TreeMap<>(new SortKeyComparator(ascs));
+
+        this.fetch = fetch != null ? new Fetch(fetch, offset) : null;
+    }
+
+    @Override
+    protected void setup1(QueryFragmentContext ctx) {
+        if (fetch != null) {
+            fetch.setup();
+        }
     }
 
     @Override
@@ -102,7 +124,14 @@ public class SortExec extends AbstractUpstreamAwareExec {
 
         resList.addAll(map.values());
 
-        res = new ListRowBatch(resList);
+        RowBatch res = new ListRowBatch(resList);
+
+        if (fetch != null) {
+            // TODO: This is not very efficient to re-copy everything! Re-implement without additional copy.
+            res = fetch.apply(res);
+        }
+
+        this.res = res;
     }
 
     @Override

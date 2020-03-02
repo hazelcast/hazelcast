@@ -26,24 +26,24 @@ public class SortKey {
     private final List<Object> key;
 
     /** Index to make rows unique. */
-    private final long idx;
+    private final long index;
 
-    public SortKey(List<Object> key, long idx) {
+    public SortKey(List<Object> key, long index) {
         this.key = key;
-        this.idx = idx;
+        this.index = index;
     }
 
     public List<Object> getKey() {
         return key;
     }
 
-    public long getIdx() {
-        return idx;
+    public long getIndex() {
+        return index;
     }
 
     @Override
     public int hashCode() {
-        return Long.hashCode(idx);
+        return Long.hashCode(index);
     }
 
     @Override
@@ -51,7 +51,7 @@ public class SortKey {
         if (obj instanceof SortKey) {
             SortKey other = (SortKey) obj;
 
-            return other.idx == ((SortKey) obj).idx;
+            return other.index == ((SortKey) obj).index;
         } else {
             return false;
         }

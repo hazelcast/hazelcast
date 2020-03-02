@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.opt.physical.visitor;
 
+import com.hazelcast.sql.impl.calcite.opt.physical.FetchPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.agg.AggregatePhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.FilterPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.MapIndexScanPhysicalRel;
@@ -27,7 +28,7 @@ import com.hazelcast.sql.impl.calcite.opt.physical.ReplicatedToDistributedPhysic
 import com.hazelcast.sql.impl.calcite.opt.physical.RootPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.SortPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.BroadcastExchangePhysicalRel;
-import com.hazelcast.sql.impl.calcite.opt.physical.exchange.RootSingletonSortMergeExchangePhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.exchange.SortMergeExchangePhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.UnicastExchangePhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.join.HashJoinPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.join.NestedLoopJoinPhysicalRel;
@@ -42,7 +43,7 @@ public interface PhysicalRelVisitor {
     void onReplicatedMapScan(ReplicatedMapScanPhysicalRel rel);
     void onUnicastExchange(UnicastExchangePhysicalRel rel);
     void onBroadcastExchange(BroadcastExchangePhysicalRel rel);
-    void onSingletonSortMergeExchange(RootSingletonSortMergeExchangePhysicalRel rel);
+    void onSortMergeExchange(SortMergeExchangePhysicalRel rel);
     void onReplicatedToDistributed(ReplicatedToDistributedPhysicalRel rel);
     void onSort(SortPhysicalRel rel);
     void onProject(ProjectPhysicalRel rel);
@@ -51,4 +52,5 @@ public interface PhysicalRelVisitor {
     void onNestedLoopJoin(NestedLoopJoinPhysicalRel rel);
     void onHashJoin(HashJoinPhysicalRel rel);
     void onMaterializedInput(MaterializedInputPhysicalRel rel);
+    void onFetch(FetchPhysicalRel rel);
 }

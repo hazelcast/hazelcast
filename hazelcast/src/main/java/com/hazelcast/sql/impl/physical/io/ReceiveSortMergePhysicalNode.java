@@ -46,6 +46,12 @@ public class ReceiveSortMergePhysicalNode extends ZeroInputPhysicalNode implemen
     /** Sort directions. */
     private List<Boolean> ascs;
 
+    /** Limit. */
+    private Expression fetch;
+
+    /** Offset. */
+    private Expression offset;
+
     public ReceiveSortMergePhysicalNode() {
         // No-op.
     }
@@ -55,7 +61,9 @@ public class ReceiveSortMergePhysicalNode extends ZeroInputPhysicalNode implemen
         int edgeId,
         List<DataType> fieldTypes,
         List<Expression> expressions,
-        List<Boolean> ascs
+        List<Boolean> ascs,
+        Expression fetch,
+        Expression offset
     ) {
         super(id);
 
@@ -63,6 +71,8 @@ public class ReceiveSortMergePhysicalNode extends ZeroInputPhysicalNode implemen
         this.fieldTypes = fieldTypes;
         this.expressions = expressions;
         this.ascs = ascs;
+        this.fetch = fetch;
+        this.offset = offset;
     }
 
     public List<Expression> getExpressions() {
@@ -71,6 +81,14 @@ public class ReceiveSortMergePhysicalNode extends ZeroInputPhysicalNode implemen
 
     public List<Boolean> getAscs() {
         return ascs;
+    }
+
+    public Expression getFetch() {
+        return fetch;
+    }
+
+    public Expression getOffset() {
+        return offset;
     }
 
     @Override
@@ -99,6 +117,8 @@ public class ReceiveSortMergePhysicalNode extends ZeroInputPhysicalNode implemen
         SerializationUtil.writeList(fieldTypes, out);
         out.writeObject(expressions);
         out.writeObject(ascs);
+        out.writeObject(fetch);
+        out.writeObject(offset);
     }
 
     @Override
@@ -107,11 +127,13 @@ public class ReceiveSortMergePhysicalNode extends ZeroInputPhysicalNode implemen
         fieldTypes = SerializationUtil.readList(in);
         expressions = in.readObject();
         ascs = in.readObject();
+        fetch = in.readObject();
+        offset = in.readObject();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, edgeId, expressions, ascs);
+        return Objects.hash(id, edgeId, expressions, ascs, fetch, offset);
     }
 
     @Override
@@ -126,12 +148,13 @@ public class ReceiveSortMergePhysicalNode extends ZeroInputPhysicalNode implemen
 
         ReceiveSortMergePhysicalNode that = (ReceiveSortMergePhysicalNode) o;
 
-        return id == that.id && edgeId == that.edgeId && expressions.equals(that.expressions) && ascs.equals(that.ascs);
+        return id == that.id && edgeId == that.edgeId && expressions.equals(that.expressions) && ascs.equals(that.ascs)
+                   && Objects.equals(fetch, that.fetch) && Objects.equals(offset, that.offset);
     }
 
     @Override
     public String toString() {
         return getClass().getSimpleName() + "{id=" + id + ", edgeId=" + edgeId + ", expressions=" + expressions
-            + ", ascs=" + ascs + '}';
+            + ", ascs=" + ascs + ", fetch=" + fetch + ", offset=" + offset + '}';
     }
 }

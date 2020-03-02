@@ -32,6 +32,7 @@ import com.hazelcast.sql.impl.exec.ReplicatedToPartitionedExec;
 import com.hazelcast.sql.impl.exec.RootExec;
 import com.hazelcast.sql.impl.exec.SortExec;
 import com.hazelcast.sql.impl.exec.agg.AggregateExec;
+import com.hazelcast.sql.impl.exec.fetch.FetchExec;
 import com.hazelcast.sql.impl.exec.index.MapIndexScanExec;
 import com.hazelcast.sql.impl.exec.io.BroadcastSendExec;
 import com.hazelcast.sql.impl.exec.io.ReceiveExec;
@@ -45,6 +46,7 @@ import com.hazelcast.sql.impl.mailbox.SingleInbox;
 import com.hazelcast.sql.impl.mailbox.StripedInbox;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
 import com.hazelcast.sql.impl.physical.AggregatePhysicalNode;
+import com.hazelcast.sql.impl.physical.FetchPhysicalNode;
 import com.hazelcast.sql.impl.physical.FilterPhysicalNode;
 import com.hazelcast.sql.impl.physical.MapIndexScanPhysicalNode;
 import com.hazelcast.sql.impl.physical.MapScanPhysicalNode;
@@ -175,7 +177,9 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
             node.getId(),
             inbox,
             node.getExpressions(),
-            node.getAscs()
+            node.getAscs(),
+            node.getFetch(),
+            node.getOffset()
         );
 
         push(res);
@@ -336,7 +340,9 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
             node.getId(),
             pop(),
             node.getExpressions(),
-            node.getAscs()
+            node.getAscs(),
+            node.getFetch(),
+            node.getOffset()
         );
 
         push(res);
@@ -435,7 +441,21 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
         push(res);
     }
 
-    public Exec getExec() {
+     @Override
+     public void onFetchNode(FetchPhysicalNode node) {
+         Exec upstream = pop();
+
+         FetchExec res = new FetchExec(
+             node.getId(),
+             upstream,
+             node.getFetch(),
+             node.getOffset()
+         );
+
+         push(res);
+     }
+
+     public Exec getExec() {
         return exec;
     }
 

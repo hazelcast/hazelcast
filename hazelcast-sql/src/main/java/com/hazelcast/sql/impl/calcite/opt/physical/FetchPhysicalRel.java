@@ -14,62 +14,58 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.opt.physical.exchange;
+package com.hazelcast.sql.impl.calcite.opt.physical;
 
-import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.PhysicalRelVisitor;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
-import org.apache.calcite.rel.RelCollation;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelWriter;
+import org.apache.calcite.rel.SingleRel;
+import org.apache.calcite.rex.RexNode;
 
 import java.util.List;
 
 /**
- * Exchange which marge sorted input streams from several nodes into a a single sorted stream on a single node.
- * <p>
- * Traits:
- * <ul>
- *     <li><b>Collation</b>: derived from the input, never empty</li>
- *     <li><b>Distribution</b>: ROOT</li>
- * </ul>
+ * A node to perform limit/offset operations.
  */
-public class RootSingletonSortMergeExchangePhysicalRel extends AbstractExchangePhysicalRel {
-    /** Collation. */
-    private final RelCollation collation;
+// TODO: Implement fetch-pushdown rule. The idea is to limit the number of returned rows as early as possible. This op
+//  optimization is applicable to nodes which doesn't change the number of rows. E.g.: project, semi-join.
+public class FetchPhysicalRel extends SingleRel implements PhysicalRel {
+    private final RexNode fetch;
+    private final RexNode offset;
 
-    public RootSingletonSortMergeExchangePhysicalRel(
-        RelOptCluster cluster,
-        RelTraitSet traitSet,
-        RelNode input,
-        RelCollation collation
-    ) {
-        super(cluster, traitSet, input);
+    public FetchPhysicalRel(RelOptCluster cluster, RelTraitSet traits, RelNode input, RexNode fetch, RexNode offset) {
+        super(cluster, traits, input);
 
-        this.collation = collation;
+        this.fetch = fetch;
+        this.offset = offset;
     }
 
-    public RelCollation getCollation() {
-        return collation;
+    public RexNode getFetch() {
+        return fetch;
+    }
+
+    public RexNode getOffset() {
+        return offset;
     }
 
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new RootSingletonSortMergeExchangePhysicalRel(getCluster(), traitSet, sole(inputs), collation);
+        return new FetchPhysicalRel(getCluster(), traitSet, sole(inputs), fetch, offset);
     }
 
     @Override
     public void visit(PhysicalRelVisitor visitor) {
         ((PhysicalRel) input).visit(visitor);
 
-        visitor.onSingletonSortMergeExchange(this);
+        visitor.onFetch(this);
     }
 
     @Override
     public final RelWriter explainTerms(RelWriter pw) {
         super.explainTerms(pw);
 
-        return pw.item("collation", collation.getFieldCollations());
+        return pw.item("fetch", fetch).item("offset", offset);
     }
 }

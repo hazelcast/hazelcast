@@ -25,7 +25,7 @@ import java.util.List;
 /**
  * Schema of a node.
  */
-public class PhysicalNodeSchema {
+public class PhysicalNodeSchema implements FieldTypeProvider {
     private final List<DataType> types;
     private final int rowWidth;
 
@@ -43,6 +43,7 @@ public class PhysicalNodeSchema {
         return new PhysicalNodeSchema(types);
     }
 
+    @Override
     public DataType getType(int index) {
         assert index <= types.size();
 

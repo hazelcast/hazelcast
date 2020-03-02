@@ -32,6 +32,10 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 
 public class SqlBackpressureTest extends SqlTestSupport {
+    /** Base query. */
+    private static final String SQL_BASE =
+        "SELECT l01, l02, l03, l04, l05, l06, l07, l08, l09, l10, l11, l12, l13, l14, l15, l16 FROM map ";
+
     // 128 - row width, 128 * 8 = 1Kb, 1Kb * 1024 = 1Mb, 1Mb * 5 - senders will need at least 2 control flow messages.
     private static final int ROW_COUNT = 7 * 8 * 1024;
 
@@ -61,7 +65,7 @@ public class SqlBackpressureTest extends SqlTestSupport {
         Map<Long, LongValue> localMap = new HashMap<>();
 
         for (long i = 0; i < ROW_COUNT; i++) {
-            localMap.put(key++, new LongValue());
+            localMap.put(key++, new LongValue(i));
         }
 
         map.putAll(localMap);
@@ -79,10 +83,22 @@ public class SqlBackpressureTest extends SqlTestSupport {
 
         List<SqlRow> rows = getQueryRows(
             member,
-            "SELECT l01, l02, l03, l04, l05, l06, l07, l08, l09, l10, l11, l12, l13, l14, l15, l16 FROM map"
+            SQL_BASE
         );
 
         assertEquals(ROW_COUNT, rows.size());
+    }
+
+    @Test
+    public void testBackpressureLimit() {
+        reload();
+
+        List<SqlRow> rows = getQueryRows(
+            member,
+            SQL_BASE + "LIMIT 200 OFFSET 100"
+        );
+
+        assertEquals(200, rows.size());
     }
 
     @Test
@@ -91,10 +107,22 @@ public class SqlBackpressureTest extends SqlTestSupport {
 
         List<SqlRow> rows = getQueryRows(
             member,
-            "SELECT l01, l02, l03, l04, l05, l06, l07, l08, l09, l10, l11, l12, l13, l14, l15, l16 FROM map ORDER BY l01"
+            SQL_BASE + "ORDER BY l01"
         );
 
         assertEquals(ROW_COUNT, rows.size());
+    }
+
+    @Test
+    public void testBackpressureWithSortingLimit() {
+        reload();
+
+        List<SqlRow> rows = getQueryRows(
+            member,
+            SQL_BASE + "ORDER BY l01 LIMIT 200 OFFSET 100"
+        );
+
+        assertEquals(200, rows.size());
     }
 
     private static class LongValue implements Serializable {
@@ -114,6 +142,25 @@ public class SqlBackpressureTest extends SqlTestSupport {
         public long l14;
         public long l15;
         public long l16;
+
+        private LongValue(long val) {
+            this.l01 = val;
+            this.l02 = val;
+            this.l03 = val;
+            this.l04 = val;
+            this.l05 = val;
+            this.l06 = val;
+            this.l07 = val;
+            this.l08 = val;
+            this.l09 = val;
+            this.l10 = val;
+            this.l11 = val;
+            this.l12 = val;
+            this.l13 = val;
+            this.l14 = val;
+            this.l15 = val;
+            this.l16 = val;
+        }
 
         public long getL01() {
             return l01;

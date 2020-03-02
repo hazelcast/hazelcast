@@ -16,14 +16,19 @@
 
 package com.hazelcast.sql.impl.exec.io;
 
+import com.hazelcast.sql.impl.QueryFragmentContext;
 import com.hazelcast.sql.impl.exec.AbstractExec;
 import com.hazelcast.sql.impl.exec.IterationResult;
+import com.hazelcast.sql.impl.exec.fetch.Fetch;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.mailbox.SendBatch;
 import com.hazelcast.sql.impl.mailbox.StripedInbox;
+import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.ListRowBatch;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
+import com.hazelcast.sql.impl.sort.MergeSortSource;
+import com.hazelcast.sql.impl.sort.MergeSort;
 import com.hazelcast.sql.impl.sort.SortKey;
 import com.hazelcast.sql.impl.sort.SortKeyComparator;
 
@@ -41,23 +46,23 @@ public class ReceiveSortMergeExec extends AbstractExec {
     /** Expressions. */
     private final List<Expression> expressions;
 
-    /** Input stripes. */
-    private final List<Row>[] stripes;
+    /** Sorter. */
+    private final MergeSort sorter;
 
-    /** Finished stripes. */
-    private final boolean[] stripesDone;
-
-    /** Comparator. */
-    private final SortKeyComparator comparator;
+    /** Fetch processor. */
+    private final Fetch fetch;
 
     /** Current batch. */
     private RowBatch curBatch;
 
-    /** Whether all sources are available for sorting. */
-    private boolean inputsAvailable;
-
-    @SuppressWarnings("unchecked")
-    public ReceiveSortMergeExec(int id, StripedInbox inbox, List<Expression> expressions, List<Boolean> ascs) {
+    public ReceiveSortMergeExec(
+        int id,
+        StripedInbox inbox,
+        List<Expression> expressions,
+        List<Boolean> ascs,
+        Expression fetch,
+        Expression offset
+    ) {
         super(id);
 
         this.inbox = inbox;
@@ -66,141 +71,57 @@ public class ReceiveSortMergeExec extends AbstractExec {
         // TODO: If there is only one input edge, then normal ReceiveExec should be used instead, since everything is already
         //  sorted. This should be a part of partition pruning.
 
-        stripes = new List[inbox.getStripeCount()];
-        stripesDone = new boolean[inbox.getStripeCount()];
+        MergeSortSource[] sources = new MergeSortSource[inbox.getStripeCount()];
 
-        comparator = new SortKeyComparator(ascs);
+        for (int i = 0; i < inbox.getStripeCount(); i++) {
+            sources[i] = new Source(i);
+        }
+
+        // TODO: Pass limit here if any.
+        sorter = new MergeSort(sources, new SortKeyComparator(ascs));
+
+        this.fetch = fetch != null ? new Fetch(fetch, offset) : null;
+    }
+
+    @Override
+    protected void setup0(QueryFragmentContext ctx) {
+        if (fetch != null) {
+            fetch.setup();
+        }
     }
 
     @Override
     public IterationResult advance0() {
-        // Try polling inputs.
-        pollInputs();
+        while (true) {
+            List<Row> rows = sorter.nextBatch();
+            boolean done = sorter.isDone();
 
-        if (!inputsAvailable) {
-            // Some nodes haven't sent their inputs yet, so we cannot proceed.
-            // TODO: Something is really wrong here: why we ever return "FETCHED_DONE" if some inputs are not available?
-            //  It seems that the whole rewrite of the operator is needed.
-            return inbox.closed() ? IterationResult.FETCHED_DONE : IterationResult.WAIT;
-        }
+            if (rows == null) {
+                curBatch = EmptyRowBatch.INSTANCE;
 
-        // All inputs available, sort as much as possible.
-        prepareBatch();
+                return done ? IterationResult.FETCHED_DONE : IterationResult.WAIT;
+            } else {
+                RowBatch batch = new ListRowBatch(rows);
 
-        if (inbox.closed()) {
-            return IterationResult.FETCHED_DONE;
-        } else {
-            // Apply backpressure.
-            inbox.sendFlowControl();
+                if (fetch != null) {
+                    batch = fetch.apply(batch);
+                    done |= fetch.isDone();
 
-            return IterationResult.FETCHED;
+                    if (batch.getRowCount() == 0 && !done) {
+                        continue;
+                    }
+                }
+
+                curBatch = batch;
+
+                return done ? IterationResult.FETCHED_DONE : IterationResult.FETCHED;
+            }
         }
     }
 
     @Override
     public RowBatch currentBatch0() {
         return curBatch;
-    }
-
-    /**
-     * Try polling inputs so that at least one batch is available everywhere.
-     */
-    private void pollInputs() {
-        if (inputsAvailable) {
-            return;
-        }
-
-        boolean res = true;
-
-        for (int i = 0; i < stripes.length; i++) {
-            if (stripesDone[i]) {
-                continue;
-            }
-
-            List<Row> stripeRows = stripes[i];
-
-            // TODO: This implementation is inefficient: we take only one batch from the inbox. What we should do
-            //  instead is poll all available batches from queue!
-            if (stripeRows == null) {
-                while (true) {
-                    SendBatch stripeBatch = inbox.poll(i);
-
-                    if (stripeBatch == null) {
-                        // No batch available at the moment, wait.
-                        res = false;
-
-                        break;
-                    } else {
-                        if (stripeBatch.isLast()) {
-                            stripesDone[i] = true;
-                        }
-
-                        List<Row> rows = stripeBatch.getRows();
-
-                        if (!rows.isEmpty()) {
-                            stripes[i] = rows;
-
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-
-        if (res) {
-            inputsAvailable = true;
-        }
-    }
-
-    /**
-     * Prepare sorted batch.
-     */
-    private void prepareBatch() {
-        List<Row> rows = new ArrayList<>();
-
-        // Sort entries until inputs are available.
-        while (inputsAvailable) {
-            SortKey curKey = null;
-            int curIdx = -1;
-
-            for (int i = 0; i < stripes.length; i++) {
-                List<Row> stripeRows = stripes[i];
-
-                if (stripeRows == null) {
-                    assert stripesDone[i];
-
-                    continue;
-                }
-
-                assert !stripeRows.isEmpty();
-
-                SortKey stripeKey = prepareSortKey(stripeRows.get(0), i);
-
-                if (curKey == null || comparator.compare(stripeKey, curKey) < 0) {
-                    curKey = stripeKey;
-                    curIdx = i;
-                }
-            }
-
-            if (curKey == null) {
-                // Avoid infinite loop is all stripes are done.
-                break;
-            } else {
-                List<Row> stripeRows = stripes[curIdx];
-
-                rows.add(stripeRows.remove(0));
-
-                if (stripeRows.isEmpty()) {
-                    stripes[curIdx] = null;
-
-                    if (!stripesDone[curIdx]) {
-                        inputsAvailable = false;
-                    }
-                }
-            }
-        }
-
-        curBatch = new ListRowBatch(rows);
     }
 
     /**
@@ -223,5 +144,92 @@ public class ReceiveSortMergeExec extends AbstractExec {
     @Override
     public boolean canReset() {
         return false;
+    }
+
+    private final class Source implements MergeSortSource {
+        private static final int INDEX_BEFORE = -1;
+
+        /** Index of stripe. */
+        private final int index;
+
+        /** Current batch we are iterating over. */
+        private List<Row> curRows;
+
+        /** Current position in the batch. */
+        private int curRowIndex = INDEX_BEFORE;
+
+        /** Current key. */
+        private SortKey curKey;
+
+        /** Current row. */
+        private Row curRow;
+
+        /** Whether the last batch was polled. */
+        private boolean lastBatch;
+
+        private Source(int index) {
+            this.index = index;
+        }
+
+        @Override
+        public boolean advance() {
+            // Get the next batch if needed.
+            while (noBatch()) {
+                if (lastBatch) {
+                    return false;
+                }
+
+                SendBatch batch = inbox.poll(index);
+
+                if (batch == null) {
+                    return false;
+                }
+
+                lastBatch = batch.isLast();
+
+                List<Row> rows = batch.getRows();
+
+                if (!rows.isEmpty()) {
+                    curRows = rows;
+                    curRowIndex = 0;
+
+                    break;
+                }
+            }
+
+            // At this point we should have a batch with at least one row, so get it.
+            assert curRowIndex < curRows.size();
+
+            // Get row and key.
+            curRow = curRows.get(curRowIndex++);
+            curKey = prepareSortKey(curRow, index);
+
+            // Check if batch is over.
+            if (curRowIndex == curRows.size()) {
+                curRows = null;
+                curRowIndex = INDEX_BEFORE;
+            }
+
+            return true;
+        }
+
+        @Override
+        public boolean isDone() {
+            return noBatch() && lastBatch;
+        }
+
+        @Override
+        public SortKey peekKey() {
+            return curKey;
+        }
+
+        @Override
+        public Row peekRow() {
+            return curRow;
+        }
+
+        private boolean noBatch() {
+            return curRowIndex == INDEX_BEFORE;
+        }
     }
 }
