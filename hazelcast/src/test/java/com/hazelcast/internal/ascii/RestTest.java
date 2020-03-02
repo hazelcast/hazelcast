@@ -131,6 +131,7 @@ public class RestTest {
 
         assertEquals(HTTP_OK, communicator.mapPut(name, key + "/", value));
         assertEquals(value, communicator.mapGetAndResponse(name, key));
+        assertEquals(value, communicator.mapGetAndResponse(name, key + "/"));
         assertTrue(instance.getMap(name).containsKey(key));
     }
 
@@ -155,6 +156,18 @@ public class RestTest {
 
         assertEquals(HTTP_OK, communicator.mapPut(name, key, value));
         assertEquals(HTTP_OK, communicator.mapDelete(name, key));
+        assertFalse(instance.getMap(name).containsKey(key));
+    }
+
+    @Test
+    public void testMapPutDeleteByUrlEndingWithSlash() throws Exception {
+        String name = randomMapName();
+
+        String key = "key";
+        String value = "value";
+
+        assertEquals(HTTP_OK, communicator.mapPut(name, key, value));
+        assertEquals(HTTP_OK, communicator.mapDelete(name, key + "/"));
         assertFalse(instance.getMap(name).containsKey(key));
     }
 

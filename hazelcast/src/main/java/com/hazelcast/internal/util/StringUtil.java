@@ -388,4 +388,17 @@ public final class StringUtil {
                 ? false
                 : (str1 == str2 || lowerCaseInternal(str1).equals(lowerCaseInternal(str2)));
     }
+
+    /**
+     * Strips the trailing slash from the input string, if it is present
+     *
+     * @param str
+     * @return the string with trailing slash removed
+     */
+    public static String stripTrailingSlash(String str) {
+        if (str.charAt(str.length() - 1) == '/') {
+            return str.substring(0, str.length() - 1);
+        }
+        return str;
+    }
 }
