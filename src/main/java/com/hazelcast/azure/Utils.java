@@ -23,30 +23,31 @@ final class Utils {
     private Utils() {
     }
 
-    static boolean isBlank(final String string) {
+    static boolean isEmpty(final String string) {
         return string == null || string.trim().length() == 0;
     }
 
-    static boolean isAllBlank(final String... values) {
-        if (values != null) {
-            for (final String val : values) {
-                if (!isBlank(val)) {
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-
-    static boolean isAllNotBlank(final String... values) {
+    static boolean isAllFilled(final String... values) {
         if (values == null) {
             return false;
         }
         for (final String val : values) {
-            if (isBlank(val)) {
+            if (isEmpty(val)) {
                 return false;
             }
         }
         return true;
+    }
+
+    static boolean isAnyFilled(final String... values) {
+        if (values == null) {
+            return false;
+        }
+        for (final String val : values) {
+            if (!isEmpty(val)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

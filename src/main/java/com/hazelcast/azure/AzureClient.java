@@ -19,8 +19,7 @@ package com.hazelcast.azure;
 import java.util.Collection;
 import java.util.logging.Logger;
 
-import static com.hazelcast.azure.Utils.isAllBlank;
-import static com.hazelcast.azure.Utils.isBlank;
+import static com.hazelcast.azure.Utils.isEmpty;
 
 /**
  * Responsible for fetching the discovery information from Azure APIs.
@@ -36,7 +35,6 @@ class AzureClient {
 
     private final AzureConfig azureConfig;
     private final Tag tag;
-    private final boolean hasSMIRight;
 
     private String subscriptionId;
     private String resourceGroup;
@@ -49,31 +47,30 @@ class AzureClient {
         this.azureAuthenticator = azureAuthenticator;
         this.azureConfig = azureConfig;
 
-        this.hasSMIRight = isAllBlank(azureConfig.getTenantId(), azureConfig.getClientId(), azureConfig.getClientSecret());
-        this.subscriptionId = subscriptionIdFromConfigOrMetadataApi(azureConfig);
-        this.resourceGroup = resourceGroupFromConfigOrMetadataApi(azureConfig);
-        this.scaleSet = scaleSetFromConfigOrMetadataApi(azureConfig);
+        this.subscriptionId = subscriptionIdFromConfigOrMetadataApi();
+        this.resourceGroup = resourceGroupFromConfigOrMetadataApi();
+        this.scaleSet = scaleSetFromConfigOrMetadataApi();
         this.tag = azureConfig.getTag();
     }
 
-    private String subscriptionIdFromConfigOrMetadataApi(final AzureConfig azureConfig) {
-        if (!isBlank(azureConfig.getSubscriptionId())) {
+    private String subscriptionIdFromConfigOrMetadataApi() {
+        if (!isEmpty(azureConfig.getSubscriptionId())) {
             return azureConfig.getSubscriptionId();
         }
         LOGGER.finest("Property 'subscriptionId' not configured, fetching from the VM metadata service");
         return RetryUtils.retry(() -> azureMetadataApi.subscriptionId(), RETRIES);
     }
 
-    private String resourceGroupFromConfigOrMetadataApi(final AzureConfig azureConfig) {
-        if (!isBlank(azureConfig.getResourceGroup())) {
+    private String resourceGroupFromConfigOrMetadataApi() {
+        if (!azureConfig.isUseInstanceMetadata()) {
             return azureConfig.getResourceGroup();
         }
         LOGGER.finest("Property 'resourceGroup' not configured, fetching from the VM metadata service");
         return RetryUtils.retry(() -> azureMetadataApi.resourceGroupName(), RETRIES);
     }
 
-    private String scaleSetFromConfigOrMetadataApi(final AzureConfig azureConfig) {
-        if (!isBlank(azureConfig.getScaleSet())) {
+    private String scaleSetFromConfigOrMetadataApi() {
+        if (!azureConfig.isUseInstanceMetadata()) {
             return azureConfig.getScaleSet();
         }
         LOGGER.finest("Property 'scaleSet' not configured, fetching from the VM metadata service");
@@ -94,7 +91,7 @@ class AzureClient {
     }
 
     private String fetchAccessToken() {
-        if (hasSMIRight) {
+        if (azureConfig.isUseInstanceMetadata()) {
             return azureMetadataApi.accessToken();
         } else {
             return azureAuthenticator.refreshAccessToken(azureConfig.getTenantId(), azureConfig.getClientId(),
@@ -112,7 +109,7 @@ class AzureClient {
      */
     String getAvailabilityZone() {
         String zone = azureMetadataApi.availabilityZone();
-        if (isBlank(zone)) {
+        if (isEmpty(zone)) {
             return azureMetadataApi.faultDomain();
         } else {
             return String.format("%s-%s", azureMetadataApi.location(), zone);

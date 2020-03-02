@@ -72,10 +72,14 @@ public class AzureDiscoveryStrategyTest {
     public void newValidProperties() {
         // given
         Map<String, Comparable> properties = new HashMap<String, Comparable>();
+        properties.put("tenant-id", "subscription-id-1");
+        properties.put("client-id", "subscription-id-1");
+        properties.put("client-secret", "subscription-id-1");
         properties.put("subscription-id", "subscription-id-1");
         properties.put("resource-group", "resource-group-1");
         properties.put("scale-set", "scale-set-1");
         properties.put("tag", "tag-1=value-1");
+        properties.put("use-instance-metadata", Boolean.FALSE);
 
         // when
         new AzureDiscoveryStrategy(properties);

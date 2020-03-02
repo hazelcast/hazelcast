@@ -39,10 +39,10 @@ import static com.hazelcast.azure.AzureProperties.PORT;
 import static com.hazelcast.azure.AzureProperties.RESOURCE_GROUP;
 import static com.hazelcast.azure.AzureProperties.SCALE_SET;
 import static com.hazelcast.azure.AzureProperties.SUBSCRIPTION_ID;
-import static com.hazelcast.azure.AzureProperties.TAG;
 import static com.hazelcast.azure.AzureProperties.TENANT_ID;
-import static com.hazelcast.azure.Utils.isAllBlank;
-import static com.hazelcast.azure.Utils.isAllNotBlank;
+import static com.hazelcast.azure.AzureProperties.USE_INSTANCE_METADATA;
+import static com.hazelcast.azure.Utils.isAllFilled;
+import static com.hazelcast.azure.Utils.isAnyFilled;
 
 /**
  * Azure implementation of {@link DiscoveryStrategy}
@@ -85,24 +85,20 @@ public class AzureDiscoveryStrategy extends AbstractDiscoveryStrategy {
                                              .setSubscriptionId(getOrNull(SUBSCRIPTION_ID))
                                              .setResourceGroup(getOrNull(RESOURCE_GROUP))
                                              .setScaleSet(getOrNull(SCALE_SET))
-                                             .setTag(tagOrNull(TAG))
+                                             .setTag(tagOrNull())
                                              .setHzPort(
                                                      new PortRange((String) getOrDefault(PORT.getDefinition(),
                                                              PORT.getDefaultValue())))
+                                             .setUseInstanceMetadata(
+                                                     (Boolean) getOrDefault(USE_INSTANCE_METADATA.getDefinition(),
+                                                             USE_INSTANCE_METADATA.getDefaultValue()))
                                              .build();
-        String tenantId = azureConfig.getTenantId();
-        String clientId = azureConfig.getClientId();
-        String clientSecret = azureConfig.getClientSecret();
-        if (!(isAllBlank(tenantId, clientId, clientSecret) || isAllNotBlank(tenantId, clientId, clientSecret))) {
-            //All 3 property must be defined & not empty
-            throw new InvalidConfigurationException("Invalid Azure Discovery config: "
-                    + "All of tenantId, clientId & clientSecret must defined or none");
-        }
+        validate(azureConfig);
         return azureConfig;
     }
 
-    private Tag tagOrNull(AzureProperties azureProperties) {
-        String tagString = getOrNull(azureProperties);
+    private Tag tagOrNull() {
+        String tagString = getOrNull(AzureProperties.TAG);
         if (tagString != null) {
             return new Tag(tagString);
         }
@@ -111,6 +107,32 @@ public class AzureDiscoveryStrategy extends AbstractDiscoveryStrategy {
 
     private String getOrNull(AzureProperties azureProperties) {
         return getOrNull(azureProperties.getDefinition());
+    }
+
+    private void validate(AzureConfig azureConfig) {
+        if (!azureConfig.isUseInstanceMetadata()) {
+            LOGGER.info("useInstanceMetadata is set to false, validating other properties...");
+            if (!isAllFilled(azureConfig.getTenantId(),
+                    azureConfig.getClientId(),
+                    azureConfig.getClientSecret(),
+                    azureConfig.getSubscriptionId(),
+                    azureConfig.getResourceGroup())) {
+                throw new InvalidConfigurationException("Invalid Azure Discovery config: "
+                        + "useInstanceMetada property is configured as `false`. Please configure all of tenantId, clientId, "
+                        + "clientSecret, subscriptionId, and resourceGroup properties.");
+            }
+        } else {
+            if (isAnyFilled(azureConfig.getTenantId(),
+                    azureConfig.getClientId(),
+                    azureConfig.getClientSecret(),
+                    azureConfig.getSubscriptionId(),
+                    azureConfig.getResourceGroup(),
+                    azureConfig.getScaleSet())) {
+                throw new InvalidConfigurationException("Invalid Azure Discovery config: "
+                        + "useInstanceMetada property is configured as `true`. Please DO NOT configure any of tenantId, "
+                        + "clientId, clientSecret, subscriptionId, resourceGroup, and scaleSet properties.");
+            }
+        }
     }
 
     @Override

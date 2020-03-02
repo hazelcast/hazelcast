@@ -65,7 +65,7 @@ public class AzureClientTest {
         // given
         given(azureComputeApi.instances(SUBSCRIPTION_ID, RESOURCE_GROUP, SCALE_SET, null, ACCESS_TOKEN)).willReturn(ADDRESSES);
 
-        AzureConfig azureConfig = AzureConfig.builder().build();
+        AzureConfig azureConfig = AzureConfig.builder().setUseInstanceMetadata(true).build();
         AzureClient azureClient = new AzureClient(azureMetadataApi, azureComputeApi, azureAuthenticator, azureConfig);
 
         // when
@@ -80,7 +80,7 @@ public class AzureClientTest {
         // given
         given(azureComputeApi.instances(SUBSCRIPTION_ID, RESOURCE_GROUP, SCALE_SET, TAG, ACCESS_TOKEN)).willReturn(ADDRESSES);
 
-        AzureConfig azureConfig = AzureConfig.builder().setTag(TAG).build();
+        AzureConfig azureConfig = AzureConfig.builder().setUseInstanceMetadata(true).setTag(TAG).build();
         AzureClient azureClient = new AzureClient(azureMetadataApi, azureComputeApi, azureAuthenticator, azureConfig);
 
         // when
@@ -93,41 +93,25 @@ public class AzureClientTest {
     @Test
     public void getAddressesWithConfiguredSettings() {
         // given
+        String tenantId = "tenant-id";
+        String clientId = "client-id";
+        String clientSecret = "client-secret";
+        given(azureAuthenticator.refreshAccessToken(tenantId, clientId, clientSecret)).willReturn(ACCESS_TOKEN);
         String subscriptionId = "subscription-2";
         String resourceGroup = "resource-group-2";
         String scaleSet = "scale-set-2";
         given(azureComputeApi.instances(subscriptionId, resourceGroup, scaleSet, TAG, ACCESS_TOKEN)).willReturn(ADDRESSES);
 
         AzureConfig azureConfig = AzureConfig.builder()
+                                       .setClientId(clientId)
+                                       .setTenantId(tenantId)
+                                       .setClientSecret(clientSecret)
                                        .setSubscriptionId(subscriptionId)
                                        .setResourceGroup(resourceGroup)
                                        .setScaleSet(scaleSet)
+                                       .setUseInstanceMetadata(false)
                                        .setTag(TAG)
                                        .build();
-        AzureClient azureClient = new AzureClient(azureMetadataApi, azureComputeApi, azureAuthenticator, azureConfig);
-
-        // when
-        Collection<AzureAddress> result = azureClient.getAddresses();
-
-        // then
-        assertEquals(ADDRESSES, result);
-    }
-
-    @Test
-    public void getAddressesWithAuthenticationSettings() {
-        // given
-        given(azureMetadataApi.accessToken()).willReturn(null);
-        String tenantId = "tenant-id";
-        String clientId = "client-id";
-        String clientSecret = "client-secret";
-        given(azureAuthenticator.refreshAccessToken(tenantId, clientId, clientSecret)).willReturn(ACCESS_TOKEN);
-        given(azureComputeApi.instances(SUBSCRIPTION_ID, RESOURCE_GROUP, SCALE_SET, null, ACCESS_TOKEN)).willReturn(ADDRESSES);
-
-        AzureConfig azureConfig = AzureConfig.builder()
-                                           .setClientId(clientId)
-                                           .setTenantId(tenantId)
-                                           .setClientSecret(clientSecret)
-                                           .build();
         AzureClient azureClient = new AzureClient(azureMetadataApi, azureComputeApi, azureAuthenticator, azureConfig);
 
         // when
@@ -143,7 +127,7 @@ public class AzureClientTest {
         String location = "location-1";
         given(azureMetadataApi.location()).willReturn(location);
         given(azureMetadataApi.availabilityZone()).willReturn(ZONE);
-        AzureConfig azureConfig = AzureConfig.builder().build();
+        AzureConfig azureConfig = AzureConfig.builder().setUseInstanceMetadata(true).build();
         AzureClient azureClient = new AzureClient(azureMetadataApi, azureComputeApi, azureAuthenticator, azureConfig);
 
         // when

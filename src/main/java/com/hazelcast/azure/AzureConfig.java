@@ -28,6 +28,7 @@ final class AzureConfig {
     private String scaleSet;
     private Tag tag;
     private PortRange hzPort;
+    private Boolean useInstanceMetadata;
 
     private AzureConfig() {
     }
@@ -66,6 +67,10 @@ final class AzureConfig {
 
     PortRange getHzPort() {
         return hzPort;
+    }
+
+    public Boolean isUseInstanceMetadata() {
+        return useInstanceMetadata;
     }
 
     static final class Builder {
@@ -113,6 +118,11 @@ final class AzureConfig {
 
         Builder setHzPort(PortRange hzPort) {
             this.config.hzPort = hzPort;
+            return this;
+        }
+
+        Builder setUseInstanceMetadata(Boolean useInstanceMetadata) {
+            this.config.useInstanceMetadata = useInstanceMetadata;
             return this;
         }
 
