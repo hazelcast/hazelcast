@@ -26,7 +26,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
-import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -141,7 +140,7 @@ public final class ImdgUtil {
         if (targetIMap instanceof MapProxyImpl) {
             return ((MapProxyImpl<K, V>) targetIMap).putAllAsync(items);
         } else if (targetIMap instanceof ClientMapProxy) {
-            return  ((ClientMapProxy<K, V>) targetIMap).putAllAsync(items);
+            return ((ClientMapProxy<K, V>) targetIMap).putAllAsync(items);
         } else {
             throw new RuntimeException("Unexpected map class: " + targetIMap.getClass().getName());
         }
@@ -164,12 +163,6 @@ public final class ImdgUtil {
     public static BufferObjectDataOutput createObjectDataOutput(@Nonnull NodeEngine engine) {
         return ((InternalSerializationService) engine.getSerializationService())
                 .createObjectDataOutput(BUFFER_SIZE);
-    }
-
-    @Nonnull
-    public static BufferObjectDataInput createObjectDataInput(@Nonnull NodeEngine engine, @Nonnull byte[] buf) {
-        return ((InternalSerializationService) engine.getSerializationService())
-                .createObjectDataInput(buf);
     }
 
     public static void writeList(@Nonnull ObjectDataOutput output, @Nonnull List list) throws IOException {

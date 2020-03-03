@@ -36,14 +36,14 @@ import static org.mockito.Mockito.mock;
 public class ReceiverTaskletTest {
 
     private ReceiverTasklet t;
-    private InternalSerializationService serService;
     private MockOutboundCollector collector;
+    private InternalSerializationService serService;
 
     @Before
     public void before() {
         collector = new MockOutboundCollector(2);
-        t = new ReceiverTasklet(collector, 3, 100, mock(LoggingService.class), new Address(), 0, "");
         serService = new DefaultSerializationServiceBuilder().build();
+        t = new ReceiverTasklet(collector, serService, 3, 100, mock(LoggingService.class), new Address(), 0, "");
     }
 
     @Test
@@ -60,6 +60,6 @@ public class ReceiverTaskletTest {
             out.writeObject(obj);
             out.writeInt(Math.abs(obj.hashCode())); // partition id
         }
-        t.receiveStreamPacket(serService.createObjectDataInput(out.toByteArray()));
+        t.receiveStreamPacket(out.toByteArray(), 0);
     }
 }

@@ -95,7 +95,7 @@ public class SenderTasklet implements Tasklet {
         this.connection = getMemberConnection(nodeEngine, destinationAddress);
         this.outputBuffer = createObjectDataOutput(nodeEngine);
         uncheckRun(() -> outputBuffer.write(createStreamPacketHeader(
-                nodeEngine, executionId, destinationVertexId, inboundEdgeStream.ordinal())));
+                executionId, destinationVertexId, inboundEdgeStream.ordinal())));
         bufPosPastHeader = outputBuffer.position();
     }
 

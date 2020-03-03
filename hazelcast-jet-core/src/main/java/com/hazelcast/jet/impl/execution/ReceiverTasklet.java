@@ -22,6 +22,8 @@ import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeUnit;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.CustomInputOutputFactory;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.SwCounter;
@@ -92,6 +94,7 @@ public class ReceiverTasklet implements Tasklet {
     private final ProgressTracker tracker = new ProgressTracker();
     private final ArrayDeque<ObjWithPtionIdAndSize> inbox = new ArrayDeque<>();
     private final OutboundCollector collector;
+    private final CustomInputOutputFactory inputOutputFactory;
 
     private boolean receptionDone;
 
@@ -116,11 +119,12 @@ public class ReceiverTasklet implements Tasklet {
     //                 END FLOW-CONTROL STATE
 
     public ReceiverTasklet(
-            OutboundCollector collector, int rwinMultiplier, int flowControlPeriodMs,
-            LoggingService loggingService,
+            OutboundCollector collector, InternalSerializationService serializationService,
+            int rwinMultiplier, int flowControlPeriodMs, LoggingService loggingService,
             Address sourceAddress, int ordinal, String destinationVertexName
     ) {
         this.collector = collector;
+        this.inputOutputFactory = CustomInputOutputFactory.from(serializationService);
         this.rwinMultiplier = rwinMultiplier;
         this.flowControlPeriodNs = (double) MILLISECONDS.toNanos(flowControlPeriodMs);
         this.sourceAddressString = sourceAddress.toString();
@@ -131,7 +135,8 @@ public class ReceiverTasklet implements Tasklet {
         this.receiveWindowCompressed = INITIAL_RECEIVE_WINDOW_COMPRESSED;
     }
 
-    @Override @Nonnull
+    @Override
+    @Nonnull
     public ProgressState call() {
         if (receptionDone) {
             return collector.offerBroadcast(DONE_ITEM);
@@ -162,8 +167,8 @@ public class ReceiverTasklet implements Tasklet {
         return tracker.toProgressState();
     }
 
-    void receiveStreamPacket(BufferObjectDataInput packetInput) {
-        incoming.add(packetInput);
+    void receiveStreamPacket(byte[] payload, int offset) {
+        incoming.add(inputOutputFactory.createInput(payload, offset));
     }
 
     /**
@@ -306,8 +311,8 @@ public class ReceiverTasklet implements Tasklet {
     @Override
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
         descriptor = descriptor.withTag(MetricTags.VERTEX, destinationVertexName)
-                       .withTag(MetricTags.SOURCE_ADDRESS, sourceAddressString)
-                       .withTag(MetricTags.ORDINAL, ordinalString);
+                               .withTag(MetricTags.SOURCE_ADDRESS, sourceAddressString)
+                               .withTag(MetricTags.ORDINAL, ordinalString);
 
         context.collect(descriptor, this);
     }

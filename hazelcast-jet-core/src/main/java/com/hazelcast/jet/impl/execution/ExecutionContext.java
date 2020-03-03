@@ -22,7 +22,6 @@ import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.ProbeUnit;
-import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
@@ -158,7 +157,8 @@ public class ExecutionContext implements DynamicMetricsProvider {
                 // begin job execution
                 JetService service = nodeEngine.getService(JetService.SERVICE_NAME);
                 ClassLoader cl = service.getJobExecutionService().getClassLoader(jobConfig, jobId);
-                executionFuture = taskletExecService.beginExecute(tasklets, cancellationFuture, cl)
+                executionFuture = taskletExecService
+                        .beginExecute(tasklets, cancellationFuture, cl)
                         .thenApply(res -> {
                             // There's a race here: a snapshot could be requested after the job just completed
                             // normally, in that case we'll report that it terminated with snapshot.
@@ -264,11 +264,11 @@ public class ExecutionContext implements DynamicMetricsProvider {
         }
     }
 
-    public void handlePacket(int vertexId, int ordinal, Address sender, BufferObjectDataInput in) {
+    public void handlePacket(int vertexId, int ordinal, Address sender, byte[] payload, int offset) {
         receiverMap.get(vertexId)
                    .get(ordinal)
                    .get(sender)
-                   .receiveStreamPacket(in);
+                   .receiveStreamPacket(payload, offset);
     }
 
     public boolean hasParticipant(Address member) {
@@ -306,7 +306,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
 
     public RawJobMetrics getJobMetrics() {
         return jobMetrics;
-}
+    }
 
     public void setJobMetrics(RawJobMetrics jobMetrics) {
         this.jobMetrics = jobMetrics;
