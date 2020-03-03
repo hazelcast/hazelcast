@@ -19,18 +19,15 @@ package com.hazelcast.client.impl.protocol.codec.builtin;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 
 import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.LONG_SIZE_IN_BYTES;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.UUID_SIZE_IN_BYTES;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeLong;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeUUID;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeLong;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeUUID;
 
 public final class EntryListUUIDUUIDCodec {
@@ -55,7 +52,7 @@ public final class EntryListUUIDUUIDCodec {
     public static List<Map.Entry<UUID, UUID>> decode(ClientMessage.ForwardFrameIterator iterator) {
         ClientMessage.Frame frame = iterator.next();
         int itemCount = frame.content.length / ENTRY_SIZE_IN_BYTES;
-        List<Map.Entry<UUID, UUID>> result = new LinkedList<>();
+        List<Map.Entry<UUID, UUID>> result = new ArrayList<>(itemCount);
         for (int i = 0; i < itemCount; i++) {
             UUID key = decodeUUID(frame.content, i * ENTRY_SIZE_IN_BYTES);
             UUID value = decodeUUID(frame.content, i * ENTRY_SIZE_IN_BYTES + UUID_SIZE_IN_BYTES);
