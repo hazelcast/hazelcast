@@ -37,6 +37,7 @@ import java.util.Map;
  * only a single aggregated row is allocated at a time. Otherwise, the whole result set is consumed from the upstream.
  */
 // TODO: Rule to convert aggregate with empty groups to DistinctRel
+@SuppressWarnings("rawtypes")
 public class AggregateExec extends AbstractUpstreamAwareExec {
     /** Group key. */
     private final List<Integer> groupKey;
