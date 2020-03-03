@@ -17,9 +17,9 @@
 package com.hazelcast.wan.impl;
 
 import com.hazelcast.config.AbstractWanPublisherConfig;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.WanBatchPublisherConfig;
 import com.hazelcast.config.WanCustomPublisherConfig;
-import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.events.AddWanConfigIgnoredEvent;
@@ -70,10 +70,14 @@ public class WanReplicationServiceImpl implements WanReplicationService,
 
     private final Node node;
 
-    /** WAN event counters for all services and only received events */
+    /**
+     * WAN event counters for all services and only received events
+     */
     private final WanEventCounterRegistry receivedWanEventCounters = new WanEventCounterRegistry();
 
-    /** WAN event counters for all services and only sent events */
+    /**
+     * WAN event counters for all services and only sent events
+     */
     private final WanEventCounterRegistry sentWanEventCounters = new WanEventCounterRegistry();
 
     private final ConcurrentMap<String, DelegatingWanScheme> wanReplications = createConcurrentHashMap(1);
@@ -155,7 +159,7 @@ public class WanReplicationServiceImpl implements WanReplicationService,
                 node.getConfigClassLoader(),
                 publisherConfig.getClassName());
         if (publisher == null) {
-            throw new InvalidConfigurationException("Either \'implementation\' or \'className\' "
+            throw new InvalidConfigurationException("Either 'implementation' or 'className' "
                     + "attribute need to be set in the WAN publisher configuration for publisher " + publisherConfig);
         }
         return publisher;
@@ -328,7 +332,7 @@ public class WanReplicationServiceImpl implements WanReplicationService,
             return Collections.emptyList();
         }
 
-        final Set<ServiceNamespace> namespaces = new HashSet<>();
+        Set<ServiceNamespace> namespaces = new HashSet<>();
         for (DelegatingWanScheme publisher : wanReplications.values()) {
             publisher.collectAllServiceNamespaces(event, namespaces);
         }

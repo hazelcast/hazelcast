@@ -21,7 +21,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -48,7 +47,8 @@ public class DurableLongRunningTaskTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
-        Config config = new Config().setProperty(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "" + CALL_TIMEOUT);
+        Config config = smallInstanceConfig()
+                .setProperty(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "" + CALL_TIMEOUT);
         hz = createHazelcastInstance(config);
     }
 
@@ -57,12 +57,9 @@ public class DurableLongRunningTaskTest extends HazelcastTestSupport {
         final String response = "foobar";
         SleepingCallable task = new SleepingCallable(response, 6 * CALL_TIMEOUT);
         final Future<String> f = hz.getDurableExecutorService("e").submit(task);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertTrue(f.isDone());
-                assertEquals(response, f.get());
-            }
+        assertTrueEventually(() -> {
+            assertTrue(f.isDone());
+            assertEquals(response, f.get());
         });
     }
 

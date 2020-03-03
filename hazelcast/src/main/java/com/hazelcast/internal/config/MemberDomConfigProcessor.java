@@ -1341,7 +1341,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             }
         }
         for (Node n : childElements(node)) {
-            String key = cleanNodeName(n);
+            String key = cleanNodeName(n, !"eureka".equals(n.getParentNode().getLocalName()));
             String value = getTextContent(n).trim();
             config.setProperty(key, value);
         }

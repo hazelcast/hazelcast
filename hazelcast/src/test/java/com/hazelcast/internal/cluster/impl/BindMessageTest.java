@@ -83,8 +83,8 @@ public class BindMessageTest {
     }
 
     Map<ProtocolType, Collection<Address>> localAddresses() throws Exception {
-        Map<ProtocolType, Collection<Address>> map = new EnumMap<ProtocolType, Collection<Address>>(ProtocolType.class);
-        Collection<Address> addresses = new ArrayList<Address>();
+        Map<ProtocolType, Collection<Address>> map = new EnumMap<>(ProtocolType.class);
+        Collection<Address> addresses = new ArrayList<>();
         addresses.add(new Address("127.0.0.1", 5701));
         addresses.add(new Address("127.0.0.1", 5702));
         addresses.add(new Address("127.0.0.1", 5703));

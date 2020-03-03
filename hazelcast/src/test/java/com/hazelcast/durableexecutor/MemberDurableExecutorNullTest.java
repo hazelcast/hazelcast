@@ -37,7 +37,7 @@ public class MemberDurableExecutorNullTest extends AbstractDurableExecutorNullTe
     @Before
     public void setup() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
-        instance = factory.newHazelcastInstance();
+        instance = factory.newHazelcastInstance(smallInstanceConfig());
     }
 
     @Override

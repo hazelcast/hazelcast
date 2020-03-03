@@ -172,23 +172,18 @@ public class ClusterViewListenerService {
      * @return address-&gt;partitions mapping, where address is the client address of the member
      */
     public Map<UUID, List<Integer>> getPartitions(PartitionTableView partitionTableView) {
-
         Map<UUID, List<Integer>> partitionsMap = new HashMap<>();
 
         int partitionCount = partitionTableView.getLength();
+
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             PartitionReplica owner = partitionTableView.getReplica(partitionId, 0);
-            if (owner == null) {
+            if (owner == null || owner.uuid() == null) {
                 partitionsMap.clear();
                 return partitionsMap;
             }
-            UUID ownerUUID = owner.uuid();
-            if (ownerUUID == null) {
-                partitionsMap.clear();
-                return partitionsMap;
-            }
-            List<Integer> indexes = partitionsMap.computeIfAbsent(ownerUUID, k -> new LinkedList<>());
-            indexes.add(partitionId);
+            partitionsMap.computeIfAbsent(owner.uuid(),
+                    k -> new LinkedList<>()).add(partitionId);
         }
         return partitionsMap;
     }

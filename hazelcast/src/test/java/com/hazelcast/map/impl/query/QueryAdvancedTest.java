@@ -141,11 +141,11 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         }
 
         // check the query result before eviction
-        Collection values = map.values(Predicates.sql("active"));
-        assertEquals(String.format("Expected %s results but got %s. Number of evicted entries: %s.",
+        final Collection values = map.values(Predicates.sql("active"));
+        assertTrueEventually(() -> assertEquals(String.format("Expected %s results but got %s."
+                        + " Number of evicted entries: %s.",
                 activeEmployees, values.size(), allEmployees - latch.getCount()),
-                activeEmployees, values.size());
-
+                activeEmployees, values.size()));
 
         // delete expire keys by explicitly calling `map#get`
         assertTrueEventually(() -> {
@@ -162,8 +162,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         assertOpenEventually(latch);
 
         // check the query result after eviction
-        values = map.values(Predicates.sql("active"));
-        assertEquals(0, values.size());
+        assertEquals(0, map.values(Predicates.sql("active")).size());
     }
 
     @Test

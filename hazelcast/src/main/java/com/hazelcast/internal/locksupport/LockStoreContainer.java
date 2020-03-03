@@ -17,20 +17,19 @@
 package com.hazelcast.internal.locksupport;
 
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.services.ServiceNamespace;
-import com.hazelcast.spi.impl.executionservice.TaskScheduler;
 import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.internal.util.scheduler.EntryTaskSchedulerFactory;
 import com.hazelcast.internal.util.scheduler.ScheduleType;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.executionservice.TaskScheduler;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.LinkedList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -107,13 +106,23 @@ public final class LockStoreContainer {
     }
 
     public Collection<ServiceNamespace> getAllNamespaces(int replicaIndex) {
-        Set<ServiceNamespace> namespaces = new HashSet<ServiceNamespace>();
+        if (lockStores.isEmpty()) {
+            return Collections.EMPTY_LIST;
+        }
+
+        Collection<ServiceNamespace> namespaces = Collections.EMPTY_LIST;
         for (LockStoreImpl lockStore : lockStores.values()) {
             if (lockStore.getTotalBackupCount() < replicaIndex) {
                 continue;
             }
+
+            if (namespaces == Collections.EMPTY_LIST) {
+                namespaces = new LinkedList<>();
+            }
+
             namespaces.add(lockStore.getNamespace());
         }
+
         return namespaces;
     }
 }

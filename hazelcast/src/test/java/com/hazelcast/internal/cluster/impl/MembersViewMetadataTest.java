@@ -36,7 +36,7 @@ public class MembersViewMetadataTest {
     @Test
     public void equalsAndHashCode() throws Exception {
         UUID memberUUID = new UUID(1, 1);
-        final MembersViewMetadata metadata
+        MembersViewMetadata metadata
                 = new MembersViewMetadata(new Address("localhost", 1234), memberUUID, new Address("localhost", 4321), 0);
 
         assertEqualAndHashCode(metadata, metadata);

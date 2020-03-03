@@ -24,6 +24,8 @@ import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
+import com.hazelcast.internal.nearcache.NearCache;
+import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
@@ -59,6 +61,7 @@ import static com.hazelcast.test.TimeConstants.MINUTE;
 import static java.lang.String.format;
 import static java.lang.Thread.currentThread;
 import static java.util.concurrent.Executors.newFixedThreadPool;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -265,35 +268,35 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
 
     @Test(timeout = 10 * MINUTE)
     public void testPreloadNearCache_withIntegerKeys() {
-        preloadNearCache(preloadFile10kInt, 10000, INTEGER);
+        preloadNearCache(preloadFile10kInt, 10000, INTEGER, 10 * MINUTE);
     }
 
     @Test(timeout = 10 * MINUTE)
     public void testPreloadNearCache_withStringKeys() {
-        preloadNearCache(preloadFile10kString, 10000, STRING);
+        preloadNearCache(preloadFile10kString, 10000, STRING, 10 * MINUTE);
     }
 
     @Test(timeout = 10 * MINUTE)
     public void testPreloadNearCache_withEmptyFile() {
-        preloadNearCache(preloadFileEmpty, 0, INTEGER);
+        preloadNearCache(preloadFileEmpty, 0, INTEGER, 10 * MINUTE);
     }
 
     @Test(timeout = 10 * MINUTE)
     public void testPreloadNearCache_withInvalidMagicBytes() {
-        preloadNearCache(preloadFileInvalidMagicBytes, 0, INTEGER);
+        preloadNearCache(preloadFileInvalidMagicBytes, 0, INTEGER, 10 * MINUTE);
     }
 
     @Test(timeout = 10 * MINUTE)
     public void testPreloadNearCache_withInvalidFileFormat() {
-        preloadNearCache(preloadFileInvalidFileFormat, 0, INTEGER);
+        preloadNearCache(preloadFileInvalidFileFormat, 0, INTEGER, 10 * MINUTE);
     }
 
     @Test(timeout = 10 * MINUTE)
     public void testPreloadNearCache_withNegativeFileFormat() {
-        preloadNearCache(preloadFileNegativeFileFormat, 0, INTEGER);
+        preloadNearCache(preloadFileNegativeFileFormat, 0, INTEGER, 10 * MINUTE);
     }
 
-    private void preloadNearCache(File preloaderFile, int keyCount, KeyType keyType) {
+    private void preloadNearCache(File preloaderFile, int keyCount, KeyType keyType, long timeoutMillis) {
         copyStoreFile(preloaderFile.getAbsoluteFile(), getStoreFile());
         NearCacheTestContext<Object, String, NK, NV> context = createContext(false);
         assumeConfiguredByteOrder(getSerializationService(context.dataInstance), ByteOrder.BIG_ENDIAN);
@@ -305,7 +308,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
         NearCacheTestContext<Object, String, NK, NV> clientContext = createNearCacheContext();
 
         // wait until the pre-loading is done, then check for the Near Cache size
-        assertNearCachePreloadDoneEventually(clientContext);
+        assertNearCachePreloadDoneEventually(clientContext, MILLISECONDS.toSeconds(timeoutMillis));
         assertNearCacheSizeEventually(clientContext, keyCount);
         assertNearCacheContent(clientContext, keyCount, keyType);
     }
@@ -478,11 +481,17 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
     }
 
     private static void assertNearCachePreloadDoneEventually(final NearCacheTestContext clientContext) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertTrue("Expected the Near Cache pre-loading to be eventually done", clientContext.nearCache.isPreloadDone());
-            }
+        assertNearCachePreloadDoneEventually(clientContext, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+    }
+
+    private static void assertNearCachePreloadDoneEventually(final NearCacheTestContext clientContext, long timeoutSeconds) {
+        assertTrueEventually(() -> {
+            NearCache nearCache = clientContext.nearCache;
+            NearCacheStats stats = nearCache.getNearCacheStats();
+            int size = nearCache.size();
+
+            assertTrue(format("Preloading has not finished yet. [size: %d, %s]",
+                    size, stats), nearCache.isPreloadDone());
         });
     }
 

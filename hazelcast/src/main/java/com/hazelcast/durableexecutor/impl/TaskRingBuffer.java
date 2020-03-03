@@ -193,6 +193,13 @@ public class TaskRingBuffer {
         return Math.abs(sequence % ringItems.length);
     }
 
+    /**
+     * Returns the number of currently running tasks in this ringbuffer.
+     */
+    public int getTaskSize() {
+        return callableCounter;
+    }
+
     public void write(ObjectDataOutput out) throws IOException {
         out.writeInt(head);
         out.writeInt(ringItems.length);

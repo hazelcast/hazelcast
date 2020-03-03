@@ -265,7 +265,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
                 throw new RetryableHazelcastException(message);
             }
 
-            if (!membershipManager.clearMemberSuspicion(candidateAddress, "Mastership claim")) {
+            if (!membershipManager.clearMemberSuspicion(masterCandidate, "Mastership claim")) {
                 throw new IllegalStateException("Cannot accept mastership claim of " + candidateAddress + ". "
                         + getMasterAddress() + " is already master.");
             }
@@ -287,7 +287,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     private boolean shouldAcceptMastership(MemberMap memberMap, MemberImpl candidate) {
         assert lock.isHeldByCurrentThread() : "Called without holding cluster service lock!";
         for (MemberImpl member : memberMap.headMemberSet(candidate, false)) {
-            if (!membershipManager.isMemberSuspected(member.getAddress())) {
+            if (!membershipManager.isMemberSuspected(member)) {
                 if (logger.isFineEnabled()) {
                     logger.fine("Should not accept mastership claim of " + candidate + ", because " + member
                             + " is not suspected at the moment and is before than " + candidate + " in the member list.");

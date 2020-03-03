@@ -264,7 +264,6 @@ public final class ClusterProperty {
             return RuntimeAvailableProcessors.get() >= 20 ? 4 : 3;
         }
     });
-    ;
 
     /**
      * Controls the number of socket input threads. By default it is the same as {@link #IO_THREAD_COUNT}.
@@ -486,6 +485,37 @@ public final class ClusterProperty {
      */
     public static final HazelcastProperty MAX_NO_HEARTBEAT_SECONDS
             = new HazelcastProperty("hazelcast.max.no.heartbeat.seconds", 60, SECONDS);
+
+    /**
+     * The master member, i.e, the first member in the cluster member list administrates the cluster
+     * and kicks unreachable members with the heartbeat mechanism. It means that a non-master member (i.e,
+     * any member other than the master) does not send heartbeats to the master for the "heartbeat timeout"
+     * duration, it is kicked from the cluster. However, there can be heartbeat problems between non-master
+     * members as well. Since the master member is the single authority to update the cluster member list,
+     * non-master members report their heartbeat problems to the master so that the master can update
+     * the cluster member list.
+     * <p>
+     * When the master receives a heartbeat problem report from another member, it first waits for a number
+     * of heartbeat rounds to allow other members to report their problems if there is any. After that,
+     * it takes all reports received so far and checks if it can update the cluster member in a way that
+     * the minimum number of members will be kicked from the cluster and there won't be any heartbeat problem
+     * between the remaining members.
+     * <p>
+     * If this configuration option is set to 0, this functionality is disabled. It is recommended to be
+     * set to at least 3 or 5 so that the master will wait long enough to collect heartbeat problem reports.
+     * Otherwise, the master member can make sub-optimal decisions.
+     */
+    public static final HazelcastProperty PARTIAL_MEMBER_DISCONNECTION_RESOLUTION_HEARTBEAT_COUNT
+            = new HazelcastProperty("hazelcast.partial.member.disconnection.resolution.heartbeat.count", 0);
+
+    /**
+     * The partial member disconnection resolution mechanism uses a graph algorithm that finds a max-clique
+     * in non-polynomial time. Since it could take a lot of time to find a max-clique in a large graph, i.e,
+     * in a large cluster with lots of random network disconnections, we use a timeout mechanism to stop
+     * execution of the algorithm.
+     */
+    public static final HazelcastProperty PARTIAL_MEMBER_DISCONNECTION_RESOLUTION_ALGORITHM_TIMEOUT_SECONDS
+            = new HazelcastProperty("hazelcast.partial.member.disconnection.resolution.algorithm.timeout.seconds", 5);
 
     /**
      * Heartbeat failure detector type. Available options are:
