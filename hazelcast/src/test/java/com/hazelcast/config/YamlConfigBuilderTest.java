@@ -369,6 +369,8 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "      eureka:\n"
                 + "        enabled: true\n"
                 + "        use-public-ip: true\n"
+                + "        shouldUseDns: false\n"
+                + "        serviceUrl.default: http://localhost:8082/eureka\n"
                 + "        namespace: hazelcast\n";
 
         Config config = buildConfig(yaml);
@@ -378,6 +380,8 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertTrue(eurekaConfig.isEnabled());
         assertTrue(eurekaConfig.isUsePublicIp());
         assertEquals("hazelcast", eurekaConfig.getProperty("namespace"));
+        assertEquals("false", eurekaConfig.getProperty("shouldUseDns"));
+        assertEquals("http://localhost:8082/eureka", eurekaConfig.getProperty("serviceUrl.default"));
     }
 
     @Override

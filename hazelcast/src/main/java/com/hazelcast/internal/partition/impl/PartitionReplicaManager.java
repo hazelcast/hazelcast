@@ -468,7 +468,7 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
         return replicaVersions[partitionId].getNamespaces();
     }
 
-    public void retainNamespaces(int partitionId, Set<ServiceNamespace> namespaces) {
+    public void retainNamespaces(int partitionId, Collection<ServiceNamespace> namespaces) {
         PartitionReplicaVersions versions = replicaVersions[partitionId];
         versions.retainNamespaces(namespaces);
     }

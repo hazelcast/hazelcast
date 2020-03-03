@@ -110,7 +110,8 @@ public class LocalMapStatsProvider {
         Map statsPerMap = new HashMap();
 
         PartitionContainer[] partitionContainers = mapServiceContext.getPartitionContainers();
-        for (PartitionContainer partitionContainer : partitionContainers) {
+        for (int i = 0; i < partitionContainers.length; i++) {
+            PartitionContainer partitionContainer = partitionContainers[i];
             Collection<RecordStore> allRecordStores = partitionContainer.getAllRecordStores();
             for (RecordStore recordStore : allRecordStores) {
                 if (!isStatsCalculationEnabledFor(recordStore)) {
@@ -273,7 +274,7 @@ public class LocalMapStatsProvider {
     }
 
     private boolean isReplicaOnThisNode(Address replicaAddress) {
-        return replicaAddress != null && localAddress.equals(replicaAddress);
+        return localAddress.equals(replicaAddress);
     }
 
     private void printWarning(int partitionId, int replica) {
