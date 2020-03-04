@@ -74,7 +74,7 @@ public class MockIOService implements IOService {
     private final ILogger logger;
 
     public MockIOService(int port) throws Exception {
-        loggingService = new LoggingServiceImpl("somegroup", "log4j2", BuildInfoProvider.getBuildInfo());
+        loggingService = new LoggingServiceImpl("somegroup", "log4j2", BuildInfoProvider.getBuildInfo(), true);
         logger = loggingService.getLogger(MockIOService.class);
         serverSocketChannel = ServerSocketChannel.open();
         ServerSocket serverSocket = serverSocketChannel.socket();
