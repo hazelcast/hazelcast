@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -27,12 +26,12 @@ import com.hazelcast.nio.serialization.TypedStreamDeserializer;
 
 import java.io.IOException;
 
-class StreamSerializerAdapter implements SerializerAdapter {
+public class StreamSerializerAdapter implements SerializerAdapter {
 
     protected final InternalSerializationService service;
     protected final StreamSerializer serializer;
 
-    StreamSerializerAdapter(InternalSerializationService service, StreamSerializer serializer) {
+    public StreamSerializerAdapter(InternalSerializationService service, StreamSerializer serializer) {
         this.service = service;
         this.serializer = serializer;
     }
