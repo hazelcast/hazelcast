@@ -358,7 +358,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         for (EdgeDef edge : srcVertex.outboundEdges()) {
             Map<Address, ConcurrentConveyor<Object>> memberToSenderConveyorMap = null;
             if (edge.isDistributed()) {
-                memberToSenderConveyorMap = memberToSenderConveyorMap(edgeSenderConveyorMap, edge);
+                memberToSenderConveyorMap = memberToSenderConveyorMap(edgeSenderConveyorMap, edge, serializationService);
             }
             outboundStreams.add(createOutboundEdgeStream(edge, processorIdx, memberToSenderConveyorMap,
                     serializationService));
@@ -372,7 +372,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
      * Populates the {@link #senderMap} and {@link #tasklets} fields.
      */
     private Map<Address, ConcurrentConveyor<Object>> memberToSenderConveyorMap(
-            Map<String, Map<Address, ConcurrentConveyor<Object>>> edgeSenderConveyorMap, EdgeDef edge
+            Map<String, Map<Address, ConcurrentConveyor<Object>>> edgeSenderConveyorMap, EdgeDef edge,
+            InternalSerializationService serializationService
     ) {
         assert edge.isDistributed() : "Edge is not distributed";
         return edgeSenderConveyorMap.computeIfAbsent(edge.edgeId(), x -> {
@@ -386,7 +387,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                 final int destVertexId = edge.destVertex().vertexId();
                 final SenderTasklet t = new SenderTasklet(inboundEdgeStream, nodeEngine, destAddr,
                         destVertexId, edge.getConfig().getPacketSizeLimit(), executionId,
-                        edge.sourceVertex().name(), edge.sourceOrdinal()
+                        edge.sourceVertex().name(), edge.sourceOrdinal(), serializationService
                 );
                 senderMap.computeIfAbsent(destVertexId, xx -> new HashMap<>())
                          .computeIfAbsent(edge.destOrdinal(), xx -> new HashMap<>())

@@ -25,6 +25,7 @@ import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.Packet;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.jet.RestartableException;
@@ -46,11 +47,12 @@ import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet.impl.execution.ReceiverTasklet.compressSeq;
 import static com.hazelcast.jet.impl.execution.ReceiverTasklet.estimatedMemoryFootprint;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
-import static com.hazelcast.jet.impl.util.ImdgUtil.createObjectDataOutput;
 import static com.hazelcast.jet.impl.util.ImdgUtil.getMemberConnection;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 
 public class SenderTasklet implements Tasklet {
+
+    private static final int BUFFER_SIZE = 1 << 15;
 
     private final Connection connection;
     private final Queue<Object> inbox = new ArrayDeque<>();
@@ -84,7 +86,8 @@ public class SenderTasklet implements Tasklet {
             NodeEngine nodeEngine,
             Address destinationAddress,
             int destinationVertexId, int packetSizeLimit, long executionId,
-            String sourceVertexName, int sourceOrdinal
+            String sourceVertexName, int sourceOrdinal,
+            InternalSerializationService serializationService
     ) {
         this.inboundEdgeStream = inboundEdgeStream;
         this.destinationAddressString = destinationAddress.toString();
@@ -93,7 +96,7 @@ public class SenderTasklet implements Tasklet {
         this.packetSizeLimit = packetSizeLimit;
         // we use Connection directly because we rely on packets not being transparently skipped or reordered
         this.connection = getMemberConnection(nodeEngine, destinationAddress);
-        this.outputBuffer = createObjectDataOutput(nodeEngine);
+        this.outputBuffer = serializationService.createObjectDataOutput(BUFFER_SIZE);
         uncheckRun(() -> outputBuffer.write(createStreamPacketHeader(
                 executionId, destinationVertexId, inboundEdgeStream.ordinal())));
         bufPosPastHeader = outputBuffer.position();
@@ -144,7 +147,7 @@ public class SenderTasklet implements Tasklet {
                  writtenCount++
             ) {
                 ObjectWithPartitionId itemWithPId = item instanceof ObjectWithPartitionId ?
-                        (ObjectWithPartitionId) item : new ObjectWithPartitionId(item, - 1);
+                        (ObjectWithPartitionId) item : new ObjectWithPartitionId(item, -1);
                 final int mark = outputBuffer.position();
                 outputBuffer.writeObject(itemWithPId.getItem());
                 sentSeq += estimatedMemoryFootprint(outputBuffer.position() - mark);
@@ -193,8 +196,8 @@ public class SenderTasklet implements Tasklet {
     @Override
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
         descriptor = descriptor.withTag(MetricTags.VERTEX, sourceVertexName)
-                        .withTag(MetricTags.ORDINAL, sourceOrdinalString)
-                        .withTag(MetricTags.DESTINATION_ADDRESS, destinationAddressString);
+                               .withTag(MetricTags.ORDINAL, sourceOrdinalString)
+                               .withTag(MetricTags.DESTINATION_ADDRESS, destinationAddressString);
 
         context.collect(descriptor, this);
     }

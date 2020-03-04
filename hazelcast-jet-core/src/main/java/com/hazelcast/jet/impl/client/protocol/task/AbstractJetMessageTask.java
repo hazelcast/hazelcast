@@ -21,8 +21,8 @@ import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -66,10 +66,6 @@ abstract class AbstractJetMessageTask<P, R> extends AbstractInvocationMessageTas
     @Override
     public String getDistributedObjectName() {
         return null;
-    }
-
-    protected <V> V toObject(Data data) {
-        return nodeEngine.getSerializationService().toObject(data);
     }
 
     protected <V> Data toData(V v) {
