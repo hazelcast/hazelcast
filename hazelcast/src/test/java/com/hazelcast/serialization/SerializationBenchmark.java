@@ -33,6 +33,7 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
+import org.openjdk.jmh.profile.GCProfiler;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
@@ -159,6 +160,8 @@ public class SerializationBenchmark {
     public static void main(String[] args) throws Exception {
         Options options = new OptionsBuilder()
                 .include(SerializationBenchmark.class.getSimpleName())
+                .addProfiler(GCProfiler.class)
+                //.resultFormat(JSON)
                 .build();
 
         new Runner(options).run();
