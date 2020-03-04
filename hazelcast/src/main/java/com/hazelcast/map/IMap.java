@@ -864,7 +864,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
                                 long maxIdle, @Nonnull TimeUnit maxIdleUnit);
 
     /**
-     * Asynchronously puts the given map entry in the map store.
+     * Asynchronously copies all of the mappings from the specified map to this map.
      * This version doesn't support batching. Don't mutate the given map until the future completes.
      * <pre>{@code
      *     CompletionStage<Void> future = map.putAllAsync(map);
@@ -907,7 +907,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * {@link com.hazelcast.map.ReachedMaxSizeException} may be thrown
      * if the write-behind queue has reached its per-node maximum
      * capacity.
-     * @param map the map entry
+     * @param map mappings to be stored in this map
      * @return CompletionStage on which client code can block waiting for the
      * operation to complete or register callbacks to be invoked
      * upon putAll operation completion
