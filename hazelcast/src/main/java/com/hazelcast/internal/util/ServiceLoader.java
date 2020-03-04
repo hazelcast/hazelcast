@@ -374,7 +374,7 @@ public final class ServiceLoader {
         private void onClassNotFoundException(String className, ClassLoader classLoader, ClassNotFoundException e) {
             if (className.startsWith("com.hazelcast")) {
                 LOGGER.fine("Failed to load " + className + " by " + classLoader
-                        + ". This indicates a classloading issue. It can happen at runtime with "
+                        + ". This indicates a classloading issue. It can happen in a runtime with "
                         + "a complicated classloading model (OSGi, Java EE, etc)");
             } else {
                 throw new HazelcastException(e);
@@ -391,12 +391,12 @@ public final class ServiceLoader {
                             + expectedType.getName() + " from its own class loader, but it does not implement "
                             + expectedType.getName() + " loaded by " + expectedType.getClassLoader());
                 } else {
+                    // the class does not implement an interface with the expected name
                     if (candidate.getClassLoader() != expectedType.getClassLoader()) {
-                        //the class does not implement interface with the expected name.
                         LOGGER.fine("There appears to be a classloading conflict. "
                                 + "Class " + className + " loaded by " + candidate.getClassLoader() + " does not "
-                                + "implement an interface with name " + expectedType.getName() + " in both class loaders."
-                                + " The interface currently loaded by " + expectedType.getClassLoader());
+                                + "implement an interface with name " + expectedType.getName() + " in both class loaders. "
+                                + "The interface is currently loaded by " + expectedType.getClassLoader());
                     } else {
                         LOGGER.fine("The class " + candidate.getName() + " does not implement the expected " +
                                 "interface " + expectedType.getName());
