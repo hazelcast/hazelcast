@@ -396,6 +396,9 @@ public final class StringUtil {
      * @return the string with trailing slash removed
      */
     public static String stripTrailingSlash(String str) {
+        if (isNullOrEmpty(str)) {
+            return str;
+        }
         if (str.charAt(str.length() - 1) == '/') {
             return str.substring(0, str.length() - 1);
         }
