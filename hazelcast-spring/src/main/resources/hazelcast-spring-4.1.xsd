@@ -2630,7 +2630,7 @@
         <xs:attributeGroup ref="class-or-bean-name">
             <xs:annotation>
                 <xs:documentation>
-                    Defines a custom WAN consumer (WanReplicationConsumer).
+                    Defines a custom WAN consumer (WanConsumer).
                     If you don't define a class name or implementation, the default processing
                     logic for incoming WAN events will be used.
                 </xs:documentation>
