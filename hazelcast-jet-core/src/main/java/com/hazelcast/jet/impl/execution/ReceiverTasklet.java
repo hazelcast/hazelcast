@@ -23,7 +23,6 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeUnit;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.CustomInputOutputFactory;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.SwCounter;
@@ -94,7 +93,7 @@ public class ReceiverTasklet implements Tasklet {
     private final ProgressTracker tracker = new ProgressTracker();
     private final ArrayDeque<ObjWithPtionIdAndSize> inbox = new ArrayDeque<>();
     private final OutboundCollector collector;
-    private final CustomInputOutputFactory inputOutputFactory;
+    private final InternalSerializationService serializationService;
 
     private boolean receptionDone;
 
@@ -124,7 +123,7 @@ public class ReceiverTasklet implements Tasklet {
             Address sourceAddress, int ordinal, String destinationVertexName
     ) {
         this.collector = collector;
-        this.inputOutputFactory = CustomInputOutputFactory.from(serializationService);
+        this.serializationService = serializationService;
         this.rwinMultiplier = rwinMultiplier;
         this.flowControlPeriodNs = (double) MILLISECONDS.toNanos(flowControlPeriodMs);
         this.sourceAddressString = sourceAddress.toString();
@@ -168,7 +167,8 @@ public class ReceiverTasklet implements Tasklet {
     }
 
     void receiveStreamPacket(byte[] payload, int offset) {
-        incoming.add(inputOutputFactory.createInput(payload, offset));
+        BufferObjectDataInput input = serializationService.createObjectDataInput(payload, offset);
+        incoming.add(input);
     }
 
     /**

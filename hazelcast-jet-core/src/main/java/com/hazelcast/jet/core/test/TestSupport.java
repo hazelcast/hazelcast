@@ -192,7 +192,7 @@ public final class TestSupport {
     private static final long BLOCKING_TIME_LIMIT_MS_WARN = 10000;
 
     private static final LoggingServiceImpl LOGGING_SERVICE = new LoggingServiceImpl(
-            "test-group", null, BuildInfoProvider.getBuildInfo()
+            "test-group", null, BuildInfoProvider.getBuildInfo(), true
     );
 
     static {
