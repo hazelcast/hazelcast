@@ -43,6 +43,11 @@ final class ByteArrayInputOutputFactory implements InputOutputFactory {
     }
 
     @Override
+    public BufferObjectDataInput createInput(byte[] buffer, int offset, InternalSerializationService service) {
+        return new ByteArrayObjectDataInput(buffer, offset, service, byteOrder);
+    }
+
+    @Override
     public BufferObjectDataOutput createOutput(int size, InternalSerializationService service) {
         return new ByteArrayObjectDataOutput(size, service, byteOrder);
     }
