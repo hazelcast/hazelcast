@@ -312,7 +312,7 @@
                     </discovery-strategy>
                 </discovery-strategies>
         * <custom-publisher>:
-            Custom implementation of a WAN publisher implementing WanReplicationPublisher.
+            Custom implementation of a WAN publisher implementing WanPublisher.
             * "<class-name>":
                 Mandatory config value defining the fully qualified class name of the
                 WAN publisher implementation.
@@ -330,7 +330,7 @@
             It has the following sub-elements:
             - <class-name>:
                 Sets the fully qualified class name of the class implementing
-                a custom WAN consumer (WanReplicationConsumer).
+                a custom WAN consumer (WanConsumer).
                 If you don't define a class name, the default processing logic for
                 incoming WAN events will be used.
             - <properties>:
