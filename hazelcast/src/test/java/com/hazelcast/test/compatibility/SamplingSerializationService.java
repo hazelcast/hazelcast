@@ -144,6 +144,11 @@ public class SamplingSerializationService implements InternalSerializationServic
     }
 
     @Override
+    public BufferObjectDataInput createObjectDataInput(byte[] data, int offset) {
+        return delegate.createObjectDataInput(data, offset);
+    }
+
+    @Override
     public BufferObjectDataInput createObjectDataInput(Data data) {
         return delegate.createObjectDataInput(data);
     }

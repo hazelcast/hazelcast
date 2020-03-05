@@ -80,6 +80,8 @@ public interface InternalSerializationService extends SerializationService, Disp
 
     BufferObjectDataInput createObjectDataInput(byte[] data);
 
+    BufferObjectDataInput createObjectDataInput(byte[] data, int offset);
+
     BufferObjectDataInput createObjectDataInput(Data data);
 
     BufferObjectDataOutput createObjectDataOutput(int size);
