@@ -312,7 +312,7 @@
                     </discovery-strategy>
                 </discovery-strategies>
         * <custom-publisher>:
-            Custom implementation of a WAN publisher implementing WanReplicationPublisher.
+            Custom implementation of a WAN publisher implementing WanPublisher.
             * "<class-name>":
                 Mandatory config value defining the fully qualified class name of the
                 WAN publisher implementation.

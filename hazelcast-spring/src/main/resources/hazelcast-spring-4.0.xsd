@@ -2610,7 +2610,7 @@
         <xs:attributeGroup ref="class-or-bean-name">
             <xs:annotation>
                 <xs:documentation>
-                    Fully qualified class name of WAN Replication implementation WanReplicationPublisher.
+                    Fully qualified class name of WAN Replication implementation WanPublisher.
                 </xs:documentation>
             </xs:annotation>
         </xs:attributeGroup>

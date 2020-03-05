@@ -2342,7 +2342,7 @@
             <xs:element name="class-name" type="xs:string" minOccurs="1" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
-                        Fully qualified class name of WAN Replication implementation WanReplicationPublisher.
+                        Fully qualified class name of WAN Replication implementation WanPublisher.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
