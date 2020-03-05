@@ -74,7 +74,7 @@ public final class TypeConverters {
         Comparable convertInternal(Comparable value) {
             String enumString = value.toString();
             if (enumString.contains(".")) {
-                // there is a dot  in the value specifier, keep part after last dot
+                // there is a dot in the value specifier, keep part after last dot
                 enumString = enumString.substring(1 + enumString.lastIndexOf('.'));
             }
             return enumString;
@@ -100,7 +100,7 @@ public final class TypeConverters {
         }
 
     }
-    
+
     static class LocalDateConverter extends BaseTypeConverter {
 
         @Override
@@ -108,12 +108,11 @@ public final class TypeConverters {
             if (value instanceof LocalDate) {
                 return value;
             }
-            return LocalDateHelper.toLocalDate((String)value);
-//            throw new IllegalArgumentException("Cannot convert [" + value + "] to java.time.LocalDate");
+            return LocalDateHelper.toLocalDate((String) value);
         }
 
     }
-    
+
     static class LocalDateTimeConverter extends BaseTypeConverter {
 
         @Override
@@ -121,8 +120,7 @@ public final class TypeConverters {
             if (value instanceof LocalDateTime) {
                 return value;
             }
-            return LocalDateHelper.toLocalDateTime((String)value);
-//            throw new IllegalArgumentException("Cannot convert [" + value + "] to java.time.LocalDate");
+            return LocalDateHelper.toLocalDateTime((String) value);
         }
 
     }
@@ -204,7 +202,7 @@ public final class TypeConverters {
 
     static class LongConverter extends BaseTypeConverter {
 
-        @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
+        @SuppressWarnings({ "checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity" })
         @Override
         Comparable convertInternal(Comparable value) {
             Class clazz = value.getClass();
@@ -314,7 +312,7 @@ public final class TypeConverters {
 
     static class IntegerConverter extends BaseTypeConverter {
 
-        @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity", "checkstyle:returncount"})
+        @SuppressWarnings({ "checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity", "checkstyle:returncount" })
         @Override
         Comparable convertInternal(Comparable value) {
             Class clazz = value.getClass();
@@ -388,7 +386,7 @@ public final class TypeConverters {
 
     static class FloatConverter extends BaseTypeConverter {
 
-        @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
+        @SuppressWarnings({ "checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity" })
         @Override
         Comparable convertInternal(Comparable value) {
             Class clazz = value.getClass();
@@ -445,7 +443,7 @@ public final class TypeConverters {
 
     static class ShortConverter extends BaseTypeConverter {
 
-        @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity", "checkstyle:returncount"})
+        @SuppressWarnings({ "checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity", "checkstyle:returncount" })
         @Override
         Comparable convertInternal(Comparable value) {
             Class clazz = value.getClass();
@@ -531,7 +529,7 @@ public final class TypeConverters {
 
     static class ByteConverter extends BaseTypeConverter {
 
-        @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity", "checkstyle:returncount"})
+        @SuppressWarnings({ "checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity", "checkstyle:returncount" })
         @Override
         Comparable convertInternal(Comparable value) {
             Class clazz = value.getClass();

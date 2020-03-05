@@ -25,6 +25,8 @@ import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -81,6 +83,10 @@ public final class ReflectionHelper {
             return AttributeType.ENUM;
         } else if (klass == UUID.class) {
             return AttributeType.UUID;
+        } else if (klass == LocalDate.class) {
+            return AttributeType.LOCALDATE;
+        } else if (klass == LocalDateTime.class) {
+            return AttributeType.LOCALDATE_TIME;
         }
         return null;
     }

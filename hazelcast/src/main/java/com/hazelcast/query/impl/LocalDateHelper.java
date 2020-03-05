@@ -22,15 +22,18 @@ import java.time.LocalDateTime;
 import java.util.Calendar;
 import java.util.Date;
 
-public class LocalDateHelper {
+public final class LocalDateHelper {
 
-    private static final String[] formats = new String[] { "yyyy-MM-dd", "yyyy/MM/dd", "yyyy-MM-dd hh:mm:ss",
+    private static final String[] DATE_FORMATS = new String[] { "yyyy-MM-dd", "yyyy/MM/dd", "yyyy-MM-dd hh:mm:ss",
             "yyyy-MM-dd hh:mm", "dd MMM yyyy", "dd MMM yyyy hh:mm", "dd MMM yyyy HH:mm", "dd MMM yyyy hh:mm:ss",
             "dd MMM yyyy HH:mm:ss", "MM/yy", "dd MMM yyyy, hh:mm:ss", "E MMM dd HH:mm:ss Z yyyy", "dd mmm yyyy, hh:mm a",
             "yyyy-MM-dd'T'hh:mm:ss" };
 
+    private LocalDateHelper() {
+    }
+
     public static Date toDate(String dateAsString) {
-        for (String format : formats) {
+        for (String format : DATE_FORMATS) {
             try {
                 return new SimpleDateFormat(format).parse(dateAsString);
             } catch (ParseException ignore) {
