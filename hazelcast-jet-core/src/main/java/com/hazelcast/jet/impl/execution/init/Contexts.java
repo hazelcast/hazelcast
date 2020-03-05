@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.impl.execution.init;
 
+import com.hazelcast.core.ManagedContext;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetInstance;
@@ -52,6 +54,7 @@ public final class Contexts {
     }
 
     static class MetaSupplierCtx implements ProcessorMetaSupplier.Context {
+
         private final JetInstance jetInstance;
         private final long jobId;
         private final long executionId;
@@ -137,13 +140,13 @@ public final class Contexts {
         public ProcessingGuarantee processingGuarantee() {
             return processingGuarantee;
         }
-
     }
 
     static class ProcSupplierCtx extends MetaSupplierCtx implements ProcessorSupplier.Context {
 
         private final int memberIndex;
         private final ConcurrentHashMap<String, File> tempDirectories;
+        private final InternalSerializationService serializationService;
 
         @SuppressWarnings("checkstyle:ParameterNumber")
         ProcSupplierCtx(
@@ -158,12 +161,14 @@ public final class Contexts {
                 int memberIndex,
                 int memberCount,
                 ProcessingGuarantee processingGuarantee,
-                ConcurrentHashMap<String, File> tempDirectories
+                ConcurrentHashMap<String, File> tempDirectories,
+                InternalSerializationService serializationService
         ) {
             super(jetInstance, jobId, executionId, jobConfig, logger, vertexName, localParallelism, totalParallelism,
                     memberCount, processingGuarantee);
             this.memberIndex = memberIndex;
             this.tempDirectories = tempDirectories;
+            this.serializationService = serializationService;
         }
 
         @Override
@@ -225,6 +230,16 @@ public final class Contexts {
                     + "-" + jobId
                     + "-" + resourceId.substring(0, min(32, resourceId.length())).replaceAll("[^\\w.\\-$]", "_");
         }
+
+        @Nonnull @Override
+        public ManagedContext managedContext() {
+            return serializationService.getManagedContext();
+        }
+
+        @Nonnull
+        public InternalSerializationService serializationService() {
+            return serializationService;
+        }
     }
 
     public static class ProcCtx extends ProcSupplierCtx implements Processor.Context {
@@ -233,13 +248,23 @@ public final class Contexts {
         private final int globalProcessorIndex;
 
         @SuppressWarnings("checkstyle:ParameterNumber")
-        public ProcCtx(JetInstance instance, long jobId, long executionId, JobConfig jobConfig,
-                       ILogger logger, String vertexName, int localProcessorIndex,
-                       int globalProcessorIndex, ProcessingGuarantee processingGuarantee, int localParallelism,
-                       int memberIndex, int memberCount, ConcurrentHashMap<String, File> tempDirectories) {
+        public ProcCtx(JetInstance instance,
+                       long jobId,
+                       long executionId,
+                       JobConfig jobConfig,
+                       ILogger logger,
+                       String vertexName,
+                       int localProcessorIndex,
+                       int globalProcessorIndex,
+                       ProcessingGuarantee processingGuarantee,
+                       int localParallelism,
+                       int memberIndex,
+                       int memberCount,
+                       ConcurrentHashMap<String, File> tempDirectories,
+                       InternalSerializationService serializationService) {
             super(instance, jobId, executionId, jobConfig, logger, vertexName, localParallelism,
                     memberCount * localParallelism, memberIndex, memberCount, processingGuarantee,
-                    tempDirectories);
+                    tempDirectories, serializationService);
             this.localProcessorIndex = localProcessorIndex;
             this.globalProcessorIndex = globalProcessorIndex;
         }
@@ -253,6 +278,5 @@ public final class Contexts {
         public int globalProcessorIndex() {
             return globalProcessorIndex;
         }
-
     }
 }

@@ -19,6 +19,8 @@ package com.hazelcast.jet.impl.util;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.partition.IPartitionService;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.serialization.impl.SerializationConstants;
 import com.hazelcast.jet.impl.JetService;
@@ -28,7 +30,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -79,14 +80,23 @@ public class AsyncSnapshotWriterImpl implements AsyncSnapshotWriter {
 
     private BiConsumer<Object, Throwable> putResponseConsumer = this::consumePutResponse;
 
-    public AsyncSnapshotWriterImpl(NodeEngine nodeEngine, SnapshotContext snapshotContext, String vertexName,
-                                   int memberIndex, int memberCount) {
-        this(DEFAULT_CHUNK_SIZE, nodeEngine, snapshotContext, vertexName, memberIndex, memberCount);
+    public AsyncSnapshotWriterImpl(NodeEngine nodeEngine,
+                                   SnapshotContext snapshotContext,
+                                   String vertexName,
+                                   int memberIndex,
+                                   int memberCount,
+                                   SerializationService serializationService) {
+        this(DEFAULT_CHUNK_SIZE, nodeEngine, snapshotContext, vertexName, memberIndex, memberCount, serializationService);
     }
 
     // for test
-    AsyncSnapshotWriterImpl(int chunkSize, NodeEngine nodeEngine, SnapshotContext snapshotContext,
-                            String vertexName, int memberIndex, int memberCount) {
+    AsyncSnapshotWriterImpl(int chunkSize,
+                            NodeEngine nodeEngine,
+                            SnapshotContext snapshotContext,
+                            String vertexName,
+                            int memberIndex,
+                            int memberCount,
+                            SerializationService serializationService) {
         if (Integer.bitCount(chunkSize) != 1) {
             throw new IllegalArgumentException("chunkSize must be a power of two, but is " + chunkSize);
         }
@@ -100,7 +110,6 @@ public class AsyncSnapshotWriterImpl implements AsyncSnapshotWriter {
 
         useBigEndian = !nodeEngine.getHazelcastInstance().getConfig().getSerializationConfig().isUseNativeByteOrder()
                 || ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN;
-
         Bits.writeInt(serializedByteArrayHeader, Bits.INT_SIZE_IN_BYTES, SerializationConstants.CONSTANT_TYPE_BYTE_ARRAY,
                 useBigEndian);
 
@@ -111,8 +120,7 @@ public class AsyncSnapshotWriterImpl implements AsyncSnapshotWriter {
 
         this.numConcurrentAsyncOps = jetService.numConcurrentAsyncOps();
 
-        byte[] valueTerminatorWithHeader = nodeEngine.getSerializationService().toData(
-                SnapshotDataValueTerminator.INSTANCE).toByteArray();
+        byte[] valueTerminatorWithHeader = serializationService.toData(SnapshotDataValueTerminator.INSTANCE).toByteArray();
         valueTerminator = Arrays.copyOfRange(valueTerminatorWithHeader, HeapData.TYPE_OFFSET,
                 valueTerminatorWithHeader.length);
         usableChunkCapacity = chunkSize - valueTerminator.length - serializedByteArrayHeader.length;

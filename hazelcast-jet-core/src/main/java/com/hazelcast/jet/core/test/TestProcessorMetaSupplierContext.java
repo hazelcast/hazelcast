@@ -177,7 +177,7 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
      * Sets the processing guarantee.
      */
     @Nonnull
-    public TestProcessorMetaSupplierContext setProcessingGuarantee(ProcessingGuarantee processingGuarantee) {
+    public TestProcessorMetaSupplierContext setProcessingGuarantee(@Nonnull ProcessingGuarantee processingGuarantee) {
         this.processingGuarantee = processingGuarantee;
         return this;
     }

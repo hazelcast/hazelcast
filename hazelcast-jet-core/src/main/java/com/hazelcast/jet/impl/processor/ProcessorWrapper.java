@@ -75,7 +75,7 @@ public abstract class ProcessorWrapper implements Processor {
             );
             context = new ProcCtx(c.jetInstance(), c.jobId(), c.executionId(), c.jobConfig(),
                     newLogger, c.vertexName(), c.localProcessorIndex(), c.globalProcessorIndex(), c.processingGuarantee(),
-                    c.localParallelism(), c.memberIndex(), c.memberCount(), c.tempDirectories());
+                    c.localParallelism(), c.memberIndex(), c.memberCount(), c.tempDirectories(), c.serializationService());
         }
         wrapped.init(outbox, context);
         initWrapper(outbox, context);

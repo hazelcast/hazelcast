@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.core.test;
 
+import com.hazelcast.core.ManagedContext;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.ProcessorSupplier;
@@ -37,6 +38,7 @@ public class TestProcessorSupplierContext
         implements ProcessorSupplier.Context {
 
     private int memberIndex;
+    private ManagedContext managedContext = object -> object;
     private final Map<String, File> attached = new HashMap<>();
 
     @Nonnull @Override
@@ -65,7 +67,7 @@ public class TestProcessorSupplierContext
     }
 
     @Nonnull @Override
-    public TestProcessorSupplierContext setProcessingGuarantee(ProcessingGuarantee processingGuarantee) {
+    public TestProcessorSupplierContext setProcessingGuarantee(@Nonnull ProcessingGuarantee processingGuarantee) {
         return (TestProcessorSupplierContext) super.setProcessingGuarantee(processingGuarantee);
     }
 
@@ -90,6 +92,11 @@ public class TestProcessorSupplierContext
         return file;
     }
 
+    @Nonnull @Override
+    public ManagedContext managedContext() {
+        return managedContext;
+    }
+
     /**
      * Add an attached file or folder. The test context doesn't distinguish
      * between files and folders;
@@ -105,6 +112,15 @@ public class TestProcessorSupplierContext
     @Nonnull
     public TestProcessorSupplierContext setMemberIndex(int memberIndex) {
         this.memberIndex = memberIndex;
+        return this;
+    }
+
+    /**
+     * Sets the {@link ManagedContext}
+     */
+    @Nonnull
+    public TestProcessorSupplierContext setManagedContext(@Nonnull ManagedContext managedContext) {
+        this.managedContext = managedContext;
         return this;
     }
 

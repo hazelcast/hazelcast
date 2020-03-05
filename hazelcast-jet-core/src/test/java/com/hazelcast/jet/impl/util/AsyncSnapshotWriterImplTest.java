@@ -22,6 +22,7 @@ import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.jet.JetInstance;
@@ -33,7 +34,6 @@ import com.hazelcast.jet.impl.util.AsyncSnapshotWriterImpl.CustomByteArrayOutput
 import com.hazelcast.jet.impl.util.AsyncSnapshotWriterImpl.SnapshotDataKey;
 import com.hazelcast.jet.impl.util.AsyncSnapshotWriterImpl.SnapshotDataValueTerminator;
 import com.hazelcast.map.IMap;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -97,7 +97,8 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
         snapshotContext = mock(SnapshotContext.class);
         when(snapshotContext.currentMapName()).thenReturn("map1");
         when(snapshotContext.currentSnapshotId()).thenReturn(0L);
-        writer = new AsyncSnapshotWriterImpl(128, nodeEngine, snapshotContext, "vertex", 0, 1);
+        writer = new AsyncSnapshotWriterImpl(128, nodeEngine, snapshotContext, "vertex", 0, 1,
+                nodeEngine.getSerializationService());
         when(snapshotContext.currentSnapshotId()).thenReturn(1L); // simulates starting new snapshot
         map = instance.getHazelcastInstance().getMap("map1");
         assertTrue(writer.usableChunkCapacity > 0);
@@ -114,7 +115,8 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
     public void test_flushingAtEdgeCases() {
         for (int i = 64; i < 196; i++) {
             when(snapshotContext.currentMapName()).thenReturn(randomMapName());
-            writer = new AsyncSnapshotWriterImpl(128, nodeEngine, snapshotContext, "vertex", 0, 1);
+            writer = new AsyncSnapshotWriterImpl(128, nodeEngine, snapshotContext, "vertex", 0, 1,
+                    nodeEngine.getSerializationService());
             try {
                 assertTrue(writer.offer(entry(serialize("k"), serialize(String.join("", nCopies(i, "a"))))));
                 assertTrue(writer.flushAndResetMap());

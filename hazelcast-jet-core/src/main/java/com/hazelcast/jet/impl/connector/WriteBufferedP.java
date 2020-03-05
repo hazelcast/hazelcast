@@ -21,8 +21,6 @@ import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.serialization.SerializationServiceAware;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Outbox;
@@ -35,7 +33,7 @@ import java.util.function.Consumer;
 
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 
-public final class WriteBufferedP<B, T> implements Processor, SerializationServiceAware {
+public final class WriteBufferedP<B, T> implements Processor {
 
     private final FunctionEx<? super Context, B> createFn;
     private final ConsumerEx<? super B> flushFn;
@@ -43,7 +41,6 @@ public final class WriteBufferedP<B, T> implements Processor, SerializationServi
 
     private B buffer;
     private final Consumer<Object> inboxConsumer;
-    private ManagedContext managedContext;
 
     WriteBufferedP(
             @Nonnull FunctionEx<? super Context, B> createFn,
@@ -64,6 +61,7 @@ public final class WriteBufferedP<B, T> implements Processor, SerializationServi
         if (localBuff == null) {
             throw new JetException("Null buffer created");
         }
+        ManagedContext managedContext = context.managedContext();
         buffer = (B) managedContext.initialize(localBuff);
     }
 
@@ -107,10 +105,5 @@ public final class WriteBufferedP<B, T> implements Processor, SerializationServi
         checkSerializable(destroyFn, "destroyFn");
 
         return () -> new WriteBufferedP<>(createFn, onReceiveFn, flushFn, destroyFn);
-    }
-
-    @Override
-    public void setSerializationService(SerializationService serializationService) {
-        this.managedContext = serializationService.getManagedContext();
     }
 }

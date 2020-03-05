@@ -145,7 +145,9 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     ) {
         this.nodeEngine = (NodeEngineImpl) nodeEngine;
         this.executionId = executionId;
-        initProcSuppliers(jobId, executionId, tempDirectories);
+        InternalSerializationService serializationService =
+                (InternalSerializationService) nodeEngine.getSerializationService();
+        initProcSuppliers(jobId, executionId, tempDirectories, serializationService);
         initDag();
 
         this.ptionArrgmt = new PartitionArrangement(partitionOwners, nodeEngine.getThisAddress());
@@ -161,7 +163,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             StoreSnapshotTasklet ssTasklet = new StoreSnapshotTasklet(snapshotContext,
                     new ConcurrentInboundEdgeStream(ssConveyor, 0, 0, true,
                             "ssFrom:" + vertex.name()),
-                    new AsyncSnapshotWriterImpl(nodeEngine, snapshotContext, vertex.name(), memberIndex, memberCount),
+                    new AsyncSnapshotWriterImpl(nodeEngine, snapshotContext, vertex.name(), memberIndex, memberCount,
+                            serializationService),
                     nodeEngine.getLogger(StoreSnapshotTasklet.class.getName() + "."
                             + sanitizeLoggerNamePart(vertex.name())),
                     vertex.name(), higherPriorityVertices.contains(vertex.vertexId()));
@@ -189,13 +192,14 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                         vertex.localParallelism(),
                         memberIndex,
                         memberCount,
-                        tempDirectories
+                        tempDirectories,
+                        serializationService
                 );
 
                 // createOutboundEdgeStreams() populates localConveyorMap and edgeSenderConveyorMap.
                 // Also populates instance fields: senderMap, receiverMap, tasklets.
                 List<OutboundEdgeStream> outboundStreams = createOutboundEdgeStreams(
-                        vertex, localProcessorIdx, (InternalSerializationService) nodeEngine.getSerializationService()
+                        vertex, localProcessorIdx, serializationService
                 );
                 List<InboundEdgeStream> inboundStreams = createInboundEdgeStreams(
                         vertex, localProcessorIdx, globalProcessorIndex
@@ -205,7 +209,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
 
                 ProcessorTasklet processorTasklet = new ProcessorTasklet(context,
                         nodeEngine.getExecutionService().getExecutor(TASKLET_INIT_CLOSE_EXECUTOR_NAME),
-                        nodeEngine.getSerializationService(), processor, inboundStreams, outboundStreams, snapshotContext,
+                        serializationService, processor, inboundStreams, outboundStreams, snapshotContext,
                         snapshotCollector);
                 tasklets.add(processorTasklet);
                 this.processors.add(processor);
@@ -296,7 +300,10 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
 
     // End implementation of IdentifiedDataSerializable
 
-    private void initProcSuppliers(long jobId, long executionId, ConcurrentHashMap<String, File> tempDirectories) {
+    private void initProcSuppliers(long jobId,
+                                   long executionId,
+                                   ConcurrentHashMap<String, File> tempDirectories,
+                                   InternalSerializationService serializationService) {
         JetService service = nodeEngine.getService(JetService.SERVICE_NAME);
 
         for (VertexDef vertex : vertices) {
@@ -316,7 +323,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                         memberIndex,
                         memberCount,
                         jobConfig.getProcessingGuarantee(),
-                        tempDirectories
+                        tempDirectories,
+                        serializationService
                 ));
             } catch (Exception e) {
                 throw sneakyThrow(e);
