@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.protocol.compatibility;
 
+import com.hazelcast.client.HazelcastClientUtil;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.ClientMessageReader;
 import com.hazelcast.client.impl.protocol.codec.*;
-import com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -37,7 +37,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static com.hazelcast.client.impl.protocol.ClientMessage.END_DATA_STRUCTURE_FLAG;
 import static com.hazelcast.client.impl.protocol.ClientMessage.IS_FINAL_FLAG;
 import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.*;
 import static org.junit.Assert.assertArrayEquals;
@@ -6921,37 +6920,24 @@ public class ClientCompatibilityNullTest_2_0 {
 
         ClientMessage.ForwardFrameIterator binaryFrameIterator = binaryMessage.frameIterator();
         ClientMessage.ForwardFrameIterator encodedFrameIterator = encodedMessage.frameIterator();
+        assertTrue("Client message that is read from the binary file does not have any frames", binaryFrameIterator.hasNext());
 
-        boolean isInitialFramesCompared = false;
         while (binaryFrameIterator.hasNext()) {
             binaryFrame = binaryFrameIterator.next();
             encodedFrame = encodedFrameIterator.next();
             assertNotNull("Encoded client message has less frames.", encodedFrame);
 
-            boolean isFinal = binaryFrameIterator.peekNext() == null;
-            boolean isEndFrame = binaryFrame.isEndFrame();
-            if (!isInitialFramesCompared) {
-                compareInitialFrame(binaryFrame, encodedFrame, isFinal);
-                isInitialFramesCompared = true;
-            } else {
-                assertArrayEquals("Frames have different contents", binaryFrame.content, Arrays.copyOf(encodedFrame.content, binaryFrame.content.length));
-                int flags = isFinal ? encodedFrame.flags | IS_FINAL_FLAG : encodedFrame.flags;
-                flags = isEndFrame ? flags | END_DATA_STRUCTURE_FLAG : flags;
-                assertEquals("Frames have different flags", binaryFrame.flags, flags);
-                if (isEndFrame && !ClientMessage.isFlagSet(encodedFrame.flags, END_DATA_STRUCTURE_FLAG)) {
-                    CodecUtil.fastForwardToEndFrame(encodedFrameIterator);
+            if (binaryFrame.isEndFrame() && !encodedFrame.isEndFrame()) {
+                if (encodedFrame.isBeginFrame()) {
+                    HazelcastClientUtil.fastForwardToEndFrame(encodedFrameIterator);
                 }
+                encodedFrame = HazelcastClientUtil.fastForwardToEndFrame(encodedFrameIterator);
             }
-        }
-        assertTrue("Client message that is read from the binary file does not have any frames", isInitialFramesCompared);
-    }
 
-    private void compareInitialFrame(ClientMessage.Frame binaryFrame, ClientMessage.Frame encodedFrame, boolean isFinal) {
-        assertTrue("Encoded client message have shorter initial frame",
-                binaryFrame.content.length <= encodedFrame.content.length);
-        assertArrayEquals("Initial frames have different contents",
-                binaryFrame.content, Arrays.copyOf(encodedFrame.content, binaryFrame.content.length));
-        int flags = isFinal ? encodedFrame.flags | IS_FINAL_FLAG : encodedFrame.flags;
-        assertEquals("Initial frames have different flags", binaryFrame.flags, flags);
+            boolean isFinal = binaryFrameIterator.peekNext() == null;
+            int flags = isFinal ? encodedFrame.flags | IS_FINAL_FLAG : encodedFrame.flags;
+            assertArrayEquals("Frames have different contents", binaryFrame.content, Arrays.copyOf(encodedFrame.content, binaryFrame.content.length));
+            assertEquals("Frames have different flags", binaryFrame.flags, flags);
+        }
     }
 }
