@@ -70,7 +70,6 @@ import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.splitbrainprotection.impl.SplitBrainProtectionServiceImpl;
-import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
@@ -156,7 +155,7 @@ public class NodeEngineImpl implements NodeEngine {
                 operationService.getInvocationMonitor(),
                 eventService,
                 getJetPacketConsumer(node.getNodeExtension()),
-                sqlService
+                sqlService.getOperationHandler()
             );
             this.splitBrainProtectionService = new SplitBrainProtectionServiceImpl(this);
             this.diagnostics = newDiagnostics();
@@ -166,7 +165,6 @@ public class NodeEngineImpl implements NodeEngine {
             serviceManager.registerService(OperationParker.SERVICE_NAME, operationParker);
             serviceManager.registerService(UserCodeDeploymentService.SERVICE_NAME, userCodeDeploymentService);
             serviceManager.registerService(ClusterWideConfigurationService.SERVICE_NAME, configurationService);
-            serviceManager.registerService(SqlService.SERVICE_NAME, sqlService);
         } catch (Throwable e) {
             try {
                 shutdown(true);
@@ -229,6 +227,7 @@ public class NodeEngineImpl implements NodeEngine {
         proxyService.init();
         operationService.start();
         splitBrainProtectionService.start();
+        sqlService.start();
 
         diagnostics.start();
         node.getNodeExtension().registerPlugins(diagnostics);
@@ -489,11 +488,16 @@ public class NodeEngineImpl implements NodeEngine {
     public void reset() {
         operationParker.reset();
         operationService.reset();
+        sqlService.reset();
     }
 
     @SuppressWarnings("checkstyle:npathcomplexity")
     public void shutdown(boolean terminate) {
         logger.finest("Shutting down services...");
+        if (sqlService != null) {
+            sqlService.shutdown();
+        }
+
         if (operationParker != null) {
             operationParker.shutdown();
         }

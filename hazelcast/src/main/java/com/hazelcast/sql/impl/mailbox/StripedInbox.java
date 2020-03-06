@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.mailbox;
 
 import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.sql.impl.SqlServiceImpl;
+import com.hazelcast.sql.impl.operation.QueryOperationHandler;
 
 import java.util.ArrayDeque;
 import java.util.Collection;
@@ -25,25 +25,25 @@ import java.util.HashMap;
 import java.util.UUID;
 
 /**
- * AbstractInbox which puts requests from different stripes into isolated queues.
+ * Inbox which puts batches from different senders into separate queues.
  */
 public class StripedInbox extends AbstractInbox {
     /** Map from member ID to index. */
     private final HashMap<UUID, Integer> memberToIdxMap = new HashMap<>();
 
     /** Batches from members. */
-    private final ArrayDeque<SendBatch>[] queues;
+    private final ArrayDeque<MailboxBatch>[] queues;
 
     @SuppressWarnings("unchecked")
     public StripedInbox(
         QueryId queryId,
         int edgeId,
         int rowWidth,
-        SqlServiceImpl service,
+        QueryOperationHandler operationHandler,
         Collection<UUID> senderMemberIds,
         long maxMemory
     ) {
-        super(queryId, edgeId, rowWidth, service, senderMemberIds.size(), maxMemory);
+        super(queryId, edgeId, rowWidth, operationHandler, senderMemberIds.size(), maxMemory);
 
         // Build inverse map from the member to it's index.
         int memberIdx = 0;
@@ -63,10 +63,10 @@ public class StripedInbox extends AbstractInbox {
     }
 
     @Override
-    public void onBatchReceived0(SendBatch batch) {
+    public void onBatchReceived0(MailboxBatch batch) {
         int idx = memberToIdxMap.get(batch.getSenderId());
 
-        ArrayDeque<SendBatch> queue = queues[idx];
+        ArrayDeque<MailboxBatch> queue = queues[idx];
 
         queue.add(batch);
     }
@@ -75,8 +75,8 @@ public class StripedInbox extends AbstractInbox {
         return queues.length;
     }
 
-    public SendBatch poll(int stripe) {
-        SendBatch batch = queues[stripe].poll();
+    public MailboxBatch poll(int stripe) {
+        MailboxBatch batch = queues[stripe].poll();
 
         onBatchPolled(batch);
 
@@ -85,6 +85,6 @@ public class StripedInbox extends AbstractInbox {
 
     @Override
     public String toString() {
-        return "StripedInbox {queryId=" + queryId + ", edgeId=" + getEdgeId() + "}";
+        return "StripedInbox {queryId=" + queryId + ", edgeId=" + edgeId + "}";
     }
 }

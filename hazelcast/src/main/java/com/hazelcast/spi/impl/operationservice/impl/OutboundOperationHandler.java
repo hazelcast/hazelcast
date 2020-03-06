@@ -16,13 +16,12 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.instance.impl.Node;
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.Packet;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.sql.impl.operation.QueryIdAwareOperation;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.internal.nio.Packet.FLAG_URGENT;
@@ -57,9 +56,7 @@ public class OutboundOperationHandler {
         byte[] bytes = serializationService.toBytes(op);
         int partitionId = op.getPartitionId();
 
-        Packet.Type type = op instanceof QueryIdAwareOperation ? Packet.Type.SQL : Packet.Type.OPERATION;
-
-        Packet packet = new Packet(bytes, partitionId).setPacketType(type);
+        Packet packet = new Packet(bytes, partitionId).setPacketType(Packet.Type.OPERATION);
 
         if (op.isUrgent()) {
             packet.raiseFlags(FLAG_URGENT);

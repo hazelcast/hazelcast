@@ -16,24 +16,22 @@
 
 package com.hazelcast.sql.impl.calcite;
 
-import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.SqlErrorCode;
-import com.hazelcast.sql.impl.OptimizerStatistics;
 import com.hazelcast.sql.impl.QueryPlan;
-import com.hazelcast.sql.impl.RuleCallTracker;
-import com.hazelcast.sql.impl.SqlOptimizer;
 import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.NodeIdVisitor;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.PlanCreateVisitor;
 import com.hazelcast.sql.impl.calcite.statistics.DefaultStatisticProvider;
 import com.hazelcast.sql.impl.calcite.statistics.StatisticProvider;
+import com.hazelcast.sql.impl.optimizer.OptimizerRuleCallTracker;
+import com.hazelcast.sql.impl.optimizer.OptimizerStatistics;
+import com.hazelcast.sql.impl.optimizer.SqlOptimizer;
 import com.hazelcast.sql.impl.schema.ChainedSqlSchemaResolver;
 import com.hazelcast.sql.impl.schema.PartitionedMapSqlSchemaResolver;
 import com.hazelcast.sql.impl.schema.ReplicatedMapSqlSchemaResolver;
@@ -92,7 +90,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
         boolean statsEnabled = context.getConfig().isStatisticsEnabled();
 
-        RuleCallTracker physicalRuleCallTracker = statsEnabled ? new RuleCallTracker() : null;
+        OptimizerRuleCallTracker physicalRuleCallTracker = statsEnabled ? new OptimizerRuleCallTracker() : null;
         PhysicalRel physicalRel = context.optimizePhysical(logicalRel, physicalRuleCallTracker);
 
         // 6. Create plan.
@@ -129,19 +127,16 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             partMap.computeIfAbsent(ownerId, (key) -> new PartitionIdSet(partCnt)).add(part.getPartitionId());
         }
 
-        // Collect remote addresses.
-        List<Address> dataMemberAddresses = new ArrayList<>(partMap.size());
+        // Collect remote IDs.
         List<UUID> dataMemberIds = new ArrayList<>(partMap.size());
 
         for (UUID partMemberId : partMap.keySet()) {
             MemberImpl member = nodeEngine.getClusterService().getMember(partMemberId);
 
             if (member == null) {
-                throw HazelcastSqlException.error(SqlErrorCode.MEMBER_LEAVE, "Participating member has "
-                    + "left the topology: " + partMemberId);
+                throw HazelcastSqlException.memberLeave(partMemberId);
             }
 
-            dataMemberAddresses.add(member.getAddress());
             dataMemberIds.add(member.getUuid());
         }
 
@@ -155,7 +150,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             nodeEngine.getLocalMember().getUuid(),
             partMap,
             dataMemberIds,
-            dataMemberAddresses,
             relIdMap,
             sql,
             paramsCount,

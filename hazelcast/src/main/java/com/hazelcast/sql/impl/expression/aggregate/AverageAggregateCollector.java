@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.expression.aggregate;
 
 import com.hazelcast.sql.impl.exec.agg.AggregateCollector;
 import com.hazelcast.sql.impl.type.DataType;
-import com.hazelcast.sql.impl.type.accessor.LongConverter;
+import com.hazelcast.sql.impl.type.converter.LongConverter;
 
 /**
  * Collector for AVG.

@@ -16,15 +16,14 @@
 
 package com.hazelcast.sql.impl.mailbox;
 
-import com.hazelcast.cluster.Member;
-import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.SqlErrorCode;
-import com.hazelcast.sql.impl.QueryFragmentContext;
 import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.sql.impl.SqlServiceImpl;
-import com.hazelcast.sql.impl.operation.QueryBatchOperation;
+import com.hazelcast.sql.impl.operation.QueryOperationChannel;
+import com.hazelcast.sql.impl.operation.QueryOperationHandler;
+import com.hazelcast.sql.impl.operation.QueryBatchExchangeOperation;
+import com.hazelcast.sql.impl.row.ListRowBatch;
 import com.hazelcast.sql.impl.row.Row;
+import com.hazelcast.sql.impl.row.RowBatch;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,8 +34,11 @@ import java.util.UUID;
  * Outbox which sends data to a single remote stripe.
  */
 public class Outbox extends AbstractMailbox {
-
+    /** Minimum number of rows to be sent. */
     private static final int MIN_BATCH_FLUSH_THRESHOLD = 4;
+
+    /** Operation handler. */
+    private final QueryOperationHandler operationHandler;
 
     /** Target member ID. */
     private final UUID targetMemberId;
@@ -44,14 +46,11 @@ public class Outbox extends AbstractMailbox {
     /** Batch flush threshold. */
     private final int batchFlushTreshold;
 
-    /** SQL service. */
-    private SqlServiceImpl sqlService;
-
-    /** Target member. */
-    private Member targetMember;
+    /** Channel to send operations through. */
+    private QueryOperationChannel operationChannel;
 
     /** Pending rows. */
-    private List<Row> batch;
+    private List<Row> rows;
 
     /** Amount of remote memory which is available at the moment. */
     private long remainingMemory;
@@ -59,33 +58,32 @@ public class Outbox extends AbstractMailbox {
     /** Whether all data was flushed. */
     private boolean flushedLast;
 
-    // TODO: Batch size must be measured in bytes!
-    public Outbox(QueryId queryId, int edgeId, int rowWidth, UUID targetMemberId, int batchSize, long remainingMemory) {
+    public Outbox(
+        QueryId queryId,
+        QueryOperationHandler operationHandler,
+        int edgeId,
+        int rowWidth,
+        UUID targetMemberId,
+        int batchSize,
+        long remainingMemory
+    ) {
         super(queryId, edgeId, rowWidth);
 
+        this.operationHandler = operationHandler;
         this.targetMemberId = targetMemberId;
         this.remainingMemory = remainingMemory;
 
         int batchFlushTreshold0 = batchSize / rowWidth;
 
-        if (batchFlushTreshold0 == 0) {
+        if (batchFlushTreshold0 < MIN_BATCH_FLUSH_THRESHOLD) {
             batchFlushTreshold0 = MIN_BATCH_FLUSH_THRESHOLD;
         }
 
         batchFlushTreshold = batchFlushTreshold0;
     }
 
-    public void setup(QueryFragmentContext context) {
-        NodeEngine nodeEngine = context.getNodeEngine();
-
-        sqlService = nodeEngine.getSqlService();
-
-        targetMember = nodeEngine.getClusterService().getMember(targetMemberId);
-
-        if (targetMember == null) {
-            throw HazelcastSqlException.error(SqlErrorCode.MEMBER_LEAVE,
-                "Outbox target member has left topology: " + targetMemberId);
-        }
+    public void setup() {
+        operationChannel = operationHandler.createChannel(targetMemberId);
     }
 
     public UUID getTargetMemberId() {
@@ -103,9 +101,6 @@ public class Outbox extends AbstractMailbox {
         // Number of rows in the batch.
         int batchRows = rows.size() - position;
 
-        // Current number of rows in buffer.
-        int currentRows = batch != null ? batch.size() : 0;
-
         // Maximum number of rows which could be sent to remote node.
         int maxRowsToAccept = (int) (remainingMemory / rowWidth);
 
@@ -118,19 +113,19 @@ public class Outbox extends AbstractMailbox {
 
         if (acceptedRows != 0 || last) {
             // Collect rows.
-            if (batch == null) {
-                batch = new ArrayList<>(batchFlushTreshold);
+            if (this.rows == null) {
+                this.rows = new ArrayList<>(batchFlushTreshold);
             }
 
             for (int i = 0; i < acceptedRows; i++) {
-                batch.add(rows.get(position + i));
+                this.rows.add(rows.get(position + i));
             }
 
             // Apply backpressure.
             remainingMemory -= acceptedRows * rowWidth;
 
             // Flush if needed: when batch is too large, or if it was the last batch and it was fully accepted.
-            boolean batchIsFull = batch.size() >= batchFlushTreshold || remainingMemory < rowWidth;
+            boolean batchIsFull = this.rows.size() >= batchFlushTreshold || remainingMemory < rowWidth;
             boolean lastTransmit = last && acceptedRows == batchRows;
 
             if (batchIsFull || lastTransmit) {
@@ -168,38 +163,31 @@ public class Outbox extends AbstractMailbox {
      * @param last Whether this is the last batch.
      */
     private void send(boolean last) {
-        List<Row> batch0 = batch;
+        List<Row> rows0 = rows;
 
-        if (batch0 == null) {
-            batch0 = Collections.emptyList();
+        if (rows0 == null) {
+            rows0 = Collections.emptyList();
         }
 
-        QueryBatchOperation op = new QueryBatchOperation(
-            sqlService.getEpochWatermark(),
-            queryId,
-            getEdgeId(),
-            new SendBatch(batch0, remainingMemory, last)
-        );
+        RowBatch batch = new ListRowBatch(rows0);
+
+        QueryBatchExchangeOperation op = new QueryBatchExchangeOperation(queryId, edgeId, batch, last, remainingMemory);
 
         if (last) {
             flushedLast = true;
         }
 
-        boolean success = sqlService.sendRequest(op, targetMember.getAddress());
+        boolean success = operationChannel.execute(op);
 
         if (!success) {
-            throw HazelcastSqlException.error(SqlErrorCode.MEMBER_LEAVE,
-                "Failed to send data batch to member: " + targetMemberId);
+            throw HazelcastSqlException.memberLeave(targetMemberId);
         }
 
-        batch = null;
+        rows = null;
     }
 
     @Override
     public String toString() {
-        return "Outbox {queryId=" + queryId
-            + ", edgeId=" + getEdgeId()
-            + ", targetMemberId=" + targetMemberId
-            + '}';
+        return "Outbox {queryId=" + queryId + ", edgeId=" + edgeId + ", targetMemberId=" + targetMemberId + '}';
     }
 }

@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -27,7 +27,7 @@ import java.util.UUID;
 /**
  * Cluster-wide unique query ID.
  */
-public final class QueryId implements DataSerializable {
+public final class QueryId implements IdentifiedDataSerializable {
     /** Member ID: most significant bits */
     private long memberIdHigh;
 
@@ -40,19 +40,15 @@ public final class QueryId implements DataSerializable {
     /** Local ID: least significant bits. */
     private long localLow;
 
-    /**  */
-    private long epoch;
-
     public QueryId() {
         // No-op.
     }
 
-    private QueryId(long memberIdHigh, long memberIdLow, long localHigh, long localLow, long epoch) {
+    private QueryId(long memberIdHigh, long memberIdLow, long localHigh, long localLow) {
         this.memberIdHigh = memberIdHigh;
         this.memberIdLow = memberIdLow;
         this.localHigh = localHigh;
         this.localLow = localLow;
-        this.epoch = epoch;
     }
 
     /**
@@ -61,15 +57,14 @@ public final class QueryId implements DataSerializable {
      * @param memberId Member ID.
      * @return Query ID.
      */
-    public static QueryId create(UUID memberId, long epoch) {
+    public static QueryId create(UUID memberId) {
         UUID qryId = UuidUtil.newUnsecureUUID();
 
         return new QueryId(
             memberId.getMostSignificantBits(),
             memberId.getLeastSignificantBits(),
             qryId.getMostSignificantBits(),
-            qryId.getLeastSignificantBits(),
-            epoch
+            qryId.getLeastSignificantBits()
         );
     }
 
@@ -81,8 +76,14 @@ public final class QueryId implements DataSerializable {
         return new UUID(localHigh, localLow);
     }
 
-    public long getEpoch() {
-        return epoch;
+    @Override
+    public int getFactoryId() {
+        return QuerySerializationHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return QuerySerializationHook.QUERY_ID;
     }
 
     @Override
@@ -91,7 +92,6 @@ public final class QueryId implements DataSerializable {
         out.writeLong(memberIdLow);
         out.writeLong(localHigh);
         out.writeLong(localLow);
-        out.writeLong(epoch);
     }
 
     @Override
@@ -100,7 +100,6 @@ public final class QueryId implements DataSerializable {
         memberIdLow = in.readLong();
         localHigh = in.readLong();
         localLow = in.readLong();
-        epoch = in.readLong();
     }
 
     @Override
@@ -116,7 +115,7 @@ public final class QueryId implements DataSerializable {
         QueryId other = (QueryId) o;
 
         return memberIdHigh == other.memberIdHigh && memberIdLow == other.memberIdLow
-            && localHigh == other.localHigh && localLow == other.localLow && epoch == other.epoch;
+            && localHigh == other.localHigh && localLow == other.localLow;
     }
 
     @Override
@@ -126,13 +125,12 @@ public final class QueryId implements DataSerializable {
         result = 31 * result + (int) (memberIdLow ^ (memberIdLow >>> 32));
         result = 31 * result + (int) (localHigh ^ (localHigh >>> 32));
         result = 31 * result + (int) (localLow ^ (localLow >>> 32));
-        result = 31 * result + (int) (epoch ^ (epoch >>> 32));
 
         return result;
     }
 
     @Override
     public String toString() {
-        return "QueryId {memberId=" + getMemberId() + ", localId=" + getLocalId() + ", epoch=" + epoch + '}';
+        return "QueryId {memberId=" + getMemberId() + ", localId=" + getLocalId() + '}';
     }
 }

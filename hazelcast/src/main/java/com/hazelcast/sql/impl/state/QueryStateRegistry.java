@@ -16,83 +16,130 @@
 
 package com.hazelcast.sql.impl.state;
 
-import com.hazelcast.sql.impl.QueryFragment;
 import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.sql.impl.operation.QueryOperationHandler;
 import com.hazelcast.sql.impl.QueryPlan;
+import com.hazelcast.sql.impl.fragment.QueryFragment;
+import com.hazelcast.sql.impl.operation.QueryCheckOperation;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.IdentityHashMap;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Query state manager.
+ * Query state implementation.
  */
-public interface QueryStateRegistry {
-    /**
-     * Callback invoked when the query is started on the initiator node.
-     *
-     * @return Query state.
-     */
-    QueryState onInitiatorQueryStarted(
+public class QueryStateRegistry {
+    /** IDs of locally started queries. */
+    private final ConcurrentHashMap<QueryId, QueryState> states = new ConcurrentHashMap<>();
+
+    /** Local member ID. */
+    private UUID localMemberId;
+
+    public void init(UUID localMemberId) {
+        this.localMemberId = localMemberId;
+    }
+
+    public QueryState onInitiatorQueryStarted(
         long initiatorTimeout,
-        QueryPlan initatorPlan,
+        QueryPlan initiatorPlan,
         IdentityHashMap<QueryFragment, Collection<UUID>> initiatorFragmentMappings,
         QueryStateRowSource initiatorRowSource,
-        boolean isExplain
-    );
+        QueryStateCompletionCallback completionCallback,
+        boolean register
+    ) {
+        QueryId queryId = QueryId.create(localMemberId);
 
-    /**
-     * Callback invoked when the query is started on participant.
-     *
-     * @return Query state.
-     */
-    QueryState onDistributedQueryStarted(QueryId queryId);
+        QueryState state = QueryState.createInitiatorState(
+            queryId,
+            localMemberId,
+            completionCallback,
+            initiatorTimeout,
+            initiatorPlan,
+            initiatorFragmentMappings,
+            initiatorRowSource
+        );
 
-    /**
-     * Callback invoked when the query is finished on the local node.
-     *
-     * @param queryId Query ID.
-     */
-    void onQueryFinished(QueryId queryId);
+        if (register) {
+            states.put(queryId, state);
+        }
 
-    /**
-     * @param queryId Query ID.
-     * @return Query state.
-     */
-    QueryState getState(QueryId queryId);
+        return state;
+    }
 
-    /**
-     * Check if the given local query is active.
-     *
-     * @param queryId Query ID.
-     * @return {@code True} if active, {@code false} otherwise.
-     */
-    boolean isLocalQueryActive(QueryId queryId);
+    public QueryState onDistributedQueryStarted(QueryId queryId, QueryStateCompletionCallback completionCallback) {
+        UUID initiatorMemberId =  queryId.getMemberId();
 
-    /**
-     * Get current epoch.
-     *
-     * @return Current epoch.
-     */
-    long getEpoch();
+        boolean local = localMemberId.equals(initiatorMemberId);
 
-    /**
-     * Get current epoch watermark.
-     *
-     * @return The lowest epoch of currently running queries.
-     */
-    long getEpochLowWatermark();
+        if (local) {
+            // For locally initiated query, the state must already exist. If not - the query has been completed.
+            return states.get(queryId);
+        } else {
+            /// Otherwise either get an existing state, or create it on demand.
+            QueryState state = states.get(queryId);
 
-    /**
-     * Set's epoch low watermark known for the given member.
-     *
-     * @param memberId Member ID.
-     * @param epochLowWatermark Epoch low watermark.
-     */
-    void setEpochLowWatermarkForMember(UUID memberId, long epochLowWatermark);
+            if (state == null) {
+                state = QueryState.createDistributedState(
+                    queryId,
+                    localMemberId,
+                    completionCallback
+                );
 
-    /**
-     * Check query state and perform corrective actions if needed.
-     */
-    void update();
+                QueryState oldState = states.putIfAbsent(queryId, state);
+
+                if (oldState != null) {
+                    state = oldState;
+                }
+            }
+
+            return state;
+        }
+    }
+
+    public void complete(QueryId queryId) {
+        states.remove(queryId);
+    }
+
+    public QueryState getState(QueryId queryId) {
+        return states.get(queryId);
+    }
+
+    public void reset() {
+        states.clear();
+    }
+
+    public void update(Collection<UUID> memberIds, QueryOperationHandler operationHandler) {
+        Map<UUID, Collection<QueryId>> checkMap = new HashMap<>();
+
+        for (QueryState state : states.values()) {
+            // 1. Check if the query has timed out.
+            if (state.tryCancelOnTimeout()) {
+                continue;
+            }
+
+            // 2. Check whether the member required for the query has left.
+            if (state.tryCancelOnMemberLeave(memberIds)) {
+                continue;
+            }
+
+            // 3. Check whether the query is not initialized for too long. If yes, trigger check process.
+            if (state.requestQueryCheck()) {
+                QueryId queryId = state.getQueryId();
+
+                checkMap.computeIfAbsent(queryId.getMemberId(), (key) -> new ArrayList<>(1)).add(queryId);
+            }
+        }
+
+        // Send batched check requests.
+        for (Map.Entry<UUID, Collection<QueryId>> checkEntry : checkMap.entrySet()) {
+            QueryCheckOperation operation = new QueryCheckOperation(checkEntry.getValue());
+
+            operationHandler.execute(checkEntry.getKey(), operation);
+        }
+    }
 }

@@ -36,12 +36,4 @@ public abstract class AbstractMailbox {
         this.edgeId = edgeId;
         this.rowWidth = rowWidth;
     }
-
-    public QueryId getQueryId() {
-        return queryId;
-    }
-
-    public int getEdgeId() {
-        return edgeId;
-    }
 }

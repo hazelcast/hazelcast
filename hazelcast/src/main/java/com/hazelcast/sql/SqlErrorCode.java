@@ -41,6 +41,9 @@ public final class SqlErrorCode {
     /** Out of memory condition. */
     public static final int OUT_OF_MEMORY = 5;
 
+    /** Client has left the topology. */
+    public static final int CLIENT_LEAVE = 6;
+
     private SqlErrorCode() {
         // No-op.
     }

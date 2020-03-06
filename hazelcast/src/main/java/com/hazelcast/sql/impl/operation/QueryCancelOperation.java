@@ -16,12 +16,14 @@
 
 package com.hazelcast.sql.impl.operation;
 
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.sql.impl.state.QueryCancelInfo;
+import com.hazelcast.sql.impl.QuerySerializationHook;
 
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * Operation to cancel query execution on participant node. Cancellation process is two-phase:
@@ -34,33 +36,52 @@ import java.io.IOException;
  * leading to N*N messages in the worst case. With two-phase approach query coordinator ensures that broadcast is performed no
  * more than once, putting upper bound on the total number of cancel messages to 2*N.
  */
-public class QueryCancelOperation extends QueryIdAwareOperation {
-    /** Cancel reason. */
-    private QueryCancelInfo cancelInfo;
+public class QueryCancelOperation extends QueryAbstractIdAwareOperation {
+
+    private int errorCode;
+    private String errorMessage;
+    private UUID originatingMemberId;
 
     public QueryCancelOperation() {
         // No-op.
     }
 
-    public QueryCancelOperation(long epochWatermark, QueryId queryId, QueryCancelInfo cancelInfo) {
-        super(epochWatermark, queryId);
+    public QueryCancelOperation(QueryId queryId, int errorCode, String errorMessage, UUID originatingMemberId) {
+        super(queryId);
 
-        this.cancelInfo = cancelInfo;
+        this.errorCode = errorCode;
+        this.errorMessage = errorMessage;
+        this.originatingMemberId = originatingMemberId;
     }
 
-    public QueryCancelInfo getCancelInfo() {
-        return cancelInfo;
+    public int getErrorCode() {
+        return errorCode;
+    }
+
+    public String getErrorMessage() {
+        return errorMessage;
+    }
+
+    public UUID getOriginatingMemberId() {
+        return originatingMemberId;
+    }
+
+    @Override
+    public int getClassId() {
+        return QuerySerializationHook.OPERATION_CANCEL;
     }
 
     @Override
     protected void writeInternal1(ObjectDataOutput out) throws IOException {
-        cancelInfo.writeData(out);
+        out.writeInt(errorCode);
+        out.writeUTF(errorMessage);
+        UUIDSerializationUtil.writeUUID(out, originatingMemberId);
     }
 
     @Override
     protected void readInternal1(ObjectDataInput in) throws IOException {
-        cancelInfo = new QueryCancelInfo();
-
-        cancelInfo.readData(in);
+        errorCode = in.readInt();
+        errorMessage = in.readUTF();
+        originatingMemberId = UUIDSerializationUtil.readUUID(in);
     }
 }

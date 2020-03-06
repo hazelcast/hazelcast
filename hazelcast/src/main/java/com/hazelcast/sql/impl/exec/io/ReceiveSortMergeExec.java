@@ -16,12 +16,12 @@
 
 package com.hazelcast.sql.impl.exec.io;
 
-import com.hazelcast.sql.impl.QueryFragmentContext;
+import com.hazelcast.sql.impl.fragment.QueryFragmentContext;
 import com.hazelcast.sql.impl.exec.AbstractExec;
 import com.hazelcast.sql.impl.exec.IterationResult;
 import com.hazelcast.sql.impl.exec.fetch.Fetch;
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.mailbox.SendBatch;
+import com.hazelcast.sql.impl.mailbox.MailboxBatch;
 import com.hazelcast.sql.impl.mailbox.StripedInbox;
 import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.ListRowBatch;
@@ -153,7 +153,7 @@ public class ReceiveSortMergeExec extends AbstractExec {
         private final int index;
 
         /** Current batch we are iterating over. */
-        private List<Row> curRows;
+        private RowBatch curBatch;
 
         /** Current position in the batch. */
         private int curRowIndex = INDEX_BEFORE;
@@ -165,7 +165,7 @@ public class ReceiveSortMergeExec extends AbstractExec {
         private Row curRow;
 
         /** Whether the last batch was polled. */
-        private boolean lastBatch;
+        private boolean last;
 
         private Source(int index) {
             this.index = index;
@@ -175,22 +175,22 @@ public class ReceiveSortMergeExec extends AbstractExec {
         public boolean advance() {
             // Get the next batch if needed.
             while (noBatch()) {
-                if (lastBatch) {
+                if (last) {
                     return false;
                 }
 
-                SendBatch batch = inbox.poll(index);
+                MailboxBatch batch = inbox.poll(index);
 
                 if (batch == null) {
                     return false;
                 }
 
-                lastBatch = batch.isLast();
+                last = batch.isLast();
 
-                List<Row> rows = batch.getRows();
+                RowBatch batch0 = batch.getBatch();
 
-                if (!rows.isEmpty()) {
-                    curRows = rows;
+                if (batch0.getRowCount() != 0) {
+                    curBatch = batch0;
                     curRowIndex = 0;
 
                     break;
@@ -198,15 +198,15 @@ public class ReceiveSortMergeExec extends AbstractExec {
             }
 
             // At this point we should have a batch with at least one row, so get it.
-            assert curRowIndex < curRows.size();
+            assert curRowIndex < curBatch.getRowCount();
 
             // Get row and key.
-            curRow = curRows.get(curRowIndex++);
+            curRow = curBatch.getRow(curRowIndex++);
             curKey = prepareSortKey(curRow, index);
 
             // Check if batch is over.
-            if (curRowIndex == curRows.size()) {
-                curRows = null;
+            if (curRowIndex == curBatch.getRowCount()) {
+                curBatch = null;
                 curRowIndex = INDEX_BEFORE;
             }
 
@@ -215,7 +215,7 @@ public class ReceiveSortMergeExec extends AbstractExec {
 
         @Override
         public boolean isDone() {
-            return noBatch() && lastBatch;
+            return noBatch() && last;
         }
 
         @Override

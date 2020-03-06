@@ -21,7 +21,7 @@ import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlErrorCode;
-import com.hazelcast.sql.impl.RuleCallTracker;
+import com.hazelcast.sql.impl.optimizer.OptimizerRuleCallTracker;
 import com.hazelcast.sql.impl.calcite.cost.CostFactory;
 import com.hazelcast.sql.impl.calcite.cost.metadata.MetadataProvider;
 import com.hazelcast.sql.impl.calcite.distribution.DistributionTrait;
@@ -275,7 +275,7 @@ public final class OptimizerContext {
      * @param rel Optimized logical tree.
      * @return Optimized physical tree.
      */
-    public PhysicalRel optimizePhysical(RelNode rel, RuleCallTracker ruleCallTracker) {
+    public PhysicalRel optimizePhysical(RelNode rel, OptimizerRuleCallTracker ruleCallTracker) {
         RuleSet rules = RuleSets.ofList(
             SortPhysicalRule.INSTANCE,
             RootPhysicalRule.INSTANCE,

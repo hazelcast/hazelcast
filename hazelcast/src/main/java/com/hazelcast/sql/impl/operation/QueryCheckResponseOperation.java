@@ -16,56 +16,25 @@
 
 package com.hazelcast.sql.impl.operation;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.sql.impl.QuerySerializationHook;
 
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 
 /**
  * Response to {@link QueryCheckOperation} operation. Sent from coordinator to participant.
  */
-public class QueryCheckResponseOperation extends QueryOperation {
-    /** List of inactive queries which should be cleared up. */
-    private Collection<QueryId> inactiveQueryIds;
-
+public class QueryCheckResponseOperation extends QueryAbstractCheckOperation {
     public QueryCheckResponseOperation() {
         // No-op.
     }
 
-    public QueryCheckResponseOperation(long epochWatermark, Collection<QueryId> queryIds) {
-        super(epochWatermark);
-
-        this.inactiveQueryIds = queryIds;
-    }
-
-    public Collection<QueryId> getInactiveQueryIds() {
-        return inactiveQueryIds;
+    public QueryCheckResponseOperation(Collection<QueryId> queryIds) {
+        super(queryIds);
     }
 
     @Override
-    protected void writeInternal0(ObjectDataOutput out) throws IOException {
-        out.writeInt(inactiveQueryIds.size());
-
-        for (QueryId queryId : inactiveQueryIds) {
-            queryId.writeData(out);
-        }
-    }
-
-    @Override
-    protected void readInternal0(ObjectDataInput in) throws IOException {
-        int size = in.readInt();
-
-        inactiveQueryIds = new ArrayList<>(size);
-
-        for (int i = 0; i < size; i++) {
-            QueryId queryId = new QueryId();
-
-            queryId.readData(in);
-
-            inactiveQueryIds.add(queryId);
-        }
+    public int getClassId() {
+        return QuerySerializationHook.OPERATION_CHECK_RESPONSE;
     }
 }

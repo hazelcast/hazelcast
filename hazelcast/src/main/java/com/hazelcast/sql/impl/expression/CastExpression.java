@@ -21,7 +21,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
 import com.hazelcast.sql.impl.type.DataTypeUtils;
-import com.hazelcast.sql.impl.type.accessor.Converter;
+import com.hazelcast.sql.impl.type.converter.Converter;
 
 import java.io.IOException;
 

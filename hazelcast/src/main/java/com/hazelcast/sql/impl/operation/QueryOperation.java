@@ -16,58 +16,55 @@
 
 package com.hazelcast.sql.impl.operation;
 
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.sql.SqlService;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.QuerySerializationHook;
 
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * Base class for query operations.
  */
-// TODO: We do not execute these operation as normal operations. Instead, we serialize them to packets with special
-//  flag. May be we do not need to extend the Operation at all, becuase only "callerId" field of that class is used.
-public abstract class QueryOperation extends Operation {
-    /** Epoch watermark which is used to piggyback on normal SQL message to propagate epoch watermark between nodes. */
-    protected long epochWatermark;
+public abstract class QueryOperation implements IdentifiedDataSerializable {
+
+    public static final int PARTITION_ANY = -1;
+
+    private UUID callerId;
 
     protected QueryOperation() {
         // No-op.
     }
 
-    protected QueryOperation(long epochWatermark) {
-        this.epochWatermark = epochWatermark;
+    public UUID getCallerId() {
+        return callerId;
     }
 
-    public long getEpochWatermark() {
-        return epochWatermark;
+    public void setCallerId(UUID callerId) {
+        this.callerId = callerId;
     }
 
-    @Override
-    public String getServiceName() {
-        return SqlService.SERVICE_NAME;
-    }
-
-    @Override
-    public void run() throws Exception {
-        throw new UnsupportedOperationException("Should not be called.");
+    public int getPartition() {
+        return PARTITION_ANY;
     }
 
     @Override
-    protected final void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
+    public final int getFactoryId() {
+        return QuerySerializationHook.F_ID;
+    }
 
-        out.writeLong(epochWatermark);
+    @Override
+    public final void writeData(ObjectDataOutput out) throws IOException {
+        UUIDSerializationUtil.writeUUID(out, callerId);
 
         writeInternal0(out);
     }
 
     @Override
-    protected final void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-
-        epochWatermark = in.readLong();
+    public final void readData(ObjectDataInput in) throws IOException {
+        callerId = UUIDSerializationUtil.readUUID(in);
 
         readInternal0(in);
     }

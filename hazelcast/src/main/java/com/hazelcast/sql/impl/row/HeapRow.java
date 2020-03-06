@@ -18,7 +18,8 @@ package com.hazelcast.sql.impl.row;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.QuerySerializationHook;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -26,7 +27,7 @@ import java.util.Arrays;
 /**
  * Row with values stored on heap.
  */
-public class HeapRow implements Row, DataSerializable {
+public class HeapRow implements Row, IdentifiedDataSerializable {
     /** Row values. */
     private Object[] values;
 
@@ -74,15 +75,36 @@ public class HeapRow implements Row, DataSerializable {
     }
 
     @Override
+    public int getFactoryId() {
+        return QuerySerializationHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return QuerySerializationHook.ROW_HEAP;
+    }
+
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeObject(values);
-        // TODO: Serialize once up the stack.
+        out.writeInt(values.length);
+
+        // TODO: Serializing wrapped objects will be slow and space-inefficient. How to mitigate it?
+        // TODO: Handle serialization errors.
+        for (Object value : values) {
+            out.writeObject(value);
+        }
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        values = in.readObject();
-        // TODO: Serialize once up the stack.
+        int len = in.readInt();
+
+        values = new Object[len];
+
+        // TODO: Handle deserialization errors: cancel query!
+        for (int i = 0; i < len; i++) {
+            values[i] = in.readObject();
+        }
     }
 
     @Override

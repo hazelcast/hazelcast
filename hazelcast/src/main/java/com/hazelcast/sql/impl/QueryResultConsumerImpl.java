@@ -20,7 +20,6 @@ import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.exec.RootExec;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.row.RowBatch;
 
 import java.util.ArrayDeque;
 import java.util.Iterator;
@@ -30,11 +29,8 @@ import java.util.NoSuchElementException;
  * Blocking array-based result consumer.
  */
 public class QueryResultConsumerImpl implements QueryResultConsumer {
-    /** Default batch size. */
-    private static final int DFLT_BATCH_SIZE = 1024;
-
     /** Maximum size. */
-    private final int maxSize;
+    private final int pageSize;
 
     /** Mutex for concurrency support. */
     private final Object mux = new Object();
@@ -57,12 +53,8 @@ public class QueryResultConsumerImpl implements QueryResultConsumer {
     /** Query root. */
     private RootExec root;
 
-    public QueryResultConsumerImpl() {
-        this(DFLT_BATCH_SIZE);
-    }
-
-    public QueryResultConsumerImpl(int maxSize) {
-        this.maxSize = maxSize;
+    public QueryResultConsumerImpl(int pageSize) {
+        this.pageSize = pageSize;
     }
 
     @Override
@@ -75,29 +67,9 @@ public class QueryResultConsumerImpl implements QueryResultConsumer {
     }
 
     @Override
-    public int consume(RowBatch batch, int startPos) {
-        synchronized (mux) {
-            int available = batch.getRowCount() - startPos;
-            int remaining = maxSize - rows.size();
-
-            int toConsume = Math.min(available, remaining);
-
-            for (int i = startPos; i < toConsume; i++) {
-                rows.add(batch.getRow(i));
-            }
-
-            rootScheduled = false;
-
-            mux.notifyAll();
-
-            return toConsume;
-        }
-    }
-
-    @Override
     public boolean consume(Iterable<Row> source) {
         synchronized (mux) {
-            int remaining = maxSize - rows.size();
+            int remaining = pageSize - rows.size();
 
             if (remaining == 0) {
                 return false;

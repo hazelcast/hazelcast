@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.expression.aggregate;
 import com.hazelcast.sql.impl.exec.agg.AggregateCollector;
 import com.hazelcast.sql.impl.type.DataType;
 import com.hazelcast.sql.impl.type.GenericType;
-import com.hazelcast.sql.impl.type.accessor.Converter;
+import com.hazelcast.sql.impl.type.converter.Converter;
 
 import java.math.BigDecimal;
 

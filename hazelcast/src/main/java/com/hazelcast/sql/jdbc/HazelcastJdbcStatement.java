@@ -57,9 +57,6 @@ public class HazelcastJdbcStatement implements Statement {
     /** Query timeout. */
     private int queryTimeout;
 
-    /** Maximum number of rows. */
-    private int maxRows;
-
     /** Whether to close the statement when the result set is closed. */
     private boolean closeOnCompletion;
 
@@ -151,7 +148,7 @@ public class HazelcastJdbcStatement implements Statement {
 
         assert resultSet == null;
 
-        JdbcCursor page = gateway.execute(sql, args, pageSize, queryTimeout * MILLIS_IN_SECOND, maxRows);
+        JdbcCursor page = gateway.execute(sql, args, pageSize, queryTimeout * MILLIS_IN_SECOND);
 
         resultSet = new HazelcastJdbcResultSet(this, page, fetchDirection);
     }
@@ -307,7 +304,7 @@ public class HazelcastJdbcStatement implements Statement {
     public int getMaxRows() throws SQLException {
         checkClosed();
 
-        return maxRows;
+        throw unsupported("getMaxRows is not supported");
     }
 
     @Override
@@ -318,7 +315,7 @@ public class HazelcastJdbcStatement implements Statement {
             throw new SQLException("Max rows cannot be negative: " + maxRows);
         }
 
-        this.maxRows = maxRows;
+        throw unsupported("setMaxRows is not supported");
     }
 
     @Override

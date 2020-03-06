@@ -16,8 +16,10 @@
 
 package com.hazelcast.sql.impl;
 
-import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.sql.impl.explain.QueryExplain;
+import com.hazelcast.sql.impl.fragment.QueryFragment;
+import com.hazelcast.sql.impl.optimizer.OptimizerStatistics;
 
 import java.util.List;
 import java.util.Map;
@@ -32,9 +34,6 @@ public class QueryPlan {
 
     /** Data member IDs. */
     private final List<UUID> dataMemberIds;
-
-    /** Data member addresses. */
-    private final List<Address> dataMemberAddresses;
 
     /** Fragment nodes. */
     private final List<QueryFragment> fragments;
@@ -60,7 +59,6 @@ public class QueryPlan {
     public QueryPlan(
         Map<UUID, PartitionIdSet> partMap,
         List<UUID> dataMemberIds,
-        List<Address> dataMemberAddresses,
         List<QueryFragment> fragments,
         Map<Integer, Integer> outboundEdgeMap,
         Map<Integer, Integer> inboundEdgeMap,
@@ -71,7 +69,6 @@ public class QueryPlan {
     ) {
         this.partMap = partMap;
         this.dataMemberIds = dataMemberIds;
-        this.dataMemberAddresses = dataMemberAddresses;
         this.fragments = fragments;
         this.outboundEdgeMap = outboundEdgeMap;
         this.inboundEdgeMap = inboundEdgeMap;
@@ -87,10 +84,6 @@ public class QueryPlan {
 
     public List<UUID> getDataMemberIds() {
         return dataMemberIds;
-    }
-
-    public List<Address> getDataMemberAddresses() {
-        return dataMemberAddresses;
     }
 
     public List<QueryFragment> getFragments() {

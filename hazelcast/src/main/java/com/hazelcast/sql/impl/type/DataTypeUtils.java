@@ -18,13 +18,13 @@ package com.hazelcast.sql.impl.type;
 
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.type.accessor.BigDecimalConverter;
-import com.hazelcast.sql.impl.type.accessor.BigIntegerConverter;
-import com.hazelcast.sql.impl.type.accessor.CalendarConverter;
-import com.hazelcast.sql.impl.type.accessor.Converter;
-import com.hazelcast.sql.impl.type.accessor.Converters;
-import com.hazelcast.sql.impl.type.accessor.DateConverter;
-import com.hazelcast.sql.impl.type.accessor.OffsetDateTimeConverter;
+import com.hazelcast.sql.impl.type.converter.BigDecimalConverter;
+import com.hazelcast.sql.impl.type.converter.BigIntegerConverter;
+import com.hazelcast.sql.impl.type.converter.CalendarConverter;
+import com.hazelcast.sql.impl.type.converter.Converter;
+import com.hazelcast.sql.impl.type.converter.Converters;
+import com.hazelcast.sql.impl.type.converter.DateConverter;
+import com.hazelcast.sql.impl.type.converter.OffsetDateTimeConverter;
 
 import java.util.List;
 

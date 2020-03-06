@@ -16,8 +16,8 @@
 
 package com.hazelcast.sql.impl.state;
 
-import com.hazelcast.sql.impl.QueryFragmentExecutable;
-import com.hazelcast.sql.impl.operation.QueryDataExchangeOperation;
+import com.hazelcast.sql.impl.worker.QueryFragmentExecutable;
+import com.hazelcast.sql.impl.operation.QueryAbstractExchangeOperation;
 
 import java.util.HashMap;
 import java.util.List;
@@ -31,7 +31,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 public class QueryDistributedState {
     /** Pending batches. */
-    private final ConcurrentLinkedDeque<QueryDataExchangeOperation> pendingOperations = new ConcurrentLinkedDeque<>();
+    private final ConcurrentLinkedDeque<QueryAbstractExchangeOperation> pendingOperations = new ConcurrentLinkedDeque<>();
 
     /** Lock to prevent conflicts on initialization and batch arrival. */
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
@@ -65,7 +65,7 @@ public class QueryDistributedState {
             // Unwind pending batches if needed.
             boolean hadPendingBatches = false;
 
-            for (QueryDataExchangeOperation pendingOperation : pendingOperations) {
+            for (QueryAbstractExchangeOperation pendingOperation : pendingOperations) {
                 onOperation0(pendingOperation);
 
                 if (!hadPendingBatches) {
@@ -81,7 +81,7 @@ public class QueryDistributedState {
         }
     }
 
-    public QueryFragmentExecutable onOperation(QueryDataExchangeOperation operation) {
+    public QueryFragmentExecutable onOperation(QueryAbstractExchangeOperation operation) {
         lock.readLock().lock();
 
         try {
@@ -97,7 +97,7 @@ public class QueryDistributedState {
         }
     }
 
-    private QueryFragmentExecutable onOperation0(QueryDataExchangeOperation operation) {
+    private QueryFragmentExecutable onOperation0(QueryAbstractExchangeOperation operation) {
         assert initializedState != null;
 
         QueryFragmentExecutable fragment = initializedState.getFragment(operation.isInbound(), operation.getEdgeId());

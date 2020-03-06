@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.exec;
 
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
@@ -57,13 +58,14 @@ public class MapScanExec extends AbstractMapScanExec {
     public MapScanExec(
         int id,
         MapProxyImpl map,
+        InternalSerializationService serializationService,
         PartitionIdSet parts,
         List<String> fieldNames,
         List<DataType> fieldTypes,
         List<Integer> projects,
         Expression<Boolean> filter
     ) {
-        super(id, map.getName(), fieldNames, fieldTypes, projects, filter);
+        super(id, map.getName(), serializationService, fieldNames, fieldTypes, projects, filter);
 
         this.map = map;
         this.parts = parts;

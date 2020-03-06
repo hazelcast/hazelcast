@@ -18,7 +18,8 @@ package com.hazelcast.sql.impl.row;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.QuerySerializationHook;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -26,7 +27,7 @@ import java.util.Objects;
 /**
  * A row which joins two other rows.
  */
-public class JoinRow implements Row, DataSerializable {
+public class JoinRow implements Row, IdentifiedDataSerializable {
     /** Left row. */
     private Row left;
 
@@ -60,13 +61,25 @@ public class JoinRow implements Row, DataSerializable {
     }
 
     @Override
+    public int getFactoryId() {
+        return QuerySerializationHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return QuerySerializationHook.ROW_JOIN;
+    }
+
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
+        // TODO: How to convert it to a HeapRow on deserialization?
         out.writeObject(left);
         out.writeObject(right);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
+        // TODO: Handle deserialization error
         left = in.readObject();
         right = in.readObject();
     }

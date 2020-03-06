@@ -16,11 +16,12 @@
 
 package com.hazelcast.sql.impl.physical.visitor;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapProxy;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.sql.impl.QueryFragmentDescriptor;
+import com.hazelcast.sql.impl.operation.QueryExecuteOperationFragment;
 import com.hazelcast.sql.impl.exec.EmptyScanExec;
 import com.hazelcast.sql.impl.exec.Exec;
 import com.hazelcast.sql.impl.exec.FilterExec;
@@ -42,7 +43,7 @@ import com.hazelcast.sql.impl.exec.join.HashJoinExec;
 import com.hazelcast.sql.impl.exec.join.NestedLoopJoinExec;
 import com.hazelcast.sql.impl.mailbox.AbstractInbox;
 import com.hazelcast.sql.impl.mailbox.Outbox;
-import com.hazelcast.sql.impl.mailbox.SingleInbox;
+import com.hazelcast.sql.impl.mailbox.Inbox;
 import com.hazelcast.sql.impl.mailbox.StripedInbox;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
 import com.hazelcast.sql.impl.physical.AggregatePhysicalNode;
@@ -130,21 +131,21 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
         int edgeId = node.getEdgeId();
 
         int sendFragmentPos = operation.getOutboundEdgeMap().get(edgeId);
-        QueryFragmentDescriptor sendFragment = operation.getFragmentDescriptors().get(sendFragmentPos);
+        QueryExecuteOperationFragment sendFragment = operation.getFragments().get(sendFragmentPos);
 
-        int fragmentMemberCount = sendFragment.getMappedMemberIds().size();
+        int fragmentMemberCount = sendFragment.getMemberIds().size();
 
         // Create and register inbox.
-        SingleInbox inbox = new SingleInbox(
+        Inbox inbox = new Inbox(
             operation.getQueryId(),
-            node.getEdgeId(),
+            edgeId,
             sendFragment.getNode().getSchema().getRowWidth(),
-            nodeEngine.getSqlService(),
+            nodeEngine.getSqlService().getOperationHandler(),
             fragmentMemberCount,
             operation.getEdgeCreditMap().get(edgeId)
         );
 
-        inboxes.put(inbox.getEdgeId(), inbox);
+        inboxes.put(edgeId, inbox);
 
         // Instantiate executor and put it to stack.
         ReceiveExec res = new ReceiveExec(node.getId(), inbox);
@@ -159,18 +160,18 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
 
         // Create and register inbox.
         int sendFragmentPos = operation.getOutboundEdgeMap().get(edgeId);
-        QueryFragmentDescriptor sendFragment = operation.getFragmentDescriptors().get(sendFragmentPos);
+        QueryExecuteOperationFragment sendFragment = operation.getFragments().get(sendFragmentPos);
 
         StripedInbox inbox = new StripedInbox(
             operation.getQueryId(),
             edgeId,
             node.getSchema().getRowWidth(),
-            nodeEngine.getSqlService(),
-            sendFragment.getMappedMemberIds(),
+            nodeEngine.getSqlService().getOperationHandler(),
+            sendFragment.getMemberIds(),
             operation.getEdgeCreditMap().get(edgeId)
         );
 
-        inboxes.put(inbox.getEdgeId(), inbox);
+        inboxes.put(edgeId, inbox);
 
         // Instantiate executor and put it to stack.
         ReceiveSortMergeExec res = new ReceiveSortMergeExec(
@@ -234,8 +235,8 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
          int rowWidth = node.getSchema().getRowWidth();
 
          int receiveFragmentPos = operation.getInboundEdgeMap().get(edgeId);
-         QueryFragmentDescriptor receiveFragment = operation.getFragmentDescriptors().get(receiveFragmentPos);
-         Collection<UUID> receiveFragmentMemberIds = receiveFragment.getMappedMemberIds();
+         QueryExecuteOperationFragment receiveFragment = operation.getFragments().get(receiveFragmentPos);
+         Collection<UUID> receiveFragmentMemberIds = receiveFragment.getMemberIds();
 
          Outbox[] res = new Outbox[receiveFragmentMemberIds.size()];
 
@@ -247,6 +248,7 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
          for (UUID receiveMemberId : receiveFragmentMemberIds) {
              Outbox outbox = new Outbox(
                  operation.getQueryId(),
+                 nodeEngine.getSqlService().getOperationHandler(),
                  edgeId,
                  rowWidth,
                  receiveMemberId,
@@ -277,6 +279,7 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
             res = new MapScanExec(
                 node.getId(),
                 map,
+                (InternalSerializationService) nodeEngine.getSerializationService(),
                 localParts,
                 node.getFieldNames(),
                 node.getFieldTypes(),
@@ -302,6 +305,7 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
              res = new MapIndexScanExec(
                  node.getId(),
                  map,
+                 (InternalSerializationService) nodeEngine.getSerializationService(),
                  localParts,
                  node.getFieldNames(),
                  node.getFieldTypes(),
@@ -324,7 +328,7 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
         Exec res = new ReplicatedMapScanExec(
             node.getId(),
             map,
-            node.getMapName(),
+            (InternalSerializationService) nodeEngine.getSerializationService(),
             node.getFieldNames(),
             node.getFieldTypes(),
             node.getProjects(),

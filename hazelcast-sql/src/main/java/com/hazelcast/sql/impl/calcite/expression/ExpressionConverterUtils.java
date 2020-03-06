@@ -17,8 +17,8 @@
 package com.hazelcast.sql.impl.calcite.expression;
 
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.SqlDaySecondInterval;
-import com.hazelcast.sql.SqlYearMonthInterval;
+import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
+import com.hazelcast.sql.impl.type.SqlYearMonthInterval;
 import com.hazelcast.sql.impl.calcite.operators.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.expression.CallOperator;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
@@ -67,7 +67,7 @@ import com.hazelcast.sql.impl.expression.string.PositionFunction;
 import com.hazelcast.sql.impl.expression.string.ReplaceFunction;
 import com.hazelcast.sql.impl.expression.string.SubstringFunction;
 import com.hazelcast.sql.impl.expression.string.UpperFunction;
-import com.hazelcast.sql.impl.type.accessor.CalendarConverter;
+import com.hazelcast.sql.impl.type.converter.CalendarConverter;
 import org.apache.calcite.avatica.util.TimeUnitRange;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.sql.SqlFunction;

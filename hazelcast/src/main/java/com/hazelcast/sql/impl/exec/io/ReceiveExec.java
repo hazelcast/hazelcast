@@ -18,20 +18,16 @@ package com.hazelcast.sql.impl.exec.io;
 
 import com.hazelcast.sql.impl.exec.AbstractExec;
 import com.hazelcast.sql.impl.exec.IterationResult;
-import com.hazelcast.sql.impl.mailbox.SendBatch;
-import com.hazelcast.sql.impl.mailbox.SingleInbox;
-import com.hazelcast.sql.impl.row.ListRowBatch;
-import com.hazelcast.sql.impl.row.Row;
+import com.hazelcast.sql.impl.mailbox.Inbox;
+import com.hazelcast.sql.impl.mailbox.MailboxBatch;
 import com.hazelcast.sql.impl.row.RowBatch;
-
-import java.util.List;
 
 /**
  * Executor which receives batches from a single inbox.
  */
 public class ReceiveExec extends AbstractExec {
     /** Inbox. */
-    private final SingleInbox inbox;
+    private final Inbox inbox;
 
     /** Current batch. */
     private RowBatch curBatch;
@@ -39,7 +35,7 @@ public class ReceiveExec extends AbstractExec {
     /** Whether inbox is closed. */
     private boolean inboxDone;
 
-    public ReceiveExec(int id, SingleInbox inbox) {
+    public ReceiveExec(int id, Inbox inbox) {
         super(id);
 
         this.inbox = inbox;
@@ -51,15 +47,13 @@ public class ReceiveExec extends AbstractExec {
             throw new IllegalStateException("Should not be called.");
         }
 
-        SendBatch batch = inbox.poll();
+        MailboxBatch batch = inbox.poll();
 
         if (batch == null) {
             return IterationResult.WAIT;
         }
 
-        List<Row> rows = batch.getRows();
-
-        curBatch = rows.isEmpty() ? null : new ListRowBatch(rows);
+        curBatch = batch.getBatch();
 
         if (inbox.closed()) {
             inboxDone = true;

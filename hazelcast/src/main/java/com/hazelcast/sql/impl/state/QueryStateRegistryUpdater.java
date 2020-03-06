@@ -16,12 +16,30 @@
 
 package com.hazelcast.sql.impl.state;
 
+import com.hazelcast.client.Client;
+import com.hazelcast.client.ClientService;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.memberselector.MemberSelectors;
+import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.sql.impl.operation.QueryOperationHandler;
+import com.hazelcast.sql.impl.client.QueryClientStateRegistry;
+
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
+
 /**
  * Class performing periodic query state check.
  */
 public class QueryStateRegistryUpdater {
     /** State to be checked. */
-    private final QueryStateRegistry state;
+    private final QueryStateRegistry stateRegistry;
+
+    /** Client state registry. */
+    private final QueryClientStateRegistry clientStateRegistry;
+
+    /** Operation handler. */
+    private final QueryOperationHandler operationHandler;
 
     /** State check frequency. */
     private final long stateCheckFrequency;
@@ -29,17 +47,24 @@ public class QueryStateRegistryUpdater {
     /** Worker performing periodic state check. */
     private final Worker worker = new Worker();
 
-    public QueryStateRegistryUpdater(QueryStateRegistry state, long stateCheckFrequency) {
+    public QueryStateRegistryUpdater(
+        QueryStateRegistry stateRegistry,
+        QueryClientStateRegistry clientStateRegistry,
+        QueryOperationHandler operationHandler,
+        long stateCheckFrequency
+    ) {
         if (stateCheckFrequency <= 0) {
             throw new IllegalArgumentException("State check frequency must be positive: " + stateCheckFrequency);
         }
 
-        this.state = state;
+        this.stateRegistry = stateRegistry;
+        this.clientStateRegistry = clientStateRegistry;
+        this.operationHandler = operationHandler;
         this.stateCheckFrequency = stateCheckFrequency;
     }
 
-    public void start() {
-        worker.start();
+    public void init(ClusterService clusterService, ClientService clientService) {
+        worker.start(clusterService, clientService);
     }
 
     public void stop() {
@@ -50,8 +75,13 @@ public class QueryStateRegistryUpdater {
         private final Object startMux = new Object();
         private volatile Thread thread;
         private volatile boolean stopped;
+        private ClusterService clusterService;
+        private ClientService clientService;
 
-        public void start() {
+        public void start(ClusterService clusterService, ClientService clientService) {
+            this.clusterService = clusterService;
+            this.clientService = clientService;
+
             synchronized (startMux) {
                 if (stopped || thread != null) {
                     return;
@@ -74,13 +104,34 @@ public class QueryStateRegistryUpdater {
                 try {
                     Thread.sleep(stateCheckFrequency);
 
-                    state.update();
+                    checkMemberState();
+                    checkClientState();
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
 
                     break;
                 }
             }
+        }
+
+        private void checkMemberState() {
+            Set<UUID> activeMemberIds = new HashSet<>();
+
+            for (Member member : clusterService.getMembers(MemberSelectors.DATA_MEMBER_SELECTOR)) {
+                activeMemberIds.add(member.getUuid());
+            }
+
+            stateRegistry.update(activeMemberIds, operationHandler);
+        }
+
+        private void checkClientState() {
+            Set<UUID> activeClientIds = new HashSet<>();
+
+            for (Client client : clientService.getConnectedClients()) {
+                activeClientIds.add(client.getUuid());
+            }
+
+            clientStateRegistry.update(activeClientIds);
         }
 
         public void stop() {

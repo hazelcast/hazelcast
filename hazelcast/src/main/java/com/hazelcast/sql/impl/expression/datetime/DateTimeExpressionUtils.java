@@ -20,7 +20,7 @@ import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
-import com.hazelcast.sql.impl.type.accessor.Converter;
+import com.hazelcast.sql.impl.type.converter.Converter;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;

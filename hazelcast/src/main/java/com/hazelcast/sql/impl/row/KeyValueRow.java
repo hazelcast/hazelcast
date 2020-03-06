@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.row;
 
+import com.hazelcast.sql.impl.exec.KeyValueRowExtractor;
 import com.hazelcast.sql.impl.expression.KeyValueExtractorExpression;
 
 import java.util.Arrays;

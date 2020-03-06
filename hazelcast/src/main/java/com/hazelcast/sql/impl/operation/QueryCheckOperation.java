@@ -16,56 +16,25 @@
 
 package com.hazelcast.sql.impl.operation;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.sql.impl.QuerySerializationHook;
 
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 
 /**
  * Operation to check whether the query is still active. Sent from participant to coordinator.
  */
-public class QueryCheckOperation extends QueryOperation {
-    /** Query IDs which should be checked. */
-    private Collection<QueryId> queryIds;
-
+public class QueryCheckOperation extends QueryAbstractCheckOperation {
     public QueryCheckOperation() {
         // No-op.
     }
 
-    public QueryCheckOperation(long epochWatermark, Collection<QueryId> queryIds) {
-        super(epochWatermark);
-
-        this.queryIds = queryIds;
-    }
-
-    public Collection<QueryId> getQueryIds() {
-        return queryIds;
+    public QueryCheckOperation(Collection<QueryId> queryIds) {
+        super(queryIds);
     }
 
     @Override
-    protected void writeInternal0(ObjectDataOutput out) throws IOException {
-        out.writeInt(queryIds.size());
-
-        for (QueryId queryId : queryIds) {
-            queryId.writeData(out);
-        }
-    }
-
-    @Override
-    protected void readInternal0(ObjectDataInput in) throws IOException {
-        int size = in.readInt();
-
-        queryIds = new ArrayList<>(size);
-
-        for (int i = 0; i < size; i++) {
-            QueryId queryId = new QueryId();
-
-            queryId.readData(in);
-
-            queryIds.add(queryId);
-        }
+    public int getClassId() {
+        return QuerySerializationHook.OPERATION_CHECK;
     }
 }

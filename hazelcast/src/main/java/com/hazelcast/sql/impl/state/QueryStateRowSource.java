@@ -21,11 +21,6 @@ import com.hazelcast.sql.SqlRow;
 
 public interface QueryStateRowSource extends Iterable<SqlRow> {
     /**
-     * @return Whether the row source represents the EXPLAIN query result.
-     */
-    boolean isExplain();
-
-    /**
      * Notify row source about an error.
      *
      * @param error Error.

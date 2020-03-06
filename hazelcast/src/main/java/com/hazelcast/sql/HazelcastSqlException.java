@@ -18,6 +18,7 @@ package com.hazelcast.sql;
 
 import com.hazelcast.core.HazelcastException;
 
+import java.util.Collection;
 import java.util.UUID;
 
 /**
@@ -97,6 +98,18 @@ public class HazelcastSqlException extends HazelcastException {
      */
     public static HazelcastSqlException remoteError(int code, String message, UUID originatingMemberId) {
         return new HazelcastSqlException(code, message, null, originatingMemberId);
+    }
+
+    public static HazelcastSqlException memberLeave(UUID memberId) {
+        return error(SqlErrorCode.MEMBER_LEAVE, "Participating member has left the topology: " + memberId);
+    }
+
+    public static HazelcastSqlException memberLeave(Collection<UUID> memberIds) {
+        return error(SqlErrorCode.MEMBER_LEAVE, "Participating members has left the topology: " + memberIds);
+    }
+
+    public static HazelcastSqlException clientLeave(UUID clientId) {
+        return error(SqlErrorCode.CLIENT_LEAVE, "Client has left the topology: " + clientId);
     }
 
     /**

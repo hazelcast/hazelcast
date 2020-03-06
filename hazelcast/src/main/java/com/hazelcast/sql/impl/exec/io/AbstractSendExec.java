@@ -16,10 +16,10 @@
 
 package com.hazelcast.sql.impl.exec.io;
 
-import com.hazelcast.sql.impl.QueryFragmentContext;
 import com.hazelcast.sql.impl.exec.AbstractUpstreamAwareExec;
 import com.hazelcast.sql.impl.exec.Exec;
 import com.hazelcast.sql.impl.exec.IterationResult;
+import com.hazelcast.sql.impl.fragment.QueryFragmentContext;
 import com.hazelcast.sql.impl.mailbox.Outbox;
 import com.hazelcast.sql.impl.row.RowBatch;
 
@@ -42,7 +42,7 @@ public abstract class AbstractSendExec extends AbstractUpstreamAwareExec {
     @Override
     protected void setup1(QueryFragmentContext ctx) {
         for (Outbox outbox : outboxes) {
-            outbox.setup(ctx);
+            outbox.setup();
         }
     }
 

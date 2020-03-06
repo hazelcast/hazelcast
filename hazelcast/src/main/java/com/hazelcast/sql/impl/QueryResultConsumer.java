@@ -18,7 +18,6 @@ package com.hazelcast.sql.impl;
 
 import com.hazelcast.sql.impl.exec.RootExec;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.row.RowBatch;
 import com.hazelcast.sql.impl.state.QueryStateRowSource;
 
 /**
@@ -33,15 +32,6 @@ public interface QueryResultConsumer extends QueryStateRowSource {
     void setup(RootExec root);
 
     /**
-     * Consume rows from the batch.
-     *
-     * @param batch Batch.
-     * @param startPos Start position in the batch.
-     * @return Number of rows consumed.
-     */
-    int consume(RowBatch batch, int startPos);
-
-    /**
      * Consume rows from the source.
      *
      * @param source Row source.
@@ -53,9 +43,4 @@ public interface QueryResultConsumer extends QueryStateRowSource {
      * Mark results as finished.
      */
     void done();
-
-    @Override
-    default boolean isExplain() {
-        return false;
-    }
 }

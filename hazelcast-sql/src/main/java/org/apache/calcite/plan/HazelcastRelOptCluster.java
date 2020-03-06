@@ -16,7 +16,7 @@
 
 package org.apache.calcite.plan;
 
-import com.hazelcast.sql.impl.RuleCallTracker;
+import com.hazelcast.sql.impl.optimizer.OptimizerRuleCallTracker;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rex.RexBuilder;
@@ -36,7 +36,7 @@ public final class HazelcastRelOptCluster extends RelOptCluster {
     private final int memberCount;
 
     /** Rule call tracker. */
-    private RuleCallTracker ruleCallTracker;
+    private OptimizerRuleCallTracker ruleCallTracker;
 
     private HazelcastRelOptCluster(
         RelOptPlanner planner,
@@ -80,11 +80,11 @@ public final class HazelcastRelOptCluster extends RelOptCluster {
         return memberCount;
     }
 
-    public RuleCallTracker getRuleCallTracker() {
+    public OptimizerRuleCallTracker getRuleCallTracker() {
         return ruleCallTracker;
     }
 
-    public void startPhysicalOptimization(RuleCallTracker ruleCallTracker) {
+    public void startPhysicalOptimization(OptimizerRuleCallTracker ruleCallTracker) {
         assert CURRENT.get() == null;
         CURRENT.set(this);
 

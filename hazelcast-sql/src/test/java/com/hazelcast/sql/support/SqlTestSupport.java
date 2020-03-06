@@ -24,7 +24,6 @@ import com.hazelcast.sql.impl.SqlCursorImpl;
 import com.hazelcast.sql.impl.SqlServiceImpl;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -34,7 +33,7 @@ public class SqlTestSupport {
     protected QueryPlan getPlan(HazelcastInstance target, String sql) {
         SqlServiceImpl sqlService = (SqlServiceImpl) target.getSqlService();
 
-        return sqlService.getPlan(sql, Collections.emptyList());
+        return sqlService.getOptimizer().prepare(sql, 0);
     }
 
     protected SqlCursor executeQuery(HazelcastInstance target, String sql) {

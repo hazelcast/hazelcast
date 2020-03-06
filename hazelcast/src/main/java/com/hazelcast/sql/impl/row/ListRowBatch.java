@@ -16,14 +16,25 @@
 
 package com.hazelcast.sql.impl.row;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.QuerySerializationHook;
+
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Batch where rows are organized in a list.
  */
-public class ListRowBatch implements RowBatch {
+public class ListRowBatch implements RowBatch, IdentifiedDataSerializable {
     /** Rows. */
-    private final List<Row> rows;
+    private List<Row> rows;
+
+    public ListRowBatch() {
+        // No-op.
+    }
 
     public ListRowBatch(List<Row> rows) {
         this.rows = rows;
@@ -42,5 +53,37 @@ public class ListRowBatch implements RowBatch {
     @Override
     public int getRowCount() {
         return rows.size();
+    }
+
+    @Override
+    public int getFactoryId() {
+        return QuerySerializationHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return QuerySerializationHook.ROW_BATCH_LIST;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeInt(rows.size());
+
+        for (int i = 0; i < rows.size(); i++) {
+            // TODO: Space inefficient!
+            out.writeObject(rows.get(i));
+        }
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        int size = in.readInt();
+
+        rows = new ArrayList<>(size);
+
+        for (int i = 0; i < size; i++) {
+            // TODO: Handle deserialization!
+            rows.add(in.readObject());
+        }
     }
 }

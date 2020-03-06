@@ -22,7 +22,7 @@ import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.ListRowBatch;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
-import com.hazelcast.sql.impl.type.accessor.Converters;
+import com.hazelcast.sql.impl.type.converter.Converters;
 
 import java.util.ArrayList;
 import java.util.List;

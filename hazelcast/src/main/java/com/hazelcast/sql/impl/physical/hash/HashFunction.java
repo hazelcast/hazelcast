@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.physical.hash;
 import com.hazelcast.sql.impl.row.Row;
 
 /**
- * Function which maps row to an integer value.
+ * Function which maps rows to integer values.
  */
 public interface HashFunction {
     /**

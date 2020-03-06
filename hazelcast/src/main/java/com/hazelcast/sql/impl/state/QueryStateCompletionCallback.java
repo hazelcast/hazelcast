@@ -16,52 +16,27 @@
 
 package com.hazelcast.sql.impl.state;
 
-import com.hazelcast.sql.SqlErrorCode;
-import com.hazelcast.sql.impl.SqlServiceImpl;
+import com.hazelcast.sql.impl.QueryId;
 
+import java.util.Collection;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
 
-/**
- * Callback invoked when the query is completed.
- */
-public class QueryStateCompletionCallback {
-    /** SQL service. */
-    private final SqlServiceImpl service;
+public interface QueryStateCompletionCallback {
+    /**
+     * Handle query completion.
+     *
+     * @param queryId Query ID.
+     */
+    void onCompleted(QueryId queryId);
 
-    /** State registry. */
-    private final QueryStateRegistry stateRegistry;
-
-    /** Guard to protect from multiple invocations. */
-    private final AtomicBoolean guard = new AtomicBoolean();
-
-    public QueryStateCompletionCallback(SqlServiceImpl service, QueryStateRegistry stateRegistry) {
-        this.service = service;
-        this.stateRegistry = stateRegistry;
-    }
-
-    public boolean onCompleted(
-        QueryState state,
-        int errorCode,
-        String errorMessage,
-        UUID originatingMemberId,
-        boolean propagate
-    ) {
-        // Make sure that only one thread completes the qyery.
-        if (!guard.compareAndSet(false, true)) {
-            return false;
-        }
-
-        try {
-            // If this is an error and it should be propagated, initiate distributed cancel.
-            if (errorCode != SqlErrorCode.OK && propagate) {
-                service.cancelQuery(state, new QueryCancelInfo(originatingMemberId, errorCode, errorMessage));
-            }
-        } finally {
-            // Remove the query from the state registry.
-            stateRegistry.onQueryFinished(state.getQueryId());
-        }
-
-        return true;
-    }
+    /**
+     * Handle query error.
+     *
+     * @param queryId Query ID.
+     * @param errorCode Error code.
+     * @param errorMessage Error message.
+     * @param originatingMemberId Originating member ID.
+     * @param memberIds Members which should be notified.
+     */
+    void onError(QueryId queryId, int errorCode, String errorMessage, UUID originatingMemberId, Collection<UUID> memberIds);
 }

@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.state;
 
-import com.hazelcast.sql.impl.QueryFragment;
+import com.hazelcast.sql.impl.fragment.QueryFragment;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryPlan;
 

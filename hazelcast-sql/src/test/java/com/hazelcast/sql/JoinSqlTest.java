@@ -17,7 +17,7 @@
 package com.hazelcast.sql;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.sql.impl.QueryFragment;
+import com.hazelcast.sql.impl.fragment.QueryFragment;
 import com.hazelcast.sql.impl.QueryPlan;
 import com.hazelcast.sql.support.ModelGenerator;
 import com.hazelcast.sql.support.SqlTestSupport;

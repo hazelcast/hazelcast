@@ -16,9 +16,11 @@
 
 package com.hazelcast.sql.impl.mailbox;
 
+import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.sql.impl.SqlServiceImpl;
-import com.hazelcast.sql.impl.operation.QueryFlowControlOperation;
+import com.hazelcast.sql.impl.operation.QueryOperationHandler;
+import com.hazelcast.sql.impl.operation.QueryFlowControlExchangeOperation;
 
 import java.util.Collection;
 
@@ -36,7 +38,7 @@ public abstract class AbstractInbox extends AbstractMailbox {
     private int remainingSources;
 
     /** Parent service. */
-    private final SqlServiceImpl service;
+    private final QueryOperationHandler operationHandler;
 
     /** Backpressure control. */
     private final InboxBackpressure backpressure;
@@ -45,13 +47,13 @@ public abstract class AbstractInbox extends AbstractMailbox {
         QueryId queryId,
         int edgeId,
         int rowWidth,
-        SqlServiceImpl service,
+        QueryOperationHandler operationHandler,
         int remainingSources,
         long maxMemory
     ) {
         super(queryId, edgeId, rowWidth);
 
-        this.service = service;
+        this.operationHandler = operationHandler;
         this.remainingSources = remainingSources;
 
         backpressure = new InboxBackpressure(maxMemory);
@@ -60,7 +62,7 @@ public abstract class AbstractInbox extends AbstractMailbox {
     /**
      * Handle batch arrival. Always invoked from the worker.
      */
-    public void onBatchReceived(SendBatch batch) {
+    public void onBatchReceived(MailboxBatch batch, long remainingMemory) {
         onBatchReceived0(batch);
 
         // Track done condition
@@ -74,14 +76,14 @@ public abstract class AbstractInbox extends AbstractMailbox {
         backpressure.onBatchAdded(
             batch.getSenderId(),
             batch.isLast(),
-            batch.getRemainingMemory(),
-            batch.getRows().size() * rowWidth
+            remainingMemory,
+            batch.getBatch().getRowCount() * rowWidth
         );
     }
 
-    protected abstract void onBatchReceived0(SendBatch batch);
+    protected abstract void onBatchReceived0(MailboxBatch batch);
 
-    protected void onBatchPolled(SendBatch batch) {
+    protected void onBatchPolled(MailboxBatch batch) {
         if (batch == null) {
             return;
         }
@@ -90,7 +92,7 @@ public abstract class AbstractInbox extends AbstractMailbox {
         enqueuedBatches--;
 
         // Track backpressure.
-        backpressure.onBatchRemoved(batch.getSenderId(), batch.isLast(), batch.getRows().size() * rowWidth);
+        backpressure.onBatchRemoved(batch.getSenderId(), batch.isLast(), batch.getBatch().getRowCount() * rowWidth);
     }
 
     public void sendFlowControl() {
@@ -100,19 +102,18 @@ public abstract class AbstractInbox extends AbstractMailbox {
             return;
         }
 
-        long epochWatermark = service.getEpochWatermark();
-
         for (InboxBackpressureState state : states) {
-            QueryFlowControlOperation operation = new QueryFlowControlOperation(
-                epochWatermark,
-                queryId,
-                edgeId,
-                state.getLocalMemory()
-            );
+            QueryFlowControlExchangeOperation operation =
+                new QueryFlowControlExchangeOperation(queryId, edgeId, state.getLocalMemory());
 
             state.setShouldSend(false);
 
-            service.sendRequest(operation, state.getMemberId());
+            boolean success = operationHandler.execute(state.getMemberId(), operation);
+
+            if (!success) {
+                throw HazelcastSqlException.error(SqlErrorCode.MEMBER_LEAVE,
+                    "Failed to send control flow message to member: " + state.getMemberId());
+            }
         }
 
         backpressure.clearPending();

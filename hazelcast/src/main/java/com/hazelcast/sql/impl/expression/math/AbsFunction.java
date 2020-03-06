@@ -24,7 +24,7 @@ import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.DataType;
 import com.hazelcast.sql.impl.type.DataTypeUtils;
 import com.hazelcast.sql.impl.type.GenericType;
-import com.hazelcast.sql.impl.type.accessor.Converter;
+import com.hazelcast.sql.impl.type.converter.Converter;
 
 public class AbsFunction<T> extends UniCallExpressionWithType<T> {
     public AbsFunction() {

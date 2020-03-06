@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.state;
 
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlErrorCode;
-import com.hazelcast.sql.impl.QueryFragment;
+import com.hazelcast.sql.impl.fragment.QueryFragment;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryPlan;
 
@@ -28,12 +28,16 @@ import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.sql.impl.SqlServiceImpl.STATE_CHECK_FREQUENCY;
 
 public final class QueryState {
     /** Query ID. */
     private final QueryId queryId;
+
+    /** Completion guard. */
+    private final AtomicBoolean completionGuard = new AtomicBoolean();
 
     /** Completion callback. */
     private final QueryStateCompletionCallback completionCallback;
@@ -155,7 +159,11 @@ public final class QueryState {
         if (distributedState.onFragmentFinished()) {
             assert completionCallback != null;
 
-            completionCallback.onCompleted(this, SqlErrorCode.OK, null, null, false);
+            if (!completionGuard.compareAndSet(false, true)) {
+                return;
+            }
+
+            completionCallback.onCompleted(queryId);
         }
     }
 
@@ -179,30 +187,36 @@ public final class QueryState {
             originatingMemberId = localMemberId;
         }
 
-        // Determine whether the global cancel should be performed. It is true if the error is produced locally, or if
-        // we are on the query coordinator.
-        boolean propagate = originatingMemberId.equals(localMemberId) || queryId.getMemberId().equals(localMemberId);
+        // Determine members which should be notified.
+        boolean initiator = queryId.getMemberId().equals(localMemberId);
+        boolean propagate = originatingMemberId.equals(localMemberId) || initiator;
+
+        Collection<UUID> memberIds = propagate ? initiator
+            ? getParticipantsWithoutInitiator() : Collections.singletonList(queryId.getMemberId()) : Collections.emptyList();
+
+        // Invoke the completion callback.
+        if (!completionGuard.compareAndSet(false, true)) {
+            return;
+        }
 
         assert completionCallback != null;
 
-        boolean cancelled = completionCallback.onCompleted(
-            this,
+        completionCallback.onError(
+            queryId,
             error0.getCode(),
             error0.getMessage(),
             originatingMemberId,
-            propagate
+            memberIds
         );
 
-        if (cancelled) {
-            completionError = error0;
+        completionError = error0;
 
-            if (isInitiator()) {
-                initiatorState.getRowSource().onError(error0);
-            }
+        if (isInitiator()) {
+            initiatorState.getRowSource().onError(error0);
         }
     }
 
-    public boolean tryCancelOnMemberLeave(Set<UUID> memberIds) {
+    public boolean tryCancelOnMemberLeave(Collection<UUID> memberIds) {
         Set<UUID> missingMemberIds;
 
         if (isInitiator()) {
@@ -227,10 +241,7 @@ public final class QueryState {
             return false;
         }
 
-        HazelcastSqlException error = HazelcastSqlException.error(
-            SqlErrorCode.MEMBER_LEAVE,
-            "Participating members has left the topology: " + missingMemberIds
-        );
+        HazelcastSqlException error = HazelcastSqlException.memberLeave(missingMemberIds);
 
         cancel(error);
 

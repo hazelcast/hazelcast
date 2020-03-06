@@ -21,7 +21,7 @@ import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.sql.impl.QueryFragmentDescriptor;
+import com.hazelcast.sql.impl.QuerySerializationHook;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryResultConsumer;
 
@@ -36,12 +36,12 @@ import java.util.UUID;
 /**
  * Operation which is broadcast to participating members to start query execution.
  */
-public class QueryExecuteOperation extends QueryIdAwareOperation {
+public class QueryExecuteOperation extends QueryAbstractIdAwareOperation {
     /** Mapped ownership of partitions. */
     private Map<UUID, PartitionIdSet> partitionMapping;
 
     /** Fragment descriptors. */
-    private List<QueryFragmentDescriptor> fragmentDescriptors;
+    private List<QueryExecuteOperationFragment> fragments;
 
     /** Outbound edge mapping (from edge ID to owning fragment position). */
     private Map<Integer, Integer> outboundEdgeMap;
@@ -66,21 +66,20 @@ public class QueryExecuteOperation extends QueryIdAwareOperation {
     }
 
     public QueryExecuteOperation(
-        long epochWatermark,
         QueryId queryId,
         Map<UUID, PartitionIdSet> partitionMapping,
-        List<QueryFragmentDescriptor> fragmentDescriptors,
+        List<QueryExecuteOperationFragment> fragments,
         Map<Integer, Integer> outboundEdgeMap,
         Map<Integer, Integer> inboundEdgeMap,
         Map<Integer, Long> edgeCreditMap,
         List<Object> arguments,
         long timeout
     ) {
-        super(epochWatermark, queryId);
+        super(queryId);
 
         this.queryId = queryId;
         this.partitionMapping = partitionMapping;
-        this.fragmentDescriptors = fragmentDescriptors;
+        this.fragments = fragments;
         this.outboundEdgeMap = outboundEdgeMap;
         this.inboundEdgeMap = inboundEdgeMap;
         this.edgeCreditMap = edgeCreditMap;
@@ -92,8 +91,8 @@ public class QueryExecuteOperation extends QueryIdAwareOperation {
         return partitionMapping;
     }
 
-    public List<QueryFragmentDescriptor> getFragmentDescriptors() {
-        return fragmentDescriptors;
+    public List<QueryExecuteOperationFragment> getFragments() {
+        return fragments;
     }
 
     public Map<Integer, Integer> getOutboundEdgeMap() {
@@ -120,10 +119,13 @@ public class QueryExecuteOperation extends QueryIdAwareOperation {
         return rootConsumer;
     }
 
-    public QueryExecuteOperation setRootConsumer(QueryResultConsumer rootConsumer) {
+    public void setRootConsumer(QueryResultConsumer rootConsumer) {
         this.rootConsumer = rootConsumer;
+    }
 
-        return this;
+    @Override
+    public int getClassId() {
+        return QuerySerializationHook.OPERATION_EXECUTE;
     }
 
     @Override
@@ -137,10 +139,10 @@ public class QueryExecuteOperation extends QueryIdAwareOperation {
         }
 
         // Write fragments.
-        out.writeInt(fragmentDescriptors.size());
+        out.writeInt(fragments.size());
 
-        for (QueryFragmentDescriptor fragmentDescriptor : fragmentDescriptors) {
-            out.writeObject(fragmentDescriptor);
+        for (QueryExecuteOperationFragment fragment : fragments) {
+            fragment.writeData(out);
         }
 
         // Write edge mappings.
@@ -197,10 +199,14 @@ public class QueryExecuteOperation extends QueryIdAwareOperation {
         // Read fragments.
         int fragmentCnt = in.readInt();
 
-        fragmentDescriptors = new ArrayList<>(fragmentCnt);
+        fragments = new ArrayList<>(fragmentCnt);
 
         for (int i = 0; i < fragmentCnt; i++) {
-            fragmentDescriptors.add(in.readObject());
+            QueryExecuteOperationFragment fragment = new QueryExecuteOperationFragment();
+
+            fragment.readData(in);
+
+            fragments.add(fragment);
         }
 
         // Read edge mappings.

@@ -16,13 +16,8 @@
 
 package com.hazelcast.sql.impl.calcite.opt.physical.visitor;
 
-import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.impl.OptimizerStatistics;
-import com.hazelcast.sql.impl.QueryExplain;
-import com.hazelcast.sql.impl.QueryFragment;
-import com.hazelcast.sql.impl.QueryFragmentMapping;
 import com.hazelcast.sql.impl.QueryPlan;
 import com.hazelcast.sql.impl.calcite.EdgeCollectorPhysicalNodeVisitor;
 import com.hazelcast.sql.impl.calcite.expression.ExpressionConverterRexVisitor;
@@ -47,6 +42,7 @@ import com.hazelcast.sql.impl.calcite.opt.physical.exchange.UnicastExchangePhysi
 import com.hazelcast.sql.impl.calcite.opt.physical.join.HashJoinPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.join.NestedLoopJoinPhysicalRel;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.sql.impl.explain.QueryExplain;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.CountRowExpression;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -58,6 +54,9 @@ import com.hazelcast.sql.impl.expression.aggregate.MaxAggregateExpression;
 import com.hazelcast.sql.impl.expression.aggregate.MinAggregateExpression;
 import com.hazelcast.sql.impl.expression.aggregate.SingleValueAggregateExpression;
 import com.hazelcast.sql.impl.expression.aggregate.SumAggregateExpression;
+import com.hazelcast.sql.impl.fragment.QueryFragment;
+import com.hazelcast.sql.impl.fragment.QueryFragmentMapping;
+import com.hazelcast.sql.impl.optimizer.OptimizerStatistics;
 import com.hazelcast.sql.impl.physical.AggregatePhysicalNode;
 import com.hazelcast.sql.impl.physical.FetchOffsetFieldTypeProvider;
 import com.hazelcast.sql.impl.physical.FetchPhysicalNode;
@@ -115,9 +114,6 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     /** Data members in a form of set. */
     private final Set<UUID> dataMemberIdsSet;
 
-    /** Data member addresses. */
-    private final List<Address> dataMemberAddresses;
-
     /** Rel ID map. */
     private final Map<PhysicalRel, List<Integer>> relIdMap;
 
@@ -146,7 +142,6 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         UUID localMemberId,
         Map<UUID, PartitionIdSet> partMap,
         List<UUID> dataMemberIds,
-        List<Address> dataMemberAddresses,
         Map<PhysicalRel, List<Integer>> relIdMap,
         String sql,
         int paramsCount,
@@ -155,7 +150,6 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         this.localMemberId = localMemberId;
         this.partMap = partMap;
         this.dataMemberIds = dataMemberIds;
-        this.dataMemberAddresses = dataMemberAddresses;
         this.relIdMap = relIdMap;
         this.sql = sql;
         this.paramsCount = paramsCount;
@@ -196,7 +190,6 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         return new QueryPlan(
             partMap,
             dataMemberIds,
-            dataMemberAddresses,
             fragments,
             outboundEdgeMap,
             inboundEdgeMap,

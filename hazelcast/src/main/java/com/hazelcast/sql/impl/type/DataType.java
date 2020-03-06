@@ -19,27 +19,27 @@ package com.hazelcast.sql.impl.type;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.sql.impl.type.accessor.BigDecimalConverter;
-import com.hazelcast.sql.impl.type.accessor.BigIntegerConverter;
-import com.hazelcast.sql.impl.type.accessor.BooleanConverter;
-import com.hazelcast.sql.impl.type.accessor.ByteConverter;
-import com.hazelcast.sql.impl.type.accessor.CalendarConverter;
-import com.hazelcast.sql.impl.type.accessor.Converter;
-import com.hazelcast.sql.impl.type.accessor.DateConverter;
-import com.hazelcast.sql.impl.type.accessor.DoubleConverter;
-import com.hazelcast.sql.impl.type.accessor.FloatConverter;
-import com.hazelcast.sql.impl.type.accessor.IntegerConverter;
-import com.hazelcast.sql.impl.type.accessor.LateConverter;
-import com.hazelcast.sql.impl.type.accessor.LocalDateConverter;
-import com.hazelcast.sql.impl.type.accessor.LocalDateTimeConverter;
-import com.hazelcast.sql.impl.type.accessor.LocalTimeConverter;
-import com.hazelcast.sql.impl.type.accessor.LongConverter;
-import com.hazelcast.sql.impl.type.accessor.ObjectConverter;
-import com.hazelcast.sql.impl.type.accessor.OffsetDateTimeConverter;
-import com.hazelcast.sql.impl.type.accessor.ShortConverter;
-import com.hazelcast.sql.impl.type.accessor.SqlDaySecondIntervalConverter;
-import com.hazelcast.sql.impl.type.accessor.SqlYearMonthIntervalConverter;
-import com.hazelcast.sql.impl.type.accessor.StringConverter;
+import com.hazelcast.sql.impl.type.converter.BigDecimalConverter;
+import com.hazelcast.sql.impl.type.converter.BigIntegerConverter;
+import com.hazelcast.sql.impl.type.converter.BooleanConverter;
+import com.hazelcast.sql.impl.type.converter.ByteConverter;
+import com.hazelcast.sql.impl.type.converter.CalendarConverter;
+import com.hazelcast.sql.impl.type.converter.Converter;
+import com.hazelcast.sql.impl.type.converter.DateConverter;
+import com.hazelcast.sql.impl.type.converter.DoubleConverter;
+import com.hazelcast.sql.impl.type.converter.FloatConverter;
+import com.hazelcast.sql.impl.type.converter.IntegerConverter;
+import com.hazelcast.sql.impl.type.converter.LateConverter;
+import com.hazelcast.sql.impl.type.converter.LocalDateConverter;
+import com.hazelcast.sql.impl.type.converter.LocalDateTimeConverter;
+import com.hazelcast.sql.impl.type.converter.LocalTimeConverter;
+import com.hazelcast.sql.impl.type.converter.LongConverter;
+import com.hazelcast.sql.impl.type.converter.ObjectConverter;
+import com.hazelcast.sql.impl.type.converter.OffsetDateTimeConverter;
+import com.hazelcast.sql.impl.type.converter.ShortConverter;
+import com.hazelcast.sql.impl.type.converter.SqlDaySecondIntervalConverter;
+import com.hazelcast.sql.impl.type.converter.SqlYearMonthIntervalConverter;
+import com.hazelcast.sql.impl.type.converter.StringConverter;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -386,10 +386,6 @@ public class DataType implements DataSerializable, Comparable<DataType> {
 
     public Converter getConverter() {
         return converter;
-    }
-
-    public int getPrecedence() {
-        return precedence;
     }
 
     public int getPrecision() {

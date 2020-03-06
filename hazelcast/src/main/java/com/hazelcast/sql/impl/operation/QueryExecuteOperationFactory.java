@@ -16,9 +16,8 @@
 
 package com.hazelcast.sql.impl.operation;
 
-import com.hazelcast.sql.impl.QueryFragment;
-import com.hazelcast.sql.impl.QueryFragmentDescriptor;
-import com.hazelcast.sql.impl.QueryFragmentMapping;
+import com.hazelcast.sql.impl.fragment.QueryFragment;
+import com.hazelcast.sql.impl.fragment.QueryFragmentMapping;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryPlan;
 import com.hazelcast.sql.impl.memory.MemoryPressure;
@@ -49,21 +48,19 @@ public class QueryExecuteOperationFactory {
     private final QueryPlan plan;
     private final List<Object> args;
     private final long timeout;
-    private final MemoryPressure memoryPressure;
-    private final long epochWatermark;
+    private final Map<Integer, Long> creditMap;
 
     public QueryExecuteOperationFactory(
         QueryPlan plan,
         List<Object> args,
         long timeout,
-        MemoryPressure memoryPressure,
-        long epochWatermark
+        MemoryPressure memoryPressure
     ) {
         this.plan = plan;
         this.args = args;
         this.timeout = timeout;
-        this.memoryPressure = memoryPressure;
-        this.epochWatermark = epochWatermark;
+
+        creditMap = createCreditMap(memoryPressure);
     }
 
     public IdentityHashMap<QueryFragment, Collection<UUID>> prepareFragmentMappings() {
@@ -102,39 +99,43 @@ public class QueryExecuteOperationFactory {
         List<QueryFragment> fragments = plan.getFragments();
 
         // Prepare descriptors.
-        List<QueryFragmentDescriptor> descriptors = new ArrayList<>(fragments.size());
+        List<QueryExecuteOperationFragment> descriptors = new ArrayList<>(fragments.size());
 
         for (QueryFragment fragment : fragments) {
-            Collection<UUID> mappedMemberIds = fragmentMappings.get(fragment);
-            PhysicalNode node = mappedMemberIds.contains(targetMemberId) ? fragment.getNode() : null;
+            Collection<UUID> fragmentMemberIds = fragmentMappings.get(fragment);
 
-            descriptors.add(new QueryFragmentDescriptor(node, mappedMemberIds));
-        }
+            // Do not send node to a member which will not execute it.
+            PhysicalNode node = fragmentMemberIds.contains(targetMemberId) ? fragment.getNode() : null;
 
-        // Prepare initial edge credits.
-        Map<Integer, Integer> inboundEdgeMemberCountMap = plan.getInboundEdgeMemberCountMap();
-
-        Map<Integer, Long> edgeCreditMap = new HashMap<>(inboundEdgeMemberCountMap.size());
-
-        for (Map.Entry<Integer, Integer> entry : inboundEdgeMemberCountMap.entrySet()) {
-            edgeCreditMap.put(entry.getKey(), getCredit(entry.getValue()));
+            descriptors.add(new QueryExecuteOperationFragment(node, fragmentMemberIds));
         }
 
         return new QueryExecuteOperation(
-            epochWatermark,
             queryId,
             plan.getPartitionMap(),
             descriptors,
             plan.getOutboundEdgeMap(),
             plan.getInboundEdgeMap(),
-            edgeCreditMap,
+            creditMap,
             args,
             timeout
         );
     }
 
+    private Map<Integer, Long> createCreditMap(MemoryPressure memoryPressure) {
+        Map<Integer, Integer> inboundEdgeMemberCountMap = plan.getInboundEdgeMemberCountMap();
+
+        Map<Integer, Long> res = new HashMap<>(inboundEdgeMemberCountMap.size());
+
+        for (Map.Entry<Integer, Integer> entry : inboundEdgeMemberCountMap.entrySet()) {
+            res.put(entry.getKey(), getCredit(memoryPressure, entry.getValue()));
+        }
+
+        return res;
+    }
+
     // TODO: This is a very dumb heuristic based on presumed memory pressure and particpating member count
-    private long getCredit(int memberCount) {
+    private static long getCredit(MemoryPressure memoryPressure, int memberCount) {
         MemoryPressure memoryPressure0;
 
         if (memberCount <= SMALL_TOPOLOGY_THRESHOLD) {

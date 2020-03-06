@@ -20,13 +20,12 @@ import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.query.impl.getters.Extractors;
-import com.hazelcast.sql.impl.QueryFragmentContext;
-import com.hazelcast.sql.impl.SqlUtils;
+import com.hazelcast.sql.impl.fragment.QueryFragmentContext;
+import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.KeyValueExtractorExpression;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.KeyValueRow;
-import com.hazelcast.sql.impl.row.KeyValueRowExtractor;
 import com.hazelcast.sql.impl.type.DataType;
 
 import java.util.ArrayList;
@@ -55,7 +54,7 @@ public abstract class AbstractMapScanExec extends AbstractExec implements KeyVal
     protected final Expression<Boolean> filter;
 
     /** Serialization service. */
-    protected InternalSerializationService serializationService;
+    protected final InternalSerializationService serializationService;
 
     /** Extractors. */
     private Extractors extractors;
@@ -66,6 +65,7 @@ public abstract class AbstractMapScanExec extends AbstractExec implements KeyVal
     protected AbstractMapScanExec(
         int id,
         String mapName,
+        InternalSerializationService serializationService,
         List<String> fieldNames,
         List<DataType> fieldTypes,
         List<Integer> projects,
@@ -74,6 +74,7 @@ public abstract class AbstractMapScanExec extends AbstractExec implements KeyVal
         super(id);
 
         this.mapName = mapName;
+        this.serializationService = serializationService;
         this.fieldNames = fieldNames;
         this.fieldTypes = fieldTypes;
         this.projects = projects;
@@ -82,7 +83,6 @@ public abstract class AbstractMapScanExec extends AbstractExec implements KeyVal
 
     @Override
     protected final void setup0(QueryFragmentContext ctx) {
-        serializationService = (InternalSerializationService) ctx.getNodeEngine().getSerializationService();
         extractors = createExtractors();
 
         List<KeyValueExtractorExpression<?>> fieldExpressions = new ArrayList<>(fieldNames.size());
@@ -111,7 +111,7 @@ public abstract class AbstractMapScanExec extends AbstractExec implements KeyVal
         } else if (THIS_ATTRIBUTE_NAME.value().equals(path)) {
             res = val;
         } else {
-            String keyPath = SqlUtils.extractKeyPath(path);
+            String keyPath = QueryUtils.extractKeyPath(path);
 
             Object target;
 

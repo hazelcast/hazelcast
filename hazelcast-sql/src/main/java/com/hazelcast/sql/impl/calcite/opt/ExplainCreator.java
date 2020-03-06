@@ -16,8 +16,8 @@
 
 package com.hazelcast.sql.impl.calcite.opt;
 
-import com.hazelcast.sql.impl.QueryExplain;
-import com.hazelcast.sql.impl.QueryExplainElement;
+import com.hazelcast.sql.impl.explain.QueryExplain;
+import com.hazelcast.sql.impl.explain.QueryExplainElement;
 import com.hazelcast.sql.impl.calcite.cost.Cost;
 import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.NodeIdVisitor;

@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.exec;
 
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapProxy;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
@@ -53,13 +54,13 @@ public class ReplicatedMapScanExec extends AbstractMapScanExec {
     public ReplicatedMapScanExec(
         int id,
         ReplicatedMapProxy map,
-        String mapName,
+        InternalSerializationService serializationService,
         List<String> fieldNames,
         List<DataType> fieldTypes,
         List<Integer> projects,
         Expression<Boolean> filter
     ) {
-        super(id, mapName, fieldNames, fieldTypes, projects, filter);
+        super(id, map.getName(), serializationService, fieldNames, fieldTypes, projects, filter);
 
         this.map = map;
     }
@@ -70,7 +71,7 @@ public class ReplicatedMapScanExec extends AbstractMapScanExec {
         if (rows == null) {
             rows = new ArrayList<>();
 
-            ReplicatedMapService svc = ctx.getNodeEngine().getService(ReplicatedMapService.SERVICE_NAME);
+            ReplicatedMapService svc = (ReplicatedMapService) map.getService();
 
             Collection<ReplicatedRecordStore> stores = svc.getAllReplicatedRecordStores(mapName);
 

@@ -16,13 +16,18 @@
 
 package com.hazelcast.sql.impl.row;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.QuerySerializationHook;
+
 import java.util.Collections;
 import java.util.List;
 
 /**
  * Empty row batch.
  */
-public final class EmptyRowBatch implements RowBatch {
+public final class EmptyRowBatch implements RowBatch, IdentifiedDataSerializable {
     /** Singleton instance. */
     public static final EmptyRowBatch INSTANCE = new EmptyRowBatch();
 
@@ -43,5 +48,25 @@ public final class EmptyRowBatch implements RowBatch {
     @Override
     public int getRowCount() {
         return 0;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return QuerySerializationHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return QuerySerializationHook.ROW_BATCH_EMPTY;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) {
+        // No-op.
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) {
+        // No-op.
     }
 }

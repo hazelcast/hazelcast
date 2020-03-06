@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.exec;
 
-import com.hazelcast.sql.impl.QueryFragmentContext;
+import com.hazelcast.sql.impl.fragment.QueryFragmentContext;
 import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
@@ -102,7 +102,7 @@ public class UpstreamState implements Iterable<Row> {
 
         RowBatch batch = currentBatch;
 
-        currentBatchPos = batch.getRows().size();
+        currentBatchPos = batch.getRowCount();
 
         return batch;
     }

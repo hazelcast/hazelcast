@@ -38,8 +38,8 @@ public class JdbcGateway {
         this.client = client;
     }
 
-    public JdbcCursor execute(String sql, List<Object> args, int pageSize, long timeout, int maxRows) {
-        SqlQuery query = new SqlQuery(sql).setParameters(args).setPageSize(pageSize).setTimeout(timeout).setMaxRows(maxRows);
+    public JdbcCursor execute(String sql, List<Object> args, int pageSize, long timeout) {
+        SqlQuery query = new SqlQuery(sql).setParameters(args).setPageSize(pageSize).setTimeout(timeout);
 
         SqlClientCursorImpl cursor = (SqlClientCursorImpl) client.getSqlService().query(query);
         Iterator<SqlRow> iterator = cursor.iterator();

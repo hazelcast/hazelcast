@@ -55,7 +55,11 @@ public class SqlCursorImpl implements SqlCursor {
 
     @Override
     public void close() {
-        state.cancel(HazelcastSqlException.error(SqlErrorCode.CANCELLED, "Query was cancelled by user."));
+        closeOnError(HazelcastSqlException.error(SqlErrorCode.CANCELLED, "Query was cancelled by user."));
+    }
+
+    public void closeOnError(HazelcastSqlException error) {
+        state.cancel(error);
     }
 
     public QueryId getQueryId() {

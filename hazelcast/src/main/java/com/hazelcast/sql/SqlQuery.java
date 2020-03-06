@@ -34,16 +34,10 @@ public class SqlQuery {
     private List<Object> parameters;
 
     /** Timeout. */
-    // TODO: Support timeout in executor.
     private long timeout;
 
     /** Page size. */
-    // TODO: Support page size in executor.
     private int pageSize = DEFAULT_PAGE_SIZE;
-
-    /** Maximum number of rows to fetch. */
-    // TODO: Support max rows in executor.
-    private int maxRows;
 
     public SqlQuery(String sql) {
         setSql(sql);
@@ -117,20 +111,6 @@ public class SqlQuery {
         }
 
         this.timeout = timeout;
-
-        return this;
-    }
-
-    public int getMaxRows() {
-        return maxRows;
-    }
-
-    public SqlQuery setMaxRows(int maxRows) {
-        if (maxRows < 0) {
-            throw new IllegalArgumentException("Max rows cannot be negative: " + maxRows);
-        }
-
-        this.maxRows = maxRows;
 
         return this;
     }

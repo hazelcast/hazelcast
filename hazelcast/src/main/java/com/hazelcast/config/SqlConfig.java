@@ -20,23 +20,29 @@ package com.hazelcast.config;
  * SQL service configuration.
  */
 public class SqlConfig {
-    /** Default thread count. */
+    /** Default number of threads responsible for fragment execution. */
     public static final int DFLT_THREAD_COUNT = Runtime.getRuntime().availableProcessors();
+
+    /** Default number of threads responsible for operation processing. */
+    public static final int DFLT_OPERATION_THREAD_COUNT = Math.min(8, Runtime.getRuntime().availableProcessors());
 
     // TODO: Evaluate this default carefully.
     /** Default max memory. */
     public static final long DFLT_MAX_MEMORY = Runtime.getRuntime().maxMemory() / 2;
 
-    /** Number of threads which will execute SQL queries. */
+    /** Number of threads responsible for query processing. */
     private int threadCount = DFLT_THREAD_COUNT;
+
+    /** Number of threads responsible for query operation handling. */
+    private int operationThreadCount = DFLT_OPERATION_THREAD_COUNT;
 
     /** Max memory in bytes for SQL processing. */
     private long maxMemory = DFLT_MAX_MEMORY;
 
     /**
-     * Gets the number of threads responsible for data processing.
+     * Gets the number of threads responsible for query processing.
      *
-     * @return Number of threads responsible for data processing.
+     * @return Number of threads responsible for query processing.
      */
     public int getThreadCount() {
         return threadCount;
@@ -45,11 +51,31 @@ public class SqlConfig {
     /**
      * Sets the number of threads responsible for data processing.
      *
-     * @param threadCount Number of threads responsible for data processing.
+     * @param threadCount Number of threads responsible for query processing.
      * @return This instance for chaining.
      */
     public SqlConfig setThreadCount(int threadCount) {
         this.threadCount = threadCount;
+        return this;
+    }
+
+    /**
+     * Gets the number of threads responsible for query operation handling.
+     *
+     * @return Number of threads responsible for query operation handling.
+     */
+    public int getOperationThreadCount() {
+        return operationThreadCount;
+    }
+
+    /**
+     * Sets the number of threads responsible for query operation handling.
+     *
+     * @param operationThreadCount Number of threads responsible for query operation handling.
+     * @return This instance for chaining.
+     */
+    public SqlConfig setOperationThreadCount(int operationThreadCount) {
+        this.operationThreadCount = operationThreadCount;
         return this;
     }
 
@@ -82,6 +108,7 @@ public class SqlConfig {
 
     @Override
     public String toString() {
-        return "SqlConfig{threadCount=" + threadCount + ", maxMemory=" + maxMemory + '}';
+        return "SqlConfig{threadCount=" + threadCount + ", operationThreadCount=" + operationThreadCount
+            + ", maxMemory=" + maxMemory + '}';
     }
 }

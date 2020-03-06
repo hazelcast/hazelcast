@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.calcite.opt.physical;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.query.QueryConstants;
-import com.hazelcast.sql.impl.SqlUtils;
+import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.calcite.HazelcastConventions;
 import com.hazelcast.sql.impl.calcite.distribution.DistributionField;
 import com.hazelcast.sql.impl.calcite.distribution.DistributionTrait;
@@ -542,7 +542,7 @@ public final class MapScanPhysicalRule extends AbstractPhysicalRule {
             } else {
                 // Try extracting the field from the key-based path and check if it is the distribution field.
                 // E.g. "field" -> (attribute) -> "__key.distField" -> (strategy) -> "distField".
-                String keyPath = SqlUtils.extractKeyPath(path);
+                String keyPath = QueryUtils.extractKeyPath(path);
 
                 if (keyPath != null) {
                     if (keyPath.equals(distributionFieldName)) {
