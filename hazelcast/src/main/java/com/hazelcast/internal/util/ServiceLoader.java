@@ -398,8 +398,8 @@ public final class ServiceLoader {
                                 + "implement an interface with name " + expectedType.getName() + " in both class loaders. "
                                 + "The interface is currently loaded by " + expectedType.getClassLoader());
                     } else {
-                        LOGGER.fine("The class " + candidate.getName() + " does not implement the expected " +
-                                "interface " + expectedType.getName());
+                        LOGGER.fine("The class " + candidate.getName() + " does not implement the expected "
+                                + "interface " + expectedType.getName());
                     }
                 }
             }
