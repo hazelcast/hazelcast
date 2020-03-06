@@ -17,16 +17,20 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-import javax.annotation.Nullable;
+import java.io.IOException;
 import java.util.Map;
 import java.util.function.BiFunction;
 
-public class BiFunctionExecutingEntryProcessor<K, V> implements EntryProcessor<K, V, V> {
-
-    private static final long serialVersionUID = 1L;
+public class BiFunctionExecutingEntryProcessor<K, V> implements EntryProcessor<K, V, V>, IdentifiedDataSerializable {
 
     BiFunction<? super K, ? super V, ? extends V> biFunction;
+
+    public BiFunctionExecutingEntryProcessor() {
+    }
 
     public BiFunctionExecutingEntryProcessor(BiFunction<? super K, ? super V, ? extends V> biFunction) {
         this.biFunction = biFunction;
@@ -43,10 +47,23 @@ public class BiFunctionExecutingEntryProcessor<K, V> implements EntryProcessor<K
         return newValue;
     }
 
-    @Nullable
     @Override
-    public EntryProcessor getBackupProcessor() {
-        return this;
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
     }
 
+    @Override
+    public int getClassId() {
+        return MapDataSerializerHook.BIFUNCTION_EXECUTING_PROCESSOR;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeObject(biFunction);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        biFunction = in.readObject();
+    }
 }

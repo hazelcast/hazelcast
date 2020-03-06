@@ -109,7 +109,7 @@ import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.util.ClassMetadataUtil;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.map.EntryProcessor;
@@ -1994,7 +1994,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(key, NULL_BIFUNCTION_IS_NOT_ALLOWED);
 
-        if (ClassMetadataUtil.isClassStaticAndSerializable(remappingFunction.getClass())) {
+        if (SerializationUtil.isClassStaticAndSerializable(remappingFunction)) {
             BiFunctionExecutingEntryProcessor<K, V> ep = new BiFunctionExecutingEntryProcessor<>(remappingFunction);
             return executeOnKeyInternal(key, ep);
         } else {

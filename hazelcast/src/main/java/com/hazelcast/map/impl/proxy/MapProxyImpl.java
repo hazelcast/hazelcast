@@ -23,7 +23,7 @@ import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.internal.util.ClassMetadataUtil;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.map.EntryProcessor;
@@ -1035,7 +1035,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(key, NULL_BIFUNCTION_IS_NOT_ALLOWED);
 
-        if (ClassMetadataUtil.isClassStaticAndSerializable(remappingFunction.getClass())) {
+        if (SerializationUtil.isClassStaticAndSerializable(remappingFunction)) {
             BiFunctionExecutingEntryProcessor<K, V> ep = new BiFunctionExecutingEntryProcessor<>(remappingFunction);
             return executeOnKey(key, ep);
         } else {

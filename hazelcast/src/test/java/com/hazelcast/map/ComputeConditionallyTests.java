@@ -20,6 +20,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.RootCauseMatcher;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -27,8 +28,10 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import testsubjects.ClientOnlyStaticSerializableBiFunction;
 import testsubjects.NonStaticFunctionFactory;
@@ -46,8 +49,10 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ComputeConditionallyTests extends HazelcastTestSupport {
 
-    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+    @Rule
+    public ExpectedException expected = ExpectedException.none();
 
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
     private HazelcastInstance server;
     private HazelcastInstance client;
 
@@ -99,16 +104,13 @@ public class ComputeConditionallyTests extends HazelcastTestSupport {
         testComputeIfPresentForFunction(biFunction, "new_value");
     }
 
-    @Test(expected = ClassNotFoundException.class)
+    @Test
     public void testComputeIfPresentWithRemappingFunctionPresentOnClientJVMOnly() throws Throwable {
+        expected.expect(HazelcastSerializationException.class);
+        expected.expectCause(new RootCauseMatcher(ClassNotFoundException.class));
+
         ClientOnlyStaticSerializableBiFunction biFunction = new ClientOnlyStaticSerializableBiFunction("new_value");
-        try {
-            testComputeIfPresentForFunction(biFunction, "new_value");
-        } catch (HazelcastSerializationException e) {
-            if (e.getCause() != null) {
-                throw e.getCause();
-            }
-        }
+        testComputeIfPresentForFunction(biFunction, "new_value");
     }
 
     @Test
