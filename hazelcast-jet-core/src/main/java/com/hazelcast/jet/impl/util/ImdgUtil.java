@@ -26,7 +26,10 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
+import com.hazelcast.internal.nio.BufferObjectDataInput;
+import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
@@ -154,6 +157,18 @@ public final class ImdgUtil {
 
     public static Connection getMemberConnection(@Nonnull NodeEngine engine, @Nonnull Address memberAddr) {
         return ((NodeEngineImpl) engine).getNode().getEndpointManager().getConnection(memberAddr);
+    }
+
+    @Nonnull
+    public static BufferObjectDataOutput createObjectDataOutput(@Nonnull NodeEngine engine, int size) {
+        return ((InternalSerializationService) engine.getSerializationService())
+                .createObjectDataOutput(size);
+    }
+
+    @Nonnull
+    public static BufferObjectDataInput createObjectDataInput(@Nonnull NodeEngine engine, @Nonnull byte[] buf) {
+        return ((InternalSerializationService) engine.getSerializationService())
+                .createObjectDataInput(buf);
     }
 
     public static void writeList(@Nonnull ObjectDataOutput output, @Nonnull List list) throws IOException {

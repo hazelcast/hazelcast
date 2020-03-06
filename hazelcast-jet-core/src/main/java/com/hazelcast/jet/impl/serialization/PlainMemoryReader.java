@@ -18,15 +18,23 @@ package com.hazelcast.jet.impl.serialization;
 
 import com.hazelcast.internal.nio.Bits;
 
+import java.nio.ByteOrder;
+
 public class PlainMemoryReader implements MemoryReader {
+
+    private final boolean bigEndian;
+
+    public PlainMemoryReader(ByteOrder byteOrder) {
+        this.bigEndian = byteOrder == ByteOrder.BIG_ENDIAN;
+    }
 
     @Override
     public int readInt(byte[] bytes, int offset) {
-        return Bits.readIntL(bytes, offset);
+        return Bits.readInt(bytes, offset, bigEndian);
     }
 
     @Override
     public long readLong(byte[] bytes, int offset) {
-        return Bits.readLongL(bytes, offset);
+        return Bits.readLong(bytes, offset, bigEndian);
     }
 }

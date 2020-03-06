@@ -42,6 +42,7 @@ import com.hazelcast.spi.impl.operationservice.LiveOperations;
 import com.hazelcast.spi.impl.operationservice.LiveOperationsTracker;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
+import java.io.IOException;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -49,6 +50,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 import static com.hazelcast.jet.core.JetProperties.JET_SHUTDOWNHOOK_ENABLED;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.Util.memoizeConcurrent;
 import static com.hazelcast.spi.properties.ClusterProperty.SHUTDOWNHOOK_POLICY;
 import static java.lang.Boolean.parseBoolean;
@@ -230,7 +232,11 @@ public class JetService implements ManagedService, MembershipAwareService, LiveO
     }
 
     void handlePacket(Packet packet) {
-        networking.handle(packet);
+        try {
+            networking.handle(packet);
+        } catch (IOException e) {
+            throw sneakyThrow(e);
+        }
     }
 
     @Override

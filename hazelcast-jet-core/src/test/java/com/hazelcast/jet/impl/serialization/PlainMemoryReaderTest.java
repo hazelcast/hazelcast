@@ -18,17 +18,34 @@ package com.hazelcast.jet.impl.serialization;
 
 import org.junit.Test;
 
+import static java.nio.ByteOrder.BIG_ENDIAN;
+import static java.nio.ByteOrder.LITTLE_ENDIAN;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class PlainMemoryReaderTest {
 
     @Test
-    public void when_Reads_then_CorrectValuesAreReturned() {
+    public void when_littleEndian_then_correctValuesAreRead() {
         // Given
-        MemoryReader reader = new PlainMemoryReader();
+        MemoryReader reader = new PlainMemoryReader(LITTLE_ENDIAN);
         byte[] bytes = new byte[]{
                 1, 0, 0, 0,
                 2, 0, 0, 0, 0, 0, 0, 0
+        };
+
+        // When
+        // Then
+        assertThat(reader.readInt(bytes, 0)).isEqualTo(1);
+        assertThat(reader.readLong(bytes, Integer.BYTES)).isEqualTo(2);
+    }
+
+    @Test
+    public void when_bigEndian_then_correctValuesAreRead() {
+        // Given
+        MemoryReader reader = new PlainMemoryReader(BIG_ENDIAN);
+        byte[] bytes = new byte[]{
+                0, 0, 0, 1,
+                0, 0, 0, 0, 0, 0, 0, 2
         };
 
         // When

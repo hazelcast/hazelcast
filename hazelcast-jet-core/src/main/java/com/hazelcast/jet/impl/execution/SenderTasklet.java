@@ -97,7 +97,7 @@ public class SenderTasklet implements Tasklet {
         // we use Connection directly because we rely on packets not being transparently skipped or reordered
         this.connection = getMemberConnection(nodeEngine, destinationAddress);
         this.outputBuffer = serializationService.createObjectDataOutput(BUFFER_SIZE);
-        uncheckRun(() -> outputBuffer.write(createStreamPacketHeader(
+        uncheckRun(() -> outputBuffer.write(createStreamPacketHeader(nodeEngine,
                 executionId, destinationVertexId, inboundEdgeStream.ordinal())));
         bufPosPastHeader = outputBuffer.position();
     }

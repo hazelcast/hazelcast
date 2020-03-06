@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.serialization;
 
 import org.junit.Test;
 
+import static java.nio.ByteOrder.BIG_ENDIAN;
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
 import static java.nio.ByteOrder.nativeOrder;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -26,9 +27,11 @@ import static org.junit.Assume.assumeTrue;
 public class UnsafeMemoryReaderTest {
 
     @Test
-    public void when_Reads_then_CorrectValuesAreReturned() {
+    public void when_littleEndian_then_correctValuesAreRead() {
+        assumeTrue(nativeOrder() == LITTLE_ENDIAN);
+
         // Given
-        MemoryReader reader = new UnsafeMemoryReader();
+        MemoryReader reader = new UnsafeMemoryReader(LITTLE_ENDIAN);
         byte[] bytes = new byte[]{
                 1, 0, 0, 0,
                 2, 0, 0, 0, 0, 0, 0, 0
@@ -41,11 +44,11 @@ public class UnsafeMemoryReaderTest {
     }
 
     @Test
-    public void when_ReverseIsSet_then_BytesAreReadInReverseOrder() {
-        assumeTrue(nativeOrder() == LITTLE_ENDIAN);
+    public void when_bigEndian_then_correctValuesAreRead() {
+        assumeTrue(nativeOrder() == BIG_ENDIAN);
 
         // Given
-        MemoryReader reader = new UnsafeMemoryReader(true);
+        MemoryReader reader = new UnsafeMemoryReader(BIG_ENDIAN);
         byte[] bytes = new byte[]{
                 0, 0, 0, 1,
                 0, 0, 0, 0, 0, 0, 0, 2

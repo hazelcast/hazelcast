@@ -16,24 +16,21 @@
 
 package com.hazelcast.jet.impl.serialization;
 
+import java.nio.ByteOrder;
+
 import static com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry.MEM;
 import static com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry.MEM_AVAILABLE;
 import static com.hazelcast.internal.memory.HeapMemoryAccessor.ARRAY_BYTE_BASE_OFFSET;
 import static com.hazelcast.internal.util.Preconditions.checkState;
-import static java.nio.ByteOrder.LITTLE_ENDIAN;
 import static java.nio.ByteOrder.nativeOrder;
 
 public class UnsafeMemoryReader implements MemoryReader {
 
     private final boolean reverse;
 
-    UnsafeMemoryReader() {
-        this(nativeOrder() != LITTLE_ENDIAN);
-    }
-
-    UnsafeMemoryReader(boolean reverse) {
+    UnsafeMemoryReader(ByteOrder byteOrder) {
         checkState(MEM_AVAILABLE, "unsafe memory access is not available");
-        this.reverse = reverse;
+        this.reverse = nativeOrder() != byteOrder;
     }
 
     @Override

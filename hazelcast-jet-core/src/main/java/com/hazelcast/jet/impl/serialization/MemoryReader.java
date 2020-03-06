@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.impl.serialization;
 
+import java.nio.ByteOrder;
+
 import static com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry.MEM_AVAILABLE;
 
 public interface MemoryReader {
@@ -24,7 +26,7 @@ public interface MemoryReader {
 
     long readLong(byte[] bytes, int offset);
 
-    static MemoryReader create() {
-        return MEM_AVAILABLE ? new UnsafeMemoryReader() : new PlainMemoryReader();
+    static MemoryReader create(ByteOrder byteOrder) {
+        return MEM_AVAILABLE ? new UnsafeMemoryReader(byteOrder) : new PlainMemoryReader(byteOrder);
     }
 }
