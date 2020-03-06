@@ -28,7 +28,7 @@ import org.apache.calcite.util.ImmutableBitSet;
 import java.util.List;
 
 /**
- * Distribution of the local aggregate, inherited from it's input.
+ * Distribution of the local aggregate, inherited from its input.
  */
 public final class AggregateDistribution {
     /** Whether the aggregate is collocated. */

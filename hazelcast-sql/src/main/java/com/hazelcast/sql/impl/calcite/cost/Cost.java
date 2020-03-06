@@ -77,7 +77,7 @@ public class Cost implements RelOptCost {
 
     @Override
     public boolean isInfinite() {
-        // Cost is considered infinite if any of it's components is infinite.
+        // Cost is considered infinite if any of its components is infinite.
         return this == INFINITY
             || rows == Double.POSITIVE_INFINITY
             || cpu == Double.POSITIVE_INFINITY

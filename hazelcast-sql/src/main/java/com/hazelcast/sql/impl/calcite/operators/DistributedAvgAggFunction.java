@@ -26,11 +26,11 @@ import org.apache.calcite.util.Optionality;
 /**
  * Distributed aggregate function (for internal use only).
  */
-public class DistirbutedAvgAggFunction extends SqlAggFunction {
+public class DistributedAvgAggFunction extends SqlAggFunction {
     /** Name. */
     private static final String NAME = "DIST_AVG";
 
-    public DistirbutedAvgAggFunction() {
+    public DistributedAvgAggFunction() {
         super(
             NAME,
             null,

@@ -45,7 +45,7 @@ public class StripedInbox extends AbstractInbox {
     ) {
         super(queryId, edgeId, rowWidth, operationHandler, senderMemberIds.size(), maxMemory);
 
-        // Build inverse map from the member to it's index.
+        // Build inverse map from the member to its index.
         int memberIdx = 0;
 
         for (UUID senderMemberId : senderMemberIds) {

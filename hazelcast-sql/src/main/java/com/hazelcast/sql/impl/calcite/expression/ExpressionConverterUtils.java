@@ -519,7 +519,7 @@ public final class ExpressionConverterUtils {
             case INTERVAL_YEAR:
             case INTERVAL_MONTH:
             case INTERVAL_YEAR_MONTH:
-                return convertLitealIntervalYearMonth(literal);
+                return convertLiteralIntervalYearMonth(literal);
 
             case INTERVAL_DAY:
             case INTERVAL_DAY_HOUR:
@@ -645,7 +645,7 @@ public final class ExpressionConverterUtils {
         return ConstantExpression.create(val);
     }
 
-    private static Expression<?> convertLitealIntervalYearMonth(RexLiteral literal) {
+    private static Expression<?> convertLiteralIntervalYearMonth(RexLiteral literal) {
         int months = literal.getValueAs(Integer.class);
 
         return ConstantExpression.create(new SqlYearMonthInterval(months));

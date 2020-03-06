@@ -126,7 +126,7 @@ public class MapIndexScanExec extends AbstractMapScanExec {
     }
 
     private Set<QueryableEntry> getIndexEntries() {
-        // TODO: Either obtain the index in advance, or check for it's existence here.
+        // TODO: Either obtain the index in advance, or check for its existence here.
         MapContainer mapContainer = map.getMapServiceContext().getMapContainer(mapName);
         InternalIndex index = mapContainer.getIndexes().getIndex(indexName);
 

@@ -62,7 +62,7 @@ public final class ProjectIntoScanLogicalRule extends RelOptRule {
         if (mapping == null) {
             transformed = processComplex(project, scan);
         } else if (Mappings.isIdentity(mapping)) {
-            // Project returns all the rows of the scan. Let ProjectRemoveRule do it's job.
+            // Project returns all the rows of the scan. Let ProjectRemoveRule do its job.
             return;
         } else {
             transformed = processSimple(mapping, scan);

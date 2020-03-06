@@ -228,7 +228,7 @@ public final class JoinPhysicalRule extends AbstractPhysicalRule {
             //     B is chosen. But if we had a chance to remove the materialization from A beforehand, it would have won.
             //     How to deal with it?
             //  3) One possible solution is to set resetability flag when a PhysicalRel is created based on the
-            //     resetability of it's inputs.
+            //     resetability of its inputs.
             return new MaterializedInputPhysicalRel(input.getCluster(), input.getTraitSet(), input);
         } else {
             // Only BROADCAST actions are expected for non-equi joins.

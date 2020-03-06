@@ -39,7 +39,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         );
 
     /** Function to calculate distributed average. */
-    public static final SqlAggFunction DISTRIBUTED_AVG = new DistirbutedAvgAggFunction();
+    public static final SqlAggFunction DISTRIBUTED_AVG = new DistributedAvgAggFunction();
 
     private static final HazelcastSqlOperatorTable INSTANCE = new HazelcastSqlOperatorTable();
 

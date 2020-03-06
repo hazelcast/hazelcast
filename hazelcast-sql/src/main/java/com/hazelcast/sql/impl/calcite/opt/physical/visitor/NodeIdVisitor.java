@@ -32,7 +32,7 @@ public class NodeIdVisitor extends PhysicalRelVisitorAdapter {
     /** Initial index. */
     private int curId;
 
-    /** Map from the node to it's indexes as they are found in the tree bottom-up.. */
+    /** Map from the node to its indexes as they are found in the tree bottom-up.. */
     private final IdentityHashMap<PhysicalRel, List<Integer>> idMap = new IdentityHashMap<>();
 
     public Map<PhysicalRel, List<Integer>> getIdMap() {

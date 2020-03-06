@@ -134,7 +134,7 @@ public final class ProjectPhysicalRule extends AbstractPhysicalRule {
     }
 
     /**
-     * Get distribution trait which should be used by project based on the distribution of it's input.
+     * Get distribution trait which should be used by project based on the distribution of its input.
      *
      * @param physicalInput Physical input.
      * @param projectFieldMap Project field map.
@@ -240,7 +240,7 @@ public final class ProjectPhysicalRule extends AbstractPhysicalRule {
 
     /**
      * Get a map of candidate collation fields for the given logical project. Key of the map is the index of the field
-     * in it's input, value of the map is the index of that field in projection.
+     * in its input, value of the map is the index of that field in projection.
      *
      * @param project Project.
      * @return Map of candidate collation fields.
@@ -276,7 +276,7 @@ public final class ProjectPhysicalRule extends AbstractPhysicalRule {
     }
 
     /**
-     * Get a map from potential input distribution field to it's index in the projection.
+     * Get a map from potential input distribution field to its index in the projection.
      *
      * @param project Projection.
      * @return Result.

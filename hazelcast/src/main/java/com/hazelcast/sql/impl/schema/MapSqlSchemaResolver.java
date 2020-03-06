@@ -173,6 +173,7 @@ public abstract class MapSqlSchemaResolver implements SqlSchemaResolver {
                 return DataType.SMALLINT;
 
             case CHAR:
+            case UTF:
                 return DataType.VARCHAR;
 
             case INT:
@@ -186,9 +187,6 @@ public abstract class MapSqlSchemaResolver implements SqlSchemaResolver {
 
             case DOUBLE:
                 return DataType.DOUBLE;
-
-            case UTF:
-                return DataType.VARCHAR;
 
             default:
                 return DataType.OBJECT;

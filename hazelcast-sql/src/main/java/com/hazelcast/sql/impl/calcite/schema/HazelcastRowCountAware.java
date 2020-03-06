@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.calcite.schema;
 
 /**
- * An interface marking that the instance can return it's row count.
+ * An interface marking that the instance can return its row count.
  */
 public interface HazelcastRowCountAware {
     /**

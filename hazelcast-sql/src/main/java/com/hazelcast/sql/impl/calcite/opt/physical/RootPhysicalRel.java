@@ -26,7 +26,7 @@ import org.apache.calcite.rel.SingleRel;
 import java.util.List;
 
 /**
- * Root node which consumes data from it's input and returns it to the user.
+ * Root node which consumes data from its input and returns it to the user.
  * <p>
  * Traits:
  * <ul>

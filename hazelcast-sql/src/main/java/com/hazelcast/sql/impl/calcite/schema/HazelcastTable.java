@@ -43,7 +43,7 @@ public class HazelcastTable extends AbstractTable {
     /** Distribution field name. */
     private final String distributionField;
 
-    /** Indxes. */
+    /** Indexes. */
     private final List<HazelcastTableIndex> indexes;
 
     /** Table statistic. */

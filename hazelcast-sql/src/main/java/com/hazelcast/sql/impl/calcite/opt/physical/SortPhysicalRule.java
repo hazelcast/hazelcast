@@ -42,7 +42,7 @@ import static com.hazelcast.sql.impl.calcite.distribution.DistributionType.REPLI
 import static com.hazelcast.sql.impl.calcite.distribution.DistributionType.ROOT;
 
 /**
- * Rule which converts logical sort into it's physical counterpart. There are several forms of physical implementations:
+ * Rule which converts logical sort into its physical counterpart. There are several forms of physical implementations:
  * <ul>
  *     <li><b>Local</b> - in case the whole input is available locally (ROOT, REPLICATED)</li>
  *     <li><b>Two-phase (local + merge)</b> - in case the input is located on several nodes. In this case a

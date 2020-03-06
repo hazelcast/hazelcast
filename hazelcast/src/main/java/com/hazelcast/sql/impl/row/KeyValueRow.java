@@ -23,7 +23,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Key-value row. Appears during iteration over a data stored in map or it's index.
+ * Key-value row. Appears during iteration over a data stored in map or its index.
  */
 public class KeyValueRow implements Row {
     /** Null-marker. */

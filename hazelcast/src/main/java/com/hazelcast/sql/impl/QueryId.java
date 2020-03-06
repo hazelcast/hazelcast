@@ -31,7 +31,7 @@ public final class QueryId implements IdentifiedDataSerializable {
     /** Member ID: most significant bits */
     private long memberIdHigh;
 
-    /** Member ID: lest significant bits. */
+    /** Member ID: least significant bits. */
     private long memberIdLow;
 
     /** Local ID: most significant bits. */
