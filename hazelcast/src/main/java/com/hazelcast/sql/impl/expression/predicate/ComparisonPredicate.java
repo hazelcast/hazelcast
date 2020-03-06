@@ -211,13 +211,13 @@ public class ComparisonPredicate extends BiCallExpression<Boolean> {
             case GREATER_THAN:
                 return compare > 0;
 
-            case GREATER_THAN_EQUAL:
+            case GREATER_THAN_OR_EQUAL:
                 return compare >= 0;
 
             case LESS_THAN:
                 return compare < 0;
 
-            case LESS_THAN_EQUAL:
+            case LESS_THAN_OR_EQUAL:
                 return compare <= 0;
 
             default:

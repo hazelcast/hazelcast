@@ -20,7 +20,7 @@ import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.QueryPlan;
 import com.hazelcast.sql.impl.calcite.EdgeCollectorPhysicalNodeVisitor;
-import com.hazelcast.sql.impl.calcite.expression.ExpressionConverterRexVisitor;
+import com.hazelcast.sql.impl.calcite.expression.RexToExpressionVisitor;
 import com.hazelcast.sql.impl.calcite.operators.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.calcite.opt.AbstractScanRel;
 import com.hazelcast.sql.impl.calcite.opt.ExplainCreator;
@@ -684,7 +684,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             return null;
         }
 
-        ExpressionConverterRexVisitor converter = new ExpressionConverterRexVisitor(fieldTypeProvider, paramsCount);
+        RexToExpressionVisitor converter = new RexToExpressionVisitor(fieldTypeProvider, paramsCount);
 
         return expression.accept(converter);
     }

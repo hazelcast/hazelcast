@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.optimizer.support;
 
-import com.hazelcast.sql.impl.calcite.expression.ExpressionConverterRexVisitor;
+import com.hazelcast.sql.impl.calcite.expression.RexToExpressionVisitor;
 import com.hazelcast.sql.impl.calcite.opt.logical.AggregateLogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.logical.JoinLogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRel;
@@ -144,7 +144,7 @@ public abstract class LogicalOptimizerTestSupport extends OptimizerTestSupport {
         return (T) rel;
     }
 
-    private static ExpressionConverterRexVisitor expressionConverter() {
-        return new ExpressionConverterRexVisitor(TestPhysicalNodeSchema.INSTANCE, 0);
+    private static RexToExpressionVisitor expressionConverter() {
+        return new RexToExpressionVisitor(TestPhysicalNodeSchema.INSTANCE, 0);
     }
 }
