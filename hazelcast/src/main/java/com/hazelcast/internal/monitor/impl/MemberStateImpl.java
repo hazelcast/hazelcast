@@ -16,14 +16,6 @@
 
 package com.hazelcast.internal.monitor.impl;
 
-import java.net.UnknownHostException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.UUID;
-
 import com.hazelcast.cluster.Address;
 import com.hazelcast.collection.LocalQueueStats;
 import com.hazelcast.executor.LocalExecutorStats;
@@ -52,6 +44,14 @@ import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.multimap.LocalMultiMapStats;
 import com.hazelcast.replicatedmap.LocalReplicatedMapStats;
 import com.hazelcast.topic.LocalTopicStats;
+
+import java.net.UnknownHostException;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.UUID;
 
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.JsonUtil.getArray;
@@ -374,7 +374,19 @@ public class MemberStateImpl implements MemberState {
 
             endpoints.add(endpoint);
         }
-        serializeEndpoints(root, endpoints);
+        root.add("endpoints", endpoints);
+
+        serializeMap(root, "mapStats", mapStats);
+        serializeMap(root, "multiMapStats", multiMapStats);
+        serializeMap(root, "replicatedMapStats", replicatedMapStats);
+        serializeMap(root, "queueStats", queueStats);
+        serializeMap(root, "topicStats", topicStats);
+        serializeMap(root, "reliableTopicStats", reliableTopicStats);
+        serializeMap(root, "pnCounterStats", pnCounterStats);
+        serializeMap(root, "executorStats", executorStats);
+        serializeMap(root, "cacheStats", cacheStats);
+        serializeMap(root, "wanStats", wanStats);
+        serializeMap(root, "flakeIdStats", flakeIdGeneratorStats);
 
         final JsonObject runtimePropsObject = new JsonObject();
         for (Map.Entry<String, Long> entry : runtimeProps.entrySet()) {
@@ -404,22 +416,6 @@ public class MemberStateImpl implements MemberState {
         root.add("inboundNetworkStats", inboundNetworkStats.toJson());
         root.add("outboundNetworkStats", outboundNetworkStats.toJson());
         return root;
-    }
-
-    private void serializeEndpoints(JsonObject root, JsonArray endpoints) {
-        root.add("endpoints", endpoints);
-
-        serializeMap(root, "mapStats", mapStats);
-        serializeMap(root, "multiMapStats", multiMapStats);
-        serializeMap(root, "replicatedMapStats", replicatedMapStats);
-        serializeMap(root, "queueStats", queueStats);
-        serializeMap(root, "topicStats", topicStats);
-        serializeMap(root, "reliableTopicStats", reliableTopicStats);
-        serializeMap(root, "pnCounterStats", pnCounterStats);
-        serializeMap(root, "executorStats", executorStats);
-        serializeMap(root, "cacheStats", cacheStats);
-        serializeMap(root, "wanStats", wanStats);
-        serializeMap(root, "flakeIdStats", flakeIdGeneratorStats);
     }
 
     private static void serializeMap(JsonObject root, String key, Map<String, ?> map) {

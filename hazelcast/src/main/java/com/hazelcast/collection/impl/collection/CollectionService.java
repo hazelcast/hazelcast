@@ -34,7 +34,7 @@ import com.hazelcast.collection.impl.collection.operations.CollectionOperation;
 import com.hazelcast.collection.impl.common.DataAwareItemEvent;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionTransactionRollbackOperation;
 import com.hazelcast.core.ItemEventType;
-import com.hazelcast.internal.monitor.impl.LocalCollectionStatsImpl;
+import com.hazelcast.internal.monitor.impl.AbstractLocalCollectionStats;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.partition.MigrationAwareService;
 import com.hazelcast.internal.partition.MigrationEndpoint;
@@ -67,9 +67,6 @@ public abstract class CollectionService implements ManagedService, RemoteService
     protected final NodeEngine nodeEngine;
     protected final SerializationService serializationService;
     protected final IPartitionService partitionService;
-
-    protected ConcurrentMap<String, LocalCollectionStatsImpl> statsMap = new ConcurrentHashMap<>();
-    protected ConstructorFunction<String, LocalCollectionStatsImpl> localCollectionStatsConstructorFunction;
 
     private final ILogger logger;
 
@@ -208,7 +205,7 @@ public abstract class CollectionService implements ManagedService, RemoteService
         return new Merger(collector);
     }
 
-    public abstract LocalCollectionStatsImpl getLocalCollectionStats(String name);
+    public abstract AbstractLocalCollectionStats getLocalCollectionStats(String name);
 
     private class Merger extends AbstractContainerMerger<CollectionContainer, Collection<Object>, CollectionMergeTypes<Object>> {
 

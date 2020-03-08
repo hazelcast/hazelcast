@@ -38,6 +38,6 @@ public class LocalSetStatsSupplier implements StatsSupplier<LocalCollectionStats
 
     @Override
     public LocalCollectionStats get() {
-        return set.getLocalCollectionStats();
+        return set.getLocalSetStats();
     }
 }

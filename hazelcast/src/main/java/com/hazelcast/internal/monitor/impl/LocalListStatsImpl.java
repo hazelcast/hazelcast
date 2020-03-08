@@ -18,6 +18,7 @@ package com.hazelcast.internal.monitor.impl;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
+import com.hazelcast.collection.LocalCollectionStats;
 import com.hazelcast.collection.LocalListStats;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.metrics.Probe;
@@ -26,21 +27,22 @@ import com.hazelcast.internal.util.Clock;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.LIST_METRIC_CREATION_TIME;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.LIST_METRIC_LAST_ACCESS_TIME;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.LIST_METRIC_LAST_UPDATE_TIME;
+import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.util.ConcurrencyUtil.setMax;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
-public class LocalListStatsImpl extends LocalCollectionStatsImpl implements LocalListStats {
+public class LocalListStatsImpl extends AbstractLocalCollectionStats implements LocalCollectionStats, LocalListStats {
 
     protected static final AtomicLongFieldUpdater<LocalListStatsImpl> LAST_ACCESS_TIME_UPDATER =
             newUpdater(LocalListStatsImpl.class, LAST_ACCESS_TIME);
     protected static final AtomicLongFieldUpdater<LocalListStatsImpl> LAST_UPDATE_TIME_UPDATER =
             newUpdater(LocalListStatsImpl.class, LAST_UPDATE_TIME);
 
-    @Probe(name = LIST_METRIC_LAST_ACCESS_TIME)
+    @Probe(name = LIST_METRIC_LAST_ACCESS_TIME, unit = MS)
     protected volatile long lastAccessTime;
-    @Probe(name = LIST_METRIC_LAST_UPDATE_TIME)
+    @Probe(name = LIST_METRIC_LAST_UPDATE_TIME, unit = MS)
     protected volatile long lastUpdateTime;
-    @Probe(name = LIST_METRIC_CREATION_TIME)
+    @Probe(name = LIST_METRIC_CREATION_TIME, unit = MS)
     protected volatile long creationTime;
 
     public LocalListStatsImpl() {

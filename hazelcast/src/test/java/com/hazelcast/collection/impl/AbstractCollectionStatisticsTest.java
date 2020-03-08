@@ -28,7 +28,6 @@ public abstract class AbstractCollectionStatisticsTest extends HazelcastTestSupp
 
     protected long previousAccessTime;
     protected long previousUpdateTime;
-    protected long previousNumberOfHits;
 
     protected void assertNewLastAccessTime() {
         assertTrueEventually(() -> {

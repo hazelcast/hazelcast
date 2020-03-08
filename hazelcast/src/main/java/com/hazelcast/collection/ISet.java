@@ -44,6 +44,6 @@ public interface ISet<E> extends Set<E>, ICollection<E> {
      *
      * @return this collection's local statistics.
      */
-    LocalSetStats getLocalCollectionStats();
+    LocalSetStats getLocalSetStats();
 
 }

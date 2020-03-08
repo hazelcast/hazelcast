@@ -40,7 +40,7 @@ public class ListStatisticsTest extends AbstractCollectionStatisticsTest {
         HazelcastInstance instance = createHazelcastInstance();
         list = instance.getList(randomString());
 
-        localCollectionStats = list.getLocalCollectionStats();
+        localCollectionStats = list.getLocalListStats();
         previousAccessTime = localCollectionStats.getLastAccessTime();
         previousUpdateTime = localCollectionStats.getLastUpdateTime();
     }

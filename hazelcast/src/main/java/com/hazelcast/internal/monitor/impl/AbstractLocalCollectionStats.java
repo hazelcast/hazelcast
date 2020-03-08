@@ -19,13 +19,13 @@ package com.hazelcast.internal.monitor.impl;
 import com.hazelcast.collection.LocalCollectionStats;
 import com.hazelcast.json.internal.JsonSerializable;
 
-public abstract class LocalCollectionStatsImpl implements LocalCollectionStats, JsonSerializable {
+public abstract class AbstractLocalCollectionStats implements LocalCollectionStats, JsonSerializable {
 
     public static final String LAST_ACCESS_TIME = "lastAccessTime";
     public static final String LAST_UPDATE_TIME = "lastUpdateTime";
     public static final String CREATION_TIME = "creationTime";
 
-    protected LocalCollectionStatsImpl() {
+    protected AbstractLocalCollectionStats() {
     }
 
     public abstract void setLastAccessTime(long lastAccessTime);

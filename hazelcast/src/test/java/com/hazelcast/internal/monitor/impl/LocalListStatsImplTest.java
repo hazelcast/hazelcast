@@ -35,7 +35,7 @@ public class LocalListStatsImplTest {
 
     @Test
     public void testDefaultConstructor() {
-        LocalCollectionStatsImpl localListStats = createTestStats();
+        AbstractLocalCollectionStats localListStats = createTestStats();
 
         assertTrue(localListStats.getCreationTime() > 0);
         assertEquals(123456, localListStats.getLastUpdateTime());
@@ -45,7 +45,7 @@ public class LocalListStatsImplTest {
     @Test
     public void testCreationTime() {
         long beforeCreationTime = Clock.currentTimeMillis();
-        LocalCollectionStatsImpl localListStats = createTestStats();
+        AbstractLocalCollectionStats localListStats = createTestStats();
         long afterCreationTime = Clock.currentTimeMillis();
 
         assertBetween("creationTime", localListStats.getCreationTime(), beforeCreationTime, afterCreationTime);
@@ -53,10 +53,10 @@ public class LocalListStatsImplTest {
 
     @Test
     public void testSerialization() {
-        LocalCollectionStatsImpl localListStats = createTestStats();
+        AbstractLocalCollectionStats localListStats = createTestStats();
 
         JsonObject serialized = localListStats.toJson();
-        LocalCollectionStatsImpl deserialized = new LocalListStatsImpl();
+        AbstractLocalCollectionStats deserialized = new LocalListStatsImpl();
         deserialized.fromJson(serialized);
 
         assertTrue(deserialized.getCreationTime() > 0);
@@ -64,8 +64,8 @@ public class LocalListStatsImplTest {
         assertEquals(654321, deserialized.getLastAccessTime());
     }
 
-    private LocalCollectionStatsImpl createTestStats() {
-        LocalCollectionStatsImpl localListStats = new LocalListStatsImpl();
+    private AbstractLocalCollectionStats createTestStats() {
+        AbstractLocalCollectionStats localListStats = new LocalListStatsImpl();
         localListStats.setLastUpdateTime(123456);
         localListStats.setLastAccessTime(654321);
         return localListStats;

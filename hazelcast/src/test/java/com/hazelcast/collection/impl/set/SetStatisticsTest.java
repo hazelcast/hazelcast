@@ -40,7 +40,7 @@ public class SetStatisticsTest extends AbstractCollectionStatisticsTest {
         HazelcastInstance instance = createHazelcastInstance();
         set = instance.getSet(randomString());
 
-        localCollectionStats = set.getLocalCollectionStats();
+        localCollectionStats = set.getLocalSetStats();
         previousAccessTime = localCollectionStats.getLastAccessTime();
         previousUpdateTime = localCollectionStats.getLastUpdateTime();
     }

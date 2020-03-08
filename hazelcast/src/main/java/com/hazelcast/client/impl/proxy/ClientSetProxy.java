@@ -218,7 +218,7 @@ public class ClientSetProxy<E> extends PartitionSpecificClientProxy implements I
     }
 
     @Override
-    public LocalSetStats getLocalCollectionStats() {
+    public LocalSetStats getLocalSetStats() {
         throw new UnsupportedOperationException("Locality is ambiguous for client!");
     }
 

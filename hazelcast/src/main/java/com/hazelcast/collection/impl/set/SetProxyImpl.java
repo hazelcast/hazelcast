@@ -39,7 +39,7 @@ public class SetProxyImpl<E> extends AbstractCollectionProxyImpl<SetService, E> 
     }
 
     @Override
-    public LocalSetStats getLocalCollectionStats() {
+    public LocalSetStats getLocalSetStats() {
         return getService().getLocalCollectionStats(name);
     }
 }

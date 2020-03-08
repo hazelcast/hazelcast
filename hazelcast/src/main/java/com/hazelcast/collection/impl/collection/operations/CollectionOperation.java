@@ -28,7 +28,7 @@ import com.hazelcast.collection.impl.collection.CollectionService;
 import com.hazelcast.collection.impl.list.ListContainer;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.core.ItemEventType;
-import com.hazelcast.internal.monitor.impl.LocalCollectionStatsImpl;
+import com.hazelcast.internal.monitor.impl.AbstractLocalCollectionStats;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.nio.ObjectDataInput;
@@ -151,7 +151,7 @@ public abstract class CollectionOperation extends Operation
         getLocalCollectionStats().setLastUpdateTime(now);
     }
 
-    private LocalCollectionStatsImpl getLocalCollectionStats() {
+    private AbstractLocalCollectionStats getLocalCollectionStats() {
         CollectionService collectionService = getService();
         return collectionService.getLocalCollectionStats(name);
     }

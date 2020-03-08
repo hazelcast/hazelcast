@@ -168,7 +168,7 @@ public class ListProxyImpl<E> extends AbstractCollectionProxyImpl<ListService, E
     }
 
     @Override
-    public LocalListStats getLocalCollectionStats() {
+    public LocalListStats getLocalListStats() {
         return getService().getLocalCollectionStats(name);
     }
 

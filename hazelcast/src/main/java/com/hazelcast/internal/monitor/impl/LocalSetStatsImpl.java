@@ -26,21 +26,22 @@ import com.hazelcast.internal.util.Clock;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.SET_METRIC_CREATION_TIME;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.SET_METRIC_LAST_ACCESS_TIME;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.SET_METRIC_LAST_UPDATE_TIME;
+import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.util.ConcurrencyUtil.setMax;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
-public class LocalSetStatsImpl extends LocalCollectionStatsImpl implements LocalSetStats {
+public class LocalSetStatsImpl extends AbstractLocalCollectionStats implements LocalSetStats {
 
     protected static final AtomicLongFieldUpdater<LocalSetStatsImpl> LAST_ACCESS_TIME_UPDATER =
             newUpdater(LocalSetStatsImpl.class, LAST_ACCESS_TIME);
     protected static final AtomicLongFieldUpdater<LocalSetStatsImpl> LAST_UPDATE_TIME_UPDATER =
             newUpdater(LocalSetStatsImpl.class, LAST_UPDATE_TIME);
 
-    @Probe(name = SET_METRIC_LAST_ACCESS_TIME)
+    @Probe(name = SET_METRIC_LAST_ACCESS_TIME, unit = MS)
     protected volatile long lastAccessTime;
-    @Probe(name = SET_METRIC_LAST_UPDATE_TIME)
+    @Probe(name = SET_METRIC_LAST_UPDATE_TIME, unit = MS)
     protected volatile long lastUpdateTime;
-    @Probe(name = SET_METRIC_CREATION_TIME)
+    @Probe(name = SET_METRIC_CREATION_TIME, unit = MS)
     protected volatile long creationTime;
 
     public LocalSetStatsImpl() {
