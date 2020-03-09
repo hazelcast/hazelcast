@@ -25,11 +25,11 @@ import com.hazelcast.nio.serialization.TypedByteArrayDeserializer;
 
 import java.io.IOException;
 
-public class ByteArraySerializerAdapter implements SerializerAdapter {
+class ByteArraySerializerAdapter implements SerializerAdapter {
 
     protected final ByteArraySerializer serializer;
 
-    public ByteArraySerializerAdapter(ByteArraySerializer serializer) {
+    ByteArraySerializerAdapter(ByteArraySerializer serializer) {
         this.serializer = serializer;
     }
 
