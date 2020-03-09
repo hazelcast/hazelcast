@@ -155,6 +155,16 @@ public class StringUtilTest extends HazelcastTestSupport {
         }
     }
 
+    @Test
+    public void testStripTrailingSlash() throws Exception {
+        assertEquals(null, StringUtil.stripTrailingSlash(null));
+        assertEquals("", StringUtil.stripTrailingSlash(""));
+        assertEquals("a", StringUtil.stripTrailingSlash("a"));
+        assertEquals("a", StringUtil.stripTrailingSlash("a/"));
+        assertEquals("a/a", StringUtil.stripTrailingSlash("a/a"));
+        assertEquals("a/", StringUtil.stripTrailingSlash("a//"));
+    }
+
     private String[] arr(String... strings) {
         return strings;
     }

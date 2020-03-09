@@ -27,6 +27,8 @@ public interface InputOutputFactory {
 
     BufferObjectDataInput createInput(byte[] buffer, InternalSerializationService service);
 
+    BufferObjectDataInput createInput(byte[] buffer, int offset, InternalSerializationService service);
+
     BufferObjectDataOutput createOutput(int size, InternalSerializationService service);
 
     ByteOrder getByteOrder();

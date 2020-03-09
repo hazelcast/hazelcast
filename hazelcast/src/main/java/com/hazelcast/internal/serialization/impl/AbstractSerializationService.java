@@ -317,6 +317,11 @@ public abstract class AbstractSerializationService implements InternalSerializat
     }
 
     @Override
+    public final BufferObjectDataInput createObjectDataInput(byte[] data, int offset) {
+        return inputOutputFactory.createInput(data, offset, this);
+    }
+
+    @Override
     public final BufferObjectDataInput createObjectDataInput(Data data) {
         return inputOutputFactory.createInput(data, this);
     }
