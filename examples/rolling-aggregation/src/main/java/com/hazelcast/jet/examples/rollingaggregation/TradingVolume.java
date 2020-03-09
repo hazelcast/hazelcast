@@ -18,12 +18,14 @@ package com.hazelcast.jet.examples.rollingaggregation;
 
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.Job;
 import com.hazelcast.jet.examples.tradesource.Trade;
+import com.hazelcast.jet.examples.tradesource.TradeSource;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 
 import static com.hazelcast.jet.aggregate.AggregateOperations.summingLong;
-import static com.hazelcast.jet.examples.tradesource.TradeGenerator.tradeSource;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Showcases the Rolling Aggregation operator of the Pipeline API.
@@ -38,13 +40,12 @@ public class TradingVolume {
 
     private static final String VOLUME_MAP_NAME = "volume-by-stock";
     private static final int TRADES_PER_SEC = 3_000;
-    private static final int MAX_LAG = 1000;
     private static final int NUMBER_OF_TICKERS = 20;
     private static final int DURATION_SECONDS = 60;
 
     private static Pipeline buildPipeline() {
         Pipeline p = Pipeline.create();
-        p.readFrom(tradeSource(NUMBER_OF_TICKERS, TRADES_PER_SEC, MAX_LAG, DURATION_SECONDS))
+        p.readFrom(TradeSource.tradeStream(NUMBER_OF_TICKERS, TRADES_PER_SEC))
          .withoutTimestamps()
          .groupingKey(Trade::getTicker)
          .rollingAggregate(summingLong(Trade::getQuantity))
@@ -52,11 +53,14 @@ public class TradingVolume {
         return p;
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         JetInstance jet = Jet.bootstrappedInstance();
         new TradingVolumeGui(jet.getMap(VOLUME_MAP_NAME));
         try {
-            jet.newJob(buildPipeline()).join();
+            Job job = jet.newJob(buildPipeline());
+            SECONDS.sleep(DURATION_SECONDS);
+            job.cancel();
+            job.join();
         } finally {
             Jet.shutdownAll();
         }

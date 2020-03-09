@@ -78,7 +78,7 @@ public final class TradingVolumeGui {
             long x = TimeUnit.MILLISECONDS.toSeconds(tse.end() - first.get());
             double y = tse.result() / SCALE_Y;
             int col = dataset.getColumnIndex(x);
-            if (col < finalResultFlags.length) {
+            if (col >= 0 && col < finalResultFlags.length) {
                 if (finalResultFlags[col]) {
                     return;
                 }

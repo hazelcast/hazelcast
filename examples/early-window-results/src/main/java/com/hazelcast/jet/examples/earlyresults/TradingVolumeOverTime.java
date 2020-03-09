@@ -18,8 +18,9 @@ package com.hazelcast.jet.examples.earlyresults;
 
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.Job;
 import com.hazelcast.jet.examples.tradesource.Trade;
-import com.hazelcast.jet.examples.tradesource.TradeGenerator;
+import com.hazelcast.jet.examples.tradesource.TradeSource;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 
@@ -54,11 +55,11 @@ public final class TradingVolumeOverTime {
     private static final String VOLUME_LIST_NAME = "trading-volume";
     private static final int TRADES_PER_SEC = 3_000;
     private static final int MAX_LAG = 5000;
-    private static final int DURATION_SECONDS = 60;
+    private static final int DURATION_SECONDS = 55;
 
     private static Pipeline buildPipeline() {
         Pipeline p = Pipeline.create();
-        p.readFrom(TradeGenerator.tradeSource(1, TRADES_PER_SEC, MAX_LAG, DURATION_SECONDS))
+        p.readFrom(TradeSource.tradeStream(1, TRADES_PER_SEC, MAX_LAG))
          .withNativeTimestamps(MAX_LAG)
          .window(tumbling(SECONDS.toMillis(2))
                  // comment out this line to see how the chart behaves without early results:
@@ -69,11 +70,14 @@ public final class TradingVolumeOverTime {
         return p;
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         JetInstance jet = Jet.bootstrappedInstance();
         new TradingVolumeGui(jet.getList(VOLUME_LIST_NAME));
         try {
-            jet.newJob(buildPipeline()).join();
+            Job job = jet.newJob(buildPipeline());
+            SECONDS.sleep(DURATION_SECONDS);
+            job.cancel();
+            job.join();
         } finally {
             Jet.shutdownAll();
         }
