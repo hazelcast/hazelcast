@@ -36,8 +36,8 @@
         <org.springframework.version>4.3.23.RELEASE</org.springframework.version>
         <jsr250.api.version>1.0</jsr250.api.version>
         <maven-artifact.version>3.6.0</maven-artifact.version>
-        <hazelcast.latest.version>3.8</hazelcast.latest.version>
-        <hazelcast-hibernate5.version>1.4.0-SNAPSHOT</hazelcast-hibernate5.version>
+        <hazelcast.latest.version>4.0</hazelcast.latest.version>
+        <hazelcast-hibernate5.version>2.0.0</hazelcast-hibernate5.version>
     </properties>
 
     <build>
