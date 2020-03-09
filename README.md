@@ -1,6 +1,6 @@
 # Table of Contents
 
-* [Discovery Implementation for Azure Services](#discovery-implementation-for-azure-services)
+* [Introduction](#hazelcast-discovery-plugin-for-microsoft-azure)
 * [Getting Started](#getting-started)
 * [Compiling with Gradle](#compiling-with-gradle)
 * [Using the Plugin](#using-the-plugin)
