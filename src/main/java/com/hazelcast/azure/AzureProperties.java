@@ -83,8 +83,9 @@ enum AzureProperties {
     PORT("hz-port", STRING, true, "5701-5703"),
 
     /**
-     * Property to enable/disable usage of Azure Instance Metadata service when retrieving current configuration parameters. Should be
-     * set to false when using the plugin outside of Azure Environment or Azure Instance Metadata service is not available.
+     * Property to enable/disable usage of Azure Instance Metadata service when retrieving current configuration parameters.
+     * Should be set to false when using the plugin outside of Azure Environment or Azure Instance Metadata service is not
+     * available.
      * <p/>
      * When set to <code>false<code/>, ALL of <code>tenantId</code>, <code>clientId</code>, <code>clientSecret</code>,
      * <code>subscriptionId</code>, and <code>resourceGroup</code> properties should be configured. When set to <code>true<code>,
