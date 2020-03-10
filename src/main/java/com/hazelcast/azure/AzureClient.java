@@ -62,7 +62,7 @@ class AzureClient {
     }
 
     private String resourceGroupFromConfigOrMetadataApi() {
-        if (!azureConfig.isUseInstanceMetadata()) {
+        if (!azureConfig.isInstanceMetadataAvailable()) {
             return azureConfig.getResourceGroup();
         }
         LOGGER.finest("Property 'resourceGroup' not configured, fetching from the VM metadata service");
@@ -70,7 +70,7 @@ class AzureClient {
     }
 
     private String scaleSetFromConfigOrMetadataApi() {
-        if (!azureConfig.isUseInstanceMetadata()) {
+        if (!azureConfig.isInstanceMetadataAvailable()) {
             return azureConfig.getScaleSet();
         }
         LOGGER.finest("Property 'scaleSet' not configured, fetching from the VM metadata service");
@@ -91,7 +91,7 @@ class AzureClient {
     }
 
     private String fetchAccessToken() {
-        if (azureConfig.isUseInstanceMetadata()) {
+        if (azureConfig.isInstanceMetadataAvailable()) {
             return azureMetadataApi.accessToken();
         } else {
             return azureAuthenticator.refreshAccessToken(azureConfig.getTenantId(), azureConfig.getClientId(),

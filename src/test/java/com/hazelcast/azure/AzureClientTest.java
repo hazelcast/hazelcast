@@ -65,7 +65,7 @@ public class AzureClientTest {
         // given
         given(azureComputeApi.instances(SUBSCRIPTION_ID, RESOURCE_GROUP, SCALE_SET, null, ACCESS_TOKEN)).willReturn(ADDRESSES);
 
-        AzureConfig azureConfig = AzureConfig.builder().setUseInstanceMetadata(true).build();
+        AzureConfig azureConfig = AzureConfig.builder().setInstanceMetadataAvailable(true).build();
         AzureClient azureClient = new AzureClient(azureMetadataApi, azureComputeApi, azureAuthenticator, azureConfig);
 
         // when
@@ -80,7 +80,7 @@ public class AzureClientTest {
         // given
         given(azureComputeApi.instances(SUBSCRIPTION_ID, RESOURCE_GROUP, SCALE_SET, TAG, ACCESS_TOKEN)).willReturn(ADDRESSES);
 
-        AzureConfig azureConfig = AzureConfig.builder().setUseInstanceMetadata(true).setTag(TAG).build();
+        AzureConfig azureConfig = AzureConfig.builder().setInstanceMetadataAvailable(true).setTag(TAG).build();
         AzureClient azureClient = new AzureClient(azureMetadataApi, azureComputeApi, azureAuthenticator, azureConfig);
 
         // when
@@ -109,7 +109,7 @@ public class AzureClientTest {
                                        .setSubscriptionId(subscriptionId)
                                        .setResourceGroup(resourceGroup)
                                        .setScaleSet(scaleSet)
-                                       .setUseInstanceMetadata(false)
+                                       .setInstanceMetadataAvailable(false)
                                        .setTag(TAG)
                                        .build();
         AzureClient azureClient = new AzureClient(azureMetadataApi, azureComputeApi, azureAuthenticator, azureConfig);
@@ -127,7 +127,7 @@ public class AzureClientTest {
         String location = "location-1";
         given(azureMetadataApi.location()).willReturn(location);
         given(azureMetadataApi.availabilityZone()).willReturn(ZONE);
-        AzureConfig azureConfig = AzureConfig.builder().setUseInstanceMetadata(true).build();
+        AzureConfig azureConfig = AzureConfig.builder().setInstanceMetadataAvailable(true).build();
         AzureClient azureClient = new AzureClient(azureMetadataApi, azureComputeApi, azureAuthenticator, azureConfig);
 
         // when

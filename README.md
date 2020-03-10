@@ -2,7 +2,6 @@
 
 * [Introduction](#hazelcast-discovery-plugin-for-microsoft-azure)
 * [Getting Started](#getting-started)
-* [Compiling with Gradle](#compiling-with-gradle)
 * [Using the Plugin](#using-the-plugin)
     * [Configuration when Azure Instance Metadata Service is available](#configuration-when-azure-instance-metadata-service-is-available)
     * [Configuration when Azure Instance Metadata Service is NOT available](#configuration-when-azure-instance-metadata-service-is-not-available)
@@ -44,19 +43,11 @@ For Maven:
 </dependencies>
 ```
 
-# Compiling with Gradle
-
-Run the following command to compile the plugin:
-
-```gradle
-compile 'com.hazelcast.azure:hazelcast-azure:${hazelcast-azure-version}'
-```
-
 Check the [releases](https://github.com/hazelcast/hazelcast-azure/releases) for the latest version.
 
 # Using the Plugin
 
-Firstly, please ensure that you have added the package `hazelcast-azure` to your Maven or Gradle configuration as mentioned above. 
+Firstly, please ensure that you have added the `hazelcast-azure` dependency to your Maven or Gradle configuration as mentioned above. 
 
 ## Configuration when Azure Instance Metadata Service is available
 
@@ -138,7 +129,7 @@ If so, then Hazelcast instances should be configured with the properties as show
     <join>
       <multicast enabled="false"/>
       <azure enabled="true">
-        <use-instance-metadata>false</use-instance-metadata>
+        <instance-metadata-available>false</instance-metadata-available>
         <client-id>CLIENT_ID</client-id>
         <client-secret>CLIENT_SECRET</client-secret>
         <tenant-id>TENANT_ID</tenant-id>
@@ -161,7 +152,7 @@ hazelcast:
         enabled: false
       azure:
         enabled: true
-        use-instance-metadata: false
+        instance-metadata-available: false
         client-id: CLIENT_ID
         tenant-id: TENANT_ID
         client-secret: CLIENT_SECRET
@@ -173,7 +164,7 @@ hazelcast:
 ```
 You will need to setup [Azure Active Directory Service Principal credentials](https://azure.microsoft.com/en-us/documentation/articles/resource-group-create-service-principal-portal/) for your Azure Subscription to be able to use these properties. 
 
-- `use-instance-metadata` - This property should be configured as `false` in order to be able to use the following properties. It is `true` by default.
+- `instance-metadata-available` - This property should be configured as `false` in order to be able to use the following properties. It is `true` by default.
 - `client-id` - The Azure Active Directory Service Principal client ID.
 - `client-secret` - The Azure Active Directory Service Principal client secret.
 - `tenant-id` - The Azure Active Directory tenant ID.

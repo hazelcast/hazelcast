@@ -79,7 +79,7 @@ public class AzureDiscoveryStrategyTest {
         properties.put("resource-group", "resource-group-1");
         properties.put("scale-set", "scale-set-1");
         properties.put("tag", "tag-1=value-1");
-        properties.put("use-instance-metadata", Boolean.FALSE);
+        properties.put("instance-metadata-available", Boolean.FALSE);
 
         // when
         new AzureDiscoveryStrategy(properties);

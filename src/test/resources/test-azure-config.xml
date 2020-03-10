@@ -38,7 +38,7 @@
                         <property name="resource-group">RESOURCE_GROUP</property>
                         <property name="scale-set">SCALE_SET</property>
                         <property name="tag">TAG_KEY=HZLCAST001</property>
-                        <property name="use-instance-metadata">false</property>
+                        <property name="instance-metadata-available">false</property>
                     </properties>
                 </discovery-strategy>
             </discovery-strategies>

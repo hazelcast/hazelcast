@@ -28,40 +28,40 @@ import static com.hazelcast.config.properties.PropertyTypeConverter.STRING;
 enum AzureProperties {
 
     /**
-     * The tenant-id of the Azure account. This property can be used only if <code>use-instance-metadata</code> property
+     * The tenant-id of the Azure account. This property can be used only if <code>instance-metadata-available</code> property
      * is set to <code>false</code>. Otherwise, the authentication token will be retrieved the Azure VM instance metadata service.
      */
     TENANT_ID("tenant-id", STRING, true),
 
     /**
-     * The client-id of the Azure account. This property can be used only if <code>use-instance-metadata</code> property
+     * The client-id of the Azure account. This property can be used only if <code>instance-metadata-available</code> property
      * is set to <code>false</code>. Otherwise, the authentication token will be retrieved the Azure VM instance metadata service.
      */
     CLIENT_ID("client-id", STRING, true),
 
     /**
-     * The client-secret of the Azure account. This property can be used only if <code>use-instance-metadata</code> property
+     * The client-secret of the Azure account. This property can be used only if <code>instance-metadata-available</code> property
      * is set to <code>false</code>. Otherwise, the authentication token will be retrieved the Azure VM instance metadata service.
      */
     CLIENT_SECRET("client-secret", STRING, true),
 
     /**
      * ID of the Azure subscription that VMs/SM Scale Set created.
-     * This property can be used only if <code>use-instance-metadata</code> property is set to <code>false</code>.
+     * This property can be used only if <code>instance-metadata-available</code> property is set to <code>false</code>.
      * Otherwise, the <code>subscription-id</code> will be retrieved the Azure VM instance metadata service.
      */
     SUBSCRIPTION_ID("subscription-id", STRING, true),
 
     /**
      * Name of the Azure resource group that VMs/SM Scale Set created.
-     * This property can be used only if <code>use-instance-metadata</code> property is set to <code>false</code>.
+     * This property can be used only if <code>instance-metadata-available</code> property is set to <code>false</code>.
      * Otherwise, the <code>resource-group</code> will be retrieved the Azure VM instance metadata service.
      */
     RESOURCE_GROUP("resource-group", STRING, true),
 
     /**
      * Name of the Azure VM scale set that VMs are created.
-     * This property can be used only if <code>use-instance-metadata</code> property is set to <code>false</code>.
+     * This property can be used only if <code>instance-metadata-available</code> property is set to <code>false</code>.
      * Otherwise, the <code>scale-set</code> will be retrieved the Azure VM instance metadata service.
      * <p>
      * Please note that the discovery will be performed only in this scale-set when this property has a value.
@@ -94,7 +94,7 @@ enum AzureProperties {
      * <p/>
      * The default value is <code>true</code>.
      */
-    USE_INSTANCE_METADATA("use-instance-metadata", BOOLEAN, true, Boolean.TRUE);
+    INSTANCE_METADATA_AVAILABLE("instance-metadata-available", BOOLEAN, true, Boolean.TRUE);
 
     private final PropertyDefinition propertyDefinition;
     private final Comparable defaultValue;

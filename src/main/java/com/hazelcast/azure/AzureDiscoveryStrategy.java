@@ -40,7 +40,7 @@ import static com.hazelcast.azure.AzureProperties.RESOURCE_GROUP;
 import static com.hazelcast.azure.AzureProperties.SCALE_SET;
 import static com.hazelcast.azure.AzureProperties.SUBSCRIPTION_ID;
 import static com.hazelcast.azure.AzureProperties.TENANT_ID;
-import static com.hazelcast.azure.AzureProperties.USE_INSTANCE_METADATA;
+import static com.hazelcast.azure.AzureProperties.INSTANCE_METADATA_AVAILABLE;
 import static com.hazelcast.azure.Utils.isAllFilled;
 import static com.hazelcast.azure.Utils.isAnyFilled;
 
@@ -89,9 +89,9 @@ public class AzureDiscoveryStrategy extends AbstractDiscoveryStrategy {
                                              .setHzPort(
                                                      new PortRange((String) getOrDefault(PORT.getDefinition(),
                                                              PORT.getDefaultValue())))
-                                             .setUseInstanceMetadata(
-                                                     (Boolean) getOrDefault(USE_INSTANCE_METADATA.getDefinition(),
-                                                             USE_INSTANCE_METADATA.getDefaultValue()))
+                                             .setInstanceMetadataAvailable(
+                                                     (Boolean) getOrDefault(INSTANCE_METADATA_AVAILABLE.getDefinition(),
+                                                             INSTANCE_METADATA_AVAILABLE.getDefaultValue()))
                                              .build();
         validate(azureConfig);
         return azureConfig;
@@ -110,8 +110,8 @@ public class AzureDiscoveryStrategy extends AbstractDiscoveryStrategy {
     }
 
     private void validate(AzureConfig azureConfig) {
-        if (!azureConfig.isUseInstanceMetadata()) {
-            LOGGER.info("useInstanceMetadata is set to false, validating other properties...");
+        if (!azureConfig.isInstanceMetadataAvailable()) {
+            LOGGER.info("instance-metadata-available is set to false, validating other properties...");
             if (!isAllFilled(azureConfig.getTenantId(),
                     azureConfig.getClientId(),
                     azureConfig.getClientSecret(),
