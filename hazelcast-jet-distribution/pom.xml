@@ -95,7 +95,9 @@
                         <dependencySourceInclude>com.hazelcast:*</dependencySourceInclude>
                         <dependencySourceInclude>com.hazelcast.jet:*</dependencySourceInclude>
                     </dependencySourceIncludes>
-                    <excludePackageNames>*.picocli.*:*.com.fasterxml:*.org.snakeyaml</excludePackageNames>
+                    <excludePackageNames>
+                        *.impl:*.impl.*:*.internal:*.internal.*:*.picocli:*.picocli.*:*.com.fasterxml:*.com.fasterxml.*:*.org.snakeyaml:*.org.snakeyaml.*
+                    </excludePackageNames>
                     <additionalDependencies>
                         <!-- provided deps are required for javadoc generation -->
                         <dependency>
@@ -152,6 +154,26 @@
                             <groupId>javax.annotation</groupId>
                             <artifactId>javax.annotation-api</artifactId>
                             <version>${jsr250.api.version}</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>org.osgi</groupId>
+                            <artifactId>org.osgi.core</artifactId>
+                            <version>${osgi.version}</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>log4j</groupId>
+                            <artifactId>log4j</artifactId>
+                            <version>${log4j.version}</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>org.apache.logging.log4j</groupId>
+                            <artifactId>log4j-api</artifactId>
+                            <version>${log4j2.version}</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>org.slf4j</groupId>
+                            <artifactId>slf4j-api</artifactId>
+                            <version>${slf4j.api.version}</version>
                         </dependency>
                     </additionalDependencies>
                 </configuration>
@@ -214,7 +236,6 @@
             <artifactId>hazelcast-jet-examples-hello-world</artifactId>
             <version>${project.version}</version>
         </dependency>
-
     </dependencies>
 </project>
 
