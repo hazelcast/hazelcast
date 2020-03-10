@@ -91,6 +91,14 @@ public final class RexToExpression {
         // No-op.
     }
 
+    /**
+     * Converts a {@link RexCall} to {@link Expression}.
+     *
+     * @param call the call to convert.
+     * @return the resulting expression.
+     * @throws HazelcastSqlException if the given {@link RexCall} can't be
+     *                               converted.
+     */
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:MethodLength", "checkstyle:ReturnCount",
             "checkstyle:NPathComplexity"})
     public static Expression<?> convertCall(RexCall call, List<Expression<?>> operands) {
