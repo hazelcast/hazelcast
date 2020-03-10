@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.expression.datetime;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.expression.UniCallExpression;
+import com.hazelcast.sql.impl.expression.UniExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
@@ -30,7 +30,7 @@ import java.util.Objects;
 /**
  * Family of date part functions.
  */
-public class DatePartFunction extends UniCallExpression<Integer> {
+public class DatePartFunction extends UniExpression<Integer> {
     /** Unit. */
     private DatePartUnit unit;
 

@@ -18,53 +18,44 @@ package com.hazelcast.sql.impl.expression;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.io.IOException;
 import java.util.Objects;
 
-public abstract class BiCallExpressionWithType<T> extends BiCallExpression<T> {
-    /** Result type. */
-    protected QueryDataType resultType;
+/**
+ * Expression with two operands.
+ */
+public abstract class BiExpression<T> implements Expression<T> {
+    /** First operand. */
+    protected Expression<?> operand1;
 
-    protected BiCallExpressionWithType() {
+    /** Second operand. */
+    protected Expression<?> operand2;
+
+    protected BiExpression() {
         // No-op.
     }
 
-    // TODO: Remove this after refactoring.
-    protected BiCallExpressionWithType(Expression<?> operand1, Expression<?> operand2) {
+    protected BiExpression(Expression<?> operand1, Expression<?> operand2) {
         this.operand1 = operand1;
         this.operand2 = operand2;
-    }
-
-    protected BiCallExpressionWithType(Expression<?> operand1, Expression<?> operand2, QueryDataType resultType) {
-        this.operand1 = operand1;
-        this.operand2 = operand2;
-        this.resultType = resultType;
-    }
-
-    @Override
-    public QueryDataType getType() {
-        return resultType;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        super.writeData(out);
-
-        out.writeObject(resultType);
+        out.writeObject(operand1);
+        out.writeObject(operand2);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        super.readData(in);
-
-        resultType = in.readObject();
+        operand1 = in.readObject();
+        operand2 = in.readObject();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(operand1, operand2, resultType);
+        return Objects.hash(operand1, operand2);
     }
 
     @Override
@@ -77,14 +68,14 @@ public abstract class BiCallExpressionWithType<T> extends BiCallExpression<T> {
             return false;
         }
 
-        BiCallExpressionWithType<?> that = (BiCallExpressionWithType<?>) o;
+        BiExpression<?> that = (BiExpression<?>) o;
 
-        return Objects.equals(operand1, that.operand1) && Objects.equals(operand2, that.operand2)
-                   && Objects.equals(resultType, that.resultType);
+        return Objects.equals(operand1, that.operand1) && Objects.equals(operand2, that.operand2);
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{operand1=" + operand1 + ", operand2=" + operand2 + ", resType=" + resultType + '}';
+        return getClass().getSimpleName() + "{operand1=" + operand1 + ", operand2=" + operand2 + '}';
     }
+
 }

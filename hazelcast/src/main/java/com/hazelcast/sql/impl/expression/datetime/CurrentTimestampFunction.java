@@ -17,13 +17,13 @@
 package com.hazelcast.sql.impl.expression.datetime;
 
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.expression.UniCallExpression;
+import com.hazelcast.sql.impl.expression.UniExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.time.OffsetDateTime;
 
-public class CurrentTimestampFunction extends UniCallExpression<OffsetDateTime> {
+public class CurrentTimestampFunction extends UniExpression<OffsetDateTime> {
     public CurrentTimestampFunction() {
         // No-op.
     }

@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.expression.math;
 
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.impl.expression.BiCallExpression;
+import com.hazelcast.sql.impl.expression.BiExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -25,7 +25,7 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 /**
  * ATAN2 function.
  */
-public class Atan2Function extends BiCallExpression<Double> {
+public class Atan2Function extends BiExpression<Double> {
     public Atan2Function() {
         // No-op.
     }

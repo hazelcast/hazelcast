@@ -20,7 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.expression.UniCallExpression;
+import com.hazelcast.sql.impl.expression.UniExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
@@ -30,7 +30,7 @@ import java.io.IOException;
  * Family of functions which accept a single double operand and return double result:
  *     COS, SIN, TAN, COT, ACOS, ASIN, ATAN, SQRT, EXP, LN, LOG10, DEGREES, RADIANS
  */
-public class DoubleFunction extends UniCallExpression<Double> {
+public class DoubleFunction extends UniExpression<Double> {
     /** Function type. */
     private DoubleFunctionType type;
 

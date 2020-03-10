@@ -17,14 +17,14 @@
 package com.hazelcast.sql.impl.expression.string;
 
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.expression.TriCallExpression;
+import com.hazelcast.sql.impl.expression.TriExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 /**
  * SUBSTRING string function.
  */
-public class SubstringFunction extends TriCallExpression<String> {
+public class SubstringFunction extends TriExpression<String> {
     public SubstringFunction() {
         // No-op.
     }

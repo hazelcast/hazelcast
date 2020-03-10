@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.expression.string;
 
-import com.hazelcast.sql.impl.expression.BiCallExpression;
+import com.hazelcast.sql.impl.expression.BiExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -24,7 +24,7 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 /**
  * A function which accepts a string, and return another string.
  */
-public class ConcatFunction extends BiCallExpression<String> {
+public class ConcatFunction extends BiExpression<String> {
     public ConcatFunction() {
         // No-op.
     }

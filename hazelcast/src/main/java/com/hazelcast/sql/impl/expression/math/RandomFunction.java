@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.expression.math;
 
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.expression.UniCallExpression;
+import com.hazelcast.sql.impl.expression.UniExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
@@ -28,7 +28,7 @@ import java.util.concurrent.ThreadLocalRandom;
 /**
  * Random function implementation.
  */
-public class RandomFunction extends UniCallExpression<Double> {
+public class RandomFunction extends UniExpression<Double> {
     public RandomFunction() {
         // No-op.
     }

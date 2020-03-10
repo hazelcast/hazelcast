@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.expression.math;
 
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.impl.expression.BiCallExpressionWithType;
+import com.hazelcast.sql.impl.expression.BiExpressionWithType;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -28,7 +28,7 @@ import java.math.RoundingMode;
 /**
  * Implementation of ROUND/TRUNCATE functions.
  */
-public abstract class RoundTruncateFunction<T> extends BiCallExpressionWithType<T> {
+public abstract class RoundTruncateFunction<T> extends BiExpressionWithType<T> {
     public RoundTruncateFunction() {
         // No-op.
     }

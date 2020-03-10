@@ -18,44 +18,50 @@ package com.hazelcast.sql.impl.expression;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.io.IOException;
 import java.util.Objects;
 
 /**
- * Expression with two operands.
+ * Expression with result type field.
  */
-public abstract class BiCallExpression<T> implements Expression<T> {
-    /** First operand. */
-    protected Expression<?> operand1;
+public abstract class UniExpressionWithType<T> extends UniExpression<T> {
+    /** Result type. */
+    protected QueryDataType resultType;
 
-    /** Second operand. */
-    protected Expression<?> operand2;
-
-    protected BiCallExpression() {
+    protected UniExpressionWithType() {
         // No-op.
     }
 
-    protected BiCallExpression(Expression<?> operand1, Expression<?> operand2) {
-        this.operand1 = operand1;
-        this.operand2 = operand2;
+    protected UniExpressionWithType(Expression<?> operand, QueryDataType resultType) {
+        this.operand = operand;
+        this.resultType = resultType;
     }
 
     @Override
+    public QueryDataType getType() {
+        return resultType;
+    }
+
+
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeObject(operand1);
-        out.writeObject(operand2);
+        super.writeData(out);
+
+        out.writeObject(resultType);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        operand1 = in.readObject();
-        operand2 = in.readObject();
+        super.readData(in);
+
+        resultType = in.readObject();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(operand1, operand2);
+        return Objects.hash(super.hashCode(), resultType);
     }
 
     @Override
@@ -68,14 +74,17 @@ public abstract class BiCallExpression<T> implements Expression<T> {
             return false;
         }
 
-        BiCallExpression<?> that = (BiCallExpression<?>) o;
+        if (!super.equals(o)) {
+            return false;
+        }
 
-        return Objects.equals(operand1, that.operand1) && Objects.equals(operand2, that.operand2);
+        UniExpressionWithType<?> that = (UniExpressionWithType<?>) o;
+
+        return resultType.equals(that.resultType);
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{operand1=" + operand1 + ", operand2=" + operand2 + '}';
+        return getClass().getSimpleName() + "{operand=" + operand + ", resultType=" + resultType + '}';
     }
-
 }

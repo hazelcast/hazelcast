@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.expression.math;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
 import com.hazelcast.sql.impl.type.SqlYearMonthInterval;
-import com.hazelcast.sql.impl.expression.BiCallExpressionWithType;
+import com.hazelcast.sql.impl.expression.BiExpressionWithType;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -33,7 +33,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 
-public class PlusFunction<T> extends BiCallExpressionWithType<T> {
+public class PlusFunction<T> extends BiExpressionWithType<T> {
     public PlusFunction() {
         // No-op.
     }

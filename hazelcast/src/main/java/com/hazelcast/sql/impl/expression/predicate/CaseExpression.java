@@ -25,38 +25,34 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 
 import java.io.IOException;
-import java.util.List;
 
 /**
  * CASE-WHEN expression.
  */
 public class CaseExpression<T> implements Expression<T> {
-    /** Conditions. */
+
     private Expression<Boolean>[] conditions;
-
-    /** Results. */
     private Expression<?>[] results;
-
-    /** Return type. */
     private QueryDataType resultType;
 
+    @SuppressWarnings("unused")
     public CaseExpression() {
         // No-op.
     }
 
-    private CaseExpression(Expression<Boolean>[] conditions, Expression<Boolean>[] results, QueryDataType resultType) {
+    private CaseExpression(Expression<Boolean>[] conditions, Expression<?>[] results, QueryDataType resultType) {
         this.conditions = conditions;
         this.results = results;
         this.resultType = resultType;
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    public static CaseExpression<?> create(List<Expression<?>> expressions) {
+    @SuppressWarnings("unchecked")
+    public static CaseExpression<?> create(Expression<?>[] expressions) {
         // Split conditions and expressions.
         assert expressions != null;
-        assert expressions.size() % 2 == 1;
+        assert expressions.length % 2 == 1;
 
-        int conditionCount = expressions.size() / 2;
+        int conditionCount = expressions.length / 2;
 
         Expression<Boolean>[] conditions = new Expression[conditionCount];
         Expression<?>[] results = new Expression[conditionCount + 1];
@@ -64,12 +60,12 @@ public class CaseExpression<T> implements Expression<T> {
         int idx = 0;
 
         for (int i = 0; i < conditionCount; i++) {
-            conditions[i] = (Expression<Boolean>) expressions.get(idx++);
-            results[i] = expressions.get(idx++);
+            conditions[i] = (Expression<Boolean>) expressions[idx++];
+            results[i] = expressions[idx++];
         }
 
         // Last expression might be null.
-        results[results.length - 1] = expressions.size() == idx + 1 ? expressions.get(idx) : null;
+        results[results.length - 1] = expressions.length == idx + 1 ? expressions[idx] : null;
 
         // Determine the result type and perform coercion.
         QueryDataType resType = compare(results);
@@ -79,7 +75,7 @@ public class CaseExpression<T> implements Expression<T> {
         }
 
         // Done.
-        return new CaseExpression(conditions, results, resType);
+        return new CaseExpression<>(conditions, results, resType);
     }
 
     @SuppressWarnings("unchecked")
@@ -161,4 +157,5 @@ public class CaseExpression<T> implements Expression<T> {
 
         return winner;
     }
+
 }

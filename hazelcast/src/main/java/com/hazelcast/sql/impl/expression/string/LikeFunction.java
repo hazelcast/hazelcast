@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.expression.string;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.expression.TriCallExpression;
+import com.hazelcast.sql.impl.expression.TriExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
@@ -27,7 +27,7 @@ import java.io.IOException;
 /**
  * LIKE string function.
  */
-public class LikeFunction extends TriCallExpression<Boolean> {
+public class LikeFunction extends TriExpression<Boolean> {
     /** Executor. */
     private transient LikeFunctionExecutor like = new LikeFunctionExecutor();
 

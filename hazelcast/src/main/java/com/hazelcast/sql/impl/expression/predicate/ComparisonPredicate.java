@@ -21,7 +21,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
 import com.hazelcast.sql.impl.type.SqlYearMonthInterval;
-import com.hazelcast.sql.impl.expression.BiCallExpression;
+import com.hazelcast.sql.impl.expression.BiExpression;
 import com.hazelcast.sql.impl.expression.CastExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.Row;
@@ -41,7 +41,7 @@ import java.util.Objects;
 /**
  * Comparison predicates: {@code =}, {@code <>}, {@code <}, {@code <=}, {@code >}, {@code >=}.
  */
-public class ComparisonPredicate extends BiCallExpression<Boolean> {
+public class ComparisonPredicate extends BiExpression<Boolean> {
     /** Data type which is used for comparison. */
     private QueryDataType type;
 
