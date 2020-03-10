@@ -96,7 +96,7 @@
                         <dependencySourceInclude>com.hazelcast.jet:*</dependencySourceInclude>
                     </dependencySourceIncludes>
                     <excludePackageNames>
-                        *.impl:*.impl.*:*.internal:*.internal.*:*.picocli:*.picocli.*:*.com.fasterxml:*.com.fasterxml.*:*.org.snakeyaml:*.org.snakeyaml.*
+                        *.impl:*.impl.*:*.internal:*.internal.*:*.picocli:*.picocli.*:*.com.fasterxml:*.com.fasterxml.*:*.org.snakeyaml:*.org.snakeyaml.*:*.io.github.*
                     </excludePackageNames>
                     <additionalDependencies>
                         <!-- provided deps are required for javadoc generation -->
@@ -134,6 +134,11 @@
                             <groupId>info.picocli</groupId>
                             <artifactId>picocli</artifactId>
                             <version>${picocli.version}</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>io.github.classgraph</groupId>
+                            <artifactId>classgraph</artifactId>
+                            <version>${classgraph.version}</version>
                         </dependency>
                         <dependency>
                             <groupId>org.apache.hadoop</groupId>
