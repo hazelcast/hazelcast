@@ -25,20 +25,20 @@ import com.hazelcast.spi.WaitNotifyKey;
 
 public final class GetOperation extends ReadonlyKeyBasedMapOperation implements BlockingOperation {
 
-    private Data result;
+    private Object result;
 
     public GetOperation() {
     }
 
     public GetOperation(String name, Data dataKey) {
         super(name, dataKey);
-
         this.dataKey = dataKey;
     }
 
     @Override
     public void run() {
-        result = mapServiceContext.toData(recordStore.get(dataKey, false, getCallerAddress()));
+        Object value = this.recordStore.get(this.dataKey, false, getCallerAddress());
+        this.result = (value instanceof com.hazelcast.map.Immutable) ? value : this.mapServiceContext.toData(value);
     }
 
     @Override
@@ -65,7 +65,7 @@ public final class GetOperation extends ReadonlyKeyBasedMapOperation implements 
     }
 
     @Override
-    public Data getResponse() {
+    public Object getResponse() {
         return result;
     }
 

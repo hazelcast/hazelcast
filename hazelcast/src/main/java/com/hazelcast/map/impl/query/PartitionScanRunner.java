@@ -142,11 +142,11 @@ public class PartitionScanRunner {
         while (resultList.size() < fetchSize && lastIndex >= 0) {
             final MapEntriesWithCursor cursor = recordStore.fetchEntries(lastIndex, fetchSize - resultList.size());
             lastIndex = cursor.getNextTableIndexToReadFrom();
-            final Collection<? extends Entry<Data, Data>> entries = cursor.getBatch();
+            final Collection<? extends Entry<Data, Object>> entries = cursor.getBatch();
             if (entries.isEmpty()) {
                 break;
             }
-            for (Entry<Data, Data> entry : entries) {
+            for (Entry<Data, Object> entry : entries) {
                 QueryableEntry queryEntry = new LazyMapEntry(entry.getKey(), entry.getValue(), serializationService, extractors);
                 if (predicate.apply(queryEntry)) {
                     resultList.add(queryEntry);

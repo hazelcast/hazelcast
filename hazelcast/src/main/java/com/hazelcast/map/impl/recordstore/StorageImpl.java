@@ -170,11 +170,14 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
     public MapEntriesWithCursor fetchEntries(int tableIndex, int size, SerializationService serializationService) {
         List<Map.Entry<Data, R>> entries = new ArrayList<Map.Entry<Data, R>>(size);
         int newTableIndex = records.fetchEntries(tableIndex, size, entries);
-        List<Map.Entry<Data, Data>> entriesData = new ArrayList<Map.Entry<Data, Data>>(entries.size());
+        List<Map.Entry<Data, Object>> entriesData = new ArrayList<Map.Entry<Data, Object>>(entries.size());
         for (Map.Entry<Data, R> entry : entries) {
-            R record = entry.getValue();
-            Data dataValue = serializationService.toData(record.getValue());
-            entriesData.add(new AbstractMap.SimpleEntry<Data, Data>(entry.getKey(), dataValue));
+            R record = (R)(Record)entry.getValue();
+            Object value = record.getValue();
+            Object dataValue = (value instanceof com.hazelcast.map.Immutable) ?
+                    value :
+                    serializationService.toData(value);
+            entriesData.add(new AbstractMap.SimpleEntry((Data)entry.getKey(), dataValue));
         }
         return new MapEntriesWithCursor(entriesData, newTableIndex);
     }

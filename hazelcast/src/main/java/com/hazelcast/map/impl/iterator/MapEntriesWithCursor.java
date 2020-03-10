@@ -33,26 +33,31 @@ import java.util.Map.Entry;
  *
  * @see com.hazelcast.map.impl.proxy.MapProxyImpl#iterator
  */
-public class MapEntriesWithCursor extends AbstractCursor<Map.Entry<Data, Data>> {
+public class MapEntriesWithCursor extends AbstractCursor<Map.Entry<Data, Object>> {
 
     public MapEntriesWithCursor() {
     }
 
-    public MapEntriesWithCursor(List<Map.Entry<Data, Data>> entries, int nextTableIndexToReadFrom) {
+    public MapEntriesWithCursor(List<Map.Entry<Data, Object>> entries, int nextTableIndexToReadFrom) {
         super(entries, nextTableIndexToReadFrom);
     }
 
     @Override
-    void writeElement(ObjectDataOutput out, Entry<Data, Data> entry) throws IOException {
-        out.writeData(entry.getKey());
-        out.writeData(entry.getValue());
+    void writeElement(ObjectDataOutput out, Entry<Data, Object> entry) throws IOException {
+        out.writeData((Data)entry.getKey());
+        Object value = entry.getValue();
+        if (value instanceof Data) {
+            out.writeData((Data)value);
+        } else {
+            out.writeObject(value);
+        }
     }
 
     @Override
-    Entry<Data, Data> readElement(ObjectDataInput in) throws IOException {
+    Entry<Data, Object> readElement(ObjectDataInput in) throws IOException {
         final Data key = in.readData();
         final Data value = in.readData();
-        return new AbstractMap.SimpleEntry<Data, Data>(key, value);
+        return new AbstractMap.SimpleEntry<Data, Object>(key, value);
     }
 
     @Override

@@ -28,6 +28,7 @@ import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 public class MapFetchEntriesMessageTask extends AbstractMapPartitionMessageTask<MapFetchEntriesCodec.RequestParameters> {
@@ -53,7 +54,7 @@ public class MapFetchEntriesMessageTask extends AbstractMapPartitionMessageTask<
         }
         MapEntriesWithCursor mapEntriesWithCursor = (MapEntriesWithCursor) response;
         return MapFetchEntriesCodec.encodeResponse(mapEntriesWithCursor.getNextTableIndexToReadFrom(),
-                mapEntriesWithCursor.getBatch());
+                                                   (List<Map.Entry<Data, Data>>)(Object)mapEntriesWithCursor.getBatch());
     }
 
     @Override
