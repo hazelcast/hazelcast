@@ -39,7 +39,7 @@ public class AbsFunction<T> extends UniCallExpressionWithType<T> {
         QueryDataType operandType = operand.getType();
 
         if (operandType.getTypeFamily() == QueryDataTypeFamily.BIT) {
-            // Bit alway remain the same, just coerce it.
+            // Bit always remain the same, just coerce it.
             return CastExpression.coerce(operand, QueryDataType.TINYINT);
         }
 

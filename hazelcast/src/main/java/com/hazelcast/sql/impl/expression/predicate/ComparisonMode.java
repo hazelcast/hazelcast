@@ -23,9 +23,9 @@ public enum ComparisonMode {
     EQUALS(0),
     NOT_EQUALS(1),
     GREATER_THAN(2),
-    GREATER_THAN_EQUAL(3),
+    GREATER_THAN_OR_EQUAL(3),
     LESS_THAN(4),
-    LESS_THAN_EQUAL(5);
+    LESS_THAN_OR_EQUAL(5);
 
     private final int id;
 

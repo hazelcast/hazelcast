@@ -35,119 +35,107 @@ import org.apache.calcite.rex.RexRangeRef;
 import org.apache.calcite.rex.RexSubQuery;
 import org.apache.calcite.rex.RexTableInputRef;
 import org.apache.calcite.rex.RexVisitor;
-import org.apache.calcite.sql.SqlOperator;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 /**
- * Visitor which converts REX node to a Hazelcast expression.
+ * Visitor which converts REX nodes to a Hazelcast expressions.
  */
-@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity", "rawtypes"})
-public class ExpressionConverterRexVisitor implements RexVisitor<Expression> {
-    /** Schema of the node. */
+public final class RexToExpressionVisitor implements RexVisitor<Expression<?>> {
+
     private final FieldTypeProvider fieldTypeProvider;
+    private final int parameterCount;
 
-    /** Parameters. */
-    private final int paramsCount;
-
-    public ExpressionConverterRexVisitor(FieldTypeProvider fieldTypeProvider, int paramsCount) {
+    public RexToExpressionVisitor(FieldTypeProvider fieldTypeProvider, int parameterCount) {
         this.fieldTypeProvider = fieldTypeProvider;
-        this.paramsCount = paramsCount;
+        this.parameterCount = parameterCount;
     }
 
     @Override
-    public Expression visitInputRef(RexInputRef inputRef) {
+    public Expression<?> visitInputRef(RexInputRef inputRef) {
         int index = inputRef.getIndex();
-
         return ColumnExpression.create(index, fieldTypeProvider.getType(index));
     }
 
     @Override
-    public Expression visitLocalRef(RexLocalRef localRef) {
+    public Expression<?> visitLocalRef(RexLocalRef localRef) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Expression visitLiteral(RexLiteral literal) {
-        return ExpressionConverterUtils.convertLiteral(literal);
+    public Expression<?> visitLiteral(RexLiteral literal) {
+        return RexToExpression.convertLiteral(literal);
     }
 
-    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:MethodLength",
-        "checkstyle:NPathComplexity", "checkstyle:ReturnCount"})
     @Override
-    public Expression visitCall(RexCall call) {
-        // Convert operator.
-        SqlOperator operator = call.getOperator();
+    public Expression<?> visitCall(RexCall call) {
+        // Convert the operands.
 
-        int hzOperator = ExpressionConverterUtils.convertOperator(operator);
+        List<RexNode> rexOperands = call.getOperands();
+        List<Expression<?>> expressionOperands;
 
-        // Convert operands.
-        List<RexNode> operands = call.getOperands();
-
-        List<Expression<?>> hzOperands;
-
-        if (operands == null || operands.isEmpty()) {
-            hzOperands = Collections.emptyList();
+        if (rexOperands == null || rexOperands.isEmpty()) {
+            expressionOperands = Collections.emptyList();
         } else {
-            hzOperands = new ArrayList<>(operands.size());
-
-            for (RexNode operand : operands) {
-                Expression<?> convertedOperand = operand.accept(this);
-
-                hzOperands.add(convertedOperand);
+            expressionOperands = new ArrayList<>(rexOperands.size());
+            for (RexNode rexOperand : rexOperands) {
+                Expression<?> expressionOperand = rexOperand.accept(this);
+                expressionOperands.add(expressionOperand);
             }
         }
 
-        return ExpressionConverterUtils.convertCall(hzOperator, hzOperands);
+        // Convert the call.
+
+        return RexToExpression.convertCall(call, expressionOperands);
     }
 
     @Override
-    public Expression visitOver(RexOver over) {
+    public Expression<?> visitOver(RexOver over) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Expression visitCorrelVariable(RexCorrelVariable correlVariable) {
+    public Expression<?> visitCorrelVariable(RexCorrelVariable correlVariable) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Expression visitDynamicParam(RexDynamicParam dynamicParam) {
+    public Expression<?> visitDynamicParam(RexDynamicParam dynamicParam) {
         int index = dynamicParam.getIndex();
 
-        if (index >= paramsCount) {
-            // TODO: Proper exception.
-            throw HazelcastSqlException.error("Insufficient parameters: " + paramsCount);
+        if (index >= parameterCount) {
+            throw HazelcastSqlException.error(
+                    "Insufficient query parameter arguments: expected at least " + (index + 1) + ", got " + parameterCount);
         }
 
-        return new ParameterExpression(index);
+        return new ParameterExpression<>(index);
     }
 
     @Override
-    public Expression visitRangeRef(RexRangeRef rangeRef) {
+    public Expression<?> visitRangeRef(RexRangeRef rangeRef) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Expression visitFieldAccess(RexFieldAccess fieldAccess) {
-        // TODO: Is this nested field access?
+    public Expression<?> visitFieldAccess(RexFieldAccess fieldAccess) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Expression visitSubQuery(RexSubQuery subQuery) {
+    public Expression<?> visitSubQuery(RexSubQuery subQuery) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Expression visitTableInputRef(RexTableInputRef fieldRef) {
+    public Expression<?> visitTableInputRef(RexTableInputRef fieldRef) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Expression visitPatternFieldRef(RexPatternFieldRef fieldRef) {
+    public Expression<?> visitPatternFieldRef(RexPatternFieldRef fieldRef) {
         throw new UnsupportedOperationException();
     }
+
 }
