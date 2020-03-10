@@ -22,11 +22,27 @@ public final class PredicateExpressionUtils {
     }
 
     public static Boolean and(Boolean first, Boolean second) {
-        return (first == null || second == null) ? null : first && second;
+        if (first == Boolean.FALSE || second == Boolean.FALSE) {
+            return Boolean.FALSE;
+        }
+
+        if (first == null || second == null) {
+            return null;
+        }
+
+        return Boolean.TRUE;
     }
 
     public static Boolean or(Boolean first, Boolean second) {
-        return (first == null) ? second : (second == null) ? null : first || second;
+        if (first == Boolean.TRUE || second == Boolean.TRUE) {
+            return Boolean.TRUE;
+        }
+
+        if (first == null || second == null) {
+            return null;
+        }
+
+        return Boolean.FALSE;
     }
 
     public static Boolean not(Boolean val) {
