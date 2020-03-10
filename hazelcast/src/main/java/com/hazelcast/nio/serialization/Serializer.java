@@ -25,6 +25,8 @@ package com.hazelcast.nio.serialization;
 public interface Serializer {
 
     /**
+     * Uniquely identifies given serializer.
+     *
      * @return typeId of serializer
      */
     int getTypeId();
