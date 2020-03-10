@@ -109,45 +109,6 @@
         </plugins>
     </build>
 
-    <profiles>
-        <profile>
-            <id>unshaded</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-shade-plugin</artifactId>
-                        <configuration>
-                            <artifactSet>
-                                <excludes>
-                                    <exclude>com.hazelcast:hazelcast:*</exclude>
-                                </excludes>
-                            </artifactSet>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>test-enterprise</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-javadoc-plugin</artifactId>
-                        <configuration>
-                            <includeDependencySources>true</includeDependencySources>
-                            <includeTransitiveDependencySources>true</includeTransitiveDependencySources>
-                            <dependencySourceIncludes>
-                                <dependencySourceInclude>com.hazelcast.jet</dependencySourceInclude>
-                            </dependencySourceIncludes>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
-
     <dependencies>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
@@ -157,7 +118,7 @@
         <dependency>
             <groupId>info.picocli</groupId>
             <artifactId>picocli</artifactId>
-            <version>3.9.0</version>
+            <version>${picocli.version}</version>
         </dependency>
 
         <!-- These dependencies are otherwise optional, but we include them in the
@@ -241,4 +202,43 @@
             <optional>true</optional>
         </dependency>
     </dependencies>
+
+    <profiles>
+        <profile>
+            <id>unshaded</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-shade-plugin</artifactId>
+                        <configuration>
+                            <artifactSet>
+                                <excludes>
+                                    <exclude>com.hazelcast:hazelcast:*</exclude>
+                                </excludes>
+                            </artifactSet>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>test-enterprise</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <configuration>
+                            <includeDependencySources>true</includeDependencySources>
+                            <includeTransitiveDependencySources>true</includeTransitiveDependencySources>
+                            <dependencySourceIncludes>
+                                <dependencySourceInclude>com.hazelcast.jet</dependencySourceInclude>
+                            </dependencySourceIncludes>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

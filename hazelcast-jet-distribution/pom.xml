@@ -79,6 +79,83 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>${maven.javadoc.plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <phase>prepare-package</phase>
+                    </execution>
+                </executions>
+                <configuration>
+                    <includeDependencySources>true</includeDependencySources>
+                    <dependencySourceIncludes>
+                        <dependencySourceInclude>com.hazelcast:*</dependencySourceInclude>
+                        <dependencySourceInclude>com.hazelcast.jet:*</dependencySourceInclude>
+                    </dependencySourceIncludes>
+                    <excludePackageNames>*.picocli.*:*.com.fasterxml:*.org.snakeyaml</excludePackageNames>
+                    <additionalDependencies>
+                        <!-- provided deps are required for javadoc generation -->
+                        <dependency>
+                            <groupId>javax.cache</groupId>
+                            <artifactId>cache-api</artifactId>
+                            <version>${jsr107.api.version}</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>javax.jms</groupId>
+                            <artifactId>javax.jms-api</artifactId>
+                            <version>${jms.api.version}</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>org.springframework</groupId>
+                            <artifactId>spring-beans</artifactId>
+                            <version>${spring.version}</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>org.springframework</groupId>
+                            <artifactId>spring-context</artifactId>
+                            <version>${spring.version}</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>org.springframework</groupId>
+                            <artifactId>spring-core</artifactId>
+                            <version>${spring.version}</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>org.springframework</groupId>
+                            <artifactId>spring-tx</artifactId>
+                            <version>${spring.version}</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>info.picocli</groupId>
+                            <artifactId>picocli</artifactId>
+                            <version>${picocli.version}</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>org.apache.hadoop</groupId>
+                            <artifactId>hadoop-hdfs</artifactId>
+                            <version>${hadoop.version}</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>org.apache.hadoop</groupId>
+                            <artifactId>hadoop-common</artifactId>
+                            <version>${hadoop.version}</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>org.apache.hadoop</groupId>
+                            <artifactId>hadoop-mapreduce-client-core</artifactId>
+                            <version>${hadoop.version}</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>javax.annotation</groupId>
+                            <artifactId>javax.annotation-api</artifactId>
+                            <version>${jsr250.api.version}</version>
+                        </dependency>
+                    </additionalDependencies>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
@@ -137,6 +214,7 @@
             <artifactId>hazelcast-jet-examples-hello-world</artifactId>
             <version>${project.version}</version>
         </dependency>
+
     </dependencies>
 </project>
 

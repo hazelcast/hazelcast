@@ -85,7 +85,7 @@
         <maven.gpg.plugin.version>1.4</maven.gpg.plugin.version>
         <maven.assembly.plugin.version>3.0.0</maven.assembly.plugin.version>
         <maven.bundle.plugin.version>2.4.0</maven.bundle.plugin.version>
-        <maven.shade.plugin.version>3.2.1</maven.shade.plugin.version>
+        <maven.shade.plugin.version>3.2.2</maven.shade.plugin.version>
         <maven.dependency.plugin.version>2.6</maven.dependency.plugin.version>
         <maven.git.commit.id.plugin.version>2.1.10</maven.git.commit.id.plugin.version>
 
@@ -113,6 +113,7 @@
         <kafka.version>2.2.0</kafka.version>
         <grpc.version>1.26.0</grpc.version>
         <protobuf.version>3.11.3</protobuf.version>
+        <picocli.version>3.9.0</picocli.version>
 
         <!-- test dependencies -->
         <activemq.version>5.15.11</activemq.version>
