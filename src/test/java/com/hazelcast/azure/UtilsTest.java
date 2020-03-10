@@ -17,34 +17,33 @@ package com.hazelcast.azure;
 
 import org.junit.Test;
 
-import static com.hazelcast.azure.Utils.isAllBlank;
-import static com.hazelcast.azure.Utils.isAllNotBlank;
-import static com.hazelcast.azure.Utils.isBlank;
+import static com.hazelcast.azure.Utils.isAllFilled;
+import static com.hazelcast.azure.Utils.isAnyFilled;
+import static com.hazelcast.azure.Utils.isEmpty;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class UtilsTest {
     @Test
-    public void isBlankTest(){
-        assertFalse(isBlank("test-string"));
-        assertFalse(isBlank(" test-string-with-initial-whitespace"));
-        assertTrue(isBlank(""));
-        assertTrue(isBlank(null));
+    public void isEmptyTest(){
+        assertFalse(isEmpty("test-string"));
+        assertFalse(isEmpty(" test-string-with-initial-whitespace"));
+        assertTrue(isEmpty(""));
+        assertTrue(isEmpty(null));
     }
 
     @Test
-    public void isAllBlankTest(){
-        assertFalse(isAllBlank("test-string-1", "test-string-2"));
-        assertFalse(isAllBlank("test-string-1", ""));
-        assertTrue(isAllBlank("", "", null));
+    public void isAllFilledTest(){
+        assertTrue(isAllFilled("test-string-1", "test-string-2"));
+        assertFalse(isAllFilled("test-string-1", ""));
+        assertFalse(isAllFilled("", "", null));
     }
 
     @Test
-    public void isAllNotBlankTest(){
-        assertTrue(isAllNotBlank("test-string-1", "test-string-2"));
-        assertFalse(isAllNotBlank("test-string-1", ""));
-        assertFalse(isAllNotBlank("", "", null));
+    public void isAnyFilledTest(){
+        assertTrue(isAnyFilled("test-string-1", "test-string-2"));
+        assertTrue(isAnyFilled("test-string-1", ""));
+        assertFalse(isAnyFilled("", "", null));
     }
-
 
 }

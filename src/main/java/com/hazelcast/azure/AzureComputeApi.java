@@ -27,7 +27,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.azure.Utils.isBlank;
+import static com.hazelcast.azure.Utils.isEmpty;
 
 /**
  * Responsible for connecting to the Azure Cloud Compute API.
@@ -80,7 +80,7 @@ class AzureComputeApi {
     }
 
     private String urlForPrivateIpList(String subscriptionId, String resourceGroup, String scaleSet) {
-        if (isBlank(scaleSet)) {
+        if (isEmpty(scaleSet)) {
             return String.format("%s/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Network"
                     + "/networkInterfaces?api-version=%s", endpoint, subscriptionId, resourceGroup, API_VERSION);
         } else {
@@ -106,7 +106,7 @@ class AzureComputeApi {
                     JsonObject ipProps = ipConfiguration.asObject().get("properties").asObject();
                     String privateIp = ipProps.getString("privateIPAddress", null);
                     String publicIpId = toJsonObject(ipProps.get("publicIPAddress")).getString("id", null);
-                    if (!isBlank(publicIpId)) {
+                    if (!isEmpty(publicIpId)) {
                         interfaces.put(publicIpId, new AzureNetworkInterface(privateIp, publicIpId, tagList));
                     }
                 }
@@ -116,7 +116,7 @@ class AzureComputeApi {
     }
 
     private String urlForPublicIpList(String subscriptionId, String resourceGroup, String scaleSet) {
-        if (isBlank(scaleSet)) {
+        if (isEmpty(scaleSet)) {
             return String.format("%s/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Network"
                     + "/publicIPAddresses?api-version=%s", endpoint, subscriptionId, resourceGroup, API_VERSION);
         } else {
@@ -132,7 +132,7 @@ class AzureComputeApi {
         for (JsonValue item : toJsonArray(Json.parse(response).asObject().get("value"))) {
             String id = item.asObject().getString("id", null);
             String ip = toJsonObject(item.asObject().get("properties")).getString("ipAddress", null);
-            if (!isBlank(ip)) {
+            if (!isEmpty(ip)) {
                 publicIps.put(id, ip);
             }
         }
