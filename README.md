@@ -7,7 +7,7 @@
 
 ----
 
-[Hazelcast Jet] is an open-source, cloud-native, distributed stream
+[Hazelcast Jet](https://jet-start.sh/) is an open-source, cloud-native, distributed stream
 and batch processing engine.
 
 Jet is simple to set up. The nodes you start discover each other and
@@ -112,7 +112,7 @@ and Jet will process them right away.
 * Constant low latency - predictable latency is a design goal
 * Zero dependencies - single JAR which is embeddable (minimum JDK 8)
 * Cloud Native - with [Docker images](https://hub.docker.com/r/hazelcast/hazelcast-jet/)
-and [Kubernetes support](https://github.com/hazelcast/hazelcast-jet-code-samples/tree/master/integration/kubernetes)
+and [Kubernetes support](https://jet-start.sh/docs/operations/kubernetes)
 including Helm Charts.
 * Elastic - Jet can scale jobs up and down while running
 * Fault Tolerant - At-least-once and exactly-once processing guarantees
@@ -124,11 +124,11 @@ for caching, enrichment or storing job results
 ## Distribution
 
 You can download the distribution package which includes command-line
-tools from [jet.hazelcast.org](http://jet.hazelcast.org/download/).
+tools from [https://jet-start.sh](https://jet-start.sh/download).
 
-## Documentation
+## Getting Started and Documentation
 
-See the [Hazelcast Jet Reference Manual].
+See the [Hazelcast Jet Getting Started Guide](https://jet-start.sh/docs/get-started/intro).
 
 ## Code Samples
 
@@ -163,8 +163,8 @@ See [hazelcast-jet-contrib](https://github.com/hazelcast/hazelcast-jet-contrib) 
 
 ## Architecture
 
-See the [architecture](https://jet.hazelcast.org/architecture/) and
-[performance](https://jet.hazelcast.org/performance/) pages for
+See the [architecture](https://jet-start.sh/docs/architecture/distributed-computing) and
+[performance](https://jet-start.sh/docs/architecture/execution-engine) pages for
 more details about Jet's internals and design.
 
 ## Start Developing Hazelcast Jet
@@ -236,15 +236,10 @@ Source code in this repository is covered by one of two licenses:
  2. [Hazelcast Community License](licenses/hazelcast-community-license.txt).   
 
 The default license throughout the repository is Apache License 2.0 unless the  
-header specifies another license. Please see the [Licensing section](https://docs.hazelcast.org/docs/jet/latest-dev/manual/#licensing) for more information.
+header specifies another license. Please see the [Licensing section](https://jet-start.sh/license) for more information.
 
 ## Copyright
 
 Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
 
 Visit [www.hazelcast.com](http://www.hazelcast.com/) for more info.
-
-
-[Hazelcast Jet]: http://jet.hazelcast.org
-[Hazelcast Jet Reference Manual]: https://docs.hazelcast.org/docs/jet/latest/manual/
-[Hazelcast Jet Code Samples]: https://github.com/hazelcast/hazelcast-jet-code-samples
