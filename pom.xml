@@ -59,6 +59,7 @@
             -XX:+AlwaysPreTouch
             -Dhazelcast.phone.home.enabled=false
             -Dhazelcast.logging.type=log4j2
+            -Dhazelcast.logging.details.enabled=true
             -Dhazelcast.test.use.network=false
             -Djava.net.preferIPv4Stack=true
         </argLine>

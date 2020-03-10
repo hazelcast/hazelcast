@@ -16,8 +16,6 @@
 
 package com.hazelcast.jet.impl.util;
 
-import com.hazelcast.instance.BuildInfoProvider;
-
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.logging.Formatter;
@@ -50,35 +48,16 @@ public class JetConsoleLogHandler extends StreamHandler {
 
     private static class JetLogFormatter extends Formatter {
 
-        /**
-         * Temporary, remove after https://github.com/hazelcast/hazelcast/pull/16622 is merged
-         * Currently the filtering doesn't work for client, because it uses IMDG version.
-         */
-        private static final String VERSION_STR =
-                "[" + BuildInfoProvider.getBuildInfo().getJetBuildInfo().getVersion() + "]";
-
-        private static final boolean ENABLE_DETAILS = Boolean.parseBoolean(getDetailsProperty());
-
         private static final int ERROR_LEVEL = 1000;
         private static final int WARNING_LEVEL = 900;
         private static final int INFO_LEVEL = 800;
         private static final int DEBUG_LEVEL = 500;
         private static final int TRACE_LEVEL = 400;
 
-        private static String getDetailsProperty() {
-            return System.getProperties().getProperty("hazelcast.logging.details.enabled", "false");
-        }
-
         @Override
         public String format(LogRecord record) {
             String loggerName = abbreviateLoggerName(record.getLoggerName());
             String message = record.getMessage();
-            if (!ENABLE_DETAILS) {
-                int versionIdx = message.indexOf(VERSION_STR);
-                if (versionIdx > 0) {
-                    message = message.substring(versionIdx + VERSION_STR.length() + 1);
-                }
-            }
             return String.format("%s [%s%5s%s] [%s%s%s] %s%s",
                     Util.toLocalTime(record.getMillis()),
                     getLevelColor(record.getLevel()),

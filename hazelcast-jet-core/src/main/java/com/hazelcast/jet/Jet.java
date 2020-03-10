@@ -43,7 +43,9 @@ import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.spi.properties.HazelcastProperty;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -283,6 +285,16 @@ public final class Jet {
         if (!jetProps.containsKey(JET_SHUTDOWNHOOK_ENABLED)) {
             jetProps.setProperty(JET_SHUTDOWNHOOK_ENABLED.getName(), hzHookEnabled);
         }
+
+        // this property should behave as if false is the default
+        HazelcastProperty loggingDetails = ClusterProperty.LOGGING_ENABLE_DETAILS;
+        if (loggingDetails.getSystemProperty() == null
+                && !jetProps.containsKey(loggingDetails)
+                && !hzProperties.containsKey(loggingDetails)
+        ) {
+            jetProps.setProperty(loggingDetails.getName(), "false");
+        }
+
         hzConfig.setProperty(SHUTDOWNHOOK_ENABLED.getName(), "false");
 
         // copy Jet properties to HZ properties
