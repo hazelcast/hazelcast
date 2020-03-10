@@ -21,7 +21,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.expression.CastExpression;
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.expression.UniCallExpressionWithType;
+import com.hazelcast.sql.impl.expression.UniExpressionWithType;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
@@ -35,7 +35,7 @@ import java.math.RoundingMode;
 /**
  * Implementation of FLOOR/CEIL functions.
  */
-public abstract class FloorCeilFunction<T> extends UniCallExpressionWithType<T> {
+public abstract class FloorCeilFunction<T> extends UniExpressionWithType<T> {
     /** If this is the CEIL call. */
     private boolean ceil;
 

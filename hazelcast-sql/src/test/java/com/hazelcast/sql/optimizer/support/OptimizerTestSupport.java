@@ -169,8 +169,8 @@ public abstract class OptimizerTestSupport {
         return compare(column(col1), column(col2), ComparisonMode.EQUALS);
     }
 
-    protected static Expression<?> and(Expression<?> left, Expression<?> right) {
-        return AndPredicate.create(left, right);
+    protected static Expression<?> and(Expression<?>... operands) {
+        return AndPredicate.create(operands);
     }
 
     protected static Expression<?> column(int col) {

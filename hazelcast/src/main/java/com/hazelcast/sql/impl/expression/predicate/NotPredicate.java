@@ -17,14 +17,14 @@
 package com.hazelcast.sql.impl.expression.predicate;
 
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.expression.UniCallExpression;
+import com.hazelcast.sql.impl.expression.UniExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 /**
  * Not predicate.
  */
-public class NotPredicate extends UniCallExpression<Boolean> {
+public class NotPredicate extends UniExpression<Boolean> {
     public NotPredicate() {
         // No-op.
     }
@@ -41,7 +41,7 @@ public class NotPredicate extends UniCallExpression<Boolean> {
 
     @Override
     public Boolean eval(Row row) {
-        return PredicateExpressionUtils.not(operand.evalAsBit(row));
+        return TernaryLogic.not(operand.evalAsBit(row));
     }
 
     @Override

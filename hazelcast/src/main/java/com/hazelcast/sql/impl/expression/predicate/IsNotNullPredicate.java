@@ -17,11 +17,11 @@
 package com.hazelcast.sql.impl.expression.predicate;
 
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.expression.UniCallExpression;
+import com.hazelcast.sql.impl.expression.UniExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
-public class IsNotNullPredicate extends UniCallExpression<Boolean> {
+public class IsNotNullPredicate extends UniExpression<Boolean> {
     public IsNotNullPredicate() {
         // No-op.
     }
@@ -36,7 +36,7 @@ public class IsNotNullPredicate extends UniCallExpression<Boolean> {
 
     @Override
     public Boolean eval(Row row) {
-        return PredicateExpressionUtils.isNotNull(operand.eval(row));
+        return TernaryLogic.isNotNull(operand.eval(row));
     }
 
     @Override

@@ -18,50 +18,45 @@ package com.hazelcast.sql.impl.expression;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.io.IOException;
-import java.util.Objects;
+import java.util.Arrays;
 
 /**
- * Expression with result type field.
+ * Expression with variadic operands.
  */
-public abstract class UniCallExpressionWithType<T> extends UniCallExpression<T> {
-    /** Result type. */
-    protected QueryDataType resultType;
+public abstract class VariExpression<T> implements Expression<T> {
 
-    protected UniCallExpressionWithType() {
-        // No-op.
+    protected Expression<?>[] operands;
+
+    protected VariExpression() {
+        // do nothing
     }
 
-    protected UniCallExpressionWithType(Expression<?> operand, QueryDataType resultType) {
-        this.operand = operand;
-        this.resultType = resultType;
+    protected VariExpression(Expression<?>... operands) {
+        this.operands = operands;
     }
-
-    @Override
-    public QueryDataType getType() {
-        return resultType;
-    }
-
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        super.writeData(out);
-
-        out.writeObject(resultType);
+        out.writeInt(operands.length);
+        for (Expression<?> operand : operands) {
+            out.writeObject(operand);
+        }
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        super.readData(in);
-
-        resultType = in.readObject();
+        int length = in.readInt();
+        operands = new Expression<?>[length];
+        for (int i = 0; i < length; ++i) {
+            operands[i] = in.readObject();
+        }
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), resultType);
+        return Arrays.hashCode(operands);
     }
 
     @Override
@@ -74,17 +69,14 @@ public abstract class UniCallExpressionWithType<T> extends UniCallExpression<T> 
             return false;
         }
 
-        if (!super.equals(o)) {
-            return false;
-        }
+        VariExpression<?> that = (VariExpression<?>) o;
 
-        UniCallExpressionWithType<?> that = (UniCallExpressionWithType<?>) o;
-
-        return resultType.equals(that.resultType);
+        return Arrays.equals(this.operands, that.operands);
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{operand=" + operand + ", resultType=" + resultType + '}';
+        return getClass().getSimpleName() + "{operands=" + Arrays.toString(operands) + '}';
     }
+
 }

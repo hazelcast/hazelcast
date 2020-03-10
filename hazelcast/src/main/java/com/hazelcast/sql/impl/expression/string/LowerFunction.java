@@ -17,11 +17,11 @@
 package com.hazelcast.sql.impl.expression.string;
 
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.expression.UniCallExpression;
+import com.hazelcast.sql.impl.expression.UniExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
-public class LowerFunction extends UniCallExpression<String> {
+public class LowerFunction extends UniExpression<String> {
     public LowerFunction() {
         // No-op.
     }

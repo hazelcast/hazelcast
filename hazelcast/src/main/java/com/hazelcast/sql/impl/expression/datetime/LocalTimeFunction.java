@@ -17,13 +17,13 @@
 package com.hazelcast.sql.impl.expression.datetime;
 
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.expression.UniCallExpression;
+import com.hazelcast.sql.impl.expression.UniExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.time.LocalTime;
 
-public class LocalTimeFunction extends UniCallExpression<LocalTime> {
+public class LocalTimeFunction extends UniExpression<LocalTime> {
     public LocalTimeFunction() {
         // No-op.
     }

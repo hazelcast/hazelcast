@@ -25,15 +25,15 @@ import java.util.Objects;
 /**
  * Expression with two operands.
  */
-public abstract class UniCallExpression<T> implements Expression<T> {
+public abstract class UniExpression<T> implements Expression<T> {
     /** Operand. */
     protected Expression<?> operand;
 
-    protected UniCallExpression() {
+    protected UniExpression() {
         // No-op.
     }
 
-    protected UniCallExpression(Expression<?> operand) {
+    protected UniExpression(Expression<?> operand) {
         this.operand = operand;
     }
 
@@ -66,7 +66,7 @@ public abstract class UniCallExpression<T> implements Expression<T> {
             return false;
         }
 
-        UniCallExpression<?> that = (UniCallExpression<?>) o;
+        UniExpression<?> that = (UniExpression<?>) o;
 
         return Objects.equals(operand, that.operand);
     }

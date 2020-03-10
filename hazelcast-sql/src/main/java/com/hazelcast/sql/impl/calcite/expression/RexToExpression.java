@@ -77,7 +77,6 @@ import org.apache.calcite.sql.type.SqlTypeName;
 
 import java.math.BigDecimal;
 import java.util.Calendar;
-import java.util.List;
 
 /**
  * Provides utility methods for REX to expression conversion.
@@ -101,104 +100,104 @@ public final class RexToExpression {
      */
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:MethodLength", "checkstyle:ReturnCount",
             "checkstyle:NPathComplexity"})
-    public static Expression<?> convertCall(RexCall call, List<Expression<?>> operands) {
+    public static Expression<?> convertCall(RexCall call, Expression<?>[] operands) {
         SqlOperator operator = call.getOperator();
 
         switch (operator.getKind()) {
             case PLUS:
-                return PlusFunction.create(operands.get(0), operands.get(1));
+                return PlusFunction.create(operands[0], operands[1]);
 
             case MINUS:
-                return MinusFunction.create(operands.get(0), operands.get(1));
+                return MinusFunction.create(operands[0], operands[1]);
 
             case TIMES:
-                return MultiplyFunction.create(operands.get(0), operands.get(1));
+                return MultiplyFunction.create(operands[0], operands[1]);
 
             case DIVIDE:
-                return DivideFunction.create(operands.get(0), operands.get(1));
+                return DivideFunction.create(operands[0], operands[1]);
 
             case MOD:
-                return RemainderFunction.create(operands.get(0), operands.get(1));
+                return RemainderFunction.create(operands[0], operands[1]);
 
             case MINUS_PREFIX:
-                return UnaryMinusFunction.create(operands.get(0));
+                return UnaryMinusFunction.create(operands[0]);
 
             case FLOOR:
-                return FloorCeilFunction.create(operands.get(0), false);
+                return FloorCeilFunction.create(operands[0], false);
 
             case CEIL:
-                return FloorCeilFunction.create(operands.get(0), true);
+                return FloorCeilFunction.create(operands[0], true);
 
             case POSITION:
-                Expression<?> position = operands.size() == 2 ? null : operands.get(2);
-                return PositionFunction.create(operands.get(0), operands.get(1), position);
+                Expression<?> position = operands.length == 2 ? null : operands[2];
+                return PositionFunction.create(operands[0], operands[1], position);
 
             case OTHER:
                 if (operator == SqlStdOperatorTable.CONCAT) {
-                    return ConcatFunction.create(operands.get(0), operands.get(1));
+                    return ConcatFunction.create(operands[0], operands[1]);
                 }
 
                 break;
 
             case EXTRACT:
-                DatePartUnit unit = ((DatePartUnitConstantExpression) operands.get(0)).getUnit();
-                return DatePartFunction.create(operands.get(1), unit);
+                DatePartUnit unit = ((DatePartUnitConstantExpression) operands[0]).getUnit();
+                return DatePartFunction.create(operands[1], unit);
 
             case TIMESTAMP_ADD:
                 // TODO
                 return null;
 
             case IS_NULL:
-                return IsNullPredicate.create(operands.get(0));
+                return IsNullPredicate.create(operands[0]);
 
             case IS_NOT_NULL:
-                return IsNotNullPredicate.create(operands.get(0));
+                return IsNotNullPredicate.create(operands[0]);
 
             case IS_FALSE:
-                return IsFalsePredicate.create(operands.get(0));
+                return IsFalsePredicate.create(operands[0]);
 
             case IS_NOT_FALSE:
-                return IsNotFalsePredicate.create(operands.get(0));
+                return IsNotFalsePredicate.create(operands[0]);
 
             case IS_TRUE:
-                return IsTruePredicate.create(operands.get(0));
+                return IsTruePredicate.create(operands[0]);
 
             case IS_NOT_TRUE:
-                return IsNotTruePredicate.create(operands.get(0));
+                return IsNotTruePredicate.create(operands[0]);
 
             case AND:
-                return AndPredicate.create(operands.get(0), operands.get(1));
+                return AndPredicate.create(operands);
 
             case OR:
-                return OrPredicate.create(operands.get(0), operands.get(1));
+                return OrPredicate.create(operands);
 
             case NOT:
-                return NotPredicate.create(operands.get(0));
+                return NotPredicate.create(operands[0]);
 
             case EQUALS:
-                return ComparisonPredicate.create(operands.get(0), operands.get(1), ComparisonMode.EQUALS);
+                return ComparisonPredicate.create(operands[0], operands[1], ComparisonMode.EQUALS);
 
             case NOT_EQUALS:
-                return ComparisonPredicate.create(operands.get(0), operands.get(1), ComparisonMode.NOT_EQUALS);
+                return ComparisonPredicate.create(operands[0], operands[1], ComparisonMode.NOT_EQUALS);
 
             case GREATER_THAN:
-                return ComparisonPredicate.create(operands.get(0), operands.get(1), ComparisonMode.GREATER_THAN);
+                return ComparisonPredicate.create(operands[0], operands[1], ComparisonMode.GREATER_THAN);
 
             case GREATER_THAN_OR_EQUAL:
-                return ComparisonPredicate.create(operands.get(0), operands.get(1), ComparisonMode.GREATER_THAN_OR_EQUAL);
+                return ComparisonPredicate.create(operands[0], operands[1], ComparisonMode.GREATER_THAN_OR_EQUAL);
 
             case LESS_THAN:
-                return ComparisonPredicate.create(operands.get(0), operands.get(1), ComparisonMode.LESS_THAN);
+                return ComparisonPredicate.create(operands[0], operands[1], ComparisonMode.LESS_THAN);
 
             case LESS_THAN_OR_EQUAL:
-                return ComparisonPredicate.create(operands.get(0), operands.get(1), ComparisonMode.LESS_THAN_OR_EQUAL);
+                return ComparisonPredicate.create(operands[0], operands[1], ComparisonMode.LESS_THAN_OR_EQUAL);
 
             case CASE:
                 return CaseExpression.create(operands);
 
             case LIKE:
-                Expression<?> escape = operands.size() == 2 ? null : operands.get(2);
-                return LikeFunction.create(operands.get(0), operands.get(1), escape);
+                Expression<?> escape = operands.length == 2 ? null : operands[2];
+                return LikeFunction.create(operands[0], operands[1], escape);
 
             case OTHER_FUNCTION:
                 SqlFunction function = (SqlFunction) operator;
@@ -206,66 +205,66 @@ public final class RexToExpression {
                 // Math.
 
                 if (function == SqlStdOperatorTable.COS) {
-                    return DoubleFunction.create(operands.get(0), DoubleFunctionType.COS);
+                    return DoubleFunction.create(operands[0], DoubleFunctionType.COS);
                 } else if (function == SqlStdOperatorTable.SIN) {
-                    return DoubleFunction.create(operands.get(0), DoubleFunctionType.SIN);
+                    return DoubleFunction.create(operands[0], DoubleFunctionType.SIN);
                 } else if (function == SqlStdOperatorTable.TAN) {
-                    return DoubleFunction.create(operands.get(0), DoubleFunctionType.TAN);
+                    return DoubleFunction.create(operands[0], DoubleFunctionType.TAN);
                 } else if (function == SqlStdOperatorTable.COT) {
-                    return DoubleFunction.create(operands.get(0), DoubleFunctionType.COT);
+                    return DoubleFunction.create(operands[0], DoubleFunctionType.COT);
                 } else if (function == SqlStdOperatorTable.ACOS) {
-                    return DoubleFunction.create(operands.get(0), DoubleFunctionType.ACOS);
+                    return DoubleFunction.create(operands[0], DoubleFunctionType.ACOS);
                 } else if (function == SqlStdOperatorTable.ASIN) {
-                    return DoubleFunction.create(operands.get(0), DoubleFunctionType.ASIN);
+                    return DoubleFunction.create(operands[0], DoubleFunctionType.ASIN);
                 } else if (function == SqlStdOperatorTable.ATAN) {
-                    return DoubleFunction.create(operands.get(0), DoubleFunctionType.ATAN);
+                    return DoubleFunction.create(operands[0], DoubleFunctionType.ATAN);
                 } else if (function == SqlStdOperatorTable.SQRT) {
-                    return DoubleFunction.create(operands.get(0), DoubleFunctionType.SQRT);
+                    return DoubleFunction.create(operands[0], DoubleFunctionType.SQRT);
                 } else if (function == SqlStdOperatorTable.EXP) {
-                    return DoubleFunction.create(operands.get(0), DoubleFunctionType.EXP);
+                    return DoubleFunction.create(operands[0], DoubleFunctionType.EXP);
                 } else if (function == SqlStdOperatorTable.LN) {
-                    return DoubleFunction.create(operands.get(0), DoubleFunctionType.LN);
+                    return DoubleFunction.create(operands[0], DoubleFunctionType.LN);
                 } else if (function == SqlStdOperatorTable.LOG10) {
-                    return DoubleFunction.create(operands.get(0), DoubleFunctionType.LOG10);
+                    return DoubleFunction.create(operands[0], DoubleFunctionType.LOG10);
                 } else if (function == SqlStdOperatorTable.RAND) {
-                    return RandomFunction.create(operands.isEmpty() ? null : operands.get(0));
+                    return RandomFunction.create(operands.length == 0 ? null : operands[0]);
                 } else if (function == SqlStdOperatorTable.ABS) {
-                    return AbsFunction.create(operands.get(0));
+                    return AbsFunction.create(operands[0]);
                 } else if (function == SqlStdOperatorTable.PI) {
                     return ConstantExpression.create(Math.PI);
                 } else if (function == SqlStdOperatorTable.SIGN) {
-                    return SignFunction.create(operands.get(0));
+                    return SignFunction.create(operands[0]);
                 } else if (function == SqlStdOperatorTable.ATAN2) {
-                    return Atan2Function.create(operands.get(0), operands.get(1));
+                    return Atan2Function.create(operands[0], operands[1]);
                 } else if (function == SqlStdOperatorTable.POWER) {
-                    return PowerFunction.create(operands.get(0), operands.get(1));
+                    return PowerFunction.create(operands[0], operands[1]);
                 } else if (function == SqlStdOperatorTable.DEGREES) {
-                    return DoubleFunction.create(operands.get(0), DoubleFunctionType.DEGREES);
+                    return DoubleFunction.create(operands[0], DoubleFunctionType.DEGREES);
                 } else if (function == SqlStdOperatorTable.RADIANS) {
-                    return DoubleFunction.create(operands.get(0), DoubleFunctionType.RADIANS);
+                    return DoubleFunction.create(operands[0], DoubleFunctionType.RADIANS);
                 } else if (function == SqlStdOperatorTable.ROUND) {
-                    return RoundTruncateFunction.create(operands.get(0), operands.size() == 1 ? null : operands.get(0), false);
+                    return RoundTruncateFunction.create(operands[0], operands.length == 1 ? null : operands[0], false);
                 } else if (function == SqlStdOperatorTable.TRUNCATE) {
-                    return RoundTruncateFunction.create(operands.get(0), operands.size() == 1 ? null : operands.get(0), true);
+                    return RoundTruncateFunction.create(operands[0], operands.length == 1 ? null : operands[0], true);
                 }
 
                 // Strings.
 
                 if (function == SqlStdOperatorTable.CHAR_LENGTH || function == SqlStdOperatorTable.CHARACTER_LENGTH
                         || function == HazelcastSqlOperatorTable.LENGTH) {
-                    return CharLengthFunction.create(operands.get(0));
+                    return CharLengthFunction.create(operands[0]);
                 } else if (function == SqlStdOperatorTable.UPPER) {
-                    return UpperFunction.create(operands.get(0));
+                    return UpperFunction.create(operands[0]);
                 } else if (function == SqlStdOperatorTable.LOWER) {
-                    return LowerFunction.create(operands.get(0));
+                    return LowerFunction.create(operands[0]);
                 } else if (function == SqlStdOperatorTable.INITCAP) {
-                    return InitcapFunction.create(operands.get(0));
+                    return InitcapFunction.create(operands[0]);
                 } else if (function == SqlStdOperatorTable.ASCII) {
-                    return AsciiFunction.create(operands.get(0));
+                    return AsciiFunction.create(operands[0]);
                 } else if (function == SqlStdOperatorTable.REPLACE) {
-                    return ReplaceFunction.create(operands.get(0), operands.get(1), operands.get(2));
+                    return ReplaceFunction.create(operands[0], operands[1], operands[2]);
                 } else if (function == SqlStdOperatorTable.SUBSTRING) {
-                    return SubstringFunction.create(operands.get(0), operands.get(1), operands.get(2));
+                    return SubstringFunction.create(operands[0], operands[1], operands[2]);
                 }
 
                 // Dates.
@@ -273,11 +272,11 @@ public final class RexToExpression {
                 if (function == SqlStdOperatorTable.CURRENT_DATE) {
                     return new CurrentDateFunction();
                 } else if (function == SqlStdOperatorTable.CURRENT_TIMESTAMP) {
-                    return CurrentTimestampFunction.create(operands.isEmpty() ? null : operands.get(0));
+                    return CurrentTimestampFunction.create(operands.length == 0 ? null : operands[0]);
                 } else if (function == SqlStdOperatorTable.LOCALTIMESTAMP) {
-                    return LocalTimestampFunction.create(operands.isEmpty() ? null : operands.get(0));
+                    return LocalTimestampFunction.create(operands.length == 0 ? null : operands[0]);
                 } else if (function == SqlStdOperatorTable.LOCALTIME) {
-                    return LocalTimeFunction.create(operands.isEmpty() ? null : operands.get(0));
+                    return LocalTimeFunction.create(operands.length == 0 ? null : operands[0]);
                 }
 
                 break;

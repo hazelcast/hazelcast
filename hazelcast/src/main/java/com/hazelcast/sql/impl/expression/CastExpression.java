@@ -28,7 +28,7 @@ import java.io.IOException;
 /**
  * Expression which converts data from one type to another.
  */
-public class CastExpression<T> extends UniCallExpression<T> {
+public class CastExpression<T> extends UniExpression<T> {
     /** Target type. */
     private QueryDataType type;
 

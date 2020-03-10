@@ -17,14 +17,14 @@
 package com.hazelcast.sql.impl.expression.string;
 
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.expression.TriCallExpression;
+import com.hazelcast.sql.impl.expression.TriExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 /**
  * POSITION(seek IN source FROM position)}.
  */
-public class PositionFunction extends TriCallExpression<Integer> {
+public class PositionFunction extends TriExpression<Integer> {
     public PositionFunction() {
         // No-op.
     }

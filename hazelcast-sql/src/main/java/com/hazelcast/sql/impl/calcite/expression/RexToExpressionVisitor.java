@@ -36,14 +36,14 @@ import org.apache.calcite.rex.RexSubQuery;
 import org.apache.calcite.rex.RexTableInputRef;
 import org.apache.calcite.rex.RexVisitor;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
  * Visitor which converts REX nodes to a Hazelcast expressions.
  */
 public final class RexToExpressionVisitor implements RexVisitor<Expression<?>> {
+
+    private static final Expression<?>[] EMPTY_EXPRESSION_OPERANDS = new Expression[0];
 
     private final FieldTypeProvider fieldTypeProvider;
     private final int parameterCount;
@@ -74,15 +74,15 @@ public final class RexToExpressionVisitor implements RexVisitor<Expression<?>> {
         // Convert the operands.
 
         List<RexNode> rexOperands = call.getOperands();
-        List<Expression<?>> expressionOperands;
+        Expression<?>[] expressionOperands;
 
         if (rexOperands == null || rexOperands.isEmpty()) {
-            expressionOperands = Collections.emptyList();
+            expressionOperands = EMPTY_EXPRESSION_OPERANDS;
         } else {
-            expressionOperands = new ArrayList<>(rexOperands.size());
-            for (RexNode rexOperand : rexOperands) {
-                Expression<?> expressionOperand = rexOperand.accept(this);
-                expressionOperands.add(expressionOperand);
+            expressionOperands = new Expression[rexOperands.size()];
+            for (int i = 0; i < rexOperands.size(); ++i) {
+                Expression<?> expressionOperand = rexOperands.get(i).accept(this);
+                expressionOperands[i] = expressionOperand;
             }
         }
 

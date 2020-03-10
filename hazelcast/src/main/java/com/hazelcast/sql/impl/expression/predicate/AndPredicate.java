@@ -16,40 +16,40 @@
 
 package com.hazelcast.sql.impl.expression.predicate;
 
-import com.hazelcast.sql.impl.expression.BiCallExpression;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.VariExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 /**
  * AND predicate.
  */
-public class AndPredicate extends BiCallExpression<Boolean> {
+public class AndPredicate extends VariExpression<Boolean> {
+
     public AndPredicate() {
         // No-op.
     }
 
-    private AndPredicate(Expression<?> first, Expression<?> second) {
-        super(first, second);
+    private AndPredicate(Expression<?>... operands) {
+        super(operands);
     }
 
-    public static AndPredicate create(Expression<?> first, Expression<?> second) {
-        first.ensureCanConvertToBit();
-        second.ensureCanConvertToBit();
+    public static AndPredicate create(Expression<?>... operands) {
+        for (Expression<?> operand : operands) {
+            operand.ensureCanConvertToBit();
+        }
 
-        return new AndPredicate(first, second);
+        return new AndPredicate(operands);
     }
 
     @Override
     public Boolean eval(Row row) {
-        Boolean firstValue = operand1.evalAsBit(row);
-        Boolean secondValue = operand2.evalAsBit(row);
-
-        return PredicateExpressionUtils.and(firstValue, secondValue);
+        return TernaryLogic.and(row, operands);
     }
 
     @Override
     public QueryDataType getType() {
         return QueryDataType.BIT;
     }
+
 }
