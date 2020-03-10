@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.type.converter;
 
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
-import com.hazelcast.sql.impl.type.GenericType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 /**
  * Converter for {@link SqlDaySecondInterval} type.
@@ -28,17 +28,12 @@ public final class SqlDaySecondIntervalConverter extends Converter {
     public static final SqlDaySecondIntervalConverter INSTANCE = new SqlDaySecondIntervalConverter();
 
     private SqlDaySecondIntervalConverter() {
-        // No-op.
+        super(ID_INTERVAL_DAY_SECOND, QueryDataTypeFamily.INTERVAL_DAY_SECOND);
     }
 
     @Override
     public Class<?> getValueClass() {
         return SqlDaySecondInterval.class;
-    }
-
-    @Override
-    public GenericType getGenericType() {
-        return GenericType.INTERVAL_DAY_SECOND;
     }
 
     @Override

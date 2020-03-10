@@ -23,7 +23,7 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.physical.PhysicalNodeSchema;
 import com.hazelcast.sql.impl.physical.ZeroInputPhysicalNode;
 import com.hazelcast.sql.impl.physical.visitor.PhysicalNodeVisitor;
-import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.io.IOException;
 import java.util.List;
@@ -38,7 +38,7 @@ public class ReceiveSortMergePhysicalNode extends ZeroInputPhysicalNode implemen
     private int edgeId;
 
     /** Field types. */
-    private List<DataType> fieldTypes;
+    private List<QueryDataType> fieldTypes;
 
     /** Expressions to be used for sorting. */
     private List<Expression> expressions;
@@ -59,7 +59,7 @@ public class ReceiveSortMergePhysicalNode extends ZeroInputPhysicalNode implemen
     public ReceiveSortMergePhysicalNode(
         int id,
         int edgeId,
-        List<DataType> fieldTypes,
+        List<QueryDataType> fieldTypes,
         List<Expression> expressions,
         List<Boolean> ascs,
         Expression fetch,

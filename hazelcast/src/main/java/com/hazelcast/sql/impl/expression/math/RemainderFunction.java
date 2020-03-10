@@ -20,9 +20,9 @@ import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.expression.BiCallExpressionWithType;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.type.DataType;
-import com.hazelcast.sql.impl.type.DataTypeUtils;
-import com.hazelcast.sql.impl.type.GenericType;
+import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.sql.impl.type.converter.Converter;
 
 import java.math.BigDecimal;
@@ -35,12 +35,12 @@ public class RemainderFunction<T> extends BiCallExpressionWithType<T> {
         // No-op.
     }
 
-    private RemainderFunction(Expression<?> operand1, Expression<?> operand2, DataType resultType) {
+    private RemainderFunction(Expression<?> operand1, Expression<?> operand2, QueryDataType resultType) {
         super(operand1, operand2, resultType);
     }
 
     public static RemainderFunction<?> create(Expression<?> operand1, Expression<?> operand2) {
-        DataType resultType = MathFunctionUtils.inferRemainderResultType(operand1.getType(), operand2.getType());
+        QueryDataType resultType = MathFunctionUtils.inferRemainderResultType(operand1.getType(), operand2.getType());
 
         return new RemainderFunction<>(operand1, operand2, resultType);
     }
@@ -65,15 +65,15 @@ public class RemainderFunction<T> extends BiCallExpressionWithType<T> {
 
     private static Object doRemainder(
         Object operand1,
-        DataType operand1Type,
+        QueryDataType operand1Type,
         Object operand2,
-        DataType operand2Type,
-        DataType resultType
+        QueryDataType operand2Type,
+        QueryDataType resultType
     ) {
         // Handle lat binding.
-        if (resultType.getType() == GenericType.LATE) {
-            operand1Type = DataTypeUtils.resolveType(operand1);
-            operand2Type = DataTypeUtils.resolveType(operand2);
+        if (resultType.getTypeFamily() == QueryDataTypeFamily.LATE) {
+            operand1Type = QueryDataTypeUtils.resolveType(operand1);
+            operand2Type = QueryDataTypeUtils.resolveType(operand2);
 
             resultType = MathFunctionUtils.inferRemainderResultType(operand1Type, operand2Type);
         }
@@ -85,16 +85,16 @@ public class RemainderFunction<T> extends BiCallExpressionWithType<T> {
     @SuppressWarnings("checkstyle:AvoidNestedBlocks")
     private static Object doRemainderNumeric(
         Object operand1,
-        DataType operand1Type,
+        QueryDataType operand1Type,
         Object operand2,
-        DataType operand2Type,
-        DataType resultType
+        QueryDataType operand2Type,
+        QueryDataType resultType
     ) {
         Converter operand1Converter = operand1Type.getConverter();
         Converter operand2Converter = operand2Type.getConverter();
 
         try {
-            switch (resultType.getType()) {
+            switch (resultType.getTypeFamily()) {
                 case TINYINT:
                     return (byte) (operand1Converter.asTinyint(operand1) % operand2Converter.asTinyint(operand2));
 

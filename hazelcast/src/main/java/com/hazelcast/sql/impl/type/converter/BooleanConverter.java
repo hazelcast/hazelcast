@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.type.converter;
 
-import com.hazelcast.sql.impl.type.GenericType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.math.BigDecimal;
 
@@ -28,17 +28,12 @@ public final class BooleanConverter extends Converter {
     public static final BooleanConverter INSTANCE = new BooleanConverter();
 
     private BooleanConverter() {
-        // No-op.
+        super(ID_BOOLEAN, QueryDataTypeFamily.BIT);
     }
 
     @Override
     public Class<?> getValueClass() {
         return Boolean.class;
-    }
-
-    @Override
-    public GenericType getGenericType() {
-        return GenericType.BIT;
     }
 
     @Override

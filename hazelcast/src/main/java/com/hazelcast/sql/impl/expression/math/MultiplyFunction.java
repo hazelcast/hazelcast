@@ -22,14 +22,16 @@ import com.hazelcast.sql.impl.type.SqlYearMonthInterval;
 import com.hazelcast.sql.impl.expression.BiCallExpressionWithType;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.type.DataType;
-import com.hazelcast.sql.impl.type.DataTypeUtils;
-import com.hazelcast.sql.impl.type.GenericType;
+import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 import com.hazelcast.sql.impl.type.converter.Converter;
 
 import java.math.BigDecimal;
 
 import static com.hazelcast.sql.impl.expression.datetime.DateTimeExpressionUtils.NANO_IN_SECONDS;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTERVAL_DAY_SECOND;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTERVAL_YEAR_MONTH;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.LATE;
 
 /**
  * Plus expression.
@@ -39,17 +41,17 @@ public class MultiplyFunction<T> extends BiCallExpressionWithType<T> {
         // No-op.
     }
 
-    private MultiplyFunction(Expression<?> operand1, Expression<?> operand2, DataType resultType) {
+    private MultiplyFunction(Expression<?> operand1, Expression<?> operand2, QueryDataType resultType) {
         super(operand1, operand2, resultType);
     }
 
     public static MultiplyFunction<?> create(Expression<?> operand1, Expression<?> operand2) {
-        DataType operand1Type = operand1.getType();
-        DataType operand2Type = operand2.getType();
+        QueryDataType operand1Type = operand1.getType();
+        QueryDataType operand2Type = operand2.getType();
 
-        DataType resultType = MathFunctionUtils.inferMultiplyResultType(operand1Type, operand2Type);
+        QueryDataType resultType = MathFunctionUtils.inferMultiplyResultType(operand1Type, operand2Type);
 
-        if (DataTypeUtils.compare(operand1Type, operand2Type) == operand1Type) {
+        if (QueryDataTypeUtils.bigger(operand1Type, operand2Type) == operand1Type) {
             return new MultiplyFunction<>(operand1, operand2, resultType);
         } else {
             return new MultiplyFunction<>(operand2, operand1, resultType);
@@ -78,23 +80,23 @@ public class MultiplyFunction<T> extends BiCallExpressionWithType<T> {
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:ReturnCount", "checkstyle:AvoidNestedBlocks"})
     private static Object doMultiply(
         Object operand1,
-        DataType operand1Type,
+        QueryDataType operand1Type,
         Object operand2,
-        DataType operand2Type,
-        DataType resultType
+        QueryDataType operand2Type,
+        QueryDataType resultType
     ) {
         // Handle late binding.
-        boolean wasLate = resultType.getType() == GenericType.LATE;
+        boolean wasLate = resultType.getTypeFamily() == LATE;
 
         if (wasLate) {
-            operand1Type = DataTypeUtils.resolveType(operand1);
-            operand2Type = DataTypeUtils.resolveType(operand1);
+            operand1Type = QueryDataTypeUtils.resolveType(operand1);
+            operand2Type = QueryDataTypeUtils.resolveType(operand1);
 
             resultType = MathFunctionUtils.inferMultiplyResultType(operand1Type, operand2Type);
         }
 
-        if (resultType.getType() == GenericType.INTERVAL_YEAR_MONTH || resultType.getType() == GenericType.INTERVAL_DAY_SECOND) {
-            if (wasLate && DataTypeUtils.compare(operand1Type, operand2Type) == operand2Type) {
+        if (resultType.getTypeFamily() == INTERVAL_YEAR_MONTH || resultType.getTypeFamily() == INTERVAL_DAY_SECOND) {
+            if (wasLate && QueryDataTypeUtils.bigger(operand1Type, operand2Type) == operand2Type) {
                 return doMultiplyInterval(operand2, operand1, operand1Type, resultType);
             } else {
                 return doMultiplyInterval(operand1, operand2, operand2Type, resultType);
@@ -106,15 +108,15 @@ public class MultiplyFunction<T> extends BiCallExpressionWithType<T> {
 
     private static Object doMultiplyNumeric(
         Object operand1,
-        DataType operand1Type,
+        QueryDataType operand1Type,
         Object operand2,
-        DataType operand2Type,
-        DataType resultType
+        QueryDataType operand2Type,
+        QueryDataType resultType
     ) {
         Converter operand1Converter = operand1Type.getConverter();
         Converter operand2Converter = operand2Type.getConverter();
 
-        switch (resultType.getType()) {
+        switch (resultType.getTypeFamily()) {
             case TINYINT:
                 return (byte) (operand1Converter.asTinyint(operand1) * operand2Converter.asTinyint(operand2));
 
@@ -148,10 +150,10 @@ public class MultiplyFunction<T> extends BiCallExpressionWithType<T> {
     private static Object doMultiplyInterval(
         Object intervalOperand,
         Object numericOperand,
-        DataType numericOperandType,
-        DataType resultType
+        QueryDataType numericOperandType,
+        QueryDataType resultType
     ) {
-        switch (resultType.getType()) {
+        switch (resultType.getTypeFamily()) {
             case INTERVAL_YEAR_MONTH: {
                 SqlYearMonthInterval interval = (SqlYearMonthInterval) intervalOperand;
                 int multiplier = numericOperandType.getConverter().asInt(numericOperand);

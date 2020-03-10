@@ -20,7 +20,7 @@ import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.fragment.QueryFragmentContext;
 import com.hazelcast.sql.impl.exec.agg.AggregateCollector;
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 /**
  * Summing accumulator.
@@ -30,12 +30,12 @@ public class SumAggregateExpression<T> extends AbstractSingleOperandAggregateExp
         // No-op.
     }
 
-    private SumAggregateExpression(Expression<?> operand, DataType resType, boolean distinct) {
+    private SumAggregateExpression(Expression<?> operand, QueryDataType resType, boolean distinct) {
         super(operand, resType, distinct);
     }
 
     public static SumAggregateExpression<?> create(Expression<?> operand, boolean distinct) {
-        DataType resType = inferResultType(operand.getType());
+        QueryDataType resType = inferResultType(operand.getType());
 
         return new SumAggregateExpression<>(operand, resType, distinct);
     }
@@ -50,23 +50,23 @@ public class SumAggregateExpression<T> extends AbstractSingleOperandAggregateExp
         return true;
     }
 
-    private static DataType inferResultType(DataType operandType) {
-        switch (operandType.getType()) {
+    private static QueryDataType inferResultType(QueryDataType operandType) {
+        switch (operandType.getTypeFamily()) {
             case BIT:
             case TINYINT:
             case SMALLINT:
-                return DataType.INT;
+                return QueryDataType.INT;
 
             case INT:
             case BIGINT:
-                return DataType.BIGINT;
+                return QueryDataType.BIGINT;
 
             case DECIMAL:
-                return DataType.DECIMAL;
+                return QueryDataType.DECIMAL;
 
             case REAL:
             case DOUBLE:
-                return DataType.DOUBLE;
+                return QueryDataType.DOUBLE;
 
             default:
                 throw HazelcastSqlException.error("Unsupported operand type: " + operandType);

@@ -16,24 +16,15 @@
 
 package com.hazelcast.sql.impl.type.converter;
 
-import com.hazelcast.sql.impl.type.GenericType;
-
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.OffsetDateTime;
-import java.time.format.DateTimeParseException;
-
 /**
  * Converter for {@link java.lang.String} type.
  */
-public final class StringConverter extends Converter {
+public final class StringConverter extends AbstractStringConverter {
     /** Singleton instance. */
     public static final StringConverter INSTANCE = new StringConverter();
 
     private StringConverter() {
-        // No-op.
+        super(ID_STRING);
     }
 
     @Override
@@ -42,125 +33,7 @@ public final class StringConverter extends Converter {
     }
 
     @Override
-    public GenericType getGenericType() {
-        return GenericType.VARCHAR;
-    }
-
-    @Override
-    public boolean asBit(Object val) {
-        return asInt(val) != 0;
-    }
-
-    @Override
-    public byte asTinyint(Object val) {
-        try {
-            return Byte.parseByte(cast(val));
-        } catch (NumberFormatException e) {
-            throw cannotConvertImplicit(val);
-        }
-    }
-
-    @Override
-    public short asSmallint(Object val) {
-        try {
-            return Short.parseShort(cast(val));
-        } catch (NumberFormatException e) {
-            throw cannotConvertImplicit(val);
-        }
-    }
-
-    @Override
-    public int asInt(Object val) {
-        try {
-            return Integer.parseInt(cast(val));
-        } catch (NumberFormatException e) {
-            throw cannotConvertImplicit(val);
-        }
-    }
-
-    @Override
-    public long asBigint(Object val) {
-        try {
-            return Long.parseLong(cast(val));
-        } catch (NumberFormatException e) {
-            throw cannotConvertImplicit(val);
-        }
-    }
-
-    @Override
-    public BigDecimal asDecimal(Object val) {
-        try {
-            return new BigDecimal(cast(val));
-        } catch (NumberFormatException e) {
-            throw cannotConvertImplicit(val);
-        }
-    }
-
-    @Override
-    public float asReal(Object val) {
-        try {
-            return Float.parseFloat(cast(val));
-        } catch (NumberFormatException e) {
-            throw cannotConvertImplicit(val);
-        }
-    }
-
-    @Override
-    public double asDouble(Object val) {
-        try {
-            return Double.parseDouble(cast(val));
-        } catch (NumberFormatException e) {
-            throw cannotConvertImplicit(val);
-        }
-    }
-
-    @Override
-    public String asVarchar(Object val) {
-        return cast(val);
-    }
-
-    @Override
-    public LocalDate asDate(Object val) {
-        try {
-            return LocalDate.parse(cast(val));
-        } catch (DateTimeParseException e) {
-            throw cannotConvertImplicit(val);
-        }
-    }
-
-    @Override
-    public LocalTime asTime(Object val) {
-        try {
-            return LocalTime.parse(cast(val));
-        } catch (DateTimeParseException e) {
-            throw cannotConvertImplicit(val);
-        }
-    }
-
-    @Override
-    public LocalDateTime asTimestamp(Object val) {
-        try {
-            return LocalDateTime.parse(cast(val));
-        } catch (DateTimeParseException e) {
-            throw cannotConvertImplicit(val);
-        }
-    }
-
-    @Override
-    public OffsetDateTime asTimestampWithTimezone(Object val) {
-        try {
-            return OffsetDateTime.parse(cast(val));
-        } catch (DateTimeParseException e) {
-            throw cannotConvertImplicit(val);
-        }
-    }
-
-    @Override
-    public Object convertToSelf(Converter valConverter, Object val) {
-        return valConverter.asVarchar(val);
-    }
-
-    private String cast(Object val) {
+    protected String cast(Object val) {
         return (String) val;
     }
 }

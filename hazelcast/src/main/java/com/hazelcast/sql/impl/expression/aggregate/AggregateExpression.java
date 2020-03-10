@@ -23,8 +23,8 @@ import com.hazelcast.sql.impl.fragment.QueryFragmentContext;
 import com.hazelcast.sql.impl.exec.agg.AggregateCollector;
 import com.hazelcast.sql.impl.exec.agg.AggregateExec;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.type.DataType;
-import com.hazelcast.sql.impl.type.GenericType;
+import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.io.IOException;
 
@@ -33,7 +33,7 @@ import java.io.IOException;
  */
 public abstract class AggregateExpression<T> implements DataSerializable {
     /** Result type. */
-    protected DataType resType;
+    protected QueryDataType resType;
 
     /** Distinct flag. */
     protected boolean distinct;
@@ -45,8 +45,8 @@ public abstract class AggregateExpression<T> implements DataSerializable {
         // No-op.
     }
 
-    protected AggregateExpression(DataType resType, boolean distinct) {
-        assert resType.getType() != GenericType.LATE;
+    protected AggregateExpression(QueryDataType resType, boolean distinct) {
+        assert resType.getTypeFamily() != QueryDataTypeFamily.LATE;
 
         this.resType = resType;
         this.distinct = distinct;
@@ -75,7 +75,7 @@ public abstract class AggregateExpression<T> implements DataSerializable {
     /**
      * @return Return type of the expression.
      */
-    public DataType getType() {
+    public QueryDataType getType() {
         return resType;
     }
 

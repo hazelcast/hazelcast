@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.expression.predicate;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.UniCallExpression;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 /**
  * Not predicate.
@@ -45,7 +45,7 @@ public class NotPredicate extends UniCallExpression<Boolean> {
     }
 
     @Override
-    public DataType getType() {
-        return DataType.BIT;
+    public QueryDataType getType() {
+        return QueryDataType.BIT;
     }
 }

@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.expression.datetime;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.UniCallExpression;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.time.LocalDateTime;
 
@@ -48,7 +48,7 @@ public class LocalTimestampFunction extends UniCallExpression<LocalDateTime> {
     }
 
     @Override
-    public DataType getType() {
-        return DataType.TIMESTAMP;
+    public QueryDataType getType() {
+        return QueryDataType.TIMESTAMP;
     }
 }

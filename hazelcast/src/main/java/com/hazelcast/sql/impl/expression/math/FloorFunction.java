@@ -17,14 +17,14 @@
 package com.hazelcast.sql.impl.expression.math;
 
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 public class FloorFunction<T> extends FloorCeilFunction<T> {
     public FloorFunction() {
         // No-op.
     }
 
-    public FloorFunction(Expression<?> operand, DataType resultType) {
+    public FloorFunction(Expression<?> operand, QueryDataType resultType) {
         super(operand, resultType);
     }
 

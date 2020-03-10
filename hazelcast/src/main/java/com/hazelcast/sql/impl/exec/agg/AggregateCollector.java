@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.exec.agg;
 
-import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -32,7 +32,7 @@ public abstract class AggregateCollector {
         this.distinctSet = distinct ? new HashSet<>() : null;
     }
 
-    public final void collect(Object operandValue, DataType operandType) {
+    public final void collect(Object operandValue, QueryDataType operandType) {
         if (distinctSet != null && !distinctSet.add(operandValue)) {
             return;
         }
@@ -40,7 +40,7 @@ public abstract class AggregateCollector {
         collect0(operandValue, operandType);
     }
 
-    protected abstract void collect0(Object operandValue, DataType operandType);
+    protected abstract void collect0(Object operandValue, QueryDataType operandType);
 
     public abstract Object reduce();
 }

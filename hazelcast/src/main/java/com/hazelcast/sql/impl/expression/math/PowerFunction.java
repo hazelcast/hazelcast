@@ -20,7 +20,7 @@ import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.expression.BiCallExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 /**
  * POWER function.
@@ -35,11 +35,11 @@ public class PowerFunction extends BiCallExpression<Double> {
     }
 
     public static PowerFunction create(Expression<?> first, Expression<?> second) {
-        if (!first.getType().isNumeric()) {
+        if (!first.getType().canConvertToNumber()) {
             throw HazelcastSqlException.error("Operand 1 is not numeric: " + first.getType());
         }
 
-        if (!second.getType().isNumeric()) {
+        if (!second.getType().canConvertToNumber()) {
             throw HazelcastSqlException.error("Operand 2 is not numeric: " + second.getType());
         }
 
@@ -59,7 +59,7 @@ public class PowerFunction extends BiCallExpression<Double> {
     }
 
     @Override
-    public DataType getType() {
-        return DataType.DOUBLE;
+    public QueryDataType getType() {
+        return QueryDataType.DOUBLE;
     }
 }

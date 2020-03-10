@@ -21,7 +21,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.physical.visitor.PhysicalNodeVisitor;
-import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -57,7 +57,7 @@ public class ProjectPhysicalNode extends UniInputPhysicalNode {
 
     @Override
     public PhysicalNodeSchema getSchema0() {
-        List<DataType> types = new ArrayList<>(projects.size());
+        List<QueryDataType> types = new ArrayList<>(projects.size());
 
         for (Expression project : projects) {
             types.add(project.getType());

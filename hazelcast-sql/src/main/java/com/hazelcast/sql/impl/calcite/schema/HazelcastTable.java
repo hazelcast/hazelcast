@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.schema;
 
-import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeField;
@@ -50,7 +50,7 @@ public class HazelcastTable extends AbstractTable {
     private final Statistic statistic;
 
     /** Field types. */
-    private final Map<String, DataType> fieldTypes;
+    private final Map<String, QueryDataType> fieldTypes;
 
     /** Field paths. */
     private final Map<String, String> fieldPaths;
@@ -65,7 +65,7 @@ public class HazelcastTable extends AbstractTable {
         boolean partitioned,
         String distributionField,
         List<HazelcastTableIndex> indexes,
-        Map<String, DataType> fieldTypes,
+        Map<String, QueryDataType> fieldTypes,
         Map<String, String> fieldPaths,
         Statistic statistic
     ) {
@@ -79,11 +79,11 @@ public class HazelcastTable extends AbstractTable {
         this.statistic = statistic;
     }
 
-    public DataType getFieldType(String fieldName) {
-        DataType fieldType = fieldTypes.get(fieldName);
+    public QueryDataType getFieldType(String fieldName) {
+        QueryDataType fieldType = fieldTypes.get(fieldName);
 
         if (fieldType == null) {
-            fieldType = DataType.LATE;
+            fieldType = QueryDataType.LATE;
         }
 
         return fieldType;

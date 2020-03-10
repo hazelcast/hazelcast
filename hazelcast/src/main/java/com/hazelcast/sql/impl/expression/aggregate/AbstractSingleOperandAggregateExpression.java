@@ -21,7 +21,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.exec.agg.AggregateCollector;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -37,7 +37,7 @@ public abstract class AbstractSingleOperandAggregateExpression<T> extends Aggreg
         // No-op.
     }
 
-    protected AbstractSingleOperandAggregateExpression(Expression<?> operand, DataType resType, boolean distinct) {
+    protected AbstractSingleOperandAggregateExpression(Expression<?> operand, QueryDataType resType, boolean distinct) {
         super(resType, distinct);
 
         this.operand = operand;

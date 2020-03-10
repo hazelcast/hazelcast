@@ -26,7 +26,7 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.KeyValueExtractorExpression;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.KeyValueRow;
-import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,7 +45,7 @@ public abstract class AbstractMapScanExec extends AbstractExec implements KeyVal
     protected final List<String> fieldNames;
 
     /** Field types. */
-    protected final List<DataType> fieldTypes;
+    protected final List<QueryDataType> fieldTypes;
 
     /** Projects. */
     protected final List<Integer> projects;
@@ -67,7 +67,7 @@ public abstract class AbstractMapScanExec extends AbstractExec implements KeyVal
         String mapName,
         InternalSerializationService serializationService,
         List<String> fieldNames,
-        List<DataType> fieldTypes,
+        List<QueryDataType> fieldTypes,
         List<Integer> projects,
         Expression<Boolean> filter
     ) {
@@ -89,7 +89,7 @@ public abstract class AbstractMapScanExec extends AbstractExec implements KeyVal
 
         for (int i = 0; i < fieldNames.size(); i++) {
             String fieldName = fieldNames.get(i);
-            DataType fieldType = fieldTypes.get(i);
+            QueryDataType fieldType = fieldTypes.get(i);
 
             fieldExpressions.add(new KeyValueExtractorExpression<>(fieldName, fieldType));
         }

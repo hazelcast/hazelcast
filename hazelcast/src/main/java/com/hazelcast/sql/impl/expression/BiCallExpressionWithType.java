@@ -18,14 +18,14 @@ package com.hazelcast.sql.impl.expression;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.io.IOException;
 import java.util.Objects;
 
 public abstract class BiCallExpressionWithType<T> extends BiCallExpression<T> {
     /** Result type. */
-    protected DataType resultType;
+    protected QueryDataType resultType;
 
     protected BiCallExpressionWithType() {
         // No-op.
@@ -37,14 +37,14 @@ public abstract class BiCallExpressionWithType<T> extends BiCallExpression<T> {
         this.operand2 = operand2;
     }
 
-    protected BiCallExpressionWithType(Expression<?> operand1, Expression<?> operand2, DataType resultType) {
+    protected BiCallExpressionWithType(Expression<?> operand1, Expression<?> operand2, QueryDataType resultType) {
         this.operand1 = operand1;
         this.operand2 = operand2;
         this.resultType = resultType;
     }
 
     @Override
-    public DataType getType() {
+    public QueryDataType getType() {
         return resultType;
     }
 

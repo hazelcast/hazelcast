@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.expression.string;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.UniCallExpression;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 public class CharLengthFunction extends UniCallExpression<Integer> {
     public CharLengthFunction() {
@@ -44,7 +44,7 @@ public class CharLengthFunction extends UniCallExpression<Integer> {
     }
 
     @Override
-    public DataType getType() {
-        return DataType.INT;
+    public QueryDataType getType() {
+        return QueryDataType.INT;
     }
 }

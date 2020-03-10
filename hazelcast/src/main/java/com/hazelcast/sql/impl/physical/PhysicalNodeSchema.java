@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.physical;
 
-import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -26,17 +26,17 @@ import java.util.List;
  * Schema of a node.
  */
 public class PhysicalNodeSchema implements FieldTypeProvider {
-    private final List<DataType> types;
+    private final List<QueryDataType> types;
     private final int rowWidth;
 
-    public PhysicalNodeSchema(List<DataType> types) {
+    public PhysicalNodeSchema(List<QueryDataType> types) {
         this.types = Collections.unmodifiableList(types);
 
         rowWidth = calculateRowWidth(types);
     }
 
     public static PhysicalNodeSchema combine(PhysicalNodeSchema schema1, PhysicalNodeSchema schema2) {
-        ArrayList<DataType> types = new ArrayList<>(schema1.types);
+        ArrayList<QueryDataType> types = new ArrayList<>(schema1.types);
 
         types.addAll(schema2.types);
 
@@ -44,13 +44,13 @@ public class PhysicalNodeSchema implements FieldTypeProvider {
     }
 
     @Override
-    public DataType getType(int index) {
+    public QueryDataType getType(int index) {
         assert index <= types.size();
 
         return types.get(index);
     }
 
-    public List<DataType> getTypes() {
+    public List<QueryDataType> getTypes() {
         return types;
     }
 
@@ -58,11 +58,11 @@ public class PhysicalNodeSchema implements FieldTypeProvider {
         return rowWidth;
     }
 
-    private static int calculateRowWidth(List<DataType> types) {
+    private static int calculateRowWidth(List<QueryDataType> types) {
         int res = 0;
 
-        for (DataType type : types) {
-            res += type.getType().getEstimatedSize();
+        for (QueryDataType type : types) {
+            res += type.getTypeFamily().getEstimatedSize();
         }
 
         return res;

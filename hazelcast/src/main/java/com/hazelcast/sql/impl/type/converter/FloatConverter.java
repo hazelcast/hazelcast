@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.type.converter;
 
-import com.hazelcast.sql.impl.type.GenericType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.math.BigDecimal;
 
@@ -28,17 +28,12 @@ public final class FloatConverter extends Converter {
     public static final FloatConverter INSTANCE = new FloatConverter();
 
     private FloatConverter() {
-        // No-op.
+        super(ID_FLOAT, QueryDataTypeFamily.REAL);
     }
 
     @Override
     public Class<?> getValueClass() {
         return Float.class;
-    }
-
-    @Override
-    public GenericType getGenericType() {
-        return GenericType.REAL;
     }
 
     @Override

@@ -29,7 +29,7 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.predicate.AndPredicate;
 import com.hazelcast.sql.impl.expression.predicate.ComparisonPredicate;
 import com.hazelcast.sql.impl.expression.predicate.ComparisonMode;
-import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.schema.Table;
 import org.apache.calcite.sql.SqlNode;
@@ -174,7 +174,7 @@ public abstract class OptimizerTestSupport {
     }
 
     protected static Expression<?> column(int col) {
-        return ColumnExpression.create(col, DataType.VARCHAR);
+        return ColumnExpression.create(col, QueryDataType.VARCHAR);
     }
 
     /**

@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.expression.datetime;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.UniCallExpression;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.time.OffsetDateTime;
 
@@ -48,7 +48,7 @@ public class CurrentTimestampFunction extends UniCallExpression<OffsetDateTime> 
     }
 
     @Override
-    public DataType getType() {
-        return DataType.TIMESTAMP_WITH_TIMEZONE_OFFSET_DATE_TIME;
+    public QueryDataType getType() {
+        return QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME;
     }
 }

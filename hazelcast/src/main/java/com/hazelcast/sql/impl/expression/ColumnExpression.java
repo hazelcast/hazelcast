@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.expression;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -32,18 +32,18 @@ public class ColumnExpression<T> implements Expression<T> {
     private int index;
 
     /** Type of the returned value. */
-    private DataType type;
+    private QueryDataType type;
 
     public ColumnExpression() {
         // No-op.
     }
 
-    public ColumnExpression(int index, DataType type) {
+    public ColumnExpression(int index, QueryDataType type) {
         this.index = index;
         this.type = type;
     }
 
-    public static ColumnExpression<?> create(int index, DataType type) {
+    public static ColumnExpression<?> create(int index, QueryDataType type) {
         return new ColumnExpression<>(index, type);
     }
 
@@ -57,7 +57,7 @@ public class ColumnExpression<T> implements Expression<T> {
     }
 
     @Override
-    public DataType getType() {
+    public QueryDataType getType() {
         return type;
     }
 

@@ -17,8 +17,8 @@
 package com.hazelcast.sql.impl.expression.aggregate;
 
 import com.hazelcast.sql.impl.exec.agg.AggregateCollector;
-import com.hazelcast.sql.impl.type.DataType;
-import com.hazelcast.sql.impl.type.GenericType;
+import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.sql.impl.type.converter.Converter;
 
 import java.math.BigDecimal;
@@ -28,26 +28,26 @@ import java.math.BigDecimal;
  */
 public final class SumAggregateCollector extends AggregateCollector {
     /** Result type. */
-    private final DataType resType;
+    private final QueryDataType resType;
 
     /** Result. */
     private Object res;
 
-    public SumAggregateCollector(DataType resType, boolean distinct) {
+    public SumAggregateCollector(QueryDataType resType, boolean distinct) {
         super(distinct);
 
         this.resType = resType;
     }
 
     @Override
-    protected void collect0(Object operandValue, DataType operandType) {
+    protected void collect0(Object operandValue, QueryDataType operandType) {
         if (res == null) {
             initialize();
         }
 
         Converter converter = operandType.getConverter();
 
-        switch (resType.getType()) {
+        switch (resType.getTypeFamily()) {
             case INT:
                 res = (int) res + converter.asInt(operandValue);
 
@@ -64,7 +64,7 @@ public final class SumAggregateCollector extends AggregateCollector {
                 break;
 
             default:
-                assert resType.getType() == GenericType.DOUBLE;
+                assert resType.getTypeFamily() == QueryDataTypeFamily.DOUBLE;
 
                 res = (double) res + converter.asDouble(operandValue);
         }
@@ -76,7 +76,7 @@ public final class SumAggregateCollector extends AggregateCollector {
     }
 
     private void initialize() {
-        switch (resType.getType()) {
+        switch (resType.getTypeFamily()) {
             case INT:
                 res = 0;
 
@@ -93,7 +93,7 @@ public final class SumAggregateCollector extends AggregateCollector {
                 break;
 
             default:
-                assert resType.getType() == GenericType.DOUBLE;
+                assert resType.getTypeFamily() == QueryDataTypeFamily.DOUBLE;
 
                 res = 0.0d;
         }

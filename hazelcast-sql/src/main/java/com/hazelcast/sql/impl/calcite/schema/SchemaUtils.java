@@ -30,7 +30,7 @@ import com.hazelcast.sql.impl.calcite.statistics.TableStatistics;
 import com.hazelcast.sql.impl.schema.SqlSchemaResolver;
 import com.hazelcast.sql.impl.schema.SqlTableField;
 import com.hazelcast.sql.impl.schema.SqlTableSchema;
-import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.schema.Schema;
 import org.apache.calcite.schema.Table;
 
@@ -161,7 +161,7 @@ public final class SchemaUtils {
                 indexes = null;
             }
 
-            Map<String, DataType> fieldTypes = prepareFieldTypes(tableSchema);
+            Map<String, QueryDataType> fieldTypes = prepareFieldTypes(tableSchema);
             Map<String, String> fieldPaths = prepareFieldPaths(tableSchema);
 
             HazelcastTable table = new HazelcastTable(
@@ -181,8 +181,8 @@ public final class SchemaUtils {
         return res;
     }
 
-    private static Map<String, DataType> prepareFieldTypes(SqlTableSchema tableSchema) {
-        Map<String, DataType> res = new HashMap<>();
+    private static Map<String, QueryDataType> prepareFieldTypes(SqlTableSchema tableSchema) {
+        Map<String, QueryDataType> res = new HashMap<>();
 
         for (SqlTableField field : tableSchema.getFields()) {
             res.put(field.getName(), field.getType());

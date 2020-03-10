@@ -16,24 +16,24 @@
 
 package com.hazelcast.sql.impl.expression.datetime;
 
-import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 /**
  * Temporal value obtained through string parsing.
  */
 public class TemporalValue {
     /** Type. */
-    private final DataType type;
+    private final QueryDataType type;
 
     /** Value. */
     private final Object val;
 
-    public TemporalValue(DataType type, Object val) {
+    public TemporalValue(QueryDataType type, Object val) {
         this.type = type;
         this.val = val;
     }
 
-    public DataType getType() {
+    public QueryDataType getType() {
         return type;
     }
 

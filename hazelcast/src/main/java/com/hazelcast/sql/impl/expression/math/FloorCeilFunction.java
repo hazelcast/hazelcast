@@ -23,9 +23,9 @@ import com.hazelcast.sql.impl.expression.CastExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.UniCallExpressionWithType;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.type.DataType;
-import com.hazelcast.sql.impl.type.DataTypeUtils;
-import com.hazelcast.sql.impl.type.GenericType;
+import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.sql.impl.type.converter.Converter;
 
 import java.io.IOException;
@@ -43,17 +43,17 @@ public abstract class FloorCeilFunction<T> extends UniCallExpressionWithType<T> 
         // No-op.
     }
 
-    protected FloorCeilFunction(Expression<?> operand, DataType resultType) {
+    protected FloorCeilFunction(Expression<?> operand, QueryDataType resultType) {
         super(operand, resultType);
     }
 
     public static Expression<?> create(Expression<?> operand, boolean ceil) {
-        DataType operandType = operand.getType();
+        QueryDataType operandType = operand.getType();
 
-        switch (operandType.getType()) {
+        switch (operandType.getTypeFamily()) {
             case BIT:
                 // Bit alway remain the same, just coerce it.
-                return CastExpression.coerce(operand, DataType.TINYINT);
+                return CastExpression.coerce(operand, QueryDataType.TINYINT);
 
             case TINYINT:
             case SMALLINT:
@@ -66,7 +66,7 @@ public abstract class FloorCeilFunction<T> extends UniCallExpressionWithType<T> 
                 break;
         }
 
-        DataType resultType = inferResultType(operandType);
+        QueryDataType resultType = inferResultType(operandType);
 
         return ceil ? new CeilFunction<>(operand, resultType) : new FloorFunction<>(operand, resultType);
     }
@@ -86,15 +86,15 @@ public abstract class FloorCeilFunction<T> extends UniCallExpressionWithType<T> 
     protected abstract boolean isCeil();
 
     @SuppressWarnings("checkstyle:AvoidNestedBlocks")
-    private static Object floorCeil(Object operandValue, DataType operandType, DataType resultType, boolean ceil) {
-        if (resultType.getType() == GenericType.LATE) {
+    private static Object floorCeil(Object operandValue, QueryDataType operandType, QueryDataType resultType, boolean ceil) {
+        if (resultType.getTypeFamily() == QueryDataTypeFamily.LATE) {
             // Special handling for late binding.
-            operandType = DataTypeUtils.resolveType(operandValue);
+            operandType = QueryDataTypeUtils.resolveType(operandValue);
 
-            switch (operandType.getType()) {
+            switch (operandType.getTypeFamily()) {
                 case BIT:
                     // Bit alway remain the same, just coerce it.
-                    return CastExpression.coerce(operandValue, operandType, DataType.TINYINT);
+                    return CastExpression.coerce(operandValue, operandType, QueryDataType.TINYINT);
 
                 case TINYINT:
                 case SMALLINT:
@@ -112,7 +112,7 @@ public abstract class FloorCeilFunction<T> extends UniCallExpressionWithType<T> 
 
         Converter operandConverter = operandType.getConverter();
 
-        switch (resultType.getType()) {
+        switch (resultType.getTypeFamily()) {
             case DECIMAL: {
                 BigDecimal operand0 = operandConverter.asDecimal(operandValue);
 
@@ -157,17 +157,17 @@ public abstract class FloorCeilFunction<T> extends UniCallExpressionWithType<T> 
      * @param operandType Operand type.
      * @return Result type.
      */
-    private static DataType inferResultType(DataType operandType) {
-        if (!operandType.isNumeric()) {
+    private static QueryDataType inferResultType(QueryDataType operandType) {
+        if (!operandType.canConvertToNumber()) {
             throw HazelcastSqlException.error("Operand is not numeric: " + operandType);
         }
 
-        switch (operandType.getType()) {
+        switch (operandType.getTypeFamily()) {
             case REAL:
-                return DataType.DOUBLE;
+                return QueryDataType.DOUBLE;
 
             case VARCHAR:
-                return DataType.DECIMAL;
+                return QueryDataType.DECIMAL;
 
             default:
                 break;

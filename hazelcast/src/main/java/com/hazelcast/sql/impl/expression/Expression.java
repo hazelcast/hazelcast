@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.expression;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
@@ -152,5 +152,5 @@ public interface Expression<T> extends DataSerializable {
     /**
      * @return Return type of the expression.
      */
-    DataType getType();
+    QueryDataType getType();
 }

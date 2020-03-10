@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.physical;
 
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 public final class FetchOffsetFieldTypeProvider implements FieldTypeProvider {
 
@@ -28,7 +28,7 @@ public final class FetchOffsetFieldTypeProvider implements FieldTypeProvider {
     }
 
     @Override
-    public DataType getType(int index) {
+    public QueryDataType getType(int index) {
         throw HazelcastSqlException.error("Columns cannot be referenced in LIMIT/OFFSET statements");
     }
 }

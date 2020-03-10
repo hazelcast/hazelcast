@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.expression.string;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.TriCallExpression;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 /**
  * SUBSTRING string function.
@@ -51,7 +51,7 @@ public class SubstringFunction extends TriCallExpression<String> {
     }
 
     @Override
-    public DataType getType() {
-        return DataType.VARCHAR;
+    public QueryDataType getType() {
+        return QueryDataType.VARCHAR;
     }
 }

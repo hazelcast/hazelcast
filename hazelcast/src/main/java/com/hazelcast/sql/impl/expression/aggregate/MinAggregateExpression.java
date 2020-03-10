@@ -20,8 +20,8 @@ import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.fragment.QueryFragmentContext;
 import com.hazelcast.sql.impl.exec.agg.AggregateCollector;
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.type.DataType;
-import com.hazelcast.sql.impl.type.GenericType;
+import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 /**
  * MIN expression.
@@ -31,14 +31,14 @@ public class MinAggregateExpression extends AbstractSingleOperandAggregateExpres
         // No-op.
     }
 
-    private MinAggregateExpression(Expression<?> operand, DataType resType, boolean distinct) {
+    private MinAggregateExpression(Expression<?> operand, QueryDataType resType, boolean distinct) {
         super(operand, resType, distinct);
     }
 
     public static MinAggregateExpression create(Expression<?> operand, boolean distinct) {
-        DataType operandType = operand.getType();
+        QueryDataType operandType = operand.getType();
 
-        if (operandType.getType() == GenericType.LATE) {
+        if (operandType.getTypeFamily() == QueryDataTypeFamily.LATE) {
             throw HazelcastSqlException.error("Operand type cannot be resolved: " + operandType);
         }
 

@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.expression.math;
 
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.math.RoundingMode;
 
@@ -29,7 +29,7 @@ public class RoundFunction<T> extends RoundTruncateFunction<T> {
         // No-op.
     }
 
-    RoundFunction(Expression<?> operand1, Expression<?> operand2, DataType resultType) {
+    RoundFunction(Expression<?> operand1, Expression<?> operand2, QueryDataType resultType) {
         super(operand1, operand2, resultType);
     }
 

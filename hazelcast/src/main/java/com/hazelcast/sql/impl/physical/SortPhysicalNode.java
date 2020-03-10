@@ -21,7 +21,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.physical.visitor.PhysicalNodeVisitor;
-import com.hazelcast.sql.impl.type.GenericType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.io.IOException;
 import java.util.List;
@@ -56,7 +56,7 @@ public class SortPhysicalNode extends UniInputPhysicalNode {
         super(id, upstream);
 
         for (Expression<?> expression : expressions) {
-            if (expression.getType().getType() == GenericType.LATE) {
+            if (expression.getType().getTypeFamily() == QueryDataTypeFamily.LATE) {
                 throw HazelcastSqlException.error("Expression type cannot be resolved: " + expression);
             }
         }

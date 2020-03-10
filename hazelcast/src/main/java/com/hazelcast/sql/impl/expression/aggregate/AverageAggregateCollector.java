@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.expression.aggregate;
 
 import com.hazelcast.sql.impl.exec.agg.AggregateCollector;
-import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.converter.LongConverter;
 
 /**
@@ -25,7 +25,7 @@ import com.hazelcast.sql.impl.type.converter.LongConverter;
  */
 public class AverageAggregateCollector extends AggregateCollector {
     /** Result type. */
-    private final DataType resType;
+    private final QueryDataType resType;
 
     /** Sum. */
     private final SumAggregateCollector sum;
@@ -33,7 +33,7 @@ public class AverageAggregateCollector extends AggregateCollector {
     /** Average. */
     private final CountAggregateCollector count;
 
-    public AverageAggregateCollector(DataType resType, boolean distinct) {
+    public AverageAggregateCollector(QueryDataType resType, boolean distinct) {
         super(distinct);
 
         sum = new SumAggregateCollector(resType, false);
@@ -43,11 +43,11 @@ public class AverageAggregateCollector extends AggregateCollector {
     }
 
     @Override
-    protected void collect0(Object operandValue, DataType operandType) {
+    protected void collect0(Object operandValue, QueryDataType operandType) {
         collectMany(operandValue, operandType, 1);
     }
 
-    public void collectMany(Object operandValue, DataType operandType, long cnt) {
+    public void collectMany(Object operandValue, QueryDataType operandType, long cnt) {
         sum.collect(operandValue, operandType);
         count.collectMany(cnt);
     }

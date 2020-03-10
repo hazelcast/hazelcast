@@ -16,12 +16,8 @@
 
 package com.hazelcast.sql.impl.type.converter;
 
-import com.hazelcast.sql.impl.type.GenericType;
-
 import java.time.Instant;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Date;
@@ -29,37 +25,17 @@ import java.util.Date;
 /**
  * Converter for {@link java.util.Date} type.
  */
-public final class DateConverter extends Converter {
+public final class DateConverter extends AbstractTimestampWithTimezoneConverter {
     /** Singleton instance. */
     public static final DateConverter INSTANCE = new DateConverter();
 
     private DateConverter() {
-        // No-op.
+        super(ID_DATE);
     }
 
     @Override
     public Class<?> getValueClass() {
         return Date.class;
-    }
-
-    @Override
-    public GenericType getGenericType() {
-        return GenericType.TIMESTAMP_WITH_TIMEZONE;
-    }
-
-    @Override
-    public String asVarchar(Object val) {
-        return asTimestampWithTimezone(val).toString();
-    }
-
-    @Override
-    public LocalDate asDate(Object val) {
-        return asTimestamp(val).toLocalDate();
-    }
-
-    @Override
-    public LocalTime asTime(Object val) {
-        return asTimestamp(val).toLocalTime();
     }
 
     @Override
@@ -74,11 +50,6 @@ public final class DateConverter extends Converter {
         Instant instant = cast(val).toInstant();
 
         return OffsetDateTime.ofInstant(instant, ZoneOffset.UTC);
-    }
-
-    @Override
-    public Object convertToSelf(Converter valConverter, Object val) {
-        return valConverter.asTimestampWithTimezone(val);
     }
 
     private Date cast(Object val) {

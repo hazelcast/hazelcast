@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.type.converter;
 
-import com.hazelcast.sql.impl.type.GenericType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.math.BigDecimal;
 
@@ -28,17 +28,12 @@ public final class ShortConverter extends Converter {
     public static final ShortConverter INSTANCE = new ShortConverter();
 
     private ShortConverter() {
-        // No-op.
+        super(ID_SHORT, QueryDataTypeFamily.SMALLINT);
     }
 
     @Override
     public Class<?> getValueClass() {
         return Short.class;
-    }
-
-    @Override
-    public GenericType getGenericType() {
-        return GenericType.SMALLINT;
     }
 
     @Override

@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.expression.predicate;
 import com.hazelcast.sql.impl.expression.BiCallExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 /**
  * AND predicate.
@@ -49,7 +49,7 @@ public class AndPredicate extends BiCallExpression<Boolean> {
     }
 
     @Override
-    public DataType getType() {
-        return DataType.BIT;
+    public QueryDataType getType() {
+        return QueryDataType.BIT;
     }
 }

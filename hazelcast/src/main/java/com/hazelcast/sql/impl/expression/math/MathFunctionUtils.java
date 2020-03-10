@@ -17,9 +17,12 @@
 package com.hazelcast.sql.impl.expression.math;
 
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.impl.type.DataType;
-import com.hazelcast.sql.impl.type.DataTypeUtils;
-import com.hazelcast.sql.impl.type.GenericType;
+import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
+
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTERVAL_DAY_SECOND;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTERVAL_YEAR_MONTH;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.LATE;
 
 /**
  * Utility methods for math functions.
@@ -36,26 +39,26 @@ public final class MathFunctionUtils {
      * @param type2 Type of the second operand.
      * @return Result type.
      */
-    public static DataType inferPlusMinusResultType(DataType type1, DataType type2, boolean commutative) {
+    public static QueryDataType inferPlusMinusResultType(QueryDataType type1, QueryDataType type2, boolean commutative) {
         // Handle late binding.
-        if (type1.getType() == GenericType.LATE) {
+        if (type1.getTypeFamily() == LATE) {
             return type2;
-        } else if (type2.getType() == GenericType.LATE) {
+        } else if (type2.getTypeFamily() == LATE) {
             return type1;
         }
 
         // Convert strings to decimals.
-        if (type1 == DataType.VARCHAR) {
-            type1 = DataType.DECIMAL;
+        if (type1 == QueryDataType.VARCHAR) {
+            type1 = QueryDataType.DECIMAL;
         }
 
-        if (type2 == DataType.VARCHAR) {
-            type2 = DataType.DECIMAL;
+        if (type2 == QueryDataType.VARCHAR) {
+            type2 = QueryDataType.DECIMAL;
         }
 
         // Pick the bigger type to simplify further logic.
         if (commutative) {
-            DataType biggerType = DataTypeUtils.compare(type1, type2);
+            QueryDataType biggerType = QueryDataTypeUtils.bigger(type1, type2);
 
             if (biggerType == type2) {
                 type2 = type1;
@@ -64,7 +67,7 @@ public final class MathFunctionUtils {
         }
 
         // Inference for temporal types. It should be the second one becuase interval type has higher precedence.
-        if (type2.isTemporal()) {
+        if (type2.getTypeFamily().isTemporal()) {
             return inferPlusMinusResultTypeTemporal(type2, type1);
         }
 
@@ -72,40 +75,22 @@ public final class MathFunctionUtils {
         return inferPlusMinusResultTypeNumeric(type1, type2);
     }
 
-    private static DataType inferPlusMinusResultTypeNumeric(DataType type1, DataType type2) {
-        if (!type1.isNumeric()) {
+    private static QueryDataType inferPlusMinusResultTypeNumeric(QueryDataType type1, QueryDataType type2) {
+        if (!type1.canConvertToNumber()) {
             throw HazelcastSqlException.error("Operand 1 is not numeric.");
         }
 
-        if (!type2.isNumeric()) {
+        if (!type2.canConvertToNumber()) {
             throw HazelcastSqlException.error("Operand 2 is not numeric.");
         }
 
-        DataType biggerType = DataTypeUtils.compare(type1, type2);
+        QueryDataType biggerType = QueryDataTypeUtils.bigger(type1, type2);
 
-        switch (biggerType.getType()) {
-            case BIT:
-            case TINYINT:
-            case SMALLINT:
-            case INT:
-            case BIGINT:
-                // Expand precision.
-                return DataType.integerType(biggerType.getPrecision() + 1);
-
-            case DECIMAL:
-                return DataType.DECIMAL;
-
-            case REAL:
-            case DOUBLE:
-                return DataType.DOUBLE;
-
-            default:
-                throw new IllegalStateException("Unsupported type: " + biggerType);
-        }
+        return biggerType.expandPrecision();
     }
 
-    private static DataType inferPlusMinusResultTypeTemporal(DataType temporalType, DataType intervalType) {
-        switch (intervalType.getType()) {
+    private static QueryDataType inferPlusMinusResultTypeTemporal(QueryDataType temporalType, QueryDataType intervalType) {
+        switch (intervalType.getTypeFamily()) {
             case INTERVAL_DAY_SECOND:
             case INTERVAL_YEAR_MONTH:
                 return temporalType;
@@ -124,25 +109,25 @@ public final class MathFunctionUtils {
      * @param type2 Type 2.
      * @return Result type.
      */
-    public static DataType inferMultiplyResultType(DataType type1, DataType type2) {
+    public static QueryDataType inferMultiplyResultType(QueryDataType type1, QueryDataType type2) {
         // Handle late binding.
-        if (type1.getType() == GenericType.LATE) {
+        if (type1.getTypeFamily() == LATE) {
             return type2;
-        } else if (type2.getType() == GenericType.LATE) {
+        } else if (type2.getTypeFamily() == LATE) {
             return type1;
         }
 
         // Convert strings to decimals.
-        if (type1 == DataType.VARCHAR) {
-            type1 = DataType.DECIMAL;
+        if (type1 == QueryDataType.VARCHAR) {
+            type1 = QueryDataType.DECIMAL;
         }
 
-        if (type2 == DataType.VARCHAR) {
-            type2 = DataType.DECIMAL;
+        if (type2 == QueryDataType.VARCHAR) {
+            type2 = QueryDataType.DECIMAL;
         }
 
         // Pick the bigger type to simplify further logic.
-        DataType biggerType = DataTypeUtils.compare(type1, type2);
+        QueryDataType biggerType = QueryDataTypeUtils.bigger(type1, type2);
 
         if (biggerType == type2) {
             type2 = type1;
@@ -150,8 +135,8 @@ public final class MathFunctionUtils {
         }
 
         // Handle intervals.
-        if (type1.getType() == GenericType.INTERVAL_DAY_SECOND || type1.getType() == GenericType.INTERVAL_YEAR_MONTH) {
-            if (!type2.isNumeric()) {
+        if (type1.getTypeFamily() == INTERVAL_DAY_SECOND || type1.getTypeFamily() == INTERVAL_YEAR_MONTH) {
+            if (!type2.canConvertToNumber()) {
                 throw HazelcastSqlException.error("Operand 2 is not numeric.");
             }
 
@@ -162,49 +147,31 @@ public final class MathFunctionUtils {
         return inferMultiplyResultTypeNumeric(type1, type2);
     }
 
-    private static DataType inferMultiplyResultTypeNumeric(DataType type1, DataType type2) {
+    private static QueryDataType inferMultiplyResultTypeNumeric(QueryDataType type1, QueryDataType type2) {
         // Only numeric types are allowed at this point.
-        if (!type1.isNumeric()) {
+        if (!type1.canConvertToNumber()) {
             throw HazelcastSqlException.error("Operand 1 is not numeric.");
         }
 
-        if (!type2.isNumeric()) {
+        if (!type2.canConvertToNumber()) {
             throw HazelcastSqlException.error("Operand 2 is not numeric.");
         }
 
-        switch (type1.getType()) {
-            case BIT:
-            case TINYINT:
-            case SMALLINT:
-            case INT:
-            case BIGINT:
-                // Expand precision.
-                return DataType.integerType(type1.getPrecision() + 1);
-
-            case DECIMAL:
-                return DataType.DECIMAL;
-
-            case REAL:
-            case DOUBLE:
-                return DataType.DOUBLE;
-
-            default:
-                throw new IllegalStateException("Unsupported type: " + type1);
-        }
+        return type1.expandPrecision();
     }
 
     @SuppressWarnings("checkstyle:NPathComplexity")
-    public static DataType inferDivideResultType(DataType type1, DataType type2) {
+    public static QueryDataType inferDivideResultType(QueryDataType type1, QueryDataType type2) {
         // Handle late binding.
-        if (type1.getType() == GenericType.LATE) {
+        if (type1.getTypeFamily() == LATE) {
             return type2;
-        } else if (type2.getType() == GenericType.LATE) {
+        } else if (type2.getTypeFamily() == LATE) {
             return type1;
         }
 
         // Handle interval types.
-        if (type1.getType() == GenericType.INTERVAL_YEAR_MONTH || type1.getType() == GenericType.INTERVAL_DAY_SECOND) {
-            if (!type2.isNumeric()) {
+        if (type1.getTypeFamily() == INTERVAL_YEAR_MONTH || type1.getTypeFamily() == INTERVAL_DAY_SECOND) {
+            if (!type2.canConvertToNumber()) {
                 throw HazelcastSqlException.error("Operand 2 is not numeric.");
             }
 
@@ -212,56 +179,56 @@ public final class MathFunctionUtils {
         }
 
         // Handle numeric types.
-        if (type1 == DataType.VARCHAR) {
-            type1 = DataType.DECIMAL;
+        if (type1 == QueryDataType.VARCHAR) {
+            type1 = QueryDataType.DECIMAL;
         }
 
-        if (type2 == DataType.VARCHAR) {
-            type2 = DataType.DECIMAL;
+        if (type2 == QueryDataType.VARCHAR) {
+            type2 = QueryDataType.DECIMAL;
         }
 
-        if (!type1.isNumeric()) {
+        if (!type1.canConvertToNumber()) {
             throw HazelcastSqlException.error("Operand 1 is not numeric.");
         }
 
-        if (!type2.isNumeric()) {
+        if (!type2.canConvertToNumber()) {
             throw HazelcastSqlException.error("Operand 2 is not numeric.");
         }
 
-        if (type1 == DataType.BIT) {
-            type1 = DataType.TINYINT;
+        if (type1 == QueryDataType.BIT) {
+            type1 = QueryDataType.TINYINT;
         }
 
         return type1;
     }
 
-    public static DataType inferRemainderResultType(DataType type1, DataType type2) {
+    public static QueryDataType inferRemainderResultType(QueryDataType type1, QueryDataType type2) {
         // Handle late binding.
-        if (type1.getType() == GenericType.LATE) {
+        if (type1.getTypeFamily() == LATE) {
             return type2;
-        } else if (type2.getType() == GenericType.LATE) {
+        } else if (type2.getTypeFamily() == LATE) {
             return type1;
         }
 
         // Handle numeric types.
-        if (type1 == DataType.VARCHAR) {
-            type1 = DataType.DECIMAL;
+        if (type1 == QueryDataType.VARCHAR) {
+            type1 = QueryDataType.DECIMAL;
         }
 
-        if (type2 == DataType.VARCHAR) {
-            type2 = DataType.DECIMAL;
+        if (type2 == QueryDataType.VARCHAR) {
+            type2 = QueryDataType.DECIMAL;
         }
 
-        if (!type1.isNumeric()) {
+        if (!type1.canConvertToNumber()) {
             throw HazelcastSqlException.error("Operand 1 is not numeric.");
         }
 
-        if (!type2.isNumeric()) {
+        if (!type2.canConvertToNumber()) {
             throw HazelcastSqlException.error("Operand 2 is not numeric.");
         }
 
-        if (type1 == DataType.BIT) {
-            type1 = DataType.TINYINT;
+        if (type1 == QueryDataType.BIT) {
+            type1 = QueryDataType.TINYINT;
         }
 
         return type1;

@@ -31,7 +31,7 @@ public final class CostUtils {
     }
 
     /**
-     * Adjust cost of a project operation based in whether it is located on a separate project operator, or inlined into scan.
+     * Adjust cost of a project operation based on whether it is located in a separate project operator, or inlined into scan.
      * Outside project is more expensive.
      *
      * @param cpu CPU.

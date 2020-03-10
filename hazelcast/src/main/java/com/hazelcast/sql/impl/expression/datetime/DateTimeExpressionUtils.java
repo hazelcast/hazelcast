@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.expression.datetime;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.converter.Converter;
 
 import java.time.LocalDate;
@@ -72,19 +72,19 @@ public final class DateTimeExpressionUtils {
                 if (input.contains("+")) {
                     // Time zone present.
                     return new TemporalValue(
-                        DataType.TIMESTAMP_WITH_TIMEZONE_OFFSET_DATE_TIME,
+                        QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME,
                         OffsetDateTime.parse(input)
                     );
                 } else {
                     // No time zone.
-                    return new TemporalValue(DataType.TIMESTAMP, LocalDateTime.parse(input));
+                    return new TemporalValue(QueryDataType.TIMESTAMP, LocalDateTime.parse(input));
                 }
             } else if (input.contains("-")) {
                 // Looks like it is a date.
-                return new TemporalValue(DataType.DATE, LocalDate.parse(input));
+                return new TemporalValue(QueryDataType.DATE, LocalDate.parse(input));
             } else {
                 // Otherwise it is a time.
-                return new TemporalValue(DataType.TIME, LocalTime.parse(input));
+                return new TemporalValue(QueryDataType.TIME, LocalTime.parse(input));
             }
         } catch (DateTimeParseException ignore) {
             throw HazelcastSqlException.error("Failed to parse a string to DATE/TIME: " + input);

@@ -16,49 +16,25 @@
 
 package com.hazelcast.sql.impl.type.converter;
 
-import com.hazelcast.sql.impl.type.GenericType;
-
 import java.time.Instant;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
 /**
  * Converter for {@link OffsetDateTime} type.
  */
-public final class OffsetDateTimeConverter extends Converter {
+public final class OffsetDateTimeConverter extends AbstractTimestampWithTimezoneConverter {
     /** Singleton instance. */
     public static final OffsetDateTimeConverter INSTANCE = new OffsetDateTimeConverter();
 
     private OffsetDateTimeConverter() {
-        // No-op.
+        super(ID_OFFSET_DATE_TIME);
     }
 
     @Override
     public Class<?> getValueClass() {
         return OffsetDateTime.class;
-    }
-
-    @Override
-    public GenericType getGenericType() {
-        return GenericType.TIMESTAMP_WITH_TIMEZONE;
-    }
-
-    @Override
-    public String asVarchar(Object val) {
-        return cast(val).toString();
-    }
-
-    @Override
-    public LocalDate asDate(Object val) {
-        return asTimestamp(val).toLocalDate();
-    }
-
-    @Override
-    public LocalTime asTime(Object val) {
-        return asTimestamp(val).toLocalTime();
     }
 
     @Override
@@ -71,11 +47,6 @@ public final class OffsetDateTimeConverter extends Converter {
     @Override
     public OffsetDateTime asTimestampWithTimezone(Object val) {
         return cast(val);
-    }
-
-    @Override
-    public Object convertToSelf(Converter valConverter, Object val) {
-        return valConverter.asTimestampWithTimezone(val);
     }
 
     private OffsetDateTime cast(Object val) {

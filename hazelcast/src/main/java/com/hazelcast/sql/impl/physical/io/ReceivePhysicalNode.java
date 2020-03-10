@@ -22,7 +22,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.physical.PhysicalNodeSchema;
 import com.hazelcast.sql.impl.physical.visitor.PhysicalNodeVisitor;
 import com.hazelcast.sql.impl.physical.ZeroInputPhysicalNode;
-import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.io.IOException;
 import java.util.List;
@@ -36,13 +36,13 @@ public class ReceivePhysicalNode extends ZeroInputPhysicalNode implements EdgeAw
     private int edgeId;
 
     /** Field types. */
-    private List<DataType> fieldTypes;
+    private List<QueryDataType> fieldTypes;
 
     public ReceivePhysicalNode() {
         // No-op.
     }
 
-    public ReceivePhysicalNode(int id, int edgeId, List<DataType> fieldTypes) {
+    public ReceivePhysicalNode(int id, int edgeId, List<QueryDataType> fieldTypes) {
         super(id);
 
         this.edgeId = edgeId;

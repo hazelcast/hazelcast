@@ -17,7 +17,7 @@
 package com.hazelcast.sql.support;
 
 import com.hazelcast.sql.impl.physical.PhysicalNodeSchema;
-import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.util.Collections;
 
@@ -32,7 +32,7 @@ public class TestPhysicalNodeSchema extends PhysicalNodeSchema {
     }
 
     @Override
-    public final DataType getType(int index) {
-        return DataType.VARCHAR;
+    public final QueryDataType getType(int index) {
+        return QueryDataType.VARCHAR;
     }
 }

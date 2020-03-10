@@ -20,7 +20,7 @@ import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.expression.BiCallExpressionWithType;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -33,14 +33,14 @@ public abstract class RoundTruncateFunction<T> extends BiCallExpressionWithType<
         // No-op.
     }
 
-    protected RoundTruncateFunction(Expression<?> operand1, Expression<?> operand2, DataType resultType) {
+    protected RoundTruncateFunction(Expression<?> operand1, Expression<?> operand2, QueryDataType resultType) {
         super(operand1, operand2, resultType);
     }
 
     public static RoundTruncateFunction<?> create(Expression<?> operand1, Expression<?> operand2, boolean truncate) {
-        DataType resultType = inferReturnType(operand1.getType());
+        QueryDataType resultType = inferReturnType(operand1.getType());
 
-        if (operand2 != null && !operand2.getType().isNumeric()) {
+        if (operand2 != null && !operand2.getType().canConvertToNumber()) {
             throw HazelcastSqlException.error("Operand 2 is not numeric: " + operand2.getType());
         }
 
@@ -76,7 +76,7 @@ public abstract class RoundTruncateFunction<T> extends BiCallExpressionWithType<
         }
 
         // Cast to expected type.
-        switch (resultType.getType()) {
+        switch (resultType.getTypeFamily()) {
             case INT:
                 return (T) (Integer) value.intValueExact();
 
@@ -96,23 +96,23 @@ public abstract class RoundTruncateFunction<T> extends BiCallExpressionWithType<
 
     protected abstract RoundingMode getRoundingMode();
 
-    private static DataType inferReturnType(DataType operand1Type) {
-        if (!operand1Type.isNumeric()) {
+    private static QueryDataType inferReturnType(QueryDataType operand1Type) {
+        if (!operand1Type.canConvertToNumber()) {
             throw HazelcastSqlException.error("Operand 1 is not numeric: " + operand1Type);
         }
 
-        switch (operand1Type.getType()) {
+        switch (operand1Type.getTypeFamily()) {
             case BIT:
             case TINYINT:
             case SMALLINT:
-                return DataType.INT;
+                return QueryDataType.INT;
 
             case VARCHAR:
             case LATE:
-                return DataType.DECIMAL;
+                return QueryDataType.DECIMAL;
 
             case REAL:
-                return DataType.DOUBLE;
+                return QueryDataType.DOUBLE;
 
             default:
                 break;

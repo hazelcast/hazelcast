@@ -19,8 +19,8 @@ package com.hazelcast.sql.impl.expression;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.type.DataType;
-import com.hazelcast.sql.impl.type.DataTypeUtils;
+import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 import com.hazelcast.sql.impl.type.converter.Converter;
 
 import java.io.IOException;
@@ -30,19 +30,19 @@ import java.io.IOException;
  */
 public class CastExpression<T> extends UniCallExpression<T> {
     /** Target type. */
-    private DataType type;
+    private QueryDataType type;
 
     public CastExpression() {
         // No-op.
     }
 
-    private CastExpression(Expression<?> operand, DataType type) {
+    private CastExpression(Expression<?> operand, QueryDataType type) {
         super(operand);
         this.type = type;
     }
 
-    public static CastExpression<?> create(Expression<?> operand, DataType type) {
-        DataTypeUtils.ensureCanConvertTo(operand.getType(), type);
+    public static CastExpression<?> create(Expression<?> operand, QueryDataType type) {
+        QueryDataTypeUtils.ensureCanConvertTo(operand.getType(), type);
 
         return new CastExpression<>(operand, type);
     }
@@ -57,11 +57,11 @@ public class CastExpression<T> extends UniCallExpression<T> {
     }
 
     @Override
-    public DataType getType() {
+    public QueryDataType getType() {
         return type;
     }
 
-    public static Object cast(Object fromValue, Converter fromValueConverter, DataType toType) {
+    public static Object cast(Object fromValue, Converter fromValueConverter, QueryDataType toType) {
         if (fromValue == null) {
             return null;
         }
@@ -69,18 +69,20 @@ public class CastExpression<T> extends UniCallExpression<T> {
         return toType.getConverter().convertToSelf(fromValueConverter, fromValue);
     }
 
-    public static Expression<?> coerce(Expression<?> from, DataType toType) {
-        DataType fromType = from.getType();
+    public static Expression<?> coerce(Expression<?> from, QueryDataType toType) {
+        QueryDataType fromType = from.getType();
 
-        if (fromType.getType() == toType.getType()) {
+        if (fromType.getTypeFamily() == toType.getTypeFamily()) {
             return from;
         } else {
+
+
             return CastExpression.create(from, toType);
         }
     }
 
-    public static Object coerce(Object fromValue, DataType fromType, DataType toType) {
-        if (fromType.getType() == toType.getType()) {
+    public static Object coerce(Object fromValue, QueryDataType fromType, QueryDataType toType) {
+        if (fromType.getTypeFamily() == toType.getTypeFamily()) {
             return fromValue;
         } else {
             return cast(fromValue, fromType.getConverter(), toType);

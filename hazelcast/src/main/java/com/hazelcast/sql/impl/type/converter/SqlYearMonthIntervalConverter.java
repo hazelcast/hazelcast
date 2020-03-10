@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.type.converter;
 
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.type.SqlYearMonthInterval;
-import com.hazelcast.sql.impl.type.GenericType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 /**
  * Converter for {@link SqlYearMonthInterval} type.
@@ -28,17 +28,12 @@ public final class SqlYearMonthIntervalConverter extends Converter {
     public static final SqlYearMonthIntervalConverter INSTANCE = new SqlYearMonthIntervalConverter();
 
     private SqlYearMonthIntervalConverter() {
-        // No-op.
+        super(ID_INTERVAL_YEAR_MONTH, QueryDataTypeFamily.INTERVAL_YEAR_MONTH);
     }
 
     @Override
     public Class<?> getValueClass() {
         return SqlYearMonthInterval.class;
-    }
-
-    @Override
-    public GenericType getGenericType() {
-        return GenericType.INTERVAL_YEAR_MONTH;
     }
 
     @Override

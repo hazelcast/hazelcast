@@ -23,7 +23,7 @@ import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.physical.PhysicalNode;
 import com.hazelcast.sql.impl.physical.visitor.PhysicalNodeVisitor;
-import com.hazelcast.sql.impl.type.GenericType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.io.IOException;
 import java.util.List;
@@ -58,13 +58,13 @@ public class HashJoinPhysicalNode extends AbstractJoinPhysicalNode {
 
         // TODO: Fail only if both sides have unresolved types. Otherwise perform coercion during join.
         for (Integer leftHashKey : leftHashKeys) {
-            if (left.getSchema().getType(leftHashKey).getType() == GenericType.LATE) {
+            if (left.getSchema().getType(leftHashKey).getTypeFamily() == QueryDataTypeFamily.LATE) {
                 throw HazelcastSqlException.error("Column type cannot be resolved: " + leftHashKey);
             }
         }
 
         for (Integer rightHashKey : rightHashKeys) {
-            if (right.getSchema().getType(rightHashKey).getType() == GenericType.LATE) {
+            if (right.getSchema().getType(rightHashKey).getTypeFamily() == QueryDataTypeFamily.LATE) {
                 throw HazelcastSqlException.error("Column type cannot be resolved: " + (leftHashKeys.size() + rightHashKey));
             }
         }

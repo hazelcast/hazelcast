@@ -20,7 +20,7 @@ import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.fragment.QueryFragmentContext;
 import com.hazelcast.sql.impl.exec.agg.AggregateCollector;
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 /**
  * Local average expression.
@@ -30,12 +30,12 @@ public class AverageAggregateExpression<T> extends AbstractSingleOperandAggregat
         // No-op.
     }
 
-    private AverageAggregateExpression(Expression<?> operand, DataType resultType, boolean distinct) {
+    private AverageAggregateExpression(Expression<?> operand, QueryDataType resultType, boolean distinct) {
         super(operand, resultType, distinct);
     }
 
     public static AverageAggregateExpression<?> create(Expression<?> operand, boolean distinct) {
-        DataType resType = inferResultType(operand.getType());
+        QueryDataType resType = inferResultType(operand.getType());
 
         return new AverageAggregateExpression<>(operand, resType, distinct);
     }
@@ -50,9 +50,9 @@ public class AverageAggregateExpression<T> extends AbstractSingleOperandAggregat
         return true;
     }
 
-    public static DataType inferResultType(DataType operandType) {
+    public static QueryDataType inferResultType(QueryDataType operandType) {
         // TODO: Read ANSI standard on how to infer return types here.
-        switch (operandType.getType()) {
+        switch (operandType.getTypeFamily()) {
             case BIT:
             case TINYINT:
             case SMALLINT:
@@ -61,7 +61,7 @@ public class AverageAggregateExpression<T> extends AbstractSingleOperandAggregat
             case DECIMAL:
             case REAL:
             case DOUBLE:
-                return DataType.DOUBLE;
+                return QueryDataType.DOUBLE;
 
             default:
                 throw HazelcastSqlException.error("Unsupported operand type: " + operandType);

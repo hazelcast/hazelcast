@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.type.converter;
 
-import com.hazelcast.sql.impl.type.GenericType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -27,18 +27,17 @@ import java.time.OffsetDateTime;
 /**
  * Converter with late type resolution.
  */
-public class LateConverter extends Converter {
+public final class LateConverter extends Converter {
     /** Singleton instance. */
     public static final LateConverter INSTANCE = new LateConverter();
+
+    private LateConverter() {
+        super(ID_LATE, QueryDataTypeFamily.LATE);
+    }
 
     @Override
     public Class<?> getValueClass() {
         return null;
-    }
-
-    @Override
-    public GenericType getGenericType() {
-        return GenericType.LATE;
     }
 
     @Override
@@ -114,5 +113,11 @@ public class LateConverter extends Converter {
     @Override
     public Object convertToSelf(Converter converter, Object val) {
         return converter.convertToSelf(converter, val);
+    }
+
+    protected static Converter getConverter(Object val) {
+        assert val != null;
+
+        return Converters.getConverter(val.getClass());
     }
 }

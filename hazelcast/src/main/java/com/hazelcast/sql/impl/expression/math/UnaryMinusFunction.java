@@ -20,14 +20,12 @@ import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.UniCallExpressionWithType;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.type.DataType;
-import com.hazelcast.sql.impl.type.DataTypeUtils;
-import com.hazelcast.sql.impl.type.GenericType;
+import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
+import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 import com.hazelcast.sql.impl.type.converter.Converter;
 
 import java.math.BigDecimal;
-
-import static com.hazelcast.sql.impl.type.DataType.PRECISION_UNLIMITED;
 
 /**
  * Unary minus operation.
@@ -37,7 +35,7 @@ public class UnaryMinusFunction<T> extends UniCallExpressionWithType<T> {
         // No-op.
     }
 
-    private UnaryMinusFunction(Expression<?> operand, DataType resultType) {
+    private UnaryMinusFunction(Expression<?> operand, QueryDataType resultType) {
         super(operand, resultType);
     }
 
@@ -58,7 +56,7 @@ public class UnaryMinusFunction<T> extends UniCallExpressionWithType<T> {
     }
 
     @Override
-    public DataType getType() {
+    public QueryDataType getType() {
         return operand.getType();
     }
 
@@ -70,17 +68,17 @@ public class UnaryMinusFunction<T> extends UniCallExpressionWithType<T> {
      * @param resultType Result type.
      * @return Result.
      */
-    private static Object doMinus(Object operandValue, DataType operandType, DataType resultType) {
-        if (resultType.getType() == GenericType.LATE) {
+    private static Object doMinus(Object operandValue, QueryDataType operandType, QueryDataType resultType) {
+        if (resultType.getTypeFamily() == QueryDataTypeFamily.LATE) {
             // Special handling for late binding.
-            operandType = DataTypeUtils.resolveType(operandValue);
+            operandType = QueryDataTypeUtils.resolveType(operandValue);
 
             resultType = inferResultType(operandType);
         }
 
         Converter operandConverter = operandType.getConverter();
 
-        switch (resultType.getType()) {
+        switch (resultType.getTypeFamily()) {
             case TINYINT:
                 return (byte) (-operandConverter.asTinyint(operandValue));
 
@@ -115,37 +113,20 @@ public class UnaryMinusFunction<T> extends UniCallExpressionWithType<T> {
      * @param operandType Operand type.
      * @return Result type.
      */
-    private static DataType inferResultType(DataType operandType) {
-        if (!operandType.isNumeric()) {
+    private static QueryDataType inferResultType(QueryDataType operandType) {
+        if (!operandType.canConvertToNumber()) {
             throw HazelcastSqlException.error("Operand is not numeric: " + operandType);
         }
 
-        switch (operandType.getType()) {
-            case BIT:
-                return DataType.TINYINT;
+        switch (operandType.getTypeFamily()) {
+            case LATE:
+                return QueryDataType.LATE;
 
             case VARCHAR:
-                return DataType.DECIMAL;
-
-            case LATE:
-                return DataType.LATE;
+                return QueryDataType.DECIMAL;
 
             default:
-                break;
-        }
-
-        if (operandType.getScale() == 0) {
-            // Integer type.
-            int precision = operandType.getPrecision();
-
-            if (precision != PRECISION_UNLIMITED) {
-                precision++;
-            }
-
-            return DataType.integerType(precision);
-        } else {
-            // DECIMAL, REAL or DOUBLE. REAL is expanded to DOUBLE. DECIMAL and DOUBLE are already the widest.
-            return operandType == DataType.REAL ? DataType.DOUBLE : operandType;
+                return operandType.expandPrecision();
         }
     }
 }

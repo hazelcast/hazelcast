@@ -16,30 +16,23 @@
 
 package com.hazelcast.sql.impl.type.converter;
 
-import com.hazelcast.sql.impl.type.GenericType;
-
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
 /**
  * Converter for {@link java.math.BigInteger} type.
  */
-public final class BigIntegerConverter extends Converter {
+public final class BigIntegerConverter extends AbstractDecimalConverter {
     /** Singleton instance. */
     public static final BigIntegerConverter INSTANCE = new BigIntegerConverter();
 
     private BigIntegerConverter() {
-        // No-op.
+        super(ID_BIG_INTEGER);
     }
 
     @Override
     public Class<?> getValueClass() {
         return BigInteger.class;
-    }
-
-    @Override
-    public GenericType getGenericType() {
-        return GenericType.DECIMAL;
     }
 
     @Override
@@ -85,11 +78,6 @@ public final class BigIntegerConverter extends Converter {
     @Override
     public String asVarchar(Object val) {
         return cast(val).toString();
-    }
-
-    @Override
-    public Object convertToSelf(Converter valConverter, Object val) {
-        return valConverter.asDecimal(val);
     }
 
     private BigInteger cast(Object val) {

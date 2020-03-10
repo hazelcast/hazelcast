@@ -21,7 +21,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.UniCallExpression;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.io.IOException;
 import java.time.OffsetDateTime;
@@ -54,7 +54,7 @@ public class DatePartFunction extends UniCallExpression<Integer> {
     public Integer eval(Row row) {
         OffsetDateTime dateTime;
 
-        if (operand.getType() == DataType.VARCHAR) {
+        if (operand.getType() == QueryDataType.VARCHAR) {
             dateTime = DateTimeExpressionUtils.parseDateTime(operand.evalAsVarchar(row));
         } else {
             dateTime = operand.evalAsTimestampWithTimezone(row);
@@ -64,8 +64,8 @@ public class DatePartFunction extends UniCallExpression<Integer> {
     }
 
     @Override
-    public DataType getType() {
-        return DataType.INT;
+    public QueryDataType getType() {
+        return QueryDataType.INT;
     }
 
     @Override

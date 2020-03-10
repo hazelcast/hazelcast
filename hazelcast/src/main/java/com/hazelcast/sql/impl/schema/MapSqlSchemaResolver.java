@@ -24,8 +24,8 @@ import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.query.QueryConstants;
-import com.hazelcast.sql.impl.type.DataType;
-import com.hazelcast.sql.impl.type.DataTypeUtils;
+import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -90,7 +90,7 @@ public abstract class MapSqlSchemaResolver implements SqlSchemaResolver {
     private void resolveObjectFields(Map<String, SqlTableField> fields, Object object, boolean isKey) {
         // Add predefined fields.
         String topName = isKey ? QueryConstants.KEY_ATTRIBUTE_NAME.value() : QueryConstants.THIS_ATTRIBUTE_NAME.value();
-        DataType topType = DataTypeUtils.resolveTypeOrNull(object.getClass());
+        QueryDataType topType = QueryDataTypeUtils.resolveTypeOrNull(object.getClass());
 
         fields.put(topName, new SqlTableField(topName, topName, topType));
 
@@ -102,7 +102,7 @@ public abstract class MapSqlSchemaResolver implements SqlSchemaResolver {
                 continue;
             }
 
-            DataType type = DataTypeUtils.resolveTypeOrNull(method.getReturnType());
+            QueryDataType type = QueryDataTypeUtils.resolveTypeOrNull(method.getReturnType());
 
             fields.putIfAbsent(name, new SqlTableField(name, resolvePath(name, isKey), type));
         }
@@ -150,7 +150,7 @@ public abstract class MapSqlSchemaResolver implements SqlSchemaResolver {
             for (String name : classDefinition.getFieldNames()) {
                 FieldType portableType = classDefinition.getFieldType(name);
 
-                DataType type = resolvePortableType(portableType);
+                QueryDataType type = resolvePortableType(portableType);
 
                 fields.putIfAbsent(name, new SqlTableField(name, resolvePath(name, isKey), type));
             }
@@ -161,35 +161,35 @@ public abstract class MapSqlSchemaResolver implements SqlSchemaResolver {
     }
 
     @SuppressWarnings("checkstyle:ReturnCount")
-    private static DataType resolvePortableType(FieldType portableType) {
+    private static QueryDataType resolvePortableType(FieldType portableType) {
         switch (portableType) {
             case BOOLEAN:
-                return DataType.BIT;
+                return QueryDataType.BIT;
 
             case BYTE:
-                return DataType.TINYINT;
+                return QueryDataType.TINYINT;
 
             case SHORT:
-                return DataType.SMALLINT;
+                return QueryDataType.SMALLINT;
 
             case CHAR:
             case UTF:
-                return DataType.VARCHAR;
+                return QueryDataType.VARCHAR;
 
             case INT:
-                return DataType.INT;
+                return QueryDataType.INT;
 
             case LONG:
-                return DataType.BIGINT;
+                return QueryDataType.BIGINT;
 
             case FLOAT:
-                return DataType.REAL;
+                return QueryDataType.REAL;
 
             case DOUBLE:
-                return DataType.DOUBLE;
+                return QueryDataType.DOUBLE;
 
             default:
-                return DataType.OBJECT;
+                return QueryDataType.OBJECT;
         }
     }
 

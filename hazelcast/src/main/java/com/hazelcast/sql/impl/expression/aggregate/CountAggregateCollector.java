@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.expression.aggregate;
 
 import com.hazelcast.sql.impl.exec.agg.AggregateCollector;
-import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 /**
  * Counting collector.
@@ -31,7 +31,7 @@ public final class CountAggregateCollector extends AggregateCollector {
     }
 
     @Override
-    protected void collect0(Object operandValue, DataType operandType) {
+    protected void collect0(Object operandValue, QueryDataType operandType) {
         collectMany(1);
     }
 

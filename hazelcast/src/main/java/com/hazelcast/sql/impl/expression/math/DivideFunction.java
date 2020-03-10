@@ -17,35 +17,40 @@
 package com.hazelcast.sql.impl.expression.math;
 
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
-import com.hazelcast.sql.impl.type.SqlYearMonthInterval;
 import com.hazelcast.sql.impl.expression.BiCallExpressionWithType;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.type.DataType;
-import com.hazelcast.sql.impl.type.DataTypeUtils;
-import com.hazelcast.sql.impl.type.GenericType;
+import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
+import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
+import com.hazelcast.sql.impl.type.SqlYearMonthInterval;
 import com.hazelcast.sql.impl.type.converter.Converter;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
 import static com.hazelcast.sql.impl.expression.datetime.DateTimeExpressionUtils.NANO_IN_SECONDS;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTERVAL_DAY_SECOND;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTERVAL_YEAR_MONTH;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.LATE;
 
 /**
  * Division.
  */
 public class DivideFunction<T> extends BiCallExpressionWithType<T> {
+    /** Scale for division operation. */
+    public static final int SCALE = 38;
+
     public DivideFunction() {
         // No-op.
     }
 
-    private DivideFunction(Expression<?> operand1, Expression<?> operand2, DataType resultType) {
+    private DivideFunction(Expression<?> operand1, Expression<?> operand2, QueryDataType resultType) {
         super(operand1, operand2, resultType);
     }
 
     public static DivideFunction<?> create(Expression<?> operand1, Expression<?> operand2) {
-        DataType resultType = MathFunctionUtils.inferDivideResultType(operand1.getType(), operand2.getType());
+        QueryDataType resultType = MathFunctionUtils.inferDivideResultType(operand1.getType(), operand2.getType());
 
         return new DivideFunction<>(operand1, operand2, resultType);
     }
@@ -70,21 +75,21 @@ public class DivideFunction<T> extends BiCallExpressionWithType<T> {
 
     private static Object doDivide(
         Object operand1,
-        DataType operand1Type,
+        QueryDataType operand1Type,
         Object operand2,
-        DataType operand2Type,
-        DataType resultType
+        QueryDataType operand2Type,
+        QueryDataType resultType
     ) {
         // Handle lat binding.
-        if (resultType.getType() == GenericType.LATE) {
-            operand1Type = DataTypeUtils.resolveType(operand1);
-            operand2Type = DataTypeUtils.resolveType(operand2);
+        if (resultType.getTypeFamily() == LATE) {
+            operand1Type = QueryDataTypeUtils.resolveType(operand1);
+            operand2Type = QueryDataTypeUtils.resolveType(operand2);
 
             resultType = MathFunctionUtils.inferDivideResultType(operand1Type, operand2Type);
         }
 
         // Handle intervals.
-        if (resultType.getType() == GenericType.INTERVAL_YEAR_MONTH || resultType.getType() == GenericType.INTERVAL_DAY_SECOND) {
+        if (resultType.getTypeFamily() == INTERVAL_YEAR_MONTH || resultType.getTypeFamily() == INTERVAL_DAY_SECOND) {
             return doDivideInterval(operand1, operand2, operand2Type, resultType);
         }
 
@@ -93,8 +98,13 @@ public class DivideFunction<T> extends BiCallExpressionWithType<T> {
     }
 
     @SuppressWarnings("checkstyle:AvoidNestedBlocks")
-    private static Object doDivideInterval(Object operand1, Object operand2, DataType operand2Type, DataType resultType) {
-        switch (resultType.getType()) {
+    private static Object doDivideInterval(
+        Object operand1,
+        Object operand2,
+        QueryDataType operand2Type,
+        QueryDataType resultType
+    ) {
+        switch (resultType.getTypeFamily()) {
             case INTERVAL_YEAR_MONTH: {
                 SqlYearMonthInterval interval = (SqlYearMonthInterval) operand1;
                 int divisor = operand2Type.getConverter().asInt(operand2);
@@ -122,16 +132,16 @@ public class DivideFunction<T> extends BiCallExpressionWithType<T> {
     @SuppressWarnings("checkstyle:AvoidNestedBlocks")
     private static Object doDivideNumeric(
         Object operand1,
-        DataType operand1Type,
+        QueryDataType operand1Type,
         Object operand2,
-        DataType operand2Type,
-        DataType resultType
+        QueryDataType operand2Type,
+        QueryDataType resultType
     ) {
         Converter operand1Converter = operand1Type.getConverter();
         Converter operand2Converter = operand2Type.getConverter();
 
         try {
-            switch (resultType.getType()) {
+            switch (resultType.getTypeFamily()) {
                 case TINYINT:
                     return (byte) (operand1Converter.asTinyint(operand1) / operand2Converter.asTinyint(operand2));
 
@@ -148,7 +158,7 @@ public class DivideFunction<T> extends BiCallExpressionWithType<T> {
                     BigDecimal op1Decimal = operand1Converter.asDecimal(operand1);
                     BigDecimal op2Decimal = operand2Converter.asDecimal(operand2);
 
-                    return op1Decimal.divide(op2Decimal, DataType.SCALE_DIVIDE, RoundingMode.HALF_DOWN);
+                    return op1Decimal.divide(op2Decimal, SCALE, RoundingMode.HALF_DOWN);
 
                 case REAL: {
                     float res = operand1Converter.asReal(operand1) / operand2Converter.asReal(operand2);

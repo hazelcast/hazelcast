@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.expression;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -28,19 +28,19 @@ import java.util.Objects;
  */
 public abstract class UniCallExpressionWithType<T> extends UniCallExpression<T> {
     /** Result type. */
-    protected DataType resultType;
+    protected QueryDataType resultType;
 
     protected UniCallExpressionWithType() {
         // No-op.
     }
 
-    protected UniCallExpressionWithType(Expression<?> operand, DataType resultType) {
+    protected UniCallExpressionWithType(Expression<?> operand, QueryDataType resultType) {
         this.operand = operand;
         this.resultType = resultType;
     }
 
     @Override
-    public DataType getType() {
+    public QueryDataType getType() {
         return resultType;
     }
 

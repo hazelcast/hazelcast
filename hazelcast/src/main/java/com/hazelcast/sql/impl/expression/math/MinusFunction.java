@@ -22,9 +22,9 @@ import com.hazelcast.sql.impl.type.SqlYearMonthInterval;
 import com.hazelcast.sql.impl.expression.BiCallExpressionWithType;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.type.DataType;
-import com.hazelcast.sql.impl.type.DataTypeUtils;
-import com.hazelcast.sql.impl.type.GenericType;
+import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.sql.impl.type.converter.Converter;
 
 import java.math.BigDecimal;
@@ -38,12 +38,12 @@ public class MinusFunction<T> extends BiCallExpressionWithType<T> {
         // No-op.
     }
 
-    private MinusFunction(Expression<?> operand1, Expression<?> operand2, DataType resultType) {
+    private MinusFunction(Expression<?> operand1, Expression<?> operand2, QueryDataType resultType) {
         super(operand1, operand2, resultType);
     }
 
     public static MinusFunction<?> create(Expression<?> operand1, Expression<?> operand2) {
-        DataType resultType = MathFunctionUtils.inferPlusMinusResultType(operand1.getType(), operand2.getType(), false);
+        QueryDataType resultType = MathFunctionUtils.inferPlusMinusResultType(operand1.getType(), operand2.getType(), false);
 
         return new MinusFunction<>(operand1, operand2, resultType);
     }
@@ -69,27 +69,27 @@ public class MinusFunction<T> extends BiCallExpressionWithType<T> {
 
     private static Object doMinus(
         Object operand1,
-        DataType operand1Type,
+        QueryDataType operand1Type,
         Object operand2,
-        DataType operand2Type,
-        DataType resultType
+        QueryDataType operand2Type,
+        QueryDataType resultType
     ) {
         // Handle late binding.
-        if (resultType.getType() == GenericType.LATE) {
-            operand1Type = DataTypeUtils.resolveType(operand1);
-            operand2Type = DataTypeUtils.resolveType(operand1);
+        if (resultType.getTypeFamily() == QueryDataTypeFamily.LATE) {
+            operand1Type = QueryDataTypeUtils.resolveType(operand1);
+            operand2Type = QueryDataTypeUtils.resolveType(operand1);
 
             resultType = MathFunctionUtils.inferPlusMinusResultType(operand1Type, operand2Type, false);
         }
 
-        if (resultType.isTemporal()) {
+        if (resultType.getTypeFamily().isTemporal()) {
             return doMinusTemporal(operand1, operand1Type, operand2, operand2Type, resultType);
         }
 
         Converter operand1Converter = operand1Type.getConverter();
         Converter operand2Converter = operand2Type.getConverter();
 
-        switch (resultType.getType()) {
+        switch (resultType.getTypeFamily()) {
             case TINYINT:
                 return operand1Converter.asTinyint(operand1) - operand2Converter.asTinyint(operand2);
 
@@ -122,16 +122,16 @@ public class MinusFunction<T> extends BiCallExpressionWithType<T> {
     @SuppressWarnings("checkstyle:AvoidNestedBlocks")
     private static Object doMinusTemporal(
         Object temporalOperand,
-        DataType temporalOperandType,
+        QueryDataType temporalOperandType,
         Object intervalOperand,
-        DataType intervalOperandType,
-        DataType resType
+        QueryDataType intervalOperandType,
+        QueryDataType resType
     ) {
-        switch (resType.getType()) {
+        switch (resType.getTypeFamily()) {
             case DATE: {
                 LocalDate date = temporalOperandType.getConverter().asDate(temporalOperand);
 
-                if (intervalOperandType.getType() == GenericType.INTERVAL_YEAR_MONTH) {
+                if (intervalOperandType.getTypeFamily() == QueryDataTypeFamily.INTERVAL_YEAR_MONTH) {
                     return date.minusDays(((SqlYearMonthInterval) intervalOperand).getMonths());
                 } else {
                     SqlDaySecondInterval interval = (SqlDaySecondInterval) intervalOperand;
@@ -143,7 +143,7 @@ public class MinusFunction<T> extends BiCallExpressionWithType<T> {
             case TIME: {
                 LocalTime time = temporalOperandType.getConverter().asTime(temporalOperand);
 
-                if (intervalOperandType.getType() == GenericType.INTERVAL_YEAR_MONTH) {
+                if (intervalOperandType.getTypeFamily() == QueryDataTypeFamily.INTERVAL_YEAR_MONTH) {
                     return time;
                 } else {
                     SqlDaySecondInterval interval = (SqlDaySecondInterval) intervalOperand;
@@ -155,7 +155,7 @@ public class MinusFunction<T> extends BiCallExpressionWithType<T> {
             case TIMESTAMP: {
                 LocalDateTime ts = temporalOperandType.getConverter().asTimestamp(temporalOperand);
 
-                if (intervalOperandType.getType() == GenericType.INTERVAL_YEAR_MONTH) {
+                if (intervalOperandType.getTypeFamily() == QueryDataTypeFamily.INTERVAL_YEAR_MONTH) {
                     return ts.minusDays(((SqlYearMonthInterval) intervalOperand).getMonths());
                 } else {
                     SqlDaySecondInterval interval = (SqlDaySecondInterval) intervalOperand;
@@ -167,7 +167,7 @@ public class MinusFunction<T> extends BiCallExpressionWithType<T> {
             case TIMESTAMP_WITH_TIMEZONE: {
                 OffsetDateTime ts = temporalOperandType.getConverter().asTimestampWithTimezone(temporalOperand);
 
-                if (intervalOperandType.getType() == GenericType.INTERVAL_YEAR_MONTH) {
+                if (intervalOperandType.getTypeFamily() == QueryDataTypeFamily.INTERVAL_YEAR_MONTH) {
                     return ts.minusDays(((SqlYearMonthInterval) intervalOperand).getMonths());
                 } else {
                     SqlDaySecondInterval interval = (SqlDaySecondInterval) intervalOperand;

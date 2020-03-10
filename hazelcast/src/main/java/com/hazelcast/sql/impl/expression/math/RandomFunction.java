@@ -20,7 +20,7 @@ import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.UniCallExpression;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
@@ -38,7 +38,7 @@ public class RandomFunction extends UniCallExpression<Double> {
     }
 
     public static RandomFunction create(Expression<?> seedExp) {
-        if (seedExp != null && !seedExp.getType().isNumeric()) {
+        if (seedExp != null && !seedExp.getType().canConvertToNumber()) {
             throw HazelcastSqlException.error("Operand is not numeric: " + seedExp.getType());
         }
 
@@ -55,7 +55,7 @@ public class RandomFunction extends UniCallExpression<Double> {
     }
 
     @Override
-    public DataType getType() {
-        return DataType.DOUBLE;
+    public QueryDataType getType() {
+        return QueryDataType.DOUBLE;
     }
 }

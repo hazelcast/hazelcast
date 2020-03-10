@@ -21,8 +21,8 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.expression.CastExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.type.DataType;
-import com.hazelcast.sql.impl.type.DataTypeUtils;
+import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 
 import java.io.IOException;
 import java.util.List;
@@ -38,13 +38,13 @@ public class CaseExpression<T> implements Expression<T> {
     private Expression<?>[] results;
 
     /** Return type. */
-    private DataType resultType;
+    private QueryDataType resultType;
 
     public CaseExpression() {
         // No-op.
     }
 
-    private CaseExpression(Expression<Boolean>[] conditions, Expression<Boolean>[] results, DataType resultType) {
+    private CaseExpression(Expression<Boolean>[] conditions, Expression<Boolean>[] results, QueryDataType resultType) {
         this.conditions = conditions;
         this.results = results;
         this.resultType = resultType;
@@ -72,7 +72,7 @@ public class CaseExpression<T> implements Expression<T> {
         results[results.length - 1] = expressions.size() == idx + 1 ? expressions.get(idx) : null;
 
         // Determine the result type and perform coercion.
-        DataType resType = DataTypeUtils.compare(results);
+        QueryDataType resType = compare(results);
 
         for (int i = 0; i < results.length; i++) {
             results[i] = CastExpression.coerce(results[i], resType);
@@ -106,7 +106,7 @@ public class CaseExpression<T> implements Expression<T> {
     }
 
     @Override
-    public DataType getType() {
+    public QueryDataType getType() {
         return resultType;
     }
 
@@ -140,5 +140,25 @@ public class CaseExpression<T> implements Expression<T> {
         results[len] = in.readObject();
 
         resultType = in.readObject();
+    }
+
+    private static QueryDataType compare(Expression<?>[] expressions) {
+        assert expressions.length != 0;
+
+        QueryDataType winner = null;
+
+        for (Expression<?> expression : expressions) {
+            if (expression == null) {
+                continue;
+            }
+
+            QueryDataType type = expression.getType();
+
+            if (winner == null || QueryDataTypeUtils.bigger(type, winner) == type) {
+                winner = type;
+            }
+        }
+
+        return winner;
     }
 }

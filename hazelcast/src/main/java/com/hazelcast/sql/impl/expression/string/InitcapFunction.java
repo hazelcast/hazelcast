@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.expression.string;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.UniCallExpression;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 public class InitcapFunction extends UniCallExpression<String> {
     public InitcapFunction() {
@@ -44,7 +44,7 @@ public class InitcapFunction extends UniCallExpression<String> {
     }
 
     @Override
-    public DataType getType() {
-        return DataType.VARCHAR;
+    public QueryDataType getType() {
+        return QueryDataType.VARCHAR;
     }
 }

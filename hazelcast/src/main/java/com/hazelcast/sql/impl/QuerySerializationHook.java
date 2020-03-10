@@ -32,6 +32,7 @@ import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.JoinRow;
 import com.hazelcast.sql.impl.row.ListRowBatch;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SQL_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SQL_DS_FACTORY_ID;
@@ -43,21 +44,23 @@ public class QuerySerializationHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(SQL_DS_FACTORY, SQL_DS_FACTORY_ID);
 
-    public static final int ROW_HEAP = 0;
-    public static final int ROW_JOIN = 1;
-    public static final int ROW_BATCH_LIST = 2;
-    public static final int ROW_BATCH_EMPTY = 3;
+    public static final int QUERY_DATA_TYPE = 0;
 
-    public static final int OPERATION_EXECUTE = 4;
-    public static final int OPERATION_BATCH = 5;
-    public static final int OPERATION_FLOW_CONTROL = 6;
-    public static final int OPERATION_CANCEL = 7;
-    public static final int OPERATION_CHECK = 8;
-    public static final int OPERATION_CHECK_RESPONSE = 9;
+    public static final int QUERY_ID = 1;
 
-    public static final int QUERY_ID = 10;
+    public static final int ROW_HEAP = 2;
+    public static final int ROW_JOIN = 3;
+    public static final int ROW_BATCH_LIST = 4;
+    public static final int ROW_BATCH_EMPTY = 5;
 
-    public static final int LEN = QUERY_ID + 1;
+    public static final int OPERATION_EXECUTE = 6;
+    public static final int OPERATION_BATCH = 7;
+    public static final int OPERATION_FLOW_CONTROL = 8;
+    public static final int OPERATION_CANCEL = 9;
+    public static final int OPERATION_CHECK = 10;
+    public static final int OPERATION_CHECK_RESPONSE = 11;
+
+    public static final int LEN = OPERATION_CHECK_RESPONSE + 1;
 
     @Override
     public int getFactoryId() {
@@ -68,6 +71,8 @@ public class QuerySerializationHook implements DataSerializerHook {
     @Override
     public DataSerializableFactory createFactory() {
         ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[LEN];
+
+        constructors[QUERY_DATA_TYPE] = arg -> new QueryDataType();
 
         constructors[ROW_HEAP] = arg -> new HeapRow();
         constructors[ROW_JOIN] = arg -> new JoinRow();

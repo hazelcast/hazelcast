@@ -22,7 +22,7 @@ import com.hazelcast.sql.impl.fragment.QueryFragmentContext;
 import com.hazelcast.sql.impl.exec.agg.AggregateCollector;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -42,7 +42,7 @@ public class DistributedAverageAggregateExpression<T> extends AggregateExpressio
     }
 
     private DistributedAverageAggregateExpression(Expression<?> sumOperand, Expression<?> countOperand) {
-        super(DataType.DOUBLE, false);
+        super(QueryDataType.DOUBLE, false);
 
         this.sumOperand = sumOperand;
         this.countOperand = countOperand;

@@ -19,8 +19,8 @@ package com.hazelcast.sql.impl.expression;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.type.DataType;
-import com.hazelcast.sql.impl.type.DataTypeUtils;
+import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 import com.hazelcast.sql.impl.type.converter.Converter;
 import com.hazelcast.sql.impl.type.converter.Converters;
 
@@ -61,10 +61,10 @@ public class ConstantExpression<T> implements Expression<T> {
     }
 
     @Override
-    public DataType getType() {
+    public QueryDataType getType() {
         // TODO: We may have a problem with NULL here, because it is resolved to LATE.
         //  Probably we should introduce another type for NULL, which could be converted to any other type?
-        return DataTypeUtils.resolveType(val);
+        return QueryDataTypeUtils.resolveType(val);
     }
 
     public T getValue() {

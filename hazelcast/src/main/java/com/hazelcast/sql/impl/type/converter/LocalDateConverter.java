@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.type.converter;
 
-import com.hazelcast.sql.impl.type.GenericType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -32,17 +32,12 @@ public final class LocalDateConverter extends Converter {
     public static final LocalDateConverter INSTANCE = new LocalDateConverter();
 
     private LocalDateConverter() {
-        // No-op.
+        super(ID_LOCAL_DATE, QueryDataTypeFamily.DATE);
     }
 
     @Override
     public Class<?> getValueClass() {
         return LocalDate.class;
-    }
-
-    @Override
-    public GenericType getGenericType() {
-        return GenericType.DATE;
     }
 
     @Override

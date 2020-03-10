@@ -20,7 +20,7 @@ import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -37,7 +37,7 @@ public abstract class AbstractMapScanPhysicalNode extends ZeroInputPhysicalNode 
     protected List<String> fieldNames;
 
     /** Field types. */
-    protected List<DataType> fieldTypes;
+    protected List<QueryDataType> fieldTypes;
 
     /** Projects. */
     protected List<Integer> projects;
@@ -53,7 +53,7 @@ public abstract class AbstractMapScanPhysicalNode extends ZeroInputPhysicalNode 
         int id,
         String mapName,
         List<String> fieldNames,
-        List<DataType> fieldTypes,
+        List<QueryDataType> fieldTypes,
         List<Integer> projects,
         Expression<Boolean> filter
     ) {
@@ -74,7 +74,7 @@ public abstract class AbstractMapScanPhysicalNode extends ZeroInputPhysicalNode 
         return fieldNames;
     }
 
-    public List<DataType> getFieldTypes() {
+    public List<QueryDataType> getFieldTypes() {
         return fieldTypes;
     }
 
@@ -88,7 +88,7 @@ public abstract class AbstractMapScanPhysicalNode extends ZeroInputPhysicalNode 
 
     @Override
     public PhysicalNodeSchema getSchema0() {
-        List<DataType> types = new ArrayList<>(projects.size());
+        List<QueryDataType> types = new ArrayList<>(projects.size());
 
         for (Integer project : projects) {
             types.add(fieldTypes.get(project));

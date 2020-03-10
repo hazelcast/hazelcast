@@ -20,9 +20,9 @@ import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.UniCallExpressionWithType;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.type.DataType;
-import com.hazelcast.sql.impl.type.DataTypeUtils;
-import com.hazelcast.sql.impl.type.GenericType;
+import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.sql.impl.type.converter.Converter;
 
 public class SignFunction extends UniCallExpressionWithType<Number> {
@@ -30,7 +30,7 @@ public class SignFunction extends UniCallExpressionWithType<Number> {
         // No-op.
     }
 
-    private SignFunction(Expression<?> operand, DataType resultType) {
+    private SignFunction(Expression<?> operand, QueryDataType resultType) {
         super(operand, resultType);
     }
 
@@ -57,17 +57,17 @@ public class SignFunction extends UniCallExpressionWithType<Number> {
      * @param resultType Type.
      * @return Absolute value of the target.
      */
-    private static Number doSign(Object operandValue, DataType operandType, DataType resultType) {
-        if (resultType.getType() == GenericType.LATE) {
+    private static Number doSign(Object operandValue, QueryDataType operandType, QueryDataType resultType) {
+        if (resultType.getTypeFamily() == QueryDataTypeFamily.LATE) {
             // Special handling for late binding.
-            operandType = DataTypeUtils.resolveType(operandValue);
+            operandType = QueryDataTypeUtils.resolveType(operandValue);
 
             resultType = inferResultType(operandType);
         }
 
         Converter operandConverter = operandType.getConverter();
 
-        switch (resultType.getType()) {
+        switch (resultType.getTypeFamily()) {
             case BIT:
             case TINYINT:
             case SMALLINT:
@@ -97,17 +97,17 @@ public class SignFunction extends UniCallExpressionWithType<Number> {
      * @param operandType Operand type.
      * @return Result type.
      */
-    private static DataType inferResultType(DataType operandType) {
-        if (!operandType.isNumeric()) {
+    private static QueryDataType inferResultType(QueryDataType operandType) {
+        if (!operandType.canConvertToNumber()) {
             throw HazelcastSqlException.error("Operand is not numeric: " + operandType);
         }
 
-        switch (operandType.getType()) {
+        switch (operandType.getTypeFamily()) {
             case BIT:
-                return DataType.TINYINT;
+                return QueryDataType.TINYINT;
 
             case VARCHAR:
-                return DataType.DECIMAL;
+                return QueryDataType.DECIMAL;
 
             default:
                 break;

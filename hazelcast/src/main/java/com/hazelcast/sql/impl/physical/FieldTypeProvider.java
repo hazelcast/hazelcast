@@ -16,11 +16,11 @@
 
 package com.hazelcast.sql.impl.physical;
 
-import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 /**
  * Interface to resovle field types.
  */
 public interface FieldTypeProvider {
-    DataType getType(int index);
+    QueryDataType getType(int index);
 }

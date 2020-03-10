@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.expression;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.io.IOException;
 
@@ -36,8 +36,8 @@ public class CountRowExpression implements Expression<Row> {
     }
 
     @Override
-    public DataType getType() {
-        return DataType.OBJECT;
+    public QueryDataType getType() {
+        return QueryDataType.OBJECT;
     }
 
     @Override

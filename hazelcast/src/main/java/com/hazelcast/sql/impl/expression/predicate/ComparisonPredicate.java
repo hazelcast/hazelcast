@@ -25,9 +25,9 @@ import com.hazelcast.sql.impl.expression.BiCallExpression;
 import com.hazelcast.sql.impl.expression.CastExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.type.DataType;
-import com.hazelcast.sql.impl.type.DataTypeUtils;
-import com.hazelcast.sql.impl.type.GenericType;
+import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.sql.impl.type.converter.Converter;
 
 import java.io.IOException;
@@ -43,7 +43,7 @@ import java.util.Objects;
  */
 public class ComparisonPredicate extends BiCallExpression<Boolean> {
     /** Data type which is used for comparison. */
-    private DataType type;
+    private QueryDataType type;
 
     /** Operator. */
     private ComparisonMode comparisonMode;
@@ -52,7 +52,7 @@ public class ComparisonPredicate extends BiCallExpression<Boolean> {
         // No-op.
     }
 
-    private ComparisonPredicate(Expression<?> first, Expression<?> second, DataType type, ComparisonMode comparisonMode) {
+    private ComparisonPredicate(Expression<?> first, Expression<?> second, QueryDataType type, ComparisonMode comparisonMode) {
         super(first, second);
 
         this.type = type;
@@ -60,7 +60,7 @@ public class ComparisonPredicate extends BiCallExpression<Boolean> {
     }
 
     public static ComparisonPredicate create(Expression<?> first, Expression<?> second, ComparisonMode comparisonMode) {
-        DataType type = DataTypeUtils.compare(first.getType(), second.getType());
+        QueryDataType type = QueryDataTypeUtils.bigger(first.getType(), second.getType());
 
         Expression<?> coercedFirst = CastExpression.coerce(first, type);
         Expression<?> coercedSecond = CastExpression.coerce(second, type);
@@ -89,26 +89,26 @@ public class ComparisonPredicate extends BiCallExpression<Boolean> {
     private static boolean doCompare(
         ComparisonMode comparisonMode,
         Object operand1,
-        DataType operand1Type,
+        QueryDataType operand1Type,
         Object operand2,
-        DataType operand2Type,
-        DataType type
+        QueryDataType operand2Type,
+        QueryDataType type
     ) {
         Converter converter1 = operand1Type.getConverter();
         Converter converter2 = operand2Type.getConverter();
 
-        if (type.getType() == GenericType.LATE) {
+        if (type.getTypeFamily() == QueryDataTypeFamily.LATE) {
             // Handle special case when we couldn't resolve the type in advance.
-            operand1Type = DataTypeUtils.resolveType(operand1);
-            operand2Type = DataTypeUtils.resolveType(operand2);
+            operand1Type = QueryDataTypeUtils.resolveType(operand1);
+            operand2Type = QueryDataTypeUtils.resolveType(operand2);
 
-            type = DataTypeUtils.compare(operand1Type, operand2Type);
+            type = QueryDataTypeUtils.bigger(operand1Type, operand2Type);
 
             operand1 = CastExpression.coerce(operand1, operand1Type, type);
             operand2 = CastExpression.coerce(operand2, operand2Type, type);
         }
 
-        switch (type.getType()) {
+        switch (type.getTypeFamily()) {
             case BIT:
             case TINYINT:
             case SMALLINT:
@@ -226,8 +226,8 @@ public class ComparisonPredicate extends BiCallExpression<Boolean> {
     }
 
     @Override
-    public DataType getType() {
-        return DataType.BIT;
+    public QueryDataType getType() {
+        return QueryDataType.BIT;
     }
 
     @Override

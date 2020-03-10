@@ -22,7 +22,7 @@ import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.UniCallExpression;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.io.IOException;
 
@@ -45,9 +45,9 @@ public class DoubleFunction extends UniCallExpression<Double> {
     }
 
     public static DoubleFunction create(Expression<?> operand, DoubleFunctionType type) {
-        DataType operandType = operand.getType();
+        QueryDataType operandType = operand.getType();
 
-        if (!operandType.isNumeric()) {
+        if (!operandType.canConvertToNumber()) {
             throw HazelcastSqlException.error("Operand is not numeric: " + operandType);
         }
 
@@ -111,8 +111,8 @@ public class DoubleFunction extends UniCallExpression<Double> {
     }
 
     @Override
-    public DataType getType() {
-        return DataType.DOUBLE;
+    public QueryDataType getType() {
+        return QueryDataType.DOUBLE;
     }
 
     @Override

@@ -16,12 +16,8 @@
 
 package com.hazelcast.sql.impl.type.converter;
 
-import com.hazelcast.sql.impl.type.GenericType;
-
 import java.time.Instant;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Calendar;
@@ -29,37 +25,17 @@ import java.util.Calendar;
 /**
  * Converter for {@link java.util.Calendar} type.
  */
-public final class CalendarConverter extends Converter {
+public final class CalendarConverter extends AbstractTimestampWithTimezoneConverter {
     /** Singleton instance. */
     public static final CalendarConverter INSTANCE = new CalendarConverter();
 
     private CalendarConverter() {
-        // No-op.
+        super(ID_CALENDAR);
     }
 
     @Override
     public Class<?> getValueClass() {
         return Calendar.class;
-    }
-
-    @Override
-    public GenericType getGenericType() {
-        return GenericType.TIMESTAMP_WITH_TIMEZONE;
-    }
-
-    @Override
-    public String asVarchar(Object val) {
-        return asTimestampWithTimezone(val).toString();
-    }
-
-    @Override
-    public LocalDate asDate(Object val) {
-        return asTimestamp(val).toLocalDate();
-    }
-
-    @Override
-    public LocalTime asTime(Object val) {
-        return asTimestamp(val).toLocalTime();
     }
 
     @Override
@@ -74,11 +50,6 @@ public final class CalendarConverter extends Converter {
         Instant instant = cast(val).toInstant();
 
         return OffsetDateTime.ofInstant(instant, ZoneOffset.UTC);
-    }
-
-    @Override
-    public Object convertToSelf(Converter valConverter, Object val) {
-        return valConverter.asTimestampWithTimezone(val);
     }
 
     private Calendar cast(Object val) {

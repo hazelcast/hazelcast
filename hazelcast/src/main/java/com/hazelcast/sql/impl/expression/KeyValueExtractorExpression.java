@@ -20,7 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.row.KeyValueRow;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.converter.Converter;
 import com.hazelcast.sql.impl.type.converter.Converters;
 
@@ -38,12 +38,12 @@ public class KeyValueExtractorExpression<T> implements Expression<T> {
     private final String path;
 
     /** Type of the returned object. */
-    private final DataType type;
+    private final QueryDataType type;
 
     private transient Class<?> lastValClass;
     private transient Converter lastValConverter;
 
-    public KeyValueExtractorExpression(String path, DataType type) {
+    public KeyValueExtractorExpression(String path, QueryDataType type) {
         assert path != null;
 
         this.path = path;
@@ -76,7 +76,7 @@ public class KeyValueExtractorExpression<T> implements Expression<T> {
     }
 
     @Override
-    public DataType getType() {
+    public QueryDataType getType() {
         return type;
     }
 

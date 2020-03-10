@@ -20,7 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.io.IOException;
 
@@ -46,7 +46,7 @@ public class DatePartUnitConstantExpression implements Expression<DatePartUnit> 
     }
 
     @Override
-    public DataType getType() {
+    public QueryDataType getType() {
         throw new UnsupportedOperationException("Should not be called.");
     }
 

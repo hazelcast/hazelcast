@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.schema;
 
-import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 /**
  * SQL table field descriptor.
@@ -25,9 +25,9 @@ import com.hazelcast.sql.impl.type.DataType;
 public class SqlTableField {
     private final String name;
     private final String path;
-    private final DataType type;
+    private final QueryDataType type;
 
-    public SqlTableField(String name, String path, DataType type) {
+    public SqlTableField(String name, String path, QueryDataType type) {
         this.name = name;
         this.path = path;
         this.type = type;
@@ -41,7 +41,7 @@ public class SqlTableField {
         return path;
     }
 
-    public DataType getType() {
+    public QueryDataType getType() {
         return type;
     }
 

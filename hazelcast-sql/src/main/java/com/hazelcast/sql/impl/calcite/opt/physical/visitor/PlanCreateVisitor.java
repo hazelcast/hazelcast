@@ -80,7 +80,7 @@ import com.hazelcast.sql.impl.physical.io.ReceiveSortMergePhysicalNode;
 import com.hazelcast.sql.impl.physical.io.UnicastSendPhysicalNode;
 import com.hazelcast.sql.impl.physical.join.HashJoinPhysicalNode;
 import com.hazelcast.sql.impl.physical.join.NestedLoopJoinPhysicalNode;
-import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.RelFieldCollation;
 import org.apache.calcite.rel.core.AggregateCall;
 import org.apache.calcite.rex.RexNode;
@@ -608,7 +608,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
      private static ColumnExpression<?> aggregateColumn(List<Integer> argList, int index, PhysicalNodeSchema upstreamSchema) {
          Integer columnIndex = argList.get(index);
-         DataType columnType = upstreamSchema.getType(columnIndex);
+         QueryDataType columnType = upstreamSchema.getType(columnIndex);
 
          return ColumnExpression.create(columnIndex, columnType);
      }
@@ -692,7 +692,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     private static PhysicalNodeSchema getScanSchemaBeforeProject(AbstractScanRel rel) {
         HazelcastTable table = rel.getTableUnwrapped();
 
-        List<DataType> types = new ArrayList<>();
+        List<QueryDataType> types = new ArrayList<>();
 
         for (String fieldName : rel.getTable().getRowType().getFieldNames()) {
             types.add(table.getFieldType(fieldName));

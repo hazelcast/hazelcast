@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.type.converter;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.impl.type.GenericType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
@@ -32,6 +32,33 @@ import java.time.OffsetDateTime;
  */
 @SuppressWarnings("checkstyle:MethodCount")
 public abstract class Converter {
+    protected static final int ID_LATE = 0;
+    protected static final int ID_BOOLEAN = 1;
+    protected static final int ID_BYTE = 2;
+    protected static final int ID_SHORT = 3;
+    protected static final int ID_INTEGER = 4;
+    protected static final int ID_LONG = 5;
+    protected static final int ID_BIG_INTEGER = 6;
+    protected static final int ID_BIG_DECIMAL = 7;
+    protected static final int ID_FLOAT = 8;
+    protected static final int ID_DOUBLE = 9;
+    protected static final int ID_CHARACTER = 10;
+    protected static final int ID_STRING = 11;
+    protected static final int ID_DATE = 12;
+    protected static final int ID_CALENDAR = 13;
+    protected static final int ID_LOCAL_DATE = 14;
+    protected static final int ID_LOCAL_TIME = 15;
+    protected static final int ID_LOCAL_DATE_TIME = 16;
+    protected static final int ID_INSTANT = 17;
+    protected static final int ID_OFFSET_DATE_TIME = 18;
+    protected static final int ID_ZONED_DATE_TIME = 19;
+    protected static final int ID_OBJECT = 20;
+    protected static final int ID_INTERVAL_YEAR_MONTH = 21;
+    protected static final int ID_INTERVAL_DAY_SECOND = 22;
+
+    private final int id;
+    private final QueryDataTypeFamily typeFamily;
+
     private final boolean convertToBit;
     private final boolean convertToTinyint;
     private final boolean convertToSmallint;
@@ -47,7 +74,10 @@ public abstract class Converter {
     private final boolean convertToTimestampWithTimezone;
     private final boolean convertToObject;
 
-    protected Converter() {
+    protected Converter(int id, QueryDataTypeFamily typeFamily) {
+        this.id = id;
+        this.typeFamily = typeFamily;
+
         try {
             Class<? extends Converter> clazz = getClass();
 
@@ -70,19 +100,15 @@ public abstract class Converter {
         }
     }
 
-    private static boolean canConvert(Method method) {
-        return method.getAnnotation(NotConvertible.class) == null;
+    public final int getId() {
+        return id;
     }
 
-    /**
-     * @return Class of the input.
-     */
-    public abstract Class<?> getValueClass();
+    public final QueryDataTypeFamily getTypeFamily() {
+        return typeFamily;
+    }
 
-    /**
-     * @return Matching generic type.
-     */
-    public abstract GenericType getGenericType();
+    public abstract Class<?> getValueClass();
 
     @NotConvertible
     public boolean asBit(Object val) {
@@ -210,29 +236,13 @@ public abstract class Converter {
         return convertToObject;
     }
 
-    /**
-     * @return {@code True} if this converter represents a numeric type.
-     */
-    public final boolean isNumeric() {
-        return canConvertToDecimal();
-    }
-
-    /**
-     * @return {@code True} if this converter represents a temporal type.
-     */
-    public final boolean isTemporal() {
-        return getGenericType().isTemporal();
-    }
-
     public abstract Object convertToSelf(Converter converter, Object val);
 
     protected final HazelcastSqlException cannotConvertImplicit(Object val) {
-        throw HazelcastSqlException.error("Cannot implicitly convert a value to " + getGenericType() + ": " + val);
+        throw HazelcastSqlException.error("Cannot implicitly convert a value to " + typeFamily + ": " + val);
     }
 
-    protected static Converter getConverter(Object val) {
-        assert val != null;
-
-        return Converters.getConverter(val.getClass());
+    private static boolean canConvert(Method method) {
+        return method.getAnnotation(NotConvertible.class) == null;
     }
 }

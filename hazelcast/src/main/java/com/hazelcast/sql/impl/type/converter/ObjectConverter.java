@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.type.converter;
 
-import com.hazelcast.sql.impl.type.GenericType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 /**
  * Converter for {@link Integer} type.
@@ -26,17 +26,12 @@ public final class ObjectConverter extends Converter {
     public static final ObjectConverter INSTANCE = new ObjectConverter();
 
     private ObjectConverter() {
-        // No-op.
+        super(ID_OBJECT, QueryDataTypeFamily.OBJECT);
     }
 
     @Override
     public Class<?> getValueClass() {
         return Object.class;
-    }
-
-    @Override
-    public GenericType getGenericType() {
-        return GenericType.OBJECT;
     }
 
     @Override

@@ -24,77 +24,36 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * Utility methods for converters.
  */
 @SuppressWarnings("checkstyle:ExecutableStatementCount")
 public final class Converters {
-    /** Map from input class to converter. */
+    /** Synthetic maximum number of converters to prevent an accidental bug which will generate too big array. */
+    private static final int MAX_CONVERTER_COUNT = 100;
+
+    private static final Converter[] CONVERTERS;
     private static final Map<Class<?>, Converter> CLASS_TO_CONVERTER;
 
     static {
-        List<Converter> converters = new ArrayList<>();
+        List<Converter> converters = getConverters();
 
-        // Boolean converter.
-        converters.add(BooleanConverter.INSTANCE);
-
-        // Converters for exact numeric types.
-        converters.add(ByteConverter.INSTANCE);
-        converters.add(ShortConverter.INSTANCE);
-        converters.add(IntegerConverter.INSTANCE);
-        converters.add(LongConverter.INSTANCE);
-        converters.add(BigIntegerConverter.INSTANCE);
-        converters.add(BigDecimalConverter.INSTANCE);
-
-        // Converters for inexact numeric types.
-        converters.add(FloatConverter.INSTANCE);
-        converters.add(DoubleConverter.INSTANCE);
-
-        // String converter.
-        converters.add(StringConverter.INSTANCE);
-
-        // Converters for temporal data types.
-        converters.add(DateConverter.INSTANCE);
-        converters.add(CalendarConverter.INSTANCE);
-
-        converters.add(LocalDateConverter.INSTANCE);
-        converters.add(LocalTimeConverter.INSTANCE);
-        converters.add(LocalDateTimeConverter.INSTANCE);
-        converters.add(OffsetDateTimeConverter.INSTANCE);
-
-        converters.add(SqlYearMonthIntervalConverter.INSTANCE);
-        converters.add(SqlDaySecondIntervalConverter.INSTANCE);
-
-        // Object.
-        converters.add(ObjectConverter.INSTANCE);
-
-        CLASS_TO_CONVERTER = new HashMap<>();
-
-        for (Converter converter : converters) {
-            Class<?> valueClass = converter.getValueClass();
-
-            if (valueClass != null) {
-                Converter prevConverter = CLASS_TO_CONVERTER.put(valueClass, converter);
-
-                if (prevConverter != null) {
-                    throw new HazelcastException("Duplicate converter for class {class=" + valueClass
-                        + ", oldConverter=" + prevConverter.getValueClass().getName()
-                        + ", newConverter=" + valueClass.getName()
-                        + '}');
-                }
-
-                Class<?> primitiveValueClass = getPrimitiveClass(valueClass);
-
-                if (primitiveValueClass != null) {
-                    CLASS_TO_CONVERTER.put(primitiveValueClass, converter);
-                }
-            }
-        }
+        CONVERTERS = createConvertersArray(converters);
+        CLASS_TO_CONVERTER = createConvertersMap(converters);
     }
 
     private Converters() {
         // No-op.
+    }
+
+    public static Converter getConverter(int converterId) {
+        if (converterId < CONVERTERS.length) {
+            return CONVERTERS[converterId];
+        }
+
+        throw HazelcastSqlException.error("Converter with ID " + converterId + " doesn't exist.");
     }
 
     /**
@@ -129,6 +88,117 @@ public final class Converters {
         }
 
         return ObjectConverter.INSTANCE;
+    }
+
+    /**
+     * @return List of all supported converters.
+     */
+    private static List<Converter> getConverters() {
+        List<Converter> converters = new ArrayList<>();
+
+        // Late binding support.
+        converters.add(LateConverter.INSTANCE);
+
+        // Boolean converter.
+        converters.add(BooleanConverter.INSTANCE);
+
+        // Converters for exact numeric types.
+        converters.add(ByteConverter.INSTANCE);
+        converters.add(ShortConverter.INSTANCE);
+        converters.add(IntegerConverter.INSTANCE);
+        converters.add(LongConverter.INSTANCE);
+        converters.add(BigIntegerConverter.INSTANCE);
+        converters.add(BigDecimalConverter.INSTANCE);
+
+        // Converters for inexact numeric types.
+        converters.add(FloatConverter.INSTANCE);
+        converters.add(DoubleConverter.INSTANCE);
+
+        // String converters.
+        converters.add(CharacterConverter.INSTANCE);
+        converters.add(StringConverter.INSTANCE);
+
+        // Converters for temporal data types.
+        converters.add(DateConverter.INSTANCE);
+        converters.add(CalendarConverter.INSTANCE);
+
+        converters.add(LocalDateConverter.INSTANCE);
+        converters.add(LocalTimeConverter.INSTANCE);
+        converters.add(LocalDateTimeConverter.INSTANCE);
+        converters.add(InstantConverter.INSTANCE);
+        converters.add(OffsetDateTimeConverter.INSTANCE);
+        converters.add(ZonedDateTimeConverter.INSTANCE);
+
+        // Object converter.
+        converters.add(ObjectConverter.INSTANCE);
+
+        // Interval converters
+        converters.add(SqlYearMonthIntervalConverter.INSTANCE);
+        converters.add(SqlDaySecondIntervalConverter.INSTANCE);
+
+        return converters;
+    }
+
+    private static Map<Class<?>, Converter> createConvertersMap(List<Converter> converters) {
+        Map<Class<?>, Converter> res = new HashMap<>();
+
+        for (Converter converter : converters) {
+            Class<?> valueClass = converter.getValueClass();
+
+            if (valueClass != null) {
+                Converter prevConverter = res.put(valueClass, converter);
+
+                if (prevConverter != null) {
+                    throw new HazelcastException("Duplicate converter for class {class=" + valueClass
+                         + ", converter1=" + prevConverter.getValueClass().getName()
+                         + ", converter2=" + valueClass.getName()
+                         + '}');
+                }
+
+                Class<?> primitiveValueClass = getPrimitiveClass(valueClass);
+
+                if (primitiveValueClass != null) {
+                    res.put(primitiveValueClass, converter);
+                }
+            }
+        }
+
+        return res;
+    }
+
+    private static Converter[] createConvertersArray(List<Converter> converters) {
+        TreeMap<Integer, Converter> map = new TreeMap<>();
+
+        for (Converter converter : converters) {
+            Converter oldConverter = map.put(converter.getId(), converter);
+
+            if (oldConverter != null) {
+                throw new HazelcastException("Two converters with the same ID [id=" + converter.getId()
+                    + ", converter1=" + oldConverter.getClass().getSimpleName()
+                    + ", converter2=" + converter.getClass().getSimpleName() + ']');
+            }
+        }
+
+        int maxId = map.lastKey();
+
+        if (maxId > MAX_CONVERTER_COUNT) {
+            throw new HazelcastException("Converter ID cannot be greater than " + MAX_CONVERTER_COUNT + ": "
+                + map.lastEntry().getValue().getClass().getSimpleName());
+        }
+
+        Converter[] res = new Converter[maxId + 1];
+
+        for (int i = 0; i <= maxId; i++) {
+            Converter converter = map.get(i);
+
+            if (converter == null) {
+                throw new HazelcastException("Converter with ID " + i + " is not defined");
+            }
+
+            res[i] = converter;
+        }
+
+        return res;
     }
 
     @SuppressWarnings({"checkstyle:NPathComplexity", "checkstyle:ReturnCount"})

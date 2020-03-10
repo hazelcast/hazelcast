@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.expression.aggregate;
 
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.exec.agg.AggregateCollector;
-import com.hazelcast.sql.impl.type.DataType;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 /**
  * Collector for the SINGLE_VALUE function.
@@ -35,7 +35,7 @@ public class SingleValueAggregateCollector extends AggregateCollector {
     }
 
     @Override
-    protected void collect0(Object operandValue, DataType operandType) {
+    protected void collect0(Object operandValue, QueryDataType operandType) {
         if (res == null) {
             res = operandValue != null ? operandValue : NULL;
         } else {

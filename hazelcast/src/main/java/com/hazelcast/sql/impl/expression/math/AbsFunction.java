@@ -21,9 +21,9 @@ import com.hazelcast.sql.impl.expression.CastExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.UniCallExpressionWithType;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.type.DataType;
-import com.hazelcast.sql.impl.type.DataTypeUtils;
-import com.hazelcast.sql.impl.type.GenericType;
+import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.sql.impl.type.converter.Converter;
 
 public class AbsFunction<T> extends UniCallExpressionWithType<T> {
@@ -31,16 +31,16 @@ public class AbsFunction<T> extends UniCallExpressionWithType<T> {
         // No-op.
     }
 
-    private AbsFunction(Expression<?> operand, DataType resultType) {
+    private AbsFunction(Expression<?> operand, QueryDataType resultType) {
         super(operand, resultType);
     }
 
     public static Expression<?> create(Expression<?> operand) {
-        DataType operandType = operand.getType();
+        QueryDataType operandType = operand.getType();
 
-        if (operandType.getType() == GenericType.BIT) {
+        if (operandType.getTypeFamily() == QueryDataTypeFamily.BIT) {
             // Bit alway remain the same, just coerce it.
-            return CastExpression.coerce(operand, DataType.TINYINT);
+            return CastExpression.coerce(operand, QueryDataType.TINYINT);
         }
 
         return new AbsFunction<>(operand, inferResultType(operand.getType()));
@@ -66,14 +66,14 @@ public class AbsFunction<T> extends UniCallExpressionWithType<T> {
      * @param resultType Result type.
      * @return Absolute value of the target.
      */
-    private static Object abs(Object operand, DataType operandType, DataType resultType) {
-        if (operandType.getType() == GenericType.LATE) {
+    private static Object abs(Object operand, QueryDataType operandType, QueryDataType resultType) {
+        if (operandType.getTypeFamily() == QueryDataTypeFamily.LATE) {
             // Special handling for late binding.
-            operandType = DataTypeUtils.resolveType(operand);
+            operandType = QueryDataTypeUtils.resolveType(operand);
 
-            if (operandType.getType() == GenericType.BIT) {
+            if (operandType.getTypeFamily() == QueryDataTypeFamily.BIT) {
                 // Bit alway remain the same, just coerce it.
-                return CastExpression.coerce(operand, operandType, DataType.TINYINT);
+                return CastExpression.coerce(operand, operandType, QueryDataType.TINYINT);
             }
 
             resultType = inferResultType(operandType);
@@ -81,7 +81,7 @@ public class AbsFunction<T> extends UniCallExpressionWithType<T> {
 
         Converter operandConverter = operandType.getConverter();
 
-        switch (resultType.getType()) {
+        switch (resultType.getTypeFamily()) {
             case TINYINT:
                 return (byte) Math.abs(operandConverter.asTinyint(operand));
 
@@ -114,13 +114,13 @@ public class AbsFunction<T> extends UniCallExpressionWithType<T> {
      * @param operandType Operand type.
      * @return Result type.
      */
-    private static DataType inferResultType(DataType operandType) {
-        if (!operandType.isNumeric()) {
+    private static QueryDataType inferResultType(QueryDataType operandType) {
+        if (!operandType.canConvertToNumber()) {
             throw HazelcastSqlException.error("Operand is not numeric: " + operandType);
         }
 
-        if (operandType.getType() == GenericType.VARCHAR) {
-            return DataType.DECIMAL;
+        if (operandType.getTypeFamily() == QueryDataTypeFamily.VARCHAR) {
+            return QueryDataType.DECIMAL;
         }
 
         return operandType;
