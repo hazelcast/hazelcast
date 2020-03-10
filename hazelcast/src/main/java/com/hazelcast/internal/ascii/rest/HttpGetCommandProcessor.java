@@ -377,6 +377,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
     }
 
     private void handleMap(HttpGetCommand command, String uri) {
+        uri = StringUtil.stripTrailingSlash(uri);
         int indexEnd = uri.indexOf('/', URI_MAPS.length());
         String mapName = uri.substring(URI_MAPS.length(), indexEnd);
         String key = uri.substring(indexEnd + 1);
