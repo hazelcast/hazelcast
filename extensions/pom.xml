@@ -45,6 +45,14 @@
         <checkstyle.headerLocation>${maven.multiModuleProjectDirectory}/checkstyle/ClassHeaderHazelcastCommunity.txt</checkstyle.headerLocation>
     </properties>
 
+    <licenses>
+        <license>
+            <name>Hazelcast Community License</name>
+            <url>http://hazelcast.com/hazelcast-community-license</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
     <dependencies>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
