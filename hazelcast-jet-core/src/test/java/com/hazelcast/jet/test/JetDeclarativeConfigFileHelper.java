@@ -43,10 +43,26 @@ public class JetDeclarativeConfigFileHelper extends DeclarativeConfigFileHelper 
         return this.givenConfigFileInWorkDir(filename, yaml);
     }
 
+    public URL givenXmlJetConfigFileOnClasspath(String filename, String property, String value) throws Exception {
+        String xml = this.xmlJetConfigWithProperty(property, value);
+        return this.givenConfigFileOnClasspath(filename, xml);
+    }
+
+    public File givenXmlJetConfigFileOnWorkdir(String filename, String property, String value) throws Exception {
+        String xml = this.xmlJetConfigWithProperty(property, value);
+        return this.givenConfigFileInWorkDir(filename, xml);
+    }
+
     private String yamlJetConfigWithProperty(String property, String value) {
         return "hazelcast-jet:\n" +
                 "  properties:\n" +
                 "    " + property + ": " + value + "\n";
+    }
+
+    private String xmlJetConfigWithProperty(String property, String value) {
+        return "<hazelcast-jet xmlns=\"http://www.hazelcast.com/schema/jet-config\">\n<properties>\n" +
+                "<property name=\"" + property + "\">" + value + "</property>\n</properties>\n" +
+                "</hazelcast-jet>";
     }
 
 

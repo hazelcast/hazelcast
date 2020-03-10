@@ -65,18 +65,18 @@ public final class ConfigProvider {
             // 2. Try loading XML config if provided in system property
             config = new XmlJetConfigBuilder(xmlConfigLocator).setProperties(properties).build();
 
-        } else if (xmlConfigLocator.locateInWorkDirOrOnClasspath()) {
-            // 3. Try loading XML config from the working directory or from the classpath
-            config = new XmlJetConfigBuilder(xmlConfigLocator).setProperties(properties).build();
-
         } else if (yamlConfigLocator.locateInWorkDirOrOnClasspath()) {
-            // 4. Try loading YAML config from the working directory or from the classpath
+            // 3. Try loading YAML config from the working directory or from the classpath
             config = new YamlJetConfigBuilder(yamlConfigLocator).setProperties(properties).build();
 
-        } else {
-            // 5. Loading the default XML configuration file
-            xmlConfigLocator.locateDefault();
+        } else if (xmlConfigLocator.locateInWorkDirOrOnClasspath()) {
+            // 4. Try loading XML config from the working directory or from the classpath
             config = new XmlJetConfigBuilder(xmlConfigLocator).setProperties(properties).build();
+
+        } else {
+            // 5. Loading the default YAML configuration file
+            yamlConfigLocator.locateDefault();
+            config = new YamlJetConfigBuilder(yamlConfigLocator).setProperties(properties).build();
         }
         return config;
 
@@ -98,18 +98,18 @@ public final class ConfigProvider {
             // 2. Try loading config if provided in system property and it is an XML file
             config = new XmlClientConfigBuilder(xmlConfigLocator.getIn()).build();
 
-        } else if (xmlConfigLocator.locateInWorkDirOrOnClasspath()) {
-            // 3. Try loading XML config from the working directory or from the classpath
-            config = new XmlClientConfigBuilder(xmlConfigLocator.getIn()).build();
-
         } else if (yamlConfigLocator.locateInWorkDirOrOnClasspath()) {
-            // 4. Try loading YAML config from the working directory or from the classpath
+            // 3. Try loading YAML config from the working directory or from the classpath
             config = new YamlClientConfigBuilder(yamlConfigLocator.getIn()).build();
 
-        } else {
-            // 5. Loading the default XML configuration file
-            xmlConfigLocator.locateDefault();
+        } else if (xmlConfigLocator.locateInWorkDirOrOnClasspath()) {
+            // 4. Try loading XML config from the working directory or from the classpath
             config = new XmlClientConfigBuilder(xmlConfigLocator.getIn()).build();
+
+        } else {
+            // 5. Loading the default YAML configuration file
+            yamlConfigLocator.locateDefault();
+            config = new YamlClientConfigBuilder(yamlConfigLocator.getIn()).build();
         }
         return config;
     }
@@ -131,18 +131,18 @@ public final class ConfigProvider {
             // 2. Try loading config if provided in system property and it is an XML file
             config = new XmlConfigBuilder(xmlConfigLocator.getIn()).setProperties(properties).build();
 
-        } else if (xmlConfigLocator.locateInWorkDirOrOnClasspath()) {
-            // 3. Try loading XML config from the working directory or from the classpath
-            config = new XmlConfigBuilder(xmlConfigLocator.getIn()).setProperties(properties).build();
-
         } else if (yamlConfigLocator.locateInWorkDirOrOnClasspath()) {
-            // 4. Try loading YAML config from the working directory or from the classpath
+            // 3. Try loading YAML config from the working directory or from the classpath
             config = new YamlConfigBuilder(yamlConfigLocator.getIn()).setProperties(properties).build();
 
-        } else {
-            // 5. Loading the default XML configuration file
-            xmlConfigLocator.locateDefault();
+        } else if (xmlConfigLocator.locateInWorkDirOrOnClasspath()) {
+            // 4. Try loading XML config from the working directory or from the classpath
             config = new XmlConfigBuilder(xmlConfigLocator.getIn()).setProperties(properties).build();
+
+        } else {
+            // 5. Loading the default YAML configuration file
+            yamlConfigLocator.locateDefault();
+            config = new YamlConfigBuilder(yamlConfigLocator.getIn()).setProperties(properties).build();
         }
         return config;
     }
