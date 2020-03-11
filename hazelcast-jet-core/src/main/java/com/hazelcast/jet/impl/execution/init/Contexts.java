@@ -185,7 +185,7 @@ public final class Contexts {
             }
             if (resourceConfig.getResourceType() != DIRECTORY) {
                 throw new JetException(String.format(
-                   "The resource with ID '%s' is not a directory, its type is %s", id, resourceConfig.getResourceType()
+                    "The resource with ID '%s' is not a directory, its type is %s", id, resourceConfig.getResourceType()
                 ));
             }
             return tempDirectories.computeIfAbsent(id, x -> extractFileToDisk(id));
@@ -200,7 +200,7 @@ public final class Contexts {
             }
             if (resourceConfig.getResourceType() != FILE) {
                 throw new JetException(String.format(
-                   "The resource with ID '%s' is not a file, its type is %s", id, resourceConfig.getResourceType()
+                    "The resource with ID '%s' is not a file, its type is %s", id, resourceConfig.getResourceType()
                 ));
             }
             Path fnamePath = Paths.get(resourceConfig.getUrl().getPath()).getFileName();

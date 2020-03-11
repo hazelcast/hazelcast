@@ -101,6 +101,7 @@ public class TestProcessorSupplierContext
      * Add an attached file or folder. The test context doesn't distinguish
      * between files and folders;
      */
+    @Nonnull
     public TestProcessorSupplierContext addFile(@Nonnull String id, @Nonnull File file) {
         attached.put(id, file);
         return this;

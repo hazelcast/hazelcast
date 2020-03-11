@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl.execution.init;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersView;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
@@ -126,7 +127,8 @@ public class VertexDef_HigherPrioritySourceTest extends SimpleTestInClusterSuppo
                 createExecutionPlans(nodeEngineImpl, membersView, dag, 0, 0, new JobConfig(), 0);
         ExecutionPlan plan = executionPlans.values().iterator().next();
         SnapshotContext ssContext = new SnapshotContext(mock(ILogger.class), "job", 0, EXACTLY_ONCE);
-        plan.initialize(nodeEngineImpl, 0, 0, ssContext, null);
+        plan.initialize(nodeEngineImpl, 0, 0, ssContext, null,
+                (InternalSerializationService) nodeEngineImpl.getSerializationService());
         Set<Integer> higherPriorityVertices = VertexDef.getHigherPriorityVertices(plan.getVertices());
         String actualHigherPriorityVertices = plan.getVertices().stream()
                 .filter(v -> higherPriorityVertices.contains(v.vertexId()))

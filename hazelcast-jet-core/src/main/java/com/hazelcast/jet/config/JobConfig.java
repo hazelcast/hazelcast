@@ -21,6 +21,7 @@ import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.annotation.EvolvingApi;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.jet.impl.util.ReflectionUtils.Resources;
@@ -29,6 +30,7 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.spi.annotation.PrivateApi;
 
 import javax.annotation.Nonnull;
@@ -39,6 +41,7 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -65,6 +68,7 @@ public class JobConfig implements IdentifiedDataSerializable {
     private boolean storeMetricsAfterJobCompletion;
 
     private Map<String, ResourceConfig> resourceConfigs = new LinkedHashMap<>();
+    private Map<String, String> serializerConfigs = new HashMap<>();
     private JobClassLoaderFactory classLoaderFactory;
     private String initialSnapshotName;
 
@@ -241,10 +245,7 @@ public class JobConfig implements IdentifiedDataSerializable {
     @Nonnull
     @SuppressWarnings("rawtypes")
     public JobConfig addClass(@Nonnull Class... classes) {
-        ReflectionUtils.nestedClassesOf(classes).forEach(clazz -> {
-            ResourceConfig cfg = new ResourceConfig(clazz);
-            resourceConfigs.put(cfg.getId(), cfg);
-        });
+        ReflectionUtils.nestedClassesOf(classes).forEach(this::addClass);
         return this;
     }
 
@@ -269,10 +270,7 @@ public class JobConfig implements IdentifiedDataSerializable {
     public JobConfig addPackage(@Nonnull String... packages) {
         checkNotNull(packages, "Packages cannot be null");
         Resources resources = ReflectionUtils.resourcesOf(packages);
-        resources.classes().forEach(clazz -> {
-            ResourceConfig cfg = new ResourceConfig(clazz);
-            resourceConfigs.put(cfg.getId(), cfg);
-        });
+        resources.classes().forEach(this::addClass);
         resources.nonClasses().forEach(this::addClasspathResource);
         return this;
     }
@@ -927,6 +925,45 @@ public class JobConfig implements IdentifiedDataSerializable {
         return resourceConfigs;
     }
 
+    /**
+     * Registers the given serializer for the given class for the scope of the
+     * job. It will be accessible to all the code attached to the underlying
+     * pipeline or DAG, but not to any other code. (An important example is the
+     * {@code IMap} data source, which can instantiate only the classes from
+     * the Jet instance's classpath.)
+     * <p>
+     * Serializers registered on a job level have precedence over any serializer
+     * registered on a cluster level.
+     * <p>
+     * Serializer must have no-arg constructor.
+     *
+     * @return {@code this} instance for fluent API
+     */
+    @Nonnull
+    @EvolvingApi
+    public <T, S extends StreamSerializer<?>> JobConfig registerSerializer(@Nonnull Class<T> clazz,
+                                                                           @Nonnull Class<S> serializerClass) {
+        Preconditions.checkFalse(serializerConfigs.containsKey(clazz.getName()),
+                "Serializer for " + clazz + " already registered");
+        serializerConfigs.put(clazz.getName(), serializerClass.getName());
+        return this;
+    }
+
+    /**
+     * Returns all the registered serializer configurations. This is a private
+     * API.
+     */
+    @Nonnull
+    @PrivateApi
+    public Map<String, String> getSerializerConfigs() {
+        return serializerConfigs;
+    }
+
+    private void addClass(@Nonnull Class<?> clazz) {
+        ResourceConfig cfg = new ResourceConfig(clazz);
+        resourceConfigs.put(cfg.getId(), cfg);
+    }
+
     private JobConfig add(@Nonnull URL url, @Nonnull String id, @Nonnull ResourceType resourceType) {
         Preconditions.checkHasText(id, "Resource ID is blank");
         ResourceConfig cfg = new ResourceConfig(url, id, resourceType);
@@ -1064,6 +1101,7 @@ public class JobConfig implements IdentifiedDataSerializable {
         out.writeBoolean(autoScaling);
         out.writeBoolean(splitBrainProtectionEnabled);
         out.writeObject(resourceConfigs);
+        out.writeObject(serializerConfigs);
         out.writeObject(classLoaderFactory);
         out.writeUTF(initialSnapshotName);
         out.writeBoolean(enableMetrics);
@@ -1078,6 +1116,7 @@ public class JobConfig implements IdentifiedDataSerializable {
         autoScaling = in.readBoolean();
         splitBrainProtectionEnabled = in.readBoolean();
         resourceConfigs = in.readObject();
+        serializerConfigs = in.readObject();
         classLoaderFactory = in.readObject();
         initialSnapshotName = in.readUTF();
         enableMetrics = in.readBoolean();
@@ -1102,6 +1141,7 @@ public class JobConfig implements IdentifiedDataSerializable {
                 Objects.equals(name, jobConfig.name) &&
                 processingGuarantee == jobConfig.processingGuarantee &&
                 Objects.equals(resourceConfigs, jobConfig.resourceConfigs) &&
+                Objects.equals(serializerConfigs, jobConfig.serializerConfigs) &&
                 Objects.equals(classLoaderFactory, jobConfig.classLoaderFactory) &&
                 Objects.equals(initialSnapshotName, jobConfig.initialSnapshotName);
     }
@@ -1110,7 +1150,7 @@ public class JobConfig implements IdentifiedDataSerializable {
     public int hashCode() {
         return Objects.hash(name, processingGuarantee, snapshotIntervalMillis, autoScaling,
                 splitBrainProtectionEnabled, enableMetrics, storeMetricsAfterJobCompletion, resourceConfigs,
-                classLoaderFactory, initialSnapshotName
+                serializerConfigs, classLoaderFactory, initialSnapshotName
         );
     }
 }

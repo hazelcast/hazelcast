@@ -17,14 +17,22 @@
 package com.hazelcast.jet.config;
 
 import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import java.util.Map;
+
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -94,5 +102,54 @@ public class JobConfigTest extends JetTestSupport {
         exception.expect(IllegalStateException.class);
         exception.expectMessage("Hot Restart requires Hazelcast Enterprise Edition");
         createJetMember(jetConfig);
+    }
+
+    @Test
+    public void when_registerSerializerTwice_then_fails() {
+        // Given
+        JobConfig config = new JobConfig();
+        config.registerSerializer(Object.class, ObjectSerializer.class);
+
+        // When
+        // Then
+        exception.expect(IllegalArgumentException.class);
+        exception.expectMessage("Serializer for class java.lang.Object already registered");
+        config.registerSerializer(Object.class, ObjectSerializer.class);
+    }
+
+    @Test
+    public void when_registerSerializer() {
+        // Given
+        JobConfig config = new JobConfig();
+
+        // When
+        config.registerSerializer(Object.class, ObjectSerializer.class);
+
+        // Then
+        Map<String, String> serializerConfigs = config.getSerializerConfigs();
+        assertThat(serializerConfigs.entrySet(), hasSize(1));
+        assertThat(serializerConfigs.keySet(), contains(Object.class.getName()));
+        assertThat(serializerConfigs.values(), contains(ObjectSerializer.class.getName()));
+    }
+
+    private static class ObjectSerializer implements StreamSerializer<Object> {
+
+        @Override
+        public int getTypeId() {
+            return 0;
+        }
+
+        @Override
+        public void write(ObjectDataOutput out, Object object) {
+        }
+
+        @Override
+        public Object read(ObjectDataInput in) {
+            return null;
+        }
+
+        @Override
+        public void destroy() {
+        }
     }
 }

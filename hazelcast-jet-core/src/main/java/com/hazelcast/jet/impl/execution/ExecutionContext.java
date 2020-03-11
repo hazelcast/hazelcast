@@ -23,6 +23,8 @@ import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.ProbeUnit;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.JetSerializationService;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.jet.config.JobConfig;
@@ -102,8 +104,9 @@ public class ExecutionContext implements DynamicMetricsProvider {
     private JobConfig jobConfig;
 
     private boolean metricsEnabled;
-
     private volatile RawJobMetrics jobMetrics = RawJobMetrics.empty();
+
+    private InternalSerializationService serializationService;
 
     public ExecutionContext(NodeEngine nodeEngine, TaskletExecutionService taskletExecService,
                             long jobId, long executionId, Address coordinator, Set<Address> participants) {
@@ -116,7 +119,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
 
         this.jobName = idToString(jobId);
 
-        logger = nodeEngine.getLogger(getClass());
+        this.logger = nodeEngine.getLogger(getClass());
     }
 
     public ExecutionContext initialize(ExecutionPlan plan) {
@@ -129,13 +132,17 @@ public class ExecutionContext implements DynamicMetricsProvider {
         snapshotContext = new SnapshotContext(nodeEngine.getLogger(SnapshotContext.class), jobNameAndExecutionId(),
                 plan.lastSnapshotId(), jobConfig.getProcessingGuarantee());
 
+        serializationService = JetSerializationService
+                .from(nodeEngine.getSerializationService(), jobConfig.getSerializerConfigs());
+
         metricsEnabled = jobConfig.isMetricsEnabled() && nodeEngine.getConfig().getMetricsConfig().isEnabled();
-        plan.initialize(nodeEngine, jobId, executionId, snapshotContext, tempDirectories);
+        plan.initialize(nodeEngine, jobId, executionId, snapshotContext, tempDirectories, serializationService);
         snapshotContext.initTaskletCount(plan.getProcessorTaskletCount(), plan.getStoreSnapshotTaskletCount(),
                 plan.getHigherPriorityVertexCount());
         receiverMap = unmodifiableMap(plan.getReceiverMap());
         senderMap = unmodifiableMap(plan.getSenderMap());
         tasklets = plan.getTasklets();
+
         return this;
     }
 
@@ -207,6 +214,10 @@ public class ExecutionContext implements DynamicMetricsProvider {
                 logger.warning("Failed to delete temporary directory " + dir);
             }
         });
+
+        if (serializationService != null) {
+            serializationService.dispose();
+        }
     }
 
     /**

@@ -27,11 +27,13 @@ import java.util.List;
 
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.hasToString;
+import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -95,6 +97,24 @@ public class ReflectionUtilsTest {
 
         List<URL> nonClasses = resources.nonClasses().collect(toList());
         assertThat(nonClasses, contains(hasToString(containsString("package.properties"))));
+    }
+
+    @Test
+    public void when_loadClass_then_returnsClass() {
+        // When
+        Class<?> clazz = ReflectionUtils.loadClass(getClass().getClassLoader(), getClass().getName());
+
+        // Then
+        assertThat(clazz, equalTo(getClass()));
+    }
+
+    @Test
+    public void when_newInstance_then_returnsInstance() {
+        // When
+        OuterClass instance = ReflectionUtils.newInstance(OuterClass.class.getClassLoader(), OuterClass.class.getName());
+
+        // Then
+        assertThat(instance, notNullValue());
     }
 
     @SuppressWarnings("unused")

@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.util;
 
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ClassInfo;
@@ -29,6 +30,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
@@ -105,6 +107,22 @@ public final class ReflectionUtils {
 
     private static String toPath(String packageName) {
         return packageName.replace('.', '/');
+    }
+
+    public static Class<?> loadClass(ClassLoader classLoader, String name) {
+        try {
+            return ClassLoaderUtil.loadClass(classLoader, name);
+        } catch (ClassNotFoundException e) {
+            throw sneakyThrow(e);
+        }
+    }
+
+    public static <T> T newInstance(ClassLoader classLoader, String name) {
+        try {
+            return ClassLoaderUtil.newInstance(classLoader, name);
+        } catch (Exception e) {
+            throw sneakyThrow(e);
+        }
     }
 
     public static final class Resources {
