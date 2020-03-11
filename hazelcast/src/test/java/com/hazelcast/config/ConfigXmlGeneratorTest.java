@@ -708,9 +708,6 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         public int getTypeId() {
             return 0;
         }
-
-        @Override
-        public void destroy() { }
     }
 
     @Test
