@@ -39,10 +39,16 @@ public class HeapRow implements Row, IdentifiedDataSerializable {
         this.values = new Object[length];
     }
 
+    public HeapRow(Object[] values) {
+        this.values = values;
+    }
+
     @SuppressWarnings("unchecked")
     @Override
-    public <T> T getColumn(int idx) {
-        return (T) values[idx];
+    public <T> T getColumn(int index) {
+        assert index >= 0 && index < values.length;
+
+        return (T) values[index];
     }
 
     @Override
@@ -50,28 +56,10 @@ public class HeapRow implements Row, IdentifiedDataSerializable {
         return values.length;
     }
 
-    public void set(int idx, Object val) {
-        values[idx] = val;
-    }
+    public void set(int index, Object val) {
+        assert index >= 0 && index < values.length;
 
-    @Override
-    public int hashCode() {
-        return Arrays.hashCode(values);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        HeapRow heapRow = (HeapRow) o;
-
-        return Arrays.equals(values, heapRow.values);
+        values[index] = val;
     }
 
     @Override
@@ -105,7 +93,27 @@ public class HeapRow implements Row, IdentifiedDataSerializable {
     }
 
     @Override
+    public int hashCode() {
+        return Arrays.hashCode(values);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        HeapRow heapRow = (HeapRow) o;
+
+        return Arrays.equals(values, heapRow.values);
+    }
+
+    @Override
     public String toString() {
-        return getClass().getSimpleName() + " {" + Arrays.toString(values) + '}';
+        return getClass().getSimpleName() + " " + Arrays.toString(values);
     }
 }
