@@ -17,7 +17,9 @@
 package com.hazelcast.sql.impl.row;
 
 import com.hazelcast.sql.impl.exec.KeyValueRowExtractor;
-import com.hazelcast.sql.impl.expression.KeyValueExtractorExpression;
+import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.converter.Converter;
+import com.hazelcast.sql.impl.type.converter.Converters;
 
 import java.util.Arrays;
 import java.util.List;
@@ -25,69 +27,76 @@ import java.util.List;
 /**
  * Key-value row. Appears during iteration over a data stored in map or its index.
  */
-public class KeyValueRow implements Row {
-    /** Null-marker. */
+public final class KeyValueRow implements Row {
+
     private static final Object NULL = new Object();
 
-    /** Extractor. */
+    private final List<String> fieldNames;
+    private final List<QueryDataType> fieldTypes;
     private final KeyValueRowExtractor extractor;
 
-    /** Field expressions. */
-    private final List<KeyValueExtractorExpression<?>> fieldExpressions;
+    private final Object[] cachedColumnValues;
+    private final Class<?>[] cachedColumnClasses;
+    private final Converter[] cachedColumnConverters;
 
-    /** Cached objects. */
-    private final Object[] cache;
-
-    /** Key. */
     private Object key;
+    private Object value;
 
-    /** Value. */
-    private Object val;
-
-    public KeyValueRow(KeyValueRowExtractor extractor, List<KeyValueExtractorExpression<?>> fieldExpressions) {
+    public KeyValueRow(List<String> fieldNames, List<QueryDataType> fieldTypes, KeyValueRowExtractor extractor) {
+        this.fieldNames = fieldNames;
+        this.fieldTypes = fieldTypes;
         this.extractor = extractor;
-        this.fieldExpressions = fieldExpressions;
 
-        cache = new Object[fieldExpressions.size()];
+        cachedColumnValues = new Object[fieldNames.size()];
+        cachedColumnClasses = new Class[fieldNames.size()];
+        cachedColumnConverters = new Converter[fieldNames.size()];
     }
 
     public void setKeyValue(Object key, Object val) {
         this.key = key;
-        this.val = val;
+        this.value = val;
 
-        Arrays.fill(cache, null);
+        Arrays.fill(cachedColumnValues, null);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T> T getColumn(int idx) {
-        Object res = cache[idx];
+    public <T> T getColumn(int index) {
+        Object columnValue = cachedColumnValues[index];
 
-        if (res == null) {
-            KeyValueExtractorExpression<?> fieldExpression = fieldExpressions.get(idx);
+        if (columnValue == null) {
+            columnValue = extractor.extract(key, value, fieldNames.get(index));
+            if (columnValue != null) {
+                columnValue = convert(index, columnValue);
+            }
 
-            res = fieldExpression.eval(this);
-
-            cache[idx] = res != null ? res : NULL;
-        } else if (res == NULL) {
-            res = null;
+            cachedColumnValues[index] = columnValue == null ? NULL : columnValue;
+        } else if (columnValue == NULL) {
+            columnValue = null;
         }
 
-        return (T) res;
+        return (T) columnValue;
     }
 
     @Override
     public int getColumnCount() {
-        return fieldExpressions.size();
+        return fieldNames.size();
     }
 
-    /**
-     * Extract the value with the given path.
-     *
-     * @param path Path.
-     * @return Extracted value.
-     */
-    public Object extract(String path) {
-        return extractor.extract(key, val, path);
+    private Object convert(int index, Object columnValue) {
+        Converter converter;
+
+        Class<?> clazz = columnValue.getClass();
+        if (clazz == cachedColumnClasses[index]) {
+            converter = cachedColumnConverters[index];
+        } else {
+            converter = Converters.getConverter(clazz);
+
+            cachedColumnClasses[index] = clazz;
+            cachedColumnConverters[index] = converter;
+        }
+
+        return fieldTypes.get(index).getConverter().convertToSelf(converter, columnValue);
     }
+
 }

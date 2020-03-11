@@ -23,12 +23,10 @@ import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.sql.impl.fragment.QueryFragmentContext;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.expression.KeyValueExtractorExpression;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.KeyValueRow;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
@@ -84,17 +82,7 @@ public abstract class AbstractMapScanExec extends AbstractExec implements KeyVal
     @Override
     protected final void setup0(QueryFragmentContext ctx) {
         extractors = createExtractors();
-
-        List<KeyValueExtractorExpression<?>> fieldExpressions = new ArrayList<>(fieldNames.size());
-
-        for (int i = 0; i < fieldNames.size(); i++) {
-            String fieldName = fieldNames.get(i);
-            QueryDataType fieldType = fieldTypes.get(i);
-
-            fieldExpressions.add(new KeyValueExtractorExpression<>(fieldName, fieldType));
-        }
-
-        keyValueRow = new KeyValueRow(this, fieldExpressions);
+        keyValueRow = new KeyValueRow(fieldNames, fieldTypes, this);
     }
 
     @Override
