@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.type;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.sql.impl.QuerySerializationHook;
+import com.hazelcast.sql.impl.SqlCustomClass;
 import com.hazelcast.sql.impl.type.converter.BigDecimalConverter;
 import com.hazelcast.sql.impl.type.converter.BigIntegerConverter;
 import com.hazelcast.sql.impl.type.converter.BooleanConverter;
@@ -156,7 +157,7 @@ public class QueryDataTypeTest {
         checkResolvedTypeForClass(QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME, OffsetDateTime.class);
         checkResolvedTypeForClass(QueryDataType.TIMESTAMP_WITH_TZ_ZONED_DATE_TIME, ZonedDateTime.class);
 
-        checkResolvedTypeForClass(QueryDataType.OBJECT, Object.class, CustomClass.class);
+        checkResolvedTypeForClass(QueryDataType.OBJECT, Object.class, SqlCustomClass.class);
     }
 
     @Test
@@ -263,9 +264,5 @@ public class QueryDataTypeTest {
 
         assertSame(bigger, QueryDataTypeUtils.bigger(bigger, bigger));
         assertSame(smaller, QueryDataTypeUtils.bigger(smaller, smaller));
-    }
-
-    private static final class CustomClass {
-        // No-op.
     }
 }

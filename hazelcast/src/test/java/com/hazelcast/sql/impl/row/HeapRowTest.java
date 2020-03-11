@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.row;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.sql.impl.QuerySerializationHook;
+import com.hazelcast.sql.impl.SqlCustomClass;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -26,16 +27,13 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.Serializable;
-import java.util.Objects;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertSame;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class HeapRowBatchTest {
+public class HeapRowTest {
     @Test
     public void testHeapRow() {
         Object[] values = new Object[2];
@@ -88,7 +86,7 @@ public class HeapRowBatchTest {
     public void testSerialization() {
         HeapRow original = new HeapRow(2);
         original.set(0, 1);
-        original.set(1, new CustomClass(1));
+        original.set(1, new SqlCustomClass(1));
 
         assertEquals(QuerySerializationHook.F_ID, original.getFactoryId());
         assertEquals(QuerySerializationHook.ROW_HEAP, original.getClassId());
@@ -106,34 +104,6 @@ public class HeapRowBatchTest {
             assertEquals(row1.hashCode(), row2.hashCode());
         } else {
             assertNotEquals(row1, row2);
-        }
-    }
-
-    private static final class CustomClass implements Serializable {
-        private int id;
-
-        private CustomClass(int id) {
-            this.id = id;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-
-            CustomClass that = (CustomClass) o;
-
-            return id == that.id;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(id);
         }
     }
 }

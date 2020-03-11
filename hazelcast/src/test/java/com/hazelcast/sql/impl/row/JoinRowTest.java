@@ -1,0 +1,97 @@
+/*
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.hazelcast.sql.impl.row;
+
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.sql.impl.QuerySerializationHook;
+import com.hazelcast.sql.impl.SqlCustomClass;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertSame;
+
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
+public class JoinRowTest {
+    @Test
+    public void testJoinRow() {
+        HeapRow row1 = new HeapRow(2);
+        HeapRow row2 = new HeapRow(3);
+
+        row1.set(0, new Object());
+        row1.set(1, new Object());
+        row2.set(0, new Object());
+        row2.set(1, new Object());
+        row2.set(2, new Object());
+
+        JoinRow joinRow = new JoinRow(row1, row2);
+
+        assertEquals(5, joinRow.getColumnCount());
+        assertSame(row1.getColumn(0), joinRow.getColumn(0));
+        assertSame(row1.getColumn(1), joinRow.getColumn(1));
+        assertSame(row2.getColumn(0), joinRow.getColumn(2));
+        assertSame(row2.getColumn(1), joinRow.getColumn(3));
+        assertSame(row2.getColumn(2), joinRow.getColumn(4));
+    }
+
+    @Test
+    public void testEquals() {
+        HeapRow row1 = new HeapRow(1);
+        HeapRow row2 = new HeapRow(2);
+
+        checkEquals(new JoinRow(row1, row2), new JoinRow(row1, row2), true);
+        checkEquals(new JoinRow(row1, row2), new JoinRow(row2, row1), false);
+    }
+
+    @Test
+    public void testSerialization() {
+        HeapRow row1 = new HeapRow(2);
+        HeapRow row2 = new HeapRow(2);
+
+        row1.set(0, 1);
+        row1.set(1, new SqlCustomClass(1));
+        row2.set(0, 2);
+        row2.set(1, new SqlCustomClass(2));
+
+        JoinRow original = new JoinRow(row1, row2);
+
+        assertEquals(QuerySerializationHook.F_ID, original.getFactoryId());
+        assertEquals(QuerySerializationHook.ROW_JOIN, original.getClassId());
+
+        InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
+
+        JoinRow restored = ss.toObject(ss.toData(original));
+
+        checkEquals(original, restored, true);
+    }
+
+    private void checkEquals(JoinRow row1, JoinRow row2, boolean expected) {
+        if (expected) {
+            assertEquals(row1, row2);
+            assertEquals(row1.hashCode(), row2.hashCode());
+        } else {
+            assertNotEquals(row1, row2);
+        }
+    }
+}
