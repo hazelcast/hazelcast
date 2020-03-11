@@ -111,9 +111,4 @@ public class HeapRow implements Row, IdentifiedDataSerializable {
 
         return Arrays.equals(values, heapRow.values);
     }
-
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + " " + Arrays.toString(values);
-    }
 }

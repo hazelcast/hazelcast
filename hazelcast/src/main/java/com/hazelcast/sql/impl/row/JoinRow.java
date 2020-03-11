@@ -101,23 +101,4 @@ public class JoinRow implements Row, IdentifiedDataSerializable {
 
         return left.equals(joinRow.left) && right.equals(joinRow.right);
     }
-
-    @Override
-    public String toString() {
-        StringBuilder res = new StringBuilder(getClass().getSimpleName() + " [");
-
-        for (int i = 0; i < getColumnCount(); i++) {
-            if (i != 0) {
-                res.append(", ");
-            }
-
-            Object column = getColumn(i);
-
-            res.append(column != null ? column.toString() : "null");
-        }
-
-        res.append("]");
-
-        return res.toString();
-    }
 }
