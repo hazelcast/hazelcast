@@ -827,7 +827,7 @@ public final class Sinks {
      *     <li>{@code <sequence>}: a sequence number starting from 0. Used if
      *          either:<ul>
      *              <li>running in <i>exactly-once</i> mode
-     *              <li>{@linkplain FileSinkBuilder#rollByFileSize(Long)
+     *              <li>{@linkplain FileSinkBuilder#rollByFileSize(long)
      *                    maximum file size} is set
      *          </ul>
      *          The sequence is reset to 0 when the {@code <date>} changes.
@@ -928,28 +928,42 @@ public final class Sinks {
      * Returns a builder object that offers a step-by-step fluent API to build
      * a custom JMS queue sink for the Pipeline API. See javadoc for {@link
      * JmsSinkBuilder} methods for more details.
-     *
-     * <p>In <b>exactly-once mode</b> the processor uses two-phase XA
-     * transactions to guarantee exactly-once delivery. The transaction is
-     * committed after all processors finished processing the items and stored
-     * all data to the snapshot. Processor is also able to finish the commit
-     * after a restart, should the job fail mid-way of the commit process. This
-     * mode significantly increases latency because produced messages are
-     * visible only after they are committed; if you want to avoid it, you can
-     * reduce the guarantee just for this sink. To do so call {@link
+     * <p>
+     * In <b>exactly-once mode</b> the processor uses two-phase XA transactions
+     * to guarantee exactly-once delivery. The transaction is committed after
+     * all processors finished processing the items and stored all data to the
+     * snapshot. Processor is also able to finish the commit after a restart,
+     * should the job fail mid-way of the commit process. This mode
+     * significantly increases latency because produced messages are visible
+     * only after they are committed; if you want to avoid it, you can reduce
+     * the guarantee just for this sink. To do so call {@link
      * JmsSinkBuilder#exactlyOnce(boolean) exactlyOnce(false)} on the returned
-     * builder.
-     *
-     * <p>In at-least-once mode or when the guarantee is off, the produced
-     * records are acknowledged immediately. We use transactions to produce
-     * messages in batches, but those transactions have very short duration.
-     *
-     * <p>IO failures should be handled by the JMS provider. If any JMS
-     * operation throws an exception, the job will fail. Most of the providers
-     * offer a configuration parameter to enable auto-reconnection, refer to
-     * provider documentation for details.
-     *
-     * <p>The default local parallelism for this processor is 1.
+     * builder. If your messages have a unique identifier, some JMS brokers
+     * have deduplication functionality - you can use this to avoid the latency
+     * penalty.
+     * <p>
+     * In <b>at-least-once mode</b> or when the <b>guarantee is off</b>, the
+     * produced records are acknowledged immediately. We use transactions to
+     * produce messages in batches, but those transactions have very short
+     * duration.
+     * <p>
+     * IO failures should be handled by the JMS provider. If any JMS operation
+     * throws an exception, the job will fail. Most of the providers offer a
+     * configuration parameter to enable auto-reconnection, refer to provider
+     * documentation for details.
+     * <p>
+     * <b>Test the XA support of your broker</b>
+     * <p>
+     * The JMS is an API, some brokers don't implement the XA transactions
+     * correctly. We run our stress tests with RabbitMQ and ActiveMQ. The most
+     * common flaw is that a prepared transaction is rolled back if the client
+     * disconnects. To check your broker, you can run the code in <a
+     * href="https://github.com/hazelcast/hazelcast-jet-contrib/xa-test">
+     * https://github.com/hazelcast/hazelcast-jet-contrib/xa-test</a>
+     * <p>
+     * <b>Notes</b>
+     * <p>
+     * The default local parallelism for this processor is 1.
      *
      * @param factorySupplier supplier to obtain JMS connection factory. For
      *      exactly-once the factory must implement {@link
@@ -990,28 +1004,39 @@ public final class Sinks {
      * Returns a builder object that offers a step-by-step fluent API to build
      * a custom JMS topic sink for the Pipeline API. See javadoc on {@link
      * JmsSinkBuilder} methods for more details.
-     *
-     * <p>In <b>exactly-once mode</b> the processor uses two-phase XA
-     * transactions to guarantee exactly-once delivery. The transaction is
-     * committed after all processors finished processing the items and stored
-     * all data to the snapshot. Processor is also able to finish the commit
-     * after a restart, should the job fail mid-way of the commit process. This
-     * mode significantly increases latency because produced messages are
-     * visible only after they are committed; if you want to avoid it, you can
-     * reduce the guarantee just for this sink. To do so call {@link
+     * <p>
+     * In <b>exactly-once mode</b> the processor uses two-phase XA transactions
+     * to guarantee exactly-once delivery. The transaction is committed after
+     * all processors finished processing the items and stored all data to the
+     * snapshot. Processor is also able to finish the commit after a restart,
+     * should the job fail mid-way of the commit process. This mode
+     * significantly increases latency because produced messages are visible
+     * only after they are committed; if you want to avoid it, you can reduce
+     * the guarantee just for this sink. To do so call {@link
      * JmsSinkBuilder#exactlyOnce(boolean) exactlyOnce(false)} on the returned
      * builder.
-     *
-     * <p>In at-least-once mode or when the guarantee is off, the produced
-     * records are acknowledged immediately. We use transactions to produce
-     * messages in batches, but those transactions have very short duration.
-     *
-     * <p>IO failures should be handled by the JMS provider. If any JMS
-     * operation throws an exception, the job will fail. Most of the providers
-     * offer a configuration parameter to enable auto-reconnection, refer to
-     * provider documentation for details.
-     *
-     * <p>The default local parallelism for this processor is 1.
+     * <p>
+     * In at-least-once mode or when the guarantee is off, the produced records
+     * are acknowledged immediately. We use transactions to produce messages in
+     * batches, but those transactions have very short duration.
+     * <p>
+     * IO failures should be handled by the JMS provider. If any JMS operation
+     * throws an exception, the job will fail. Most of the providers offer a
+     * configuration parameter to enable auto-reconnection, refer to provider
+     * documentation for details.
+     * <p>
+     * <b>Test the XA support of your broker</b>
+     * <p>
+     * The JMS is an API, some brokers don't implement the XA transactions
+     * correctly. We run our stress tests with RabbitMQ and ActiveMQ. The most
+     * common flaw is that a prepared transaction is rolled back if the client
+     * disconnects. To check your broker, you can run the code in <a
+     * href="https://github.com/hazelcast/hazelcast-jet-contrib/xa-test">
+     * https://github.com/hazelcast/hazelcast-jet-contrib/xa-test</a>
+     * <p>
+     * <b>Notes</b>
+     * <p>
+     * The default local parallelism for this processor is 1.
      *
      * @param <T> type of the items the sink accepts
      */
@@ -1121,6 +1146,17 @@ public final class Sinks {
      * transparently reconnect and the job won't fail, except for an {@link
      * SQLNonTransientException} subclass. In XA mode the job will fail
      * immediately.
+     * <p>
+     * <b>Test the XA support of your database</b>
+     * <p>
+     *  The JDBC is an API, some brokers don't implement the XA transactions
+     *  correctly. We run our stress tests with PostgreSQL. The most common
+     *  flaw is that a prepared transaction is rolled back if the client
+     *  disconnects. To check your database, you can run the code in <a
+     *  href="https://github.com/hazelcast/hazelcast-jet-contrib/xa-test">
+     *  https://github.com/hazelcast/hazelcast-jet-contrib/xa-test</a>
+     * <p>
+     * <b>Notes</b>
      * <p>
      * The default local parallelism for this sink is 1.
      *
