@@ -5,7 +5,7 @@
 * [Configuring the Plugin](#configuring-the-plugin)
     * [Basic Configuration](#basic-configuration)
     * [Additional Properties](#additional-properties)
-    * [Configuration for Hazelcast Clients Connecting from outside of Azure](#configuration-for-hazelcast-clients-connecting-from-outside-of-azure)
+    * [Configuration for Hazelcast Clients Connecting from outside Azure](#configuration-for-hazelcast-clients-connecting-from-outside-azure)
     * [Configuration for WAN Replication Target Cluster Discovery](#configuration-for-wan-replication-target-cluster-discovery)
     * [Property Definitions](#property-definitions)
     * [ZONE_AWARE Partition Group](#zone_aware-partition-group)
@@ -147,7 +147,7 @@ hazelcast:
 - `tag` - *(Optional)* The key-value pair of the tag on the Azure VM resources. The format should be as `key=value`. If this setting is configured, the plugin will search for instances over only the resources that have this tag entry. If not configured, the plugin will search for instances over all available resources.
 - `hz-port` - *(Optional)* The port range where Hazelcast is expected to be running. The format should be as `5701` or `5701-5703`. The default value is `5701-5703`.
 
-## Configuration for Hazelcast Clients Connecting from outside of Azure
+## Configuration for Hazelcast Clients Connecting from outside Azure
  
 Hazelcast client instances might be running outside of an Azure VM which makes Azure Instance Metadata service unavailable. Then, Hazelcast client instances should be configured with the properties as shown below:
 
@@ -188,7 +188,7 @@ Please see [Property Definitions](#property-definitions) below for details.
 
 ## Configuration for WAN Replication Target Cluster Discovery
 
-Hazelcast allows you to configure WAN replication to work with the Azure Discovery plugin and determine the endpoint IP addresses at runtime. You can find below the sample configurations for WAN Replication:
+Hazelcast allows you to configure [WAN replication](https://docs.hazelcast.org/docs/latest/manual/html-single/#wan) to work with the Azure Discovery plugin and determine the endpoint IP addresses at runtime. If the Hazelcast cluster is running outside Azure environment and the target cluster is running inside Azure Environment, then you should configure your WAN batch publisher as below:
 
 #### XML Configuration:
 ```xml
@@ -239,7 +239,7 @@ You will need to setup [Azure Active Directory Service Principal credentials](ht
 - `subscription-id` - The Azure subscription ID.
 - `resource-group` - The name of Azure [resource group](https://azure.microsoft.com/en-us/documentation/articles/resource-group-portal/) which the Hazelcast instance is running in.
 - `scale-set` - *(Optional)* The name of Azure [VM scale set](https://docs.microsoft.com/en-us/azure/virtual-machine-scale-sets/overview). If this setting is configured, the plugin will search for instances over the resources only within this scale set.
-- `use-public-ip` - Enables the discovery joiner to use public IPs. It should be set to `true` in client instances running outside of the Azure environment.
+- `use-public-ip` - Enables the discovery joiner to use public IPs. It should be set to `true` in client instances running outside the Azure environment.
 
 ## ZONE_AWARE Partition Group
 
