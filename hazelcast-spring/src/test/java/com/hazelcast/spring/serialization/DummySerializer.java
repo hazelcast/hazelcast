@@ -37,8 +37,4 @@ public class DummySerializer implements StreamSerializer<DummySerializableObject
     public int getTypeId() {
         return 123;
     }
-
-    @Override
-    public void destroy() {
-    }
 }

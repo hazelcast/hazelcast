@@ -115,9 +115,6 @@ public class SerializationTest extends HazelcastTestSupport {
                     public int getTypeId() {
                         return 123;
                     }
-
-                    public void destroy() {
-                    }
                 }));
 
         SerializationService ss1 = new DefaultSerializationServiceBuilder().setConfig(serializationConfig).build();
@@ -159,9 +156,6 @@ public class SerializationTest extends HazelcastTestSupport {
 
                     public int getTypeId() {
                         return 123;
-                    }
-
-                    public void destroy() {
                     }
                 }));
 
@@ -236,10 +230,6 @@ public class SerializationTest extends HazelcastTestSupport {
                             @Override
                             public int getTypeId() {
                                 return 123;
-                            }
-
-                            @Override
-                            public void destroy() {
                             }
                         }));
 
