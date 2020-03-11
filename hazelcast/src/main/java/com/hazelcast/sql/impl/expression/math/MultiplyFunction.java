@@ -90,7 +90,7 @@ public class MultiplyFunction<T> extends BiExpressionWithType<T> {
 
         if (wasLate) {
             operand1Type = QueryDataTypeUtils.resolveType(operand1);
-            operand2Type = QueryDataTypeUtils.resolveType(operand1);
+            operand2Type = QueryDataTypeUtils.resolveType(operand2);
 
             resultType = MathFunctionUtils.inferMultiplyResultType(operand1Type, operand2Type);
         }

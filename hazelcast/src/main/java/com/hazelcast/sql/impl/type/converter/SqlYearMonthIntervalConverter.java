@@ -16,9 +16,8 @@
 
 package com.hazelcast.sql.impl.type.converter;
 
-import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.impl.type.SqlYearMonthInterval;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
+import com.hazelcast.sql.impl.type.SqlYearMonthInterval;
 
 /**
  * Converter for {@link SqlYearMonthInterval} type.
@@ -36,12 +35,17 @@ public final class SqlYearMonthIntervalConverter extends Converter {
         return SqlYearMonthInterval.class;
     }
 
+    @NotConvertible
+    public Object asObject(Object val) {
+        throw cannotConvert(QueryDataTypeFamily.OBJECT);
+    }
+
     @Override
     public Object convertToSelf(Converter converter, Object val) {
         if (val instanceof SqlYearMonthInterval) {
             return val;
         }
 
-        throw HazelcastSqlException.error("Value cannot be converted to " + SqlYearMonthInterval.class + ": " + val);
+        throw cannotConvert(converter.getTypeFamily(), getTypeFamily(), val);
     }
 }

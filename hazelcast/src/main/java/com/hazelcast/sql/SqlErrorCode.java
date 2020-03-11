@@ -27,22 +27,25 @@ public final class SqlErrorCode {
     public static final int OK = 0;
 
     /** Member has left the topology. */
-    public static final int MEMBER_LEAVE = 1;
+    public static final int MEMBER_LEAVE = 1001;
 
     /** Generic parsing error. */
-    public static final int PARSING = 2;
+    public static final int PARSING = 1002;
 
     /** Query was cancelled due to user request. */
-    public static final int CANCELLED = 3;
+    public static final int CANCELLED = 1003;
 
     /** Query was cancelled due to timeout. */
-    public static final int TIMEOUT = 4;
+    public static final int TIMEOUT = 1004;
 
     /** Out of memory condition. */
-    public static final int OUT_OF_MEMORY = 5;
+    public static final int OUT_OF_MEMORY = 1005;
 
     /** Client has left the topology. */
-    public static final int CLIENT_LEAVE = 6;
+    public static final int CLIENT_LEAVE = 1006;
+
+    /** An error with data conversion or transformation. */
+    public static final int DATA_EXCEPTION = 2000;
 
     private SqlErrorCode() {
         // No-op.

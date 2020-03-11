@@ -23,7 +23,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
-import java.time.ZonedDateTime;
+import java.time.ZoneOffset;
 
 /**
  * Converter for {@link LocalDateTime} type.
@@ -63,7 +63,7 @@ public final class LocalDateTimeConverter extends Converter {
 
     @Override
     public OffsetDateTime asTimestampWithTimezone(Object val) {
-        return ZonedDateTime.of(asTimestamp(val), ZoneId.systemDefault()).toOffsetDateTime();
+        return OffsetDateTime.ofInstant(cast(val).toInstant(ZoneOffset.UTC), ZoneId.systemDefault());
     }
 
     @Override

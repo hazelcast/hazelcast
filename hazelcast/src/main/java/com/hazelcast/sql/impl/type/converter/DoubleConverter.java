@@ -37,11 +37,6 @@ public final class DoubleConverter extends Converter {
     }
 
     @Override
-    public boolean asBit(Object val) {
-        return cast(val) != 0.0d;
-    }
-
-    @Override
     public byte asTinyint(Object val) {
         return (byte) cast(val);
     }
@@ -63,7 +58,7 @@ public final class DoubleConverter extends Converter {
 
     @Override
     public BigDecimal asDecimal(Object val) {
-        return new BigDecimal(cast(val));
+        return BigDecimal.valueOf(cast(val));
     }
 
     @Override

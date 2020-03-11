@@ -21,7 +21,7 @@ import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 /**
  * Converter for {@link Integer} type.
  */
-public final class ObjectConverter extends Converter {
+public final class ObjectConverter extends AbstractObjectConverter {
     /** Singleton instance. */
     public static final ObjectConverter INSTANCE = new ObjectConverter();
 
@@ -36,16 +36,28 @@ public final class ObjectConverter extends Converter {
 
     @Override
     public String asVarchar(Object val) {
-        return val != null ? val.toString() : "null";
+        Converter converter = Converters.getConverter(val.getClass());
+
+        if (converter == this) {
+            return val.toString();
+        } else {
+            return converter.asVarchar(val);
+        }
+    }
+
+    @Override
+    public Object asObject(Object val) {
+        Converter converter = Converters.getConverter(val.getClass());
+
+        if (converter == this) {
+            return val;
+        } else {
+            return converter.asObject(val);
+        }
     }
 
     @Override
     public Object convertToSelf(Converter valConverter, Object val) {
         return valConverter.asObject(val);
-    }
-
-    @Override
-    public Object asObject(Object val) {
-        return val;
     }
 }

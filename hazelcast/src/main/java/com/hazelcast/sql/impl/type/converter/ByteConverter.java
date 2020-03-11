@@ -37,11 +37,6 @@ public final class ByteConverter extends Converter {
     }
 
     @Override
-    public boolean asBit(Object val) {
-        return cast(val) != 0;
-    }
-
-    @Override
     public byte asTinyint(Object val) {
         return cast(val);
     }

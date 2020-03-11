@@ -37,11 +37,6 @@ public final class FloatConverter extends Converter {
     }
 
     @Override
-    public boolean asBit(Object val) {
-        return cast(val) != 0.0f;
-    }
-
-    @Override
     public byte asTinyint(Object val) {
         return (byte) cast(val);
     }

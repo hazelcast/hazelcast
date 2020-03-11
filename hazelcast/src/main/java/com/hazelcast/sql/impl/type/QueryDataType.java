@@ -97,11 +97,11 @@ public class QueryDataType implements IdentifiedDataSerializable {
         // No-op.
     }
 
-    public QueryDataType(Converter converter) {
+    QueryDataType(Converter converter) {
         this(converter, PRECISION_UNLIMITED);
     }
 
-    public QueryDataType(Converter converter, int precision) {
+    QueryDataType(Converter converter, int precision) {
         this.converter = converter;
         this.precision = precision;
     }
@@ -116,31 +116,6 @@ public class QueryDataType implements IdentifiedDataSerializable {
 
     public int getPrecision() {
         return precision;
-    }
-
-    public QueryDataType expandPrecision() {
-        QueryDataTypeFamily typeFamily = converter.getTypeFamily();
-
-        switch (typeFamily) {
-            case BIT:
-            case TINYINT:
-            case SMALLINT:
-            case INT:
-            case BIGINT:
-            case DECIMAL:
-                return QueryDataTypeUtils.integerType(precision == PRECISION_UNLIMITED ? precision : precision + 1);
-
-            case REAL:
-            case DOUBLE:
-                return DOUBLE;
-
-            default:
-                throw new IllegalArgumentException("Type is not numeric: " + this);
-        }
-    }
-
-    public boolean canConvertToNumber() {
-        return converter.canConvertToDecimal();
     }
 
     @Override

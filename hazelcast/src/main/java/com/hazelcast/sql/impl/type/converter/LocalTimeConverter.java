@@ -18,17 +18,14 @@ package com.hazelcast.sql.impl.type.converter;
 
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 
 /**
  * Converter for {@link java.time.LocalTime} type.
  */
-public final class LocalTimeConverter extends Converter {
+public final class LocalTimeConverter extends AbstractTemporalConverter {
     /** Singleton instance. */
     public static final LocalTimeConverter INSTANCE = new LocalTimeConverter();
 
@@ -53,12 +50,18 @@ public final class LocalTimeConverter extends Converter {
 
     @Override
     public LocalDateTime asTimestamp(Object val) {
-        return LocalDateTime.of(LocalDate.now(), asTime(val));
+        LocalTime time = cast(val);
+
+        return timeToTimestamp(time);
     }
 
     @Override
     public OffsetDateTime asTimestampWithTimezone(Object val) {
-        return ZonedDateTime.of(asTimestamp(val), ZoneId.systemDefault()).toOffsetDateTime();
+        LocalTime time = cast(val);
+
+        LocalDateTime timestamp = timeToTimestamp(time);
+
+        return timestampToTimestampWithTimezone(timestamp);
     }
 
     @Override

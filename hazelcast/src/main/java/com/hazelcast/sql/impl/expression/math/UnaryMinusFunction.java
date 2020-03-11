@@ -114,7 +114,7 @@ public class UnaryMinusFunction<T> extends UniExpressionWithType<T> {
      * @return Result type.
      */
     private static QueryDataType inferResultType(QueryDataType operandType) {
-        if (!operandType.canConvertToNumber()) {
+        if (!MathFunctionUtils.canConvertToNumber(operandType)) {
             throw HazelcastSqlException.error("Operand is not numeric: " + operandType);
         }
 
@@ -126,7 +126,7 @@ public class UnaryMinusFunction<T> extends UniExpressionWithType<T> {
                 return QueryDataType.DECIMAL;
 
             default:
-                return operandType.expandPrecision();
+                return MathFunctionUtils.expandPrecision(operandType);
         }
     }
 }

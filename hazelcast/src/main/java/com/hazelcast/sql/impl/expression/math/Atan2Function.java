@@ -35,11 +35,11 @@ public class Atan2Function extends BiExpression<Double> {
     }
 
     public static Atan2Function create(Expression<?> first, Expression<?> second) {
-        if (!first.getType().canConvertToNumber()) {
+        if (!MathFunctionUtils.canConvertToNumber(first.getType())) {
             throw HazelcastSqlException.error("Operand 1 is not numeric: " + first.getType());
         }
 
-        if (!second.getType().canConvertToNumber()) {
+        if (!MathFunctionUtils.canConvertToNumber(second.getType())) {
             throw HazelcastSqlException.error("Operand 2 is not numeric: " + second.getType());
         }
 

@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.type;
 
-import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.type.converter.BigDecimalConverter;
 import com.hazelcast.sql.impl.type.converter.BigIntegerConverter;
 import com.hazelcast.sql.impl.type.converter.CalendarConverter;
@@ -60,10 +59,10 @@ public final class QueryDataTypeUtils {
     /** 12 (hdr) + 36 (arbitrary content). */
     public static final int TYPE_LEN_OBJECT = 12 + 36;
 
-    private static final QueryDataType[] INTEGER_TYPES = new QueryDataType[QueryDataType.PRECISION_BIGINT];
+    private static final QueryDataType[] INTEGER_TYPES = new QueryDataType[QueryDataType.PRECISION_BIGINT + 1];
 
     static {
-        for (int i = 1; i < QueryDataType.PRECISION_BIGINT; i++) {
+        for (int i = 1; i <= QueryDataType.PRECISION_BIGINT; i++) {
             QueryDataType type;
 
             if (i == QueryDataType.PRECISION_BIT) {
@@ -80,8 +79,10 @@ public final class QueryDataTypeUtils {
                 type = new QueryDataType(QueryDataType.INT.getConverter(), i);
             } else if (i == QueryDataType.PRECISION_INT) {
                 type = QueryDataType.INT;
+            } else if (i < QueryDataType.PRECISION_BIGINT) {
+                type = new QueryDataType(QueryDataType.BIGINT.getConverter(), i);
             } else {
-                type = new QueryDataType(QueryDataType.INT.getConverter(), i);
+                type = QueryDataType.BIGINT;
             }
 
             INTEGER_TYPES[i] = type;
@@ -92,85 +93,6 @@ public final class QueryDataTypeUtils {
         // No-op.
     }
 
-    public static QueryDataType bigger(QueryDataType first, QueryDataType second) {
-        int res = Integer.compare(first.getTypeFamily().getPrecedence(), second.getTypeFamily().getPrecedence());
-
-        if (res == 0) {
-            res = Integer.compare(first.getPrecision(), second.getPrecision());
-        }
-
-        return (res > 0) ? first : second;
-    }
-
-    /**
-     * Check if the second type could be converted to the first one.
-     *
-     * @param to First type.
-     * @param from Second type.
-     * @return {@code True} if the second type could be casted to the first one.
-     */
-    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:ReturnCount"})
-    public static boolean canConvertTo(QueryDataType from, QueryDataType to) {
-        switch (to.getTypeFamily()) {
-            case BIT:
-                return from.getConverter().canConvertToBit();
-
-            case TINYINT:
-                return from.getConverter().canConvertToTinyint();
-
-            case SMALLINT:
-                return from.getConverter().canConvertToSmallint();
-
-            case INT:
-                return from.getConverter().canConvertToInt();
-
-            case BIGINT:
-                return from.getConverter().canConvertToBigint();
-
-            case DECIMAL:
-                return from.getConverter().canConvertToDecimal();
-
-            case REAL:
-                return from.getConverter().canConvertToReal();
-
-            case DOUBLE:
-                return from.getConverter().canConvertToDouble();
-
-            case VARCHAR:
-                return from.getConverter().canConvertToVarchar();
-
-            case DATE:
-                return from.getConverter().canConvertToDate();
-
-            case TIME:
-                return from.getConverter().canConvertToTime();
-
-            case TIMESTAMP:
-                return from.getConverter().canConvertToTimestamp();
-
-            case TIMESTAMP_WITH_TIMEZONE:
-                return from.getConverter().canConvertToTimestampWithTimezone();
-
-            case OBJECT:
-                return from.getConverter().canConvertToObject();
-
-            default:
-                return false;
-        }
-    }
-
-    public static void ensureCanConvertTo(QueryDataType from, QueryDataType to) {
-        if (!canConvertTo(from, to)) {
-            throw HazelcastSqlException.error("Cannot convert " + from + " to " + to);
-        }
-    }
-
-    /**
-     * Get type of the given object.
-     *
-     * @param obj Object.
-     * @return Object's type.
-     */
     public static QueryDataType resolveType(Object obj) {
         if (obj == null) {
             return QueryDataType.LATE;
@@ -178,28 +100,25 @@ public final class QueryDataTypeUtils {
 
         Class<?> clazz = obj.getClass();
 
-        QueryDataType type = resolveTypeOrNull(clazz);
-
-        if (type == null) {
-            throw HazelcastSqlException.error("Unsupported class: " + clazz.getName());
-        }
-
-        return type;
+        return resolveTypeForClass(clazz);
     }
 
-    /**
-     * Get type of the given object.
-     *
-     * @param clazz Object class.
-     * @return Object's type.
-     */
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:ReturnCount", "checkstyle:MethodLength"})
-    public static QueryDataType resolveTypeOrNull(Class<?> clazz) {
+    public static QueryDataType resolveTypeForClass(Class<?> clazz) {
         Converter converter = Converters.getConverter(clazz);
 
         QueryDataTypeFamily typeFamily = converter.getTypeFamily();
 
         switch (typeFamily) {
+            case VARCHAR:
+                if (converter == StringConverter.INSTANCE) {
+                    return QueryDataType.VARCHAR;
+                } else {
+                    assert converter == CharacterConverter.INSTANCE;
+
+                    return QueryDataType.VARCHAR_CHARACTER;
+                }
+
             case BIT:
                 return QueryDataType.BIT;
 
@@ -218,26 +137,17 @@ public final class QueryDataTypeUtils {
             case DECIMAL:
                 if (converter == BigDecimalConverter.INSTANCE) {
                     return QueryDataType.DECIMAL;
-                } else if (converter == BigIntegerConverter.INSTANCE) {
+                } else {
+                    assert converter == BigIntegerConverter.INSTANCE;
+
                     return QueryDataType.DECIMAL_BIG_INTEGER;
                 }
-
-                break;
 
             case REAL:
                 return QueryDataType.REAL;
 
             case DOUBLE:
                 return QueryDataType.DOUBLE;
-
-            case VARCHAR:
-                if (converter == StringConverter.INSTANCE) {
-                    return QueryDataType.VARCHAR;
-                } else if (converter == CharacterConverter.INSTANCE) {
-                    return QueryDataType.VARCHAR_CHARACTER;
-                }
-
-                break;
 
             case DATE:
                 return QueryDataType.DATE;
@@ -257,11 +167,11 @@ public final class QueryDataTypeUtils {
                     return QueryDataType.TIMESTAMP_WITH_TZ_INSTANT;
                 } else if (converter == OffsetDateTimeConverter.INSTANCE) {
                     return QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME;
-                } else if (converter == ZonedDateTimeConverter.INSTANCE) {
+                } else {
+                    assert converter == ZonedDateTimeConverter.INSTANCE;
+
                     return QueryDataType.TIMESTAMP_WITH_TZ_ZONED_DATE_TIME;
                 }
-
-                break;
 
             case INTERVAL_YEAR_MONTH:
                 return QueryDataType.INTERVAL_YEAR_MONTH;
@@ -273,10 +183,68 @@ public final class QueryDataTypeUtils {
                 return QueryDataType.OBJECT;
 
             default:
-                break;
-        }
+                assert typeFamily == QueryDataTypeFamily.LATE;
 
-        return null;
+                throw new IllegalArgumentException("Unexpected class: " + clazz);
+        }
+    }
+
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:ReturnCount", "checkstyle:MethodLength"})
+    public static QueryDataType resolveTypeForTypeFamily(QueryDataTypeFamily typeFamily) {
+        switch (typeFamily) {
+            case VARCHAR:
+                return QueryDataType.VARCHAR;
+
+            case BIT:
+                return QueryDataType.BIT;
+
+            case TINYINT:
+                return QueryDataType.TINYINT;
+
+            case SMALLINT:
+                return QueryDataType.SMALLINT;
+
+            case INT:
+                return QueryDataType.INT;
+
+            case BIGINT:
+                return QueryDataType.BIGINT;
+
+            case DECIMAL:
+                return QueryDataType.DECIMAL;
+
+            case REAL:
+                return QueryDataType.REAL;
+
+            case DOUBLE:
+                return QueryDataType.DOUBLE;
+
+            case DATE:
+                return QueryDataType.DATE;
+
+            case TIME:
+                return QueryDataType.TIME;
+
+            case TIMESTAMP:
+                return QueryDataType.TIMESTAMP;
+
+            case TIMESTAMP_WITH_TIMEZONE:
+                return QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME;
+
+            case INTERVAL_YEAR_MONTH:
+                return QueryDataType.INTERVAL_YEAR_MONTH;
+
+            case INTERVAL_DAY_SECOND:
+                return QueryDataType.INTERVAL_DAY_SECOND;
+
+            case OBJECT:
+                return QueryDataType.OBJECT;
+
+            default:
+                assert typeFamily == QueryDataTypeFamily.LATE;
+
+                throw new IllegalArgumentException("Unexpected type family: " + typeFamily);
+        }
     }
 
     /**
@@ -286,14 +254,26 @@ public final class QueryDataTypeUtils {
      * @return Type.
      */
     public static QueryDataType integerType(int precision) {
-        assert precision != 0;
+        if (precision == 0) {
+            throw new IllegalArgumentException("Precision cannot be zero.");
+        }
 
         if (precision == QueryDataType.PRECISION_UNLIMITED) {
             return QueryDataType.DECIMAL;
-        } else if (precision < QueryDataType.PRECISION_BIGINT) {
+        } else if (precision <= QueryDataType.PRECISION_BIGINT) {
             return INTEGER_TYPES[precision];
         } else {
             return QueryDataType.DECIMAL;
         }
+    }
+
+    public static QueryDataType bigger(QueryDataType first, QueryDataType second) {
+        int res = Integer.compare(first.getTypeFamily().getPrecedence(), second.getTypeFamily().getPrecedence());
+
+        if (res == 0) {
+            res = Integer.compare(first.getPrecision(), second.getPrecision());
+        }
+
+        return (res >= 0) ? first : second;
     }
 }

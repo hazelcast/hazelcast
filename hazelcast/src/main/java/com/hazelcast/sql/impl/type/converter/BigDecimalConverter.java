@@ -35,11 +35,6 @@ public final class BigDecimalConverter extends AbstractDecimalConverter {
     }
 
     @Override
-    public boolean asBit(Object val) {
-        return cast(val).compareTo(BigDecimal.ZERO) != 0;
-    }
-
-    @Override
     public byte asTinyint(Object val) {
         return cast(val).byteValue();
     }

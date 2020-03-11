@@ -27,7 +27,7 @@ import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_TIMESTAMP_
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_VARCHAR;
 
 public enum QueryDataTypeFamily {
-    LATE(true, 0, TYPE_LEN_OBJECT),
+    LATE(false, 0, TYPE_LEN_OBJECT),
     VARCHAR(false, 100, TYPE_LEN_VARCHAR),
     BIT(false, 200, 1),
     TINYINT(false, 300, 1),
@@ -50,6 +50,9 @@ public enum QueryDataTypeFamily {
     private final int estimatedSize;
 
     QueryDataTypeFamily(boolean temporal, int precedence, int estimatedSize) {
+        assert precedence >= 0;
+        assert estimatedSize > 0;
+
         this.temporal = temporal;
         this.precedence = precedence;
         this.estimatedSize = estimatedSize;

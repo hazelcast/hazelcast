@@ -16,8 +16,6 @@
 
 package com.hazelcast.sql.impl.type.converter;
 
-import java.time.Instant;
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Calendar;
@@ -39,20 +37,7 @@ public final class CalendarConverter extends AbstractTimestampWithTimezoneConver
     }
 
     @Override
-    public LocalDateTime asTimestamp(Object val) {
-        Instant instant = cast(val).toInstant();
-
-        return LocalDateTime.ofInstant(instant, ZoneOffset.systemDefault());
-    }
-
-    @Override
     public OffsetDateTime asTimestampWithTimezone(Object val) {
-        Instant instant = cast(val).toInstant();
-
-        return OffsetDateTime.ofInstant(instant, ZoneOffset.UTC);
-    }
-
-    private Calendar cast(Object val) {
-        return ((Calendar) val);
+        return OffsetDateTime.ofInstant(((Calendar) val).toInstant(), ZoneOffset.UTC);
     }
 }

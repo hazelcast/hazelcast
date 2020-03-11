@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.type.converter;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
@@ -38,18 +37,7 @@ public final class InstantConverter extends AbstractTimestampWithTimezoneConvert
     }
 
     @Override
-    public LocalDateTime asTimestamp(Object val) {
-        Instant instant = cast(val);
-
-        return LocalDateTime.ofInstant(instant, ZoneOffset.systemDefault());
-    }
-
-    @Override
     public OffsetDateTime asTimestampWithTimezone(Object val) {
-        return OffsetDateTime.ofInstant(cast(val), ZoneOffset.UTC);
-    }
-
-    private Instant cast(Object val) {
-        return ((Instant) val);
+        return OffsetDateTime.ofInstant(((Instant) val), ZoneOffset.UTC);
     }
 }

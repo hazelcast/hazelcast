@@ -18,16 +18,10 @@ package com.hazelcast.sql.impl.type.converter;
 
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.OffsetDateTime;
-
 /**
  * Converter with late type resolution.
  */
-public final class LateConverter extends Converter {
+public final class LateConverter extends AbstractObjectConverter {
     /** Singleton instance. */
     public static final LateConverter INSTANCE = new LateConverter();
 
@@ -41,83 +35,19 @@ public final class LateConverter extends Converter {
     }
 
     @Override
-    public boolean asBit(Object val) {
-        return getConverter(val).asBit(val);
-    }
-
-    @Override
-    public byte asTinyint(Object val) {
-        return getConverter(val).asTinyint(val);
-    }
-
-    @Override
-    public short asSmallint(Object val) {
-        return getConverter(val).asSmallint(val);
-    }
-
-    @Override
-    public int asInt(Object val) {
-        return getConverter(val).asInt(val);
-    }
-
-    @Override
-    public long asBigint(Object val) {
-        return getConverter(val).asBigint(val);
-    }
-
-    @Override
-    public BigDecimal asDecimal(Object val) {
-        return getConverter(val).asDecimal(val);
-    }
-
-    @Override
-    public float asReal(Object val) {
-        return getConverter(val).asReal(val);
-    }
-
-    @Override
-    public double asDouble(Object val) {
-        return getConverter(val).asDouble(val);
-    }
-
-    @Override
     public String asVarchar(Object val) {
-        return getConverter(val).asVarchar(val);
-    }
-
-    @Override
-    public LocalDate asDate(Object val) {
-        return getConverter(val).asDate(val);
-    }
-
-    @Override
-    public LocalTime asTime(Object val) {
-        return getConverter(val).asTime(val);
-    }
-
-    @Override
-    public LocalDateTime asTimestamp(Object val) {
-        return getConverter(val).asTimestamp(val);
-    }
-
-    @Override
-    public OffsetDateTime asTimestampWithTimezone(Object val) {
-        return getConverter(val).asTimestampWithTimezone(val);
+        return resolveConverter(val, QueryDataTypeFamily.VARCHAR).asVarchar(val);
     }
 
     @Override
     public Object asObject(Object val) {
-        return getConverter(val).asObject(val);
+        return resolveConverter(val, QueryDataTypeFamily.OBJECT).asObject(val);
     }
 
     @Override
-    public Object convertToSelf(Converter converter, Object val) {
-        return converter.convertToSelf(converter, val);
-    }
+    public Object convertToSelf(Converter valConverter, Object val) {
+        assert valConverter != this;
 
-    protected static Converter getConverter(Object val) {
-        assert val != null;
-
-        return Converters.getConverter(val.getClass());
+        return valConverter.convertToSelf(valConverter, val);
     }
 }

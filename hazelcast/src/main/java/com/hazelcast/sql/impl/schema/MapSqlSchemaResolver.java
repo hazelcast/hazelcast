@@ -90,7 +90,7 @@ public abstract class MapSqlSchemaResolver implements SqlSchemaResolver {
     private void resolveObjectFields(Map<String, SqlTableField> fields, Object object, boolean isKey) {
         // Add predefined fields.
         String topName = isKey ? QueryConstants.KEY_ATTRIBUTE_NAME.value() : QueryConstants.THIS_ATTRIBUTE_NAME.value();
-        QueryDataType topType = QueryDataTypeUtils.resolveTypeOrNull(object.getClass());
+        QueryDataType topType = QueryDataTypeUtils.resolveTypeForClass(object.getClass());
 
         fields.put(topName, new SqlTableField(topName, topName, topType));
 
@@ -102,7 +102,7 @@ public abstract class MapSqlSchemaResolver implements SqlSchemaResolver {
                 continue;
             }
 
-            QueryDataType type = QueryDataTypeUtils.resolveTypeOrNull(method.getReturnType());
+            QueryDataType type = QueryDataTypeUtils.resolveTypeForClass(method.getReturnType());
 
             fields.putIfAbsent(name, new SqlTableField(name, resolvePath(name, isKey), type));
         }

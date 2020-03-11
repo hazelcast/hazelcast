@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.expression.math;
 
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTERVAL_DAY_SECOND;
@@ -76,17 +77,17 @@ public final class MathFunctionUtils {
     }
 
     private static QueryDataType inferPlusMinusResultTypeNumeric(QueryDataType type1, QueryDataType type2) {
-        if (!type1.canConvertToNumber()) {
+        if (!canConvertToNumber(type1)) {
             throw HazelcastSqlException.error("Operand 1 is not numeric.");
         }
 
-        if (!type2.canConvertToNumber()) {
+        if (!canConvertToNumber(type2)) {
             throw HazelcastSqlException.error("Operand 2 is not numeric.");
         }
 
         QueryDataType biggerType = QueryDataTypeUtils.bigger(type1, type2);
 
-        return biggerType.expandPrecision();
+        return expandPrecision(biggerType);
     }
 
     private static QueryDataType inferPlusMinusResultTypeTemporal(QueryDataType temporalType, QueryDataType intervalType) {
@@ -136,7 +137,7 @@ public final class MathFunctionUtils {
 
         // Handle intervals.
         if (type1.getTypeFamily() == INTERVAL_DAY_SECOND || type1.getTypeFamily() == INTERVAL_YEAR_MONTH) {
-            if (!type2.canConvertToNumber()) {
+            if (!canConvertToNumber(type2)) {
                 throw HazelcastSqlException.error("Operand 2 is not numeric.");
             }
 
@@ -149,15 +150,15 @@ public final class MathFunctionUtils {
 
     private static QueryDataType inferMultiplyResultTypeNumeric(QueryDataType type1, QueryDataType type2) {
         // Only numeric types are allowed at this point.
-        if (!type1.canConvertToNumber()) {
+        if (!canConvertToNumber(type1)) {
             throw HazelcastSqlException.error("Operand 1 is not numeric.");
         }
 
-        if (!type2.canConvertToNumber()) {
+        if (!canConvertToNumber(type2)) {
             throw HazelcastSqlException.error("Operand 2 is not numeric.");
         }
 
-        return type1.expandPrecision();
+        return expandPrecision(type1);
     }
 
     @SuppressWarnings("checkstyle:NPathComplexity")
@@ -171,7 +172,7 @@ public final class MathFunctionUtils {
 
         // Handle interval types.
         if (type1.getTypeFamily() == INTERVAL_YEAR_MONTH || type1.getTypeFamily() == INTERVAL_DAY_SECOND) {
-            if (!type2.canConvertToNumber()) {
+            if (!canConvertToNumber(type2)) {
                 throw HazelcastSqlException.error("Operand 2 is not numeric.");
             }
 
@@ -187,11 +188,11 @@ public final class MathFunctionUtils {
             type2 = QueryDataType.DECIMAL;
         }
 
-        if (!type1.canConvertToNumber()) {
+        if (!canConvertToNumber(type1)) {
             throw HazelcastSqlException.error("Operand 1 is not numeric.");
         }
 
-        if (!type2.canConvertToNumber()) {
+        if (!canConvertToNumber(type2)) {
             throw HazelcastSqlException.error("Operand 2 is not numeric.");
         }
 
@@ -219,11 +220,11 @@ public final class MathFunctionUtils {
             type2 = QueryDataType.DECIMAL;
         }
 
-        if (!type1.canConvertToNumber()) {
+        if (!canConvertToNumber(type1)) {
             throw HazelcastSqlException.error("Operand 1 is not numeric.");
         }
 
-        if (!type2.canConvertToNumber()) {
+        if (!canConvertToNumber(type2)) {
             throw HazelcastSqlException.error("Operand 2 is not numeric.");
         }
 
@@ -232,5 +233,32 @@ public final class MathFunctionUtils {
         }
 
         return type1;
+    }
+
+    // TODO: Optionally do not expand precision for better performance (e.g. to avoid BigDecimal's when summing longs).
+    public static QueryDataType expandPrecision(QueryDataType type) {
+        QueryDataTypeFamily typeFamily = type.getConverter().getTypeFamily();
+        int precision = type.getPrecision();
+
+        switch (typeFamily) {
+            case BIT:
+            case TINYINT:
+            case SMALLINT:
+            case INT:
+            case BIGINT:
+            case DECIMAL:
+                return QueryDataTypeUtils.integerType(precision == QueryDataType.PRECISION_UNLIMITED ? precision : precision + 1);
+
+            case REAL:
+            case DOUBLE:
+                return QueryDataType.DOUBLE;
+
+            default:
+                throw new IllegalArgumentException("Type is not numeric: " + type);
+        }
+    }
+
+    public static boolean canConvertToNumber(QueryDataType type) {
+        return type.getConverter().canConvertToDecimal();
     }
 }

@@ -85,7 +85,7 @@ public class PlusFunction<T> extends BiExpressionWithType<T> {
 
         if (wasLate) {
             operand1Type = QueryDataTypeUtils.resolveType(operand1);
-            operand2Type = QueryDataTypeUtils.resolveType(operand1);
+            operand2Type = QueryDataTypeUtils.resolveType(operand2);
 
             resultType = MathFunctionUtils.inferPlusMinusResultType(operand1Type, operand2Type, true);
         }

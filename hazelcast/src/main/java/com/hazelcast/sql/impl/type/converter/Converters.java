@@ -53,7 +53,7 @@ public final class Converters {
             return CONVERTERS[converterId];
         }
 
-        throw HazelcastSqlException.error("Converter with ID " + converterId + " doesn't exist.");
+        throw HazelcastSqlException.error("Converter with ID " + converterId + " doesn't exist");
     }
 
     /**
@@ -66,28 +66,14 @@ public final class Converters {
         Converter res = CLASS_TO_CONVERTER.get(clazz);
 
         if (res == null) {
-            res = getConverterInexact(clazz);
-        }
-
-        if (res == null) {
-            throw HazelcastSqlException.error("Class is not supported by Hazelcast SQL: " + clazz.getName());
+            if (Calendar.class.isAssignableFrom(clazz)) {
+                res = CalendarConverter.INSTANCE;
+            } else {
+                res = ObjectConverter.INSTANCE;
+            }
         }
 
         return res;
-    }
-
-    /**
-     * Try to get inexact converter in case there is a type hierarchy.
-     *
-     * @param clazz Class.
-     * @return Converter or {@code null}.
-     */
-    private static Converter getConverterInexact(Class<?> clazz) {
-        if (Calendar.class.isAssignableFrom(clazz)) {
-            return CalendarConverter.INSTANCE;
-        }
-
-        return ObjectConverter.INSTANCE;
     }
 
     /**
@@ -149,10 +135,10 @@ public final class Converters {
                 Converter prevConverter = res.put(valueClass, converter);
 
                 if (prevConverter != null) {
-                    throw new HazelcastException("Duplicate converter for class {class=" + valueClass
+                    throw new HazelcastException("Duplicate converter for class [class=" + valueClass
                          + ", converter1=" + prevConverter.getValueClass().getName()
                          + ", converter2=" + valueClass.getName()
-                         + '}');
+                         + ']');
                 }
 
                 Class<?> primitiveValueClass = getPrimitiveClass(valueClass);
@@ -173,7 +159,7 @@ public final class Converters {
             Converter oldConverter = map.put(converter.getId(), converter);
 
             if (oldConverter != null) {
-                throw new HazelcastException("Two converters with the same ID [id=" + converter.getId()
+                throw new HazelcastException("Two converters has the same ID [id=" + converter.getId()
                     + ", converter1=" + oldConverter.getClass().getSimpleName()
                     + ", converter2=" + converter.getClass().getSimpleName() + ']');
             }

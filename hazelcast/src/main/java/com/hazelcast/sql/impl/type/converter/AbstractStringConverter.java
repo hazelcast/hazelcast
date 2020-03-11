@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql.impl.type.converter;
 
+import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.math.BigDecimal;
@@ -35,7 +37,15 @@ public abstract class AbstractStringConverter extends Converter {
 
     @Override
     public final boolean asBit(Object val) {
-        return asInt(val) != 0;
+        String val0 = cast(val);
+
+        if (val0.equalsIgnoreCase(BooleanConverter.TRUE)) {
+            return true;
+        } else if (val0.equalsIgnoreCase(BooleanConverter.FALSE)) {
+            return false;
+        }
+
+        throw HazelcastSqlException.error(SqlErrorCode.DATA_EXCEPTION, "String literal cannot be converter to BIT: " + val);
     }
 
     @Override
@@ -43,7 +53,7 @@ public abstract class AbstractStringConverter extends Converter {
         try {
             return Byte.parseByte(cast(val));
         } catch (NumberFormatException e) {
-            throw cannotConvertImplicit(val);
+            throw cannotConvert(QueryDataTypeFamily.TINYINT, val);
         }
     }
 
@@ -52,7 +62,7 @@ public abstract class AbstractStringConverter extends Converter {
         try {
             return Short.parseShort(cast(val));
         } catch (NumberFormatException e) {
-            throw cannotConvertImplicit(val);
+            throw cannotConvert(QueryDataTypeFamily.SMALLINT, val);
         }
     }
 
@@ -61,7 +71,7 @@ public abstract class AbstractStringConverter extends Converter {
         try {
             return Integer.parseInt(cast(val));
         } catch (NumberFormatException e) {
-            throw cannotConvertImplicit(val);
+            throw cannotConvert(QueryDataTypeFamily.INT, val);
         }
     }
 
@@ -70,7 +80,7 @@ public abstract class AbstractStringConverter extends Converter {
         try {
             return Long.parseLong(cast(val));
         } catch (NumberFormatException e) {
-            throw cannotConvertImplicit(val);
+            throw cannotConvert(QueryDataTypeFamily.BIGINT, val);
         }
     }
 
@@ -79,7 +89,7 @@ public abstract class AbstractStringConverter extends Converter {
         try {
             return new BigDecimal(cast(val));
         } catch (NumberFormatException e) {
-            throw cannotConvertImplicit(val);
+            throw cannotConvert(QueryDataTypeFamily.DECIMAL, val);
         }
     }
 
@@ -88,7 +98,7 @@ public abstract class AbstractStringConverter extends Converter {
         try {
             return Float.parseFloat(cast(val));
         } catch (NumberFormatException e) {
-            throw cannotConvertImplicit(val);
+            throw cannotConvert(QueryDataTypeFamily.REAL, val);
         }
     }
 
@@ -97,7 +107,7 @@ public abstract class AbstractStringConverter extends Converter {
         try {
             return Double.parseDouble(cast(val));
         } catch (NumberFormatException e) {
-            throw cannotConvertImplicit(val);
+            throw cannotConvert(QueryDataTypeFamily.DOUBLE, val);
         }
     }
 
@@ -111,7 +121,7 @@ public abstract class AbstractStringConverter extends Converter {
         try {
             return LocalDate.parse(cast(val));
         } catch (DateTimeParseException e) {
-            throw cannotConvertImplicit(val);
+            throw cannotConvert(QueryDataTypeFamily.DATE, val);
         }
     }
 
@@ -120,7 +130,7 @@ public abstract class AbstractStringConverter extends Converter {
         try {
             return LocalTime.parse(cast(val));
         } catch (DateTimeParseException e) {
-            throw cannotConvertImplicit(val);
+            throw cannotConvert(QueryDataTypeFamily.TIME, val);
         }
     }
 
@@ -129,7 +139,7 @@ public abstract class AbstractStringConverter extends Converter {
         try {
             return LocalDateTime.parse(cast(val));
         } catch (DateTimeParseException e) {
-            throw cannotConvertImplicit(val);
+            throw cannotConvert(QueryDataTypeFamily.TIMESTAMP, val);
         }
     }
 
@@ -138,8 +148,13 @@ public abstract class AbstractStringConverter extends Converter {
         try {
             return OffsetDateTime.parse(cast(val));
         } catch (DateTimeParseException e) {
-            throw cannotConvertImplicit(val);
+            throw cannotConvert(QueryDataTypeFamily.TIMESTAMP_WITH_TIMEZONE, val);
         }
+    }
+
+    @Override
+    public final Object asObject(Object val) {
+        return asVarchar(val);
     }
 
     @Override

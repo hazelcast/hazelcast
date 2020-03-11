@@ -18,14 +18,15 @@ package com.hazelcast.sql.impl.type.converter;
 
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
-import java.math.BigDecimal;
-
 /**
  * Converter for {@link java.lang.Boolean} type.
  */
 public final class BooleanConverter extends Converter {
     /** Singleton instance. */
     public static final BooleanConverter INSTANCE = new BooleanConverter();
+
+    protected static final String TRUE = "true";
+    protected static final String FALSE = "false";
 
     private BooleanConverter() {
         super(ID_BOOLEAN, QueryDataTypeFamily.BIT);
@@ -38,55 +39,18 @@ public final class BooleanConverter extends Converter {
 
     @Override
     public boolean asBit(Object val) {
-        return cast(val) != 0;
-    }
-
-    @Override
-    public byte asTinyint(Object val) {
-        return cast(val);
-    }
-
-    @Override
-    public short asSmallint(Object val) {
-        return cast(val);
-    }
-
-    @Override
-    public int asInt(Object val) {
-        return cast(val);
-    }
-
-    @Override
-    public long asBigint(Object val) {
-        return cast(val);
-    }
-
-    @Override
-    public BigDecimal asDecimal(Object val) {
-        return cast(val) == 0 ? BigDecimal.ZERO : BigDecimal.ONE;
-    }
-
-    @Override
-    public float asReal(Object val) {
-        return cast(val);
-    }
-
-    @Override
-    public double asDouble(Object val) {
-        return cast(val);
+        return ((Boolean) val);
     }
 
     @Override
     public String asVarchar(Object val) {
-        return Byte.toString(cast(val));
+        boolean val0 = (Boolean) val;
+
+        return val0 ? TRUE : FALSE;
     }
 
     @Override
     public Object convertToSelf(Converter valConverter, Object val) {
         return valConverter.asBit(val);
-    }
-
-    private byte cast(Object val) {
-        return (Boolean) val ? (byte) 1 : (byte) 0;
     }
 }

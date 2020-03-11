@@ -40,7 +40,7 @@ public abstract class RoundTruncateFunction<T> extends BiExpressionWithType<T> {
     public static RoundTruncateFunction<?> create(Expression<?> operand1, Expression<?> operand2, boolean truncate) {
         QueryDataType resultType = inferReturnType(operand1.getType());
 
-        if (operand2 != null && !operand2.getType().canConvertToNumber()) {
+        if (operand2 != null && !MathFunctionUtils.canConvertToNumber(operand2.getType())) {
             throw HazelcastSqlException.error("Operand 2 is not numeric: " + operand2.getType());
         }
 
@@ -97,7 +97,7 @@ public abstract class RoundTruncateFunction<T> extends BiExpressionWithType<T> {
     protected abstract RoundingMode getRoundingMode();
 
     private static QueryDataType inferReturnType(QueryDataType operand1Type) {
-        if (!operand1Type.canConvertToNumber()) {
+        if (!MathFunctionUtils.canConvertToNumber(operand1Type)) {
             throw HazelcastSqlException.error("Operand 1 is not numeric: " + operand1Type);
         }
 

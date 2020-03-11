@@ -53,7 +53,7 @@ public abstract class FloorCeilFunction<T> extends UniExpressionWithType<T> {
         switch (operandType.getTypeFamily()) {
             case BIT:
                 // Bit alway remain the same, just coerce it.
-                return CastExpression.coerce(operand, QueryDataType.TINYINT);
+                return CastExpression.coerceExpression(operand, QueryDataTypeFamily.TINYINT);
 
             case TINYINT:
             case SMALLINT:
@@ -94,7 +94,7 @@ public abstract class FloorCeilFunction<T> extends UniExpressionWithType<T> {
             switch (operandType.getTypeFamily()) {
                 case BIT:
                     // Bit alway remain the same, just coerce it.
-                    return CastExpression.coerce(operandValue, operandType, QueryDataType.TINYINT);
+                    return CastExpression.coerceValue(operandValue, operandType, QueryDataType.TINYINT);
 
                 case TINYINT:
                 case SMALLINT:
@@ -158,7 +158,7 @@ public abstract class FloorCeilFunction<T> extends UniExpressionWithType<T> {
      * @return Result type.
      */
     private static QueryDataType inferResultType(QueryDataType operandType) {
-        if (!operandType.canConvertToNumber()) {
+        if (!MathFunctionUtils.canConvertToNumber(operandType)) {
             throw HazelcastSqlException.error("Operand is not numeric: " + operandType);
         }
 

@@ -98,7 +98,7 @@ public class SignFunction extends UniExpressionWithType<Number> {
      * @return Result type.
      */
     private static QueryDataType inferResultType(QueryDataType operandType) {
-        if (!operandType.canConvertToNumber()) {
+        if (!MathFunctionUtils.canConvertToNumber(operandType)) {
             throw HazelcastSqlException.error("Operand is not numeric: " + operandType);
         }
 

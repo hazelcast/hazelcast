@@ -19,12 +19,13 @@ package com.hazelcast.sql.impl.type.converter;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 /**
  * Common converter class for TIMESTAMP WITH TIMEZONE type.
  */
-public abstract class AbstractTimestampWithTimezoneConverter extends Converter {
+public abstract class AbstractTimestampWithTimezoneConverter extends AbstractTemporalConverter {
     protected AbstractTimestampWithTimezoneConverter(int id) {
         super(id, QueryDataTypeFamily.TIMESTAMP_WITH_TIMEZONE);
     }
@@ -42,6 +43,16 @@ public abstract class AbstractTimestampWithTimezoneConverter extends Converter {
     @Override
     public final LocalTime asTime(Object val) {
         return asTimestamp(val).toLocalTime();
+    }
+
+    @Override
+    public final LocalDateTime asTimestamp(Object val) {
+        return timestampWithTimezoneToTimestamp(asTimestampWithTimezone(val));
+    }
+
+    @Override
+    public final Object asObject(Object val) {
+        return asTimestampWithTimezone(val);
     }
 
     @Override

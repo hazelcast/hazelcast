@@ -40,7 +40,7 @@ public class AbsFunction<T> extends UniExpressionWithType<T> {
 
         if (operandType.getTypeFamily() == QueryDataTypeFamily.BIT) {
             // Bit always remain the same, just coerce it.
-            return CastExpression.coerce(operand, QueryDataType.TINYINT);
+            return CastExpression.coerceExpression(operand, QueryDataTypeFamily.TINYINT);
         }
 
         return new AbsFunction<>(operand, inferResultType(operand.getType()));
@@ -73,7 +73,7 @@ public class AbsFunction<T> extends UniExpressionWithType<T> {
 
             if (operandType.getTypeFamily() == QueryDataTypeFamily.BIT) {
                 // Bit alway remain the same, just coerce it.
-                return CastExpression.coerce(operand, operandType, QueryDataType.TINYINT);
+                return CastExpression.coerceValue(operand, operandType, QueryDataType.TINYINT);
             }
 
             resultType = inferResultType(operandType);
@@ -115,7 +115,7 @@ public class AbsFunction<T> extends UniExpressionWithType<T> {
      * @return Result type.
      */
     private static QueryDataType inferResultType(QueryDataType operandType) {
-        if (!operandType.canConvertToNumber()) {
+        if (!MathFunctionUtils.canConvertToNumber(operandType)) {
             throw HazelcastSqlException.error("Operand is not numeric: " + operandType);
         }
 

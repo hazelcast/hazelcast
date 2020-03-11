@@ -71,7 +71,7 @@ public class CaseExpression<T> implements Expression<T> {
         QueryDataType resType = compare(results);
 
         for (int i = 0; i < results.length; i++) {
-            results[i] = CastExpression.coerce(results[i], resType);
+            results[i] = CastExpression.coerceExpression(results[i], resType.getTypeFamily());
         }
 
         // Done.

@@ -16,9 +16,8 @@
 
 package com.hazelcast.sql.impl.type.converter;
 
-import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
+import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
 
 /**
  * Converter for {@link SqlDaySecondInterval} type.
@@ -36,12 +35,17 @@ public final class SqlDaySecondIntervalConverter extends Converter {
         return SqlDaySecondInterval.class;
     }
 
+    @NotConvertible
+    public Object asObject(Object val) {
+        throw cannotConvert(QueryDataTypeFamily.OBJECT);
+    }
+
     @Override
     public Object convertToSelf(Converter converter, Object val) {
         if (val instanceof SqlDaySecondInterval) {
             return val;
         }
 
-        throw HazelcastSqlException.error("Value cannot be converted to " + SqlDaySecondInterval.class + ": " + val);
+        throw cannotConvert(converter.getTypeFamily(), getTypeFamily(), val);
     }
 }

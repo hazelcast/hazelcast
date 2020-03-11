@@ -47,7 +47,7 @@ public class DoubleFunction extends UniExpression<Double> {
     public static DoubleFunction create(Expression<?> operand, DoubleFunctionType type) {
         QueryDataType operandType = operand.getType();
 
-        if (!operandType.canConvertToNumber()) {
+        if (!MathFunctionUtils.canConvertToNumber(operandType)) {
             throw HazelcastSqlException.error("Operand is not numeric: " + operandType);
         }
 

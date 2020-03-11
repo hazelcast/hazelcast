@@ -38,7 +38,7 @@ public class RandomFunction extends UniExpression<Double> {
     }
 
     public static RandomFunction create(Expression<?> seedExp) {
-        if (seedExp != null && !seedExp.getType().canConvertToNumber()) {
+        if (seedExp != null && !MathFunctionUtils.canConvertToNumber(seedExp.getType())) {
             throw HazelcastSqlException.error("Operand is not numeric: " + seedExp.getType());
         }
 

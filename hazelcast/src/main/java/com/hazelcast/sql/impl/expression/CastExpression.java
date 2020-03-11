@@ -18,8 +18,10 @@ package com.hazelcast.sql.impl.expression;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 import com.hazelcast.sql.impl.type.converter.Converter;
 
@@ -42,7 +44,11 @@ public class CastExpression<T> extends UniExpression<T> {
     }
 
     public static CastExpression<?> create(Expression<?> operand, QueryDataType type) {
-        QueryDataTypeUtils.ensureCanConvertTo(operand.getType(), type);
+        boolean convertable = operand.getType().getConverter().canConvertTo(type.getTypeFamily());
+
+        if (!convertable) {
+            throw HazelcastSqlException.error("Cannot convert " + operand.getType() + " to " + type);
+        }
 
         return new CastExpression<>(operand, type);
     }
@@ -69,20 +75,20 @@ public class CastExpression<T> extends UniExpression<T> {
         return toType.getConverter().convertToSelf(fromValueConverter, fromValue);
     }
 
-    public static Expression<?> coerce(Expression<?> from, QueryDataType toType) {
+    public static Expression<?> coerceExpression(Expression<?> from, QueryDataTypeFamily toTypeFamily) {
         QueryDataType fromType = from.getType();
 
-        if (fromType.getTypeFamily() == toType.getTypeFamily()) {
+        if (fromType.getTypeFamily() == toTypeFamily) {
             return from;
         } else {
+            QueryDataType type = QueryDataTypeUtils.resolveTypeForTypeFamily(toTypeFamily);
 
-
-            return CastExpression.create(from, toType);
+            return CastExpression.create(from, type);
         }
     }
 
-    public static Object coerce(Object fromValue, QueryDataType fromType, QueryDataType toType) {
-        if (fromType.getTypeFamily() == toType.getTypeFamily()) {
+    public static Object coerceValue(Object fromValue, QueryDataType fromType, QueryDataType toType) {
+        if (fromType.equals(toType)) {
             return fromValue;
         } else {
             return cast(fromValue, fromType.getConverter(), toType);

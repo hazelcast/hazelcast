@@ -37,11 +37,6 @@ public final class LongConverter extends Converter {
     }
 
     @Override
-    public boolean asBit(Object val) {
-        return cast(val) != 0L;
-    }
-
-    @Override
     public byte asTinyint(Object val) {
         return (byte) cast(val);
     }

@@ -77,7 +77,7 @@ public class MinusFunction<T> extends BiExpressionWithType<T> {
         // Handle late binding.
         if (resultType.getTypeFamily() == QueryDataTypeFamily.LATE) {
             operand1Type = QueryDataTypeUtils.resolveType(operand1);
-            operand2Type = QueryDataTypeUtils.resolveType(operand1);
+            operand2Type = QueryDataTypeUtils.resolveType(operand2);
 
             resultType = MathFunctionUtils.inferPlusMinusResultType(operand1Type, operand2Type, false);
         }

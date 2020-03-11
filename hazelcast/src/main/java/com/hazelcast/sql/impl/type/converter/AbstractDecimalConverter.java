@@ -24,6 +24,11 @@ public abstract class AbstractDecimalConverter extends Converter {
     }
 
     @Override
+    public final Object asObject(Object val) {
+        return asDecimal(val);
+    }
+
+    @Override
     public final Object convertToSelf(Converter valConverter, Object val) {
         return valConverter.asDecimal(val);
     }

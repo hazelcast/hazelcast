@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.type.converter;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.lang.reflect.Method;
@@ -112,72 +113,71 @@ public abstract class Converter {
 
     @NotConvertible
     public boolean asBit(Object val) {
-        throw cannotConvertImplicit(val);
+        throw cannotConvert(QueryDataTypeFamily.BIT);
     }
 
     @NotConvertible
     public byte asTinyint(Object val) {
-        throw cannotConvertImplicit(val);
+        throw cannotConvert(QueryDataTypeFamily.TINYINT);
     }
 
     @NotConvertible
     public short asSmallint(Object val) {
-        throw cannotConvertImplicit(val);
+        throw cannotConvert(QueryDataTypeFamily.SMALLINT);
     }
 
     @NotConvertible
     public int asInt(Object val) {
-        throw cannotConvertImplicit(val);
+        throw cannotConvert(QueryDataTypeFamily.INT);
     }
 
     @NotConvertible
     public long asBigint(Object val) {
-        throw cannotConvertImplicit(val);
+        throw cannotConvert(QueryDataTypeFamily.BIGINT);
     }
 
     @NotConvertible
     public BigDecimal asDecimal(Object val) {
-        throw cannotConvertImplicit(val);
+        throw cannotConvert(QueryDataTypeFamily.DECIMAL);
     }
 
     @NotConvertible
     public float asReal(Object val) {
-        throw cannotConvertImplicit(val);
+        throw cannotConvert(QueryDataTypeFamily.REAL);
     }
 
     @NotConvertible
     public double asDouble(Object val) {
-        throw cannotConvertImplicit(val);
+        throw cannotConvert(QueryDataTypeFamily.DOUBLE);
     }
 
     @NotConvertible
     public String asVarchar(Object val) {
-        throw cannotConvertImplicit(val);
+        throw cannotConvert(QueryDataTypeFamily.VARCHAR);
     }
 
     @NotConvertible
     public LocalDate asDate(Object val) {
-        throw cannotConvertImplicit(val);
+        throw cannotConvert(QueryDataTypeFamily.DATE);
     }
 
     @NotConvertible
     public LocalTime asTime(Object val) {
-        throw cannotConvertImplicit(val);
+        throw cannotConvert(QueryDataTypeFamily.TIME);
     }
 
     @NotConvertible
     public LocalDateTime asTimestamp(Object val) {
-        throw cannotConvertImplicit(val);
+        throw cannotConvert(QueryDataTypeFamily.TIMESTAMP);
     }
 
     @NotConvertible
     public OffsetDateTime asTimestampWithTimezone(Object val) {
-        throw cannotConvertImplicit(val);
+        throw cannotConvert(QueryDataTypeFamily.TIMESTAMP_WITH_TIMEZONE);
     }
 
-    @NotConvertible
     public Object asObject(Object val) {
-        throw cannotConvertImplicit(val);
+        return val;
     }
 
     public final boolean canConvertToBit() {
@@ -236,13 +236,82 @@ public abstract class Converter {
         return convertToObject;
     }
 
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:ReturnCount"})
+    public final boolean canConvertTo(QueryDataTypeFamily typeFamily) {
+        switch (typeFamily) {
+            case BIT:
+                return canConvertToBit();
+
+            case TINYINT:
+                return canConvertToTinyint();
+
+            case SMALLINT:
+                return canConvertToSmallint();
+
+            case INT:
+                return canConvertToInt();
+
+            case BIGINT:
+                return canConvertToBigint();
+
+            case DECIMAL:
+                return canConvertToDecimal();
+
+            case REAL:
+                return canConvertToReal();
+
+            case DOUBLE:
+                return canConvertToDouble();
+
+            case VARCHAR:
+                return canConvertToVarchar();
+
+            case DATE:
+                return canConvertToDate();
+
+            case TIME:
+                return canConvertToTime();
+
+            case TIMESTAMP:
+                return canConvertToTimestamp();
+
+            case TIMESTAMP_WITH_TIMEZONE:
+                return canConvertToTimestampWithTimezone();
+
+            case OBJECT:
+                return canConvertToObject();
+
+            default:
+                return getTypeFamily() == typeFamily;
+        }
+    }
+
     public abstract Object convertToSelf(Converter converter, Object val);
 
-    protected final HazelcastSqlException cannotConvertImplicit(Object val) {
-        throw HazelcastSqlException.error("Cannot implicitly convert a value to " + typeFamily + ": " + val);
+    protected final HazelcastSqlException cannotConvert(QueryDataTypeFamily target) {
+        return cannotConvert(target, null);
+    }
+
+    protected final HazelcastSqlException cannotConvert(QueryDataTypeFamily target, Object val) {
+        return cannotConvert(typeFamily, target, val);
+    }
+
+    protected final HazelcastSqlException cannotConvert(QueryDataTypeFamily source, QueryDataTypeFamily target, Object val) {
+        String message = "Cannot convert " + source + " to " + target;
+
+        if (val != null) {
+            message += ": " + val;
+        }
+
+        return HazelcastSqlException.error(SqlErrorCode.DATA_EXCEPTION, message);
     }
 
     private static boolean canConvert(Method method) {
         return method.getAnnotation(NotConvertible.class) == null;
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName();
     }
 }
