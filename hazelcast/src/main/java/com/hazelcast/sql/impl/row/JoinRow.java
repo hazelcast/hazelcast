@@ -104,7 +104,7 @@ public class JoinRow implements Row, IdentifiedDataSerializable {
 
     @Override
     public String toString() {
-        StringBuilder res = new StringBuilder(getClass().getSimpleName() + " [{]");
+        StringBuilder res = new StringBuilder(getClass().getSimpleName() + " [");
 
         for (int i = 0; i < getColumnCount(); i++) {
             if (i != 0) {

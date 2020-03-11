@@ -48,23 +48,18 @@ public abstract class AbstractExec implements Exec {
         return advance0();
     }
 
-    /**
-     * Internal advance routine.
-     *
-     * @return Iteration result.
-     */
-    protected abstract IterationResult advance0();
-
-    protected void setup0(QueryFragmentContext ctx) {
-        // No-op.
-    }
-
     @Override
     public final RowBatch currentBatch() {
         RowBatch res = currentBatch0();
 
         return res != null ? res : EmptyRowBatch.INSTANCE;
     }
+
+    protected void setup0(QueryFragmentContext ctx) {
+        // No-op.
+    }
+
+    protected abstract IterationResult advance0();
 
     protected abstract RowBatch currentBatch0();
 }
