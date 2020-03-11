@@ -16,14 +16,13 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Serializer;
 
 import java.io.IOException;
 
-interface SerializerAdapter {
+public interface SerializerAdapter {
 
     void write(ObjectDataOutput out, Object object) throws IOException;
 

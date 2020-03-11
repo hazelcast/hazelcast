@@ -18,7 +18,9 @@ package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.partition.PartitioningStrategy;
+import com.hazelcast.internal.nio.BufferObjectDataInput;
+import com.hazelcast.internal.nio.BufferObjectDataOutput;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InputOutputFactory;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPool;
@@ -27,15 +29,13 @@ import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolThreadLoca
 import com.hazelcast.internal.usercodedeployment.impl.ClassLocator;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.internal.nio.BufferObjectDataInput;
-import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.Serializer;
+import com.hazelcast.partition.PartitioningStrategy;
 
 import java.io.Externalizable;
 import java.io.Serializable;
@@ -98,6 +98,17 @@ public abstract class AbstractSerializationService implements InternalSerializat
         this.bufferPoolThreadLocal = new BufferPoolThreadLocal(this, builder.bufferPoolFactory,
                 builder.notActiveExceptionSupplier);
         this.nullSerializerAdapter = createSerializerAdapter(new ConstantSerializers.NullSerializer(), this);
+    }
+
+    protected AbstractSerializationService(AbstractSerializationService prototype) {
+        this.version = prototype.version;
+        this.inputOutputFactory = prototype.inputOutputFactory;
+        this.classLoader = prototype.classLoader;
+        this.managedContext = prototype.managedContext;
+        this.globalPartitioningStrategy = prototype.globalPartitioningStrategy;
+        this.outputBufferSize = prototype.outputBufferSize;
+        this.bufferPoolThreadLocal = prototype.bufferPoolThreadLocal;
+        this.nullSerializerAdapter = prototype.nullSerializerAdapter;
     }
 
     //region Serialization Service
@@ -440,7 +451,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
         return serializer;
     }
 
-    protected final SerializerAdapter serializerFor(final int typeId) {
+    public SerializerAdapter serializerFor(final int typeId) {
         if (typeId <= 0) {
             final int index = indexForDefaultType(typeId);
             if (index < CONSTANT_SERIALIZERS_LENGTH) {
@@ -450,7 +461,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
         return idMap.get(typeId);
     }
 
-    protected final SerializerAdapter serializerFor(Object object) {
+    public SerializerAdapter serializerFor(Object object) {
         /*
             Searches for a serializer for the provided object
             Serializers will be  searched in this order;
