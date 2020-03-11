@@ -1,0 +1,1074 @@
+/*
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.hazelcast.sql.impl.type.converter;
+
+import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.SqlErrorCode;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.HashSet;
+import java.util.Set;
+
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.BIGINT;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.BIT;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DATE;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DECIMAL;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DOUBLE;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INT;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.LATE;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.OBJECT;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.REAL;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.SMALLINT;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIME;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIMESTAMP;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIMESTAMP_WITH_TIMEZONE;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TINYINT;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.VARCHAR;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.values;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+@SuppressWarnings("SimplifiableJUnitAssertion")
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
+public class ConvertersTest {
+    @Test
+    public void testGetById() {
+        checkGetById(LateConverter.INSTANCE);
+
+        checkGetById(StringConverter.INSTANCE);
+        checkGetById(CharacterConverter.INSTANCE);
+
+        checkGetById(BooleanConverter.INSTANCE);
+        checkGetById(ByteConverter.INSTANCE);
+        checkGetById(ShortConverter.INSTANCE);
+        checkGetById(IntegerConverter.INSTANCE);
+        checkGetById(LongConverter.INSTANCE);
+        checkGetById(BigDecimalConverter.INSTANCE);
+        checkGetById(BigIntegerConverter.INSTANCE);
+        checkGetById(FloatConverter.INSTANCE);
+        checkGetById(DoubleConverter.INSTANCE);
+
+        checkGetById(LocalTimeConverter.INSTANCE);
+        checkGetById(LocalDateConverter.INSTANCE);
+        checkGetById(LocalDateTimeConverter.INSTANCE);
+        checkGetById(DateConverter.INSTANCE);
+        checkGetById(CalendarConverter.INSTANCE);
+        checkGetById(InstantConverter.INSTANCE);
+        checkGetById(OffsetDateTimeConverter.INSTANCE);
+        checkGetById(ZonedDateTimeConverter.INSTANCE);
+
+        checkGetById(ObjectConverter.INSTANCE);
+    }
+
+    @Test
+    public void testGetByClass() {
+        checkGetByClass(StringConverter.INSTANCE, String.class);
+        checkGetByClass(CharacterConverter.INSTANCE, char.class, Character.class);
+
+        checkGetByClass(BooleanConverter.INSTANCE, boolean.class, Boolean.class);
+        checkGetByClass(ByteConverter.INSTANCE, byte.class, Byte.class);
+        checkGetByClass(ShortConverter.INSTANCE, short.class, Short.class);
+        checkGetByClass(IntegerConverter.INSTANCE, int.class, Integer.class);
+        checkGetByClass(LongConverter.INSTANCE, long.class, Long.class);
+        checkGetByClass(BigDecimalConverter.INSTANCE, BigDecimal.class);
+        checkGetByClass(BigIntegerConverter.INSTANCE, BigInteger.class);
+        checkGetByClass(FloatConverter.INSTANCE, float.class, Float.class);
+        checkGetByClass(DoubleConverter.INSTANCE, double.class, Double.class);
+
+        checkGetByClass(LocalTimeConverter.INSTANCE, LocalTime.class);
+        checkGetByClass(LocalDateConverter.INSTANCE, LocalDate.class);
+        checkGetByClass(LocalDateTimeConverter.INSTANCE, LocalDateTime.class);
+        checkGetByClass(DateConverter.INSTANCE, Date.class);
+        checkGetByClass(CalendarConverter.INSTANCE, Calendar.class, GregorianCalendar.class);
+        checkGetByClass(InstantConverter.INSTANCE, Instant.class);
+        checkGetByClass(OffsetDateTimeConverter.INSTANCE, OffsetDateTime.class);
+        checkGetByClass(ZonedDateTimeConverter.INSTANCE, ZonedDateTime.class);
+
+        checkGetByClass(ObjectConverter.INSTANCE, Object.class, CustomClass.class);
+    }
+
+    @Test
+    public void testBooleanConverter() {
+        BooleanConverter converter = BooleanConverter.INSTANCE;
+
+        checkConverter(converter, Converter.ID_BOOLEAN, BIT, Boolean.class);
+        checkConverterConversions(converter, VARCHAR, OBJECT);
+
+        assertEquals("true", converter.asVarchar(true));
+        assertEquals("false", converter.asVarchar(false));
+
+        assertEquals(true, converter.asObject(true));
+
+        checkConverterSelf(converter);
+    }
+
+    @Test
+    public void testByteConverter() {
+        ByteConverter converter = ByteConverter.INSTANCE;
+
+        checkConverter(converter, Converter.ID_BYTE, TINYINT, Byte.class);
+        checkConverterConversions(converter, VARCHAR, SMALLINT, INT, BIGINT, DECIMAL, REAL, DOUBLE, OBJECT);
+
+        assertEquals("1", converter.asVarchar((byte) 1));
+
+        assertEquals(1, converter.asTinyint((byte) 1));
+        assertEquals(1, converter.asSmallint((byte) 1));
+        assertEquals(1, converter.asInt((byte) 1));
+        assertEquals(1L, converter.asBigint((byte) 1));
+        assertEquals(BigDecimal.ONE, converter.asDecimal((byte) 1));
+
+        assertEquals(1.0f, converter.asReal((byte) 1), 0);
+        assertEquals(1.0d, converter.asDouble((byte) 1), 0);
+
+        assertEquals((byte) 1, converter.asObject((byte) 1));
+
+        checkConverterSelf(converter);
+    }
+
+    @Test
+    public void testShortConverter() {
+        ShortConverter converter = ShortConverter.INSTANCE;
+
+        checkConverter(converter, Converter.ID_SHORT, SMALLINT, Short.class);
+        checkConverterConversions(converter, VARCHAR, TINYINT, INT, BIGINT, DECIMAL, REAL, DOUBLE, OBJECT);
+
+        assertEquals("1", converter.asVarchar((short) 1));
+
+        assertEquals(1, converter.asTinyint((short) 1));
+        assertEquals(1, converter.asSmallint((short) 1));
+        assertEquals(1, converter.asInt((short) 1));
+        assertEquals(1L, converter.asBigint((short) 1));
+        assertEquals(BigDecimal.ONE, converter.asDecimal((short) 1));
+
+        assertEquals(1.0f, converter.asReal((short) 1), 0);
+        assertEquals(1.0d, converter.asDouble((short) 1), 0);
+
+        assertEquals((short) 1, converter.asObject((short) 1));
+
+        checkConverterSelf(converter);
+    }
+
+    @Test
+    public void testIntConverter() {
+        IntegerConverter converter = IntegerConverter.INSTANCE;
+
+        checkConverter(converter, Converter.ID_INTEGER, INT, Integer.class);
+        checkConverterConversions(converter, VARCHAR, TINYINT, SMALLINT, BIGINT, DECIMAL, REAL, DOUBLE, OBJECT);
+
+        assertEquals("1", converter.asVarchar(1));
+
+        assertEquals(1, converter.asTinyint(1));
+        assertEquals(1, converter.asSmallint(1));
+        assertEquals(1, converter.asInt(1));
+        assertEquals(1L, converter.asBigint(1));
+        assertEquals(BigDecimal.ONE, converter.asDecimal(1));
+
+        assertEquals(1.0f, converter.asReal(1), 0);
+        assertEquals(1.0d, converter.asDouble(1), 0);
+
+        assertEquals(1, converter.asObject(1));
+
+        checkConverterSelf(converter);
+    }
+
+    @Test
+    public void testLongConverter() {
+        LongConverter converter = LongConverter.INSTANCE;
+
+        checkConverter(converter, Converter.ID_LONG, BIGINT, Long.class);
+        checkConverterConversions(converter, VARCHAR, TINYINT, SMALLINT, INT, DECIMAL, REAL, DOUBLE, OBJECT);
+
+        assertEquals("1", converter.asVarchar(1L));
+
+        assertEquals(1, converter.asTinyint(1L));
+        assertEquals(1, converter.asSmallint(1L));
+        assertEquals(1, converter.asInt(1L));
+        assertEquals(1L, converter.asBigint(1L));
+        assertEquals(BigDecimal.ONE, converter.asDecimal(1L));
+
+        assertEquals(1.0f, converter.asReal(1L), 0);
+        assertEquals(1.0d, converter.asDouble(1L), 0);
+
+        assertEquals(1L, converter.asObject(1L));
+
+        checkConverterSelf(converter);
+    }
+
+    @Test
+    public void testBigIntegerConverter() {
+        BigIntegerConverter converter = BigIntegerConverter.INSTANCE;
+
+        checkConverter(converter, Converter.ID_BIG_INTEGER, DECIMAL, BigInteger.class);
+        checkConverterConversions(converter, VARCHAR, TINYINT, SMALLINT, INT, BIGINT, REAL, DOUBLE, OBJECT);
+
+        assertEquals("1", converter.asVarchar(BigInteger.ONE));
+
+        assertEquals(1, converter.asTinyint(BigInteger.ONE));
+        assertEquals(1, converter.asSmallint(BigInteger.ONE));
+        assertEquals(1, converter.asInt(BigInteger.ONE));
+        assertEquals(1L, converter.asBigint(BigInteger.ONE));
+        assertEquals(BigDecimal.ONE, converter.asDecimal(BigInteger.ONE));
+
+        assertEquals(1.0f, converter.asReal(BigInteger.ONE), 0);
+        assertEquals(1.0d, converter.asDouble(BigInteger.ONE), 0);
+
+        assertEquals(BigDecimal.ONE, converter.asObject(BigInteger.ONE));
+
+        checkConverterSelf(converter);
+    }
+
+    @Test
+    public void testBigDecimalConverter() {
+        BigDecimalConverter converter = BigDecimalConverter.INSTANCE;
+
+        checkConverter(converter, Converter.ID_BIG_DECIMAL, DECIMAL, BigDecimal.class);
+        checkConverterConversions(converter, VARCHAR, TINYINT, SMALLINT, INT, BIGINT, REAL, DOUBLE, OBJECT);
+
+        BigDecimal val = BigDecimal.valueOf(11, 1);
+
+        assertEquals("1.1", converter.asVarchar(val));
+
+        assertEquals(1, converter.asTinyint(val));
+        assertEquals(1, converter.asSmallint(val));
+        assertEquals(1, converter.asInt(val));
+        assertEquals(1L, converter.asBigint(val));
+        assertEquals(val, converter.asDecimal(val));
+
+        assertEquals(1.1f, converter.asReal(val), 0);
+        assertEquals(1.1d, converter.asDouble(val), 0);
+
+        assertEquals(val, converter.asObject(val));
+
+        checkConverterSelf(converter);
+    }
+
+    @Test
+    public void testFloatConverter() {
+        FloatConverter converter = FloatConverter.INSTANCE;
+
+        checkConverter(converter, Converter.ID_FLOAT, REAL, Float.class);
+        checkConverterConversions(converter, VARCHAR, TINYINT, SMALLINT, INT, BIGINT, DECIMAL, DOUBLE, OBJECT);
+
+        float val = 1.1f;
+
+        assertEquals("1.1", converter.asVarchar(val));
+
+        assertEquals(1, converter.asTinyint(val));
+        assertEquals(1, converter.asSmallint(val));
+        assertEquals(1, converter.asInt(val));
+        assertEquals(1L, converter.asBigint(val));
+        assertEquals(BigDecimal.valueOf(val), converter.asDecimal(val));
+
+        assertEquals(1.1f, converter.asReal(val), 0);
+        assertEquals(1.1f, converter.asDouble(val), 0);
+
+        assertEquals(1.1f, converter.asObject(val));
+
+        checkConverterSelf(converter);
+    }
+
+    @Test
+    public void testDoubleConverter() {
+        DoubleConverter converter = DoubleConverter.INSTANCE;
+
+        checkConverter(converter, Converter.ID_DOUBLE, DOUBLE, Double.class);
+        checkConverterConversions(converter, VARCHAR, TINYINT, SMALLINT, INT, BIGINT, DECIMAL, REAL, OBJECT);
+
+        double val = 1.1d;
+
+        assertEquals("1.1", converter.asVarchar(val));
+
+        assertEquals(1, converter.asTinyint(val));
+        assertEquals(1, converter.asSmallint(val));
+        assertEquals(1, converter.asInt(val));
+        assertEquals(1L, converter.asBigint(val));
+        assertEquals(BigDecimal.valueOf(val), converter.asDecimal(val));
+
+        assertEquals(1.1f, converter.asReal(val), 0);
+        assertEquals(1.1d, converter.asDouble(val), 0);
+
+        assertEquals(1.1d, converter.asObject(val));
+
+        checkConverterSelf(converter);
+    }
+
+    @Test
+    public void testLocalTimeConverter() {
+        LocalTimeConverter converter = LocalTimeConverter.INSTANCE;
+
+        checkConverter(converter, Converter.ID_LOCAL_TIME, TIME, LocalTime.class);
+        checkConverterConversions(converter, VARCHAR, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE, OBJECT);
+
+        String timeString = "11:22:33.444";
+        LocalTime time = LocalTime.parse(timeString);
+        LocalDate date = LocalDate.now();
+        LocalDateTime dateTime = LocalDateTime.of(date, time);
+        OffsetDateTime globalDateTime = OffsetDateTime.ofInstant(dateTime.toInstant(ZoneOffset.UTC), ZoneId.systemDefault());
+
+        assertEquals(timeString, converter.asVarchar(time));
+        assertEquals(time, converter.asTime(time));
+        assertEquals(dateTime, converter.asTimestamp(time));
+        assertEquals(globalDateTime, converter.asTimestampWithTimezone(time));
+
+        checkConverterSelf(converter);
+    }
+
+    @Test
+    public void testLocalDateConverter() {
+        LocalDateConverter converter = LocalDateConverter.INSTANCE;
+
+        checkConverter(converter, Converter.ID_LOCAL_DATE, DATE, LocalDate.class);
+        checkConverterConversions(converter, VARCHAR, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE, OBJECT);
+
+        String dateString = "2020-02-02";
+        LocalDate date = LocalDate.parse(dateString);
+        LocalDateTime dateTime = date.atStartOfDay();
+        OffsetDateTime globalDateTime = OffsetDateTime.ofInstant(dateTime.toInstant(ZoneOffset.UTC), ZoneId.systemDefault());
+
+        assertEquals(dateString, converter.asVarchar(date));
+        assertEquals(date, converter.asDate(date));
+        assertEquals(dateTime, converter.asTimestamp(date));
+        assertEquals(globalDateTime, converter.asTimestampWithTimezone(date));
+
+        checkConverterSelf(converter);
+    }
+
+    @Test
+    public void testLocalDateTimeConverter() {
+        LocalDateTimeConverter converter = LocalDateTimeConverter.INSTANCE;
+
+        checkConverter(converter, Converter.ID_LOCAL_DATE_TIME, TIMESTAMP, LocalDateTime.class);
+        checkConverterConversions(converter, VARCHAR, TIME, DATE, TIMESTAMP_WITH_TIMEZONE, OBJECT);
+
+        String dateTimeString = "2020-02-02T11:22:33.444";
+        LocalDateTime dateTime = LocalDateTime.parse(dateTimeString);
+        OffsetDateTime globalDateTime = OffsetDateTime.ofInstant(dateTime.toInstant(ZoneOffset.UTC), ZoneId.systemDefault());
+
+        assertEquals(dateTimeString, converter.asVarchar(dateTime));
+        assertEquals(dateTime.toLocalDate(), converter.asDate(dateTime));
+        assertEquals(dateTime.toLocalTime(), converter.asTime(dateTime));
+        assertEquals(dateTime, converter.asTimestamp(dateTime));
+        assertEquals(globalDateTime, converter.asTimestampWithTimezone(dateTime));
+
+        checkConverterSelf(converter);
+    }
+
+    @Test
+    public void testDateConverter() {
+        DateConverter converter = DateConverter.INSTANCE;
+
+        checkConverter(converter, Converter.ID_DATE, TIMESTAMP_WITH_TIMEZONE, Date.class);
+        checkConverterConversions(converter, VARCHAR, TIME, DATE, TIMESTAMP, OBJECT);
+
+        Date val = new Date();
+
+        checkTimestampWithTimezone(converter, val, OffsetDateTime.ofInstant(val.toInstant(), ZoneOffset.UTC));
+
+        checkConverterSelf(converter);
+    }
+
+    @Test
+    public void testCalendarConverter() {
+        CalendarConverter converter = CalendarConverter.INSTANCE;
+
+        checkConverter(converter, Converter.ID_CALENDAR, TIMESTAMP_WITH_TIMEZONE, Calendar.class);
+        checkConverterConversions(converter, VARCHAR, TIME, DATE, TIMESTAMP, OBJECT);
+
+        Calendar val = Calendar.getInstance();
+
+        checkTimestampWithTimezone(converter, val, OffsetDateTime.ofInstant(val.toInstant(), ZoneOffset.UTC));
+
+        checkConverterSelf(converter);
+    }
+
+    @Test
+    public void testInstantConverter() {
+        InstantConverter converter = InstantConverter.INSTANCE;
+
+        checkConverter(converter, Converter.ID_INSTANT, TIMESTAMP_WITH_TIMEZONE, Instant.class);
+        checkConverterConversions(converter, VARCHAR, TIME, DATE, TIMESTAMP, OBJECT);
+
+        Instant val = Instant.now();
+
+        checkTimestampWithTimezone(converter, val, OffsetDateTime.ofInstant(val, ZoneOffset.UTC));
+
+        checkConverterSelf(converter);
+    }
+
+    @Test
+    public void testOffsetDateTimeConverter() {
+        OffsetDateTimeConverter converter = OffsetDateTimeConverter.INSTANCE;
+
+        checkConverter(converter, Converter.ID_OFFSET_DATE_TIME, TIMESTAMP_WITH_TIMEZONE, OffsetDateTime.class);
+        checkConverterConversions(converter, VARCHAR, TIME, DATE, TIMESTAMP, OBJECT);
+
+        OffsetDateTime val = OffsetDateTime.now();
+
+        checkTimestampWithTimezone(converter, val, val);
+
+        checkConverterSelf(converter);
+    }
+
+    @Test
+    public void testZonedDateTimeConverter() {
+        ZonedDateTimeConverter converter = ZonedDateTimeConverter.INSTANCE;
+
+        checkConverter(converter, Converter.ID_ZONED_DATE_TIME, TIMESTAMP_WITH_TIMEZONE, ZonedDateTime.class);
+        checkConverterConversions(converter, VARCHAR, TIME, DATE, TIMESTAMP, OBJECT);
+
+        ZonedDateTime val = ZonedDateTime.now();
+
+        checkTimestampWithTimezone(converter, val, val.toOffsetDateTime());
+
+        checkConverterSelf(converter);
+    }
+
+    @Test
+    public void testStringConverter() {
+        StringConverter c = StringConverter.INSTANCE;
+
+        checkConverter(c, Converter.ID_STRING, VARCHAR, String.class);
+        checkConverterConversions(c,
+            BIT, TINYINT, SMALLINT, INT, BIGINT, DECIMAL, REAL, DOUBLE, TIME, DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE, OBJECT);
+
+        // Boolean
+        assertEquals(false, c.asBit("false"));
+        assertEquals(false, c.asBit("False"));
+        assertEquals(true, c.asBit("true"));
+        assertEquals(true, c.asBit("True"));
+        checkDataException(() -> c.asBit("0"));
+        checkDataException(() -> c.asBit("1"));
+
+        // Numeric
+        String invalid = "invalid";
+
+        assertEquals((byte) 1, c.asTinyint("1"));
+        checkDataException(() -> c.asTinyint(invalid));
+
+        assertEquals((short) 1, c.asSmallint("1"));
+        checkDataException(() -> c.asSmallint(invalid));
+
+        assertEquals(1, c.asInt("1"));
+        checkDataException(() -> c.asInt(invalid));
+
+        assertEquals(1L, c.asBigint("1"));
+        checkDataException(() -> c.asBigint(invalid));
+
+        assertEquals(new BigDecimal("1.1"), c.asDecimal("1.1"));
+        checkDataException(() -> c.asDecimal(invalid));
+
+        assertEquals(1.1f, c.asReal("1.1"), 0);
+        checkDataException(() -> c.asReal(invalid));
+
+        assertEquals(1.1d, c.asDouble("1.1"), 0);
+        checkDataException(() -> c.asDouble(invalid));
+
+        // Temporal
+        assertEquals(LocalTime.parse("11:22"), c.asTime("11:22"));
+        assertEquals(LocalTime.parse("11:22:33"), c.asTime("11:22:33"));
+        assertEquals(LocalTime.parse("11:22:33.444"), c.asTime("11:22:33.444"));
+        assertEquals(LocalTime.parse("11:22:33.444444444"), c.asTime("11:22:33.444444444"));
+        checkDataException(() -> c.asTime("33:22"));
+        checkDataException(() -> c.asTime("11:66"));
+        checkDataException(() -> c.asTime("11:22:66"));
+        checkDataException(() -> c.asTime("11:22:33.4444444444"));
+        checkDataException(() -> c.asTime(invalid));
+
+        assertEquals(LocalDate.parse("2020-01-01"), c.asDate("2020-01-01"));
+        checkDataException(() -> c.asDate("2020-13-01"));
+        checkDataException(() -> c.asDate("2020-01-35"));
+        checkDataException(() -> c.asDate(invalid));
+
+        assertEquals(LocalDateTime.parse("2020-01-01T11:22"), c.asTimestamp("2020-01-01T11:22"));
+        assertEquals(LocalDateTime.parse("2020-01-01T11:22:33"), c.asTimestamp("2020-01-01T11:22:33"));
+        assertEquals(LocalDateTime.parse("2020-01-01T11:22:33.444"), c.asTimestamp("2020-01-01T11:22:33.444"));
+        assertEquals(LocalDateTime.parse("2020-01-01T11:22:33.444444444"), c.asTimestamp("2020-01-01T11:22:33.444444444"));
+        checkDataException(() -> c.asTimestamp("2020-13-01T11:22"));
+        checkDataException(() -> c.asTimestamp("2020-01-35T11:22"));
+        checkDataException(() -> c.asTimestamp("2020-01-01T33:22"));
+        checkDataException(() -> c.asTimestamp("2020-01-01T11:66"));
+        checkDataException(() -> c.asTimestamp("2020-01-01T11:22:66"));
+        checkDataException(() -> c.asTimestamp("2020-01-01T11:22:33.4444444444"));
+        checkDataException(() -> c.asTimestamp(invalid));
+
+        assertEquals(OffsetDateTime.parse("2020-01-01T11:22:33.444444444Z"),
+            c.asTimestampWithTimezone("2020-01-01T11:22:33.444444444Z"));
+        assertEquals(OffsetDateTime.parse("2020-01-01T11:22:33.444444444+01:00"),
+            c.asTimestampWithTimezone("2020-01-01T11:22:33.444444444+01:00"));
+        checkDataException(() -> c.asTimestampWithTimezone(invalid));
+
+        // Object
+        assertEquals("val", c.asObject("val"));
+
+        checkConverterSelf(c);
+    }
+
+    @Test
+    public void testCharacterConverter() {
+        CharacterConverter c = CharacterConverter.INSTANCE;
+
+        checkConverter(c, Converter.ID_CHARACTER, VARCHAR, Character.class);
+        checkConverterConversions(c,
+            BIT, TINYINT, SMALLINT, INT, BIGINT, DECIMAL, REAL, DOUBLE, TIME, DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE, OBJECT);
+
+        char invalid = 'c';
+
+        assertEquals((byte) 1, c.asTinyint('1'));
+        checkDataException(() -> c.asTinyint(invalid));
+
+        assertEquals((short) 1, c.asSmallint('1'));
+        checkDataException(() -> c.asSmallint(invalid));
+
+        assertEquals(1, c.asInt('1'));
+        checkDataException(() -> c.asInt(invalid));
+
+        assertEquals(1L, c.asBigint('1'));
+        checkDataException(() -> c.asBigint(invalid));
+
+        assertEquals(new BigDecimal("1"), c.asDecimal('1'));
+        checkDataException(() -> c.asDecimal(invalid));
+
+        assertEquals(1f, c.asReal('1'), 0);
+        checkDataException(() -> c.asReal(invalid));
+
+        assertEquals(1d, c.asDouble('1'), 0);
+        checkDataException(() -> c.asDouble(invalid));
+
+        assertEquals("c", c.asObject('c'));
+
+        checkConverterSelf(c);
+    }
+
+    @Test
+    public void testObjectConverter() {
+        ObjectConverter c = ObjectConverter.INSTANCE;
+
+        checkConverter(c, Converter.ID_OBJECT, OBJECT, Object.class);
+        checkConverterConversions(c,
+            BIT, TINYINT, SMALLINT, INT, BIGINT, DECIMAL, REAL, DOUBLE, TIME, DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE, VARCHAR);
+
+        checkObjectConverter(c);
+
+        checkConverterSelf(c);
+    }
+
+    @Test
+    public void testLateConverter() {
+        LateConverter c = LateConverter.INSTANCE;
+
+        checkConverter(c, Converter.ID_LATE, LATE, null);
+        checkConverterConversions(c, BIT, TINYINT, SMALLINT, INT, BIGINT, DECIMAL, REAL, DOUBLE, TIME, DATE, TIMESTAMP,
+            TIMESTAMP_WITH_TIMEZONE, VARCHAR, OBJECT);
+
+        checkObjectConverter(c);
+
+        MockConverter mockConverter = new MockConverter();
+        c.convertToSelf(mockConverter, new Object());
+        assertTrue(mockConverter.isInvokedSelf());
+    }
+
+    private void checkDataException(Runnable runnable) {
+        try {
+            runnable.run();
+
+            fail("Must fail");
+        } catch (HazelcastSqlException e) {
+            assertEquals(SqlErrorCode.DATA_EXCEPTION, e.getCode());
+        }
+    }
+
+    private void checkTimestampWithTimezone(Converter converter, Object value, OffsetDateTime timestampWithTimezone) {
+        LocalDateTime timestamp = timestampWithTimezone.atZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime();
+        LocalDate date = timestamp.toLocalDate();
+        LocalTime time = timestamp.toLocalTime();
+
+        assertEquals(timestampWithTimezone.toString(), converter.asVarchar(value));
+        assertEquals(date, converter.asDate(value));
+        assertEquals(time, converter.asTime(value));
+        assertEquals(timestamp, converter.asTimestamp(value));
+        assertEquals(timestampWithTimezone, converter.asTimestampWithTimezone(value));
+        assertEquals(timestampWithTimezone, converter.asObject(value));
+    }
+
+    private void checkObjectConverter(Converter c) {
+        // Boolean
+        assertEquals(true, c.asBit(true));
+        assertEquals(true, c.asBit("true"));
+        assertEquals(false, c.asBit(false));
+        assertEquals(false, c.asBit("false"));
+        checkDataException(() -> c.asBit("1"));
+        checkDataException(() -> c.asBit(1));
+        checkDataException(() -> c.asBit(new Object()));
+
+        // Numeric
+        String invalid = "invalid";
+
+        assertEquals((byte) 1, c.asTinyint(1));
+        assertEquals((byte) 1, c.asTinyint("1"));
+        checkDataException(() -> c.asTinyint(invalid));
+
+        assertEquals((short) 1, c.asSmallint(1));
+        assertEquals((short) 1, c.asSmallint("1"));
+        checkDataException(() -> c.asSmallint(invalid));
+
+        assertEquals(1, c.asInt(1));
+        assertEquals(1, c.asInt("1"));
+        checkDataException(() -> c.asInt(invalid));
+
+        assertEquals(1L, c.asBigint(1));
+        assertEquals(1L, c.asBigint("1"));
+        checkDataException(() -> c.asBigint(invalid));
+
+        assertEquals(new BigDecimal("1.1"), c.asDecimal(new BigDecimal("1.1")));
+        assertEquals(new BigDecimal("1.1"), c.asDecimal("1.1"));
+        checkDataException(() -> c.asDecimal(invalid));
+
+        assertEquals(1.1f, c.asReal(1.1f), 0);
+        assertEquals(1.1f, c.asReal("1.1"), 0);
+        checkDataException(() -> c.asReal(invalid));
+
+        assertEquals(1.1d, c.asDouble(1.1d), 0);
+        assertEquals(1.1d, c.asDouble("1.1"), 0);
+        checkDataException(() -> c.asDouble(invalid));
+
+        // Temporal
+        assertEquals(LocalTime.parse("11:22"), c.asTime(LocalTime.parse("11:22")));
+        assertEquals(LocalTime.parse("11:22"), c.asTime(LocalDateTime.parse("2020-01-01T11:22")));
+        assertEquals(LocalTime.parse("11:22"), c.asTime("11:22"));
+        checkDataException(() -> c.asTime(invalid));
+
+        assertEquals(LocalDate.parse("2020-01-01"), c.asDate(LocalDate.parse("2020-01-01")));
+        assertEquals(LocalDate.parse("2020-01-01"), c.asDate(LocalDateTime.parse("2020-01-01T11:22:33")));
+        assertEquals(LocalDate.parse("2020-01-01"), c.asDate("2020-01-01"));
+        checkDataException(() -> c.asDate(invalid));
+
+        assertEquals(LocalDateTime.parse("2020-01-01T11:22:33.444444444"),
+            c.asTimestamp(LocalDateTime.parse("2020-01-01T11:22:33.444444444")));
+        assertEquals(LocalDateTime.parse("2020-01-01T11:22:33.444444444"), c.asTimestamp("2020-01-01T11:22:33.444444444"));
+        checkDataException(() -> c.asTimestamp(invalid));
+
+        assertEquals(OffsetDateTime.parse("2020-01-01T11:22:33.444444444+01:00"),
+            c.asTimestampWithTimezone(OffsetDateTime.parse("2020-01-01T11:22:33.444444444+01:00")));
+        assertEquals(OffsetDateTime.parse("2020-01-01T11:22:33.444444444+01:00"),
+            c.asTimestampWithTimezone("2020-01-01T11:22:33.444444444+01:00"));
+        checkDataException(() -> c.asTimestampWithTimezone(invalid));
+
+        // Strings.
+        assertEquals("c", c.asVarchar('c'));
+        assertEquals("val", c.asVarchar("val"));
+        assertEquals("2020-01-01T11:22:33.444444444", c.asVarchar(LocalDateTime.parse("2020-01-01T11:22:33.444444444")));
+        assertEquals(new CustomClass(1).toString(), c.asVarchar(new CustomClass(1)));
+
+        // Object
+        assertEquals("val", c.asObject("val"));
+        assertEquals(1, c.asObject(1));
+        assertEquals(new CustomClass(1), c.asObject(new CustomClass(1)));
+    }
+
+    private void checkGetById(Converter converter) {
+        Converter other = Converters.getConverter(converter.getId());
+
+        assertSame(converter, other);
+    }
+
+    private void checkGetByClass(Converter expectedConverter, Class<?>... classes) {
+        for (Class<?> clazz : classes) {
+            Converter other = Converters.getConverter(clazz);
+
+            assertSame(expectedConverter, other);
+        }
+    }
+
+    private void checkConverter(
+        Converter converter,
+        int expectedId,
+        QueryDataTypeFamily expectedTypeFamily,
+        Class<?> expectedValueClass
+    ) {
+        assertEquals(expectedId, converter.getId());
+        assertEquals(expectedTypeFamily, converter.getTypeFamily());
+        assertEquals(expectedValueClass, converter.getValueClass());
+    }
+
+    private void checkConverterConversions(Converter converter, QueryDataTypeFamily... expectedSupportedConversions) {
+        Set<QueryDataTypeFamily> expectedSupportedConversions0 = new HashSet<>();
+
+        expectedSupportedConversions0.add(converter.getTypeFamily());
+        expectedSupportedConversions0.addAll(Arrays.asList(expectedSupportedConversions));
+
+        for (QueryDataTypeFamily typeFamily : values()) {
+            checkConverterConversion(converter, typeFamily, expectedSupportedConversions0.contains(typeFamily));
+        }
+    }
+
+    private void checkConverterConversion(Converter converter, QueryDataTypeFamily typeFamily, boolean expected) {
+        assertEquals(typeFamily + ": " + expected, expected, converter.canConvertTo(typeFamily));
+
+        switch (typeFamily) {
+            case VARCHAR:
+                assertEquals(expected, converter.canConvertToVarchar());
+
+                break;
+
+            case BIT:
+                assertEquals(expected, converter.canConvertToBit());
+
+                break;
+
+            case TINYINT:
+                assertEquals(expected, converter.canConvertToTinyint());
+
+                break;
+
+            case SMALLINT:
+                assertEquals(expected, converter.canConvertToSmallint());
+
+                break;
+
+            case INT:
+                assertEquals(expected, converter.canConvertToInt());
+
+                break;
+
+            case BIGINT:
+                assertEquals(expected, converter.canConvertToBigint());
+
+                break;
+
+            case DECIMAL:
+                assertEquals(expected, converter.canConvertToDecimal());
+
+                break;
+
+            case REAL:
+                assertEquals(expected, converter.canConvertToReal());
+
+                break;
+
+            case DOUBLE:
+                assertEquals(expected, converter.canConvertToDouble());
+
+                break;
+
+            case TIME:
+                assertEquals(expected, converter.canConvertToTime());
+
+                break;
+
+            case DATE:
+                assertEquals(expected, converter.canConvertToDate());
+
+                break;
+
+            case TIMESTAMP:
+                assertEquals(expected, converter.canConvertToTimestamp());
+
+                break;
+
+            case TIMESTAMP_WITH_TIMEZONE:
+                assertEquals(expected, converter.canConvertToTimestampWithTimezone());
+
+                break;
+
+            case OBJECT:
+                assertEquals(expected, converter.canConvertToObject());
+
+                break;
+        }
+
+        if (!expected) {
+            checkCannotConvert(converter, typeFamily);
+        }
+    }
+
+    private void checkCannotConvert(Converter converter, QueryDataTypeFamily typeFamily) {
+        try {
+            Object val = new Object();
+
+            switch (typeFamily) {
+                case VARCHAR:
+                    converter.asVarchar(val);
+
+                    break;
+
+                case BIT:
+                    converter.asBit(val);
+
+                    break;
+
+                case TINYINT:
+                    converter.asTinyint(val);
+
+                    break;
+
+                case SMALLINT:
+                    converter.asSmallint(val);
+
+                    break;
+
+                case INT:
+                    converter.asInt(val);
+
+                    break;
+
+                case BIGINT:
+                    converter.asBigint(val);
+
+                    break;
+
+                case DECIMAL:
+                    converter.asDecimal(val);
+
+                    break;
+
+                case REAL:
+                    converter.asReal(val);
+
+                    break;
+
+                case DOUBLE:
+                    converter.asDouble(val);
+
+                    break;
+
+                case TIME:
+                    converter.asTime(val);
+
+                    break;
+
+                case DATE:
+                    converter.asDate(val);
+
+                    break;
+
+                case TIMESTAMP:
+                    converter.asTimestamp(val);
+
+                    break;
+
+                case TIMESTAMP_WITH_TIMEZONE:
+                    converter.asTimestampWithTimezone(val);
+
+                    break;
+
+                case OBJECT:
+                    converter.asObject(val);
+
+                    break;
+
+                default:
+                    return;
+            }
+
+            fail("Must fail: " + typeFamily);
+        } catch (HazelcastSqlException e) {
+            assertEquals(SqlErrorCode.DATA_EXCEPTION, e.getCode());
+        }
+    }
+
+    private void checkConverterSelf(Converter converter) {
+        MockConverter mockConverter = new MockConverter();
+
+        converter.convertToSelf(mockConverter, new Object());
+
+        assertEquals(converter.getTypeFamily(), mockConverter.getInvoked());
+    }
+
+    private static final class CustomClass {
+        private int val;
+
+        private CustomClass(int val) {
+            this.val = val;
+        }
+
+        @Override
+        public int hashCode() {
+            return val;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            CustomClass that = (CustomClass) o;
+
+            return val == that.val;
+        }
+
+        @Override
+        public String toString() {
+            return getClass().getSimpleName() + "{val=" + val + '}';
+        }
+    }
+
+    private static final class MockConverter extends Converter {
+
+        private QueryDataTypeFamily invoked;
+        private boolean invokedSelf;
+
+        private MockConverter() {
+            super(-1, OBJECT);
+        }
+
+        @Override
+        public Class<?> getValueClass() {
+            return Object.class;
+        }
+
+        @Override
+        public boolean asBit(Object val) {
+            invoked = BIT;
+
+            return true;
+        }
+
+        @Override
+        public byte asTinyint(Object val) {
+            invoked = TINYINT;
+
+            return 0;
+        }
+
+        @Override
+        public short asSmallint(Object val) {
+            invoked = SMALLINT;
+
+            return 0;
+        }
+
+        @Override
+        public int asInt(Object val) {
+            invoked = INT;
+
+            return 0;
+        }
+
+        @Override
+        public long asBigint(Object val) {
+            invoked = BIGINT;
+
+            return 0;
+        }
+
+        @Override
+        public BigDecimal asDecimal(Object val) {
+            invoked = DECIMAL;
+
+            return BigDecimal.ZERO;
+        }
+
+        @Override
+        public float asReal(Object val) {
+            invoked = REAL;
+
+            return 0.0f;
+        }
+
+        @Override
+        public double asDouble(Object val) {
+            invoked = DOUBLE;
+
+            return 0.0d;
+        }
+
+        @Override
+        public String asVarchar(Object val) {
+            invoked = VARCHAR;
+
+            return "";
+        }
+
+        @Override
+        public LocalDate asDate(Object val) {
+            invoked = DATE;
+
+            return LocalDate.now();
+        }
+
+        @Override
+        public LocalTime asTime(Object val) {
+            invoked = TIME;
+
+            return LocalTime.now();
+        }
+
+        @Override
+        public LocalDateTime asTimestamp(Object val) {
+            invoked = TIMESTAMP;
+
+            return LocalDateTime.now();
+        }
+
+        @Override
+        public OffsetDateTime asTimestampWithTimezone(Object val) {
+            invoked = TIMESTAMP_WITH_TIMEZONE;
+
+            return OffsetDateTime.now();
+        }
+
+        @Override
+        public Object asObject(Object val) {
+            invoked = OBJECT;
+
+            return new Object();
+        }
+
+        @Override
+        public Object convertToSelf(Converter converter, Object val) {
+            invokedSelf = true;
+
+            return val;
+        }
+
+        private QueryDataTypeFamily getInvoked() {
+            return invoked;
+        }
+
+        private boolean isInvokedSelf() {
+            return invokedSelf;
+        }
+    }
+}
