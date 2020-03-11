@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.expression.predicate;
 
+import com.hazelcast.sql.impl.expression.util.Eval;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.Row;
 
@@ -29,7 +30,7 @@ public final class TernaryLogic {
         boolean seenUnknown = false;
 
         for (int i = 1; i < operands.length; ++i) {
-            Boolean result = operands[i].evalAsBit(row);
+            Boolean result = Eval.asBit(operands[i], row);
 
             if (result == Boolean.FALSE) {
                 return Boolean.FALSE;
@@ -47,7 +48,7 @@ public final class TernaryLogic {
         boolean seenUnknown = false;
 
         for (int i = 1; i < operands.length; ++i) {
-            Boolean result = operands[i].evalAsBit(row);
+            Boolean result = Eval.asBit(operands[i], row);
 
             if (result == Boolean.TRUE) {
                 return Boolean.TRUE;

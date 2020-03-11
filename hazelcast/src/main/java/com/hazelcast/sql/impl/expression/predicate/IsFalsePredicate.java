@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql.impl.expression.predicate;
 
+import com.hazelcast.sql.impl.expression.util.EnsureConvertible;
+import com.hazelcast.sql.impl.expression.util.Eval;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.UniExpression;
 import com.hazelcast.sql.impl.row.Row;
@@ -31,14 +33,14 @@ public class IsFalsePredicate extends UniExpression<Boolean> {
     }
 
     public static IsFalsePredicate create(Expression<?> operand) {
-        operand.ensureCanConvertToBit();
+        EnsureConvertible.toBit(operand);
 
         return new IsFalsePredicate(operand);
     }
 
     @Override
     public Boolean eval(Row row) {
-        return TernaryLogic.isFalse(operand.evalAsBit(row));
+        return TernaryLogic.isFalse(Eval.asBit(operand, row));
     }
 
     @Override

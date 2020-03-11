@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql.impl.expression.string;
 
+import com.hazelcast.sql.impl.expression.util.EnsureConvertible;
+import com.hazelcast.sql.impl.expression.util.Eval;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.TriExpression;
 import com.hazelcast.sql.impl.row.Row;
@@ -34,11 +36,11 @@ public class PositionFunction extends TriExpression<Integer> {
     }
 
     public static PositionFunction create(Expression<?> seek, Expression<?> source, Expression<?> position) {
-        seek.ensureCanConvertToVarchar();
-        source.ensureCanConvertToVarchar();
+        EnsureConvertible.toVarchar(seek);
+        EnsureConvertible.toVarchar(source);
 
         if (position != null) {
-            position.ensureCanConvertToInt();
+            EnsureConvertible.toInt(position);
         }
 
         return new PositionFunction(seek, source, position);
@@ -46,9 +48,9 @@ public class PositionFunction extends TriExpression<Integer> {
 
     @Override
     public Integer eval(Row row) {
-        String seek = operand1.evalAsVarchar(row);
-        String source = operand2.evalAsVarchar(row);
-        Integer position = operand3 != null ? operand3.evalAsInt(row) : null;
+        String seek = Eval.asVarchar(operand1, row);
+        String source = Eval.asVarchar(operand2, row);
+        Integer position = operand3 != null ? Eval.asInt(operand3, row) : null;
 
         return StringExpressionUtils.position(seek, source, position != null ? position : 0);
     }

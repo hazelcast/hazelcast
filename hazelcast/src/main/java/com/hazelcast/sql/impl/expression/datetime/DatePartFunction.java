@@ -18,6 +18,8 @@ package com.hazelcast.sql.impl.expression.datetime;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.sql.impl.expression.util.EnsureConvertible;
+import com.hazelcast.sql.impl.expression.util.Eval;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.UniExpression;
 import com.hazelcast.sql.impl.row.Row;
@@ -45,7 +47,7 @@ public class DatePartFunction extends UniExpression<Integer> {
     }
 
     public static DatePartFunction create(Expression<?> operand, DatePartUnit unit) {
-        operand.ensureCanConvertToTimestampWithTimezone();
+        EnsureConvertible.toTimestampWithTimezone(operand);
 
         return new DatePartFunction(operand, unit);
     }
@@ -55,9 +57,9 @@ public class DatePartFunction extends UniExpression<Integer> {
         OffsetDateTime dateTime;
 
         if (operand.getType() == QueryDataType.VARCHAR) {
-            dateTime = DateTimeExpressionUtils.parseDateTime(operand.evalAsVarchar(row));
+            dateTime = DateTimeExpressionUtils.parseDateTime(Eval.asVarchar(operand, row));
         } else {
-            dateTime = operand.evalAsTimestampWithTimezone(row);
+            dateTime = Eval.asTimestampWithTimezone(operand, row);
         }
 
         return DateTimeExpressionUtils.getDatePart(dateTime, unit);

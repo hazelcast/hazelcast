@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.expression.math;
 
 import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.expression.util.Eval;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.UniExpression;
 import com.hazelcast.sql.impl.row.Row;
@@ -47,7 +48,7 @@ public class RandomFunction extends UniExpression<Double> {
 
     @Override
     public Double eval(Row row) {
-        Long seed = operand != null ? operand.evalAsBigint(row) : null;
+        Long seed = operand != null ? Eval.asBigint(operand, row) : null;
 
         Random random = seed != null ? new Random(seed) : ThreadLocalRandom.current();
 

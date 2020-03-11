@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql.impl.expression.string;
 
+import com.hazelcast.sql.impl.expression.util.EnsureConvertible;
+import com.hazelcast.sql.impl.expression.util.Eval;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.UniExpression;
 import com.hazelcast.sql.impl.row.Row;
@@ -31,14 +33,14 @@ public class CharLengthFunction extends UniExpression<Integer> {
     }
 
     public static CharLengthFunction create(Expression<?> operand) {
-        operand.ensureCanConvertToVarchar();
+        EnsureConvertible.toVarchar(operand);
 
         return new CharLengthFunction(operand);
     }
 
     @Override
     public Integer eval(Row row) {
-        String value = operand.evalAsVarchar(row);
+        String value = Eval.asVarchar(operand, row);
 
         return StringExpressionUtils.charLength(value);
     }

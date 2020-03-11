@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.expression.predicate;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.expression.CastExpression;
+import com.hazelcast.sql.impl.expression.util.Eval;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -84,7 +85,7 @@ public class CaseExpression<T> implements Expression<T> {
         for (int i = 0; i < conditions.length; i++) {
             Expression<Boolean> condition = conditions[i];
 
-            Boolean conditionRes = condition.evalAsBit(row);
+            Boolean conditionRes = Eval.asBit(condition, row);
 
             if (conditionRes != null && conditionRes) {
                 return (T) results[i].eval(row);

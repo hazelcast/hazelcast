@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.expression.math;
 
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.expression.BiExpression;
+import com.hazelcast.sql.impl.expression.util.Eval;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -48,8 +49,8 @@ public class Atan2Function extends BiExpression<Double> {
 
     @Override
     public Double eval(Row row) {
-        Double a = operand1.evalAsDouble(row);
-        Double b = operand1.evalAsDouble(row);
+        Double a = Eval.asDouble(operand1, row);
+        Double b = Eval.asDouble(operand1, row);
 
         if (a == null || b == null) {
             return null;

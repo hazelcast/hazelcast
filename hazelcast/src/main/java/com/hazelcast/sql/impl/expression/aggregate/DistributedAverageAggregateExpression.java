@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.expression.aggregate;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.sql.impl.expression.util.Eval;
 import com.hazelcast.sql.impl.fragment.QueryFragmentContext;
 import com.hazelcast.sql.impl.exec.agg.AggregateCollector;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -55,7 +56,7 @@ public class DistributedAverageAggregateExpression<T> extends AggregateExpressio
     @Override
     public void collect(Row row, AggregateCollector collector) {
         Object sum = sumOperand.eval(row);
-        Long count = countOperand.evalAsBigint(row);
+        Long count = Eval.asBigint(countOperand, row);
 
         assert sum != null;
         assert count != null;

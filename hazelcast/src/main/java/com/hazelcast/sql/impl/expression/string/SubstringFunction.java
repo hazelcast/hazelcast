@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql.impl.expression.string;
 
+import com.hazelcast.sql.impl.expression.util.EnsureConvertible;
+import com.hazelcast.sql.impl.expression.util.Eval;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.TriExpression;
 import com.hazelcast.sql.impl.row.Row;
@@ -34,18 +36,18 @@ public class SubstringFunction extends TriExpression<String> {
     }
 
     public static SubstringFunction create(Expression<?> source, Expression<?> start, Expression<?> length) {
-        source.ensureCanConvertToVarchar();
-        start.ensureCanConvertToVarchar();
-        length.ensureCanConvertToInt();
+        EnsureConvertible.toVarchar(source);
+        EnsureConvertible.toVarchar(start);
+        EnsureConvertible.toInt(length);
 
         return new SubstringFunction(source, start, length);
     }
 
     @Override
     public String eval(Row row) {
-        String source = operand1.evalAsVarchar(row);
-        Integer start = operand2.evalAsInt(row);
-        Integer length = operand3.evalAsInt(row);
+        String source = Eval.asVarchar(operand1, row);
+        Integer start = Eval.asInt(operand2, row);
+        Integer length = Eval.asInt(operand3, row);
 
         return StringExpressionUtils.substring(source, start, length);
     }

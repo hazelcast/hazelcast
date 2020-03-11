@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql.impl.expression.string;
 
+import com.hazelcast.sql.impl.expression.util.EnsureConvertible;
+import com.hazelcast.sql.impl.expression.util.Eval;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.UniExpression;
 import com.hazelcast.sql.impl.row.Row;
@@ -31,14 +33,14 @@ public class LowerFunction extends UniExpression<String> {
     }
 
     public static LowerFunction create(Expression<?> operand) {
-        operand.ensureCanConvertToVarchar();
+        EnsureConvertible.toVarchar(operand);
 
         return new LowerFunction(operand);
     }
 
     @Override
     public String eval(Row row) {
-        String value = operand.evalAsVarchar(row);
+        String value = Eval.asVarchar(operand, row);
 
         return StringExpressionUtils.lower(value);
     }

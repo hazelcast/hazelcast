@@ -17,6 +17,8 @@
 package com.hazelcast.sql.impl.expression.string;
 
 import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.sql.impl.expression.util.EnsureConvertible;
+import com.hazelcast.sql.impl.expression.util.Eval;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.TriExpression;
 import com.hazelcast.sql.impl.row.Row;
@@ -40,11 +42,11 @@ public class LikeFunction extends TriExpression<Boolean> {
     }
 
     public static LikeFunction create(Expression<?> source, Expression<?> pattern, Expression<?> escape) {
-        source.ensureCanConvertToVarchar();
-        pattern.ensureCanConvertToVarchar();
+        EnsureConvertible.toVarchar(source);
+        EnsureConvertible.toVarchar(pattern);
 
         if (escape != null) {
-            escape.ensureCanConvertToVarchar();
+            EnsureConvertible.toVarchar(escape);
         }
 
         return new LikeFunction(source, pattern, escape);
@@ -52,9 +54,9 @@ public class LikeFunction extends TriExpression<Boolean> {
 
     @Override
     public Boolean eval(Row row) {
-        String source = operand1.evalAsVarchar(row);
-        String pattern = operand2.evalAsVarchar(row);
-        String escape = operand3 != null ? operand3.evalAsVarchar(row) : null;
+        String source = Eval.asVarchar(operand1, row);
+        String pattern = Eval.asVarchar(operand2, row);
+        String escape = operand3 != null ? Eval.asVarchar(operand3, row) : null;
 
         return like.like(source, pattern, escape);
     }

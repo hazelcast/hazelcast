@@ -44,7 +44,7 @@ import com.hazelcast.sql.impl.calcite.opt.physical.join.NestedLoopJoinPhysicalRe
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.explain.QueryExplain;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
-import com.hazelcast.sql.impl.expression.CountRowExpression;
+import com.hazelcast.sql.impl.expression.aggregate.CountRowExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.aggregate.AggregateExpression;
 import com.hazelcast.sql.impl.expression.aggregate.AverageAggregateExpression;

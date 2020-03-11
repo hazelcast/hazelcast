@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.expression.datetime;
 
+import com.hazelcast.sql.impl.expression.util.EnsureConvertible;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.UniExpression;
 import com.hazelcast.sql.impl.row.Row;
@@ -34,7 +35,7 @@ public class LocalTimestampFunction extends UniExpression<LocalDateTime> {
 
     public static LocalTimestampFunction create(Expression<?> precision) {
         if (precision != null) {
-            precision.ensureCanConvertToInt();
+            EnsureConvertible.toInt(precision);
         }
 
         return new LocalTimestampFunction(precision);
