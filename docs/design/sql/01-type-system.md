@@ -5,11 +5,13 @@ Hazelcast SQL type system defines how objects of different types interact with e
 is defined by the list of supported types, type mapping and type conversion rules.
 
 Type is described by name, precedence, precision and scale.
-- Name is textual representation of type name
-- Precedence is an integer number which defines context-dependent type resolution rules for expressions
-- Precision is the total count of significant digits in the whole number, applicable to **numeric types**
+- **Name** is textual representation of type name
+- **Precision** is the total count of significant digits in the whole number, applicable to **numeric types**
+- **Precedence** is a comparable value which is used for type inference in expressions. A type with a
+higher value has precedence over a type with lower value. If two types has the same precedence value, then
+the type with higher precision has precedence.
 
-Type family is a collection of types with the same name, but different precisions. All types
+**Type family** is a collection of types with the same name, but different precisions. All types
 within a family have the same name and precedence. For example, `INT(11)` and `INT(12)` are two types
 from the same `INT` family.
 

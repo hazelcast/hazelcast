@@ -239,10 +239,10 @@ public class QueryDataTypeTest {
     }
 
     private void checkBigger(QueryDataType bigger, QueryDataType smaller) {
-        assertSame(bigger, QueryDataTypeUtils.bigger(bigger, smaller));
+        assertSame(bigger, QueryDataTypeUtils.withHigherPrecedence(bigger, smaller));
 
-        assertSame(bigger, QueryDataTypeUtils.bigger(bigger, bigger));
-        assertSame(smaller, QueryDataTypeUtils.bigger(smaller, smaller));
+        assertSame(bigger, QueryDataTypeUtils.withHigherPrecedence(bigger, bigger));
+        assertSame(smaller, QueryDataTypeUtils.withHigherPrecedence(smaller, smaller));
     }
 
     private static final class CustomClass {

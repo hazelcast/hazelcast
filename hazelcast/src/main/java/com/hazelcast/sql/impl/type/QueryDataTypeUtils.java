@@ -249,7 +249,7 @@ public final class QueryDataTypeUtils {
         }
     }
 
-    public static QueryDataType bigger(QueryDataType first, QueryDataType second) {
+    public static QueryDataType withHigherPrecedence(QueryDataType first, QueryDataType second) {
         int res = Integer.compare(first.getTypeFamily().getPrecedence(), second.getTypeFamily().getPrecedence());
 
         if (res == 0) {
