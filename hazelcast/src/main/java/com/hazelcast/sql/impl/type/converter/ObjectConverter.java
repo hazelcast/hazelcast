@@ -22,7 +22,7 @@ import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
  * Converter for {@link Integer} type.
  */
 public final class ObjectConverter extends AbstractObjectConverter {
-    /** Singleton instance. */
+
     public static final ObjectConverter INSTANCE = new ObjectConverter();
 
     private ObjectConverter() {

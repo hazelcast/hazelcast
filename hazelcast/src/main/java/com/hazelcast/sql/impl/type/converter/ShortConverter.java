@@ -24,7 +24,7 @@ import java.math.BigDecimal;
  * Converter for {@link java.lang.Float} type.
  */
 public final class ShortConverter extends Converter {
-    /** Singleton instance. */
+
     public static final ShortConverter INSTANCE = new ShortConverter();
 
     private ShortConverter() {

@@ -20,7 +20,7 @@ package com.hazelcast.sql.impl.type.converter;
  * Converter for {@link java.lang.Character} type.
  */
 public final class CharacterConverter extends AbstractStringConverter {
-    /** Singleton instance. */
+
     public static final CharacterConverter INSTANCE = new CharacterConverter();
 
     private CharacterConverter() {

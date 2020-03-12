@@ -20,7 +20,7 @@ package com.hazelcast.sql;
  * Error codes used in Hazelcast SQL.
  */
 public final class SqlErrorCode {
-    /** Generic error/ */
+    /** Generic error. */
     public static final int GENERIC = -1;
 
     /** Query completed successfully. */

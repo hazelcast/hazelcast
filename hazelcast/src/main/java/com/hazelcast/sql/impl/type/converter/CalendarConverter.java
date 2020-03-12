@@ -24,7 +24,7 @@ import java.util.Calendar;
  * Converter for {@link java.util.Calendar} type.
  */
 public final class CalendarConverter extends AbstractTimestampWithTimezoneConverter {
-    /** Singleton instance. */
+
     public static final CalendarConverter INSTANCE = new CalendarConverter();
 
     private CalendarConverter() {

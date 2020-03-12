@@ -83,10 +83,7 @@ public class QueryDataType implements IdentifiedDataSerializable {
 
     public static final QueryDataType OBJECT = new QueryDataType(ObjectConverter.INSTANCE);
 
-    /** Converter. */
     private Converter converter;
-
-    /** Precision. */
     private int precision;
 
     public QueryDataType() {

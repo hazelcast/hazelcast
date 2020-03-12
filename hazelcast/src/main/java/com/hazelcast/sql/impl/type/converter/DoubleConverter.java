@@ -24,7 +24,7 @@ import java.math.BigDecimal;
  * Converter for {@link java.lang.Double} type.
  */
 public final class DoubleConverter extends Converter {
-    /** Singleton instance. */
+
     public static final DoubleConverter INSTANCE = new DoubleConverter();
 
     private DoubleConverter() {

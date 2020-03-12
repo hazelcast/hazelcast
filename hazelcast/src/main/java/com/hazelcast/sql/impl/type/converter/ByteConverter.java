@@ -24,7 +24,7 @@ import java.math.BigDecimal;
  * Converter for {@link java.lang.Byte} type.
  */
 public final class ByteConverter extends Converter {
-    /** Singleton instance. */
+
     public static final ByteConverter INSTANCE = new ByteConverter();
 
     private ByteConverter() {
