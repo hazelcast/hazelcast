@@ -97,7 +97,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
         this.outputBufferSize = builder.initialOutputBufferSize;
         this.bufferPoolThreadLocal = new BufferPoolThreadLocal(this, builder.bufferPoolFactory,
                 builder.notActiveExceptionSupplier);
-        this.nullSerializerAdapter = createSerializerAdapter(new ConstantSerializers.NullSerializer(), this);
+        this.nullSerializerAdapter = createSerializerAdapter(new ConstantSerializers.NullSerializer());
     }
 
     //region Serialization Service
@@ -367,7 +367,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
             throw new IllegalArgumentException(
                     "Type ID must be positive. Current: " + serializer.getTypeId() + ", Serializer: " + serializer);
         }
-        safeRegister(type, createSerializerAdapter(serializer, this));
+        safeRegister(type, createSerializerAdapter(serializer));
     }
 
     public final void registerGlobal(final Serializer serializer) {
@@ -375,7 +375,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
     }
 
     public final void registerGlobal(final Serializer serializer, boolean overrideJavaSerialization) {
-        SerializerAdapter adapter = createSerializerAdapter(serializer, this);
+        SerializerAdapter adapter = createSerializerAdapter(serializer);
         if (!global.compareAndSet(null, adapter)) {
             throw new IllegalStateException("Global serializer is already registered");
         }
@@ -403,7 +403,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
     }
 
     protected final boolean safeRegister(final Class type, final Serializer serializer) {
-        return safeRegister(type, createSerializerAdapter(serializer, this));
+        return safeRegister(type, createSerializerAdapter(serializer));
     }
 
     protected final boolean safeRegister(final Class type, final SerializerAdapter serializer) {
@@ -424,7 +424,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
     }
 
     protected final void registerConstant(Class type, Serializer serializer) {
-        registerConstant(type, createSerializerAdapter(serializer, this));
+        registerConstant(type, createSerializerAdapter(serializer));
     }
 
     protected final void registerConstant(Class type, SerializerAdapter serializer) {

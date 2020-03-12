@@ -51,7 +51,7 @@ public class SerializationUtilTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testCreateSerializerAdapter_invalidSerializer() {
-        SerializationUtil.createSerializerAdapter(new InvalidSerializer(), null);
+        SerializationUtil.createSerializerAdapter(new InvalidSerializer());
     }
 
     @Test(expected = IllegalArgumentException.class)

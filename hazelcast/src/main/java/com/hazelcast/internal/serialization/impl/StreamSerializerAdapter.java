@@ -29,11 +29,9 @@ import java.io.IOException;
 
 class StreamSerializerAdapter implements SerializerAdapter {
 
-    protected final InternalSerializationService service;
     protected final StreamSerializer serializer;
 
-    StreamSerializerAdapter(InternalSerializationService service, StreamSerializer serializer) {
-        this.service = service;
+    StreamSerializerAdapter(StreamSerializer serializer) {
         this.serializer = serializer;
     }
 
