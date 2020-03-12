@@ -69,10 +69,6 @@ class DataModelSerializerHooks {
                 public int getTypeId() {
                     return SerializerHookConstants.WINDOW_RESULT;
                 }
-
-                @Override
-                public void destroy() {
-                }
             };
         }
 
@@ -114,10 +110,6 @@ class DataModelSerializerHooks {
                 public int getTypeId() {
                     return SerializerHookConstants.KEYED_WINDOW_RESULT;
                 }
-
-                @Override
-                public void destroy() {
-                }
             };
         }
 
@@ -139,11 +131,6 @@ class DataModelSerializerHooks {
                 @Override
                 public int getTypeId() {
                     return SerializerHookConstants.TIMESTAMPED_ITEM;
-                }
-
-                @Override
-                public void destroy() {
-
                 }
 
                 @Override
@@ -193,10 +180,6 @@ class DataModelSerializerHooks {
                 public int getTypeId() {
                     return SerializerHookConstants.TUPLE2;
                 }
-
-                @Override
-                public void destroy() {
-                }
             };
         }
 
@@ -230,10 +213,6 @@ class DataModelSerializerHooks {
                 @Override
                 public int getTypeId() {
                     return SerializerHookConstants.TUPLE3;
-                }
-
-                @Override
-                public void destroy() {
                 }
             };
         }
@@ -269,10 +248,6 @@ class DataModelSerializerHooks {
                 @Override
                 public int getTypeId() {
                     return SerializerHookConstants.TUPLE4;
-                }
-
-                @Override
-                public void destroy() {
                 }
             };
         }
@@ -310,10 +285,6 @@ class DataModelSerializerHooks {
                 public int getTypeId() {
                     return SerializerHookConstants.TUPLE5;
                 }
-
-                @Override
-                public void destroy() {
-                }
             };
         }
 
@@ -345,10 +316,6 @@ class DataModelSerializerHooks {
                 @Override
                 public int getTypeId() {
                     return SerializerHookConstants.TAG;
-                }
-
-                @Override
-                public void destroy() {
                 }
             };
         }
@@ -401,10 +368,6 @@ class DataModelSerializerHooks {
         @Override
         public int getTypeId() {
             return SerializerHookConstants.ITEMS_BY_TAG;
-        }
-
-        @Override
-        public void destroy() {
         }
     }
 }

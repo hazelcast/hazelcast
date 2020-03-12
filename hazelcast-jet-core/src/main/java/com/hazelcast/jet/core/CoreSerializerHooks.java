@@ -50,10 +50,6 @@ class CoreSerializerHooks {
                 }
 
                 @Override
-                public void destroy() {
-                }
-
-                @Override
                 public void write(ObjectDataOutput out, Watermark object) throws IOException {
                     out.writeLong(object.timestamp());
                 }
@@ -97,10 +93,6 @@ class CoreSerializerHooks {
                 @Override
                 public int getTypeId() {
                     return SerializerHookConstants.JET_EVENT;
-                }
-
-                @Override
-                public void destroy() {
                 }
             };
         }

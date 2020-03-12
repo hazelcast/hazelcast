@@ -24,7 +24,6 @@ import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.ProbeUnit;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.JetSerializationService;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.jet.config.JobConfig;
@@ -132,8 +131,8 @@ public class ExecutionContext implements DynamicMetricsProvider {
         snapshotContext = new SnapshotContext(nodeEngine.getLogger(SnapshotContext.class), jobNameAndExecutionId(),
                 plan.lastSnapshotId(), jobConfig.getProcessingGuarantee());
 
-        serializationService = JetSerializationService
-                .from(nodeEngine.getSerializationService(), jobConfig.getSerializerConfigs());
+        JetService jetService = nodeEngine.getService(JetService.SERVICE_NAME);
+        serializationService = jetService.createSerializationService(jobConfig.getSerializerConfigs());
 
         metricsEnabled = jobConfig.isMetricsEnabled() && nodeEngine.getConfig().getMetricsConfig().isEnabled();
         plan.initialize(nodeEngine, jobId, executionId, snapshotContext, tempDirectories, serializationService);

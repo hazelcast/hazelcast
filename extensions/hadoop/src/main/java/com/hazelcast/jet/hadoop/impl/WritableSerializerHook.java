@@ -59,10 +59,6 @@ public abstract class WritableSerializerHook<T extends Writable> implements Seri
             }
 
             @Override
-            public void destroy() {
-            }
-
-            @Override
             public void write(ObjectDataOutput out, Writable writable) throws IOException {
                 writable.write(out);
             }

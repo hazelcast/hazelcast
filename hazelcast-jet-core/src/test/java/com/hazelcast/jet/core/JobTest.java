@@ -804,9 +804,5 @@ public class JobTest extends SimpleTestInClusterSupport {
         public Value read(ObjectDataInput input) throws IOException {
             return new Value(input.readInt());
         }
-
-        @Override
-        public void destroy() {
-        }
     }
 }

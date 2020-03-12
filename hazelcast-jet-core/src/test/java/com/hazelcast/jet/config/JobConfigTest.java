@@ -147,9 +147,5 @@ public class JobConfigTest extends JetTestSupport {
         public Object read(ObjectDataInput in) {
             return null;
         }
-
-        @Override
-        public void destroy() {
-        }
     }
 }

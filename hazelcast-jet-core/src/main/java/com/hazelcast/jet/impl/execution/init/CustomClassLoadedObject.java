@@ -117,10 +117,5 @@ public final class CustomClassLoadedObject {
         public int getTypeId() {
             return SerializerHookConstants.CUSTOM_CLASS_LOADED_OBJECT;
         }
-
-        @Override
-        public void destroy() {
-
-        }
     }
 }

@@ -122,10 +122,6 @@ final class WritableSerializerHooks {
         }
 
         @Override
-        public void destroy() {
-        }
-
-        @Override
         public void write(ObjectDataOutput out, Writable writable) throws IOException {
             if (!warnedOnce) {
                 LOGGER.warning("Using default Writable serialization without explicit type registration. " +
