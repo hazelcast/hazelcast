@@ -37,10 +37,10 @@ Types supported by the Hazelcast SQL engine is listed in the Table 1. Precision 
 | `TIME` | 1000 |  |
 | `DATE` | 1100 |  |
 | `TIMESTAMP` | 1200 |  |
-| `TIMESTAMP WITH TIMEZONE` | 1300 |  |
+| `TIMESTAMP WITH TIME ZONE` | 1300 |  |
 | `OBJECT` | 1400 |  |
 
-The type `TIME WITH TIMEZONE` is not supported because of its confusing behavior: daylight-saving rules make it hard to reason
+The type `TIME WITH TIME ZONE` is not supported because of its confusing behavior: daylight-saving rules make it hard to reason
 about time with offset without date part. For this reason this type is of little use for real applications. The support for this
 type might be added in future releases if we find useful use cases for it.
 
@@ -81,7 +81,7 @@ The table 2 establishes a strict one-to-one mapping between SQL and Java types.
 | `TIMESTAMP W/ TZ` | `java.time.OffsetDateTime` |
 | `OBJECT` | `java.lang.Object` |
 
-`TIMESTAMP WITH TIMEZONE` is mapped to the `java.time.OffsetDateTime` class because ANSI SQL requires only zone
+`TIMESTAMP WITH TIME ZONE` is mapped to the `java.time.OffsetDateTime` class because ANSI SQL requires only zone
 displacement, so full zone information from the `java.time.ZonedDateTime` class is not needed.
 
 ### Java to SQL mapping
