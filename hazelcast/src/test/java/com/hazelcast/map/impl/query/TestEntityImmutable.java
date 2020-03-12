@@ -14,10 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map;
+package com.hazelcast.map.impl.query;
 
-/**
- * This is just a marker interface for Adobe Entities so that we can disable Copy on Read for this type
- */
-public interface Immutable {
+import com.hazelcast.map.Immutable;
+
+import java.io.Serializable;
+
+class TestEntityImmutable implements Immutable, Serializable {
+    private static final long serialVersionUID = 1L;
+    private String test;
+
+    public TestEntityImmutable(String test) {
+        this.test = test;
+    }
+
+    public String getTest() {
+        return test;
+    }
 }

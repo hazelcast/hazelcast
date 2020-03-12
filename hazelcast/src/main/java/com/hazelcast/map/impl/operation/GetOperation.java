@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
 import com.hazelcast.core.OperationTimeoutException;
+import com.hazelcast.map.Immutable;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BlockingOperation;
@@ -38,7 +39,7 @@ public final class GetOperation extends ReadonlyKeyBasedMapOperation implements 
     @Override
     public void run() {
         Object value = this.recordStore.get(this.dataKey, false, getCallerAddress());
-        this.result = (value instanceof com.hazelcast.map.Immutable) ? value : this.mapServiceContext.toData(value);
+        this.result = (value instanceof Immutable) ? value : mapServiceContext.toData(value);
     }
 
     @Override

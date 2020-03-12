@@ -44,10 +44,10 @@ public class MapEntriesWithCursor extends AbstractCursor<Map.Entry<Data, Object>
 
     @Override
     void writeElement(ObjectDataOutput out, Entry<Data, Object> entry) throws IOException {
-        out.writeData((Data)entry.getKey());
+        out.writeData(entry.getKey());
         Object value = entry.getValue();
         if (value instanceof Data) {
-            out.writeData((Data)value);
+            out.writeData((Data) value);
         } else {
             out.writeObject(value);
         }
