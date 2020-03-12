@@ -162,10 +162,9 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
     }
 
     //for testing
-    public boolean isListenerCancelled(UUID registrationID) {
+    public boolean isListenerCancelled(@Nonnull UUID registrationID) {
         checkNotNull(registrationID, "registrationId can't be null");
-
-        MessageRunner runner = runnersMap.get(registrationID);
+        MessageRunner<?> runner = runnersMap.get(registrationID);
         if (runner == null) {
             return true;
         }
