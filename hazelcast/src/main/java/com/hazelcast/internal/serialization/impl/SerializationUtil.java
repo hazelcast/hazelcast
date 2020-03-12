@@ -115,7 +115,7 @@ public final class SerializationUtil {
         throw new HazelcastSerializationException("Failed to serialize '" + clazz + '\'', e);
     }
 
-    static SerializerAdapter createSerializerAdapter(Serializer serializer) {
+    public static SerializerAdapter createSerializerAdapter(Serializer serializer) {
         final SerializerAdapter s;
         if (serializer instanceof StreamSerializer) {
             s = new StreamSerializerAdapter((StreamSerializer) serializer);
