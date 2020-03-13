@@ -28,6 +28,34 @@ import com.hazelcast.sql.impl.type.converter.OffsetDateTimeConverter;
 import com.hazelcast.sql.impl.type.converter.StringConverter;
 import com.hazelcast.sql.impl.type.converter.ZonedDateTimeConverter;
 
+import static com.hazelcast.sql.impl.type.QueryDataType.BIGINT;
+import static com.hazelcast.sql.impl.type.QueryDataType.BIT;
+import static com.hazelcast.sql.impl.type.QueryDataType.DATE;
+import static com.hazelcast.sql.impl.type.QueryDataType.DECIMAL;
+import static com.hazelcast.sql.impl.type.QueryDataType.DECIMAL_BIG_INTEGER;
+import static com.hazelcast.sql.impl.type.QueryDataType.DOUBLE;
+import static com.hazelcast.sql.impl.type.QueryDataType.INT;
+import static com.hazelcast.sql.impl.type.QueryDataType.LATE;
+import static com.hazelcast.sql.impl.type.QueryDataType.OBJECT;
+import static com.hazelcast.sql.impl.type.QueryDataType.PRECISION_BIGINT;
+import static com.hazelcast.sql.impl.type.QueryDataType.PRECISION_BIT;
+import static com.hazelcast.sql.impl.type.QueryDataType.PRECISION_INT;
+import static com.hazelcast.sql.impl.type.QueryDataType.PRECISION_SMALLINT;
+import static com.hazelcast.sql.impl.type.QueryDataType.PRECISION_TINYINT;
+import static com.hazelcast.sql.impl.type.QueryDataType.PRECISION_UNLIMITED;
+import static com.hazelcast.sql.impl.type.QueryDataType.REAL;
+import static com.hazelcast.sql.impl.type.QueryDataType.SMALLINT;
+import static com.hazelcast.sql.impl.type.QueryDataType.TIME;
+import static com.hazelcast.sql.impl.type.QueryDataType.TIMESTAMP;
+import static com.hazelcast.sql.impl.type.QueryDataType.TIMESTAMP_WITH_TZ_CALENDAR;
+import static com.hazelcast.sql.impl.type.QueryDataType.TIMESTAMP_WITH_TZ_DATE;
+import static com.hazelcast.sql.impl.type.QueryDataType.TIMESTAMP_WITH_TZ_INSTANT;
+import static com.hazelcast.sql.impl.type.QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME;
+import static com.hazelcast.sql.impl.type.QueryDataType.TIMESTAMP_WITH_TZ_ZONED_DATE_TIME;
+import static com.hazelcast.sql.impl.type.QueryDataType.TINYINT;
+import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
+import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR_CHARACTER;
+
 /**
  * Utility methods for SQL data types.
  */
@@ -53,30 +81,30 @@ public final class QueryDataTypeUtils {
     /** 12 (hdr) + 36 (arbitrary content). */
     public static final int TYPE_LEN_OBJECT = 12 + 36;
 
-    private static final QueryDataType[] INTEGER_TYPES = new QueryDataType[QueryDataType.PRECISION_BIGINT + 1];
+    private static final QueryDataType[] INTEGER_TYPES = new QueryDataType[PRECISION_BIGINT + 1];
 
     static {
-        for (int i = 1; i <= QueryDataType.PRECISION_BIGINT; i++) {
+        for (int i = 1; i <= PRECISION_BIGINT; i++) {
             QueryDataType type;
 
-            if (i == QueryDataType.PRECISION_BIT) {
-                type = QueryDataType.BIT;
-            } else if (i < QueryDataType.PRECISION_TINYINT) {
-                type = new QueryDataType(QueryDataType.TINYINT.getConverter(), i);
-            } else if (i == QueryDataType.PRECISION_TINYINT) {
-                type = QueryDataType.TINYINT;
-            } else if (i < QueryDataType.PRECISION_SMALLINT) {
-                type = new QueryDataType(QueryDataType.SMALLINT.getConverter(), i);
-            } else if (i == QueryDataType.PRECISION_SMALLINT) {
-                type = QueryDataType.SMALLINT;
-            } else if (i < QueryDataType.PRECISION_INT) {
-                type = new QueryDataType(QueryDataType.INT.getConverter(), i);
-            } else if (i == QueryDataType.PRECISION_INT) {
-                type = QueryDataType.INT;
-            } else if (i < QueryDataType.PRECISION_BIGINT) {
-                type = new QueryDataType(QueryDataType.BIGINT.getConverter(), i);
+            if (i == PRECISION_BIT) {
+                type = BIT;
+            } else if (i < PRECISION_TINYINT) {
+                type = new QueryDataType(TINYINT.getConverter(), i);
+            } else if (i == PRECISION_TINYINT) {
+                type = TINYINT;
+            } else if (i < PRECISION_SMALLINT) {
+                type = new QueryDataType(SMALLINT.getConverter(), i);
+            } else if (i == PRECISION_SMALLINT) {
+                type = SMALLINT;
+            } else if (i < PRECISION_INT) {
+                type = new QueryDataType(INT.getConverter(), i);
+            } else if (i == PRECISION_INT) {
+                type = INT;
+            } else if (i < PRECISION_BIGINT) {
+                type = new QueryDataType(BIGINT.getConverter(), i);
             } else {
-                type = QueryDataType.BIGINT;
+                type = BIGINT;
             }
 
             INTEGER_TYPES[i] = type;
@@ -89,7 +117,7 @@ public final class QueryDataTypeUtils {
 
     public static QueryDataType resolveType(Object obj) {
         if (obj == null) {
-            return QueryDataType.LATE;
+            return LATE;
         }
 
         Class<?> clazz = obj.getClass();
@@ -106,69 +134,69 @@ public final class QueryDataTypeUtils {
         switch (typeFamily) {
             case VARCHAR:
                 if (converter == StringConverter.INSTANCE) {
-                    return QueryDataType.VARCHAR;
+                    return VARCHAR;
                 } else {
                     assert converter == CharacterConverter.INSTANCE;
 
-                    return QueryDataType.VARCHAR_CHARACTER;
+                    return VARCHAR_CHARACTER;
                 }
 
             case BIT:
-                return QueryDataType.BIT;
+                return BIT;
 
             case TINYINT:
-                return QueryDataType.TINYINT;
+                return TINYINT;
 
             case SMALLINT:
-                return QueryDataType.SMALLINT;
+                return SMALLINT;
 
             case INT:
-                return QueryDataType.INT;
+                return INT;
 
             case BIGINT:
-                return QueryDataType.BIGINT;
+                return BIGINT;
 
             case DECIMAL:
                 if (converter == BigDecimalConverter.INSTANCE) {
-                    return QueryDataType.DECIMAL;
+                    return DECIMAL;
                 } else {
                     assert converter == BigIntegerConverter.INSTANCE;
 
-                    return QueryDataType.DECIMAL_BIG_INTEGER;
+                    return DECIMAL_BIG_INTEGER;
                 }
 
             case REAL:
-                return QueryDataType.REAL;
+                return REAL;
 
             case DOUBLE:
-                return QueryDataType.DOUBLE;
+                return DOUBLE;
 
             case DATE:
-                return QueryDataType.DATE;
+                return DATE;
 
             case TIME:
-                return QueryDataType.TIME;
+                return TIME;
 
             case TIMESTAMP:
-                return QueryDataType.TIMESTAMP;
+                return TIMESTAMP;
 
             case TIMESTAMP_WITH_TIMEZONE:
                 if (converter == DateConverter.INSTANCE) {
-                    return QueryDataType.TIMESTAMP_WITH_TZ_DATE;
+                    return TIMESTAMP_WITH_TZ_DATE;
                 } else if (converter == CalendarConverter.INSTANCE) {
-                    return QueryDataType.TIMESTAMP_WITH_TZ_CALENDAR;
+                    return TIMESTAMP_WITH_TZ_CALENDAR;
                 } else if (converter == InstantConverter.INSTANCE) {
-                    return QueryDataType.TIMESTAMP_WITH_TZ_INSTANT;
+                    return TIMESTAMP_WITH_TZ_INSTANT;
                 } else if (converter == OffsetDateTimeConverter.INSTANCE) {
-                    return QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME;
+                    return TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME;
                 } else {
                     assert converter == ZonedDateTimeConverter.INSTANCE;
 
-                    return QueryDataType.TIMESTAMP_WITH_TZ_ZONED_DATE_TIME;
+                    return TIMESTAMP_WITH_TZ_ZONED_DATE_TIME;
                 }
 
             case OBJECT:
-                return QueryDataType.OBJECT;
+                return OBJECT;
 
             default:
                 assert typeFamily == QueryDataTypeFamily.LATE;
@@ -181,46 +209,46 @@ public final class QueryDataTypeUtils {
     public static QueryDataType resolveTypeForTypeFamily(QueryDataTypeFamily typeFamily) {
         switch (typeFamily) {
             case VARCHAR:
-                return QueryDataType.VARCHAR;
+                return VARCHAR;
 
             case BIT:
-                return QueryDataType.BIT;
+                return BIT;
 
             case TINYINT:
-                return QueryDataType.TINYINT;
+                return TINYINT;
 
             case SMALLINT:
-                return QueryDataType.SMALLINT;
+                return SMALLINT;
 
             case INT:
-                return QueryDataType.INT;
+                return INT;
 
             case BIGINT:
-                return QueryDataType.BIGINT;
+                return BIGINT;
 
             case DECIMAL:
-                return QueryDataType.DECIMAL;
+                return DECIMAL;
 
             case REAL:
-                return QueryDataType.REAL;
+                return REAL;
 
             case DOUBLE:
-                return QueryDataType.DOUBLE;
+                return DOUBLE;
 
             case DATE:
-                return QueryDataType.DATE;
+                return DATE;
 
             case TIME:
-                return QueryDataType.TIME;
+                return TIME;
 
             case TIMESTAMP:
-                return QueryDataType.TIMESTAMP;
+                return TIMESTAMP;
 
             case TIMESTAMP_WITH_TIMEZONE:
-                return QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME;
+                return TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME;
 
             case OBJECT:
-                return QueryDataType.OBJECT;
+                return OBJECT;
 
             default:
                 assert typeFamily == QueryDataTypeFamily.LATE;
@@ -240,12 +268,12 @@ public final class QueryDataTypeUtils {
             throw new IllegalArgumentException("Precision cannot be zero.");
         }
 
-        if (precision == QueryDataType.PRECISION_UNLIMITED) {
-            return QueryDataType.DECIMAL;
-        } else if (precision <= QueryDataType.PRECISION_BIGINT) {
+        if (precision == PRECISION_UNLIMITED) {
+            return DECIMAL;
+        } else if (precision <= PRECISION_BIGINT) {
             return INTEGER_TYPES[precision];
         } else {
-            return QueryDataType.DECIMAL;
+            return DECIMAL;
         }
     }
 
@@ -253,6 +281,13 @@ public final class QueryDataTypeUtils {
         int res = Integer.compare(first.getTypeFamily().getPrecedence(), second.getTypeFamily().getPrecedence());
 
         if (res == 0) {
+            // Only types from the same type family may have the same precedence.
+            assert first.getTypeFamily() == second.getTypeFamily();
+
+            // Types from the same family either all have unlimited precision, or both have non-unlimited precision.
+            assert (first.getPrecision() != PRECISION_UNLIMITED && second.getPrecision() != PRECISION_UNLIMITED)
+                || (first.getPrecision() == PRECISION_UNLIMITED && second.getPrecision() == PRECISION_UNLIMITED);
+
             res = Integer.compare(first.getPrecision(), second.getPrecision());
         }
 
