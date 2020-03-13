@@ -2,14 +2,15 @@
 
 This repository contains a plugin which provides the automatic Hazelcast member discovery in the Amazon Web Services Platform.
 
-***NOTE:*** *hazelcast-cloud module has been renamed as hazelcast-aws module (starting with Hazelcast 3.7.3). If you want to use AWS Discovery, you should add the library hazelcast-aws JAR to your environment.*
-
-***NOTE:*** *hazelcast-aws 2.4* is compatible with *hazelcast 3.12+*, *hazelcast-aws 2.3* is compatible with *hazelcast 3.11.x*, for older hazelcast versions you need to use *hazelcast-aws 2.2*.
-
 ## Requirements
 
-- Hazelcast 3.6+
-- Linux Kernel 3.19+ (TCP connections may get stuck when used with older Kernel versions, resulting in undefined timeouts)
+* Hazelcast 3.6+
+* Linux Kernel 3.19+ (TCP connections may get stuck when used with older Kernel versions, resulting in undefined timeouts)
+* Versions compatibility:
+  * hazelcast-aws 3+ is compatible with hazelcast 4+
+  * hazelcast-aws 2.4 is compatible with hazelcast 3.12.x
+  * hazelcast-aws 2.3 is compatible with hazelcast 3.11.x
+  * hazelcast-aws 2.2 is compatible with older hazelcast versions
 
 ## Embedded mode
 
