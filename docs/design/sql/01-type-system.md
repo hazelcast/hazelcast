@@ -130,14 +130,14 @@ converted to the target type.
 | From/To | VARCHAR | BIT | TINYINT | SMALLINT | INT | BINGINT | DECIMAL | REAL | DOUBLE | DATE | TIME | TIMESTAMP | TIMESTAMP W/ TZ | OBJECT |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | **VARCHAR** | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` |
-| **BIT** | `E` | `I` | `I` | `I` | `I` | `I` | `I` | `I`  | `I`  |  |  |  |  | `I` |
-| **TINYINT** | `E` | `E` | `I` | `I` | `I` | `I` | `I` | `I` |`I`  |  |  |  |  | `I` |
-| **SMALLINT** | `E` | `E` | `E` | `I` | `I` | `I` | `I` | `I` | `I` |  |  |  |  | `I` |
-| **INT** | `E` | `E` | `E` | `E` | `I` | `I` | `I` | `I` | `I` |  |  |  |  | `I` |
-| **BIGINT** | `E` | `E` | `E` | `E` | `E` | `I` | `I` | `I` | `I` |  |  |  |  | `I` |
-| **DECIMAL** | `E` | `E` | `E` | `E` | `E` | `E` | `I` | `I` | `I` |  |  |  |  | `I` |
-| **REAL** | `E` | `E` | `E` | `E` | `E` | `E` | `E` | `I` | `I` |  |  |  |  | `I` |
-| **DOUBLE** | `E` | `E` | `E` | `E` | `E` | `E` | `E` | `E` | `I` |  |  |  |  | `I` |
+| **BIT** | `E` | `I` |  |  |  |  |  |  |  |  |  |  |  | `I` |
+| **TINYINT** | `E` |  | `I` | `I` | `I` | `I` | `I` | `I` |`I`  |  |  |  |  | `I` |
+| **SMALLINT** | `E` |  | `E` | `I` | `I` | `I` | `I` | `I` | `I` |  |  |  |  | `I` |
+| **INT** | `E` |  | `E` | `E` | `I` | `I` | `I` | `I` | `I` |  |  |  |  | `I` |
+| **BIGINT** | `E` |  | `E` | `E` | `E` | `I` | `I` | `I` | `I` |  |  |  |  | `I` |
+| **DECIMAL** | `E` |  | `E` | `E` | `E` | `E` | `I` | `I` | `I` |  |  |  |  | `I` |
+| **REAL** | `E` |  | `E` | `E` | `E` | `E` | `E` | `I` | `I` |  |  |  |  | `I` |
+| **DOUBLE** | `E` |  | `E` | `E` | `E` | `E` | `E` | `E` | `I` |  |  |  |  | `I` |
 | **TIME** | `E` |  |  |  |  |  |  |  |  |  | `I` | `I` | `I` | `I` |
 | **DATE** | `E` |  |  |  |  |  |  |  |  | `I` |  | `I` | `I` | `I` |
 | **TIMESTAMP** | `E` |  |  |  |  |  |  |  |  | `E` | `E` | `I` | `I` | `I` |
