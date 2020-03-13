@@ -29,7 +29,6 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.partition.PartitioningStrategy;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -38,6 +37,7 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.create
 import static com.hazelcast.jet.impl.util.ReflectionUtils.loadClass;
 import static com.hazelcast.jet.impl.util.ReflectionUtils.newInstance;
 import static java.lang.Thread.currentThread;
+import static java.util.Collections.emptyMap;
 
 public class DelegatingSerializationService extends AbstractSerializationService {
 
@@ -52,20 +52,27 @@ public class DelegatingSerializationService extends AbstractSerializationService
                                           AbstractSerializationService delegate) {
         super(delegate);
 
-        Map<Class<?>, SerializerAdapter> serializersByClass = new HashMap<>();
-        Map<Integer, SerializerAdapter> serializersById = new HashMap<>();
-        serializers.forEach((clazz, serializer) -> {
-            if (serializersById.containsKey(serializer.getTypeId())) {
-                Serializer registered = serializersById.get(serializer.getTypeId()).getImpl();
-                throw new IllegalStateException("Cannot register Serializer[" + serializer.getClass().getName() + "] - " +
-                        registered.getClass().getName() + " has been already registered for type ID: " +
-                        serializer.getTypeId());
-            }
+        Map<Class<?>, SerializerAdapter> serializersByClass;
+        Map<Integer, SerializerAdapter> serializersById;
+        if (serializers.isEmpty()) {
+            serializersByClass = emptyMap();
+            serializersById = emptyMap();
+        } else {
+            serializersByClass = new HashMap<>();
+            serializersById = new HashMap<>();
+            serializers.forEach((clazz, serializer) -> {
+                if (serializersById.containsKey(serializer.getTypeId())) {
+                    Serializer registered = serializersById.get(serializer.getTypeId()).getImpl();
+                    throw new IllegalStateException("Cannot register Serializer[" + serializer.getClass().getName()
+                            + "] - " + registered.getClass().getName() + " has been already registered for type ID: " +
+                            serializer.getTypeId());
+                }
 
-            SerializerAdapter serializerAdapter = createSerializerAdapter(serializer, this);
-            serializersByClass.put(clazz, serializerAdapter);
-            serializersById.put(serializerAdapter.getImpl().getTypeId(), serializerAdapter);
-        });
+                SerializerAdapter serializerAdapter = createSerializerAdapter(serializer, this);
+                serializersByClass.put(clazz, serializerAdapter);
+                serializersById.put(serializerAdapter.getImpl().getTypeId(), serializerAdapter);
+            });
+        }
         this.serializersByClass = serializersByClass;
         this.serializersById = serializersById;
 
@@ -75,28 +82,28 @@ public class DelegatingSerializationService extends AbstractSerializationService
     }
 
     @Override
-    public <B extends Data> B toData(Object o, DataType dataType) {
-        return delegate.toData(o, dataType);
+    public <B extends Data> B toData(Object object, DataType type) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
-    public <B extends Data> B toData(Object o, DataType dataType, PartitioningStrategy partitioningStrategy) {
-        return delegate.toData(o, dataType, partitioningStrategy);
+    public <B extends Data> B toData(Object object, DataType type, PartitioningStrategy strategy) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public <B extends Data> B convertData(Data data, DataType dataType) {
-        return delegate.convertData(data, dataType);
+        throw new UnsupportedOperationException();
     }
 
     @Override
-    public PortableReader createPortableReader(Data data) throws IOException {
-        return delegate.createPortableReader(data);
+    public PortableReader createPortableReader(Data data) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public PortableContext getPortableContext() {
-        return delegate.getPortableContext();
+        throw new UnsupportedOperationException();
     }
 
     @Override
