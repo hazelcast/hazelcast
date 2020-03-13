@@ -27,9 +27,12 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
+import java.util.AbstractMap.SimpleImmutableEntry;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 public class MapFetchEntriesMessageTask extends AbstractMapPartitionMessageTask<MapFetchEntriesCodec.RequestParameters> {
     public MapFetchEntriesMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -54,7 +57,23 @@ public class MapFetchEntriesMessageTask extends AbstractMapPartitionMessageTask<
         }
         MapEntriesWithCursor mapEntriesWithCursor = (MapEntriesWithCursor) response;
         return MapFetchEntriesCodec.encodeResponse(mapEntriesWithCursor.getNextTableIndexToReadFrom(),
-                                                   (List<Map.Entry<Data, Data>>) (Object) mapEntriesWithCursor.getBatch());
+                                                   serializeBatch(mapEntriesWithCursor));
+    }
+
+    private List<Entry<Data, Data>> serializeBatch(MapEntriesWithCursor mapEntriesWithCursor) {
+        if (mapEntriesWithCursor.getBatch().size() == 0) {
+            return Collections.emptyList();
+        }
+
+        if (mapEntriesWithCursor.getBatch().get(0).getValue() instanceof Data) {
+            return (List<Entry<Data, Data>>) (Object) mapEntriesWithCursor.getBatch();
+        }
+
+        List<Entry<Data, Data>> serializedBatch = new ArrayList<>(mapEntriesWithCursor.getBatch().size());
+        for (Entry<Data, Object> entry : mapEntriesWithCursor.getBatch()) {
+            serializedBatch.add(new SimpleImmutableEntry<>(entry.getKey(), serializationService.toData(entry.getValue())));
+        }
+        return serializedBatch;
     }
 
     @Override
