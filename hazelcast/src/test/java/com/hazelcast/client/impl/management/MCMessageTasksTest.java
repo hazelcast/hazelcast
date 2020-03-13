@@ -461,21 +461,15 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testShutdownClusterMessageTask() throws Exception {
+    public void testShutdownClusterMessageTask() {
         ClientInvocation invocation = new ClientInvocation(
                 getClientImpl(),
                 MCShutdownClusterCodec.encodeRequest(),
                 null
         );
 
-        ClientDelegatingFuture<MCShutdownClusterCodec.ResponseParameters> future = new ClientDelegatingFuture<>(
-                invocation.invoke(),
-                getClientImpl().getSerializationService(),
-                MCShutdownClusterCodec::decodeResponse
-        );
+        invocation.invoke();
 
-        MCShutdownClusterCodec.ResponseParameters response = future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
-        assertNotNull(response);
         assertTrueEventually(() -> assertFalse(member.getLifecycleService().isRunning()));
     }
 
