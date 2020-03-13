@@ -67,7 +67,7 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
         }
     };
 
-    private final AbstractClientInvocationService invocationService;
+    private final ClientInvocationServiceImpl invocationService;
     private final ResponseThread[] responseThreads;
     private final HazelcastClientInstanceImpl client;
 
@@ -76,7 +76,7 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
     private final boolean responseThreadsDynamic;
     private final ConcurrencyDetection concurrencyDetection;
 
-    public ClientResponseHandlerSupplier(AbstractClientInvocationService invocationService,
+    public ClientResponseHandlerSupplier(ClientInvocationServiceImpl invocationService,
                                          ConcurrencyDetection concurrencyDetection) {
         this.invocationService = invocationService;
         this.concurrencyDetection = concurrencyDetection;

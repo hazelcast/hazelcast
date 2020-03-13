@@ -21,7 +21,6 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.cluster.Member;
 
-import java.io.IOException;
 import java.util.UUID;
 import java.util.function.Consumer;
 
@@ -33,13 +32,13 @@ import java.util.function.Consumer;
  */
 public interface ClientInvocationService {
 
-    void invokeOnConnection(ClientInvocation invocation, ClientConnection connection) throws IOException;
+    boolean invokeOnConnection(ClientInvocation invocation, ClientConnection connection);
 
-    void invokeOnPartitionOwner(ClientInvocation invocation, int partitionId) throws IOException;
+    boolean invokeOnPartitionOwner(ClientInvocation invocation, int partitionId);
 
-    void invokeOnRandomTarget(ClientInvocation invocation) throws IOException;
+    boolean invokeOnRandomTarget(ClientInvocation invocation);
 
-    void invokeOnTarget(ClientInvocation invocation, UUID uuid) throws IOException;
+    boolean invokeOnTarget(ClientInvocation invocation, UUID uuid);
 
     boolean isRedoOperation();
 

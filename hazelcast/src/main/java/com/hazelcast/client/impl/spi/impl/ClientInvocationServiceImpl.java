@@ -21,9 +21,13 @@ import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.ClientLocalBackupListenerCodec;
 import com.hazelcast.client.impl.spi.ClientInvocationService;
+import com.hazelcast.client.impl.spi.ClientListenerService;
+import com.hazelcast.client.impl.spi.ClientPartitionService;
 import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.impl.executionservice.TaskScheduler;
@@ -33,6 +37,7 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.io.IOException;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Consumer;
@@ -50,30 +55,51 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_PR
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
-public abstract class AbstractClientInvocationService implements ClientInvocationService {
+public class ClientInvocationServiceImpl implements ClientInvocationService {
+
+    private static final ListenerMessageCodec BACKUP_LISTENER = new ListenerMessageCodec() {
+        @Override
+        public ClientMessage encodeAddRequest(boolean localOnly) {
+            return ClientLocalBackupListenerCodec.encodeRequest();
+        }
+
+        @Override
+        public UUID decodeAddResponse(ClientMessage clientMessage) {
+            return ClientLocalBackupListenerCodec.decodeResponse(clientMessage).response;
+        }
+
+        @Override
+        public ClientMessage encodeRemoveRequest(UUID realRegistrationId) {
+            return null;
+        }
+
+        @Override
+        public boolean decodeRemoveResponse(ClientMessage clientMessage) {
+            return false;
+        }
+    };
 
     private static final HazelcastProperty CLEAN_RESOURCES_MILLIS
             = new HazelcastProperty("hazelcast.client.internal.clean.resources.millis", 100, MILLISECONDS);
 
-    protected final HazelcastClientInstanceImpl client;
-
-    protected ClientConnectionManager connectionManager;
-    protected ClientPartitionServiceImpl partitionService;
+    final HazelcastClientInstanceImpl client;
     final ILogger invocationLogger;
+    private volatile boolean isShutdown;
 
     @Probe(name = CLIENT_METRIC_INVOCATIONS_PENDING_CALLS, level = MANDATORY)
-    private ConcurrentMap<Long, ClientInvocation> invocations = new ConcurrentHashMap<>();
-
-    private ClientResponseHandlerSupplier responseHandlerSupplier;
-
-    private volatile boolean isShutdown;
+    private final ConcurrentMap<Long, ClientInvocation> invocations = new ConcurrentHashMap<>();
+    private final ClientResponseHandlerSupplier responseHandlerSupplier;
     private final long invocationTimeoutMillis;
     private final long invocationRetryPauseMillis;
     private final CallIdSequence callIdSequence;
     private final boolean shouldFailOnIndeterminateOperationState;
     private final int operationBackupTimeoutMillis;
+    private final boolean isBackupAckToClientEnabled;
+    private final ClientConnectionManager connectionManager;
+    private final ClientPartitionService partitionService;
+    private final boolean isSmartRoutingEnabled;
 
-    AbstractClientInvocationService(HazelcastClientInstanceImpl client) {
+    public ClientInvocationServiceImpl(HazelcastClientInstanceImpl client) {
         this.client = client;
         this.invocationLogger = client.getLoggingService().getLogger(ClientInvocationService.class);
         this.invocationTimeoutMillis = initInvocationTimeoutMillis();
@@ -88,6 +114,10 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
         this.operationBackupTimeoutMillis = properties.getInteger(OPERATION_BACKUP_TIMEOUT_MILLIS);
         this.shouldFailOnIndeterminateOperationState = properties.getBoolean(FAIL_ON_INDETERMINATE_OPERATION_STATE);
         client.getMetricsRegistry().registerStaticMetrics(this, CLIENT_PREFIX_INVOCATIONS);
+        this.isSmartRoutingEnabled = client.getClientConfig().getNetworkConfig().isSmartRouting();
+        this.isBackupAckToClientEnabled = isSmartRoutingEnabled && client.getClientConfig().isBackupAckToClientEnabled();
+        this.connectionManager = client.getConnectionManager();
+        this.partitionService = client.getClientPartitionService();
     }
 
     private long initInvocationRetryPauseMillis() {
@@ -120,14 +150,61 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
         return callIdSequence;
     }
 
+    public void addBackupListener() {
+        if (isBackupAckToClientEnabled) {
+            ClientListenerService listenerService = client.getListenerService();
+            listenerService.registerListener(BACKUP_LISTENER, new BackupEventHandler());
+        }
+    }
+
     public void start() {
-        connectionManager = client.getConnectionManager();
-        partitionService = (ClientPartitionServiceImpl) client.getClientPartitionService();
         responseHandlerSupplier.start();
         TaskScheduler executionService = client.getTaskScheduler();
         long cleanResourcesMillis = client.getProperties().getPositiveMillisOrDefault(CLEAN_RESOURCES_MILLIS);
         executionService.scheduleWithRepetition(new CleanResourcesTask(), cleanResourcesMillis,
                 cleanResourcesMillis, MILLISECONDS);
+    }
+
+    @Override
+    public boolean invokeOnPartitionOwner(ClientInvocation invocation, int partitionId) {
+        UUID partitionOwner = partitionService.getPartitionOwner(partitionId);
+        if (partitionOwner == null) {
+            if (invocationLogger.isFinestEnabled()) {
+                invocationLogger.finest("Partition owner is not assigned yet");
+            }
+            return false;
+        }
+        return invokeOnTarget(invocation, partitionOwner);
+    }
+
+    @Override
+    public boolean invokeOnRandomTarget(ClientInvocation invocation) {
+        Connection connection = connectionManager.getRandomConnection();
+        if (connection == null) {
+            if (invocationLogger.isFinestEnabled()) {
+                invocationLogger.finest("No connection found to invoke");
+            }
+            return false;
+        }
+        return send(invocation, (ClientConnection) connection);
+    }
+
+    @Override
+    public boolean invokeOnTarget(ClientInvocation invocation, UUID uuid) {
+        assert (uuid != null);
+        Connection connection = connectionManager.getConnection(uuid);
+        if (connection == null) {
+            if (invocationLogger.isFinestEnabled()) {
+                invocationLogger.finest("Client is not connected to target : " + uuid);
+            }
+            return false;
+        }
+        return send(invocation, (ClientConnection) connection);
+    }
+
+    @Override
+    public boolean invokeOnConnection(ClientInvocation invocation, ClientConnection connection) {
+        return send(invocation, connection);
     }
 
     @Override
@@ -140,18 +217,27 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
         return client.getClientConfig().getNetworkConfig().isRedoOperation();
     }
 
-    protected final void send(ClientInvocation invocation, ClientConnection connection) throws IOException {
+    private boolean send(ClientInvocation invocation, ClientConnection connection) {
         if (isShutdown) {
             throw new HazelcastClientNotActiveException();
         }
+
+        if (isBackupAckToClientEnabled) {
+            invocation.getClientMessage().getStartFrame().flags |= ClientMessage.BACKUP_AWARE_FLAG;
+        }
+
         registerInvocation(invocation, connection);
 
         ClientMessage clientMessage = invocation.getClientMessage();
         if (!writeToConnection(connection, clientMessage)) {
-            throw new IOException("Packet not sent to " + connection.getEndPoint() + " " + clientMessage);
+            if (invocationLogger.isFinestEnabled()) {
+                invocationLogger.finest("Packet not sent to " + connection.getEndPoint() + " " + clientMessage);
+            }
+            return false;
         }
 
         invocation.setSendConnection(connection);
+        return true;
     }
 
     private boolean writeToConnection(ClientConnection connection, ClientMessage clientMessage) {
@@ -159,7 +245,6 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
     }
 
     private void registerInvocation(ClientInvocation clientInvocation, ClientConnection connection) {
-
         ClientMessage clientMessage = clientInvocation.getClientMessage();
         long correlationId = clientMessage.getCorrelationId();
         invocations.put(correlationId, clientInvocation);
@@ -198,8 +283,11 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
         return shouldFailOnIndeterminateOperationState;
     }
 
-    private class CleanResourcesTask implements Runnable {
+    public boolean isSmartRoutingEnabled() {
+        return isSmartRoutingEnabled;
+    }
 
+    private class CleanResourcesTask implements Runnable {
         @Override
         public void run() {
             for (ClientInvocation invocation : invocations.values()) {
@@ -221,6 +309,23 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
         private void notifyException(ClientInvocation invocation, ClientConnection connection) {
             Exception ex = new TargetDisconnectedException(connection.getCloseReason(), connection.getCloseCause());
             invocation.notifyException(ex);
+        }
+    }
+
+    public class BackupEventHandler extends ClientLocalBackupListenerCodec.AbstractEventHandler
+            implements EventHandler<ClientMessage> {
+
+        @Override
+        public void handleBackupEvent(long sourceInvocationCorrelationId) {
+            ClientInvocation invocation = getInvocation(sourceInvocationCorrelationId);
+            if (invocation == null) {
+                if (invocationLogger.isFinestEnabled()) {
+                    invocationLogger.finest("Invocation not found for backup event, invocation id "
+                            + sourceInvocationCorrelationId);
+                }
+                return;
+            }
+            invocation.notifyBackupComplete();
         }
     }
 }
