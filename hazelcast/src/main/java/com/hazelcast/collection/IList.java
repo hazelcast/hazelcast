@@ -38,7 +38,6 @@ public interface IList<E> extends List<E>, ICollection<E> {
 
     /**
      * Returns {@link LocalListStats} for this collection.
-     * LocalCollectionStats is the statistics for this collection.
      *
      * @return this collection's local statistics.
      */

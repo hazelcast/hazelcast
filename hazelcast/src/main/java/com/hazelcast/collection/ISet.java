@@ -39,8 +39,7 @@ import com.hazelcast.config.SplitBrainProtectionConfig;
 public interface ISet<E> extends Set<E>, ICollection<E> {
 
     /**
-     * Returns {@link LocalCollectionStats} for this collection.
-     * LocalCollectionStats is the statistics for this collection.
+     * Returns {@link LocalSetStats} for this collection.
      *
      * @return this collection's local statistics.
      */
