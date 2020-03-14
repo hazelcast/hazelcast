@@ -65,6 +65,18 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         return containsKey(key, false);
     }
 
+    @Override
+    public boolean containsValue(Object value) {
+        checkTransactionState();
+
+        for(TxnValueWrapper txnValueWrapper: txMap.values()){
+            if(txnValueWrapper.value.equals(value))
+                return true;
+        }
+
+        return false;
+    }
+
     public boolean containsKey(Object key, boolean skipNearCacheLookup) {
         checkTransactionState();
         checkNotNull(key, "key can't be null");

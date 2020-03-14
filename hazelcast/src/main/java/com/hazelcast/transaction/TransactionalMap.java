@@ -78,6 +78,8 @@ public interface TransactionalMap<K, V> extends TransactionalObject, BaseMap<K, 
     @Override
     boolean containsKey(Object key);
 
+    boolean containsValue(Object value);
+
     /**
      * Transactional implementation of {@link IMap#get(Object)}.
      *
