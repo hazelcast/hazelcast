@@ -38,7 +38,7 @@ compile 'com.hazelcast.jet:hazelcast-jet:{jet-version}'
 
 If you are setting up Jet as a standalone cluster, download the
 https://jet.hazelcast.org/download[distribution package] of Hazelcast Jet
-and use the `bin/start-jet` command to start an instance.
+and use the `bin/jet-start` command to start an instance.
 
 The distribution package contains a ready-made JAR,
 `examples/hello-world.jar`, that you can use to run a simple smoke
