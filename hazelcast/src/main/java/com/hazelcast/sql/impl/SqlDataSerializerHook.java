@@ -74,6 +74,8 @@ public class SqlDataSerializerHook implements DataSerializerHook {
 
         constructors[QUERY_DATA_TYPE] = arg -> new QueryDataType();
 
+        constructors[QUERY_ID] = arg -> new QueryId();
+
         constructors[ROW_HEAP] = arg -> new HeapRow();
         constructors[ROW_JOIN] = arg -> new JoinRow();
         constructors[ROW_BATCH_LIST] = arg -> new ListRowBatch();
@@ -85,8 +87,6 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[OPERATION_CANCEL] = arg -> new QueryCancelOperation();
         constructors[OPERATION_CHECK] = arg -> new QueryCheckOperation();
         constructors[OPERATION_CHECK_RESPONSE] = arg -> new QueryCheckResponseOperation();
-
-        constructors[QUERY_ID] = arg -> new QueryId();
 
         return new ArrayDataSerializableFactory(constructors);
     }

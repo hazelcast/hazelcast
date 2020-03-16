@@ -22,7 +22,7 @@ import java.time.OffsetDateTime;
  * Converter for {@link OffsetDateTime} type.
  */
 public final class OffsetDateTimeConverter extends AbstractTimestampWithTimezoneConverter {
-    /** Singleton instance. */
+
     public static final OffsetDateTimeConverter INSTANCE = new OffsetDateTimeConverter();
 
     private OffsetDateTimeConverter() {

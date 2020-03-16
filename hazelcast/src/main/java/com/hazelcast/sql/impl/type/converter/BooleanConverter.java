@@ -22,7 +22,7 @@ import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
  * Converter for {@link java.lang.Boolean} type.
  */
 public final class BooleanConverter extends Converter {
-    /** Singleton instance. */
+
     public static final BooleanConverter INSTANCE = new BooleanConverter();
 
     protected static final String TRUE = "true";

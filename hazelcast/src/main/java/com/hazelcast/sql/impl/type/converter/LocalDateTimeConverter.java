@@ -29,7 +29,7 @@ import java.time.ZoneOffset;
  * Converter for {@link LocalDateTime} type.
  */
 public final class LocalDateTimeConverter extends Converter {
-    /** Singleton instance. */
+
     public static final LocalDateTimeConverter INSTANCE = new LocalDateTimeConverter();
 
     private LocalDateTimeConverter() {

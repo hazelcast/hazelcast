@@ -60,7 +60,7 @@ public class ComparisonPredicate extends BiExpression<Boolean> {
     }
 
     public static ComparisonPredicate create(Expression<?> first, Expression<?> second, ComparisonMode comparisonMode) {
-        QueryDataType type = QueryDataTypeUtils.bigger(first.getType(), second.getType());
+        QueryDataType type = QueryDataTypeUtils.withHigherPrecedence(first.getType(), second.getType());
 
         Expression<?> coercedFirst = CastExpression.coerceExpression(first, type.getTypeFamily());
         Expression<?> coercedSecond = CastExpression.coerceExpression(second, type.getTypeFamily());
@@ -102,7 +102,7 @@ public class ComparisonPredicate extends BiExpression<Boolean> {
             operand1Type = QueryDataTypeUtils.resolveType(operand1);
             operand2Type = QueryDataTypeUtils.resolveType(operand2);
 
-            type = QueryDataTypeUtils.bigger(operand1Type, operand2Type);
+            type = QueryDataTypeUtils.withHigherPrecedence(operand1Type, operand2Type);
 
             operand1 = CastExpression.coerceValue(operand1, operand1Type, type);
             operand2 = CastExpression.coerceValue(operand2, operand2Type, type);

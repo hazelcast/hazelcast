@@ -23,7 +23,7 @@ import java.math.BigInteger;
  * Converter for {@link java.math.BigInteger} type.
  */
 public final class BigIntegerConverter extends AbstractDecimalConverter {
-    /** Singleton instance. */
+
     public static final BigIntegerConverter INSTANCE = new BigIntegerConverter();
 
     private BigIntegerConverter() {

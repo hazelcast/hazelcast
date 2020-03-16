@@ -26,7 +26,7 @@ import java.time.OffsetDateTime;
  * Converter for {@link java.time.LocalTime} type.
  */
 public final class LocalTimeConverter extends AbstractTemporalConverter {
-    /** Singleton instance. */
+
     public static final LocalTimeConverter INSTANCE = new LocalTimeConverter();
 
     private LocalTimeConverter() {

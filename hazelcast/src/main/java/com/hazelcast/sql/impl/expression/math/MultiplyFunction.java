@@ -51,7 +51,7 @@ public class MultiplyFunction<T> extends BiExpressionWithType<T> {
 
         QueryDataType resultType = MathFunctionUtils.inferMultiplyResultType(operand1Type, operand2Type);
 
-        if (QueryDataTypeUtils.bigger(operand1Type, operand2Type) == operand1Type) {
+        if (QueryDataTypeUtils.withHigherPrecedence(operand1Type, operand2Type) == operand1Type) {
             return new MultiplyFunction<>(operand1, operand2, resultType);
         } else {
             return new MultiplyFunction<>(operand2, operand1, resultType);
@@ -96,7 +96,7 @@ public class MultiplyFunction<T> extends BiExpressionWithType<T> {
         }
 
         if (resultType.getTypeFamily() == INTERVAL_YEAR_MONTH || resultType.getTypeFamily() == INTERVAL_DAY_SECOND) {
-            if (wasLate && QueryDataTypeUtils.bigger(operand1Type, operand2Type) == operand2Type) {
+            if (wasLate && QueryDataTypeUtils.withHigherPrecedence(operand1Type, operand2Type) == operand2Type) {
                 return doMultiplyInterval(operand2, operand1, operand1Type, resultType);
             } else {
                 return doMultiplyInterval(operand1, operand2, operand2Type, resultType);

@@ -151,7 +151,7 @@ public class CaseExpression<T> implements Expression<T> {
 
             QueryDataType type = expression.getType();
 
-            if (winner == null || QueryDataTypeUtils.bigger(type, winner) == type) {
+            if (winner == null || QueryDataTypeUtils.withHigherPrecedence(type, winner) == type) {
                 winner = type;
             }
         }

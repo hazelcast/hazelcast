@@ -185,24 +185,24 @@ public class QueryDataTypeTest {
 
     @Test
     public void testBigger() {
-        checkBigger(QueryDataType.VARCHAR, QueryDataType.LATE);
+        checkPrecedence(QueryDataType.VARCHAR, QueryDataType.LATE);
 
-        checkBigger(QueryDataType.BIT, QueryDataType.VARCHAR);
-        checkBigger(QueryDataType.TINYINT, QueryDataType.BIT);
-        checkBigger(QueryDataType.SMALLINT, QueryDataType.TINYINT);
-        checkBigger(QueryDataType.INT, QueryDataType.SMALLINT);
-        checkBigger(QueryDataType.BIGINT, QueryDataType.INT);
-        checkBigger(QueryDataType.DECIMAL, QueryDataType.BIGINT);
-        checkBigger(QueryDataType.REAL, QueryDataType.DECIMAL);
-        checkBigger(QueryDataType.DOUBLE, QueryDataType.REAL);
+        checkPrecedence(QueryDataType.BIT, QueryDataType.VARCHAR);
+        checkPrecedence(QueryDataType.TINYINT, QueryDataType.BIT);
+        checkPrecedence(QueryDataType.SMALLINT, QueryDataType.TINYINT);
+        checkPrecedence(QueryDataType.INT, QueryDataType.SMALLINT);
+        checkPrecedence(QueryDataType.BIGINT, QueryDataType.INT);
+        checkPrecedence(QueryDataType.DECIMAL, QueryDataType.BIGINT);
+        checkPrecedence(QueryDataType.REAL, QueryDataType.DECIMAL);
+        checkPrecedence(QueryDataType.DOUBLE, QueryDataType.REAL);
 
-        checkBigger(QueryDataType.TIME, QueryDataType.DOUBLE);
-        checkBigger(QueryDataType.DATE, QueryDataType.TIME);
-        checkBigger(QueryDataType.TIMESTAMP, QueryDataType.DATE);
-        checkBigger(QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME, QueryDataType.TIMESTAMP);
+        checkPrecedence(QueryDataType.TIME, QueryDataType.DOUBLE);
+        checkPrecedence(QueryDataType.DATE, QueryDataType.TIME);
+        checkPrecedence(QueryDataType.TIMESTAMP, QueryDataType.DATE);
+        checkPrecedence(QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME, QueryDataType.TIMESTAMP);
 
         for (int i = 1; i < QueryDataType.PRECISION_BIGINT; i++) {
-            checkBigger(QueryDataTypeUtils.integerType(i + 1), QueryDataTypeUtils.integerType(i));
+            checkPrecedence(QueryDataTypeUtils.integerType(i + 1), QueryDataTypeUtils.integerType(i));
         }
     }
 
@@ -244,11 +244,11 @@ public class QueryDataTypeTest {
         assertSame(expectedType, QueryDataTypeUtils.resolveTypeForTypeFamily(typeFamily));
     }
 
-    private void checkBigger(QueryDataType bigger, QueryDataType smaller) {
-        assertSame(bigger, QueryDataTypeUtils.bigger(bigger, smaller));
+    private void checkPrecedence(QueryDataType bigger, QueryDataType smaller) {
+        assertSame(bigger, QueryDataTypeUtils.withHigherPrecedence(bigger, smaller));
 
-        assertSame(bigger, QueryDataTypeUtils.bigger(bigger, bigger));
-        assertSame(smaller, QueryDataTypeUtils.bigger(smaller, smaller));
+        assertSame(bigger, QueryDataTypeUtils.withHigherPrecedence(bigger, bigger));
+        assertSame(smaller, QueryDataTypeUtils.withHigherPrecedence(smaller, smaller));
     }
 
     private static final class CustomClass {

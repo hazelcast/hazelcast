@@ -59,7 +59,7 @@ public final class MathFunctionUtils {
 
         // Pick the bigger type to simplify further logic.
         if (commutative) {
-            QueryDataType biggerType = QueryDataTypeUtils.bigger(type1, type2);
+            QueryDataType biggerType = QueryDataTypeUtils.withHigherPrecedence(type1, type2);
 
             if (biggerType == type2) {
                 type2 = type1;
@@ -85,7 +85,7 @@ public final class MathFunctionUtils {
             throw HazelcastSqlException.error("Operand 2 is not numeric.");
         }
 
-        QueryDataType biggerType = QueryDataTypeUtils.bigger(type1, type2);
+        QueryDataType biggerType = QueryDataTypeUtils.withHigherPrecedence(type1, type2);
 
         return expandPrecision(biggerType);
     }
@@ -128,7 +128,7 @@ public final class MathFunctionUtils {
         }
 
         // Pick the bigger type to simplify further logic.
-        QueryDataType biggerType = QueryDataTypeUtils.bigger(type1, type2);
+        QueryDataType biggerType = QueryDataTypeUtils.withHigherPrecedence(type1, type2);
 
         if (biggerType == type2) {
             type2 = type1;

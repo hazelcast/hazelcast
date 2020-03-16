@@ -48,7 +48,7 @@ public class PlusFunction<T> extends BiExpressionWithType<T> {
 
         QueryDataType resultType = MathFunctionUtils.inferPlusMinusResultType(operand1Type, operand2Type, true);
 
-        if (QueryDataTypeUtils.bigger(operand1Type, operand2Type) == operand1Type) {
+        if (QueryDataTypeUtils.withHigherPrecedence(operand1Type, operand2Type) == operand1Type) {
             return new PlusFunction<>(operand1, operand2, resultType);
         } else {
             return new PlusFunction<>(operand2, operand1, resultType);
@@ -92,7 +92,7 @@ public class PlusFunction<T> extends BiExpressionWithType<T> {
 
         // Handle temporal.
         if (resultType.getTypeFamily().isTemporal()) {
-            if (wasLate && QueryDataTypeUtils.bigger(operand1Type, operand2Type) == operand2Type) {
+            if (wasLate && QueryDataTypeUtils.withHigherPrecedence(operand1Type, operand2Type) == operand2Type) {
                 return doPlusTemporal(operand1, operand1Type, operand2, operand2Type, resultType);
             } else {
                 return doPlusTemporal(operand2, operand2Type, operand1, operand1Type, resultType);

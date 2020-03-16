@@ -23,7 +23,7 @@ import java.time.ZonedDateTime;
  * Converter for {@link ZonedDateTime} type.
  */
 public final class ZonedDateTimeConverter extends AbstractTimestampWithTimezoneConverter {
-    /** Singleton instance. */
+
     public static final ZonedDateTimeConverter INSTANCE = new ZonedDateTimeConverter();
 
     private ZonedDateTimeConverter() {

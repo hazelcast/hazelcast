@@ -24,7 +24,7 @@ import java.util.UUID;
 /**
  * Exception occurred during SQL query execution.
  */
-public class HazelcastSqlException extends HazelcastException {
+public final class HazelcastSqlException extends HazelcastException {
 
     private static final long serialVersionUID = -1153559924521087582L;
 
@@ -125,7 +125,10 @@ public class HazelcastSqlException extends HazelcastException {
 
     @Override
     public String getMessage() {
-        // TODO: Override getMessage to output originating member ID as well.
-        return super.getMessage() + " (error code " + code + ')';
+        if (originatingMemberId != null) {
+            return super.getMessage() + " (code=" + code + ", originatingMemberId=" + originatingMemberId + ')';
+        } else {
+            return super.getMessage() + " (code=" + code + ')';
+        }
     }
 }
