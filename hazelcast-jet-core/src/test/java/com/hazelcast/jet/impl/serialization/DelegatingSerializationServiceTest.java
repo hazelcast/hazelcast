@@ -19,9 +19,9 @@ package com.hazelcast.jet.impl.serialization;
 import com.google.common.collect.ImmutableMap;
 import com.hazelcast.internal.serialization.impl.AbstractSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import org.junit.Test;
@@ -61,9 +61,9 @@ public class DelegatingSerializationServiceTest {
         // When
         // Then
         assertThatThrownBy(() -> service.serializerFor(new Value()))
-                .isInstanceOf(HazelcastSerializationException.class);
+                .isInstanceOf(JetException.class);
         assertThatThrownBy(() -> service.serializerFor(Integer.MAX_VALUE))
-                .isInstanceOf(HazelcastSerializationException.class);
+                .isInstanceOf(JetException.class);
     }
 
     @Test
@@ -77,6 +77,16 @@ public class DelegatingSerializationServiceTest {
         // Then
         assertThat(service.serializerFor(CONSTANT_TYPE_BYTE).getImpl()).isInstanceOf(CustomByteSerializer.class);
         assertThat(service.serializerFor(Byte.valueOf((byte) 1)).getImpl()).isInstanceOf(CustomByteSerializer.class);
+    }
+
+    @Test
+    public void when_triesToFindSerializerForNullObject_then_Succeeds() {
+        // Given
+        DelegatingSerializationService service = new DelegatingSerializationService(emptyMap(), DELEGATE);
+
+        // When
+        // Then
+        assertThat(service.serializerFor(null).getImpl()).isNotNull();
     }
 
     private static class Value {

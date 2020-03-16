@@ -24,11 +24,13 @@ import com.hazelcast.internal.serialization.PortableContext;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.AbstractSerializationService;
 import com.hazelcast.internal.serialization.impl.SerializerAdapter;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.partition.PartitioningStrategy;
 
+import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -108,31 +110,60 @@ public class DelegatingSerializationService extends AbstractSerializationService
 
     @Override
     public SerializerAdapter serializerFor(Object object) {
-        Class<?> clazz = object.getClass();
-        SerializerAdapter serializer = serializersByClass.get(clazz);
+        Class<?> clazz = object == null ? null : object.getClass();
+
+        SerializerAdapter serializer = null;
+        if (clazz != null) {
+            serializer = serializersByClass.get(clazz);
+        }
         if (serializer == null) {
-            serializer = delegate.serializerFor(object);
-            if (serializer == null) {
-                throw active ?
-                        new HazelcastSerializationException("There is no suitable serializer for " + clazz) :
-                        new HazelcastInstanceNotActiveException();
+            try {
+                serializer = delegate.serializerFor(object);
+            } catch (HazelcastSerializationException hse) {
+                throw serializationException(clazz, hse);
             }
         }
+        if (serializer == null) {
+            throw active ? serializationException(clazz) : new HazelcastInstanceNotActiveException();
+        }
         return serializer;
+    }
+
+    private RuntimeException serializationException(@Nullable Class<?> clazz, Throwable t) {
+        return new JetException("Unable to serialize instance of " + clazz + ": " +
+                t.getMessage() + " - Note: You can register a serializer using JobConfig.registerSerializer()", t);
+    }
+
+    private RuntimeException serializationException(@Nullable Class<?> clazz) {
+        return new JetException("There is no suitable serializer for " + clazz +
+                ", did you register it with JobConfig.registerSerializer()?");
     }
 
     @Override
     public SerializerAdapter serializerFor(int typeId) {
         SerializerAdapter serializer = serializersById.get(typeId);
         if (serializer == null) {
-            serializer = delegate.serializerFor(typeId);
-            if (serializer == null) {
-                throw active ?
-                        newHazelcastSerializationException(typeId) :
-                        new HazelcastInstanceNotActiveException();
+            try {
+                serializer = delegate.serializerFor(typeId);
+            } catch (HazelcastSerializationException hse) {
+                throw serializationException(typeId, hse);
             }
         }
+        if (serializer == null) {
+            throw active ? serializationException(typeId) : new HazelcastInstanceNotActiveException();
+        }
         return serializer;
+    }
+
+    private RuntimeException serializationException(int typeId, Throwable t) {
+        return new JetException("Unable to deserialize object for type " + typeId + ": " +
+                t.getMessage(), t);
+    }
+
+    private RuntimeException serializationException(int typeId) {
+        return new JetException("There is no suitable de-serializer for type " + typeId + ". "
+                + "This exception is likely caused by differences in the serialization configuration between members "
+                + "or between clients and members.");
     }
 
     @Override
@@ -151,11 +182,5 @@ public class DelegatingSerializationService extends AbstractSerializationService
             serializers.put(loadClass(classLoader, entry.getKey()), newInstance(classLoader, entry.getValue()));
         }
         return new DelegatingSerializationService(serializers, (AbstractSerializationService) serializationService);
-    }
-
-    private static HazelcastSerializationException newHazelcastSerializationException(int typeId) {
-        return new HazelcastSerializationException("There is no suitable de-serializer for type " + typeId + ". "
-                + "This exception is likely caused by differences in the serialization configuration between members "
-                + "or between clients and members.");
     }
 }
