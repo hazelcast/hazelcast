@@ -25,7 +25,7 @@ import com.hazelcast.sql.impl.worker.QueryFragmentWorkerPool;
 import java.util.List;
 
 /**
- * Context of the running query.
+ * Context of a running query fragment.
  */
 public class QueryFragmentContext {
     /** Current query context. */
@@ -44,6 +44,8 @@ public class QueryFragmentContext {
         QueryFragmentWorkerPool fragmentPool,
         QueryResultConsumer rootConsumer
     ) {
+        assert arguments != null;
+
         this.state = state;
         this.arguments = arguments;
         this.fragmentPool = fragmentPool;
@@ -70,12 +72,10 @@ public class QueryFragmentContext {
         return rootConsumer;
     }
 
-    public Object getArgument(int idx) {
-        if (arguments == null || idx >= arguments.size()) {
-            throw new IllegalArgumentException("Argument not found: " + idx);
-        }
+    public Object getArgument(int index) {
+        assert index >= 0 && index <= arguments.size();
 
-        return arguments.get(idx);
+        return arguments.get(index);
     }
 
     public void reschedule() {

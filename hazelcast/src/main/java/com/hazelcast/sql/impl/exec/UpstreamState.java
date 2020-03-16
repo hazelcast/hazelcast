@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.exec;
 
+import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.fragment.QueryFragmentContext;
 import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.Row;
@@ -24,6 +25,7 @@ import com.hazelcast.sql.impl.row.RowBatch;
 import java.util.Iterator;
 
 import static com.hazelcast.sql.impl.exec.IterationResult.FETCHED_DONE;
+import static com.hazelcast.sql.impl.exec.IterationResult.WAIT;
 
 /**
  * Upstream state.
@@ -80,14 +82,13 @@ public class UpstreamState implements Iterable<Row> {
 
                 return true;
 
-            case WAIT:
+            default:
+                assert state == WAIT;
+
                 currentBatch = EmptyRowBatch.INSTANCE;
                 currentBatchPos = 0;
 
                 return false;
-
-            default:
-                throw new IllegalStateException("Should not reach this.");
         }
     }
 
@@ -97,7 +98,7 @@ public class UpstreamState implements Iterable<Row> {
 
     public RowBatch consumeBatch() {
         if (currentBatchPos != 0) {
-            throw new IllegalStateException("Batch can be consumed only as a whole.");
+            throw HazelcastSqlException.error("Batch can be consumed only as a whole: " + upstream);
         }
 
         RowBatch batch = currentBatch;

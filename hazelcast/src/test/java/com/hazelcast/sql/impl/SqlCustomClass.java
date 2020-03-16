@@ -14,31 +14,38 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.row;
+package com.hazelcast.sql.impl;
 
-import com.hazelcast.sql.SqlRow;
-
-import java.util.Collections;
-import java.util.List;
+import java.io.Serializable;
+import java.util.Objects;
 
 /**
- * Single row.
+ * Simple custom class for tests.
  */
-public interface Row extends RowBatch, SqlRow {
-    @Override
-    default Row getRow(int index) {
-        assert index == 0;
+public class SqlCustomClass implements Serializable {
+    private int id;
 
-        return this;
+    public SqlCustomClass(int id) {
+        this.id = id;
     }
 
     @Override
-    default List<Row> getRows() {
-        return Collections.singletonList(this);
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        SqlCustomClass that = (SqlCustomClass) o;
+
+        return id == that.id;
     }
 
     @Override
-    default int getRowCount() {
-        return 1;
+    public int hashCode() {
+        return Objects.hash(id);
     }
 }

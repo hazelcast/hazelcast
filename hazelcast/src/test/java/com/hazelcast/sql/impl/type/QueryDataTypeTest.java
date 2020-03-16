@@ -16,6 +16,10 @@
 
 package com.hazelcast.sql.impl.type;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
+import com.hazelcast.sql.impl.SqlCustomClass;
 import com.hazelcast.sql.impl.type.converter.BigDecimalConverter;
 import com.hazelcast.sql.impl.type.converter.BigIntegerConverter;
 import com.hazelcast.sql.impl.type.converter.BooleanConverter;
@@ -23,6 +27,7 @@ import com.hazelcast.sql.impl.type.converter.ByteConverter;
 import com.hazelcast.sql.impl.type.converter.CalendarConverter;
 import com.hazelcast.sql.impl.type.converter.CharacterConverter;
 import com.hazelcast.sql.impl.type.converter.Converter;
+import com.hazelcast.sql.impl.type.converter.Converters;
 import com.hazelcast.sql.impl.type.converter.DateConverter;
 import com.hazelcast.sql.impl.type.converter.DoubleConverter;
 import com.hazelcast.sql.impl.type.converter.FloatConverter;
@@ -155,7 +160,7 @@ public class QueryDataTypeTest {
         checkResolvedTypeForClass(QueryDataType.INTERVAL_YEAR_MONTH, SqlYearMonthInterval.class);
         checkResolvedTypeForClass(QueryDataType.INTERVAL_DAY_SECOND, SqlDaySecondInterval.class);
 
-        checkResolvedTypeForClass(QueryDataType.OBJECT, Object.class, CustomClass.class);
+        checkResolvedTypeForClass(QueryDataType.OBJECT, Object.class, SqlCustomClass.class);
     }
 
     @Test
@@ -208,12 +213,28 @@ public class QueryDataTypeTest {
 
     @Test
     public void testEquals() {
-        checkTypeEq(new QueryDataType(IntegerConverter.INSTANCE, 11), new QueryDataType(IntegerConverter.INSTANCE, 11), true);
-        checkTypeEq(new QueryDataType(IntegerConverter.INSTANCE, 11), new QueryDataType(IntegerConverter.INSTANCE, 12), false);
-        checkTypeEq(new QueryDataType(IntegerConverter.INSTANCE, 11), new QueryDataType(LongConverter.INSTANCE, 11), false);
+        checkEquals(new QueryDataType(IntegerConverter.INSTANCE, 11), new QueryDataType(IntegerConverter.INSTANCE, 11), true);
+        checkEquals(new QueryDataType(IntegerConverter.INSTANCE, 11), new QueryDataType(IntegerConverter.INSTANCE, 12), false);
+        checkEquals(new QueryDataType(IntegerConverter.INSTANCE, 11), new QueryDataType(LongConverter.INSTANCE, 11), false);
     }
 
-    private void checkTypeEq(QueryDataType type1, QueryDataType type2, boolean expected) {
+    @Test
+    public void testSerialization() {
+        InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
+
+        for (Converter converter : Converters.getConverters()) {
+            QueryDataType original = new QueryDataType(converter, QueryDataType.PRECISION_BIGINT);
+
+            assertEquals(SqlDataSerializerHook.F_ID, original.getFactoryId());
+            assertEquals(SqlDataSerializerHook.QUERY_DATA_TYPE, original.getClassId());
+
+            QueryDataType restored = ss.toObject(ss.toData(original));
+
+            checkEquals(original, restored, true);
+        }
+    }
+
+    private void checkEquals(QueryDataType type1, QueryDataType type2, boolean expected) {
         if (expected) {
             assertEquals(type1, type2);
             assertEquals(type1.hashCode(), type2.hashCode());
@@ -249,9 +270,5 @@ public class QueryDataTypeTest {
 
         assertSame(bigger, QueryDataTypeUtils.withHigherPrecedence(bigger, bigger));
         assertSame(smaller, QueryDataTypeUtils.withHigherPrecedence(smaller, smaller));
-    }
-
-    private static final class CustomClass {
-        // No-op.
     }
 }

@@ -41,8 +41,10 @@ public class ListRowBatch implements RowBatch, IdentifiedDataSerializable {
     }
 
     @Override
-    public Row getRow(int idx) {
-        return rows.get(idx);
+    public Row getRow(int index) {
+        assert index >= 0 && index < rows.size() : index;
+
+        return rows.get(index);
     }
 
     @Override
@@ -69,9 +71,8 @@ public class ListRowBatch implements RowBatch, IdentifiedDataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(rows.size());
 
-        for (int i = 0; i < rows.size(); i++) {
-            // TODO: Space inefficient!
-            out.writeObject(rows.get(i));
+        for (Row row : rows) {
+            out.writeObject(row);
         }
     }
 
@@ -82,7 +83,6 @@ public class ListRowBatch implements RowBatch, IdentifiedDataSerializable {
         rows = new ArrayList<>(size);
 
         for (int i = 0; i < size; i++) {
-            // TODO: Handle deserialization!
             rows.add(in.readObject());
         }
     }

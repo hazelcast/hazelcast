@@ -26,17 +26,8 @@ import java.util.UUID;
  */
 public final class HazelcastSqlException extends HazelcastException {
 
-    private static final long serialVersionUID = -1153559924521087582L;
-
-    /** Code of the exception. */
     private int code;
-
-    /** Originator member ID. */
     private UUID originatingMemberId;
-
-    public HazelcastSqlException() {
-        // No-op.
-    }
 
     private HazelcastSqlException(int code, String message, Throwable cause, UUID originatingMemberId) {
         super(message, cause);

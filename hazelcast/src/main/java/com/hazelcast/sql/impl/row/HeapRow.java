@@ -39,10 +39,16 @@ public class HeapRow implements Row, IdentifiedDataSerializable {
         this.values = new Object[length];
     }
 
+    public HeapRow(Object[] values) {
+        this.values = values;
+    }
+
     @SuppressWarnings("unchecked")
     @Override
-    public <T> T getColumn(int idx) {
-        return (T) values[idx];
+    public <T> T getColumn(int index) {
+        assert index >= 0 && index < values.length;
+
+        return (T) values[index];
     }
 
     @Override
@@ -50,8 +56,40 @@ public class HeapRow implements Row, IdentifiedDataSerializable {
         return values.length;
     }
 
-    public void set(int idx, Object val) {
-        values[idx] = val;
+    public void set(int index, Object val) {
+        assert index >= 0 && index < values.length;
+
+        values[index] = val;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SqlDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return SqlDataSerializerHook.ROW_HEAP;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeInt(values.length);
+
+        for (Object value : values) {
+            out.writeObject(value);
+        }
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        int len = in.readInt();
+
+        values = new Object[len];
+
+        for (int i = 0; i < len; i++) {
+            values[i] = in.readObject();
+        }
     }
 
     @Override
@@ -72,43 +110,5 @@ public class HeapRow implements Row, IdentifiedDataSerializable {
         HeapRow heapRow = (HeapRow) o;
 
         return Arrays.equals(values, heapRow.values);
-    }
-
-    @Override
-    public int getFactoryId() {
-        return SqlDataSerializerHook.F_ID;
-    }
-
-    @Override
-    public int getClassId() {
-        return SqlDataSerializerHook.ROW_HEAP;
-    }
-
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(values.length);
-
-        // TODO: Serializing wrapped objects will be slow and space-inefficient. How to mitigate it?
-        // TODO: Handle serialization errors.
-        for (Object value : values) {
-            out.writeObject(value);
-        }
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        int len = in.readInt();
-
-        values = new Object[len];
-
-        // TODO: Handle deserialization errors: cancel query!
-        for (int i = 0; i < len; i++) {
-            values[i] = in.readObject();
-        }
-    }
-
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + "{" + Arrays.toString(values) + '}';
     }
 }

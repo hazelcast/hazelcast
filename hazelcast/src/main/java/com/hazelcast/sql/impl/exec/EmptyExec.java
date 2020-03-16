@@ -14,31 +14,26 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.row;
+package com.hazelcast.sql.impl.exec;
 
-import com.hazelcast.sql.SqlRow;
-
-import java.util.Collections;
-import java.util.List;
+import com.hazelcast.sql.impl.row.EmptyRowBatch;
+import com.hazelcast.sql.impl.row.RowBatch;
 
 /**
- * Single row.
+ * Scan over an empty result-set.
  */
-public interface Row extends RowBatch, SqlRow {
-    @Override
-    default Row getRow(int index) {
-        assert index == 0;
-
-        return this;
+public final class EmptyExec extends AbstractExec {
+    public EmptyExec(int id) {
+        super(id);
     }
 
     @Override
-    default List<Row> getRows() {
-        return Collections.singletonList(this);
+    public IterationResult advance0() {
+        return IterationResult.FETCHED_DONE;
     }
 
     @Override
-    default int getRowCount() {
-        return 1;
+    public RowBatch currentBatch0() {
+        return EmptyRowBatch.INSTANCE;
     }
 }

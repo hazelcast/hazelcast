@@ -24,10 +24,8 @@ import com.hazelcast.sql.impl.row.RowBatch;
  * Abstract executor.
  */
 public abstract class AbstractExec implements Exec {
-    /** Global query context. */
-    protected QueryFragmentContext ctx;
 
-    /** ID of the executor. */
+    protected QueryFragmentContext ctx;
     private final int id;
 
     protected AbstractExec(int id) {
@@ -53,20 +51,24 @@ public abstract class AbstractExec implements Exec {
         return advance0();
     }
 
-    /**
-     * Internal advance routine.
-     *
-     * @return Iteration result.
-     */
-    protected abstract IterationResult advance0();
-
     @Override
-    public boolean canReset() {
-        return false;
+    public final RowBatch currentBatch() {
+        RowBatch res = currentBatch0();
+
+        return res != null ? res : EmptyRowBatch.INSTANCE;
     }
 
     protected void setup0(QueryFragmentContext ctx) {
         // No-op.
+    }
+
+    protected abstract IterationResult advance0();
+
+    protected abstract RowBatch currentBatch0();
+
+    @Override
+    public boolean canReset() {
+        return false;
     }
 
     @Override
@@ -84,15 +86,6 @@ public abstract class AbstractExec implements Exec {
     protected void reset0() {
         // No-op.
     }
-
-    @Override
-    public final RowBatch currentBatch() {
-        RowBatch res = currentBatch0();
-
-        return res != null ? res : EmptyRowBatch.INSTANCE;
-    }
-
-    protected abstract RowBatch currentBatch0();
 
     protected void checkCancelled() {
         ctx.checkCancelled();

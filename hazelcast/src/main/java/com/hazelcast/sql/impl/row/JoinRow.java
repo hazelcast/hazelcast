@@ -72,14 +72,12 @@ public class JoinRow implements Row, IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        // TODO: How to convert it to a HeapRow on deserialization?
         out.writeObject(left);
         out.writeObject(right);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        // TODO: Handle deserialization error
         left = in.readObject();
         right = in.readObject();
     }
@@ -102,24 +100,5 @@ public class JoinRow implements Row, IdentifiedDataSerializable {
         JoinRow joinRow = (JoinRow) o;
 
         return left.equals(joinRow.left) && right.equals(joinRow.right);
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder res = new StringBuilder(getClass().getSimpleName() + "{");
-
-        for (int i = 0; i < getColumnCount(); i++) {
-            if (i != 0) {
-                res.append(", ");
-            }
-
-            Object column = getColumn(i);
-
-            res.append(column != null ? column.toString() : "null");
-        }
-
-        res.append("}");
-
-        return res.toString();
     }
 }

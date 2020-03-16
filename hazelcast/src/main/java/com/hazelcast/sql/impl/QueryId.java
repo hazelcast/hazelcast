@@ -44,7 +44,7 @@ public final class QueryId implements IdentifiedDataSerializable {
         // No-op.
     }
 
-    private QueryId(long memberIdHigh, long memberIdLow, long localHigh, long localLow) {
+    QueryId(long memberIdHigh, long memberIdLow, long localHigh, long localLow) {
         this.memberIdHigh = memberIdHigh;
         this.memberIdLow = memberIdLow;
         this.localHigh = localHigh;
@@ -72,7 +72,7 @@ public final class QueryId implements IdentifiedDataSerializable {
         return new UUID(memberIdHigh, memberIdLow);
     }
 
-    private UUID getLocalId() {
+    public UUID getLocalId() {
         return new UUID(localHigh, localLow);
     }
 
