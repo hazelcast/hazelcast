@@ -55,7 +55,6 @@ class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
         cfg.addSecurityInterceptorConfig(new SecurityInterceptorConfig(className));
     }
 
-    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:methodlength"})
     protected void handleSecurityPermissions(Node node) {
         String onJoinOp = getAttribute(node, "on-join-operation");
         if (onJoinOp != null) {
@@ -63,57 +62,16 @@ class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
                     .valueOf(upperCaseInternal(onJoinOp));
             config.getSecurityConfig().setOnJoinPermissionOperation(onJoinPermissionOperation);
         }
-        for (Node child : childElements(node)) {
+        Iterable<Node> nodes = childElements(node);
+        for (Node child : nodes) {
             String nodeName = cleanNodeName(child);
-            PermissionConfig.PermissionType type;
-            if ("map".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.MAP;
-            } else if ("queue".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.QUEUE;
-            } else if ("multimap".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.MULTIMAP;
-            } else if ("topic".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.TOPIC;
-            } else if ("list".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.LIST;
-            } else if ("set".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.SET;
-            } else if ("lock".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.LOCK;
-            } else if ("atomic-long".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.ATOMIC_LONG;
-            } else if ("atomic-reference".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.ATOMIC_REFERENCE;
-            } else if ("countdown-latch".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.COUNTDOWN_LATCH;
-            } else if ("semaphore".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.SEMAPHORE;
-            } else if ("id-generator".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.ID_GENERATOR;
-            } else if ("flake-id-generator".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.FLAKE_ID_GENERATOR;
-            } else if ("executor-service".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.EXECUTOR_SERVICE;
-            } else if ("transaction".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.TRANSACTION;
-            } else if ("all".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.ALL;
-            } else if ("durable-executor-service".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.DURABLE_EXECUTOR_SERVICE;
-            } else if ("cardinality-estimator".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.CARDINALITY_ESTIMATOR;
-            } else if ("scheduled-executor".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.SCHEDULED_EXECUTOR;
-            } else if ("pn-counter".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.PN_COUNTER;
-            } else if ("cache".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.CACHE;
-            } else if ("user-code-deployment".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.USER_CODE_DEPLOYMENT;
-            } else if ("config".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.CONFIG;
-            } else {
+            if ("on-join-operation".equals(nodeName)) {
                 continue;
+            }
+            nodeName = "all".equals(nodeName) ? nodeName + "-permissions" : nodeName + "-permission";
+            PermissionConfig.PermissionType type = PermissionConfig.PermissionType.getType(nodeName);
+            if (type == null) {
+                throw new InvalidConfigurationException("Security permission type is not valid " + nodeName);
             }
 
             if (PermissionConfig.PermissionType.CONFIG == type

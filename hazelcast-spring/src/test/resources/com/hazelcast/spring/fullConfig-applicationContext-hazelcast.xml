@@ -719,6 +719,16 @@
                             <hz:action>all</hz:action>
                         </hz:actions>
                     </hz:user-code-deployment-permission>
+                    <hz:ring-buffer-permission name="*">
+                        <hz:actions>
+                            <hz:action>all</hz:action>
+                        </hz:actions>
+                    </hz:ring-buffer-permission>
+                    <hz:reliable-topic-permission name="*">
+                        <hz:actions>
+                            <hz:action>all</hz:action>
+                        </hz:actions>
+                    </hz:reliable-topic-permission>
                 </hz:client-permissions>
                 <hz:client-block-unmapped-actions>false</hz:client-block-unmapped-actions>
             </hz:security>

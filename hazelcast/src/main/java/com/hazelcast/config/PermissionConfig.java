@@ -58,6 +58,10 @@ public class PermissionConfig {
      */
     public enum PermissionType {
         /**
+         * All
+         */
+        ALL("all-permissions"),
+        /**
          * Map
          */
         MAP("map-permission"),
@@ -138,18 +142,21 @@ public class PermissionConfig {
          */
         USER_CODE_DEPLOYMENT("user-code-deployment-permission"),
         /**
-         * All
-         */
-        ALL("all-permissions"),
-        /**
          * Configuration permission
          */
         CONFIG("config-permission"),
         /**
          * CRDT PN Counter
          */
-        PN_COUNTER("pn-counter-permission");
-
+        PN_COUNTER("pn-counter-permission"),
+        /**
+         * RingBuffer
+         */
+        RING_BUFFER("ring-buffer-permission"),
+        /**
+         * ReliableTopic
+         */
+        RELIABLE_TOPIC("reliable-topic-permission");
         private final String nodeName;
 
         PermissionType(String nodeName) {
