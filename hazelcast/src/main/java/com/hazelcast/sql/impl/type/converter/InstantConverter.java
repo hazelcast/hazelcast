@@ -24,7 +24,7 @@ import java.time.ZoneOffset;
  * Converter for {@link Instant} type.
  */
 public final class InstantConverter extends AbstractTimestampWithTimezoneConverter {
-    /** Singleton instance. */
+
     public static final InstantConverter INSTANCE = new InstantConverter();
 
     private InstantConverter() {

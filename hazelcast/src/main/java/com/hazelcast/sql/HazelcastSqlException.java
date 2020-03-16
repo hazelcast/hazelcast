@@ -22,7 +22,6 @@ import com.hazelcast.core.HazelcastException;
  * Exception occurred during SQL query execution.
  */
 public final class HazelcastSqlException extends HazelcastException {
-    /** Code of the exception. */
     private int code;
 
     private HazelcastSqlException(int code, String message, Throwable cause) {

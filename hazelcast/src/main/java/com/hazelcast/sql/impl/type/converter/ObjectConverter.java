@@ -19,10 +19,10 @@ package com.hazelcast.sql.impl.type.converter;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 /**
- * Converter for {@link Integer} type.
+ * Converter for arbitrary objects which do not have more specific converter.
  */
 public final class ObjectConverter extends AbstractObjectConverter {
-    /** Singleton instance. */
+
     public static final ObjectConverter INSTANCE = new ObjectConverter();
 
     private ObjectConverter() {

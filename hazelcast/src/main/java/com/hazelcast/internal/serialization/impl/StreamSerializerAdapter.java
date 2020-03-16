@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;

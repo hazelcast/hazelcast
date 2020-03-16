@@ -53,9 +53,4 @@ public class PersonSerializer implements StreamSerializer<Person> {
     public int getTypeId() {
         return 999;
     }
-
-    @Override
-    public void destroy() {
-
-    }
 }

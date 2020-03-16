@@ -22,7 +22,7 @@ import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
  * Converter with late type resolution.
  */
 public final class LateConverter extends AbstractObjectConverter {
-    /** Singleton instance. */
+
     public static final LateConverter INSTANCE = new LateConverter();
 
     private LateConverter() {

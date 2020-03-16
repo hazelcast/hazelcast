@@ -5,11 +5,13 @@ Hazelcast SQL type system defines how objects of different types interact with e
 is defined by the list of supported types, type mapping and type conversion rules.
 
 Type is described by name, precedence, precision and scale.
-- Name is textual representation of type name
-- Precedence is an integer number which defines context-dependent type resolution rules for expressions
-- Precision is the total count of significant digits in the whole number, applicable to **numeric types**
+- **Name** is textual representation of type name
+- **Precision** is the total count of significant digits in the whole number, applicable to **numeric types**
+- **Precedence** is a comparable value which is used for type inference in expressions. A type with a
+higher value has precedence over a type with lower value. If two types has the same precedence value, then
+the type with higher precision has precedence.
 
-Type family is a collection of types with the same name, but different precisions. All types
+**Type family** is a collection of types with the same name, but different precisions. All types
 within a family have the same name and precedence. For example, `INT(11)` and `INT(12)` are two types
 from the same `INT` family.
 
@@ -37,10 +39,10 @@ Types supported by the Hazelcast SQL engine is listed in the Table 1. Precision 
 | `TIME` | 1000 |  |
 | `DATE` | 1100 |  |
 | `TIMESTAMP` | 1200 |  |
-| `TIMESTAMP WITH TIMEZONE` | 1300 |  |
+| `TIMESTAMP WITH TIME ZONE` | 1300 |  |
 | `OBJECT` | 1400 |  |
 
-The type `TIME WITH TIMEZONE` is not supported because of its confusing behavior: daylight-saving rules make it hard to reason
+The type `TIME WITH TIME ZONE` is not supported because of its confusing behavior: daylight-saving rules make it hard to reason
 about time with offset without date part. For this reason this type is of little use for real applications. The support for this
 type might be added in future releases if we find useful use cases for it.
 
@@ -81,7 +83,7 @@ The table 2 establishes a strict one-to-one mapping between SQL and Java types.
 | `TIMESTAMP W/ TZ` | `java.time.OffsetDateTime` |
 | `OBJECT` | `java.lang.Object` |
 
-`TIMESTAMP WITH TIMEZONE` is mapped to the `java.time.OffsetDateTime` class because ANSI SQL requires only zone
+`TIMESTAMP WITH TIME ZONE` is mapped to the `java.time.OffsetDateTime` class because ANSI SQL requires only zone
 displacement, so full zone information from the `java.time.ZonedDateTime` class is not needed.
 
 ### Java to SQL mapping
@@ -128,14 +130,14 @@ converted to the target type.
 | From/To | VARCHAR | BIT | TINYINT | SMALLINT | INT | BINGINT | DECIMAL | REAL | DOUBLE | DATE | TIME | TIMESTAMP | TIMESTAMP W/ TZ | OBJECT |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | **VARCHAR** | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` |
-| **BIT** | `E` | `I` | `I` | `I` | `I` | `I` | `I` | `I`  | `I`  |  |  |  |  | `I` |
-| **TINYINT** | `E` | `E` | `I` | `I` | `I` | `I` | `I` | `I` |`I`  |  |  |  |  | `I` |
-| **SMALLINT** | `E` | `E` | `E` | `I` | `I` | `I` | `I` | `I` | `I` |  |  |  |  | `I` |
-| **INT** | `E` | `E` | `E` | `E` | `I` | `I` | `I` | `I` | `I` |  |  |  |  | `I` |
-| **BIGINT** | `E` | `E` | `E` | `E` | `E` | `I` | `I` | `I` | `I` |  |  |  |  | `I` |
-| **DECIMAL** | `E` | `E` | `E` | `E` | `E` | `E` | `I` | `I` | `I` |  |  |  |  | `I` |
-| **REAL** | `E` | `E` | `E` | `E` | `E` | `E` | `E` | `I` | `I` |  |  |  |  | `I` |
-| **DOUBLE** | `E` | `E` | `E` | `E` | `E` | `E` | `E` | `E` | `I` |  |  |  |  | `I` |
+| **BIT** | `E` | `I` |  |  |  |  |  |  |  |  |  |  |  | `I` |
+| **TINYINT** | `E` |  | `I` | `I` | `I` | `I` | `I` | `I` |`I`  |  |  |  |  | `I` |
+| **SMALLINT** | `E` |  | `E` | `I` | `I` | `I` | `I` | `I` | `I` |  |  |  |  | `I` |
+| **INT** | `E` |  | `E` | `E` | `I` | `I` | `I` | `I` | `I` |  |  |  |  | `I` |
+| **BIGINT** | `E` |  | `E` | `E` | `E` | `I` | `I` | `I` | `I` |  |  |  |  | `I` |
+| **DECIMAL** | `E` |  | `E` | `E` | `E` | `E` | `I` | `I` | `I` |  |  |  |  | `I` |
+| **REAL** | `E` |  | `E` | `E` | `E` | `E` | `E` | `I` | `I` |  |  |  |  | `I` |
+| **DOUBLE** | `E` |  | `E` | `E` | `E` | `E` | `E` | `E` | `I` |  |  |  |  | `I` |
 | **TIME** | `E` |  |  |  |  |  |  |  |  |  | `I` | `I` | `I` | `I` |
 | **DATE** | `E` |  |  |  |  |  |  |  |  | `I` |  | `I` | `I` | `I` |
 | **TIMESTAMP** | `E` |  |  |  |  |  |  |  |  | `E` | `E` | `I` | `I` | `I` |

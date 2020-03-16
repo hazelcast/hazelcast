@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.type;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.sql.impl.QuerySerializationHook;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.type.converter.BigDecimalConverter;
 import com.hazelcast.sql.impl.type.converter.BigIntegerConverter;
 import com.hazelcast.sql.impl.type.converter.BooleanConverter;
@@ -83,10 +83,7 @@ public class QueryDataType implements IdentifiedDataSerializable {
 
     public static final QueryDataType OBJECT = new QueryDataType(ObjectConverter.INSTANCE);
 
-    /** Converter. */
     private Converter converter;
-
-    /** Precision. */
     private int precision;
 
     public QueryDataType() {
@@ -116,12 +113,12 @@ public class QueryDataType implements IdentifiedDataSerializable {
 
     @Override
     public int getFactoryId() {
-        return QuerySerializationHook.F_ID;
+        return SqlDataSerializerHook.F_ID;
     }
 
     @Override
     public int getClassId() {
-        return QuerySerializationHook.QUERY_DATA_TYPE;
+        return SqlDataSerializerHook.QUERY_DATA_TYPE;
     }
 
     @Override

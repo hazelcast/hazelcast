@@ -22,7 +22,7 @@ import java.math.BigDecimal;
  * Converter for {@link java.math.BigDecimal} type.
  */
 public final class BigDecimalConverter extends AbstractDecimalConverter {
-    /** Singleton instance. */
+
     public static final BigDecimalConverter INSTANCE = new BigDecimalConverter();
 
     private BigDecimalConverter() {

@@ -24,7 +24,7 @@ import java.util.Date;
  * Converter for {@link java.util.Date} type.
  */
 public final class DateConverter extends AbstractTimestampWithTimezoneConverter {
-    /** Singleton instance. */
+
     public static final DateConverter INSTANCE = new DateConverter();
 
     private DateConverter() {
