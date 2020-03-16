@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.row;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.sql.impl.QuerySerializationHook;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlCustomClass;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -88,8 +88,8 @@ public class HeapRowTest {
         original.set(0, 1);
         original.set(1, new SqlCustomClass(1));
 
-        assertEquals(QuerySerializationHook.F_ID, original.getFactoryId());
-        assertEquals(QuerySerializationHook.ROW_HEAP, original.getClassId());
+        assertEquals(SqlDataSerializerHook.F_ID, original.getFactoryId());
+        assertEquals(SqlDataSerializerHook.ROW_HEAP, original.getClassId());
 
         InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
 

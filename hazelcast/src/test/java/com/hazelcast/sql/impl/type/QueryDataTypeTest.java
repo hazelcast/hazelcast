@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.type;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.sql.impl.QuerySerializationHook;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlCustomClass;
 import com.hazelcast.sql.impl.type.converter.BigDecimalConverter;
 import com.hazelcast.sql.impl.type.converter.BigIntegerConverter;
@@ -219,8 +219,8 @@ public class QueryDataTypeTest {
         for (Converter converter : Converters.getConverters()) {
             QueryDataType original = new QueryDataType(converter, QueryDataType.PRECISION_BIGINT);
 
-            assertEquals(QuerySerializationHook.F_ID, original.getFactoryId());
-            assertEquals(QuerySerializationHook.QUERY_DATA_TYPE, original.getClassId());
+            assertEquals(SqlDataSerializerHook.F_ID, original.getFactoryId());
+            assertEquals(SqlDataSerializerHook.QUERY_DATA_TYPE, original.getClassId());
 
             QueryDataType restored = ss.toObject(ss.toData(original));
 

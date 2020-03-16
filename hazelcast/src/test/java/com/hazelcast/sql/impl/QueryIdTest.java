@@ -73,8 +73,8 @@ public class QueryIdTest {
     public void testSerialization() {
         QueryId original = QueryId.create(UUID.randomUUID());
 
-        assertEquals(QuerySerializationHook.F_ID, original.getFactoryId());
-        assertEquals(QuerySerializationHook.QUERY_ID, original.getClassId());
+        assertEquals(SqlDataSerializerHook.F_ID, original.getFactoryId());
+        assertEquals(SqlDataSerializerHook.QUERY_ID, original.getClassId());
 
         InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
 

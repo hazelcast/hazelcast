@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.row;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.sql.impl.QuerySerializationHook;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -43,8 +43,8 @@ public class EmptyRowBatchTest {
     public void testSerialization() {
         EmptyRowBatch original = EmptyRowBatch.INSTANCE;
 
-        assertEquals(QuerySerializationHook.F_ID, original.getFactoryId());
-        assertEquals(QuerySerializationHook.ROW_BATCH_EMPTY, original.getClassId());
+        assertEquals(SqlDataSerializerHook.F_ID, original.getFactoryId());
+        assertEquals(SqlDataSerializerHook.ROW_BATCH_EMPTY, original.getClassId());
 
         InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
 
