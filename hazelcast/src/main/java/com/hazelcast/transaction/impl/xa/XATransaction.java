@@ -169,8 +169,10 @@ public final class XATransaction implements Transaction {
             waitWithDeadline(futures, COMMIT_TIMEOUT_MINUTES, MINUTES, commitExceptionHandler);
 
             state = COMMITTED;
+            transactionLog.onCommitSuccess();
         } catch (Throwable e) {
             state = COMMIT_FAILED;
+            transactionLog.onCommitFailure();
             throw ExceptionUtil.rethrow(e, TransactionException.class);
         }
     }
