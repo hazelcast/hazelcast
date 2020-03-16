@@ -21,7 +21,7 @@ import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import java.math.BigDecimal;
 
 /**
- * Converter for {@link java.lang.Float} type.
+ * Converter for {@link java.lang.Short} type.
  */
 public final class ShortConverter extends Converter {
 
