@@ -173,7 +173,7 @@ public abstract class Converter {
 
     @NotConvertible
     public OffsetDateTime asTimestampWithTimezone(Object val) {
-        throw cannotConvert(QueryDataTypeFamily.TIMESTAMP_WITH_TIMEZONE);
+        throw cannotConvert(QueryDataTypeFamily.TIMESTAMP_WITH_TIME_ZONE);
     }
 
     public Object asObject(Object val) {
@@ -275,7 +275,7 @@ public abstract class Converter {
             case TIMESTAMP:
                 return canConvertToTimestamp();
 
-            case TIMESTAMP_WITH_TIMEZONE:
+            case TIMESTAMP_WITH_TIME_ZONE:
                 return canConvertToTimestampWithTimezone();
 
             case OBJECT:

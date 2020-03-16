@@ -262,17 +262,17 @@ public class HashJoinExec extends AbstractUpstreamAwareExec {
      */
     private Object prepareKey(Row row, List<Integer> hashKeys) {
         if (hashKeys.size() == 1) {
-            return row.getColumn(hashKeys.get(0));
+            return row.get(hashKeys.get(0));
         } else if (hashKeys.size() == 2) {
             return new HashKey2(
-                row.getColumn(hashKeys.get(0)),
-                row.getColumn(hashKeys.get(1))
+                row.get(hashKeys.get(0)),
+                row.get(hashKeys.get(1))
             );
         } else {
             Object[] vals = new Object[hashKeys.size()];
 
             for (int i = 0; i < hashKeys.size(); i++) {
-                vals[i] = row.getColumn(hashKeys.get(i));
+                vals[i] = row.get(hashKeys.get(i));
             }
 
             return new HashKeyN(vals);

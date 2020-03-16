@@ -148,7 +148,7 @@ public abstract class AbstractStringConverter extends Converter {
         try {
             return OffsetDateTime.parse(cast(val));
         } catch (DateTimeParseException e) {
-            throw cannotConvert(QueryDataTypeFamily.TIMESTAMP_WITH_TIMEZONE, val);
+            throw cannotConvert(QueryDataTypeFamily.TIMESTAMP_WITH_TIME_ZONE, val);
         }
     }
 

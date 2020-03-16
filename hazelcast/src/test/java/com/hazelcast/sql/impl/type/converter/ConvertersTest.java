@@ -60,7 +60,7 @@ import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.REAL;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.SMALLINT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIME;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIMESTAMP;
-import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIMESTAMP_WITH_TIMEZONE;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIMESTAMP_WITH_TIME_ZONE;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TINYINT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.VARCHAR;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.values;
@@ -345,7 +345,7 @@ public class ConvertersTest {
         LocalTimeConverter converter = LocalTimeConverter.INSTANCE;
 
         checkConverter(converter, Converter.ID_LOCAL_TIME, TIME, LocalTime.class);
-        checkConverterConversions(converter, VARCHAR, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE, OBJECT);
+        checkConverterConversions(converter, VARCHAR, TIMESTAMP, TIMESTAMP_WITH_TIME_ZONE, OBJECT);
 
         String timeString = "11:22:33.444";
         LocalTime time = LocalTime.parse(timeString);
@@ -366,7 +366,7 @@ public class ConvertersTest {
         LocalDateConverter converter = LocalDateConverter.INSTANCE;
 
         checkConverter(converter, Converter.ID_LOCAL_DATE, DATE, LocalDate.class);
-        checkConverterConversions(converter, VARCHAR, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE, OBJECT);
+        checkConverterConversions(converter, VARCHAR, TIMESTAMP, TIMESTAMP_WITH_TIME_ZONE, OBJECT);
 
         String dateString = "2020-02-02";
         LocalDate date = LocalDate.parse(dateString);
@@ -386,7 +386,7 @@ public class ConvertersTest {
         LocalDateTimeConverter converter = LocalDateTimeConverter.INSTANCE;
 
         checkConverter(converter, Converter.ID_LOCAL_DATE_TIME, TIMESTAMP, LocalDateTime.class);
-        checkConverterConversions(converter, VARCHAR, TIME, DATE, TIMESTAMP_WITH_TIMEZONE, OBJECT);
+        checkConverterConversions(converter, VARCHAR, TIME, DATE, TIMESTAMP_WITH_TIME_ZONE, OBJECT);
 
         String dateTimeString = "2020-02-02T11:22:33.444";
         LocalDateTime dateTime = LocalDateTime.parse(dateTimeString);
@@ -405,7 +405,7 @@ public class ConvertersTest {
     public void testDateConverter() {
         DateConverter converter = DateConverter.INSTANCE;
 
-        checkConverter(converter, Converter.ID_DATE, TIMESTAMP_WITH_TIMEZONE, Date.class);
+        checkConverter(converter, Converter.ID_DATE, TIMESTAMP_WITH_TIME_ZONE, Date.class);
         checkConverterConversions(converter, VARCHAR, TIME, DATE, TIMESTAMP, OBJECT);
 
         Date val = new Date();
@@ -419,7 +419,7 @@ public class ConvertersTest {
     public void testCalendarConverter() {
         CalendarConverter converter = CalendarConverter.INSTANCE;
 
-        checkConverter(converter, Converter.ID_CALENDAR, TIMESTAMP_WITH_TIMEZONE, Calendar.class);
+        checkConverter(converter, Converter.ID_CALENDAR, TIMESTAMP_WITH_TIME_ZONE, Calendar.class);
         checkConverterConversions(converter, VARCHAR, TIME, DATE, TIMESTAMP, OBJECT);
 
         Calendar val = Calendar.getInstance();
@@ -433,7 +433,7 @@ public class ConvertersTest {
     public void testInstantConverter() {
         InstantConverter converter = InstantConverter.INSTANCE;
 
-        checkConverter(converter, Converter.ID_INSTANT, TIMESTAMP_WITH_TIMEZONE, Instant.class);
+        checkConverter(converter, Converter.ID_INSTANT, TIMESTAMP_WITH_TIME_ZONE, Instant.class);
         checkConverterConversions(converter, VARCHAR, TIME, DATE, TIMESTAMP, OBJECT);
 
         Instant val = Instant.now();
@@ -447,7 +447,7 @@ public class ConvertersTest {
     public void testOffsetDateTimeConverter() {
         OffsetDateTimeConverter converter = OffsetDateTimeConverter.INSTANCE;
 
-        checkConverter(converter, Converter.ID_OFFSET_DATE_TIME, TIMESTAMP_WITH_TIMEZONE, OffsetDateTime.class);
+        checkConverter(converter, Converter.ID_OFFSET_DATE_TIME, TIMESTAMP_WITH_TIME_ZONE, OffsetDateTime.class);
         checkConverterConversions(converter, VARCHAR, TIME, DATE, TIMESTAMP, OBJECT);
 
         OffsetDateTime val = OffsetDateTime.now();
@@ -461,7 +461,7 @@ public class ConvertersTest {
     public void testZonedDateTimeConverter() {
         ZonedDateTimeConverter converter = ZonedDateTimeConverter.INSTANCE;
 
-        checkConverter(converter, Converter.ID_ZONED_DATE_TIME, TIMESTAMP_WITH_TIMEZONE, ZonedDateTime.class);
+        checkConverter(converter, Converter.ID_ZONED_DATE_TIME, TIMESTAMP_WITH_TIME_ZONE, ZonedDateTime.class);
         checkConverterConversions(converter, VARCHAR, TIME, DATE, TIMESTAMP, OBJECT);
 
         ZonedDateTime val = ZonedDateTime.now();
@@ -501,7 +501,7 @@ public class ConvertersTest {
 
         checkConverter(c, Converter.ID_STRING, VARCHAR, String.class);
         checkConverterConversions(c,
-            BIT, TINYINT, SMALLINT, INT, BIGINT, DECIMAL, REAL, DOUBLE, TIME, DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE, OBJECT);
+            BIT, TINYINT, SMALLINT, INT, BIGINT, DECIMAL, REAL, DOUBLE, TIME, DATE, TIMESTAMP, TIMESTAMP_WITH_TIME_ZONE, OBJECT);
 
         // Boolean
         assertEquals(false, c.asBit("false"));
@@ -581,7 +581,7 @@ public class ConvertersTest {
 
         checkConverter(c, Converter.ID_CHARACTER, VARCHAR, Character.class);
         checkConverterConversions(c,
-            BIT, TINYINT, SMALLINT, INT, BIGINT, DECIMAL, REAL, DOUBLE, TIME, DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE, OBJECT);
+            BIT, TINYINT, SMALLINT, INT, BIGINT, DECIMAL, REAL, DOUBLE, TIME, DATE, TIMESTAMP, TIMESTAMP_WITH_TIME_ZONE, OBJECT);
 
         char invalid = 'c';
 
@@ -617,7 +617,7 @@ public class ConvertersTest {
 
         checkConverter(c, Converter.ID_OBJECT, OBJECT, Object.class);
         checkConverterConversions(c,
-            BIT, TINYINT, SMALLINT, INT, BIGINT, DECIMAL, REAL, DOUBLE, TIME, DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE, VARCHAR);
+            BIT, TINYINT, SMALLINT, INT, BIGINT, DECIMAL, REAL, DOUBLE, TIME, DATE, TIMESTAMP, TIMESTAMP_WITH_TIME_ZONE, VARCHAR);
 
         checkObjectConverter(c);
 
@@ -630,7 +630,7 @@ public class ConvertersTest {
 
         checkConverter(c, Converter.ID_LATE, LATE, null);
         checkConverterConversions(c, BIT, TINYINT, SMALLINT, INT, BIGINT, DECIMAL, REAL, DOUBLE, TIME, DATE, TIMESTAMP,
-            TIMESTAMP_WITH_TIMEZONE, VARCHAR, OBJECT);
+            TIMESTAMP_WITH_TIME_ZONE, VARCHAR, OBJECT);
 
         checkObjectConverter(c);
 
@@ -837,7 +837,7 @@ public class ConvertersTest {
 
                 break;
 
-            case TIMESTAMP_WITH_TIMEZONE:
+            case TIMESTAMP_WITH_TIME_ZONE:
                 assertEquals(expected, converter.canConvertToTimestampWithTimezone());
 
                 break;
@@ -918,7 +918,7 @@ public class ConvertersTest {
 
                     break;
 
-                case TIMESTAMP_WITH_TIMEZONE:
+                case TIMESTAMP_WITH_TIME_ZONE:
                     converter.asTimestampWithTimezone(val);
 
                     break;
@@ -1046,7 +1046,7 @@ public class ConvertersTest {
 
         @Override
         public OffsetDateTime asTimestampWithTimezone(Object val) {
-            invoked = TIMESTAMP_WITH_TIMEZONE;
+            invoked = TIMESTAMP_WITH_TIME_ZONE;
 
             return OffsetDateTime.now();
         }

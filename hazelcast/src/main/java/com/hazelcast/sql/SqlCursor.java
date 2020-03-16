@@ -20,5 +20,16 @@ package com.hazelcast.sql;
  * Cursor over SQL query result.
  */
 public interface SqlCursor extends Iterable<SqlRow>, AutoCloseable {
-    // No-op.
+    /**
+     * @return Number of columns in the rows.
+     */
+    int getColumnCount();
+
+    /**
+     * Get column metadata.
+     *
+     * @param index Column index.
+     * @return Metadata.
+     */
+    SqlColumnMetadata getColumnMetadata(int index);
 }

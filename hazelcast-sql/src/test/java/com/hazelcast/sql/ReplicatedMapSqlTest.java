@@ -88,7 +88,7 @@ public class ReplicatedMapSqlTest extends SqlTestSupport {
             assertEquals(expSize, rows.size());
 
             for (SqlRow row : rows) {
-                String name = row.getColumn(0);
+                String name = row.getObject(0);
 
                 assertTrue(expNames.contains(name));
             }
@@ -117,7 +117,7 @@ public class ReplicatedMapSqlTest extends SqlTestSupport {
             assertEquals(expSize, rows.size());
 
             for (SqlRow row : rows) {
-                String name = row.getColumn(0);
+                String name = row.getObject(0);
 
                 assertTrue(expNames.contains(name));
             }
@@ -140,7 +140,7 @@ public class ReplicatedMapSqlTest extends SqlTestSupport {
             List<SqlRow> rows = getQueryRows(cursor);
 
             assertEquals(1, rows.size());
-            assertEquals(name, rows.get(0).getColumn(0));
+            assertEquals(name, rows.get(0).getObject(0));
         }
     }
 

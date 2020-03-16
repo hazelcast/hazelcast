@@ -45,7 +45,7 @@ public class HeapRow implements Row, IdentifiedDataSerializable {
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T> T getColumn(int index) {
+    public <T> T get(int index) {
         assert index >= 0 && index < values.length;
 
         return (T) values[index];

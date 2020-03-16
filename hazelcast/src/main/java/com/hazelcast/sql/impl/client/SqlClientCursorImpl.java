@@ -18,9 +18,12 @@ package com.hazelcast.sql.impl.client;
 
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.util.BiTuple;
+import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlCursor;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.sql.impl.SqlRowImpl;
+import com.hazelcast.sql.impl.row.Row;
 
 import java.util.Iterator;
 import java.util.List;
@@ -30,32 +33,39 @@ import java.util.NoSuchElementException;
  * Client-side cursor.
  */
 public class SqlClientCursorImpl implements SqlCursor {
-    /** Service. */
     private final SqlClientServiceImpl service;
-
-    /** Connection which should be used to fetch further results. */
     private final Connection connection;
-
-    /** Query ID. */
     private final QueryId queryId;
-
-    /** Client iterator. */
+    private final int columnCount;
     private final ClientIterator iterator = new ClientIterator();
 
-    /** Page size. */
     private int pageSize;
-
-    /** Whether the cursor is closed. */
     private boolean closed;
-
-    /** Whether iterator was accessed. */
     private boolean iteratorAccessed;
 
-    public SqlClientCursorImpl(SqlClientServiceImpl service, Connection connection, QueryId queryId, int pageSize) {
+    public SqlClientCursorImpl(
+        SqlClientServiceImpl service,
+        Connection connection,
+        QueryId queryId,
+        int columnCount,
+        int pageSize
+    ) {
         this.service = service;
         this.connection = connection;
         this.queryId = queryId;
+        this.columnCount = columnCount;
         this.pageSize = pageSize;
+    }
+
+    @Override
+    public int getColumnCount() {
+        return columnCount;
+    }
+
+    @Override
+    public SqlColumnMetadata getColumnMetadata(int index) {
+        // TODO: Implement.
+        throw new UnsupportedOperationException("Implement me.");
     }
 
     @SuppressWarnings("NullableProblems")
@@ -99,7 +109,7 @@ public class SqlClientCursorImpl implements SqlCursor {
     }
 
     private void fetchNextPage(ClientIterator iterator) {
-        BiTuple<List<SqlRow>, Boolean> nextPage = service.fetch(connection, queryId, pageSize);
+        BiTuple<List<Row>, Boolean> nextPage = service.fetch(connection, queryId, pageSize);
 
         iterator.onNextPage(nextPage.element1, nextPage.element2);
     }
@@ -109,7 +119,7 @@ public class SqlClientCursorImpl implements SqlCursor {
      */
     private class ClientIterator implements Iterator<SqlRow> {
         /** Current page. */
-        private List<SqlRow> currentPage;
+        private List<Row> currentPage;
 
         /** Position in the current page. */
         private int currentPagePosition;
@@ -150,7 +160,9 @@ public class SqlClientCursorImpl implements SqlCursor {
                 throw new NoSuchElementException();
             }
 
-            return currentPage.get(currentPagePosition++);
+            Row row = currentPage.get(currentPagePosition++);
+
+            return new SqlRowImpl(row);
         }
 
         /**
@@ -159,7 +171,7 @@ public class SqlClientCursorImpl implements SqlCursor {
          * @param page Page.
          * @param last Last page flag.
          */
-        private void onNextPage(List<SqlRow> page, boolean last) {
+        private void onNextPage(List<Row> page, boolean last) {
             currentPage = page;
             currentPagePosition = 0;
             this.last = last;

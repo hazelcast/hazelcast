@@ -53,7 +53,7 @@ public class ColumnExpression<T> implements Expression<T> {
         //  Most like this is already so, because normalization must happen on all leaf nodes (KeyValueExtractorExpression,
         //  ParameterExpression, ConstantExpression), and ColumnExpression is not a leaf node! So the task is to ensure
         //  that all leaf always return normalized values.
-        return (T) row.getColumn(index);
+        return (T) row.get(index);
     }
 
     @Override

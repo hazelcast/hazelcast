@@ -36,14 +36,15 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Starts execution of an SQL query.
  */
-@Generated("d21da255b9feb019c61105178614d369")
+@Generated("28884598c3fdacc0c86328ee1dea4ced")
 public final class SqlExecuteCodec {
     //hex: 0x210100
     public static final int REQUEST_MESSAGE_TYPE = 2162944;
     //hex: 0x210101
     public static final int RESPONSE_MESSAGE_TYPE = 2162945;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
+    private static final int RESPONSE_COLUMN_COUNT_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_COLUMN_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private SqlExecuteCodec() {
     }
@@ -92,12 +93,18 @@ public final class SqlExecuteCodec {
          * ID of the query which was started.
          */
         public com.hazelcast.internal.serialization.Data queryId;
+
+        /**
+         * Number of columns in the result.
+         */
+        public int columnCount;
     }
 
-    public static ClientMessage encodeResponse(com.hazelcast.internal.serialization.Data queryId) {
+    public static ClientMessage encodeResponse(com.hazelcast.internal.serialization.Data queryId, int columnCount) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, RESPONSE_COLUMN_COUNT_FIELD_OFFSET, columnCount);
         clientMessage.add(initialFrame);
 
         DataCodec.encode(clientMessage, queryId);
@@ -107,8 +114,8 @@ public final class SqlExecuteCodec {
     public static SqlExecuteCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
+        ClientMessage.Frame initialFrame = iterator.next();
+        response.columnCount = decodeInt(initialFrame.content, RESPONSE_COLUMN_COUNT_FIELD_OFFSET);
         response.queryId = DataCodec.decode(iterator);
         return response;
     }

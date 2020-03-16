@@ -59,7 +59,7 @@ public abstract class AggregateKey {
 
         @Override
         public boolean matches(Row row) {
-            return Objects.equals(item, row.getColumn(0));
+            return Objects.equals(item, row.get(0));
         }
 
         @Override
@@ -111,7 +111,7 @@ public abstract class AggregateKey {
 
         @Override
         public boolean matches(Row row) {
-            return Objects.equals(item1, row.getColumn(0)) && Objects.equals(item2, row.getColumn(1));
+            return Objects.equals(item1, row.get(0)) && Objects.equals(item2, row.get(1));
         }
 
         @Override
@@ -170,7 +170,7 @@ public abstract class AggregateKey {
         @Override
         public boolean matches(Row row) {
             for (int i = 0; i < items.length; i++) {
-                if (!Objects.equals(items[i], row.getColumn(i))) {
+                if (!Objects.equals(items[i], row.get(i))) {
                     return false;
                 }
             }

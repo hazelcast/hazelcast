@@ -180,7 +180,7 @@ public class QueryDataTypeTest {
         checkResolvedTypeForTypeFamily(QueryDataType.DATE, QueryDataTypeFamily.DATE);
         checkResolvedTypeForTypeFamily(QueryDataType.TIMESTAMP, QueryDataTypeFamily.TIMESTAMP);
         checkResolvedTypeForTypeFamily(QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME,
-            QueryDataTypeFamily.TIMESTAMP_WITH_TIMEZONE);
+            QueryDataTypeFamily.TIMESTAMP_WITH_TIME_ZONE);
 
         checkResolvedTypeForTypeFamily(QueryDataType.INTERVAL_YEAR_MONTH, QueryDataTypeFamily.INTERVAL_YEAR_MONTH);
         checkResolvedTypeForTypeFamily(QueryDataType.INTERVAL_DAY_SECOND, QueryDataTypeFamily.INTERVAL_DAY_SECOND);

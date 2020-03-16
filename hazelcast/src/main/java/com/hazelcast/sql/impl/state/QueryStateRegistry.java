@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.state;
 
 import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.sql.impl.QueryMetadata;
 import com.hazelcast.sql.impl.operation.QueryOperationHandler;
 import com.hazelcast.sql.impl.QueryPlan;
 import com.hazelcast.sql.impl.fragment.QueryFragment;
@@ -47,6 +48,7 @@ public class QueryStateRegistry {
     public QueryState onInitiatorQueryStarted(
         long initiatorTimeout,
         QueryPlan initiatorPlan,
+        QueryMetadata initiatorMetadata,
         IdentityHashMap<QueryFragment, Collection<UUID>> initiatorFragmentMappings,
         QueryStateRowSource initiatorRowSource,
         QueryStateCompletionCallback completionCallback,
@@ -60,6 +62,7 @@ public class QueryStateRegistry {
             completionCallback,
             initiatorTimeout,
             initiatorPlan,
+            initiatorMetadata,
             initiatorFragmentMappings,
             initiatorRowSource
         );

@@ -40,7 +40,7 @@ public class AllFieldsHashFunction implements HashFunction, DataSerializable {
         int res = 0;
 
         for (int idx = 0; idx < row.getColumnCount(); idx++) {
-            Object val = row.getColumn(idx);
+            Object val = row.get(idx);
             int hash = val != null ? val.hashCode() : 0;
 
             res = 31 * res + hash;

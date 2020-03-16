@@ -48,11 +48,11 @@ public class JoinRowTest {
         JoinRow joinRow = new JoinRow(row1, row2);
 
         assertEquals(5, joinRow.getColumnCount());
-        assertSame(row1.getColumn(0), joinRow.getColumn(0));
-        assertSame(row1.getColumn(1), joinRow.getColumn(1));
-        assertSame(row2.getColumn(0), joinRow.getColumn(2));
-        assertSame(row2.getColumn(1), joinRow.getColumn(3));
-        assertSame(row2.getColumn(2), joinRow.getColumn(4));
+        assertSame(row1.get(0), joinRow.get(0));
+        assertSame(row1.get(1), joinRow.get(1));
+        assertSame(row2.get(0), joinRow.get(2));
+        assertSame(row2.get(1), joinRow.get(3));
+        assertSame(row2.get(2), joinRow.get(4));
     }
 
     @Test

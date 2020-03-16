@@ -22,9 +22,9 @@ import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.sql.impl.row.Row;
 
 import java.security.Permission;
 import java.util.ArrayList;
@@ -63,7 +63,7 @@ public class SqlFetchMessageTask extends AbstractCallableMessageTask<SqlFetchCod
         } else {
             rows = new ArrayList<>(page.getRows().size());
 
-            for (SqlRow row : page.getRows()) {
+            for (Row row : page.getRows()) {
                 rows.add(serializationService.toData(row));
             }
         }

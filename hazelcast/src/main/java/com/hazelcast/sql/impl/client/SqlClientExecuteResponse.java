@@ -16,30 +16,22 @@
 
 package com.hazelcast.sql.impl.client;
 
-import com.hazelcast.sql.impl.row.Row;
+import com.hazelcast.internal.serialization.Data;
 
-import java.util.List;
+public class SqlClientExecuteResponse {
+    private Data queryId;
+    private int columnCount;
 
-/**
- * Single page which is going to be supplied to the client.
- */
-public class SqlClientPage {
-    /** Rows. */
-    private final List<Row> rows;
-
-    /** Whether this is the last page. */
-    private final boolean last;
-
-    public SqlClientPage(List<Row> rows, boolean last) {
-        this.rows = rows;
-        this.last = last;
+    public SqlClientExecuteResponse(Data queryId, int columnCount) {
+        this.queryId = queryId;
+        this.columnCount = columnCount;
     }
 
-    public List<Row> getRows() {
-        return rows;
+    public Data getQueryId() {
+        return queryId;
     }
 
-    public boolean isLast() {
-        return last;
+    public int getColumnCount() {
+        return columnCount;
     }
 }

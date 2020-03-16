@@ -20,6 +20,8 @@ import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlCursorImpl;
+import com.hazelcast.sql.impl.SqlRowImpl;
+import com.hazelcast.sql.impl.row.Row;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -50,12 +52,13 @@ public class QueryClientStateRegistry {
 
         Iterator<SqlRow> iterator = clientCursor.getIterator();
 
-        List<SqlRow> rows = new ArrayList<>(pageSize);
+        List<Row> rows = new ArrayList<>(pageSize);
 
         while (iterator.hasNext()) {
             SqlRow row = iterator.next();
 
-            rows.add(row);
+            // TODO: Avoid this double wrap-unwrap. Instead, we should fetch Row from the cursor here.
+            rows.add(((SqlRowImpl) row).getDelegate());
 
             if (rows.size() == pageSize) {
                 break;

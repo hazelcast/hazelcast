@@ -59,6 +59,10 @@ public class JdbcCursor {
         return iterator.next();
     }
 
+    public int getColumnCount() {
+        return cursor.getColumnCount();
+    }
+
     public void close() {
         try {
             cursor.close();

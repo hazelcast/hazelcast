@@ -14,32 +14,19 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.client;
-
-import com.hazelcast.sql.impl.row.Row;
-
-import java.util.List;
+package com.hazelcast.sql;
 
 /**
- * Single page which is going to be supplied to the client.
+ * Column metadata.
  */
-public class SqlClientPage {
-    /** Rows. */
-    private final List<Row> rows;
+public class SqlColumnMetadata {
+    private final SqlColumnType type;
 
-    /** Whether this is the last page. */
-    private final boolean last;
-
-    public SqlClientPage(List<Row> rows, boolean last) {
-        this.rows = rows;
-        this.last = last;
+    public SqlColumnMetadata(SqlColumnType type) {
+        this.type = type;
     }
 
-    public List<Row> getRows() {
-        return rows;
-    }
-
-    public boolean isLast() {
-        return last;
+    public SqlColumnType getType() {
+        return type;
     }
 }

@@ -156,7 +156,7 @@ public class ComparisonPredicate extends BiExpression<Boolean> {
                 return doCompareComparable(comparisonMode, first, second);
             }
 
-            case TIMESTAMP_WITH_TIMEZONE: {
+            case TIMESTAMP_WITH_TIME_ZONE: {
                 OffsetDateTime first = converter1.asTimestampWithTimezone(operand1);
                 OffsetDateTime second = converter2.asTimestampWithTimezone(operand2);
 

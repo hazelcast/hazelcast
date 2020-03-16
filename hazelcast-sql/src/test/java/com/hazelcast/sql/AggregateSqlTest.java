@@ -79,17 +79,18 @@ public class AggregateSqlTest extends SqlTestSupport {
             "SELECT SUM(salary), COUNT(salary), AVG(salary), MIN(salary), MAX(salary) FROM person"
         );
 
+        assertEquals(5, cursor.getColumnCount());
+
         List<SqlRow> rows = getQueryRows(cursor);
         assertEquals(1, rows.size());
 
         SqlRow row = rows.get(0);
-        assertEquals(5, row.getColumnCount());
 
-        assertEquals(collector.getSum(), row.getColumn(0));
-        assertEquals(collector.getCnt(), row.getColumn(1));
-        assertEquals(collector.getAvg(), row.getColumn(2));
-        assertEquals(collector.getMin(), row.getColumn(3));
-        assertEquals(collector.getMax(), row.getColumn(4));
+        assertEquals(collector.getSum(), row.getObject(0));
+        assertEquals(collector.getCnt(), row.getObject(1));
+        assertEquals(collector.getAvg(), row.getObject(2));
+        assertEquals(collector.getMin(), row.getObject(3));
+        assertEquals(collector.getMax(), row.getObject(4));
     }
 
     @Test    public void testSimpleAggregateWithGroupByCollocated() {
@@ -109,21 +110,21 @@ public class AggregateSqlTest extends SqlTestSupport {
             "SELECT deptId, SUM(salary), COUNT(salary), AVG(salary), MIN(salary), MAX(salary) FROM person GROUP BY deptId"
         );
 
+        assertEquals(6, cursor.getColumnCount());
+
         List<SqlRow> rows = getQueryRows(cursor);
         assertEquals(collectors.size(), rows.size());
 
         for (SqlRow row : rows) {
-            assertEquals(6, row.getColumnCount());
-
-            long deptId = row.getColumn(0);
+            long deptId = row.getObject(0);
             PersonSalaryCollector collector = collectors.get(deptId);
             assertNotNull(collector);
 
-            assertEquals(collector.getSum(), row.getColumn(1));
-            assertEquals(collector.getCnt(), row.getColumn(2));
-            assertEquals(collector.getAvg(), row.getColumn(3));
-            assertEquals(collector.getMin(), row.getColumn(4));
-            assertEquals(collector.getMax(), row.getColumn(5));
+            assertEquals(collector.getSum(), row.getObject(1));
+            assertEquals(collector.getCnt(), row.getObject(2));
+            assertEquals(collector.getAvg(), row.getObject(3));
+            assertEquals(collector.getMin(), row.getObject(4));
+            assertEquals(collector.getMax(), row.getObject(5));
         }
     }
 
@@ -145,21 +146,21 @@ public class AggregateSqlTest extends SqlTestSupport {
             "SELECT deptTitle, SUM(salary), COUNT(salary), AVG(salary), MIN(salary), MAX(salary) FROM person GROUP BY deptTitle"
         );
 
+        assertEquals(6, cursor.getColumnCount());
+
         List<SqlRow> rows = getQueryRows(cursor);
         assertEquals(collectors.size(), rows.size());
 
         for (SqlRow row : rows) {
-            assertEquals(6, row.getColumnCount());
-
-            String deptTitle = row.getColumn(0);
+            String deptTitle = row.getObject(0);
             PersonSalaryCollector collector = collectors.get(deptTitle);
             assertNotNull(collector);
 
-            assertEquals(collector.getSum(), row.getColumn(1));
-            assertEquals(collector.getCnt(), row.getColumn(2));
-            assertEquals(collector.getAvg(), row.getColumn(3));
-            assertEquals(collector.getMin(), row.getColumn(4));
-            assertEquals(collector.getMax(), row.getColumn(5));
+            assertEquals(collector.getSum(), row.getObject(1));
+            assertEquals(collector.getCnt(), row.getObject(2));
+            assertEquals(collector.getAvg(), row.getObject(3));
+            assertEquals(collector.getMin(), row.getObject(4));
+            assertEquals(collector.getMax(), row.getObject(5));
         }
     }
 

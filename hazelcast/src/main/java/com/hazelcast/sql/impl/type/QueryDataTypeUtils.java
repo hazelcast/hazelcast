@@ -188,7 +188,7 @@ public final class QueryDataTypeUtils {
             case TIMESTAMP:
                 return TIMESTAMP;
 
-            case TIMESTAMP_WITH_TIMEZONE:
+            case TIMESTAMP_WITH_TIME_ZONE:
                 if (converter == DateConverter.INSTANCE) {
                     return TIMESTAMP_WITH_TZ_DATE;
                 } else if (converter == CalendarConverter.INSTANCE) {
@@ -258,7 +258,7 @@ public final class QueryDataTypeUtils {
             case TIMESTAMP:
                 return TIMESTAMP;
 
-            case TIMESTAMP_WITH_TIMEZONE:
+            case TIMESTAMP_WITH_TIME_ZONE:
                 return TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME;
 
             case INTERVAL_YEAR_MONTH:

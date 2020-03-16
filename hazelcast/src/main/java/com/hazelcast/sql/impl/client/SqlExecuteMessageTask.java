@@ -59,7 +59,7 @@ public class SqlExecuteMessageTask extends AbstractCallableMessageTask<SqlExecut
 
         sqlService.getClientStateRegistry().register(endpoint.getUuid(), cursor);
 
-        return serializationService.toData(cursor.getQueryId());
+        return new SqlClientExecuteResponse(serializationService.toData(cursor.getQueryId()), cursor.getColumnCount());
     }
 
     @Override
@@ -69,7 +69,9 @@ public class SqlExecuteMessageTask extends AbstractCallableMessageTask<SqlExecut
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return SqlExecuteCodec.encodeResponse((Data) response);
+        SqlClientExecuteResponse response0 = (SqlClientExecuteResponse) response;
+
+        return SqlExecuteCodec.encodeResponse(response0.getQueryId(), response0.getColumnCount());
     }
 
     @Override

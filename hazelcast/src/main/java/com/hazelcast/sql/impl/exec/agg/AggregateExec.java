@@ -279,16 +279,16 @@ public class AggregateExec extends AbstractUpstreamAwareExec {
 
         switch (size) {
             case 1:
-                return AggregateKey.single(row.getColumn(groupKey.get(0)));
+                return AggregateKey.single(row.get(groupKey.get(0)));
 
             case 2:
-                return AggregateKey.dual(row.getColumn(groupKey.get(0)), row.getColumn(groupKey.get(1)));
+                return AggregateKey.dual(row.get(groupKey.get(0)), row.get(groupKey.get(1)));
 
             default:
                 Object[] items = new Object[size];
 
                 for (int i = 0; i < items.length; i++) {
-                    items[i] = row.getColumn(groupKey.get(i));
+                    items[i] = row.get(groupKey.get(i));
                 }
 
                 return AggregateKey.multiple(items);

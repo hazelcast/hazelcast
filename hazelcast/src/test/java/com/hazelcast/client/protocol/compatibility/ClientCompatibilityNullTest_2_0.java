@@ -6926,6 +6926,7 @@ public class ClientCompatibilityNullTest_2_0 {
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         SqlExecuteCodec.ResponseParameters parameters = SqlExecuteCodec.decodeResponse(fromFile);
         assertTrue(isEqual(aData, parameters.queryId));
+        assertTrue(isEqual(anInt, parameters.columnCount));
     }
 
     @Test

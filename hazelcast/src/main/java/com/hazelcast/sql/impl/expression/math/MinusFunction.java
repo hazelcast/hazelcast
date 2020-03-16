@@ -164,7 +164,7 @@ public class MinusFunction<T> extends BiExpressionWithType<T> {
                 }
             }
 
-            case TIMESTAMP_WITH_TIMEZONE: {
+            case TIMESTAMP_WITH_TIME_ZONE: {
                 OffsetDateTime ts = temporalOperandType.getConverter().asTimestampWithTimezone(temporalOperand);
 
                 if (intervalOperandType.getTypeFamily() == QueryDataTypeFamily.INTERVAL_YEAR_MONTH) {

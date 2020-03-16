@@ -26,14 +26,14 @@ import com.hazelcast.client.impl.protocol.codec.SqlFetchCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.BiTuple;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.sql.SqlCursor;
 import com.hazelcast.sql.SqlQuery;
-import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.sql.impl.row.Row;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -49,8 +49,12 @@ import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 //  will have two IDs at hands.
 public class SqlClientServiceImpl implements SqlService {
     /** Decoder for execute request. */
-    private static final ClientMessageDecoder<Data> EXECUTE_DECODER =
-        clientMessage -> SqlExecuteCodec.decodeResponse(clientMessage).queryId;
+    private static final ClientMessageDecoder<SqlClientExecuteResponse> EXECUTE_DECODER =
+        clientMessage -> {
+            SqlExecuteCodec.ResponseParameters response = SqlExecuteCodec.decodeResponse(clientMessage);
+
+            return new SqlClientExecuteResponse(response.queryId, response.columnCount);
+        };
 
     /** Decoder for fetch request. */
     private static final ClientMessageDecoder<BiTuple<List<Data>, Boolean>> FETCH_DECODER = clientMessage -> {
@@ -92,10 +96,11 @@ public class SqlClientServiceImpl implements SqlService {
 
         Connection connection = client.getConnectionManager().getRandomConnection();
 
-        Data queryIdData = invoke(message, connection, EXECUTE_DECODER);
-        QueryId queryId = toObject(queryIdData);
+        SqlClientExecuteResponse response = invoke(message, connection, EXECUTE_DECODER);
 
-        return new SqlClientCursorImpl(this, connection, queryId, query.getPageSize());
+        QueryId queryId = toObject(response.getQueryId());
+
+        return new SqlClientCursorImpl(this, connection, queryId, response.getColumnCount(), query.getPageSize());
     }
 
     /**
@@ -105,7 +110,7 @@ public class SqlClientServiceImpl implements SqlService {
      * @param queryId Query ID.
      * @return Pair: fetched rows + last page flag.
      */
-    public BiTuple<List<SqlRow>, Boolean> fetch(Connection connection, QueryId queryId, int pageSize) {
+    public BiTuple<List<Row>, Boolean> fetch(Connection connection, QueryId queryId, int pageSize) {
         ClientMessage message = SqlFetchCodec.encodeRequest(toData(queryId), pageSize);
 
         BiTuple<List<Data>, Boolean> res = invoke(message, connection, FETCH_DECODER);
@@ -113,7 +118,7 @@ public class SqlClientServiceImpl implements SqlService {
         List<Data> serializedRows = res.element1;
         boolean last = res.element2;
 
-        List<SqlRow> rows;
+        List<Row> rows;
 
         if (serializedRows.isEmpty()) {
             rows = Collections.emptyList();

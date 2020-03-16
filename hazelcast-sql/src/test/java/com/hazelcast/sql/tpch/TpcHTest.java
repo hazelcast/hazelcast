@@ -893,7 +893,7 @@ public class TpcHTest extends SqlTestSupport {
 
         System.out.println(">>> Explain:");
         for (SqlRow explainRow : res.getPlan().getExplain().asRows()) {
-            System.out.println("\t" + explainRow.getColumn(0));
+            System.out.println("\t" + explainRow.getObject(0));
         }
         System.out.println();
 

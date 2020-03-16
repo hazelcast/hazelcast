@@ -19,6 +19,7 @@ package com.hazelcast.sql;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.sql.impl.SqlRowImpl;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.support.ModelGenerator;
 import com.hazelcast.sql.support.SqlTestSupport;
@@ -84,14 +85,27 @@ public class JoinSqlJdbcTest extends SqlTestSupport {
                         row.set(0, name);
                         row.set(1, deptTitle);
 
-                        jdbcRows.add(row);
+                        jdbcRows.add(new SqlRowImpl(row));
                     }
                 }
             }
         }
 
         assertEquals(PERSON_CNT, rows.size());
-        assertEquals(rows.size(), jdbcRows.size());
-        assertEquals(rows, jdbcRows);
+
+        checkRows(rows, jdbcRows, 2);
+    }
+
+    private static void checkRows(List<SqlRow> rows, List<SqlRow> otherRows, int columnCount) {
+        assertEquals(rows.size(), otherRows.size());
+
+        for (int i = 0; i < rows.size(); i++) {
+            SqlRow row = rows.get(i);
+            SqlRow otherRow = otherRows.get(i);
+
+            for (int j = 0; j < columnCount; j++) {
+                assertEquals(row.getObject(j), otherRow.getObject(j));
+            }
+        }
     }
 }

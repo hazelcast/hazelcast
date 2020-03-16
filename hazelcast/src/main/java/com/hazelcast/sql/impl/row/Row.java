@@ -16,15 +16,13 @@
 
 package com.hazelcast.sql.impl.row;
 
-import com.hazelcast.sql.SqlRow;
-
 import java.util.Collections;
 import java.util.List;
 
 /**
  * Single row.
  */
-public interface Row extends RowBatch, SqlRow {
+public interface Row extends RowBatch {
     @Override
     default Row getRow(int index) {
         assert index == 0;
@@ -41,4 +39,8 @@ public interface Row extends RowBatch, SqlRow {
     default int getRowCount() {
         return 1;
     }
+
+    <T> T get(int index);
+
+    int getColumnCount();
 }

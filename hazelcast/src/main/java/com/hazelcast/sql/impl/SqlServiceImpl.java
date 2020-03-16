@@ -170,7 +170,9 @@ public class SqlServiceImpl implements SqlService {
             throw HazelcastSqlException.error("Page size must be positive: " + pageSize);
         }
 
-        // Get plan.
+        // Execute.
+        QueryState state;
+
         if (QueryUtils.isExplain(sql)) {
             String unwrappedSql = QueryUtils.unwrapExplain(sql);
 
@@ -180,17 +182,19 @@ public class SqlServiceImpl implements SqlService {
 
             QueryPlan plan = optimizer.prepare(unwrappedSql, params0.size());
 
-            return executeExplain(plan);
+            state = executeExplain(plan);
         } else {
             QueryPlan plan = optimizer.prepare(sql, params0.size());
 
-            return execute(
+            state = execute(
                 plan,
                 params0,
                 timeout,
                 pageSize
             );
         }
+
+        return new SqlCursorImpl(state);
     }
 
     /**
@@ -198,7 +202,7 @@ public class SqlServiceImpl implements SqlService {
      *
      * @return Query state.
      */
-    public SqlCursorImpl execute(QueryPlan plan, List<Object> params, long timeout, int pageSize) {
+    public QueryState execute(QueryPlan plan, List<Object> params, long timeout, int pageSize) {
         assert params != null;
 
         if (plan.getParameterCount() > params.size()) {
@@ -222,6 +226,7 @@ public class SqlServiceImpl implements SqlService {
         QueryState state = stateRegistry.onInitiatorQueryStarted(
             timeout,
             plan,
+            plan.getMetadata(),
             fragmentMappings,
             consumer,
             operationHandler,
@@ -253,7 +258,7 @@ public class SqlServiceImpl implements SqlService {
                 }
             }
 
-            return new SqlCursorImpl(state);
+            return state;
         } catch (Exception e) {
             state.cancel(e);
 
@@ -261,7 +266,7 @@ public class SqlServiceImpl implements SqlService {
         }
     }
 
-    private SqlCursorImpl executeExplain(QueryPlan plan) {
+    private QueryState executeExplain(QueryPlan plan) {
         QueryExplain explain = plan.getExplain();
 
         QueryExplainRowSource rowSource = new QueryExplainRowSource(explain);
@@ -269,13 +274,14 @@ public class SqlServiceImpl implements SqlService {
         QueryState state = stateRegistry.onInitiatorQueryStarted(
             0,
             plan,
+            QueryExplain.EXPLAIN_METADATA,
             null,
             rowSource,
             operationHandler,
             false
         );
 
-        return new SqlCursorImpl(state);
+        return state;
     }
 
     /**

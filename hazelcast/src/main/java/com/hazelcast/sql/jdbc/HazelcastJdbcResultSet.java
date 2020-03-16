@@ -289,11 +289,11 @@ public class HazelcastJdbcResultSet extends JdbcResultSetAdapter {
             throw new SQLException("Column index must be positive: " + columnIndex);
         }
 
-        if (currentRow.getColumnCount() <= index) {
+        if (cursor.getColumnCount() <= index) {
             throw new SQLException("Column index is greater than the number of columns in the result set: " + index);
         }
 
-        Object val = currentRow.getColumn(index);
+        Object val = currentRow.getObject(index);
 
         wasNull = val == null;
 

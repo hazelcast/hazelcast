@@ -21,7 +21,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * SQL query.
+ * Definition of the SQL query.
  */
 public class SqlQuery {
     /** Default page size. */
@@ -39,8 +39,22 @@ public class SqlQuery {
     /** Page size. */
     private int pageSize = DEFAULT_PAGE_SIZE;
 
+    public SqlQuery() {
+        // No-op.
+    }
+
     public SqlQuery(String sql) {
         setSql(sql);
+    }
+
+    /**
+     * Copying constructor.
+     */
+    private SqlQuery(String sql, List<Object> parameters, long timeout, int pageSize) {
+        this.sql = sql;
+        this.parameters = parameters;
+        this.timeout = timeout;
+        this.pageSize = pageSize;
     }
 
     public String getSql() {
@@ -87,6 +101,20 @@ public class SqlQuery {
         return this;
     }
 
+    public long getTimeout() {
+        return timeout;
+    }
+
+    public SqlQuery setTimeout(long timeout) {
+        if (timeout < 0) {
+            throw new IllegalArgumentException("Timeout cannot be negative: " + timeout);
+        }
+
+        this.timeout = timeout;
+
+        return this;
+    }
+
     public int getPageSize() {
         return pageSize;
     }
@@ -101,17 +129,7 @@ public class SqlQuery {
         return this;
     }
 
-    public long getTimeout() {
-        return timeout;
-    }
-
-    public SqlQuery setTimeout(long timeout) {
-        if (timeout < 0) {
-            throw new IllegalArgumentException("Timeout cannot be negative: " + timeout);
-        }
-
-        this.timeout = timeout;
-
-        return this;
+    public SqlQuery copy() {
+        return new SqlQuery(sql, parameters, timeout, pageSize);
     }
 }

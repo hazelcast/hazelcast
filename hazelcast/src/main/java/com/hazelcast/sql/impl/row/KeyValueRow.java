@@ -61,7 +61,7 @@ public final class KeyValueRow implements Row {
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T> T getColumn(int index) {
+    public <T> T get(int index) {
         Object columnValue = cachedColumnValues[index];
 
         if (columnValue == null) {

@@ -21,15 +21,10 @@ package com.hazelcast.sql;
  */
 public interface SqlRow {
     /**
-     * Get column by index.
+     * Get value of the column by index.
      *
-     * @param idx Index.
-     * @return Column value.
+     * @param index Index.
+     * @return Value of the column.
      */
-    <T> T getColumn(int idx);
-
-    /**
-     * @return Number of columns in a row.
-     */
-    int getColumnCount();
+    <T> T getObject(int index);
 }

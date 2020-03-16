@@ -89,7 +89,7 @@ public abstract class AbstractObjectConverter extends Converter {
 
     @Override
     public OffsetDateTime asTimestampWithTimezone(Object val) {
-        return resolveConverter(val, QueryDataTypeFamily.TIMESTAMP_WITH_TIMEZONE).asTimestampWithTimezone(val);
+        return resolveConverter(val, QueryDataTypeFamily.TIMESTAMP_WITH_TIME_ZONE).asTimestampWithTimezone(val);
     }
 
     protected Converter resolveConverter(Object val, QueryDataTypeFamily target) {

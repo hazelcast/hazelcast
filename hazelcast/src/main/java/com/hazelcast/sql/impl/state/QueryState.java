@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.state;
 
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlErrorCode;
+import com.hazelcast.sql.impl.QueryMetadata;
 import com.hazelcast.sql.impl.fragment.QueryFragment;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryPlan;
@@ -68,6 +69,7 @@ public final class QueryState {
         boolean initiator,
         long initiatorTimeout,
         QueryPlan initiatorPlan,
+        QueryMetadata initiatorMetadata,
         IdentityHashMap<QueryFragment, Collection<UUID>> initiatorFragmentMappings,
         QueryStateRowSource initiatorRowSource
     ) {
@@ -81,6 +83,7 @@ public final class QueryState {
             initiatorState = new QueryInitiatorState(
                 queryId,
                 initiatorPlan,
+                initiatorMetadata,
                 initiatorFragmentMappings,
                 initiatorRowSource,
                 initiatorTimeout
@@ -96,6 +99,7 @@ public final class QueryState {
         QueryStateCompletionCallback completionCallback,
         long initiatorTimeout,
         QueryPlan initiatorPlan,
+        QueryMetadata initiatorMetadata,
         IdentityHashMap<QueryFragment, Collection<UUID>> initiatorFragmentMappings,
         QueryStateRowSource initiatorRowSource
     ) {
@@ -107,6 +111,7 @@ public final class QueryState {
             true,
             initiatorTimeout,
             initiatorPlan,
+            initiatorMetadata,
             initiatorFragmentMappings,
             initiatorRowSource
         );
@@ -130,6 +135,7 @@ public final class QueryState {
             completionCallback,
             false,
             -1,
+            null,
             null,
             null,
             null

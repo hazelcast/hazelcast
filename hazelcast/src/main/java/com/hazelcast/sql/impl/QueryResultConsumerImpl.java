@@ -131,7 +131,7 @@ public class QueryResultConsumerImpl implements QueryResultConsumer {
      */
     private class InternalIterator implements Iterator<SqlRow> {
         /** Current row. */
-        private Row currentRow;
+        private SqlRow currentRow;
 
         @Override
         public boolean hasNext() {
@@ -141,10 +141,10 @@ public class QueryResultConsumerImpl implements QueryResultConsumer {
         }
 
         @Override
-        public Row next() {
+        public SqlRow next() {
             advanceIfNeeded();
 
-            Row res = currentRow;
+            SqlRow res = currentRow;
 
             currentRow = null;
 
@@ -163,13 +163,13 @@ public class QueryResultConsumerImpl implements QueryResultConsumer {
             currentRow = advance0();
         }
 
-        private Row advance0() {
+        private SqlRow advance0() {
             synchronized (mux) {
                 while (true) {
                     Row row = rows.poll();
 
                     if (row != null) {
-                        return row;
+                        return new SqlRowImpl(row);
                     }
 
                     if (done) {

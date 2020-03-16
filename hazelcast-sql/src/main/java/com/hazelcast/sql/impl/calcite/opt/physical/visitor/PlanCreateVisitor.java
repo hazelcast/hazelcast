@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.calcite.opt.physical.visitor;
 
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryMetadata;
 import com.hazelcast.sql.impl.QueryPlan;
 import com.hazelcast.sql.impl.calcite.EdgeCollectorPhysicalNodeVisitor;
 import com.hazelcast.sql.impl.calcite.expression.RexToExpressionVisitor;
@@ -138,6 +139,9 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     /** Root physical rel. */
     private RootPhysicalRel rootPhysicalRel;
 
+    /** Root metadata. */
+    private QueryMetadata rootMetadata;
+
     public PlanCreateVisitor(
         UUID localMemberId,
         Map<UUID, PartitionIdSet> partMap,
@@ -181,9 +185,8 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             }
         }
 
-        // Calculate edge
-
         assert rootPhysicalRel != null;
+        assert rootMetadata != null;
 
         QueryExplain explain = ExplainCreator.explain(sql, rootPhysicalRel);
 
@@ -195,6 +198,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             inboundEdgeMap,
             inboundEdgeMemberCountMap,
             paramsCount,
+            rootMetadata,
             explain,
             stats
         );
@@ -210,6 +214,8 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             pollId(rel),
             upstreamNode
         );
+
+        rootMetadata = new QueryMetadata(rootNode.getSchema().getTypes());
 
         addFragment(rootNode, QueryFragmentMapping.staticMapping(Collections.singleton(localMemberId)));
     }

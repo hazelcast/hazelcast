@@ -133,7 +133,7 @@ public abstract class AbstractMapScanExec extends AbstractExec implements KeyVal
         HeapRow row = new HeapRow(projects.size());
 
         for (int j = 0; j < projects.size(); j++) {
-            Object projectRes = keyValueRow.getColumn(projects.get(j));
+            Object projectRes = keyValueRow.get(projects.get(j));
 
             row.set(j, projectRes);
         }

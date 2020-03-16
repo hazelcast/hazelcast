@@ -47,7 +47,7 @@ public class FieldHashFunction implements HashFunction, DataSerializable {
         int res = 0;
 
         for (Integer field : fields) {
-            Object val = row.getColumn(field);
+            Object val = row.get(field);
             int hash = val != null ? val.hashCode() : 0;
 
             res = 31 * res + hash;

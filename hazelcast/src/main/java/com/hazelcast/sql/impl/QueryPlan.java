@@ -50,6 +50,9 @@ public class QueryPlan {
     /** Number of parameters. */
     private final int parameterCount;
 
+    /** Query metadata. */
+    private final QueryMetadata metadata;
+
     /** Explain. */
     private final QueryExplain explain;
 
@@ -64,6 +67,7 @@ public class QueryPlan {
         Map<Integer, Integer> inboundEdgeMap,
         Map<Integer, Integer> inboundEdgeMemberCountMap,
         int parameterCount,
+        QueryMetadata metadata,
         QueryExplain explain,
         OptimizerStatistics stats
     ) {
@@ -74,6 +78,7 @@ public class QueryPlan {
         this.inboundEdgeMap = inboundEdgeMap;
         this.inboundEdgeMemberCountMap = inboundEdgeMemberCountMap;
         this.parameterCount = parameterCount;
+        this.metadata = metadata;
         this.explain = explain;
         this.stats = stats;
     }
@@ -104,6 +109,10 @@ public class QueryPlan {
 
     public int getParameterCount() {
         return parameterCount;
+    }
+
+    public QueryMetadata getMetadata() {
+        return metadata;
     }
 
     public QueryExplain getExplain() {

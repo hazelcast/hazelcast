@@ -44,8 +44,8 @@ public class HeapRowTest {
         HeapRow row = new HeapRow(values);
 
         assertEquals(2, row.getColumnCount());
-        assertSame(values[0], row.getColumn(0));
-        assertSame(values[1], row.getColumn(1));
+        assertSame(values[0], row.get(0));
+        assertSame(values[1], row.get(1));
 
         row = new HeapRow(2);
 
@@ -53,8 +53,8 @@ public class HeapRowTest {
         row.set(1, values[1]);
 
         assertEquals(2, row.getColumnCount());
-        assertSame(values[0], row.getColumn(0));
-        assertSame(values[1], row.getColumn(1));
+        assertSame(values[0], row.get(0));
+        assertSame(values[1], row.get(1));
     }
 
     @Test

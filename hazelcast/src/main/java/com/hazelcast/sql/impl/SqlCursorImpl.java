@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl;
 
 import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlCursor;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.SqlRow;
@@ -30,14 +31,31 @@ import java.util.Iterator;
  * Cursor implementation.
  */
 public class SqlCursorImpl implements SqlCursor {
-    /** Query state. */
-    private final QueryState state;
 
-    /** Iterator. */
+    private final QueryState state;
+    private final QueryMetadata metadata;
     private Iterator<SqlRow> iterator;
 
     public SqlCursorImpl(QueryState state) {
         this.state = state;
+
+        metadata = state.getInitiatorState().getMetadata();
+    }
+
+    @Override
+    public int getColumnCount() {
+        return metadata.getColumnCount();
+    }
+
+    @Override
+    public SqlColumnMetadata getColumnMetadata(int index) {
+        int columnCount = metadata.getColumnCount();
+
+        if (index < 0 || index >= columnCount) {
+            throw new IllegalArgumentException("Column index is out of range: " + index);
+        }
+
+        return QueryUtils.getColumnMetadata(metadata.getColumnType(index));
     }
 
     @Override @Nonnull
