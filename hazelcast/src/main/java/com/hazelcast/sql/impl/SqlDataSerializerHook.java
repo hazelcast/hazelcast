@@ -40,7 +40,7 @@ import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SQL_DS_F
 /**
  * Serialization hook for SQL classes.
  */
-public class QuerySerializationHook implements DataSerializerHook {
+public class SqlDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(SQL_DS_FACTORY, SQL_DS_FACTORY_ID);
 

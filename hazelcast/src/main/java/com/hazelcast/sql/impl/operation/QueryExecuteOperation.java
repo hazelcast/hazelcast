@@ -21,7 +21,7 @@ import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.sql.impl.QuerySerializationHook;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryResultConsumer;
 
@@ -125,7 +125,7 @@ public class QueryExecuteOperation extends QueryAbstractIdAwareOperation {
 
     @Override
     public int getClassId() {
-        return QuerySerializationHook.OPERATION_EXECUTE;
+        return SqlDataSerializerHook.OPERATION_EXECUTE;
     }
 
     @Override

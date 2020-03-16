@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.operation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.sql.impl.QuerySerializationHook;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 
 import java.io.IOException;
 
@@ -51,7 +51,7 @@ public class QueryFlowControlExchangeOperation extends QueryAbstractExchangeOper
 
     @Override
     public int getClassId() {
-        return QuerySerializationHook.OPERATION_FLOW_CONTROL;
+        return SqlDataSerializerHook.OPERATION_FLOW_CONTROL;
     }
 
     @Override
