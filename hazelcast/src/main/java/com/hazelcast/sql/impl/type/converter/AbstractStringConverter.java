@@ -45,7 +45,7 @@ public abstract class AbstractStringConverter extends Converter {
             return false;
         }
 
-        throw HazelcastSqlException.error(SqlErrorCode.DATA_EXCEPTION, "String literal cannot be converter to BIT: " + val);
+        throw HazelcastSqlException.error(SqlErrorCode.DATA_EXCEPTION, "VARCHAR value cannot be converted to BIT: " + val);
     }
 
     @Override
