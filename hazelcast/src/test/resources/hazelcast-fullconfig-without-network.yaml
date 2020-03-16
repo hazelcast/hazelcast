@@ -136,12 +136,10 @@ hazelcast:
     enabled: true
     group-type: CUSTOM
     member-group:
-      -
-        - 10.10.0.*
+      - - 10.10.0.*
         - 10.10.3.*
         - 10.10.5.*
-      -
-        - 10.10.10.10-100
+      - - 10.10.10.10-100
         - 10.10.1.*
         - 10.10.2.*
 
@@ -185,7 +183,7 @@ hazelcast:
         # all put/offer operations will get blocked until the queue size
         # of the JVM goes down below the maximum.
         # Any integer between 0 and Integer.MAX_VALUE. 0 means
-        # Integer.MAX_VALUE. Default is 0.
+      # Integer.MAX_VALUE. Default is 0.
       max-size: 10
 
       backup-count: 2
@@ -193,14 +191,14 @@ hazelcast:
       empty-queue-ttl: 12
 
       item-listeners:
-         - include-value: true
-           class-name: com.hazelcast.examples.ItemListener
+        - include-value: true
+          class-name: com.hazelcast.examples.ItemListener
       queue-store:
-         enabled: true
-         # class-name: DummyClass
-         factory-class-name: DummyFactoryClass
-         properties:
-           foo: bar
+        enabled: true
+        # class-name: DummyClass
+        factory-class-name: DummyFactoryClass
+        properties:
+          foo: bar
 
       quorum-ref: quorumRuleWithThreeMembers
       merge-policy:
@@ -580,11 +578,11 @@ hazelcast:
       - factory-id: 1
         class-name: com.hazelcast.examples.PortableFactory
     global-serializer:
-       override-java-serialization: true
-       class-name: com.hazelcast.examples.GlobalSerializerFactory
+      override-java-serialization: true
+      class-name: com.hazelcast.examples.GlobalSerializerFactory
     serializers:
-       - type-class: com.hazelcast.examples.DummyType
-         class-name: com.hazelcast.examples.SerializerFactory
+      - type-class: com.hazelcast.examples.DummyType
+        class-name: com.hazelcast.examples.SerializerFactory
     check-class-def-errors: false
     java-serialization-filter:
       defaults-disabled: true
@@ -756,6 +754,16 @@ hazelcast:
           actions:
             - all
       executor-service:
+        - name: "*"
+          principal: "*"
+          actions:
+            - all
+      ring-buffer:
+        - name: "*"
+          principal: "*"
+          actions:
+            - all
+      reliable-topic:
         - name: "*"
           principal: "*"
           actions:
