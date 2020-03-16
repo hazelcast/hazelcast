@@ -45,6 +45,10 @@ public class ArrayStreamSerializer implements StreamSerializer<Object[]> {
     }
 
     @Override
+    public void destroy() {
+    }
+
+    @Override
     public int getTypeId() {
         return SerializationConstants.JAVA_DEFAULT_TYPE_ARRAY;
     }
