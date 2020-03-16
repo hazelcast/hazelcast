@@ -77,7 +77,7 @@ public class ConsoleCommandHandler {
      */
     private class ConsoleHandlerApp extends ConsoleApp {
         ConsoleHandlerApp(HazelcastInstance hazelcast) {
-            super(hazelcast);
+            super(hazelcast, System.out);
         }
 
         @Override

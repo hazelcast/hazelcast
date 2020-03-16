@@ -34,5 +34,6 @@ public interface Serializer {
     /**
      * Called when instance is shutting down. It can be used to clear used resources.
      */
-    void destroy();
+    default void destroy() {
+    }
 }

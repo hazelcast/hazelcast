@@ -136,8 +136,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
 
     public MultiMapService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
-        int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
-        this.partitionContainers = new MultiMapPartitionContainer[partitionCount];
+        this.partitionContainers = createContainers(nodeEngine);
         this.dispatcher = new MultiMapEventsDispatcher(this, nodeEngine.getClusterService());
         this.publisher = new MultiMapEventsPublisher(nodeEngine);
         this.splitBrainProtectionService = nodeEngine.getSplitBrainProtectionService();
@@ -145,10 +144,6 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
 
     @Override
     public void init(final NodeEngine nodeEngine, Properties properties) {
-        int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
-        for (int partition = 0; partition < partitionCount; partition++) {
-            partitionContainers[partition] = new MultiMapPartitionContainer(this, partition);
-        }
         LockSupportService lockService = nodeEngine.getServiceOrNull(LockSupportService.SERVICE_NAME);
         if (lockService != null) {
             lockService.registerLockStoreConstructor(SERVICE_NAME, key -> {
@@ -172,6 +167,15 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
         if (dsMetricsEnabled) {
             ((NodeEngineImpl) nodeEngine).getMetricsRegistry().registerDynamicMetricsProvider(this);
         }
+    }
+
+    private MultiMapPartitionContainer[] createContainers(NodeEngine nodeEngine) {
+        int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
+        MultiMapPartitionContainer[] partitionContainers = new MultiMapPartitionContainer[partitionCount];
+        for (int partition = 0; partition < partitionCount; partition++) {
+            partitionContainers[partition] = new MultiMapPartitionContainer(this, partition);
+        }
+        return partitionContainers;
     }
 
     @Override
@@ -489,17 +493,19 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
 
         for (int i = 0; i < partitionContainers.length; i++) {
             MultiMapPartitionContainer container = partitionContainers[i];
-            if (!container.containerMap.isEmpty()) {
-                for (String name : container.containerMap.keySet()) {
-                    if (!multiMapStats.containsKey(name)
-                            && container.getMultiMapContainer(name, false).config.isStatisticsEnabled()) {
+            if (container.containerMap.isEmpty()) {
+                continue;
+            }
 
-                        if (multiMapStats == EMPTY_MAP) {
-                            multiMapStats = new HashMap<>();
-                        }
+            for (String name : container.containerMap.keySet()) {
+                if (!multiMapStats.containsKey(name)
+                        && container.getMultiMapContainer(name, false).config.isStatisticsEnabled()) {
 
-                        multiMapStats.put(name, createStats(name));
+                    if (multiMapStats == EMPTY_MAP) {
+                        multiMapStats = new HashMap<>();
                     }
+
+                    multiMapStats.put(name, createStats(name));
                 }
             }
         }
