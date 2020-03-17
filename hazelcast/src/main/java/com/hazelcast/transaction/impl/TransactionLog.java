@@ -91,6 +91,18 @@ public class TransactionLog {
         return futures;
     }
 
+    public void onCommitSuccess() {
+        for (TransactionLogRecord record : recordMap.values()) {
+            record.onCommitSuccess();
+        }
+    }
+
+    public void onCommitFailure() {
+        for (TransactionLogRecord record : recordMap.values()) {
+            record.onCommitFailure();
+        }
+    }
+
     public List<Future> prepare(NodeEngine nodeEngine) {
         List<Future> futures = new ArrayList<Future>(size());
         for (TransactionLogRecord record : recordMap.values()) {
