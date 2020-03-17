@@ -55,8 +55,8 @@ public class CastExpression<T> extends UniExpression<T> {
 
     @SuppressWarnings("unchecked")
     @Override
-    public T eval(Row row) {
-        Object value = operand.eval(row);
+    public T eval(Row row, ExpressionEvalContext context) {
+        Object value = operand.eval(row, context);
         Converter valueConverter = operand.getType().getConverter();
 
         return (T) cast(value, valueConverter, type);

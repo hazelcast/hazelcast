@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.expression.math;
 
 import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
 import com.hazelcast.sql.impl.type.SqlYearMonthInterval;
 import com.hazelcast.sql.impl.expression.BiExpressionWithType;
@@ -57,14 +58,14 @@ public class PlusFunction<T> extends BiExpressionWithType<T> {
 
     @SuppressWarnings("unchecked")
     @Override
-    public T eval(Row row) {
-        Object operand1Value = operand1.eval(row);
+    public T eval(Row row, ExpressionEvalContext context) {
+        Object operand1Value = operand1.eval(row, context);
 
         if (operand1Value == null) {
             return null;
         }
 
-        Object operand2Value = operand2.eval(row);
+        Object operand2Value = operand2.eval(row, context);
 
         if (operand2Value == null) {
             return null;

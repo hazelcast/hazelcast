@@ -16,29 +16,19 @@
 
 package com.hazelcast.sql.impl.expression;
 
-import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.type.QueryDataType;
+import java.util.List;
 
 /**
- * Defines expression contract for SQL.
+ * Defines expression evaluation context contract for SQL {@link Expression
+ * expressions}.
  *
- * @param <T> the return type of this expression.
+ * @see Expression#eval
  */
-public interface Expression<T> extends DataSerializable {
+public interface ExpressionEvalContext {
 
     /**
-     * Evaluates this expression.
-     *
-     * @param row     the row to evaluate this expression on.
-     * @param context the expression evaluation context.
-     * @return the result produced by the evaluation.
+     * @return the query parameter arguments set in this context.
      */
-    T eval(Row row, ExpressionEvalContext context);
-
-    /**
-     * @return the return query data type of this expression.
-     */
-    QueryDataType getType();
+    List<Object> getArguments();
 
 }

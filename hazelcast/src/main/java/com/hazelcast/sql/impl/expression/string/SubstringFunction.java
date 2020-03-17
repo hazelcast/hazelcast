@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.expression.string;
 
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.util.EnsureConvertible;
 import com.hazelcast.sql.impl.expression.util.Eval;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -44,10 +45,10 @@ public class SubstringFunction extends TriExpression<String> {
     }
 
     @Override
-    public String eval(Row row) {
-        String source = Eval.asVarchar(operand1, row);
-        Integer start = Eval.asInt(operand2, row);
-        Integer length = Eval.asInt(operand3, row);
+    public String eval(Row row, ExpressionEvalContext context) {
+        String source = Eval.asVarchar(operand1, row, context);
+        Integer start = Eval.asInt(operand2, row, context);
+        Integer length = Eval.asInt(operand3, row, context);
 
         return StringExpressionUtils.substring(source, start, length);
     }

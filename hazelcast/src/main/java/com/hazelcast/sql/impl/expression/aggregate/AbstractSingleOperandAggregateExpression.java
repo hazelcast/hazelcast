@@ -20,6 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.exec.agg.AggregateCollector;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
@@ -44,8 +45,8 @@ public abstract class AbstractSingleOperandAggregateExpression<T> extends Aggreg
     }
 
     @Override
-    public void collect(Row row, AggregateCollector collector) {
-        Object operandValue = operand.eval(row);
+    public void collect(Row row, AggregateCollector collector, ExpressionEvalContext context) {
+        Object operandValue = operand.eval(row, context);
 
         if (isIgnoreNull() && operandValue == null) {
             return;

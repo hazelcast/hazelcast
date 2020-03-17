@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.expression.datetime;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
@@ -30,7 +31,7 @@ import java.time.LocalDate;
  */
 public class CurrentDateFunction implements Expression<LocalDate> {
     @Override
-    public LocalDate eval(Row row) {
+    public LocalDate eval(Row row, ExpressionEvalContext context) {
         return DateTimeExpressionUtils.getLocalDate();
     }
 

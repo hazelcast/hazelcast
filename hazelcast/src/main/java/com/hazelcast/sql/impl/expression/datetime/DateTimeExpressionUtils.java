@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.expression.datetime;
 
 import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.util.Eval;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.Row;
@@ -98,18 +99,18 @@ public final class DateTimeExpressionUtils {
         return PRECISION_DIVISORS[precision];
     }
 
-    public static int getPrecision(Row row, Expression<?> operand) {
+    public static int getPrecision(Row row, Expression<?> operand, ExpressionEvalContext context) {
         if (operand == null) {
             return DateTimeExpressionUtils.NANO_PRECISION;
         }
 
-        Object operandValue = operand.eval(row);
+        Object operandValue = operand.eval(row, context);
 
         if (operandValue == null) {
             return DateTimeExpressionUtils.NANO_PRECISION;
         }
 
-        Integer res = Eval.asInt(operand, row);
+        Integer res = Eval.asInt(operand, row, context);
 
         if (res == null) {
             return DateTimeExpressionUtils.NANO_PRECISION;

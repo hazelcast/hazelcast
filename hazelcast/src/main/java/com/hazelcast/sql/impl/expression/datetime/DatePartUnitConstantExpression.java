@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.expression.datetime;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
@@ -41,7 +42,7 @@ public class DatePartUnitConstantExpression implements Expression<DatePartUnit> 
     }
 
     @Override
-    public DatePartUnit eval(Row row) {
+    public DatePartUnit eval(Row row, ExpressionEvalContext context) {
         throw new UnsupportedOperationException("Should not be called.");
     }
 

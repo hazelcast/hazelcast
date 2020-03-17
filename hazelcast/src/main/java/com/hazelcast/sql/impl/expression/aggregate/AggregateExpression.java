@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.expression.aggregate;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.fragment.QueryFragmentContext;
 import com.hazelcast.sql.impl.exec.agg.AggregateCollector;
 import com.hazelcast.sql.impl.exec.agg.AggregateExec;
@@ -62,7 +63,7 @@ public abstract class AggregateExpression<T> implements DataSerializable {
      * @param row Row.
      * @param collector Collector.
      */
-    public abstract void collect(Row row, AggregateCollector collector);
+    public abstract void collect(Row row, AggregateCollector collector, ExpressionEvalContext context);
 
     /**
      * Create new collector for the given expression.

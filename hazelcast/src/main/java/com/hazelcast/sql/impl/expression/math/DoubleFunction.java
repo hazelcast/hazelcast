@@ -20,6 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.UniExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -56,8 +57,8 @@ public class DoubleFunction extends UniExpression<Double> {
 
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:ReturnCount"})
     @Override
-    public Double eval(Row row) {
-        Object value = operand.eval(row);
+    public Double eval(Row row, ExpressionEvalContext context) {
+        Object value = operand.eval(row, context);
 
         if (value == null) {
             return null;

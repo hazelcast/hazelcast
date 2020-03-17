@@ -39,7 +39,7 @@ public class FetchExec extends AbstractUpstreamAwareExec {
 
     @Override
     protected void setup1(QueryFragmentContext ctx) {
-        fetch.setup();
+        fetch.setup(ctx);
     }
 
     @Override

@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.expression.predicate;
 
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.util.EnsureConvertible;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.VariExpression;
@@ -44,8 +45,8 @@ public class AndPredicate extends VariExpression<Boolean> {
     }
 
     @Override
-    public Boolean eval(Row row) {
-        return TernaryLogic.and(row, operands);
+    public Boolean eval(Row row, ExpressionEvalContext context) {
+        return TernaryLogic.and(row, context, operands);
     }
 
     @Override

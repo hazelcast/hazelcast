@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.expression.datetime;
 
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.util.EnsureConvertible;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.UniExpression;
@@ -42,8 +43,8 @@ public class CurrentTimestampFunction extends UniExpression<OffsetDateTime> {
     }
 
     @Override
-    public OffsetDateTime eval(Row row) {
-        int precision = DateTimeExpressionUtils.getPrecision(row, operand);
+    public OffsetDateTime eval(Row row, ExpressionEvalContext context) {
+        int precision = DateTimeExpressionUtils.getPrecision(row, operand, context);
 
         return DateTimeExpressionUtils.getCurrentTimestamp(precision);
     }

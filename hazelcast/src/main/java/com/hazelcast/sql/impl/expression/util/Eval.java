@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.expression.util;
 
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.Row;
 
 import java.math.BigDecimal;
@@ -40,8 +41,8 @@ public final class Eval {
      * @param row        the row to evaluate the expression on.
      * @return the converted evaluation result.
      */
-    public static Boolean asBit(Expression<?> expression, Row row) {
-        Object res = expression.eval(row);
+    public static Boolean asBit(Expression<?> expression, Row row, ExpressionEvalContext context) {
+        Object res = expression.eval(row, context);
 
         if (res == null) {
             return null;
@@ -58,8 +59,8 @@ public final class Eval {
      * @param row        the row to evaluate the expression on.
      * @return the converted evaluation result.
      */
-    public static Integer asInt(Expression<?> expression, Row row) {
-        Object res = expression.eval(row);
+    public static Integer asInt(Expression<?> expression, Row row, ExpressionEvalContext context) {
+        Object res = expression.eval(row, context);
 
         if (res == null) {
             return null;
@@ -76,8 +77,8 @@ public final class Eval {
      * @param row        the row to evaluate the expression on.
      * @return the converted evaluation result.
      */
-    public static Long asBigint(Expression<?> expression, Row row) {
-        Object res = expression.eval(row);
+    public static Long asBigint(Expression<?> expression, Row row, ExpressionEvalContext context) {
+        Object res = expression.eval(row, context);
 
         if (res == null) {
             return null;
@@ -94,8 +95,8 @@ public final class Eval {
      * @param row        the row to evaluate the expression on.
      * @return the converted evaluation result.
      */
-    public static BigDecimal asDecimal(Expression<?> expression, Row row) {
-        Object res = expression.eval(row);
+    public static BigDecimal asDecimal(Expression<?> expression, Row row, ExpressionEvalContext context) {
+        Object res = expression.eval(row, context);
 
         if (res == null) {
             return null;
@@ -112,8 +113,8 @@ public final class Eval {
      * @param row        the row to evaluate the expression on.
      * @return the converted evaluation result.
      */
-    public static Double asDouble(Expression<?> expression, Row row) {
-        Object res = expression.eval(row);
+    public static Double asDouble(Expression<?> expression, Row row, ExpressionEvalContext context) {
+        Object res = expression.eval(row, context);
 
         if (res == null) {
             return null;
@@ -130,8 +131,8 @@ public final class Eval {
      * @param row        the row to evaluate the expression on.
      * @return the converted evaluation result.
      */
-    public static String asVarchar(Expression<?> expression, Row row) {
-        Object res = expression.eval(row);
+    public static String asVarchar(Expression<?> expression, Row row, ExpressionEvalContext context) {
+        Object res = expression.eval(row, context);
 
         if (res == null) {
             return null;
@@ -148,8 +149,8 @@ public final class Eval {
      * @param row        the row to evaluate the expression on.
      * @return the converted evaluation result.
      */
-    public static OffsetDateTime asTimestampWithTimezone(Expression<?> expression, Row row) {
-        Object res = expression.eval(row);
+    public static OffsetDateTime asTimestampWithTimezone(Expression<?> expression, Row row, ExpressionEvalContext context) {
+        Object res = expression.eval(row, context);
 
         if (res == null) {
             return null;

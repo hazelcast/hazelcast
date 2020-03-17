@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.expression.string;
 
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.util.EnsureConvertible;
 import com.hazelcast.sql.impl.expression.util.Eval;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -44,10 +45,10 @@ public class ReplaceFunction extends TriExpression<String> {
     }
 
     @Override
-    public String eval(Row row) {
-        String source = Eval.asVarchar(operand1, row);
-        String search = Eval.asVarchar(operand2, row);
-        String replacement = Eval.asVarchar(operand3, row);
+    public String eval(Row row, ExpressionEvalContext context) {
+        String source = Eval.asVarchar(operand1, row, context);
+        String search = Eval.asVarchar(operand2, row, context);
+        String replacement = Eval.asVarchar(operand3, row, context);
 
         return StringExpressionUtils.replace(source, search, replacement);
     }

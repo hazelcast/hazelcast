@@ -20,7 +20,6 @@ import com.hazelcast.sql.impl.SqlTestUtils;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -28,16 +27,12 @@ import org.junit.runner.RunWith;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class QueryFragmentContextTest {
-    @After
-    public void after() {
-        QueryFragmentContext.setCurrentContext(null);
-    }
 
     @Test
     public void testArguments() {
@@ -48,22 +43,9 @@ public class QueryFragmentContextTest {
 
         QueryFragmentContext context = SqlTestUtils.emptyFragmentContext(args);
 
-        assertSame(args.get(0), context.getArgument(0));
-        assertSame(args.get(1), context.getArgument(1));
+        assertEquals(2, context.getArguments().size());
+        assertSame(args.get(0), context.getArguments().get(0));
+        assertSame(args.get(1), context.getArguments().get(1));
     }
 
-    @Test
-    public void testThreadLocal() {
-        assertNull(QueryFragmentContext.getCurrentContext());
-
-        List<Object> args = new ArrayList<>();
-        args.add(new Object());
-
-        QueryFragmentContext context = SqlTestUtils.emptyFragmentContext(args);
-
-        QueryFragmentContext.setCurrentContext(context);
-
-        assertSame(context, QueryFragmentContext.getCurrentContext());
-        assertSame(args.get(0), QueryFragmentContext.getCurrentContext().getArgument(0));
-    }
 }
