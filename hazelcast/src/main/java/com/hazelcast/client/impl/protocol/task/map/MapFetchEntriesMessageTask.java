@@ -69,9 +69,9 @@ public class MapFetchEntriesMessageTask extends AbstractMapPartitionMessageTask<
             return (List<Entry<Data, Data>>) (Object) mapEntriesWithCursor.getBatch();
         }
 
-        List<Entry<Data, Data>> serializedBatch = new ArrayList<>(mapEntriesWithCursor.getBatch().size());
+        List<Entry<Data, Data>> serializedBatch = new ArrayList<Entry<Data, Data>>(mapEntriesWithCursor.getBatch().size());
         for (Entry<Data, Object> entry : mapEntriesWithCursor.getBatch()) {
-            serializedBatch.add(new SimpleImmutableEntry<>(entry.getKey(), serializationService.toData(entry.getValue())));
+            serializedBatch.add(new SimpleImmutableEntry<Data, Data>(entry.getKey(), serializationService.toData(entry.getValue())));
         }
         return serializedBatch;
     }
