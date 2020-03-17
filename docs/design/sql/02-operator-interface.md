@@ -57,7 +57,7 @@ HAVING SUM(b) > 50
 ## Volcano Model
 
 Volcano Model defines the common data exchange interface between operators in the relational tree. This allows
-for extensibility, as new operators can be implemented with minimal changes to the engine.
+for extensibility, as new operators could be implemented with minimal changes to the engine.
 
 In the original paper the interface consists of three operations:
 
@@ -70,7 +70,7 @@ interface Operator {
 }
 ```
 
-## Mustang Model
+## Volcano Model in Hazelcast Mustang
 
 The original Volcano Model has two drawbacks:
 1. Operators exchange one row at a time, which leads to performance overhead
@@ -113,7 +113,7 @@ interface Row extends RowBatch {
 ### Operator
 The operator is defined by `Exec` interface:
 1. Operators exchange `RowBatch` instead of `Row`
-1. The blocking `next()` method is replaced with the non-blocking `advance` method, which returns the iteration
+1. The blocking `next()` method is replaced with the non-blocking `advance()` method, which returns the iteration
 result instead of the row batch
 1. The `RowBatch` could be accessed through a separate method
 1. The `open()` method is renamed to `setup()`. Special query context is passed to it as an argument
@@ -136,7 +136,7 @@ The result of iteration is defined in the `IterationResult` enumeration.
 enum IterationResult {
     FETCHED,      // Iteration produced new rows
     FETCHED_DONE, // Iteration produced new rows and reached the end of the stream, no more rows are expected
-    WAIT          // Failed to produce new rows, release the control
+    WAIT;         // Failed to produce new rows, release the control
 }
 ```
 
@@ -146,7 +146,7 @@ execution is halted, and the control is transferred to another query in the exec
 execution is resumed upon an external signal (e.g. when the batch arrives from the remote node, or free space
 in the send buffer appears).
 
-## Implementation Guideline
+## Implementation Guidelines
 Operator implementations must adhere to the following rules:
 1. Use row batches to minimize evaluation overhead
 1. Do not block the thread waiting for data send or receive
