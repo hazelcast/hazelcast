@@ -70,7 +70,7 @@ public class DelegatingSerializationService extends AbstractSerializationService
                             serializer.getTypeId());
                 }
 
-                SerializerAdapter serializerAdapter = createSerializerAdapter(serializer, this);
+                SerializerAdapter serializerAdapter = createSerializerAdapter(serializer);
                 serializersByClass.put(clazz, serializerAdapter);
                 serializersById.put(serializerAdapter.getImpl().getTypeId(), serializerAdapter);
             });
