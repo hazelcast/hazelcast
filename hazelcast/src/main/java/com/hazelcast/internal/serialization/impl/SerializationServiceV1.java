@@ -117,14 +117,14 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         }
 
         dataSerializerAdapter = createSerializerAdapter(
-                new DataSerializableSerializer(builder.dataSerializableFactories, builder.getClassLoader()), this);
+                new DataSerializableSerializer(builder.dataSerializableFactories, builder.getClassLoader()));
         portableSerializer = new PortableSerializer(portableContext, loader.getFactories());
-        portableSerializerAdapter = createSerializerAdapter(portableSerializer, this);
+        portableSerializerAdapter = createSerializerAdapter(portableSerializer);
 
         javaSerializerAdapter = createSerializerAdapter(
-                new JavaSerializer(builder.enableSharedObject, builder.enableCompression, builder.classNameFilter), this);
+                new JavaSerializer(builder.enableSharedObject, builder.enableCompression, builder.classNameFilter));
         javaExternalizableAdapter = createSerializerAdapter(
-                new JavaDefaultSerializers.ExternalizableSerializer(builder.enableCompression, builder.classNameFilter), this);
+                new JavaDefaultSerializers.ExternalizableSerializer(builder.enableCompression, builder.classNameFilter));
         registerConstantSerializers();
         registerJavaTypeSerializers();
     }
