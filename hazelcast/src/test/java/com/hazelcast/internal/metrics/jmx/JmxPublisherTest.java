@@ -292,7 +292,7 @@ public class JmxPublisherTest {
     }
 
     private BiTuple<String, List<TriTuple<String, Number, Type>>> metric(String objectName,
-                                                                           List<TriTuple<String, Number, Type>> measurements) {
+                                                                         List<TriTuple<String, Number, Type>> measurements) {
         return BiTuple.of(objectName, measurements);
     }
 
