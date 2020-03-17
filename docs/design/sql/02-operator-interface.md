@@ -1,0 +1,154 @@
+# SQL Operator Interface
+
+## Overview
+In databases SQL queries are typically represented in a form of operator tree, called "Volcano Model",
+introduced in Goetz Graefe's seminal paper [[1]]. In this document we describe the design of the operator
+interface in Hazelcast Mustang engine.
+
+## Relational Operators
+SQL query is first parsed into **parse tree**, which is used for syntax validation and semantic checks.
+
+The parse tree is then converted into **relational operator tree**, or simply **relational tree**,
+for optimization. Relational tree is more convenient because it's structure is simpler than the structure
+of the parse tree.
+
+A **query plan**, consisting of a relational tree and supplemental information, is submitted for execution
+after the optimization.
+
+The table below lists common relational operators used in database engines.
+
+*Table 1: Common Relational Operators*
+
+| Name | Description |
+|---|---|
+| `Scan` | Iterate over source rows |
+| `Project` | Return a set of original or derived attributes of the child operator |
+| `Filter` | Return rows of the child operator which pass the provided predicate |
+| `Aggregate` | Aggregate rows of the child operator |
+| `Sort` | Sort rows of the child operator |
+| `Join` | Join rows from several child operators |
+
+An example of a query, its parse tree and relational tree is provided below.
+
+*Snippet 1: Query*
+```sql
+SELECT a, SUM(b)
+FROM table
+GROUP BY a
+HAVING SUM(b) > 50
+```
+*Snippet 2: Parse Tree*
+```
+-- Select
+---- SelectList [a, SUM(b)]
+---- From [table]
+---- GroupBy [a]
+---- Having [SUM(b) > 50]
+```
+*Snippet 3: Relational Tree*
+```
+-- Filter [SUM(b) > 50]
+---- Aggregate [a -> SUM(b)]
+------ Project [a, b]
+-------- Scan [table]
+```
+
+## Volcano Model
+
+Volcano Model defines the common data exchange interface between operators in the relational tree. This allows
+for extensibility, as new operators can be implemented with minimal changes to the engine.
+
+In the original paper the interface consists of three operations:
+
+*Snippet 4: Volcano Interface*
+```java
+interface Operator {
+    void open();  // Initialize the operator
+    Row next();   // Get the next row
+    void close(); // Close the operator and release all resources
+}
+```
+
+## Mustang Model
+
+The original Volcano Model has two drawbacks:
+1. Operators exchange one row at a time, what leads to high performance overhead
+2. Call to the `next()` is blocking, which is not optimal for the distributed environment, where
+operators often wait for remote data or free space in the send buffer.
+
+To achieve high performance, we introduce several changes to the original Volcano Model: batching and
+non-blocking execution.
+
+### Row and RowBatch
+We define the `RowBatch` interface which a collection of rows (tuples).
+
+*Snippet 5: RowBatch interface*
+```java
+interface RowBatch {
+    Row getRow(int index); // Get the row by index
+    int getRowCount();     // Get the number of rows 
+} 
+```
+
+Then we define the `Row` interface, which provides access to values by index. The `Row` itself is considered
+as a special case of `RowBatch` with one row. This allows to save on allocations in some parts of the engine.
+
+*Snippet 6: Row interface*
+```java
+interface Row extends RowBatch {
+    Object get(int index); // Get the value by index
+    int getColumnCount();  // Get the number of values in the row 
+    
+    default int getRowCount() {
+        return 1;
+    }
+    
+    default int getRow(int index) {
+        return this;
+    }
+}
+```
+
+### Operator
+The operator is defined by `Exec` interface:
+1. Operators exchange `RowBatch` instead of `Row`
+1. Blocking call to the next row is replaced with a non-blocking `advance` method, which returns the iteration
+result instead of the row batch
+1. The `RowBatch` could be accessed through a separate method
+1. The `open()` method is renamed to `setup()`. Special query context is passed to it as an argument
+1. There is not separate `close()` methodbecause the engine doesn't need explicit per-operator cleanup at the
+moment. This may change in future, but is not important for the purpose of this document.
+
+*Snippet 7: Exec interface*
+```java
+interface Exec {
+    void setup(QueryContext context); // Initialize the operator
+    IterationResult advance();        // Advance the operator if possible; never blocks
+    RowBatch currentBatch();          // Get the batch returned by the previous advance() call 
+}
+```
+
+The result of iteration is defined in the `IterationResult` enumeration.
+
+*Snippet 8: IterationResult enumeration*
+```java
+enum IteraionResult {
+    FETCHED,      // Iteration produced new rows
+    FETCHED_DONE, // Iteration produced new rows and reached end of the stream, no more rows are expected
+    WAIT          // Failed to produce new rows, release the control
+}
+```
+
+When the engine has received `FETCHED` or `FETCHED_DONE` from the `Exec.advance()` call, it may access the
+produced rows through the `Exec.currentBatch()` call. If the engine has received `WAIT`, then query
+execution is halted, and the control is transferred to another query in the execution queue. The query
+execution is resumed upon an external signal (e.g. when the batch arrives from the remote node, or free space
+in the send buffer appears).
+
+## Implementation Guideline
+Operator implementations must adhere to the following rules:
+1. Use row batches to minimize evaluation overhead
+1. Do not block the thread waiting for data send or receive
+1. Avoid blocking synchronization when possible
+
+[1]: https://dl.acm.org/doi/10.1109/69.273032 "Volcano - An Extensible and Parallel Query Evaluation System ()"
