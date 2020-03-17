@@ -4,7 +4,7 @@
 In databases, SQL queries are typically represented in a form of operator tree, called **Volcano Model**,
 introduced in Goetz Graefe seminal paper [[1]].
 
-In this document, we describe the design of the operator interface in the Hazelcast Mustang engine.
+In this document, we describe the design of the Hazelcast Mustang operator interface.
 
 ## Relational Operators
 An SQL query is first parsed into a **parse tree**, which is used for syntactic and semantic checking.
@@ -152,4 +152,4 @@ Operator implementations must adhere to the following rules:
 1. Do not block the thread waiting for data send or receive
 1. Avoid blocking synchronization when possible
 
-[1]: https://dl.acm.org/doi/10.1109/69.273032 "Volcano - An Extensible and Parallel Query Evaluation System ()"
+[1]: https://dl.acm.org/doi/10.1109/69.273032 "Volcano - An Extensible and Parallel Query Evaluation System"
