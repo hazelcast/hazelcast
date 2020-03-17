@@ -62,7 +62,7 @@ public final class HazelcastSqlException extends HazelcastException {
     }
 
     /**
-     * Constructs and error with specific code and cause.
+     * Constructs an error with specific code and cause.
      *
      * @param code Code.
      * @param message Message.

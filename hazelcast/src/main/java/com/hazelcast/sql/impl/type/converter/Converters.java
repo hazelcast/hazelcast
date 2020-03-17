@@ -130,7 +130,7 @@ public final class Converters {
     }
 
     private static Map<Class<?>, Converter> createConvertersMap(List<Converter> converters) {
-        Map<Class<?>, Converter> res = new HashMap<>();
+        Map<Class<?>, Converter> res = new HashMap<>(converters.size());
 
         for (Converter converter : converters) {
             Class<?> valueClass = converter.getValueClass();
