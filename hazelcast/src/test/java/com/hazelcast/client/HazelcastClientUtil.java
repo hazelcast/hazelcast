@@ -18,6 +18,7 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.connection.AddressProvider;
+import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.core.HazelcastInstance;
 
 public class HazelcastClientUtil {
@@ -28,5 +29,19 @@ public class HazelcastClientUtil {
 
     public static String getInstanceName(ClientConfig config) {
         return HazelcastClient.getInstanceName(config, null);
+    }
+
+    public static ClientMessage.Frame fastForwardToEndFrame(ClientMessage.ForwardFrameIterator iterator) {
+        int numberOfExpectedEndFrames = 1;
+        ClientMessage.Frame frame = null;
+        while (numberOfExpectedEndFrames != 0) {
+            frame = iterator.next();
+            if (frame.isEndFrame()) {
+                numberOfExpectedEndFrames--;
+            } else if (frame.isBeginFrame()) {
+                numberOfExpectedEndFrames++;
+            }
+        }
+        return frame;
     }
 }
