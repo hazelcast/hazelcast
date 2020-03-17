@@ -30,7 +30,7 @@ import com.hazelcast.sql.impl.exec.MaterializedInputExec;
 import com.hazelcast.sql.impl.exec.ProjectExec;
 import com.hazelcast.sql.impl.exec.ReplicatedMapScanExec;
 import com.hazelcast.sql.impl.exec.ReplicatedToPartitionedExec;
-import com.hazelcast.sql.impl.exec.RootExec;
+import com.hazelcast.sql.impl.exec.root.RootExec;
 import com.hazelcast.sql.impl.exec.SortExec;
 import com.hazelcast.sql.impl.exec.agg.AggregateExec;
 import com.hazelcast.sql.impl.exec.fetch.FetchExec;

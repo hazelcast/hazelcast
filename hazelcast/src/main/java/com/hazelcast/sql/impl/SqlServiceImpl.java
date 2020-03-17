@@ -26,8 +26,9 @@ import com.hazelcast.sql.SqlCursor;
 import com.hazelcast.sql.SqlQuery;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.client.QueryClientStateRegistry;
+import com.hazelcast.sql.impl.exec.root.RootResultConsumerImpl;
 import com.hazelcast.sql.impl.explain.QueryExplain;
-import com.hazelcast.sql.impl.explain.QueryExplainRowSource;
+import com.hazelcast.sql.impl.explain.QueryExplainResultProducer;
 import com.hazelcast.sql.impl.fragment.QueryFragment;
 import com.hazelcast.sql.impl.memory.GlobalMemoryReservationManager;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
@@ -221,7 +222,7 @@ public class SqlServiceImpl implements SqlService {
         IdentityHashMap<QueryFragment, Collection<UUID>> fragmentMappings = operationFactory.prepareFragmentMappings();
 
         // Register the state.
-        QueryResultConsumerImpl consumer = new QueryResultConsumerImpl(pageSize);
+        RootResultConsumerImpl consumer = new RootResultConsumerImpl(pageSize);
 
         QueryState state = stateRegistry.onInitiatorQueryStarted(
             timeout,
@@ -269,7 +270,7 @@ public class SqlServiceImpl implements SqlService {
     private QueryState executeExplain(QueryPlan plan) {
         QueryExplain explain = plan.getExplain();
 
-        QueryExplainRowSource rowSource = new QueryExplainRowSource(explain);
+        QueryExplainResultProducer rowSource = new QueryExplainResultProducer(explain);
 
         QueryState state = stateRegistry.onInitiatorQueryStarted(
             0,

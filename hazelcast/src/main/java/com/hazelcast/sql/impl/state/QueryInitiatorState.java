@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.state;
 
 import com.hazelcast.sql.impl.QueryMetadata;
+import com.hazelcast.sql.impl.QueryResultProducer;
 import com.hazelcast.sql.impl.fragment.QueryFragment;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryPlan;
@@ -34,7 +35,7 @@ public class QueryInitiatorState {
     private final QueryPlan plan;
     private final QueryMetadata metadata;
     private final IdentityHashMap<QueryFragment, Collection<UUID>> fragmentMappings;
-    private final QueryStateRowSource rowSource;
+    private final QueryResultProducer rowSource;
     private final long timeout;
 
     public QueryInitiatorState(
@@ -42,7 +43,7 @@ public class QueryInitiatorState {
         QueryPlan plan,
         QueryMetadata metadata,
         IdentityHashMap<QueryFragment, Collection<UUID>> fragmentMappings,
-        QueryStateRowSource rowSource,
+        QueryResultProducer rowSource,
         long timeout
     ) {
         this.queryId = queryId;
@@ -69,7 +70,7 @@ public class QueryInitiatorState {
         return fragmentMappings;
     }
 
-    public QueryStateRowSource getRowSource() {
+    public QueryResultProducer getRowSource() {
         return rowSource;
     }
 

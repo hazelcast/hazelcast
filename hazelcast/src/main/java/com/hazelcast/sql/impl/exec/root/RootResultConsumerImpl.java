@@ -14,11 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl;
+package com.hazelcast.sql.impl.exec.root;
 
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.SqlRow;
-import com.hazelcast.sql.impl.exec.RootExec;
 import com.hazelcast.sql.impl.row.Row;
 
 import java.util.ArrayDeque;
@@ -28,7 +26,7 @@ import java.util.NoSuchElementException;
 /**
  * Blocking array-based result consumer.
  */
-public class QueryResultConsumerImpl implements QueryResultConsumer {
+public class RootResultConsumerImpl implements RootResultConsumer {
     /** Maximum size. */
     private final int pageSize;
 
@@ -53,7 +51,7 @@ public class QueryResultConsumerImpl implements QueryResultConsumer {
     /** Query root. */
     private RootExec root;
 
-    public QueryResultConsumerImpl(int pageSize) {
+    public RootResultConsumerImpl(int pageSize) {
         this.pageSize = pageSize;
     }
 
@@ -122,16 +120,16 @@ public class QueryResultConsumerImpl implements QueryResultConsumer {
     }
 
     @Override
-    public Iterator<SqlRow> iterator() {
+    public Iterator<Row> iterator() {
         return iterator;
     }
 
     /**
      * Iterator over results.
      */
-    private class InternalIterator implements Iterator<SqlRow> {
-        /** Current row. */
-        private SqlRow currentRow;
+    private class InternalIterator implements Iterator<Row> {
+
+        private Row currentRow;
 
         @Override
         public boolean hasNext() {
@@ -141,10 +139,10 @@ public class QueryResultConsumerImpl implements QueryResultConsumer {
         }
 
         @Override
-        public SqlRow next() {
+        public Row next() {
             advanceIfNeeded();
 
-            SqlRow res = currentRow;
+            Row res = currentRow;
 
             currentRow = null;
 
@@ -163,13 +161,13 @@ public class QueryResultConsumerImpl implements QueryResultConsumer {
             currentRow = advance0();
         }
 
-        private SqlRow advance0() {
+        private Row advance0() {
             synchronized (mux) {
                 while (true) {
                     Row row = rows.poll();
 
                     if (row != null) {
-                        return new SqlRowImpl(row);
+                        return row;
                     }
 
                     if (done) {

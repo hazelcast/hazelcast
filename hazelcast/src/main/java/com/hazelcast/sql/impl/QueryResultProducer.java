@@ -16,31 +16,27 @@
 
 package com.hazelcast.sql.impl;
 
-import com.hazelcast.sql.impl.exec.RootExec;
+import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.state.QueryStateRowSource;
+
+import java.util.Iterator;
 
 /**
- * Consumer of results.
+ * Generic interface which produces iterator over results which are then delivered to users.
+ * Returned iterator must provide rows which were not returned yet.
  */
-public interface QueryResultConsumer extends QueryStateRowSource {
+public interface QueryResultProducer {
     /**
-     * Perform one-time setup.
+     * Get iterator over results. Subsequent calls must return the same instance.
      *
-     * @param root Root.
+     * @return Iterator.
      */
-    void setup(RootExec root);
+    Iterator<Row> iterator();
 
     /**
-     * Consume rows from the source.
+     * Notify row source about an error. Implementation of the interface should stop query execution ASAP.
      *
-     * @param source Row source.
-     * @return {@code True} if consumed.
+     * @param error Error.
      */
-    boolean consume(Iterable<Row> source);
-
-    /**
-     * Mark results as finished.
-     */
-    void done();
+    void onError(HazelcastSqlException error);
 }

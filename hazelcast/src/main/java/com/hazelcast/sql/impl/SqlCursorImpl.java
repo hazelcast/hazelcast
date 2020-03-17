@@ -21,6 +21,7 @@ import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlCursor;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.SqlRow;
+import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.state.QueryInitiatorState;
 import com.hazelcast.sql.impl.state.QueryState;
 
@@ -61,7 +62,7 @@ public class SqlCursorImpl implements SqlCursor {
     @Override @Nonnull
     public Iterator<SqlRow> iterator() {
         if (iterator == null) {
-            Iterator<SqlRow> iterator0 = getQueryInitiatorState().getRowSource().iterator();
+            Iterator<SqlRow> iterator0 = new RowToSqlRowIterator(getQueryInitiatorState().getRowSource().iterator());
 
             iterator = iterator0;
 
@@ -90,5 +91,24 @@ public class SqlCursorImpl implements SqlCursor {
 
     private QueryInitiatorState getQueryInitiatorState() {
         return state.getInitiatorState();
+    }
+
+    private static final class RowToSqlRowIterator implements Iterator<SqlRow> {
+
+        private final Iterator<Row> delegate;
+
+        private RowToSqlRowIterator(Iterator<Row> delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return delegate.hasNext();
+        }
+
+        @Override
+        public SqlRow next() {
+            return new SqlRowImpl(delegate.next());
+        }
     }
 }

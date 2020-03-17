@@ -23,7 +23,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.sql.impl.QueryResultConsumer;
+import com.hazelcast.sql.impl.exec.root.RootResultConsumer;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -59,7 +59,7 @@ public class QueryExecuteOperation extends QueryAbstractIdAwareOperation {
     private long timeout;
 
     /** Root fragment result consumer. Applicable only to root fragment being executed on local node. */
-    private transient QueryResultConsumer rootConsumer;
+    private transient RootResultConsumer rootConsumer;
 
     public QueryExecuteOperation() {
         // No-op.
@@ -115,11 +115,11 @@ public class QueryExecuteOperation extends QueryAbstractIdAwareOperation {
         return timeout;
     }
 
-    public QueryResultConsumer getRootConsumer() {
+    public RootResultConsumer getRootConsumer() {
         return rootConsumer;
     }
 
-    public void setRootConsumer(QueryResultConsumer rootConsumer) {
+    public void setRootConsumer(RootResultConsumer rootConsumer) {
         this.rootConsumer = rootConsumer;
     }
 

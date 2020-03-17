@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.state;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryMetadata;
+import com.hazelcast.sql.impl.QueryResultProducer;
 import com.hazelcast.sql.impl.fragment.QueryFragment;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryPlan;
@@ -71,7 +72,7 @@ public final class QueryState {
         QueryPlan initiatorPlan,
         QueryMetadata initiatorMetadata,
         IdentityHashMap<QueryFragment, Collection<UUID>> initiatorFragmentMappings,
-        QueryStateRowSource initiatorRowSource
+        QueryResultProducer initiatorRowSource
     ) {
         // Set common state.
         this.queryId = queryId;
@@ -101,7 +102,7 @@ public final class QueryState {
         QueryPlan initiatorPlan,
         QueryMetadata initiatorMetadata,
         IdentityHashMap<QueryFragment, Collection<UUID>> initiatorFragmentMappings,
-        QueryStateRowSource initiatorRowSource
+        QueryResultProducer initiatorResultProducer
     ) {
         return new QueryState(
             queryId,
@@ -113,7 +114,7 @@ public final class QueryState {
             initiatorPlan,
             initiatorMetadata,
             initiatorFragmentMappings,
-            initiatorRowSource
+            initiatorResultProducer
         );
     }
 

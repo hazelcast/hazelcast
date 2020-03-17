@@ -27,6 +27,7 @@ import com.hazelcast.sql.impl.QueryPlan;
 import com.hazelcast.sql.impl.SqlCursorImpl;
 import com.hazelcast.sql.impl.calcite.OptimizerConfig;
 import com.hazelcast.sql.impl.calcite.OptimizerContext;
+import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.support.SqlTestSupport;
 import com.hazelcast.sql.tpch.model.ModelConfig;
 import com.hazelcast.sql.tpch.model.ModelLoader;
@@ -892,8 +893,8 @@ public class TpcHTest extends SqlTestSupport {
         QueryPlan plan = res.getPlan();
 
         System.out.println(">>> Explain:");
-        for (SqlRow explainRow : res.getPlan().getExplain().asRows()) {
-            System.out.println("\t" + explainRow.getObject(0));
+        for (Row explainRow : res.getPlan().getExplain().asRows()) {
+            System.out.println("\t" + explainRow.get(0));
         }
         System.out.println();
 

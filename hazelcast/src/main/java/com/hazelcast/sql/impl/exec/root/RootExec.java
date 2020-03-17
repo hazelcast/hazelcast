@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.exec;
+package com.hazelcast.sql.impl.exec.root;
 
+import com.hazelcast.sql.impl.exec.AbstractUpstreamAwareExec;
+import com.hazelcast.sql.impl.exec.Exec;
+import com.hazelcast.sql.impl.exec.IterationResult;
 import com.hazelcast.sql.impl.fragment.QueryFragmentContext;
-import com.hazelcast.sql.impl.QueryResultConsumer;
 import com.hazelcast.sql.impl.row.RowBatch;
 
 /**
@@ -25,7 +27,7 @@ import com.hazelcast.sql.impl.row.RowBatch;
  */
 public class RootExec extends AbstractUpstreamAwareExec {
     /** Consumer (user iterator, client listener, etc). */
-    private QueryResultConsumer consumer;
+    private RootResultConsumer consumer;
 
     public RootExec(int id, Exec upstream) {
         super(id, upstream);

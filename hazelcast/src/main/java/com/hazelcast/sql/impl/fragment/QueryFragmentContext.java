@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.fragment;
 
 import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.sql.impl.QueryResultConsumer;
+import com.hazelcast.sql.impl.exec.root.RootResultConsumer;
 import com.hazelcast.sql.impl.state.QueryState;
 import com.hazelcast.sql.impl.worker.QueryFragmentExecutable;
 import com.hazelcast.sql.impl.worker.QueryFragmentWorkerPool;
@@ -34,7 +34,7 @@ public class QueryFragmentContext {
     private final QueryState state;
     private final List<Object> arguments;
     private final QueryFragmentWorkerPool fragmentPool;
-    private final QueryResultConsumer rootConsumer;
+    private final RootResultConsumer rootConsumer;
 
     private QueryFragmentExecutable fragmentExecutable;
 
@@ -42,7 +42,7 @@ public class QueryFragmentContext {
         QueryState state,
         List<Object> arguments,
         QueryFragmentWorkerPool fragmentPool,
-        QueryResultConsumer rootConsumer
+        RootResultConsumer rootConsumer
     ) {
         assert arguments != null;
 
@@ -68,7 +68,7 @@ public class QueryFragmentContext {
         return state.getQueryId();
     }
 
-    public QueryResultConsumer getRootConsumer() {
+    public RootResultConsumer getRootConsumer() {
         return rootConsumer;
     }
 

@@ -18,21 +18,29 @@ package com.hazelcast.sql.impl.explain;
 
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlRow;
-import com.hazelcast.sql.impl.state.QueryStateRowSource;
+import com.hazelcast.sql.impl.QueryResultProducer;
+import com.hazelcast.sql.impl.row.Row;
 
 import java.util.Iterator;
 
-public class QueryExplainRowSource implements QueryStateRowSource {
-    /** Explain */
-    private final QueryExplain explain;
+/**
+ * Result producer for EXPLAIN statement.
+ */
+// TODO: Remove this class.
+public class QueryExplainResultProducer implements QueryResultProducer {
 
-    public QueryExplainRowSource(QueryExplain explain) {
+    private final QueryExplain explain;
+    private final Iterator<Row> iterator;
+
+    public QueryExplainResultProducer(QueryExplain explain) {
         this.explain = explain;
+
+        iterator = explain.asRows().iterator();
     }
 
     @Override
-    public Iterator<SqlRow> iterator() {
-        return explain.asRows().iterator();
+    public Iterator<Row> iterator() {
+        return iterator;
     }
 
     @Override
