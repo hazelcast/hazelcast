@@ -1,16 +1,17 @@
 # SQL Operator Interface
 
 ## Overview
-In databases SQL queries are typically represented in a form of operator tree, called "Volcano Model",
-introduced in Goetz Graefe's seminal paper [[1]]. In this document we describe the design of the operator
-interface in Hazelcast Mustang engine.
+In databases, SQL queries are typically represented in a form of operator tree, called **Volcano Model**,
+introduced in Goetz Graefe seminal paper [[1]].
+
+In this document, we describe the design of the operator interface in the Hazelcast Mustang engine.
 
 ## Relational Operators
-SQL query is first parsed into **parse tree**, which is used for syntax validation and semantic checks.
+An SQL query is first parsed into a **parse tree**, which is used for syntactic and semantic checking.
 
 The parse tree is then converted into **relational operator tree**, or simply **relational tree**,
-for optimization. Relational tree is more convenient because it's structure is simpler than the structure
-of the parse tree.
+for optimization. The relational tree is more convenient because its structure is simpler than the
+structure of the parse tree.
 
 A **query plan**, consisting of a relational tree and supplemental information, is submitted for execution
 after the optimization.
@@ -28,7 +29,7 @@ The table below lists common relational operators used in database engines.
 | `Sort` | Sort rows of the child operator |
 | `Join` | Join rows from several child operators |
 
-An example of a query, its parse tree and relational tree is provided below.
+An example of a query, its parse tree, and its relational tree is provided below.
 
 *Snippet 1: Query*
 ```sql
@@ -72,7 +73,7 @@ interface Operator {
 ## Mustang Model
 
 The original Volcano Model has two drawbacks:
-1. Operators exchange one row at a time, what leads to high performance overhead
+1. Operators exchange one row at a time, which leads to performance overhead
 2. Call to the `next()` is blocking, which is not optimal for the distributed environment, where
 operators often wait for remote data or free space in the send buffer.
 
@@ -91,7 +92,7 @@ interface RowBatch {
 ```
 
 Then we define the `Row` interface, which provides access to values by index. The `Row` itself is considered
-as a special case of `RowBatch` with one row. This allows to save on allocations in some parts of the engine.
+as a special case of `RowBatch` with one row. This allows saving on allocations in some parts of the engine.
 
 *Snippet 6: Row interface*
 ```java
@@ -112,12 +113,12 @@ interface Row extends RowBatch {
 ### Operator
 The operator is defined by `Exec` interface:
 1. Operators exchange `RowBatch` instead of `Row`
-1. Blocking call to the next row is replaced with a non-blocking `advance` method, which returns the iteration
+1. The blocking `next()` method is replaced with the non-blocking `advance` method, which returns the iteration
 result instead of the row batch
 1. The `RowBatch` could be accessed through a separate method
 1. The `open()` method is renamed to `setup()`. Special query context is passed to it as an argument
-1. There is not separate `close()` methodbecause the engine doesn't need explicit per-operator cleanup at the
-moment. This may change in future, but is not important for the purpose of this document.
+1. There is no separate `close()` method because the engine doesn't need explicit per-operator cleanup at the
+moment. This may change in future but is not important for the purpose of this document.
 
 *Snippet 7: Exec interface*
 ```java
@@ -132,9 +133,9 @@ The result of iteration is defined in the `IterationResult` enumeration.
 
 *Snippet 8: IterationResult enumeration*
 ```java
-enum IteraionResult {
+enum IterationResult {
     FETCHED,      // Iteration produced new rows
-    FETCHED_DONE, // Iteration produced new rows and reached end of the stream, no more rows are expected
+    FETCHED_DONE, // Iteration produced new rows and reached the end of the stream, no more rows are expected
     WAIT          // Failed to produce new rows, release the control
 }
 ```
