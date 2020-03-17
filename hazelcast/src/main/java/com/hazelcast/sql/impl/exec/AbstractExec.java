@@ -24,8 +24,9 @@ import com.hazelcast.sql.impl.row.RowBatch;
  * Abstract executor.
  */
 public abstract class AbstractExec implements Exec {
-    private final int id;
+
     protected QueryFragmentContext ctx;
+    private final int id;
 
     protected AbstractExec(int id) {
         this.id = id;

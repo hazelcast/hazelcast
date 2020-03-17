@@ -49,7 +49,7 @@ public class AbstractUpstreamAwareExecTest {
 
         private QueryFragmentContext context;
 
-        public ChildExec() {
+        private ChildExec() {
             super(1);
         }
 
@@ -73,7 +73,7 @@ public class AbstractUpstreamAwareExecTest {
 
         private QueryFragmentContext context;
 
-        public ParentExec(Exec upstream) {
+        private ParentExec(Exec upstream) {
             super(2, upstream);
         }
 

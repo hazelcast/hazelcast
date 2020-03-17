@@ -22,8 +22,6 @@ import java.util.List;
  * Context of a running query fragment.
  */
 public class QueryFragmentContext {
-    /** Current query context. */
-    private static final ThreadLocal<QueryFragmentContext> CURRENT = new ThreadLocal<>();
 
     private final List<Object> arguments;
 
@@ -31,14 +29,6 @@ public class QueryFragmentContext {
         assert arguments != null;
 
         this.arguments = arguments;
-    }
-
-    public static QueryFragmentContext getCurrentContext() {
-        return CURRENT.get();
-    }
-
-    public static void setCurrentContext(QueryFragmentContext context) {
-        CURRENT.set(context);
     }
 
     public Object getArgument(int index) {

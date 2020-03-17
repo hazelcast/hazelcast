@@ -16,8 +16,6 @@
 
 package com.hazelcast.sql.impl.row;
 
-import java.util.List;
-
 /**
  * Batch of rows.
  */
