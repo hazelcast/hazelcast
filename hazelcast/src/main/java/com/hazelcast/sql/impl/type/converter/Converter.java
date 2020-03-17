@@ -30,6 +30,10 @@ import java.time.OffsetDateTime;
 
 /**
  * Interface to convert an item from one type to another.
+ * <p>
+ * Converters assume that the passed values are not null, caller of conversion methods must ensure that.
+ * We do this because most SQL expressions have special treatment for null values, and in general null check
+ * is already performed by the time the converter is called.
  */
 @SuppressWarnings("checkstyle:MethodCount")
 public abstract class Converter {

@@ -19,7 +19,7 @@ Scale is not used in Hazelcast SQL. It is applicable only for DECIMAL, REAL and 
 of defining it as a separate value, we just treat these types as types with infinite scale.
 
 ## Supported types
-Types supported by the Hazelcast SQL engine is listed in the Table 1. Precision is the smallest precision in the type family.
+Types supported by the Hazelcast SQL engine are listed in the Table 1. Precision is the smallest precision in the type family.
 
 `OBJECT` is Hazelcast-specific type representing an object which doesn't match any other type.
 

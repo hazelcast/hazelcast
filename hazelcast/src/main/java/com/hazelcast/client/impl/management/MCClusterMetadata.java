@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.impl.management;
 
-import com.hazelcast.client.impl.protocol.codec.MCGetClusterMetadataCodec.ResponseParameters;
 import com.hazelcast.cluster.ClusterState;
 
 public class MCClusterMetadata {
@@ -24,15 +23,6 @@ public class MCClusterMetadata {
     private long clusterTime;
     private String memberVersion;
     private String jetVersion;
-
-    static MCClusterMetadata fromResponse(ResponseParameters parameters) {
-        MCClusterMetadata metadata = new MCClusterMetadata();
-        metadata.currentState = ClusterState.getById(parameters.currentState);
-        metadata.clusterTime = parameters.clusterTime;
-        metadata.memberVersion = parameters.memberVersion;
-        metadata.jetVersion = parameters.jetVersion;
-        return metadata;
-    }
 
     public ClusterState getCurrentState() {
         return currentState;

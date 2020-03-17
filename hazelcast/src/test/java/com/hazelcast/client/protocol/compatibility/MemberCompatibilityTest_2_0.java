@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.protocol.compatibility;
 
+import com.hazelcast.client.HazelcastClientUtil;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.ClientMessageReader;
 import com.hazelcast.client.impl.protocol.codec.*;
@@ -42,6 +43,7 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -7417,87 +7419,29 @@ public class MemberCompatibilityTest_2_0 {
         compareClientMessages(fromFile, encoded);
     }
 
-    @Test
-    public void test_SqlExecuteCodec_decodeRequest() {
-        int fileClientMessageIndex = 823;
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        SqlExecuteCodec.RequestParameters parameters = SqlExecuteCodec.decodeRequest(fromFile);
-        assertTrue(isEqual(aString, parameters.query));
-        assertTrue(isEqual(aListOfData, parameters.parameters));
-    }
-
-    @Test
-    public void test_SqlExecuteCodec_encodeResponse() {
-        int fileClientMessageIndex = 824;
-        ClientMessage encoded = SqlExecuteCodec.encodeResponse(aData, anInt);
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        compareClientMessages(fromFile, encoded);
-    }
-
-    @Test
-    public void test_SqlFetchCodec_decodeRequest() {
-        int fileClientMessageIndex = 825;
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        SqlFetchCodec.RequestParameters parameters = SqlFetchCodec.decodeRequest(fromFile);
-        assertTrue(isEqual(aData, parameters.queryId));
-        assertTrue(isEqual(anInt, parameters.pageSize));
-    }
-
-    @Test
-    public void test_SqlFetchCodec_encodeResponse() {
-        int fileClientMessageIndex = 826;
-        ClientMessage encoded = SqlFetchCodec.encodeResponse(aListOfData, aBoolean);
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        compareClientMessages(fromFile, encoded);
-    }
-
-    @Test
-    public void test_SqlCloseCodec_decodeRequest() {
-        int fileClientMessageIndex = 827;
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        SqlCloseCodec.RequestParameters parameters = SqlCloseCodec.decodeRequest(fromFile);
-        assertTrue(isEqual(aData, parameters.queryId));
-    }
-
-    @Test
-    public void test_SqlCloseCodec_encodeResponse() {
-        int fileClientMessageIndex = 828;
-        ClientMessage encoded = SqlCloseCodec.encodeResponse();
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        compareClientMessages(fromFile, encoded);
-    }
-
-     private void compareClientMessages(ClientMessage binaryMessage, ClientMessage encodedMessage) {
+    private void compareClientMessages(ClientMessage binaryMessage, ClientMessage encodedMessage) {
         ClientMessage.Frame binaryFrame, encodedFrame;
 
         ClientMessage.ForwardFrameIterator binaryFrameIterator = binaryMessage.frameIterator();
         ClientMessage.ForwardFrameIterator encodedFrameIterator = encodedMessage.frameIterator();
+        assertTrue("Client message that is read from the binary file does not have any frames", binaryFrameIterator.hasNext());
 
-        boolean isInitialFramesCompared = false;
         while (binaryFrameIterator.hasNext()) {
             binaryFrame = binaryFrameIterator.next();
             encodedFrame = encodedFrameIterator.next();
             assertNotNull("Encoded client message has less frames.", encodedFrame);
 
-            boolean isFinal = binaryFrameIterator.peekNext() == null;
-            if (!isInitialFramesCompared) {
-                compareInitialFrame(binaryFrame, encodedFrame, isFinal);
-                isInitialFramesCompared = true;
-            } else {
-                assertArrayEquals("Frames have different contents", binaryFrame.content, encodedFrame.content);
-                int flags = isFinal ? encodedFrame.flags | IS_FINAL_FLAG : encodedFrame.flags;
-                assertEquals("Frames have different flags", binaryFrame.flags, flags);
+            if (binaryFrame.isEndFrame() && !encodedFrame.isEndFrame()) {
+                if (encodedFrame.isBeginFrame()) {
+                    HazelcastClientUtil.fastForwardToEndFrame(encodedFrameIterator);
+                }
+                encodedFrame = HazelcastClientUtil.fastForwardToEndFrame(encodedFrameIterator);
             }
-        }
-        assertTrue("Client message that is read from the binary file does not have any frames", isInitialFramesCompared);
-    }
 
-    private void compareInitialFrame(ClientMessage.Frame binaryFrame, ClientMessage.Frame encodedFrame, boolean isFinal) {
-        assertTrue("Encoded client message have shorter initial frame",
-                binaryFrame.content.length <= encodedFrame.content.length);
-        assertArrayEquals("Initial frames have different contents",
-                binaryFrame.content, Arrays.copyOf(encodedFrame.content, binaryFrame.content.length));
-        int flags = isFinal ? encodedFrame.flags | IS_FINAL_FLAG : encodedFrame.flags;
-        assertEquals("Initial frames have different flags", binaryFrame.flags, flags);
+            boolean isFinal = binaryFrameIterator.peekNext() == null;
+            int flags = isFinal ? encodedFrame.flags | IS_FINAL_FLAG : encodedFrame.flags;
+            assertArrayEquals("Frames have different contents", binaryFrame.content, Arrays.copyOf(encodedFrame.content, binaryFrame.content.length));
+            assertEquals("Frames have different flags", binaryFrame.flags, flags);
+        }
     }
 }

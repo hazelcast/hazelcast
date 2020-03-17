@@ -33,7 +33,6 @@ import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.connection.nio.ClientConnectionManagerImpl;
-import com.hazelcast.client.impl.management.ManagementCenterService;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectsCodec;
 import com.hazelcast.client.impl.proxy.ClientClusterProxy;
@@ -133,7 +132,6 @@ import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.transaction.impl.xa.XAService;
 
-import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EventListener;
@@ -150,6 +148,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+
+import javax.annotation.Nonnull;
 
 import static com.hazelcast.client.properties.ClientProperty.CONCURRENT_WINDOW_MS;
 import static com.hazelcast.client.properties.ClientProperty.IO_WRITE_THROUGH_ENABLED;
@@ -198,7 +198,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final ClusterDiscoveryService clusterDiscoveryService;
     private final ClientProxySessionManager proxySessionManager;
     private final CPSubsystemImpl cpSubsystem;
-    private final ManagementCenterService managementCenterService;
     private final ConcurrentLinkedQueue<Disposable> onClusterChangeDisposables = new ConcurrentLinkedQueue();
     private final ConcurrentLinkedQueue<Disposable> onClientShutdownDisposables = new ConcurrentLinkedQueue();
     private final SqlClientServiceImpl sqlService;
@@ -261,7 +260,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         userCodeDeploymentService = new ClientUserCodeDeploymentService(config.getUserCodeDeploymentConfig(), classLoader);
         proxySessionManager = new ClientProxySessionManager(this);
         cpSubsystem = new CPSubsystemImpl(this);
-        managementCenterService = new ManagementCenterService(this, serializationService);
         sqlService = new SqlClientServiceImpl(this);
     }
 
@@ -820,10 +818,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     public ClientQueryCacheContext getQueryCacheContext() {
         return queryCacheContext;
-    }
-
-    public ManagementCenterService getManagementCenterService() {
-        return managementCenterService;
     }
 
     public ConcurrencyDetection getConcurrencyDetection() {
