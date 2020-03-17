@@ -93,10 +93,10 @@ public final class Jet {
      * doesn't have all the classes you use in the job.
      * <p>
      * Normally you would have to explicitly add all the dependency classes to
-     * the {@link JobConfig#addClass(Class[]) JobConfig}, either one by one or packaged
-     * into a JAR. If you're submitting a job using the command-line tool {@code
-     * jet submit}, the JAR to attach is the same JAR that contains the code
-     * that submits the job.
+     * the {@link JobConfig#addClass(Class[]) JobConfig}, either one by one or
+     * packaged into a JAR. If you're submitting a job using the command-line
+     * tool {@code jet submit}, the JAR to attach is the same JAR that
+     * contains the code that submits the job.
      * <p>
      * This factory takes all of the above into account in order to provide a
      * smoother experience:
