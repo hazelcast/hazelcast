@@ -681,7 +681,11 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                     future.onSuccess(connection);
                     break;
                 case CREDENTIALS_FAILED:
-                    onFailure(new AuthenticationException("Invalid credentials! Principal: " + principal));
+                    AuthenticationException authException = new AuthenticationException("Authentication failed. The configured "
+                            + "name or password on the client (see ClientConfig.getGroupConfig()) does not match the one "
+                            + "configured in the cluster or the credentials set in the Client security config could not"
+                            + " be authenticated");
+                    onFailure(authException);
                     break;
                 case NOT_ALLOWED_IN_CLUSTER:
                     onFailure(new ClientNotAllowedInClusterException("Client is not allowed in the cluster"));
