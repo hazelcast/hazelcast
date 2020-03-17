@@ -34,7 +34,6 @@ import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricDescriptorConstants;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.impl.ProviderHelper;
-import com.hazelcast.internal.monitor.impl.LocalListStatsImpl;
 import com.hazelcast.internal.monitor.impl.LocalSetStatsImpl;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
 import com.hazelcast.internal.services.StatisticsAwareService;
@@ -70,7 +69,8 @@ public class SetService extends CollectionService implements DynamicMetricsProvi
         }
     };
     private final ConcurrentMap<String, LocalSetStatsImpl> statsMap = new ConcurrentHashMap<>();
-    private final ConstructorFunction<String, LocalSetStatsImpl> localCollectionStatsConstructorFunction = key -> new LocalSetStatsImpl();
+    private final ConstructorFunction<String, LocalSetStatsImpl> localCollectionStatsConstructorFunction =
+            key -> new LocalSetStatsImpl();
 
     public SetService(NodeEngine nodeEngine) {
         super(nodeEngine);

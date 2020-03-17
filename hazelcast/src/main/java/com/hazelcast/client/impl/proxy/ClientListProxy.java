@@ -59,7 +59,6 @@ import com.hazelcast.collection.ItemListener;
 import com.hazelcast.collection.LocalListStats;
 import com.hazelcast.collection.impl.common.DataAwareItemEvent;
 import com.hazelcast.core.ItemEventType;
-import com.hazelcast.internal.monitor.impl.LocalListStatsImpl;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
 
