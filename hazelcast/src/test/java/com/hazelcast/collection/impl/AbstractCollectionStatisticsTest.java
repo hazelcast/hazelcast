@@ -40,11 +40,9 @@ public abstract class AbstractCollectionStatisticsTest extends HazelcastTestSupp
     }
 
     protected void assertSameLastUpdateTime() {
-        assertTrueEventually(() -> {
-            long lastUpdateTime = localCollectionStats.getLastUpdateTime();
-            assertEqualsStringFormat("Expected the lastUpdateTime to be %d, but was %d", previousUpdateTime, lastUpdateTime);
-            previousUpdateTime = lastUpdateTime;
-        });
+        long lastUpdateTime = localCollectionStats.getLastUpdateTime();
+        assertEqualsStringFormat("Expected the lastUpdateTime to be %d, but was %d", previousUpdateTime, lastUpdateTime);
+        previousUpdateTime = lastUpdateTime;
     }
 
     protected void assertNewLastUpdateTime() {

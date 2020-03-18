@@ -64,13 +64,20 @@ public class SetStatisticsTest extends AbstractCollectionStatisticsTest {
         assertNewLastUpdateTime();
 
         // a contains operation updates the lastAccessTime, but not the lastUpdateTime
+        // we double the operation - with the same parameter - and the last access time check
+        // so that we can be sure that assertSameLastUpdateTime() sees an unwanted update
+        // at least from the first operation
         sleepMillis(10);
+        set.contains("element1");
+        assertNewLastAccessTime();
         set.contains("element1");
         assertNewLastAccessTime();
         assertSameLastUpdateTime();
 
         // an isEmpty operation updates the lastAccessTime, but not the lastUpdateTime
         sleepMillis(10);
+        set.isEmpty();
+        assertNewLastAccessTime();
         set.isEmpty();
         assertNewLastAccessTime();
         assertSameLastUpdateTime();
@@ -89,6 +96,8 @@ public class SetStatisticsTest extends AbstractCollectionStatisticsTest {
 
         // a size operation updates the lastAccessTime, but not the lastUpdateTime
         sleepMillis(10);
+        set.size();
+        assertNewLastAccessTime();
         set.size();
         assertNewLastAccessTime();
         assertSameLastUpdateTime();

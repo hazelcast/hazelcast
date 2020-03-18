@@ -64,7 +64,12 @@ public class ListStatisticsTest extends AbstractCollectionStatisticsTest {
         assertNewLastUpdateTime();
 
         // a get operation updates the lastAccessTime, but not the lastUpdateTime
+        // we double the operation - with the same parameter - and the last access time check
+        // so that we can be sure that assertSameLastUpdateTime() sees an unwanted update
+        // at least from the first operation
         sleepMillis(10);
+        list.get(0);
+        assertNewLastAccessTime();
         list.get(0);
         assertNewLastAccessTime();
         assertSameLastUpdateTime();
@@ -73,16 +78,22 @@ public class ListStatisticsTest extends AbstractCollectionStatisticsTest {
         sleepMillis(10);
         list.contains("element1");
         assertNewLastAccessTime();
+        list.contains("element1");
+        assertNewLastAccessTime();
         assertSameLastUpdateTime();
 
         // an indexOf operation updates the lastAccessTime, but not the lastUpdateTime
         sleepMillis(10);
         list.indexOf("element1");
         assertNewLastAccessTime();
+        list.indexOf("element1");
+        assertNewLastAccessTime();
         assertSameLastUpdateTime();
 
         // an isEmpty operation updates the lastAccessTime, but not the lastUpdateTime
         sleepMillis(10);
+        list.isEmpty();
+        assertNewLastAccessTime();
         list.isEmpty();
         assertNewLastAccessTime();
         assertSameLastUpdateTime();
@@ -109,10 +120,14 @@ public class ListStatisticsTest extends AbstractCollectionStatisticsTest {
         sleepMillis(10);
         list.size();
         assertNewLastAccessTime();
+        list.size();
+        assertNewLastAccessTime();
         assertSameLastUpdateTime();
 
         // a subList operation updates the lastAccessTime, but not the lastUpdateTime
         sleepMillis(10);
+        list.subList(0, 1);
+        assertNewLastAccessTime();
         list.subList(0, 1);
         assertNewLastAccessTime();
         assertSameLastUpdateTime();
