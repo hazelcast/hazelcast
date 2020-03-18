@@ -141,11 +141,14 @@ enum IterationResult {
 }
 ```
 
-When the engine has received `FETCHED` or `FETCHED_DONE` from the `Exec.advance()` call, it may access the
-produced rows through the `Exec.currentBatch()` call. If the engine has received `WAIT`, then query
-execution is halted, and the control is transferred to another query in the execution queue. The query
-execution is resumed upon an external signal (e.g. when the batch arrives from the remote node, or free space
-in the send buffer appears).
+When the engine has received `FETCHED` or `FETCHED_DONE` from the `Exec.advance()` call, it may access the produced row batch
+through the `Exec.currentBatch()` call. The ownership of the batch is held by the producer. The content of the row batch is valid
+until the next `advance()` call on the producer. If the consumer may require access to the row batch content after the next call
+to `advance()`, it should make a copy of the batch.
+
+If the engine has received `WAIT`, then query execution is halted, and the control is transferred to another query in the
+execution queue. The query execution is resumed upon an external signal (e.g. when the batch arrives from the remote node,
+or free space in the send buffer appears).
 
 ## Implementation Guidelines
 Operator implementations must adhere to the following rules:
