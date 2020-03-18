@@ -121,7 +121,7 @@ result instead of the row batch
 1. There is no separate `close()` method because the engine doesn't need explicit per-operator cleanup at the
 moment. This may change in future, in this case the current document should be updated accordingly
 
-*Snippet 7: Exec interface*
+*Snippet 7: Executable operator interface*
 ```java
 interface Exec {
     void setup(QueryContext context); // Initialize the operator
