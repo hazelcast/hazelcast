@@ -70,6 +70,7 @@ public class ListStatisticsTest extends AbstractCollectionStatisticsTest {
         sleepMillis(10);
         list.get(0);
         assertNewLastAccessTime();
+        sleepMillis(10);
         list.get(0);
         assertNewLastAccessTime();
         assertSameLastUpdateTime();
@@ -78,6 +79,7 @@ public class ListStatisticsTest extends AbstractCollectionStatisticsTest {
         sleepMillis(10);
         list.contains("element1");
         assertNewLastAccessTime();
+        sleepMillis(10);
         list.contains("element1");
         assertNewLastAccessTime();
         assertSameLastUpdateTime();
@@ -86,6 +88,7 @@ public class ListStatisticsTest extends AbstractCollectionStatisticsTest {
         sleepMillis(10);
         list.indexOf("element1");
         assertNewLastAccessTime();
+        sleepMillis(10);
         list.indexOf("element1");
         assertNewLastAccessTime();
         assertSameLastUpdateTime();
@@ -94,6 +97,7 @@ public class ListStatisticsTest extends AbstractCollectionStatisticsTest {
         sleepMillis(10);
         list.isEmpty();
         assertNewLastAccessTime();
+        sleepMillis(10);
         list.isEmpty();
         assertNewLastAccessTime();
         assertSameLastUpdateTime();
@@ -120,6 +124,7 @@ public class ListStatisticsTest extends AbstractCollectionStatisticsTest {
         sleepMillis(10);
         list.size();
         assertNewLastAccessTime();
+        sleepMillis(10);
         list.size();
         assertNewLastAccessTime();
         assertSameLastUpdateTime();
@@ -128,6 +133,7 @@ public class ListStatisticsTest extends AbstractCollectionStatisticsTest {
         sleepMillis(10);
         list.subList(0, 1);
         assertNewLastAccessTime();
+        sleepMillis(10);
         list.subList(0, 1);
         assertNewLastAccessTime();
         assertSameLastUpdateTime();

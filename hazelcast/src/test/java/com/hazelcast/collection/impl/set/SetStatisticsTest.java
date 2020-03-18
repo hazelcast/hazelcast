@@ -70,6 +70,7 @@ public class SetStatisticsTest extends AbstractCollectionStatisticsTest {
         sleepMillis(10);
         set.contains("element1");
         assertNewLastAccessTime();
+        sleepMillis(10);
         set.contains("element1");
         assertNewLastAccessTime();
         assertSameLastUpdateTime();
@@ -78,6 +79,7 @@ public class SetStatisticsTest extends AbstractCollectionStatisticsTest {
         sleepMillis(10);
         set.isEmpty();
         assertNewLastAccessTime();
+        sleepMillis(10);
         set.isEmpty();
         assertNewLastAccessTime();
         assertSameLastUpdateTime();
@@ -98,6 +100,7 @@ public class SetStatisticsTest extends AbstractCollectionStatisticsTest {
         sleepMillis(10);
         set.size();
         assertNewLastAccessTime();
+        sleepMillis(10);
         set.size();
         assertNewLastAccessTime();
         assertSameLastUpdateTime();
