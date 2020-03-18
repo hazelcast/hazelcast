@@ -7,7 +7,7 @@ design [[1]].
 
 ## 2 Query ID
 
-Query execution is a distributed process which spans one or more nodes. Every query execution is assigned with a unique
+Query execution is a distributed process that spans one or more nodes. Every query execution is assigned with a unique
 ID which is propagated with messages to participating members. The ID must be unique cluster-wide.
 
 We thus define the query ID as follows.
@@ -49,11 +49,11 @@ I                 P1  P2
 |--------execute->----|
 ```
 
-When the participant receives the `execute` message, it starts execution of the query **immediately**. There is no single
+When the participant receives the `execute` message, it starts the execution of the query **immediately**. There is no single
 synchronization point, like in Hazelcast Jet, when either the initiator or participants know that all other participants
-started execution of the query. This way we improve the latency, because participants do not need to wait for another
+started the execution of the query. This decreases latency because participants do not need to wait for another
 message to start actual query execution. On the other hand, it introduces inherent race conditions between query start,
-cancel, and data arrival, which are discussed in the section 4.
+cancel, and data arrival, which are discussed in section 4.
 
 The `execute` message has the following structure.
 
@@ -69,8 +69,8 @@ class QueryExecuteOperation {
 
 ### 2.2 Query cancel
 
-Query cancel might be required for different reasons, such as user request, timeout, exception, participant leave. Any
-participant may request the cancellation of the query at any time.
+Query cancel might be required for different reasons, such as user request, timeout, exception, participant failure.
+Participants may request the cancellation of the query at any time.
 
 The `cancel` request is first sent from the cancel initiator to the query initiator. The query initiator then broadcasts
 the request to all participants. If the cancel initiator is the query initiator, then only the broadcast to participants is
@@ -90,11 +90,11 @@ C/I              P1  P2
 |----cancel->----|   |
 |--------cancel->----|
 ```
-This two step process reduces the total number of cancel messages which might be sent in the worst case. Consider the case when
-all participants initiate the query cancel at the same time, e.g. due to participant leave. If we implement the cancellation
-as a broadcast from the cancel initiator to participants, then up to `N * N` of messages could be sent. With the two step approach
+This two-step process reduces the total number of cancel messages which might be sent in the worst case. Consider the case when
+all participants initiate the query cancel at the same time, e.g. due to participant failure. If we implement the cancellation
+as a broadcast from the cancel initiator to participants, then up to `N * N` of messages could be sent. With the two-step approach
 no more than `2 * N` messages are sent: N from all cancel initiators to query initiator, N from query initiator to participants.
-The two step approach has higher latency, but the latency is not important for cancellation process.
+The two-step approach has higher latency, but latency is not important for the cancellation process.
 
 The `cancel` message has the following structure.
 
@@ -143,14 +143,14 @@ Data exchange between two operators from two fragments is called **stream** as d
 1. **Receiver (R)** - receives data and responds with flow control messages
 
 The following messages are used:
-1. `batch` - batch of rows sent from a sender to a receiver
+1. `batch` - a batch of rows sent from a sender to a receiver
 1. `flowControl` - flow control message sent from a receiver to a sender
 
 ### 3.1 Batches
 
-Data is first accumulated in batches on sender's side. The batch is then serialized and sent over the wire in `batch` message.
-The sender doesn't expect an ack for every batch from the receiver. Multiple batches could be sent one after the other. The
-last batch in the stream has special marker, denoting end of the stream.
+Data is first accumulated in batches on the sender's side. The batch is then serialized and sent over the wire in the `batch`
+message. The sender doesn't wait for an explicit ack for every batch from the receiver. Multiple batches could be sent one
+after the other. The last batch in the stream has a special marker, denoting the end of the stream.
 
 *Snippet 9: Batch protocol*
 ```
@@ -178,14 +178,14 @@ class QueryBatchOperation {
 
 The sender may produce new batches faster than the receiver could process them, so the flow control is needed. We implement
 it using the credit-based approach:
-1. Sender and receiver agree on the initial amount of credits
-1. Whenever the sender sends the batch, it decreases the amount of credits by the value which depends on the batch size
-1. When the amount of credits on the sender reaches zero, the sender stops sending data
-1. Receiver periodically increases the amount of credits available to the sender and sends it back, so that the sender may
+1. Sender and receiver agree on the initial number of credits
+1. Whenever the sender sends the batch, it decreases the number of credits by the value which depends on the batch size
+1. When the number of credits on the sender reaches zero, the sender stops sending data
+1. Receiver periodically increases the number of credits available to the sender and sends it back, so that the sender may
 resume data exchange
 
-One credit is equal to one byte because it is convenient for the memory management purposes. A row could not be used as a credit
-becaise size of the rows may vary significantly.
+One credit is equal to one byte because it is convenient for memory management purposes. A row could not be used as a unit of
+credit because row size may vary significantly.
 
 Precise conditions which trigger the `flowControl` message, as well as the initial amount of credits are implementation-defined
 and are not part of the protocol.
@@ -215,8 +215,8 @@ class QueryBatchOperation {
 ### 4 Cleanup
 
 Given that there are no synchronization points between query start, batch arrival, and query finish (either normal or due to
-cancel), various race conditions are possible. For example, a batch may arrive the the participant after the query has been
-cancelled. Such batch must be **discarded**.
+cancel), various race conditions are possible. For example, a batch may reach the participant after the query has been
+canceled. Such batch must be **discarded**.
 
 *Snippet 13: Race condition with a stale data batch*
 ```
@@ -239,23 +239,26 @@ I              P1            P2
 |----start->---|             |
 ```
 
-When the batch arrives and there is no active query with the given ID, we cannot distinguish between the query which has not
-started yet, and the query which has been cancelled. To mitigate this we introduce a a pair of messages to clean stale batches:
+When the batch arrives and there is no active query associated with the given ID, we cannot distinguish between the query
+which has not started yet, and the query which has been canceled. To mitigate this we introduce a pair of messages to clean
+stale batches:
 
 1. `check` - verifies whether queries with the given IDs are still active on the query initiator
 1. `checkResponse` - a response to the `check` message with the subset of suspected query IDs, which are no longer active on the
 query initiator
 
-When a participant receives the batch and cannot find the active query with the given ID, it puts it into the pending queue.
+When a participant receives the batch and cannot find the active query with the given ID, it puts it into the pending batch queue.
 The participant iterates over pending batches periodically and collects their query IDs. Then the participant sends `check`
 messages to query initiators. The query initiator ID could be derived from the query ID. The query initiator then iterates
-over the active set of active queries and determines the list of suspected query IDs which are no longer active. This list
-is sent back to the participant in the `checkResponse` messages. The participant is then deletes the stale batches and all
-other resources associated with the queries which are no longer active.
+over the active queries and determines the list of suspected query IDs that are no longer active. This list is sent back to
+the participant in the `checkResponse` message. The participant then deletes the stale batches and all other resources
+associated with the queries which are no longer active.
 
-The protocol relies on the fact is that query start on the initiator happens-before any check message arrival containing the ID
-of the started query. Therefore, if the query with the given ID is not active on the query initiator, then it may be considered
-completed (cancelled).
+The protocol relies on the fact is that the query start on the initiator happens-before any check message arrival containing
+the ID of the started query. Therefore, if the query with the given ID is not active on the query initiator, it may be
+considered completed (canceled).
+
+The precise conditions when the `check` message is triggered are implementation-defined and are not part of the protocol.
 
 *Snippet 15: Check protocol*
 ```
