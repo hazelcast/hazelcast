@@ -119,7 +119,7 @@ result instead of the row batch
 1. The `RowBatch` could be accessed through a separate method
 1. The `open()` method is renamed to `setup()`. Special query context is passed to it as an argument
 1. There is no separate `close()` method because the engine doesn't need explicit per-operator cleanup at the
-moment. This may change in future but is not important for the purpose of this document.
+moment. This may change in future, in this case the current document should be updated accordingly
 
 *Snippet 7: Exec interface*
 ```java
@@ -149,8 +149,9 @@ in the send buffer appears).
 
 ## Implementation Guidelines
 Operator implementations must adhere to the following rules:
+1. Operator's state is not required to be thread-safe
 1. Use row batches to minimize evaluation overhead
-1. Do not block the thread waiting for data send or receive
+1. Avoid blocking the thread while waiting for data send or receive
 1. Avoid blocking synchronization when possible
 
 [1]: https://dl.acm.org/doi/10.1109/69.273032 "Volcano - An Extensible and Parallel Query Evaluation System"
