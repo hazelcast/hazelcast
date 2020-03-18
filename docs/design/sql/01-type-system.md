@@ -1,10 +1,10 @@
 # SQL Type System
 
 ## Overview
-Hazelcast SQL type system defines how objects of different types interact with each other. The type system
-is defined by the list of supported types, type mapping, and type conversion rules.
+The type system defines how objects of different types interact with each other in the Hazelcast Mustang engine.
+The type system is defined by the list of supported types, type mapping, and type conversion rules.
 
-Type is described by name, precedence, precision, and scale.
+A type is defined by name, precedence, precision, and scale.
 - **Name** is a textual representation of type name
 - **Precision** is the total count of significant digits in the whole number, applicable to **numeric types**
 - **Precedence** is a comparable value that is used for type inference in expressions. A type with a
@@ -15,15 +15,15 @@ the type with higher precision has precedence.
 within a family have the same name and precedence. For example, `INT(11)` and `INT(12)` are two types
 from the same `INT` family.
 
-The scale is not used in Hazelcast SQL. It is applicable only for `DECIMAL`, `REAL`, and `DOUBLE` types.
+The scale is not used in Hazelcast Mustang. It is applicable only for `DECIMAL`, `REAL`, and `DOUBLE` types.
 Instead of defining it as a separate value, we just treat these types as types with infinite scale.
 
 ## Supported types
-Types supported by the Hazelcast SQL engine are listed in Table 1. Precision is the smallest precision in the type family.
+Types supported by the Hazelcast Mustang are listed in Table 1. Precision is the smallest precision in the type family.
 
 `OBJECT` is a Hazelcast-specific type representing an object which doesn't match any other type.
 
-*Table 1: Hazelcast SQL Data Types*
+*Table 1: Hazelcast Mustang Data Types*
 
 | SQL Type | Precedence | Precision |
 |---|---|---|
