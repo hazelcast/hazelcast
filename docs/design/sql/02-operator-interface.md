@@ -105,7 +105,7 @@ interface Row extends RowBatch {
         return 1;
     }
     
-    default int getRow(int index) {
+    default Row getRow(int index) {
         return this;
     }
 }
