@@ -23,8 +23,6 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.util.ExceptionUtil;
-import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.multimap.LocalMultiMapStats;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.multimap.impl.operations.EntrySetResponse;
