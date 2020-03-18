@@ -18,6 +18,8 @@ package com.hazelcast.internal.util;
 
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 
+import java.util.concurrent.TimeUnit;
+
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 /**
@@ -112,7 +114,7 @@ public final class Clock {
 
         @Override
         protected long currentTimeMillis() {
-            return System.currentTimeMillis();
+            return TimeUnit.NANOSECONDS.toMillis(System.nanoTime());
         }
 
         @Override
@@ -135,7 +137,7 @@ public final class Clock {
 
         @Override
         protected long currentTimeMillis() {
-            return System.currentTimeMillis() + offset;
+            return TimeUnit.NANOSECONDS.toMillis(System.nanoTime()) + offset;
         }
 
         @Override
