@@ -1,4 +1,4 @@
-# SQL Protocol
+# SQL Networking
 
 ## Overview
 Hazelcast Mustang is a distributed SQL engine. Network communication between nodes is required to produce the final result.
@@ -8,7 +8,7 @@ query cancellation, and maintenance operations.
 The remainder of this document is structured as follows. Section 1 describes the existing networking infrastructure of the
 Hazelcast cluster. Section 2 explains how the engine's networking is built on top of the existing infrastructure.
 
-## 1. Existing Infrastructure
+## 1 Existing Infrastructure
 
 Hazelcast relies on TCP protocol for data exchange. Key abstractions are `Packet`, `Connection` and `Operation`.
 
@@ -40,7 +40,7 @@ command to be executed as well as additional information such as the caller ID, 
 Operations are submitted to the `OperationService` which obtains the connection, serializes operations to packets, and manage
 completion futures, timeouts, and retries.
 
-## 2. Design
+## 2 Design
 
 The engine works similarly to Hazelcast Jet. It doesn't use operations infrastructure, works with packets and
 connections directly, and relies on consistent packet delivery order. The following sections explain the motivation.
