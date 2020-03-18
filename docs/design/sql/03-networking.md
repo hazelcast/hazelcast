@@ -72,14 +72,6 @@ the parent operator (downstream). A stream is uniquely identified by `[queryId. 
 where the `queryId` is a cluster-wide unique identifier of a query, and the `edgeId` is an identifier of the edge between
 two remote operators, which is unique for the query.
 
-### 2.3 Buffering and Flow Control
-Rows are buffered on the sender into batches, which reduces the total number of messages. Batches are then serialized
-into packets and sent over the wire.
-
-The receiver doesn't send the ack back to the sender for every batch. Instead, it sends control flow messages back to
-the sender, which defines the number of bytes the sender may send to the receiver.
-
-### 2.4 Ordering
 Every stream uses the **same** `Connection` object for the duration of the query. This guarantees that the order of
 received rows is equal to the send order. If a connection is broken in the middle of query execution, the query is
 canceled with an error.
@@ -94,7 +86,7 @@ This makes such design inappropriate for us.
 Future implementations of the `Connection` interface must provide the ability for ordered packet transfer between members.
 Both Hazelcast Mustang and Hazelcast Jet require this.
 
-### 2.5 Operations
+### 2.3 Operations
 
 The engine doesn't use the existing `Operation` infrastructure for two reasons:
 1. We need consistent ordering for some messages
