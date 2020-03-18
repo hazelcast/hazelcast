@@ -35,7 +35,7 @@ public class NestedClassIsLoaded extends AbstractProcessor {
             Method method = clazz.getMethod("map", String.class);
             // We invoke the method so that the lambda inside of it is executed.
             // We check the lambda is loaded with the outer class.
-            assertEquals(method.invoke(clazz.getDeclaredConstructor().newInstance(), "some-string"), "some-string");
+            assertEquals("some-string", method.invoke(clazz.getDeclaredConstructor().newInstance(), "some-string"));
         } catch (Exception e) {
             fail(e.getMessage());
         }

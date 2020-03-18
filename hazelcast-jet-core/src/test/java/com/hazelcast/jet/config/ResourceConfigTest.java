@@ -88,6 +88,16 @@ public class ResourceConfigTest extends JetTestSupport {
     }
 
     @Test
+    public void when_addResourcesWithNonExistingPackage() {
+        // When
+        config.addPackage("thispackage.does.not.exist");
+
+        // Then
+        Collection<ResourceConfig> resourceConfigs = config.getResourceConfigs().values();
+        assertTrue(resourceConfigs.isEmpty());
+    }
+
+    @Test
     public void when_addJarWithUrl() throws Exception {
         // Given
         String resourceId = "jarfile";
