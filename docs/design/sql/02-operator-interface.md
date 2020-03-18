@@ -149,6 +149,9 @@ in the send buffer appears).
 
 ## Implementation Guidelines
 Operator implementations must adhere to the following rules:
+1. `Row` instances should be immutable to facilitate their transfer between batches
+1. The row batch returned by the `Exec.currentBatch()` call is valid before the next call to the `Exec.advance()` interface.
+Do not use the reference to the batch outside of this scope
 1. Operator's state is not required to be thread-safe
 1. Use row batches to minimize evaluation overhead
 1. Avoid blocking the thread while waiting for data send or receive
