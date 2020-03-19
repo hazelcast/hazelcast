@@ -22,6 +22,12 @@ import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.operation.QueryBatchExchangeOperation;
+import com.hazelcast.sql.impl.operation.QueryCancelOperation;
+import com.hazelcast.sql.impl.operation.QueryCheckOperation;
+import com.hazelcast.sql.impl.operation.QueryCheckResponseOperation;
+import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
+import com.hazelcast.sql.impl.operation.QueryFlowControlExchangeOperation;
 import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.JoinRow;
@@ -47,7 +53,14 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int ROW_BATCH_LIST = 4;
     public static final int ROW_BATCH_EMPTY = 5;
 
-    public static final int LEN = ROW_BATCH_EMPTY + 1;
+    public static final int OPERATION_EXECUTE = 6;
+    public static final int OPERATION_BATCH = 7;
+    public static final int OPERATION_FLOW_CONTROL = 8;
+    public static final int OPERATION_CANCEL = 9;
+    public static final int OPERATION_CHECK = 10;
+    public static final int OPERATION_CHECK_RESPONSE = 11;
+
+    public static final int LEN = OPERATION_CHECK_RESPONSE + 1;
 
     @Override
     public int getFactoryId() {
@@ -67,6 +80,13 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[ROW_JOIN] = arg -> new JoinRow();
         constructors[ROW_BATCH_LIST] = arg -> new ListRowBatch();
         constructors[ROW_BATCH_EMPTY] = arg -> EmptyRowBatch.INSTANCE;
+
+        constructors[OPERATION_EXECUTE] = arg -> new QueryExecuteOperation();
+        constructors[OPERATION_BATCH] = arg -> new QueryBatchExchangeOperation();
+        constructors[OPERATION_FLOW_CONTROL] = arg -> new QueryFlowControlExchangeOperation();
+        constructors[OPERATION_CANCEL] = arg -> new QueryCancelOperation();
+        constructors[OPERATION_CHECK] = arg -> new QueryCheckOperation();
+        constructors[OPERATION_CHECK_RESPONSE] = arg -> new QueryCheckResponseOperation();
 
         return new ArrayDataSerializableFactory(constructors);
     }
