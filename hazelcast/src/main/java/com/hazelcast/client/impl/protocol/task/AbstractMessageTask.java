@@ -346,7 +346,7 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
 
 
     /**
-     * The default implementation returns false. Child classes which implements a logic related to a management operation should
+     * The default implementation returns false. Child classes which implement a logic related to a management operation should
      * override it and return true so the proper access control mechanism is used.
      */
     @Override

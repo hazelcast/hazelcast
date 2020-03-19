@@ -19,9 +19,15 @@ package com.hazelcast.internal.cluster;
 import com.hazelcast.cluster.Address;
 
 /**
- *
+ * Interface for trust checks based on source {@link Address}.
  */
 public interface AddressChecker {
 
+    /**
+     * Returns {@code true} if the code is trusted.
+     *
+     * @param address The {@link Address} to be checked.
+     * @return {@code true} when trusted; false otherwise
+     */
     boolean isTrusted(Address address);
 }
