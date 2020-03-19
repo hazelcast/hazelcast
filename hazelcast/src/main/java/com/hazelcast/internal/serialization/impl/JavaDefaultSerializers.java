@@ -316,6 +316,10 @@ public final class JavaDefaultSerializers {
     }
 
     private abstract static class SingletonSerializer<T> implements StreamSerializer<T> {
+
+        @Override
+        public void destroy() {
+        }
     }
 
     private JavaDefaultSerializers() {

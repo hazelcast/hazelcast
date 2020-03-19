@@ -44,7 +44,7 @@
     <cluster-name>my-cluster</cluster-name>
     <license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</license-key>
     <instance-name>dummy</instance-name>
-    <management-center scripting-enabled="false" />
+    <management-center scripting-enabled="false"/>
 
     <properties>
         <property name="foo">bar</property>
@@ -752,6 +752,16 @@
                     <action>all</action>
                 </actions>
             </pn-counter-permission>
+            <ring-buffer-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </ring-buffer-permission>
+            <reliable-topic-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </reliable-topic-permission>
         </client-permissions>
         <client-block-unmapped-actions>true</client-block-unmapped-actions>
     </security>
@@ -786,13 +796,14 @@
     <split-brain-protection enabled="true" name="probabilistic-split-brain-protection">
         <minimum-cluster-size>3</minimum-cluster-size>
         <protect-on>READ_WRITE</protect-on>
-        <probabilistic-split-brain-protection acceptable-heartbeat-pause-millis="100" max-sample-size="20" suspicion-threshold="10" />
+        <probabilistic-split-brain-protection acceptable-heartbeat-pause-millis="100" max-sample-size="20"
+                                              suspicion-threshold="10"/>
     </split-brain-protection>
 
     <split-brain-protection enabled="true" name="recently-active-split-brain-protection">
         <minimum-cluster-size>4</minimum-cluster-size>
         <protect-on>READ_WRITE</protect-on>
-        <recently-active-split-brain-protection heartbeat-tolerance-millis="60000" />
+        <recently-active-split-brain-protection heartbeat-tolerance-millis="60000"/>
     </split-brain-protection>
 
     <hot-restart-persistence enabled="false">
