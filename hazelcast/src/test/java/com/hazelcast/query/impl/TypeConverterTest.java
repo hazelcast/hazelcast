@@ -30,6 +30,8 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.Locale;
 
@@ -371,6 +373,26 @@ public class TypeConverterTest {
                 is(instanceOf(Date.class)),
                 is(equalTo((Comparable) expected))
         ));
+    }
+    
+    @Test
+    public void testLocalDateConverter_whenNumberPassed() {
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);
+        String format = formatter.format(new Date());
+        Comparable actual = TypeConverters.LOCALDATE_CONVERTER.convert(format);
+
+        assertThat(actual, instanceOf(LocalDate.class));
+        assertThat(actual, CoreMatchers.<Comparable>is( LocalDateHelper.toLocalDate(format)));
+    }
+    
+    @Test
+    public void testLocalDateTimeConverter_whenNumberPassed() {
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);
+        String format = formatter.format(new Date());
+        Comparable actual = TypeConverters.LOCALDATE_TIME_CONVERTER.convert(format);
+
+        assertThat(actual, instanceOf(LocalDateTime.class));
+        assertThat(actual, CoreMatchers.<Comparable>is( LocalDateHelper.toLocalDateTime(format)));
     }
 
     @Test
