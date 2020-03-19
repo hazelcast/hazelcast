@@ -30,8 +30,8 @@ public class ExecutorServiceMBean extends HazelcastMBean<IExecutorService> {
     }
 
     @ManagedAnnotation("localCreationTime")
-    @ManagedDescription("the creation time of this executor on this member.")
-    public long getCreationTime() {
+    @ManagedDescription("the creation time of this executor on this member")
+    public long getLocalCreationTime() {
         return managedObject.getLocalExecutorStats().getCreationTime();
     }
 
