@@ -45,7 +45,7 @@ public abstract class QueryAbstractIdAwareOperation extends QueryOperation {
 
     @Override
     public int getPartition() {
-        return Math.abs(queryId.hashCode());
+        return getPartitionForHash(queryId.hashCode());
     }
 
     @Override

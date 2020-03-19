@@ -50,6 +50,14 @@ public abstract class QueryOperation implements IdentifiedDataSerializable {
         return PARTITION_ANY;
     }
 
+    protected int getPartitionForHash(int hash) {
+        if (hash == Integer.MIN_VALUE) {
+            hash = Integer.MAX_VALUE;
+        }
+
+        return Math.abs(hash);
+    }
+
     @Override
     public final int getFactoryId() {
         return SqlDataSerializerHook.F_ID;

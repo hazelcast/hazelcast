@@ -50,7 +50,7 @@ public abstract class QueryAbstractExchangeOperation extends QueryAbstractIdAwar
     @SuppressWarnings("checkstyle:MagicNumber")
     @Override
     public int getPartition() {
-        return Math.abs(31 * queryId.hashCode() + edgeId);
+        return getPartitionForHash(31 * queryId.hashCode() + edgeId);
     }
 
     @Override
