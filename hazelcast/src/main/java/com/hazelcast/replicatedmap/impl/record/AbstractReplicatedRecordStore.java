@@ -21,6 +21,7 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapEventPublishingService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.operation.ReplicateUpdateOperation;
@@ -78,11 +79,11 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
         long time = System.nanoTime();
         V oldValue;
         K marshalledKey = (K) marshall(key);
-        ReplicatedRecord current = storage.get(marshalledKey);
+        ReplicatedRecord<K, V> current = storage.get(marshalledKey);
         if (current == null) {
             oldValue = null;
         } else {
-            oldValue = (V) current.getValueInternal();
+            oldValue = current.getValueInternal();
             storage.remove(marshalledKey, current);
         }
         if (replicatedMapConfig.isStatisticsEnabled()) {
@@ -100,11 +101,11 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
         V oldValue;
         K marshalledKey = (K) marshall(key);
         InternalReplicatedMapStorage<K, V> storage = getStorage();
-        ReplicatedRecord current = storage.get(marshalledKey);
+        ReplicatedRecord<K, V> current = storage.get(marshalledKey);
         if (current == null) {
             oldValue = null;
         } else {
-            oldValue = (V) current.getValueInternal();
+            oldValue = current.getValueInternal();
             storage.remove(marshalledKey, current);
         }
         Data dataKey = nodeEngine.toData(key);
@@ -120,7 +121,7 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
     public Object get(Object key) {
         isNotNull(key, "key");
         long time = System.nanoTime();
-        ReplicatedRecord replicatedRecord = getStorage().get(marshall(key));
+        ReplicatedRecord<K, V> replicatedRecord = getStorage().get(marshall(key));
 
         // Force return null on ttl expiration (but before cleanup thread run)
         long ttlMillis = replicatedRecord == null ? 0 : replicatedRecord.getTtlMillis();
@@ -206,7 +207,7 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
 
     // IMPORTANT >> Increments hit counter
     private boolean containsKeyAndValue(Object key) {
-        ReplicatedRecord replicatedRecord = getStorage().get(marshall(key));
+        ReplicatedRecord<K, V> replicatedRecord = getStorage().get(marshall(key));
         return replicatedRecord != null && replicatedRecord.getValue() != null;
     }
 
@@ -250,7 +251,7 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
     public Collection values(Comparator comparator) {
         InternalReplicatedMapStorage<K, V> storage = getStorage();
         List<Object> values = new ArrayList<>(storage.size());
-        for (ReplicatedRecord record : storage.values()) {
+        for (ReplicatedRecord<K, V> record : storage.values()) {
             values.add(unmarshall(record.getValue()));
         }
         getStats().incrementOtherOperations();
@@ -318,7 +319,7 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
     private void putRecord(InternalReplicatedMapStorage<K, V> storage, RecordMigrationInfo record) {
         K key = (K) marshall(record.getKey());
         V value = (V) marshall(record.getValue());
-        ReplicatedRecord newRecord = buildReplicatedRecord(key, value, record.getTtl());
+        ReplicatedRecord<K, V> newRecord = buildReplicatedRecord(key, value, record.getTtl());
         newRecord.setHits(record.getHits());
         newRecord.setCreationTime(record.getCreationTime());
         newRecord.setLastAccessTime(record.getLastAccessTime());

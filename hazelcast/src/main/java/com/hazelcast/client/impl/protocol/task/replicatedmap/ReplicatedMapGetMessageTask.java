@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.monitor.impl.LocalReplicatedMapStatsImpl;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.operation.GetOperation;
 import com.hazelcast.security.permission.ActionConstants;
@@ -33,7 +34,7 @@ import java.security.Permission;
 public class ReplicatedMapGetMessageTask
         extends AbstractPartitionMessageTask<ReplicatedMapGetCodec.RequestParameters> {
 
-    private volatile long startTimeNanos;
+    private volatile long startTime;
 
     public ReplicatedMapGetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -51,7 +52,7 @@ public class ReplicatedMapGetMessageTask
 
     @Override
     protected void beforeProcess() {
-        startTimeNanos = System.nanoTime();
+        startTime = Timer.millis();
     }
 
     @Override
@@ -59,7 +60,7 @@ public class ReplicatedMapGetMessageTask
         ReplicatedMapService replicatedMapService = getService(ReplicatedMapService.SERVICE_NAME);
         if (replicatedMapService.getReplicatedMapConfig(parameters.name).isStatisticsEnabled()) {
             LocalReplicatedMapStatsImpl stats = replicatedMapService.getLocalReplicatedMapStatsImpl(parameters.name);
-            stats.incrementGetsNanos(System.nanoTime() - startTimeNanos);
+            stats.incrementGetsNanos(System.nanoTime() - startTime);
         }
         return response;
     }
