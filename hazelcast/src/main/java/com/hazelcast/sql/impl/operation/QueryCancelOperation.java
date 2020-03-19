@@ -49,6 +49,8 @@ public class QueryCancelOperation extends QueryAbstractIdAwareOperation {
     public QueryCancelOperation(QueryId queryId, int errorCode, String errorMessage, UUID originatingMemberId) {
         super(queryId);
 
+        assert originatingMemberId != null;
+
         this.errorCode = errorCode;
         this.errorMessage = errorMessage;
         this.originatingMemberId = originatingMemberId;

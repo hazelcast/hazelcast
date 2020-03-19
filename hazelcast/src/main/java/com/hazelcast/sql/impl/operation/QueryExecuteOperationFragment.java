@@ -25,6 +25,7 @@ import com.hazelcast.sql.impl.physical.PhysicalNode;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -78,5 +79,25 @@ public class QueryExecuteOperationFragment implements DataSerializable {
                 memberIds.add(UUIDSerializationUtil.readUUID(in));
             }
         }
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(node, memberIds);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        QueryExecuteOperationFragment fragment = (QueryExecuteOperationFragment) o;
+
+        return Objects.equals(node, fragment.node) && Objects.equals(memberIds, fragment.memberIds);
     }
 }

@@ -73,6 +73,14 @@ public class QueryExecuteOperation extends QueryAbstractIdAwareOperation {
     ) {
         super(queryId);
 
+        assert partitionMapping != null && !partitionMapping.isEmpty() : partitionMapping;
+        assert fragments != null && fragments.size() > 0 : fragments;
+        assert outboundEdgeMap != null;
+        assert inboundEdgeMap != null;
+        assert inboundEdgeMap.size() == outboundEdgeMap.size();
+        assert edgeCreditMap != null;
+        assert edgeCreditMap.size() == outboundEdgeMap.size();
+
         this.queryId = queryId;
         this.partitionMapping = partitionMapping;
         this.fragments = fragments;

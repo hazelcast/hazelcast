@@ -34,11 +34,18 @@ public abstract class QueryAbstractIdAwareOperation extends QueryOperation {
     }
 
     protected QueryAbstractIdAwareOperation(QueryId queryId) {
+        assert queryId != null;
+
         this.queryId = queryId;
     }
 
     public QueryId getQueryId() {
         return queryId;
+    }
+
+    @Override
+    public int getPartition() {
+        return Math.abs(queryId.hashCode());
     }
 
     @Override

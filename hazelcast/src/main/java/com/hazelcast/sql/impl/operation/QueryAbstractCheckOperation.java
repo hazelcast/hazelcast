@@ -36,6 +36,8 @@ public abstract class QueryAbstractCheckOperation extends QueryOperation {
     }
 
     public QueryAbstractCheckOperation(Collection<QueryId> queryIds) {
+        assert queryIds != null;
+
         this.queryIds = queryIds;
     }
 

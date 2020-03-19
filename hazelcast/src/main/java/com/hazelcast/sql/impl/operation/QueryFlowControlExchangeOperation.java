@@ -37,6 +37,8 @@ public class QueryFlowControlExchangeOperation extends QueryAbstractExchangeOper
     public QueryFlowControlExchangeOperation(QueryId queryId, int edgeId, long remainingMemory) {
         super(queryId, edgeId);
 
+        assert remainingMemory >= 0L;
+
         this.remainingMemory = remainingMemory;
     }
 
