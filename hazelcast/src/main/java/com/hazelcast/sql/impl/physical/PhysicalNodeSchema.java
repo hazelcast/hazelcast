@@ -30,6 +30,8 @@ public class PhysicalNodeSchema implements FieldTypeProvider {
     private final int rowWidth;
 
     public PhysicalNodeSchema(List<QueryDataType> types) {
+        assert types != null;
+
         this.types = Collections.unmodifiableList(types);
 
         rowWidth = calculateRowWidth(types);

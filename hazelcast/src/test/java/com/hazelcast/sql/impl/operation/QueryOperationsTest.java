@@ -14,17 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.physical;
+package com.hazelcast.sql.impl.operation;
+
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 /**
- * A node without inputs.
+ * Tests for operations.
  */
-public abstract class ZeroInputPhysicalNode extends AbstractPhysicalNode {
-    protected ZeroInputPhysicalNode() {
-        // No-op.
-    }
-
-    protected ZeroInputPhysicalNode(int id) {
-        super(id);
-    }
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
+public class QueryOperationsTest {
 }
