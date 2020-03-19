@@ -131,6 +131,7 @@ public final class MetricDescriptorConstants {
     public static final String EXECUTOR_PREFIX_DURABLE_INTERNAL = "executor.durable.internal";
     public static final String EXECUTOR_PREFIX_SCHEDULED_INTERNAL = "executor.scheduled.internal";
     public static final String EXECUTOR_DISCRIMINATOR_NAME = "name";
+    public static final String EXECUTOR_METRIC_CREATION_TIME = "creationTime";
     public static final String EXECUTOR_METRIC_PENDING = "pending";
     public static final String EXECUTOR_METRIC_STARTED = "started";
     public static final String EXECUTOR_METRIC_COMPLETED = "completed";

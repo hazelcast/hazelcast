@@ -727,6 +727,16 @@ hazelcast:
           principal: "*"
           actions:
             - all
+      ring-buffer:
+        - name: "*"
+          principal: "*"
+          actions:
+            - all
+      reliable-topic:
+        - name: "*"
+          principal: "*"
+          actions:
+            - all
     client-block-unmapped-actions: true
 
   member-attributes:
