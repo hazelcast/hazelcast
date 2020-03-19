@@ -45,4 +45,9 @@ abstract class AbstractCollectionStreamSerializer<CollectionType extends Collect
         }
         return collection;
     }
+
+    @Override
+    public void destroy() {
+    }
+
 }

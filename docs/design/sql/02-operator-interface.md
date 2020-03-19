@@ -105,7 +105,7 @@ interface Row extends RowBatch {
         return 1;
     }
     
-    default int getRow(int index) {
+    default Row getRow(int index) {
         return this;
     }
 }
@@ -119,7 +119,7 @@ result instead of the row batch
 1. The `RowBatch` could be accessed through a separate method
 1. The `open()` method is renamed to `setup()`. Special query context is passed to it as an argument
 1. There is no separate `close()` method because the engine doesn't need explicit per-operator cleanup at the
-moment. This may change in future but is not important for the purpose of this document.
+moment. This may change in future, in this case the current document should be updated accordingly
 
 *Snippet 7: Executable operator interface*
 ```java
@@ -141,16 +141,23 @@ enum IterationResult {
 }
 ```
 
-When the engine has received `FETCHED` or `FETCHED_DONE` from the `Exec.advance()` call, it may access the
-produced rows through the `Exec.currentBatch()` call. If the engine has received `WAIT`, then query
-execution is halted, and the control is transferred to another query in the execution queue. The query
-execution is resumed upon an external signal (e.g. when the batch arrives from the remote node, or free space
-in the send buffer appears).
+When the engine has received `FETCHED` or `FETCHED_DONE` from the `Exec.advance()` call, it may access the produced row batch
+through the `Exec.currentBatch()` call. The ownership of the batch is held by the producer. The content of the row batch is valid
+until the next `advance()` call on the producer. If the consumer may require access to the row batch content after the next call
+to `advance()`, it should make a copy of the batch.
+
+If the engine has received `WAIT`, then query execution is halted, and the control is transferred to another query in the
+execution queue. The query execution is resumed upon an external signal (e.g. when the batch arrives from the remote node,
+or free space in the send buffer appears).
 
 ## Implementation Guidelines
 Operator implementations must adhere to the following rules:
+1. `Row` instances should be immutable to facilitate their transfer between batches
+1. The row batch returned by the `Exec.currentBatch()` call is valid before the next call to the `Exec.advance()` interface.
+Do not use the reference to the batch outside of this scope
+1. Operator's state is not required to be thread-safe
 1. Use row batches to minimize evaluation overhead
-1. Do not block the thread waiting for data send or receive
+1. Avoid blocking the thread while waiting for data send or receive
 1. Avoid blocking synchronization when possible
 
 [1]: https://dl.acm.org/doi/10.1109/69.273032 "Volcano - An Extensible and Parallel Query Evaluation System"

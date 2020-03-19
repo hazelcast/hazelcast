@@ -44,8 +44,10 @@
                                     <xs:element name="split-brain-protection-ref" minOccurs="0" maxOccurs="1">
                                         <xs:annotation>
                                             <xs:documentation>
-                                                Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
-                                                You should set the split-brain-protection-ref's value as the split brain protection's name.
+                                                Adds the Split Brain Protection for this data-structure which you configure using
+                                                the split-brain-protection element.
+                                                You should set the split-brain-protection-ref's value as the split brain
+                                                protection's name.
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
@@ -81,8 +83,10 @@
                                     <xs:element name="split-brain-protection-ref" minOccurs="0" maxOccurs="1">
                                         <xs:annotation>
                                             <xs:documentation>
-                                                Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
-                                                You should set the split-brain-protection-ref's value as the split brain protection's name.
+                                                Adds the Split Brain Protection for this data-structure which you configure using
+                                                the split-brain-protection element.
+                                                You should set the split-brain-protection-ref's value as the split brain
+                                                protection's name.
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
@@ -117,8 +121,10 @@
                                     <xs:element name="split-brain-protection-ref" minOccurs="0" maxOccurs="1">
                                         <xs:annotation>
                                             <xs:documentation>
-                                                Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
-                                                You should set the split-brain-protection-ref's value as the split brain protection's name.
+                                                Adds the Split Brain Protection for this data-structure which you configure using
+                                                the split-brain-protection element.
+                                                You should set the split-brain-protection-ref's value as the split brain
+                                                protection's name.
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
@@ -149,7 +155,8 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
-                                <xs:attribute name="capacity-policy" use="optional" type="scheduled-executor-capacity-policy" default="PER_NODE">
+                                <xs:attribute name="capacity-policy" use="optional" type="scheduled-executor-capacity-policy"
+                                              default="PER_NODE">
                                     <xs:annotation>
                                         <xs:documentation>
                                             The active policy for the capacity setting
@@ -194,8 +201,10 @@
                                     <xs:element name="split-brain-protection-ref" minOccurs="0" maxOccurs="1">
                                         <xs:annotation>
                                             <xs:documentation>
-                                                Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
-                                                You should set the split-brain-protection-ref's value as the split brain protection's name.
+                                                Adds the Split Brain Protection for this data-structure which you configure using
+                                                the split-brain-protection element.
+                                                You should set the split-brain-protection-ref's value as the split brain
+                                                protection's name.
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
@@ -236,8 +245,10 @@
                                     <xs:element name="split-brain-protection-ref" minOccurs="0" maxOccurs="1">
                                         <xs:annotation>
                                             <xs:documentation>
-                                                Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
-                                                You should set the split-brain-protection-ref's value as the split brain protection's name.
+                                                Adds the Split Brain Protection for this data-structure which you configure using
+                                                the split-brain-protection element.
+                                                You should set the split-brain-protection-ref's value as the split brain
+                                                protection's name.
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
@@ -316,8 +327,10 @@
                                     <xs:element name="split-brain-protection-ref" minOccurs="0" maxOccurs="1">
                                         <xs:annotation>
                                             <xs:documentation>
-                                                Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
-                                                You should set the split-brain-protection-ref's value as the split brain protection's name.
+                                                Adds the Split Brain Protection for this data-structure which you configure using
+                                                the split-brain-protection element.
+                                                You should set the split-brain-protection-ref's value as the split brain
+                                                protection's name.
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
@@ -327,7 +340,8 @@
                                 <xs:attribute name="capacity" use="optional" type="parameterized-unsigned-int">
                                     <xs:annotation>
                                         <xs:documentation>
-                                            Number of items in the ringbuffer. If no time-to-live-seconds is set, the size will always
+                                            Number of items in the ringbuffer. If no time-to-live-seconds is set, the size will
+                                            always
                                             be equal to capacity after the head completed the first loop around the ring. This is
                                             because no items are getting expired. The default value is 10000.
                                         </xs:documentation>
@@ -454,10 +468,12 @@
                                                 be hosting more partitions, and therefore map entries, than that of a larger
                                                 cluster. Thus, for a small cluster, eviction of the entries will decrease
                                                 performance (the number of entries is large).
-                                                USED_HEAP_SIZE: Maximum used heap size in megabytes per map for each Hazelcast instance.
+                                                USED_HEAP_SIZE: Maximum used heap size in megabytes per map for each Hazelcast
+                                                instance.
                                                 USED_HEAP_PERCENTAGE: Maximum used heap size percentage per map for each Hazelcast
                                                 instance.
-                                                If, for example, JVM is configured to have 1000 MB and this value is 10, then the map
+                                                If, for example, JVM is configured to have 1000 MB and this value is 10, then the
+                                                map
                                                 entries will be evicted when used heap size exceeds 100 MB.
                                                 FREE_HEAP_SIZE: Minimum free heap size in megabytes for each JVM.
                                                 FREE_HEAP_PERCENTAGE: Minimum free heap size percentage for each JVM.
@@ -581,7 +597,8 @@
                                                 <xs:element name="attribute" minOccurs="0" maxOccurs="unbounded">
                                                     <xs:complexType>
                                                         <xs:attribute name="name" type="xs:string" use="required"/>
-                                                        <xs:attribute name="extractor-class-name" type="xs:string" use="required"/>
+                                                        <xs:attribute name="extractor-class-name" type="xs:string"
+                                                                      use="required"/>
                                                     </xs:complexType>
                                                 </xs:element>
                                             </xs:sequence>
@@ -604,8 +621,10 @@
                                     <xs:element name="split-brain-protection-ref" minOccurs="0" maxOccurs="1">
                                         <xs:annotation>
                                             <xs:documentation>
-                                                Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
-                                                You should set the split-brain-protection-ref's value as the split brain protection's name.
+                                                Adds the Split Brain Protection for this data-structure which you configure using
+                                                the split-brain-protection element.
+                                                You should set the split-brain-protection-ref's value as the split brain
+                                                protection's name.
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
@@ -640,14 +659,18 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
-                                <xs:attribute name="metadata-policy" use="optional" type="metadata-policy" default="CREATE_ON_UPDATE">
+                                <xs:attribute name="metadata-policy" use="optional" type="metadata-policy"
+                                              default="CREATE_ON_UPDATE">
                                     <xs:annotation>
                                         <xs:documentation>
-                                            Metadata policy for this map. Hazelcast may process objects of supported types ahead of time to
-                                            create additional metadata about them. This metadata then is used to make querying and indexing faster.
+                                            Metadata policy for this map. Hazelcast may process objects of supported types ahead
+                                            of time to
+                                            create additional metadata about them. This metadata then is used to make querying and
+                                            indexing faster.
                                             Turning on preprocessing may decrease put throughput.
                                             Valid values are:
-                                            CREATE_ON_UPDATE (default): Objects of supported types are pre-processed when they are created and updated.
+                                            CREATE_ON_UPDATE (default): Objects of supported types are pre-processed when they are
+                                            created and updated.
                                             OFF: No metadata is created.
                                         </xs:documentation>
                                     </xs:annotation>
@@ -817,8 +840,10 @@
                                     <xs:element name="split-brain-protection-ref" minOccurs="0" maxOccurs="1">
                                         <xs:annotation>
                                             <xs:documentation>
-                                                Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
-                                                You should set the split-brain-protection-ref's value as the split brain protection's name.
+                                                Adds the Split Brain Protection for this data-structure which you configure using
+                                                the split-brain-protection element.
+                                                You should set the split-brain-protection-ref's value as the split brain
+                                                protection's name.
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
@@ -975,8 +1000,10 @@
                                     <xs:element name="split-brain-protection-ref" minOccurs="0" maxOccurs="1">
                                         <xs:annotation>
                                             <xs:documentation>
-                                                Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
-                                                You should set the split-brain-protection-ref's value as the split brain protection's name.
+                                                Adds the Split Brain Protection for this data-structure which you configure using
+                                                the split-brain-protection element.
+                                                You should set the split-brain-protection-ref's value as the split brain
+                                                protection's name.
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
@@ -1046,8 +1073,10 @@
                                     <xs:element name="split-brain-protection-ref" minOccurs="0" maxOccurs="1">
                                         <xs:annotation>
                                             <xs:documentation>
-                                                Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
-                                                You should set the split-brain-protection-ref's value as the split brain protection's name.
+                                                Adds the Split Brain Protection for this data-structure which you configure using
+                                                the split-brain-protection element.
+                                                You should set the split-brain-protection-ref's value as the split brain
+                                                protection's name.
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
@@ -1103,8 +1132,10 @@
                                     <xs:element name="split-brain-protection-ref" minOccurs="0" maxOccurs="1">
                                         <xs:annotation>
                                             <xs:documentation>
-                                                Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
-                                                You should set the split-brain-protection-ref's value as the split-brain-protection's name.
+                                                Adds the Split Brain Protection for this data-structure which you configure using
+                                                the split-brain-protection element.
+                                                You should set the split-brain-protection-ref's value as the
+                                                split-brain-protection's name.
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
@@ -1217,8 +1248,10 @@
                                     <xs:element name="split-brain-protection-ref" minOccurs="0" maxOccurs="1">
                                         <xs:annotation>
                                             <xs:documentation>
-                                                Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
-                                                You should set the split-brain-protection-ref's value as the split-brain-protection's name.
+                                                Adds the Split Brain Protection for this data-structure which you configure using
+                                                the split-brain-protection element.
+                                                You should set the split-brain-protection-ref's value as the
+                                                split-brain-protection's name.
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
@@ -1264,7 +1297,8 @@
                                 <xs:field xpath="@name"/>
                             </xs:unique>
                         </xs:element>
-                        <xs:element name="split-brain-protection" type="split-brain-protection" minOccurs="0" maxOccurs="unbounded"/>
+                        <xs:element name="split-brain-protection" type="split-brain-protection" minOccurs="0"
+                                    maxOccurs="unbounded"/>
                         <xs:element name="lite-member" minOccurs="0" maxOccurs="1">
                             <xs:complexType>
                                 <xs:attribute name="enabled" type="parameterized-boolean">
@@ -1282,10 +1316,12 @@
                         <xs:element name="pn-counter" minOccurs="0" maxOccurs="unbounded">
                             <xs:complexType>
                                 <xs:all>
-                                    <xs:element name="replica-count" type="crdt-replica-count" minOccurs="0" maxOccurs="1" default="2147483647">
+                                    <xs:element name="replica-count" type="crdt-replica-count" minOccurs="0" maxOccurs="1"
+                                                default="2147483647">
                                         <xs:annotation>
                                             <xs:documentation>
-                                                Number of replicas on which the CRDT state will be kept. The updates are replicated
+                                                Number of replicas on which the CRDT state will be kept. The updates are
+                                                replicated
                                                 asynchronously between replicas.
                                                 The number must be greater than 1 and up to 2147483647 (Integer.MAX_VALUE).
                                                 The default value is 2147483647 (Integer.MAX_VALUE).
@@ -1295,8 +1331,10 @@
                                     <xs:element name="split-brain-protection-ref" minOccurs="0" maxOccurs="1">
                                         <xs:annotation>
                                             <xs:documentation>
-                                                Adds the Split Brain Protection for this data-structure which you configure using the split-brain-protection element.
-                                                You should set the split-brain-protection-ref's value as the split-brain-protection's name.
+                                                Adds the Split Brain Protection for this data-structure which you configure using
+                                                the split-brain-protection element.
+                                                You should set the split-brain-protection-ref's value as the
+                                                split-brain-protection's name.
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
@@ -1967,7 +2005,7 @@
 
     <xs:complexType name="aliased-discovery-strategy">
         <xs:sequence/>
-        <xs:anyAttribute processContents="skip" />
+        <xs:anyAttribute processContents="skip"/>
     </xs:complexType>
 
     <xs:complexType name="discovery-strategies">
@@ -2424,7 +2462,8 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="batch-max-delay-millis" type="parameterized-positive-integer" default="1000" minOccurs="0" maxOccurs="1">
+            <xs:element name="batch-max-delay-millis" type="parameterized-positive-integer" default="1000" minOccurs="0"
+                        maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
                         Sets the maximum amount of time in milliseconds to wait before sending a
@@ -2433,7 +2472,8 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="response-timeout-millis" type="parameterized-positive-integer" default="60000" minOccurs="0" maxOccurs="1">
+            <xs:element name="response-timeout-millis" type="parameterized-positive-integer" default="60000" minOccurs="0"
+                        maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
                         Sets the duration in milliseconds for the waiting time before retrying to
@@ -2648,8 +2688,6 @@
     </xs:complexType>
 
 
-
-
     <xs:complexType name="memcache-protocol">
         <xs:attribute name="enabled" type="xs:boolean" use="required"/>
     </xs:complexType>
@@ -2774,6 +2812,10 @@
                         <xs:element name="user-code-deployment-permission" type="instance-permission" minOccurs="0"
                                     maxOccurs="unbounded"/>
                         <xs:element name="config-permission" type="base-permission" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="ring-buffer-permission" type="instance-permission" minOccurs="0"
+                                    maxOccurs="unbounded"/>
+                        <xs:element name="reliable-topic-permission" type="instance-permission" minOccurs="0"
+                                    maxOccurs="unbounded"/>
                     </xs:choice>
                     <xs:attribute name="on-join-operation" type="permission-on-join-operation" use="optional" default="RECEIVE"/>
                 </xs:complexType>
@@ -3254,7 +3296,7 @@
             </xs:annotation>
             <xs:simpleType>
                 <xs:restriction base="xs:int">
-                    <xs:minInclusive value="1" />
+                    <xs:minInclusive value="1"/>
                 </xs:restriction>
             </xs:simpleType>
         </xs:attribute>
@@ -3275,7 +3317,7 @@
         <xs:attribute name="epochStart" type="xs:long" default="1514764800000" use="optional">
             <xs:annotation>
                 <xs:documentation>
-                    Sets the offset of timestamp component. Time unit is milliseconds, default is 1514764800000 
+                    Sets the offset of timestamp component. Time unit is milliseconds, default is 1514764800000
                     (1.1.2018 0:00 UTC).
                 </xs:documentation>
             </xs:annotation>
@@ -3298,8 +3340,8 @@
             </xs:annotation>
             <xs:simpleType>
                 <xs:restriction base="xs:int">
-                    <xs:minInclusive value="0" />
-                    <xs:maxInclusive value="63" />
+                    <xs:minInclusive value="0"/>
+                    <xs:maxInclusive value="63"/>
                 </xs:restriction>
             </xs:simpleType>
         </xs:attribute>
@@ -3311,15 +3353,16 @@
             </xs:annotation>
             <xs:simpleType>
                 <xs:restriction base="xs:int">
-                    <xs:minInclusive value="0" />
-                    <xs:maxInclusive value="63" />
+                    <xs:minInclusive value="0"/>
+                    <xs:maxInclusive value="63"/>
                 </xs:restriction>
             </xs:simpleType>
         </xs:attribute>
         <xs:attribute name="allowedFutureMillis" default="15000" use="optional">
             <xs:annotation>
                 <xs:documentation>
-                    Sets how far to the future is the generator allowed to go to generate IDs without blocking, default is 15 seconds.
+                    Sets how far to the future is the generator allowed to go to generate IDs without blocking, default is 15
+                    seconds.
                 </xs:documentation>
             </xs:annotation>
             <xs:simpleType>
@@ -3357,7 +3400,7 @@
             </xs:annotation>
             <xs:simpleType>
                 <xs:restriction base="xs:int">
-                    <xs:minInclusive value="1" />
+                    <xs:minInclusive value="1"/>
                 </xs:restriction>
             </xs:simpleType>
         </xs:attribute>
@@ -3778,7 +3821,7 @@
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
-            <xs:element ref="choice-of-split-brain-protection-function" minOccurs="0" maxOccurs="1" />
+            <xs:element ref="choice-of-split-brain-protection-function" minOccurs="0" maxOccurs="1"/>
         </xs:all>
         <xs:attribute name="enabled" type="parameterized-boolean" use="required"/>
         <xs:attribute name="name" use="required">
@@ -3796,19 +3839,24 @@
                 <xs:documentation>
                     A probabilistic split brain protection function based on Phi Accrual failure detector. See
                     com.hazelcast.internal.cluster.fd.PhiAccrualClusterFailureDetector for implementation
-                    details. Configuration:<br/>
+                    details. Configuration:
+                    <br/>
                     - <code>acceptable-heartbeat-pause</code>: duration in milliseconds corresponding to number
                     of potentially lost/delayed heartbeats that will be accepted before considering it to be an anomaly.
                     This margin is important to be able to survive sudden, occasional, pauses in heartbeat arrivals,
-                    due to for example garbage collection or network drops.<br/>
+                    due to for example garbage collection or network drops.
+                    <br/>
                     - <code>threshold</code>: threshold for suspicion level. A low threshold is prone to generate
                     many wrong suspicions but ensures a quick detection in the event of a real crash. Conversely, a high
-                    threshold generates fewer mistakes but needs more time to detect actual crashes.<br/>
+                    threshold generates fewer mistakes but needs more time to detect actual crashes.
+                    <br/>
                     - <code>max-sample-size</code>: number of samples to use for calculation of mean and standard
-                    deviation of inter-arrival times.<br/>
+                    deviation of inter-arrival times.
+                    <br/>
                     - <code>first-heartbeat-estimate</code>: bootstrap the stats with heartbeats that corresponds to
                     this duration in milliseconds, with a rather high standard deviation (since environment is unknown
-                    in the beginning)<br/>
+                    in the beginning)
+                    <br/>
                     - <code>min-std-deviation</code>: minimum standard deviation (in milliseconds) to use for the normal
                     distribution used when calculating phi. Too low standard deviation might result in too much
                     sensitivity for sudden, but normal, deviations in heartbeat inter arrival times.
@@ -3816,9 +3864,9 @@
             </xs:annotation>
             <xs:attribute name="acceptable-heartbeat-pause-millis" type="parameterized-unsigned-int" use="optional"
                           default="60000"/>
-            <xs:attribute name="suspicion-threshold" type="parameterized-double" use="optional" default="10" />
+            <xs:attribute name="suspicion-threshold" type="parameterized-double" use="optional" default="10"/>
             <xs:attribute name="max-sample-size" type="parameterized-unsigned-int" use="optional" default="200"/>
-            <xs:attribute name="min-std-deviation-millis" type="parameterized-unsigned-long" use="optional" default="100" />
+            <xs:attribute name="min-std-deviation-millis" type="parameterized-unsigned-long" use="optional" default="100"/>
             <xs:attribute name="heartbeat-interval-millis" type="parameterized-unsigned-long" use="optional" default="5000"/>
         </xs:complexType>
     </xs:element>
@@ -3829,7 +3877,8 @@
                 <xs:documentation>
                     A split brain protection function that keeps track of the last heartbeat timestamp per each member.
                     For a member to be considered live (for the purpose to conclude whether the minimum cluster size
-                    property is satisfied), a heartbeat must have been received at most <code>heartbeat-tolerance</code>
+                    property is satisfied), a heartbeat must have been received at most
+                    <code>heartbeat-tolerance</code>
                     milliseconds before current time.
                 </xs:documentation>
             </xs:annotation>
@@ -4335,11 +4384,15 @@
                 </xs:annotation>
             </xs:element>
             <xs:element name="wan-endpoint-config" type="endpoint-config" minOccurs="0" maxOccurs="unbounded"/>
-            <xs:element name="wan-server-socket-endpoint-config" type="server-socket-endpoint-config" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="wan-server-socket-endpoint-config" type="server-socket-endpoint-config" minOccurs="0"
+                        maxOccurs="unbounded"/>
             <xs:element name="member-server-socket-endpoint-config" type="server-socket-endpoint-config"/>
-            <xs:element name="client-server-socket-endpoint-config" type="server-socket-endpoint-config" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="rest-server-socket-endpoint-config" type="rest-server-socket-endpoint-config" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="memcache-server-socket-endpoint-config" type="server-socket-endpoint-config" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="client-server-socket-endpoint-config" type="server-socket-endpoint-config" minOccurs="0"
+                        maxOccurs="1"/>
+            <xs:element name="rest-server-socket-endpoint-config" type="rest-server-socket-endpoint-config" minOccurs="0"
+                        maxOccurs="1"/>
+            <xs:element name="memcache-server-socket-endpoint-config" type="server-socket-endpoint-config" minOccurs="0"
+                        maxOccurs="1"/>
         </xs:choice>
         <xs:attribute name="enabled" type="parameterized-boolean" default="false">
             <xs:annotation>
@@ -4511,7 +4564,8 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="missing-cp-member-auto-removal-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0">
+            <xs:element name="missing-cp-member-auto-removal-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1"
+                        default="0">
                 <xs:annotation>
                     <xs:documentation>
                         Duration to wait before automatically removing a missing CP member from
@@ -4535,7 +4589,8 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="fail-on-indeterminate-operation-state" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
+            <xs:element name="fail-on-indeterminate-operation-state" type="xs:boolean" minOccurs="0" maxOccurs="1"
+                        default="false">
                 <xs:annotation>
                     <xs:documentation>
                         Offers a choice between at-least-once and at-most-once execution
@@ -4887,7 +4942,7 @@
         </xs:choice>
     </xs:complexType>
     <xs:complexType name="tls-authentication">
-        <xs:attribute name="roleAttribute" type="xs:string" use="optional" default="cn" />
+        <xs:attribute name="roleAttribute" type="xs:string" use="optional" default="cn"/>
     </xs:complexType>
     <xs:complexType name="ldap-authentication">
         <xs:all>
@@ -4935,8 +4990,8 @@
         </xs:choice>
     </xs:complexType>
     <xs:complexType name="username-password">
-        <xs:attribute name="username" type="xs:string" use="required" />
-        <xs:attribute name="password" type="xs:string" use="required" />
+        <xs:attribute name="username" type="xs:string" use="required"/>
+        <xs:attribute name="password" type="xs:string" use="required"/>
     </xs:complexType>
     <xs:complexType name="token">
         <xs:simpleContent>
