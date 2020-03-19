@@ -29,6 +29,12 @@ public class ExecutorServiceMBean extends HazelcastMBean<IExecutorService> {
         this.objectName = service.createObjectName("IExecutorService", managedObject.getName());
     }
 
+    @ManagedAnnotation("localCreationTime")
+    @ManagedDescription("the creation time of this executor on this member")
+    public long getLocalCreationTime() {
+        return managedObject.getLocalExecutorStats().getCreationTime();
+    }
+
     @ManagedAnnotation("localPendingTaskCount")
     @ManagedDescription("the number of pending operations of this executor service on this member")
     public long getLocalPendingTaskCount() {
