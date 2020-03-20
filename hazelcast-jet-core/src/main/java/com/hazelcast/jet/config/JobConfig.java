@@ -265,6 +265,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      * copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
+     * @since 4.1
      */
     @Nonnull
     public JobConfig addPackage(@Nonnull String... packages) {
@@ -938,6 +939,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      * Serializer must have no-arg constructor.
      *
      * @return {@code this} instance for fluent API
+     * @since 4.1
      */
     @Nonnull
     @EvolvingApi
