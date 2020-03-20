@@ -119,69 +119,62 @@ public class QueryFragmentExecutable {
                 initialized = true;
             }
 
-            // Advance the executor.
-            QueryFragmentContext.setCurrentContext(fragmentContext);
+            // Feed all batches to relevant inboxes first. Set the upper boundary on the number of batches to avoid
+            // starvation when batches arrive quicker than we are able to process them.
+            int maxOperationCount = operationCount.get();
+            int processedBatchCount = 0;
 
-            try {
-                // Feed all batches to relevant inboxes first. Set the upper boundary on the number of batches to avoid
-                // starvation when batches arrive quicker than we are able to process them.
-                int maxOperationCount = operationCount.get();
-                int processedBatchCount = 0;
+            QueryOperation operation;
 
-                QueryOperation operation;
+            while ((operation = operations.pollFirst()) != null) {
+                if (operation instanceof QueryBatchExchangeOperation) {
+                    QueryBatchExchangeOperation operation0 = (QueryBatchExchangeOperation) operation;
 
-                while ((operation = operations.pollFirst()) != null) {
-                    if (operation instanceof QueryBatchExchangeOperation) {
-                        QueryBatchExchangeOperation operation0 = (QueryBatchExchangeOperation) operation;
+                    AbstractInbox inbox = inboxes.get(operation0.getEdgeId());
+                    assert inbox != null;
 
-                        AbstractInbox inbox = inboxes.get(operation0.getEdgeId());
-                        assert inbox != null;
+                    MailboxBatch batch = new MailboxBatch(
+                        operation0.getBatch(),
+                        operation0.isLast(),
+                        operation0.getCallerId()
+                    );
 
-                        MailboxBatch batch = new MailboxBatch(
-                            operation0.getBatch(),
-                            operation0.isLast(),
-                            operation0.getCallerId()
-                        );
+                    inbox.onBatchReceived(batch, operation0.getRemainingMemory());
+                } else {
+                    assert operation instanceof QueryFlowControlExchangeOperation;
 
-                        inbox.onBatchReceived(batch, operation0.getRemainingMemory());
-                    } else {
-                        assert operation instanceof QueryFlowControlExchangeOperation;
+                    QueryFlowControlExchangeOperation operation0 = (QueryFlowControlExchangeOperation) operation;
 
-                        QueryFlowControlExchangeOperation operation0 = (QueryFlowControlExchangeOperation) operation;
+                    Map<UUID, Outbox> edgeOutboxes = outboxes.get(operation0.getEdgeId());
+                    assert edgeOutboxes != null;
 
-                        Map<UUID, Outbox> edgeOutboxes = outboxes.get(operation0.getEdgeId());
-                        assert edgeOutboxes != null;
+                    Outbox outbox = edgeOutboxes.get(operation.getCallerId());
+                    assert outbox != null;
 
-                        Outbox outbox = edgeOutboxes.get(operation.getCallerId());
-                        assert outbox != null;
-
-                        outbox.onFlowControl(operation0.getRemainingMemory());
-                    }
-
-                    if (++processedBatchCount >= maxOperationCount) {
-                        break;
-                    }
+                    outbox.onFlowControl(operation0.getRemainingMemory());
                 }
 
-                operationCount.addAndGet(-1 * processedBatchCount);
-
-                IterationResult res = exec.advance();
-
-                // Send flow control messages if needed.
-                if (res != IterationResult.FETCHED_DONE) {
-                    for (AbstractInbox inbox : inboxes.values()) {
-                        inbox.sendFlowControl();
-                    }
+                if (++processedBatchCount >= maxOperationCount) {
+                    break;
                 }
+            }
 
-                // If executor finished, notify the state.
-                if (res == IterationResult.FETCHED_DONE) {
-                    completed = true;
+            operationCount.addAndGet(-1 * processedBatchCount);
 
-                    state.onFragmentFinished();
+            IterationResult res = exec.advance();
+
+            // Send flow control messages if needed.
+            if (res != IterationResult.FETCHED_DONE) {
+                for (AbstractInbox inbox : inboxes.values()) {
+                    inbox.sendFlowControl();
                 }
-            } finally {
-                QueryFragmentContext.setCurrentContext(null);
+            }
+
+            // If executor finished, notify the state.
+            if (res == IterationResult.FETCHED_DONE) {
+                completed = true;
+
+                state.onFragmentFinished();
             }
         } catch (Exception e) {
             // Prevent subsequent invocations.

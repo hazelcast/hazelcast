@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.expression.string;
 
 import com.hazelcast.sql.impl.expression.BiExpression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.util.EnsureConvertible;
 import com.hazelcast.sql.impl.expression.util.Eval;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -43,9 +44,9 @@ public class ConcatFunction extends BiExpression<String> {
     }
 
     @Override
-    public String eval(Row row) {
-        String first = Eval.asVarchar(operand1, row);
-        String second = Eval.asVarchar(operand2, row);
+    public String eval(Row row, ExpressionEvalContext context) {
+        String first = Eval.asVarchar(operand1, row, context);
+        String second = Eval.asVarchar(operand2, row, context);
 
         return StringExpressionUtils.concat(first, second);
     }

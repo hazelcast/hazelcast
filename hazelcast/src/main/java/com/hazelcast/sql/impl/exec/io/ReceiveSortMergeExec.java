@@ -86,7 +86,7 @@ public class ReceiveSortMergeExec extends AbstractExec {
     @Override
     protected void setup0(QueryFragmentContext ctx) {
         if (fetch != null) {
-            fetch.setup();
+            fetch.setup(ctx);
         }
     }
 
@@ -135,7 +135,7 @@ public class ReceiveSortMergeExec extends AbstractExec {
         List<Object> key = new ArrayList<>(expressions.size());
 
         for (Expression<?> expression : expressions) {
-            key.add(expression.eval(row));
+            key.add(expression.eval(row, ctx));
         }
 
         return new SortKey(key, stripe);

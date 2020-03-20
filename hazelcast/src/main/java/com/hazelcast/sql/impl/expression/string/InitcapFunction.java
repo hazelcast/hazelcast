@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.expression.string;
 
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.util.EnsureConvertible;
 import com.hazelcast.sql.impl.expression.util.Eval;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -39,8 +40,8 @@ public class InitcapFunction extends UniExpression<String> {
     }
 
     @Override
-    public String eval(Row row) {
-        String value = Eval.asVarchar(operand, row);
+    public String eval(Row row, ExpressionEvalContext context) {
+        String value = Eval.asVarchar(operand, row, context);
 
         return StringExpressionUtils.upper(value);
     }

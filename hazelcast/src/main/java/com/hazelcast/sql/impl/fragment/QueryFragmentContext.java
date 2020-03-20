@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.fragment;
 
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.exec.root.RootResultConsumer;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.state.QueryState;
 import com.hazelcast.sql.impl.worker.QueryFragmentExecutable;
 import com.hazelcast.sql.impl.worker.QueryFragmentWorkerPool;
@@ -27,9 +28,7 @@ import java.util.List;
 /**
  * Context of a running query fragment.
  */
-public class QueryFragmentContext {
-    /** Current query context. */
-    private static final ThreadLocal<QueryFragmentContext> CURRENT = new ThreadLocal<>();
+public final class QueryFragmentContext implements ExpressionEvalContext {
 
     private final QueryState state;
     private final List<Object> arguments;
@@ -52,14 +51,6 @@ public class QueryFragmentContext {
         this.rootConsumer = rootConsumer;
     }
 
-    public static QueryFragmentContext getCurrentContext() {
-        return CURRENT.get();
-    }
-
-    public static void setCurrentContext(QueryFragmentContext context) {
-        CURRENT.set(context);
-    }
-
     public void setFragmentExecutable(QueryFragmentExecutable fragmentExecutable) {
         this.fragmentExecutable = fragmentExecutable;
     }
@@ -72,10 +63,9 @@ public class QueryFragmentContext {
         return rootConsumer;
     }
 
-    public Object getArgument(int index) {
-        assert index >= 0 && index <= arguments.size();
-
-        return arguments.get(index);
+    @Override
+    public List<Object> getArguments() {
+        return arguments;
     }
 
     public void reschedule() {

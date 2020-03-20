@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.exec.fetch;
 
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.ListRowBatch;
 import com.hazelcast.sql.impl.row.Row;
@@ -46,9 +47,9 @@ public class Fetch {
         this.offset = offset;
     }
 
-    public void setup() {
-        fetchValue = eval(fetch, true);
-        offsetValue = eval(offset, false);
+    public void setup(ExpressionEvalContext context) {
+        fetchValue = eval(fetch, true, context);
+        offsetValue = eval(offset, false, context);
     }
 
     public RowBatch apply(RowBatch batch) {
@@ -100,14 +101,14 @@ public class Fetch {
         return fetchApplied == fetchValue;
     }
 
-    private long eval(Expression<?> expression, boolean fetch) {
+    private long eval(Expression<?> expression, boolean fetch, ExpressionEvalContext context) {
         if (expression == null) {
             return 0L;
         }
 
         String name = fetch ? "LIMIT" : "OFFSET";
 
-        Object val = expression.eval(FetchRow.INSTANCE);
+        Object val = expression.eval(FetchRow.INSTANCE, context);
 
         if (val == null) {
             throw HazelcastSqlException.error("Value of " + name + " cannot be null");

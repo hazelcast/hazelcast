@@ -48,7 +48,7 @@ public class ColumnExpression<T> implements Expression<T> {
     }
 
     @SuppressWarnings("unchecked")
-    @Override public T eval(Row row) {
+    @Override public T eval(Row row, ExpressionEvalContext context) {
         // TODO: VO: We need to double-check that all values which could be returned here are already normalized.
         //  Most like this is already so, because normalization must happen on all leaf nodes (KeyValueExtractorExpression,
         //  ParameterExpression, ConstantExpression), and ColumnExpression is not a leaf node! So the task is to ensure

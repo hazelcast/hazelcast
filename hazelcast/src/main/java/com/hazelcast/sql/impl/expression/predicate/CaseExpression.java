@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.expression.predicate;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.expression.CastExpression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.util.Eval;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.Row;
@@ -81,14 +82,14 @@ public class CaseExpression<T> implements Expression<T> {
 
     @SuppressWarnings("unchecked")
     @Override
-    public T eval(Row row) {
+    public T eval(Row row, ExpressionEvalContext context) {
         for (int i = 0; i < conditions.length; i++) {
             Expression<Boolean> condition = conditions[i];
 
-            Boolean conditionRes = Eval.asBit(condition, row);
+            Boolean conditionRes = Eval.asBit(condition, row, context);
 
             if (conditionRes != null && conditionRes) {
-                return (T) results[i].eval(row);
+                return (T) results[i].eval(row, context);
             }
         }
 
@@ -96,7 +97,7 @@ public class CaseExpression<T> implements Expression<T> {
         Expression<?> lastResult = results[results.length - 1];
 
         if (lastResult != null) {
-            return (T) lastResult.eval(row);
+            return (T) lastResult.eval(row, context);
         } else {
             return null;
         }

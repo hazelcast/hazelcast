@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.expression.predicate;
 
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.util.EnsureConvertible;
 import com.hazelcast.sql.impl.expression.util.Eval;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -39,8 +40,8 @@ public class IsNotTruePredicate extends UniExpression<Boolean> {
     }
 
     @Override
-    public Boolean eval(Row row) {
-        return TernaryLogic.isNotTrue(Eval.asBit(operand, row));
+    public Boolean eval(Row row, ExpressionEvalContext context) {
+        return TernaryLogic.isNotTrue(Eval.asBit(operand, row, context));
     }
 
     @Override

@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.expression.math;
 
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.expression.BiExpressionWithType;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.util.Eval;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.Row;
@@ -54,16 +55,16 @@ public abstract class RoundTruncateFunction<T> extends BiExpressionWithType<T> {
 
     @SuppressWarnings("unchecked")
     @Override
-    public T eval(Row row) {
+    public T eval(Row row, ExpressionEvalContext context) {
         // Get base operand.
-        BigDecimal value = Eval.asDecimal(operand1, row);
+        BigDecimal value = Eval.asDecimal(operand1, row, context);
 
         if (value == null) {
             return null;
         }
 
         // Get length.
-        Integer len = operand2 != null ? Eval.asInt(operand2, row) : null;
+        Integer len = operand2 != null ? Eval.asInt(operand2, row, context) : null;
 
         int len0 = len != null ? len : 0;
 

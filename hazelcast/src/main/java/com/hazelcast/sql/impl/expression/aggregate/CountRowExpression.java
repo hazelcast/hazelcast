@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.expression.aggregate;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
@@ -32,7 +33,7 @@ public class CountRowExpression implements Expression<Row> {
     public static final CountRowExpression INSTANCE = new CountRowExpression();
 
     @Override
-    public Row eval(Row row) {
+    public Row eval(Row row, ExpressionEvalContext context) {
         return row;
     }
 

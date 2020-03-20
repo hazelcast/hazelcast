@@ -69,7 +69,7 @@ public class SortExec extends AbstractUpstreamAwareExec {
     @Override
     protected void setup1(QueryFragmentContext ctx) {
         if (fetch != null) {
-            fetch.setup();
+            fetch.setup(ctx);
         }
     }
 
@@ -106,7 +106,7 @@ public class SortExec extends AbstractUpstreamAwareExec {
         List<Object> key = new ArrayList<>(expressions.size());
 
         for (Expression expression : expressions) {
-            key.add(expression.eval(row));
+            key.add(expression.eval(row, ctx));
         }
 
         map.put(new SortKey(key, idx++), row);

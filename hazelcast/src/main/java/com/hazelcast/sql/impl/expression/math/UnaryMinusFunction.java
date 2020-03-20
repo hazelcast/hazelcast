@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.expression.math;
 
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.UniExpressionWithType;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -45,8 +46,8 @@ public class UnaryMinusFunction<T> extends UniExpressionWithType<T> {
 
     @SuppressWarnings("unchecked")
     @Override
-    public T eval(Row row) {
-        Object value = operand.eval(row);
+    public T eval(Row row, ExpressionEvalContext context) {
+        Object value = operand.eval(row, context);
 
         if (value == null) {
             return null;

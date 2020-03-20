@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.expression.predicate;
 
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.UniExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -35,8 +36,8 @@ public class IsNotNullPredicate extends UniExpression<Boolean> {
     }
 
     @Override
-    public Boolean eval(Row row) {
-        return TernaryLogic.isNotNull(operand.eval(row));
+    public Boolean eval(Row row, ExpressionEvalContext context) {
+        return TernaryLogic.isNotNull(operand.eval(row, context));
     }
 
     @Override

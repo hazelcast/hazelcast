@@ -56,7 +56,7 @@ public class ConstantExpression<T> implements Expression<T> {
     }
 
     @Override
-    public T eval(Row row) {
+    public T eval(Row row, ExpressionEvalContext context) {
         return val;
     }
 

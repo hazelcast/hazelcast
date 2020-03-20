@@ -47,12 +47,12 @@ public class ParameterExpression<T> implements Expression<T> {
 
     @SuppressWarnings("unchecked")
     @Override
-    public T eval(Row row) {
+    public T eval(Row row, ExpressionEvalContext context) {
         if (cachedValue != null) {
             return cachedValue;
         }
 
-        T value = (T) QueryFragmentContext.getCurrentContext().getArgument(index);
+        T value = (T) context.getArguments().get(index);
 
         if (value == null) {
             return null;
