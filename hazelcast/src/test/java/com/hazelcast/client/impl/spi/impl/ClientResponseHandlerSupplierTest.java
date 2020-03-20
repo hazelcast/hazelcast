@@ -95,7 +95,7 @@ public class ClientResponseHandlerSupplierTest extends ClientTestSupport {
                         .setProperty(RESPONSE_THREAD_COUNT.getName(), "" + threadCount)
                         .setProperty(RESPONSE_THREAD_DYNAMIC.getName(), "" + dynamic));
         HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
-        AbstractClientInvocationService invocationService = (AbstractClientInvocationService) clientInstanceImpl.getInvocationService();
+        ClientInvocationServiceImpl invocationService = (ClientInvocationServiceImpl) clientInstanceImpl.getInvocationService();
 
         ClientResponseHandlerSupplier responseHandlerSupplier =
                 new ClientResponseHandlerSupplier(invocationService, clientInstanceImpl.getConcurrencyDetection());
