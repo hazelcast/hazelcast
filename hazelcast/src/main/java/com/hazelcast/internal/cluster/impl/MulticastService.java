@@ -23,6 +23,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.cluster.AddressChecker;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.nio.NodeIOService;
@@ -70,7 +71,7 @@ public final class MulticastService implements Runnable {
     private final BufferObjectDataOutput sendOutput;
     private final DatagramPacket datagramPacketSend;
     private final DatagramPacket datagramPacketReceive;
-    private final JoinMessageTrustChecker joinMessageTrustChecker;
+    private final AddressChecker joinMessageTrustChecker;
 
     private final ByteArrayProcessor inputProcessor;
     private final ByteArrayProcessor outputProcessor;
@@ -97,8 +98,8 @@ public final class MulticastService implements Runnable {
         this.datagramPacketReceive = new DatagramPacket(new byte[DATAGRAM_BUFFER_SIZE], DATAGRAM_BUFFER_SIZE);
 
         Set<String> trustedInterfaces = multicastConfig.getTrustedInterfaces();
-        ILogger logger = node.getLogger(JoinMessageTrustChecker.class);
-        joinMessageTrustChecker = new JoinMessageTrustChecker(trustedInterfaces, logger);
+        ILogger logger = node.getLogger(AddressCheckerImpl.class);
+        joinMessageTrustChecker = new AddressCheckerImpl(trustedInterfaces, logger);
     }
 
     public static MulticastService createMulticastService(Address bindAddress, Node node, Config config, ILogger logger) {
@@ -197,7 +198,7 @@ public final class MulticastService implements Runnable {
             while (running) {
                 try {
                     final JoinMessage joinMessage = receive();
-                    if (joinMessage != null && joinMessageTrustChecker.isTrusted(joinMessage)) {
+                    if (joinMessage != null && joinMessageTrustChecker.isTrusted(joinMessage.getAddress())) {
                         for (MulticastListener multicastListener : listeners) {
                             try {
                                 multicastListener.onMessage(joinMessage);

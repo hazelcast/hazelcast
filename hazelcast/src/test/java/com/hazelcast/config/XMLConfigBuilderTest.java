@@ -787,13 +787,20 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Test
     public void testManagementCenterConfig() {
         String xml = HAZELCAST_START_TAG
-                + "<management-center scripting-enabled='true' />"
+                + "<management-center scripting-enabled='true'>"
+                + "  <trusted-interfaces>\n"
+                + "    <interface>127.0.0.1</interface>\n"
+                + "    <interface>192.168.1.*</interface>\n"
+                + "  </trusted-interfaces>\n"
+                + "</management-center>"
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
         ManagementCenterConfig mcConfig = config.getManagementCenterConfig();
 
         assertTrue(mcConfig.isScriptingEnabled());
+        assertEquals(2, mcConfig.getTrustedInterfaces().size());
+        assertTrue(mcConfig.getTrustedInterfaces().containsAll(ImmutableSet.of("127.0.0.1", "192.168.1.*")));
     }
 
     @Override

@@ -107,6 +107,7 @@ import com.hazelcast.config.SplitBrainProtectionListenerConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TopicConfig;
+import com.hazelcast.config.TrustedInterfacesConfigurable;
 import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.config.VaultSecureStoreConfig;
 import com.hazelcast.config.WanAcknowledgeType;
@@ -1381,10 +1382,10 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    protected void handleTrustedInterfaces(MulticastConfig multicastConfig, Node n) {
+    protected void handleTrustedInterfaces(TrustedInterfacesConfigurable<?> tiConfig, Node n) {
         for (Node child : childElements(n)) {
             if ("interface".equals(lowerCaseInternal(cleanNodeName(child)))) {
-                multicastConfig.addTrustedInterface(getTextContent(child).trim());
+                tiConfig.addTrustedInterface(getTextContent(child).trim());
             }
         }
     }
@@ -2555,14 +2556,20 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     private void handleManagementCenterConfig(Node node) {
-        NamedNodeMap attrs = node.getAttributes();
-
         ManagementCenterConfig managementCenterConfig = config.getManagementCenterConfig();
 
-        Node scriptingEnabledNode = attrs.getNamedItem("scripting-enabled");
+        Node scriptingEnabledNode = node.getAttributes().getNamedItem("scripting-enabled");
         if (scriptingEnabledNode != null) {
             managementCenterConfig.setScriptingEnabled(getBooleanValue(getTextContent(scriptingEnabledNode)));
         }
+
+        for (Node n : childElements(node)) {
+            String value = getTextContent(n).trim();
+            if ("trusted-interfaces".equals(cleanNodeName(n))) {
+                handleTrustedInterfaces(managementCenterConfig, n);
+            }
+        }
+
     }
 
     private void handleSecurity(Node node) {

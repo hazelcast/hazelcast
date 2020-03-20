@@ -39,6 +39,9 @@ hazelcast:
 
   management-center:
     scripting-enabled: false
+    trusted-interfaces:
+      - 10.10.1.*
+      - 10.10.2.*
 
   properties:
     foo: bar

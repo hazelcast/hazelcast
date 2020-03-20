@@ -86,4 +86,9 @@ public class ApplyMCConfigMessageTask extends AbstractCallableMessageTask<Reques
                 parameters.clientBwListEntries
         };
     }
+
+    @Override
+    public boolean isManagementTask() {
+        return true;
+    }
 }

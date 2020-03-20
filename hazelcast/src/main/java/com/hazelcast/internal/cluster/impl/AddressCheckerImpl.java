@@ -16,45 +16,46 @@
 
 package com.hazelcast.internal.cluster.impl;
 
-import com.hazelcast.config.MulticastConfig;
-import com.hazelcast.logging.ILogger;
-
-import java.util.Set;
-
 import static com.hazelcast.internal.util.AddressUtil.matchAnyInterface;
 import static java.lang.String.format;
 
+import java.util.Set;
+
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.cluster.AddressChecker;
+import com.hazelcast.logging.ILogger;
+
 /**
- * Check if a received join message is to be trusted.
- *
- * To be precise it's checking if IP of the JoinMessage sender
- * is among configured {@link MulticastConfig#getTrustedInterfaces()}
+ * Check if {@link Address} belongs to set of trusted one.
  *
  * When no trusted interfaces were explicitly configured then all messages are deemed
  * as trusted.
- *
  */
-final class JoinMessageTrustChecker {
+public final class AddressCheckerImpl implements AddressChecker {
+
     private final Set<String> trustedInterfaces;
     private final ILogger logger;
 
-    JoinMessageTrustChecker(Set<String> trustedInterfaces, ILogger logger) {
+    public AddressCheckerImpl(Set<String> trustedInterfaces, ILogger logger) {
         this.trustedInterfaces = trustedInterfaces;
         this.logger = logger;
     }
 
-    boolean isTrusted(JoinMessage joinMessage) {
+    public boolean isTrusted(Address address) {
+        if (address == null) {
+            return false;
+        }
         if (trustedInterfaces.isEmpty()) {
             return true;
         }
 
-        String host = joinMessage.getAddress().getHost();
+        String host = address.getHost();
         if (matchAnyInterface(host, trustedInterfaces)) {
             return true;
         } else {
             if (logger.isFineEnabled()) {
                 logger.fine(format(
-                        "JoinMessage from %s is dropped because its sender is not a trusted interface", host));
+                        "Address %s doesn't match any trusted interface", host));
             }
             return false;
         }

@@ -38,7 +38,11 @@
             <hz:instance-name>test-instance</hz:instance-name>
             <hz:cluster-name>${cluster.name}</hz:cluster-name>
             <hz:license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</hz:license-key>
-            <hz:management-center scripting-enabled="true" />
+            <hz:management-center scripting-enabled="true">
+                <hz:trusted-interfaces>
+                    <hz:interface>10.1.2.*</hz:interface>
+                </hz:trusted-interfaces>
+            </hz:management-center>
 
             <hz:properties>
                 <hz:property name="hazelcast.merge.first.run.delay.seconds">5</hz:property>
