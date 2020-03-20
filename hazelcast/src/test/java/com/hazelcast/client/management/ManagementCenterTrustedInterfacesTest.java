@@ -26,6 +26,7 @@ import static org.hamcrest.CoreMatchers.isA;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.security.AccessControlException;
 import java.util.concurrent.CompletableFuture;
 
 import org.junit.After;
@@ -35,7 +36,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
-import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.impl.management.MCWanBatchPublisherConfig;
 import com.hazelcast.client.impl.management.ManagementCenterService;
@@ -103,7 +103,7 @@ public class ManagementCenterTrustedInterfacesTest extends HazelcastTestSupport 
 
         HazelcastInstance client = factory.newHazelcastClient(null, "192.168.2.111");
         ManagementCenterService managementCenterService = ((HazelcastClientProxy) client).client.getManagementCenterService();
-        expected.expectCause(isA(AuthenticationException.class));
+        expected.expectCause(isA(AccessControlException.class));
         resolve(managementCenterService.changeClusterState(PASSIVE));
     }
 
@@ -153,47 +153,47 @@ public class ManagementCenterTrustedInterfacesTest extends HazelcastTestSupport 
 
         HazelcastInstance client = factory.newHazelcastClient(null, "192.168.2.111");
         ManagementCenterService managementCenterService = ((HazelcastClientProxy) client).client.getManagementCenterService();
-        expected.expectCause(isA(AuthenticationException.class));
+        expected.expectCause(isA(AccessControlException.class));
         resolve(managementCenterService.changeClusterState(PASSIVE));
     }
 
     @Test
     public void runGc_untrustedNotAllowed() throws Exception {
         Scenario scenario = createUntrustedTestScenario();
-        expected.expectCause(isA(AuthenticationException.class));
+        expected.expectCause(isA(AccessControlException.class));
         resolve(scenario.managementCenterService.runGc(scenario.member));
     }
 
     @Test
     public void getMapConfig_untrustedNotAllowed() throws Exception {
         Scenario scenario = createUntrustedTestScenario();
-        expected.expectCause(isA(AuthenticationException.class));
+        expected.expectCause(isA(AccessControlException.class));
         resolve(scenario.managementCenterService.getMapConfig("map-1"));
     }
 
     @Test
     public void updateMapConfig_untrustedNotAllowed() throws Exception {
         Scenario scenario = createUntrustedTestScenario();
-        expected.expectCause(isA(AuthenticationException.class));
+        expected.expectCause(isA(AccessControlException.class));
         scenario.hz.getMap("map-1").put(1, 1);
 
         UpdateMapConfigParameters parameters = new UpdateMapConfigParameters("map-1", 27, 29, EvictionPolicy.LRU, false, 35,
                 PER_NODE);
-        expected.expectCause(isA(AuthenticationException.class));
+        expected.expectCause(isA(AccessControlException.class));
         resolve(scenario.managementCenterService.updateMapConfig(scenario.member, parameters));
     }
 
     @Test
     public void getMemberConfig_untrustedNotAllowed() throws Exception {
         Scenario scenario = createUntrustedTestScenario();
-        expected.expectCause(isA(AuthenticationException.class));
+        expected.expectCause(isA(AccessControlException.class));
         resolve(scenario.managementCenterService.getMemberConfig(scenario.member));
     }
 
     @Test
     public void getThreadDump_untrustedNotAllowed() throws Exception {
         Scenario scenario = createUntrustedTestScenario();
-        expected.expectCause(isA(AuthenticationException.class));
+        expected.expectCause(isA(AccessControlException.class));
         resolve(scenario.managementCenterService.getThreadDump(scenario.member, false));
     }
 
@@ -207,28 +207,28 @@ public class ManagementCenterTrustedInterfacesTest extends HazelcastTestSupport 
     @Test
     public void promoteMember_untrustedNotAllowed() throws Exception {
         Scenario scenario = createUntrustedTestScenario();
-        expected.expectCause(isA(AuthenticationException.class));
+        expected.expectCause(isA(AccessControlException.class));
         resolve(scenario.managementCenterService.promoteLiteMember(scenario.member));
     }
 
     @Test
     public void getSystemProperties_untrustedNotAllowed() throws Exception {
         Scenario scenario = createUntrustedTestScenario();
-        expected.expectCause(isA(AuthenticationException.class));
+        expected.expectCause(isA(AccessControlException.class));
         resolve(scenario.managementCenterService.getSystemProperties(scenario.member));
     }
 
     @Test
     public void getTimedMemberState_untrustedNotAllowed() throws Exception {
         Scenario scenario = createUntrustedTestScenario();
-        expected.expectCause(isA(AuthenticationException.class));
+        expected.expectCause(isA(AccessControlException.class));
         resolve(scenario.managementCenterService.getTimedMemberState(scenario.member));
     }
 
     @Test
     public void getClusterMetadata_untrustedNotAllowed() throws Exception {
         Scenario scenario = createUntrustedTestScenario();
-        expected.expectCause(isA(AuthenticationException.class));
+        expected.expectCause(isA(AccessControlException.class));
         resolve(scenario.managementCenterService.getClusterMetadata(scenario.member));
     }
 
@@ -242,7 +242,7 @@ public class ManagementCenterTrustedInterfacesTest extends HazelcastTestSupport 
     @Test
     public void changeClusterVersion_untrustedNotAllowed() throws Exception {
         Scenario scenario = createUntrustedTestScenario();
-        expected.expectCause(isA(AuthenticationException.class));
+        expected.expectCause(isA(AccessControlException.class));
         resolve(scenario.managementCenterService
                 .changeClusterVersion(Version.of(BuildInfoProvider.getBuildInfo().getVersion())));
     }
@@ -250,7 +250,7 @@ public class ManagementCenterTrustedInterfacesTest extends HazelcastTestSupport 
     @Test
     public void matchMCConfig_untrustedNotAllowed() throws Exception {
         Scenario scenario = createUntrustedTestScenario();
-        expected.expectCause(isA(AuthenticationException.class));
+        expected.expectCause(isA(AccessControlException.class));
         resolve(scenario.managementCenterService.matchMCConfig(scenario.member, "eTag"));
     }
 
@@ -259,63 +259,63 @@ public class ManagementCenterTrustedInterfacesTest extends HazelcastTestSupport 
         ClientBwListDTO bwListDTO = new ClientBwListDTO(ClientBwListDTO.Mode.BLACKLIST,
                 singletonList(new ClientBwListEntryDTO(ClientBwListEntryDTO.Type.INSTANCE_NAME, "test-name")));
         Scenario scenario = createUntrustedTestScenario();
-        expected.expectCause(isA(AuthenticationException.class));
+        expected.expectCause(isA(AccessControlException.class));
         resolve(scenario.managementCenterService.applyMCConfig(scenario.member, "eTag", bwListDTO));
     }
 
     @Test
     public void runScript_untrustedNotAllowed() throws Exception {
         Scenario scenario = createUntrustedTestScenario();
-        expected.expectCause(isA(AuthenticationException.class));
+        expected.expectCause(isA(AccessControlException.class));
         resolve(scenario.managementCenterService.runScript(scenario.member, "javascript", "'hello world';"));
     }
 
     @Test
     public void runConsoleCommand_untrustedNotAllowed() throws Exception {
         Scenario scenario = createUntrustedTestScenario();
-        expected.expectCause(isA(AuthenticationException.class));
+        expected.expectCause(isA(AccessControlException.class));
         resolve(scenario.managementCenterService.runConsoleCommand(scenario.member, null, "m.size"));
     }
 
     @Test
     public void pollMCEvents_untrustedNotAllowed() throws Exception {
         Scenario scenario = createUntrustedTestScenario();
-        expected.expectCause(isA(AuthenticationException.class));
+        expected.expectCause(isA(AccessControlException.class));
         resolve(scenario.managementCenterService.pollMCEvents(scenario.member));
     }
 
     @Test
     public void getCPMembers_untrustedNotAllowed() throws Exception {
         Scenario scenario = createUntrustedTestScenario();
-        expected.expectCause(isA(AuthenticationException.class));
+        expected.expectCause(isA(AccessControlException.class));
         resolve(scenario.managementCenterService.getCPMembers());
     }
 
     @Test
     public void promoteToCPMember_untrustedNotAllowed() throws Exception {
         Scenario scenario = createUntrustedTestScenario();
-        expected.expectCause(isA(AuthenticationException.class));
+        expected.expectCause(isA(AccessControlException.class));
         resolve(scenario.managementCenterService.promoteToCPMember(scenario.member));
     }
 
     @Test
     public void removeCPMember_untrustedNotAllowed() throws Exception {
         Scenario scenario = createUntrustedTestScenario();
-        expected.expectCause(isA(AuthenticationException.class));
+        expected.expectCause(isA(AccessControlException.class));
         resolve(scenario.managementCenterService.removeCPMember(scenario.member.getUuid()));
     }
 
     @Test
     public void resetCPSubsystem_untrustedNotAllowed() throws Exception {
         Scenario scenario = createUntrustedTestScenario();
-        expected.expectCause(isA(AuthenticationException.class));
+        expected.expectCause(isA(AccessControlException.class));
         resolve(scenario.managementCenterService.resetCPSubsystem());
     }
 
     @Test
     public void addWanReplicationConfig_untrustedNotAllowed() throws Exception {
         Scenario scenario = createUntrustedTestScenario();
-        expected.expectCause(isA(AuthenticationException.class));
+        expected.expectCause(isA(AccessControlException.class));
         MCWanBatchPublisherConfig config = new MCWanBatchPublisherConfig();
         config.setAckType(WanAcknowledgeType.ACK_ON_OPERATION_COMPLETE);
         config.setQueueFullBehaviour(WanQueueFullBehavior.THROW_EXCEPTION);
@@ -328,7 +328,7 @@ public class ManagementCenterTrustedInterfacesTest extends HazelcastTestSupport 
     @Test
     public void changeWanReplicationState_untrustedNotAllowed() throws Exception {
         Scenario scenario = createUntrustedTestScenario();
-        expected.expectCause(isA(AuthenticationException.class));
+        expected.expectCause(isA(AccessControlException.class));
         resolve(scenario.managementCenterService.changeWanReplicationState(scenario.member, "test", "publisherId",
                 WanPublisherState.STOPPED));
     }
@@ -336,63 +336,63 @@ public class ManagementCenterTrustedInterfacesTest extends HazelcastTestSupport 
     @Test
     public void checkWanConsistency_untrustedNotAllowed() throws Exception {
         Scenario scenario = createUntrustedTestScenario();
-        expected.expectCause(isA(AuthenticationException.class));
+        expected.expectCause(isA(AccessControlException.class));
         resolve(scenario.managementCenterService.checkWanConsistency("test", "publisherId", "mymap"));
     }
 
     @Test
     public void clearWanQueues_untrustedNotAllowed() throws Exception {
         Scenario scenario = createUntrustedTestScenario();
-        expected.expectCause(isA(AuthenticationException.class));
+        expected.expectCause(isA(AccessControlException.class));
         resolve(scenario.managementCenterService.clearWanQueues(scenario.member, "wanRepName", "publisherId"));
     }
 
     @Test
     public void wanSyncAllMaps_untrustedNotAllowed() throws Exception {
         Scenario scenario = createUntrustedTestScenario();
-        expected.expectCause(isA(AuthenticationException.class));
+        expected.expectCause(isA(AccessControlException.class));
         resolve(scenario.managementCenterService.wanSyncAllMaps("rep", "pubId"));
     }
 
     @Test
     public void wanSyncMap_untrustedNotAllowed() throws Exception {
         Scenario scenario = createUntrustedTestScenario();
-        expected.expectCause(isA(AuthenticationException.class));
+        expected.expectCause(isA(AccessControlException.class));
         resolve(scenario.managementCenterService.wanSyncMap("wanRepName", "pubId", "map"));
     }
 
     @Test
     public void interruptHotRestartBackup_untrustedNotAllowed() throws Exception {
         Scenario scenario = createUntrustedTestScenario();
-        expected.expectCause(isA(AuthenticationException.class));
+        expected.expectCause(isA(AccessControlException.class));
         resolve(scenario.managementCenterService.interruptHotRestartBackup());
     }
 
     @Test
     public void readMetricsAsync_untrustedNotAllowed() throws Exception {
         Scenario scenario = createUntrustedTestScenario();
-        expected.expectCause(isA(AuthenticationException.class));
+        expected.expectCause(isA(AccessControlException.class));
         resolve(scenario.managementCenterService.readMetricsAsync(scenario.member, 0L));
     }
 
     @Test
     public void triggerForceStart_untrustedNotAllowed() throws Exception {
         Scenario scenario = createUntrustedTestScenario();
-        expected.expectCause(isA(AuthenticationException.class));
+        expected.expectCause(isA(AccessControlException.class));
         resolve(scenario.managementCenterService.triggerForceStart());
     }
 
     @Test
     public void triggerHotRestartBackup_untrustedNotAllowed() throws Exception {
         Scenario scenario = createUntrustedTestScenario();
-        expected.expectCause(isA(AuthenticationException.class));
+        expected.expectCause(isA(AccessControlException.class));
         resolve(scenario.managementCenterService.triggerHotRestartBackup());
     }
 
     @Test
     public void triggerPartialStart_untrustedNotAllowed() throws Exception {
         Scenario scenario = createUntrustedTestScenario();
-        expected.expectCause(isA(AuthenticationException.class));
+        expected.expectCause(isA(AccessControlException.class));
         resolve(scenario.managementCenterService.triggerPartialStart());
     }
 

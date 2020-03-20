@@ -41,6 +41,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 
 import java.lang.reflect.Field;
+import java.security.AccessControlException;
 import java.security.Permission;
 import java.util.Arrays;
 import java.util.Collection;
@@ -107,8 +108,7 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
                 String message = "The client address " + address + " is not allowed for management task "
                         + getClass().getName();
                 logger.info(message);
-                sendClientMessage(new AuthenticationException(message));
-                connection.close(message, null);
+                throw new AccessControlException(message);
             } else if (requiresAuthentication() && !endpoint.isAuthenticated()) {
                 handleAuthenticationFailure();
             } else {
