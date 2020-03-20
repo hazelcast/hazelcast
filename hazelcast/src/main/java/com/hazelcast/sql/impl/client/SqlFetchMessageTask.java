@@ -24,6 +24,7 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.sql.impl.SqlInternalService;
 import com.hazelcast.sql.impl.row.Row;
 
 import java.security.Permission;
@@ -44,7 +45,9 @@ public class SqlFetchMessageTask extends AbstractCallableMessageTask<SqlFetchCod
         QueryId queryId = serializationService.toObject(parameters.queryId);
         int pageSize = parameters.pageSize;
 
-        return nodeEngine.getSqlService().getClientStateRegistry().fetch(endpoint.getUuid(), queryId, pageSize);
+        SqlInternalService service = nodeEngine.getSqlService().getInternalService();
+
+        return service.getClientStateRegistry().fetch(endpoint.getUuid(), queryId, pageSize);
     }
 
     @Override

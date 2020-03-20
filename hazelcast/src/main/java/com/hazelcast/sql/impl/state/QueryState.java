@@ -32,7 +32,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.sql.impl.SqlServiceImpl.STATE_CHECK_FREQUENCY;
+import static com.hazelcast.sql.impl.SqlInternalService.STATE_CHECK_FREQUENCY;
 
 public final class QueryState {
     /** Query ID. */

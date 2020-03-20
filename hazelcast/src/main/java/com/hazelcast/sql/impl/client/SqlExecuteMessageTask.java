@@ -24,7 +24,7 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.SqlCursorImpl;
-import com.hazelcast.sql.impl.SqlServiceImpl;
+import com.hazelcast.sql.impl.SqlServiceProxy;
 
 import java.security.Permission;
 
@@ -53,11 +53,11 @@ public class SqlExecuteMessageTask extends AbstractCallableMessageTask<SqlExecut
             params = null;
         }
 
-        SqlServiceImpl sqlService = nodeEngine.getSqlService();
+        SqlServiceProxy sqlService = nodeEngine.getSqlService();
 
         SqlCursorImpl cursor = (SqlCursorImpl) sqlService.query(query, params);
 
-        sqlService.getClientStateRegistry().register(endpoint.getUuid(), cursor);
+        sqlService.getInternalService().getClientStateRegistry().register(endpoint.getUuid(), cursor);
 
         return new SqlClientExecuteResponse(serializationService.toData(cursor.getQueryId()), cursor.getColumnCount());
     }

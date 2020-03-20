@@ -23,10 +23,10 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.partition.IPartitionService;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
@@ -35,7 +35,7 @@ import com.hazelcast.spi.impl.proxyservice.ProxyService;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
-import com.hazelcast.sql.impl.SqlServiceImpl;
+import com.hazelcast.sql.impl.SqlServiceProxy;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.wan.impl.WanReplicationService;
@@ -120,7 +120,7 @@ public interface NodeEngine {
      *
      * @return the SQL service
      */
-    SqlServiceImpl getSqlService();
+    SqlServiceProxy getSqlService();
 
     /**
      * Gets the TransactionManagerService.

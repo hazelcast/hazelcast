@@ -37,6 +37,7 @@ import com.hazelcast.sql.impl.mailbox.Outbox;
 import com.hazelcast.sql.impl.mailbox.Inbox;
 import com.hazelcast.sql.impl.mailbox.StripedInbox;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
+import com.hazelcast.sql.impl.operation.QueryOperationHandler;
 import com.hazelcast.sql.impl.physical.AggregatePhysicalNode;
 import com.hazelcast.sql.impl.physical.FetchPhysicalNode;
 import com.hazelcast.sql.impl.physical.FilterPhysicalNode;
@@ -133,7 +134,7 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
             operation.getQueryId(),
             edgeId,
             sendFragment.getNode().getSchema().getRowWidth(),
-            nodeEngine.getSqlService().getOperationHandler(),
+            getOperationHandler(),
             fragmentMemberCount,
             operation.getEdgeCreditMap().get(edgeId)
         );
@@ -159,7 +160,7 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
             operation.getQueryId(),
             edgeId,
             node.getSchema().getRowWidth(),
-            nodeEngine.getSqlService().getOperationHandler(),
+            getOperationHandler(),
             sendFragment.getMemberIds(),
             operation.getEdgeCreditMap().get(edgeId)
         );
@@ -241,7 +242,7 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
          for (UUID receiveMemberId : receiveFragmentMemberIds) {
              Outbox outbox = new Outbox(
                  operation.getQueryId(),
-                 nodeEngine.getSqlService().getOperationHandler(),
+                 getOperationHandler(),
                  edgeId,
                  rowWidth,
                  receiveMemberId,
@@ -475,5 +476,9 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
 
     private void push(Exec exec) {
         stack.add(exec);
+    }
+
+    private QueryOperationHandler getOperationHandler() {
+         return nodeEngine.getSqlService().getInternalService().getOperationHandler();
     }
 }

@@ -72,7 +72,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlService;
-import com.hazelcast.sql.impl.client.SqlClientServiceImpl;
+import com.hazelcast.sql.impl.client.SqlClientService;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.cp.CPSubsystem;
@@ -200,7 +200,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final CPSubsystemImpl cpSubsystem;
     private final ConcurrentLinkedQueue<Disposable> onClusterChangeDisposables = new ConcurrentLinkedQueue();
     private final ConcurrentLinkedQueue<Disposable> onClientShutdownDisposables = new ConcurrentLinkedQueue();
-    private final SqlClientServiceImpl sqlService;
+    private final SqlClientService sqlService;
 
     public HazelcastClientInstanceImpl(String instanceName, ClientConfig clientConfig,
                                        ClientFailoverConfig clientFailoverConfig,
@@ -260,7 +260,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         userCodeDeploymentService = new ClientUserCodeDeploymentService(config.getUserCodeDeploymentConfig(), classLoader);
         proxySessionManager = new ClientProxySessionManager(this);
         cpSubsystem = new CPSubsystemImpl(this);
-        sqlService = new SqlClientServiceImpl(this);
+        sqlService = new SqlClientService(this);
     }
 
     private ConcurrencyDetection initConcurrencyDetection() {

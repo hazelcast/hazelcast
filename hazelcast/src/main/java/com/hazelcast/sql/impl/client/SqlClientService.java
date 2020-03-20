@@ -47,7 +47,7 @@ import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 // TODO: Need to improve query ID serialization: either make it first-class citizen for the protocol, or use another UUID
 //  to remap from QueryId to more light-weight UUID. The latter might be not good from the manageability standpoint, as user
 //  will have two IDs at hands.
-public class SqlClientServiceImpl implements SqlService {
+public class SqlClientService implements SqlService {
     /** Decoder for execute request. */
     private static final ClientMessageDecoder<SqlClientExecuteResponse> EXECUTE_DECODER =
         clientMessage -> {
@@ -73,7 +73,7 @@ public class SqlClientServiceImpl implements SqlService {
     /** Client. */
     private final HazelcastClientInstanceImpl client;
 
-    public SqlClientServiceImpl(HazelcastClientInstanceImpl client) {
+    public SqlClientService(HazelcastClientInstanceImpl client) {
         this.client = client;
     }
 

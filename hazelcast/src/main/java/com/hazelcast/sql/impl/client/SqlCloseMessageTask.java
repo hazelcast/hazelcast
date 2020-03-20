@@ -23,6 +23,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.sql.impl.SqlInternalService;
 
 import java.security.Permission;
 
@@ -38,7 +39,9 @@ public class SqlCloseMessageTask extends AbstractCallableMessageTask<SqlCloseCod
     protected Object call() throws Exception {
         QueryId queryId = serializationService.toObject(parameters.queryId);
 
-        nodeEngine.getSqlService().getClientStateRegistry().close(endpoint.getUuid(), queryId);
+        SqlInternalService service = nodeEngine.getSqlService().getInternalService();
+
+        service.getClientStateRegistry().close(endpoint.getUuid(), queryId);
 
         return null;
     }

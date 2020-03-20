@@ -33,7 +33,7 @@ import java.util.NoSuchElementException;
  * Client-side cursor.
  */
 public class SqlClientCursorImpl implements SqlCursor {
-    private final SqlClientServiceImpl service;
+    private final SqlClientService service;
     private final Connection connection;
     private final QueryId queryId;
     private final int columnCount;
@@ -44,7 +44,7 @@ public class SqlClientCursorImpl implements SqlCursor {
     private boolean iteratorAccessed;
 
     public SqlClientCursorImpl(
-        SqlClientServiceImpl service,
+        SqlClientService service,
         Connection connection,
         QueryId queryId,
         int columnCount,
