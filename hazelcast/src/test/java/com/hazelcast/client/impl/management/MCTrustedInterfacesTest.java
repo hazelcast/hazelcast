@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.management;
 
+import static java.util.UUID.randomUUID;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
@@ -27,7 +28,6 @@ import static org.junit.Assert.fail;
 import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Random;
-import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
 import org.junit.After;
@@ -36,7 +36,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
@@ -61,6 +60,7 @@ import com.hazelcast.client.impl.protocol.codec.MCMatchMCConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MCPollMCEventsCodec;
 import com.hazelcast.client.impl.protocol.codec.MCPromoteLiteMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.MCPromoteToCPMemberCodec;
+import com.hazelcast.client.impl.protocol.codec.MCReadMetricsCodec;
 import com.hazelcast.client.impl.protocol.codec.MCRemoveCPMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.MCResetCPSubsystemCodec;
 import com.hazelcast.client.impl.protocol.codec.MCRunConsoleCommandCodec;
@@ -251,7 +251,7 @@ public class MCTrustedInterfacesTest extends HazelcastTestSupport {
 
     @Test
     public void testRemoveCPMemberMessageTask() throws Exception {
-        assertFailureOnUntrustedInterface(MCRemoveCPMemberCodec.encodeRequest(UUID.randomUUID()));
+        assertFailureOnUntrustedInterface(MCRemoveCPMemberCodec.encodeRequest(randomUUID()));
     }
 
     @Test
@@ -297,12 +297,17 @@ public class MCTrustedInterfacesTest extends HazelcastTestSupport {
         assertFailureOnUntrustedInterface(clientMessage);
     }
 
+    @Test
+    public void testReadMetrics() throws Exception {
+        assertFailureOnUntrustedInterface(MCReadMetricsCodec.encodeRequest(randomUUID(), 0L));
+    }
+
     private void assertFailureOnUntrustedInterface(ClientMessage clientMessage) throws Exception {
         ClientInvocation invocation = new ClientInvocation(((HazelcastClientProxy) client).client, clientMessage, null);
         ClientInvocationFuture future = invocation.invoke();
         try {
             future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
-            fail("AuthenticationException was expected.");
+            fail("AccessControlException was expected.");
         } catch (ExecutionException e) {
             assertThat(e.getCause(), is(instanceOf(AccessControlException.class)));
         }
