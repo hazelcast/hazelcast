@@ -70,7 +70,8 @@ public class JobTracking {
             System.out.println("Job is cancelled.");
         }
 
-        // let's query the job status again. Now the status is COMPLETED
+        // Let's query the job status again. Now the status is FAILED.
+        // It is expected status for streaming jobs when they are cancelled.
         System.out.println("Status: " + trackedJob1.getStatus());
 
         // running or completed jobs can be also queried by name
