@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.iterator;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -45,18 +46,13 @@ public class MapEntriesWithCursor extends AbstractCursor<Map.Entry<Data, Object>
     @Override
     void writeElement(ObjectDataOutput out, Entry<Data, Object> entry) throws IOException {
         out.writeData(entry.getKey());
-        Object value = entry.getValue();
-        if (value instanceof Data) {
-            out.writeData((Data) value);
-        } else {
-            out.writeObject(value);
-        }
+        IOUtil.writeObject(out, entry.getValue());
     }
 
     @Override
     Entry<Data, Object> readElement(ObjectDataInput in) throws IOException {
         final Data key = in.readData();
-        final Data value = in.readData();
+        final Object value = IOUtil.readObject(in);
         return new AbstractMap.SimpleEntry<Data, Object>(key, value);
     }
 
