@@ -18,6 +18,7 @@ package com.hazelcast.multimap.impl;
 
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
@@ -353,5 +354,15 @@ public class MultiMapProxyImpl<K, V>
 
     private void ensureNoSplitBrain(SplitBrainProtectionOn requiredSplitBrainProtectionPermissionType) {
         getService().ensureNoSplitBrain(name, requiredSplitBrainProtectionPermissionType);
+    }
+
+    @Override
+    protected boolean preDestroy() {
+        if (super.preDestroy()) {
+            MultiMapService service = getService();
+            service.publishMultiMapEvent(getName(), EntryEventType.CLEAR_ALL, size());
+            return true;
+        }
+        return false;
     }
 }

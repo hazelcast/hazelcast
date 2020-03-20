@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.proxy;
 
 import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
@@ -31,6 +32,7 @@ import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.SimpleEntryView;
+import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.iterator.MapPartitionIterator;
 import com.hazelcast.map.impl.iterator.MapQueryPartitionIterator;
 import com.hazelcast.map.impl.journal.MapEventJournalReadOperation;
@@ -1018,5 +1020,17 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         if (predicate instanceof PagingPredicate) {
             throw new IllegalArgumentException("PagingPredicate not supported in " + method + " method");
         }
+    }
+
+    @Override
+    protected boolean preDestroy() {
+        if (super.preDestroy()) {
+            MapService service = getService();
+            MapEventPublisher mapEventPublisher = service.getMapServiceContext().getMapEventPublisher();
+            mapEventPublisher.publishMapEvent(getNodeEngine().getThisAddress(),
+                    getName(), EntryEventType.CLEAR_ALL, size());
+            return true;
+        }
+        return false;
     }
 }
