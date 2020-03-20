@@ -39,7 +39,7 @@ public class ListSourceAndSink {
     private static final String INPUT_LIST = "inputList";
     private static final String RESULT_LIST = "resultList";
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         JetInstance jet = Jet.newJetInstance();
 
         try {

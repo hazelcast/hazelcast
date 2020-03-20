@@ -36,7 +36,7 @@ public class CacheSourceAndSink {
     private static final String SOURCE_NAME = "source";
     private static final String SINK_NAME = "sink";
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         JetConfig config = new JetConfig();
 
         // Unlike with IMap, ICache names must be explicitly configured before using

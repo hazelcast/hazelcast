@@ -129,7 +129,7 @@ public class MapSourceAndSinks {
         return pipeline;
     }
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         JetInstance jet = Jet.newJetInstance();
         new MapSourceAndSinks(jet).go();
     }
@@ -188,7 +188,7 @@ public class MapSourceAndSinks {
      * Dumps contents of the IMap named {@code mapName} to the output stream
      */
     private static void dumpMap(JetInstance instance, String mapName) {
-        IMap sinkMap = instance.getMap(mapName);
+        IMap<Object, Object> sinkMap = instance.getMap(mapName);
         System.out.println("Sink map size: " + sinkMap.size());
         System.out.println("Sink map entries: ");
         sinkMap.forEach((k, v) -> System.out.println(k + " - " + v));
@@ -228,7 +228,5 @@ public class MapSourceAndSinks {
         public Integer process(Entry<Integer, Integer> entry) {
             return entry.setValue(entry.getValue() + incrementBy);
         }
-
     }
-
 }

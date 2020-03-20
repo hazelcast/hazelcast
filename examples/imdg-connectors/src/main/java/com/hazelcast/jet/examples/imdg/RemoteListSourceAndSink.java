@@ -41,7 +41,7 @@ public class RemoteListSourceAndSink {
     private static final String LIST_1 = "list-1";
     private static final String LIST_2 = "list-2";
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         JetInstance localJet = Jet.newJetInstance();
         try {
             HazelcastInstance externalHz = startExternalHazelcast();

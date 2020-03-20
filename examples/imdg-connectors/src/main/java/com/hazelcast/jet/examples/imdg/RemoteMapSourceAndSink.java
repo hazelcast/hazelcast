@@ -37,7 +37,7 @@ public class RemoteMapSourceAndSink {
     private static final String MAP_2 = "map-2";
     private static final int ITEM_COUNT = 10;
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         JetInstance localJet = Jet.newJetInstance();
         try {
             HazelcastInstance externalHz = startExternalHazelcast();
