@@ -33,13 +33,16 @@ public final class GetOperation extends ReadonlyKeyBasedMapOperation implements 
 
     public GetOperation(String name, Data dataKey) {
         super(name, dataKey);
+
         this.dataKey = dataKey;
     }
 
     @Override
     public void run() {
-        Object value = this.recordStore.get(this.dataKey, false, getCallerAddress());
-        this.result = (value instanceof Immutable) ? value : mapServiceContext.toData(value);
+        Object currentValue = recordStore.get(dataKey, false, getCallerAddress());
+        result = (currentValue instanceof Immutable)
+                ? currentValue
+                : mapServiceContext.toData(currentValue);
     }
 
     @Override

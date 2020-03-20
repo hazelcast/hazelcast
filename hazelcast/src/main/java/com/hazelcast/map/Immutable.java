@@ -16,8 +16,24 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.spi.annotation.Beta;
+
 /**
- * This is just a marker interface for Adobe Entities so that we can disable Copy on Read for this type
+ * Allows notifying Hazelcast code that the object implementing this interface
+ * is effectively immutable.
+ * This may mean that it either does not have any state (e.g. pure function)
+ * or the state is not mutated at any point.
+ * This interface allows for performance optimisations where applicable such
+ * as avoiding cloning user supplied objects or cloning hazelcast internal
+ * objects supplied to the user.
+ * It is important that the user follows the rules:
+ * <ul>
+ * <li>the object must not have any state which is changed by cloning the object</li>
+ * <li>the existing state must not be changed</li>
+ * </ul>
+ * If an object implements this interface but does not follow these rules,
+ * the results of the execution are undefined.
  */
+@Beta
 public interface Immutable {
 }
