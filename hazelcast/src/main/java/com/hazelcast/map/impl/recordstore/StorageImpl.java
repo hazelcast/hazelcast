@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryView;
+import com.hazelcast.map.Immutable;
 import com.hazelcast.map.impl.EntryCostEstimator;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
@@ -170,11 +171,12 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
     public MapEntriesWithCursor fetchEntries(int tableIndex, int size, SerializationService serializationService) {
         List<Map.Entry<Data, R>> entries = new ArrayList<Map.Entry<Data, R>>(size);
         int newTableIndex = records.fetchEntries(tableIndex, size, entries);
-        List<Map.Entry<Data, Data>> entriesData = new ArrayList<Map.Entry<Data, Data>>(entries.size());
+        List<Map.Entry<Data, Object>> entriesData = new ArrayList<Map.Entry<Data, Object>>(entries.size());
         for (Map.Entry<Data, R> entry : entries) {
             R record = entry.getValue();
-            Data dataValue = serializationService.toData(record.getValue());
-            entriesData.add(new AbstractMap.SimpleEntry<Data, Data>(entry.getKey(), dataValue));
+            Object value = record.getValue();
+            Object resultValue = (value instanceof Immutable) ? value : serializationService.toData(value);
+            entriesData.add(new AbstractMap.SimpleEntry<Data, Object>(entry.getKey(), resultValue));
         }
         return new MapEntriesWithCursor(entriesData, newTableIndex);
     }

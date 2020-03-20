@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.iterator;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -33,26 +34,26 @@ import java.util.Map.Entry;
  *
  * @see com.hazelcast.map.impl.proxy.MapProxyImpl#iterator
  */
-public class MapEntriesWithCursor extends AbstractCursor<Map.Entry<Data, Data>> {
+public class MapEntriesWithCursor extends AbstractCursor<Map.Entry<Data, Object>> {
 
     public MapEntriesWithCursor() {
     }
 
-    public MapEntriesWithCursor(List<Map.Entry<Data, Data>> entries, int nextTableIndexToReadFrom) {
+    public MapEntriesWithCursor(List<Map.Entry<Data, Object>> entries, int nextTableIndexToReadFrom) {
         super(entries, nextTableIndexToReadFrom);
     }
 
     @Override
-    void writeElement(ObjectDataOutput out, Entry<Data, Data> entry) throws IOException {
+    void writeElement(ObjectDataOutput out, Entry<Data, Object> entry) throws IOException {
         out.writeData(entry.getKey());
-        out.writeData(entry.getValue());
+        IOUtil.writeObject(out, entry.getValue());
     }
 
     @Override
-    Entry<Data, Data> readElement(ObjectDataInput in) throws IOException {
+    Entry<Data, Object> readElement(ObjectDataInput in) throws IOException {
         final Data key = in.readData();
-        final Data value = in.readData();
-        return new AbstractMap.SimpleEntry<Data, Data>(key, value);
+        final Object value = IOUtil.readObject(in);
+        return new AbstractMap.SimpleEntry<Data, Object>(key, value);
     }
 
     @Override

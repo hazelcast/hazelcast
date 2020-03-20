@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
 import com.hazelcast.core.OperationTimeoutException;
+import com.hazelcast.map.Immutable;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BlockingOperation;
@@ -25,7 +26,7 @@ import com.hazelcast.spi.WaitNotifyKey;
 
 public final class GetOperation extends ReadonlyKeyBasedMapOperation implements BlockingOperation {
 
-    private Data result;
+    private Object result;
 
     public GetOperation() {
     }
@@ -38,7 +39,10 @@ public final class GetOperation extends ReadonlyKeyBasedMapOperation implements 
 
     @Override
     public void run() {
-        result = mapServiceContext.toData(recordStore.get(dataKey, false, getCallerAddress()));
+        Object currentValue = recordStore.get(dataKey, false, getCallerAddress());
+        result = (currentValue instanceof Immutable)
+                ? currentValue
+                : mapServiceContext.toData(currentValue);
     }
 
     @Override
@@ -65,7 +69,7 @@ public final class GetOperation extends ReadonlyKeyBasedMapOperation implements 
     }
 
     @Override
-    public Data getResponse() {
+    public Object getResponse() {
         return result;
     }
 
