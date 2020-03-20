@@ -16,12 +16,9 @@
 
 package com.hazelcast.sql.impl.fragment;
 
-import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.sql.impl.exec.root.RootResultConsumer;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
-import com.hazelcast.sql.impl.state.QueryState;
-import com.hazelcast.sql.impl.worker.QueryFragmentExecutable;
-import com.hazelcast.sql.impl.worker.QueryFragmentWorkerPool;
+import com.hazelcast.sql.impl.state.QueryStateCancellationToken;
+import com.hazelcast.sql.impl.worker.QueryFragmentScheduleCallback;
 
 import java.util.List;
 
@@ -30,37 +27,20 @@ import java.util.List;
  */
 public final class QueryFragmentContext implements ExpressionEvalContext {
 
-    private final QueryState state;
     private final List<Object> arguments;
-    private final QueryFragmentWorkerPool fragmentPool;
-    private final RootResultConsumer rootConsumer;
-
-    private QueryFragmentExecutable fragmentExecutable;
+    private final QueryFragmentScheduleCallback scheduleCallback;
+    private final QueryStateCancellationToken cancellationToken;
 
     public QueryFragmentContext(
-        QueryState state,
         List<Object> arguments,
-        QueryFragmentWorkerPool fragmentPool,
-        RootResultConsumer rootConsumer
+        QueryFragmentScheduleCallback scheduleCallback,
+        QueryStateCancellationToken cancellationToken
     ) {
         assert arguments != null;
 
-        this.state = state;
+        this.cancellationToken = cancellationToken;
         this.arguments = arguments;
-        this.fragmentPool = fragmentPool;
-        this.rootConsumer = rootConsumer;
-    }
-
-    public void setFragmentExecutable(QueryFragmentExecutable fragmentExecutable) {
-        this.fragmentExecutable = fragmentExecutable;
-    }
-
-    public QueryId getQueryId() {
-        return state.getQueryId();
-    }
-
-    public RootResultConsumer getRootConsumer() {
-        return rootConsumer;
+        this.scheduleCallback = scheduleCallback;
     }
 
     @Override
@@ -68,11 +48,11 @@ public final class QueryFragmentContext implements ExpressionEvalContext {
         return arguments;
     }
 
-    public void reschedule() {
-        fragmentExecutable.schedule(fragmentPool);
+    public void schedule() {
+        scheduleCallback.schedule();
     }
 
     public void checkCancelled() {
-        state.checkCancelled();
+        cancellationToken.checkCancelled();
     }
 }

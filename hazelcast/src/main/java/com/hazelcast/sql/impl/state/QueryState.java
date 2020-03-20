@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.sql.impl.SqlInternalService.STATE_CHECK_FREQUENCY;
 
-public final class QueryState {
+public final class QueryState implements QueryStateCancellationToken {
     /** Query ID. */
     private final QueryId queryId;
 
@@ -308,6 +308,7 @@ public final class QueryState {
         return true;
     }
 
+    @Override
     public void checkCancelled() {
         HazelcastSqlException completionError0 = completionError;
 

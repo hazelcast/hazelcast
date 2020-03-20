@@ -27,7 +27,6 @@ import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.exec.Exec;
-import com.hazelcast.sql.impl.fragment.QueryFragmentContext;
 import com.hazelcast.sql.impl.mailbox.AbstractInbox;
 import com.hazelcast.sql.impl.mailbox.Outbox;
 import com.hazelcast.sql.impl.exec.CreateExecVisitor;
@@ -191,24 +190,15 @@ public class QueryOperationHandler implements QueryStateCompletionCallback, Cons
             Map<Integer, AbstractInbox> inboxes = visitor.getInboxes();
             Map<Integer, Map<UUID, Outbox>> outboxes = visitor.getOutboxes();
 
-            // Create fragment context.
-            QueryFragmentContext fragmentContext = new QueryFragmentContext(
-                state,
-                operation.getArguments(),
-                fragmentPool,
-                operation.getRootConsumer()
-            );
-
             // Assemble all necessary information into a fragment executable.
             QueryFragmentExecutable fragmentExecutable = new QueryFragmentExecutable(
                 state,
+                operation.getArguments(),
                 exec,
                 inboxes,
                 outboxes,
-                fragmentContext
+                fragmentPool
             );
-
-            fragmentContext.setFragmentExecutable(fragmentExecutable);
 
             fragmentExecutables.add(fragmentExecutable);
         }
@@ -218,7 +208,7 @@ public class QueryOperationHandler implements QueryStateCompletionCallback, Cons
 
         // Schedule initial processing of fragments.
         for (QueryFragmentExecutable fragmentExecutable : fragmentExecutables) {
-            fragmentExecutable.schedule(fragmentPool);
+            fragmentExecutable.schedule();
         }
     }
 
@@ -240,7 +230,7 @@ public class QueryOperationHandler implements QueryStateCompletionCallback, Cons
 
         if (fragmentExecutable != null) {
             // Fragment is scheduled if the query is already initialized.
-            fragmentExecutable.schedule(fragmentPool);
+            fragmentExecutable.schedule();
         }
     }
 
@@ -281,7 +271,7 @@ public class QueryOperationHandler implements QueryStateCompletionCallback, Cons
 
         if (fragmentExecutable != null) {
             // Fragment is scheduled if the query is already initialized.
-            fragmentExecutable.schedule(fragmentPool);
+            fragmentExecutable.schedule();
         }
     }
 

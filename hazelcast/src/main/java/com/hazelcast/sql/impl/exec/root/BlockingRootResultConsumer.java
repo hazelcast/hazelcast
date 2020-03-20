@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.exec.root;
 
 import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.fragment.QueryFragmentContext;
 import com.hazelcast.sql.impl.row.Row;
 
 import java.util.ArrayDeque;
@@ -26,7 +27,7 @@ import java.util.NoSuchElementException;
 /**
  * Blocking array-based result consumer.
  */
-public class RootResultConsumerImpl implements RootResultConsumer {
+public class BlockingRootResultConsumer implements RootResultConsumer {
     /** Maximum size. */
     private final int pageSize;
 
@@ -46,19 +47,19 @@ public class RootResultConsumerImpl implements RootResultConsumer {
     private HazelcastSqlException doneError;
 
     /** Whether root update already scheduled. */
-    private boolean rootScheduled;
+    private boolean scheduled;
 
     /** Query root. */
-    private RootExec root;
+    private QueryFragmentContext context;
 
-    public RootResultConsumerImpl(int pageSize) {
+    public BlockingRootResultConsumer(int pageSize) {
         this.pageSize = pageSize;
     }
 
     @Override
-    public void setup(RootExec root) {
+    public void setup(QueryFragmentContext context) {
         synchronized (mux) {
-            this.root = root;
+            this.context = context;
 
             mux.notifyAll();
         }
@@ -88,7 +89,7 @@ public class RootResultConsumerImpl implements RootResultConsumer {
                 }
             }
 
-            rootScheduled = false;
+            scheduled = false;
 
             if (added) {
                 mux.notifyAll();
@@ -178,10 +179,10 @@ public class RootResultConsumerImpl implements RootResultConsumer {
                         return null;
                     } else {
                         // Schedule root advance if needed.
-                        if (root != null && !rootScheduled) {
-                            root.reschedule();
+                        if (context != null && !scheduled) {
+                            context.schedule();
 
-                            rootScheduled = true;
+                            scheduled = true;
                         }
 
                         try {

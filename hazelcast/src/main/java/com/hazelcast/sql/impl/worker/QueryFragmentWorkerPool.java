@@ -48,7 +48,7 @@ public class QueryFragmentWorkerPool {
      * @param task Fragment.
      */
     public void submit(QueryFragmentExecutable task) {
-        Runnable wrappedTask = () -> task.run(QueryFragmentWorkerPool.this);
+        Runnable wrappedTask = () -> task.run();
 
         pool.submit(wrappedTask);
     }

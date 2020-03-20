@@ -29,6 +29,7 @@ import com.hazelcast.sql.impl.operation.QueryOperation;
 import com.hazelcast.sql.impl.state.QueryState;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedDeque;
@@ -38,21 +39,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Query fragment executable which tracks whether it is scheduled for execution or not.
  */
-public class QueryFragmentExecutable {
-    /** Global query state. */
+public class QueryFragmentExecutable implements QueryFragmentScheduleCallback {
+
     private final QueryState state;
-
-    /** Exec for the given fragment. */
+    private final List<Object> arguments;
     private final Exec exec;
-
-    /** Inboxes. */
     private final Map<Integer, AbstractInbox> inboxes;
-
-    /** Outboxes. */
     private final Map<Integer, Map<UUID, Outbox>> outboxes;
-
-    /** Context. */
-    private final QueryFragmentContext fragmentContext;
+    private final QueryFragmentWorkerPool fragmentPool;
 
     /** Operations to be processed. */
     private final ConcurrentLinkedDeque<QueryAbstractExchangeOperation> operations = new ConcurrentLinkedDeque<>();
@@ -71,16 +65,18 @@ public class QueryFragmentExecutable {
 
     public QueryFragmentExecutable(
         QueryState state,
+        List<Object> arguments,
         Exec exec,
         Map<Integer, AbstractInbox> inboxes,
         Map<Integer, Map<UUID, Outbox>> outboxes,
-        QueryFragmentContext fragmentContext
+        QueryFragmentWorkerPool fragmentPool
     ) {
         this.state = state;
+        this.arguments = arguments;
         this.exec = exec;
         this.inboxes = inboxes;
         this.outboxes = outboxes;
-        this.fragmentContext = fragmentContext;
+        this.fragmentPool = fragmentPool;
     }
 
     public Collection<Integer> getInboxEdgeIds() {
@@ -92,13 +88,6 @@ public class QueryFragmentExecutable {
     }
 
     /**
-     * Schedule fragment execution.
-     */
-    public void schedule(QueryFragmentWorkerPool workerPool) {
-        schedule0(workerPool);
-    }
-
-    /**
      * Add operation to be processed.
      */
     public void addOperation(QueryAbstractExchangeOperation operation) {
@@ -106,18 +95,14 @@ public class QueryFragmentExecutable {
         operations.addLast(operation);
     }
 
-    public void run(QueryFragmentWorkerPool fragmentPool) {
+    public void run() {
         try {
             if (completed) {
                 return;
             }
 
             // Setup the executor if needed.
-            if (!initialized) {
-                exec.setup(fragmentContext);
-
-                initialized = true;
-            }
+            setupExecutor();
 
             // Feed all batches to relevant inboxes first. Set the upper boundary on the number of batches to avoid
             // starvation when batches arrive quicker than we are able to process them.
@@ -185,23 +170,11 @@ public class QueryFragmentExecutable {
         }
 
         // Unschedule the fragment with double-check for new batches.
-        unschedule(fragmentPool);
+        unschedule();
     }
 
-    /**
-     * Unschedule the fragment.
-     */
-    private void unschedule(QueryFragmentWorkerPool fragmentPool) {
-        // Unset the scheduled flag.
-        scheduled.lazySet(false);
-
-        // If new tasks arrived concurrently, reschedule the fragment again.
-        if (!operations.isEmpty() && !completed) {
-            schedule0(fragmentPool);
-        }
-    }
-
-    private void schedule0(QueryFragmentWorkerPool fragmentPool) {
+    @Override
+    public void schedule() {
         // If the fragment is already scheduled, we do not need to do anything else, because executor will re-check queue state
         // before exiting.
         if (scheduled.get()) {
@@ -211,6 +184,31 @@ public class QueryFragmentExecutable {
         // Otherwise we schedule the fragment into the worker pool.
         if (scheduled.compareAndSet(false, true)) {
             fragmentPool.submit(this);
+        }
+    }
+
+    /**
+     * Unschedule the fragment.
+     */
+    private void unschedule() {
+        // Unset the scheduled flag.
+        scheduled.lazySet(false);
+
+        // If new tasks arrived concurrently, reschedule the fragment again.
+        if (!operations.isEmpty() && !completed) {
+            schedule();
+        }
+    }
+
+    private void setupExecutor() {
+        if (initialized) {
+            return;
+        }
+
+        try {
+            exec.setup(new QueryFragmentContext(arguments, this, state));
+        } finally {
+            initialized = true;
         }
     }
 }

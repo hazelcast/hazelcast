@@ -17,20 +17,21 @@
 package com.hazelcast.sql.impl.exec.root;
 
 import com.hazelcast.sql.impl.QueryResultProducer;
+import com.hazelcast.sql.impl.fragment.QueryFragmentContext;
 import com.hazelcast.sql.impl.row.Row;
 
 /**
  * Consumer of results from {@link RootExec}.
  * <p>
- * Consumed results are then exposed to end users, hance the interface extends {@link QueryResultProducer}.
+ * Consumed results are then exposed to end users, hence the interface extends {@link QueryResultProducer}.
  */
 public interface RootResultConsumer extends QueryResultProducer {
     /**
      * Perform one-time setup.
      *
-     * @param root Root.
+     * @param context Context.
      */
-    void setup(RootExec root);
+    void setup(QueryFragmentContext context);
 
     /**
      * Consume rows from the source.

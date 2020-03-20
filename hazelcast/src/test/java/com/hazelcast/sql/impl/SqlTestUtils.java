@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl;
 
 import com.hazelcast.sql.impl.fragment.QueryFragmentContext;
 import com.hazelcast.sql.impl.state.QueryState;
+import com.hazelcast.sql.impl.worker.QueryFragmentScheduleCallback;
 
 import java.util.Collections;
 import java.util.List;
@@ -44,6 +45,16 @@ public final class SqlTestUtils {
             null
         );
 
-        return new QueryFragmentContext(state, args, null, null);
+        return new QueryFragmentContext(args, NoOpScheduleCallback.INSTANCE, state);
+    }
+
+    private static final class NoOpScheduleCallback implements QueryFragmentScheduleCallback {
+
+        private static final NoOpScheduleCallback INSTANCE = new NoOpScheduleCallback();
+
+        @Override
+        public void schedule() {
+            // No-op.
+        }
     }
 }

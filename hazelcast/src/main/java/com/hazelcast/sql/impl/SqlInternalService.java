@@ -20,7 +20,7 @@ import com.hazelcast.config.SqlConfig;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.client.QueryClientStateRegistry;
-import com.hazelcast.sql.impl.exec.root.RootResultConsumerImpl;
+import com.hazelcast.sql.impl.exec.root.BlockingRootResultConsumer;
 import com.hazelcast.sql.impl.explain.QueryExplain;
 import com.hazelcast.sql.impl.explain.QueryExplainResultProducer;
 import com.hazelcast.sql.impl.fragment.QueryFragment;
@@ -135,7 +135,7 @@ public class SqlInternalService {
         IdentityHashMap<QueryFragment, Collection<UUID>> fragmentMappings = operationFactory.prepareFragmentMappings();
 
         // Register the state.
-        RootResultConsumerImpl consumer = new RootResultConsumerImpl(pageSize);
+        BlockingRootResultConsumer consumer = new BlockingRootResultConsumer(pageSize);
 
         QueryState state = stateRegistry.onInitiatorQueryStarted(
             timeout,

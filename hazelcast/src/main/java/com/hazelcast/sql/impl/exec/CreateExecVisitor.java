@@ -115,7 +115,8 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
 
         exec = new RootExec(
             node.getId(),
-            pop()
+            pop(),
+            operation.getRootConsumer()
         );
     }
 

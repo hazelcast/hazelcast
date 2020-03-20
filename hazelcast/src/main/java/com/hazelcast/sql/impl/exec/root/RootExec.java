@@ -27,17 +27,17 @@ import com.hazelcast.sql.impl.row.RowBatch;
  */
 public class RootExec extends AbstractUpstreamAwareExec {
     /** Consumer (user iterator, client listener, etc). */
-    private RootResultConsumer consumer;
+    private final RootResultConsumer consumer;
 
-    public RootExec(int id, Exec upstream) {
+    public RootExec(int id, Exec upstream, RootResultConsumer consumer) {
         super(id, upstream);
+
+        this.consumer = consumer;
     }
 
     @Override
     protected void setup1(QueryFragmentContext ctx) {
-        consumer = ctx.getRootConsumer();
-
-        consumer.setup(this);
+        consumer.setup(ctx);
     }
 
     @Override
@@ -71,7 +71,7 @@ public class RootExec extends AbstractUpstreamAwareExec {
      * Reschedule execution of this root node to fetch more data for the user.
      */
     public void reschedule() {
-        ctx.reschedule();
+        ctx.schedule();
     }
 
     @Override
