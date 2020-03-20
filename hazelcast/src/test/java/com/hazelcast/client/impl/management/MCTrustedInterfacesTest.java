@@ -24,6 +24,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.UUID;
@@ -303,7 +304,7 @@ public class MCTrustedInterfacesTest extends HazelcastTestSupport {
             future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
             fail("AuthenticationException was expected.");
         } catch (ExecutionException e) {
-            assertThat(e.getCause(), is(instanceOf(AuthenticationException.class)));
+            assertThat(e.getCause(), is(instanceOf(AccessControlException.class)));
         }
     }
 }
