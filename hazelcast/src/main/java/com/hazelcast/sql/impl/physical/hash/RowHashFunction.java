@@ -21,7 +21,7 @@ import com.hazelcast.sql.impl.row.Row;
 /**
  * Function which maps rows to integer values.
  */
-public interface HashFunction {
+public interface RowHashFunction {
     /**
      * Get hash of the row.
      *

@@ -16,28 +16,9 @@
 
 package com.hazelcast.sql.impl.physical;
 
-import com.hazelcast.nio.serialization.DataSerializable;
-
 /**
- * Physical node.
+ * Extension of a physical node which can get the callback from the visitor. Used mainly for testing purposes.
  */
-public interface PhysicalNode extends DataSerializable {
-    /**
-     * @return ID of the node.
-     */
-    int getId();
-
-    /**
-     * Visit the node.
-     *
-     * @param visitor Visitor.
-     */
-    void visit(PhysicalNodeVisitor visitor);
-
-    /**
-     * Get schema associated with the node.
-     *
-     * @return Schema.
-     */
-    PhysicalNodeSchema getSchema();
+public interface PhysicalNodeWithVisitorCallback extends PhysicalNode {
+    void onVisitorCallback(PhysicalNodeVisitor visitor);
 }

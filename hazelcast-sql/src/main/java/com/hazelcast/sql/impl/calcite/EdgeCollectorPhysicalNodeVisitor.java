@@ -23,7 +23,8 @@ import com.hazelcast.sql.impl.physical.MapIndexScanPhysicalNode;
 import com.hazelcast.sql.impl.physical.MapScanPhysicalNode;
 import com.hazelcast.sql.impl.physical.MaterializedInputPhysicalNode;
 import com.hazelcast.sql.impl.physical.PhysicalNode;
-import com.hazelcast.sql.impl.physical.visitor.PhysicalNodeVisitor;
+import com.hazelcast.sql.impl.physical.PhysicalNodeVisitor;
+import com.hazelcast.sql.impl.physical.PhysicalNodeWithVisitorCallback;
 import com.hazelcast.sql.impl.physical.ProjectPhysicalNode;
 import com.hazelcast.sql.impl.physical.ReplicatedMapScanPhysicalNode;
 import com.hazelcast.sql.impl.physical.ReplicatedToPartitionedPhysicalNode;
@@ -138,6 +139,11 @@ public class EdgeCollectorPhysicalNodeVisitor implements PhysicalNodeVisitor {
     @Override
     public void onFetchNode(FetchPhysicalNode node) {
         onNode(node);
+    }
+
+    @Override
+    public void onCustomNode(PhysicalNodeWithVisitorCallback node) {
+        node.onVisitorCallback(this);
     }
 
     private void onNode(PhysicalNode node) {

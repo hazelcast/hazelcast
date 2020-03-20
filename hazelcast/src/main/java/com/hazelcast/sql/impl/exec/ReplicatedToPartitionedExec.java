@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.exec;
 
 import com.hazelcast.internal.util.HashUtil;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
-import com.hazelcast.sql.impl.physical.hash.HashFunction;
+import com.hazelcast.sql.impl.physical.hash.RowHashFunction;
 import com.hazelcast.sql.impl.row.Row;
 
 /**
@@ -26,12 +26,12 @@ import com.hazelcast.sql.impl.row.Row;
  */
 public class ReplicatedToPartitionedExec extends AbstractFilterExec {
     /** Hash function. */
-    private final HashFunction hashFunction;
+    private final RowHashFunction hashFunction;
 
     /** Owning partitions. */
     private final PartitionIdSet parts;
 
-    public ReplicatedToPartitionedExec(int id, Exec upstream, HashFunction hashFunction, PartitionIdSet parts) {
+    public ReplicatedToPartitionedExec(int id, Exec upstream, RowHashFunction hashFunction, PartitionIdSet parts) {
         super(id, upstream);
 
         this.hashFunction = hashFunction;

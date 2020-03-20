@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.explain;
 
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.QueryResultProducer;
 import com.hazelcast.sql.impl.row.Row;
 

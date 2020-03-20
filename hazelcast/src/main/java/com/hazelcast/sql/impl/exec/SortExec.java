@@ -22,8 +22,8 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.ListRowBatch;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
-import com.hazelcast.sql.impl.sort.SortKey;
-import com.hazelcast.sql.impl.sort.SortKeyComparator;
+import com.hazelcast.sql.impl.exec.sort.SortKey;
+import com.hazelcast.sql.impl.exec.sort.SortKeyComparator;
 
 import java.util.ArrayList;
 import java.util.List;

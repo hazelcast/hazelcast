@@ -22,7 +22,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.physical.PhysicalNode;
-import com.hazelcast.sql.impl.physical.visitor.PhysicalNodeVisitor;
+import com.hazelcast.sql.impl.physical.PhysicalNodeVisitor;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.io.IOException;

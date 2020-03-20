@@ -16,8 +16,6 @@
 
 package com.hazelcast.sql.impl.physical;
 
-import com.hazelcast.sql.impl.physical.visitor.PhysicalNodeVisitor;
-
 import java.util.Objects;
 
 /**

@@ -73,8 +73,8 @@ import com.hazelcast.sql.impl.physical.ReplicatedMapScanPhysicalNode;
 import com.hazelcast.sql.impl.physical.ReplicatedToPartitionedPhysicalNode;
 import com.hazelcast.sql.impl.physical.RootPhysicalNode;
 import com.hazelcast.sql.impl.physical.SortPhysicalNode;
-import com.hazelcast.sql.impl.physical.hash.AllFieldsHashFunction;
-import com.hazelcast.sql.impl.physical.hash.FieldHashFunction;
+import com.hazelcast.sql.impl.physical.hash.AllFieldsRowHashFunction;
+import com.hazelcast.sql.impl.physical.hash.FieldRowHashFunction;
 import com.hazelcast.sql.impl.physical.io.BroadcastSendPhysicalNode;
 import com.hazelcast.sql.impl.physical.io.ReceivePhysicalNode;
 import com.hazelcast.sql.impl.physical.io.ReceiveSortMergePhysicalNode;
@@ -323,7 +323,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             id,
             upstreamNode,
             edge,
-            new FieldHashFunction(rel.getHashFields())
+            new FieldRowHashFunction(rel.getHashFields())
         );
 
         addFragment(sendNode, QueryFragmentMapping.staticMapping(dataMemberIdsSet));
@@ -384,7 +384,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             id,
             sortNode,
             edge,
-            AllFieldsHashFunction.INSTANCE
+            AllFieldsRowHashFunction.INSTANCE
         );
 
         addFragment(sendNode, QueryFragmentMapping.staticMapping(dataMemberIdsSet));
@@ -410,7 +410,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
          ReplicatedToPartitionedPhysicalNode replicatedToPartitionedNode = new ReplicatedToPartitionedPhysicalNode(
              pollId(rel),
              upstreamNode,
-             new FieldHashFunction(rel.getHashFields())
+             new FieldRowHashFunction(rel.getHashFields())
          );
 
          pushUpstream(replicatedToPartitionedNode);

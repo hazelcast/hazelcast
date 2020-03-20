@@ -30,7 +30,7 @@ import com.hazelcast.sql.impl.exec.Exec;
 import com.hazelcast.sql.impl.fragment.QueryFragmentContext;
 import com.hazelcast.sql.impl.mailbox.AbstractInbox;
 import com.hazelcast.sql.impl.mailbox.Outbox;
-import com.hazelcast.sql.impl.physical.visitor.CreateExecVisitor;
+import com.hazelcast.sql.impl.exec.CreateExecVisitor;
 import com.hazelcast.sql.impl.state.QueryState;
 import com.hazelcast.sql.impl.state.QueryStateCompletionCallback;
 import com.hazelcast.sql.impl.state.QueryStateRegistry;

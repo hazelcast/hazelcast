@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.sort;
+package com.hazelcast.sql.impl.exec.sort;
 
 import java.util.Comparator;
 import java.util.List;

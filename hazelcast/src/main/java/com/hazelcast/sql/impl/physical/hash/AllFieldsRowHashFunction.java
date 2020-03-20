@@ -16,29 +16,22 @@
 
 package com.hazelcast.sql.impl.physical.hash;
 
-import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.sql.impl.row.Row;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.Objects;
 
 /**
- * Hash function which uses fields to get the hash.
+ * Hash function which uses all row columns to calculate the hash.
  */
-public class FieldHashFunction implements HashFunction, DataSerializable {
-    /** Fields. */
-    private List<Integer> fields;
+public class AllFieldsRowHashFunction implements RowHashFunction, DataSerializable {
+    /** Singleton instance. */
+    public static final AllFieldsRowHashFunction INSTANCE = new AllFieldsRowHashFunction();
 
-    public FieldHashFunction() {
+    public AllFieldsRowHashFunction() {
         // No-op.
-    }
-
-    public FieldHashFunction(List<Integer> fields) {
-        this.fields = fields;
     }
 
     @SuppressWarnings("checkstyle:MagicNumber")
@@ -46,8 +39,8 @@ public class FieldHashFunction implements HashFunction, DataSerializable {
     public int getHash(Row row) {
         int res = 0;
 
-        for (Integer field : fields) {
-            Object val = row.get(field);
+        for (int idx = 0; idx < row.getColumnCount(); idx++) {
+            Object val = row.get(idx);
             int hash = val != null ? val.hashCode() : 0;
 
             res = 31 * res + hash;
@@ -58,36 +51,26 @@ public class FieldHashFunction implements HashFunction, DataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        SerializationUtil.writeList(fields, out);
+        // No-op.
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        fields = SerializationUtil.readList(in);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        FieldHashFunction that = (FieldHashFunction) o;
-
-        return Objects.equals(fields, that.fields);
+        // No-op.
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(fields);
+        return getClass().hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof AllFieldsRowHashFunction;
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{fields=" + fields + '}';
+        return getClass().getSimpleName() + "{}";
     }
 }

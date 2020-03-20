@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.physical.visitor;
+package com.hazelcast.sql.impl.exec;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
@@ -22,16 +22,7 @@ import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapProxy;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperationFragment;
-import com.hazelcast.sql.impl.exec.EmptyScanExec;
-import com.hazelcast.sql.impl.exec.Exec;
-import com.hazelcast.sql.impl.exec.FilterExec;
-import com.hazelcast.sql.impl.exec.MapScanExec;
-import com.hazelcast.sql.impl.exec.MaterializedInputExec;
-import com.hazelcast.sql.impl.exec.ProjectExec;
-import com.hazelcast.sql.impl.exec.ReplicatedMapScanExec;
-import com.hazelcast.sql.impl.exec.ReplicatedToPartitionedExec;
 import com.hazelcast.sql.impl.exec.root.RootExec;
-import com.hazelcast.sql.impl.exec.SortExec;
 import com.hazelcast.sql.impl.exec.agg.AggregateExec;
 import com.hazelcast.sql.impl.exec.fetch.FetchExec;
 import com.hazelcast.sql.impl.exec.index.MapIndexScanExec;
@@ -52,6 +43,7 @@ import com.hazelcast.sql.impl.physical.FilterPhysicalNode;
 import com.hazelcast.sql.impl.physical.MapIndexScanPhysicalNode;
 import com.hazelcast.sql.impl.physical.MapScanPhysicalNode;
 import com.hazelcast.sql.impl.physical.MaterializedInputPhysicalNode;
+import com.hazelcast.sql.impl.physical.PhysicalNodeWithVisitorCallback;
 import com.hazelcast.sql.impl.physical.ProjectPhysicalNode;
 import com.hazelcast.sql.impl.physical.ReplicatedMapScanPhysicalNode;
 import com.hazelcast.sql.impl.physical.ReplicatedToPartitionedPhysicalNode;
@@ -64,6 +56,7 @@ import com.hazelcast.sql.impl.physical.io.ReceiveSortMergePhysicalNode;
 import com.hazelcast.sql.impl.physical.io.UnicastSendPhysicalNode;
 import com.hazelcast.sql.impl.physical.join.HashJoinPhysicalNode;
 import com.hazelcast.sql.impl.physical.join.NestedLoopJoinPhysicalNode;
+import com.hazelcast.sql.impl.physical.PhysicalNodeVisitor;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -445,21 +438,26 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
         push(res);
     }
 
-     @Override
-     public void onFetchNode(FetchPhysicalNode node) {
-         Exec upstream = pop();
+    @Override
+    public void onFetchNode(FetchPhysicalNode node) {
+        Exec upstream = pop();
 
-         FetchExec res = new FetchExec(
-             node.getId(),
-             upstream,
-             node.getFetch(),
-             node.getOffset()
-         );
+        FetchExec res = new FetchExec(
+            node.getId(),
+            upstream,
+            node.getFetch(),
+            node.getOffset()
+        );
 
-         push(res);
-     }
+        push(res);
+    }
 
-     public Exec getExec() {
+    @Override
+    public void onCustomNode(PhysicalNodeWithVisitorCallback node) {
+        node.onVisitorCallback(this);
+    }
+
+    public Exec getExec() {
         return exec;
     }
 

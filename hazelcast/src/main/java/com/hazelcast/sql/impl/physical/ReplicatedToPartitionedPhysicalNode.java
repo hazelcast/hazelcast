@@ -18,8 +18,7 @@ package com.hazelcast.sql.impl.physical;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.sql.impl.physical.hash.HashFunction;
-import com.hazelcast.sql.impl.physical.visitor.PhysicalNodeVisitor;
+import com.hazelcast.sql.impl.physical.hash.RowHashFunction;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -29,19 +28,19 @@ import java.util.Objects;
  */
 public class ReplicatedToPartitionedPhysicalNode extends UniInputPhysicalNode {
     /** Function which should be used for hashing. */
-    private HashFunction hashFunction;
+    private RowHashFunction hashFunction;
 
     public ReplicatedToPartitionedPhysicalNode() {
         // No-op.
     }
 
-    public ReplicatedToPartitionedPhysicalNode(int id, PhysicalNode upstream, HashFunction hashFunction) {
+    public ReplicatedToPartitionedPhysicalNode(int id, PhysicalNode upstream, RowHashFunction hashFunction) {
         super(id, upstream);
 
         this.hashFunction = hashFunction;
     }
 
-    public HashFunction getHashFunction() {
+    public RowHashFunction getHashFunction() {
         return hashFunction;
     }
 

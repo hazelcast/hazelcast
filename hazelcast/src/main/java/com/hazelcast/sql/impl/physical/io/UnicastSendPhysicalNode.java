@@ -20,8 +20,8 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.physical.PhysicalNode;
 import com.hazelcast.sql.impl.physical.UniInputPhysicalNode;
-import com.hazelcast.sql.impl.physical.hash.HashFunction;
-import com.hazelcast.sql.impl.physical.visitor.PhysicalNodeVisitor;
+import com.hazelcast.sql.impl.physical.hash.RowHashFunction;
+import com.hazelcast.sql.impl.physical.PhysicalNodeVisitor;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -34,20 +34,20 @@ public class UnicastSendPhysicalNode extends UniInputPhysicalNode implements Edg
     private int edgeId;
 
     /** Partition hasher (get partition hash from row). */
-    private HashFunction hashFunction;
+    private RowHashFunction hashFunction;
 
     public UnicastSendPhysicalNode() {
         // No-op.
     }
 
-    public UnicastSendPhysicalNode(int id, PhysicalNode upstream, int edgeId, HashFunction hashFunction) {
+    public UnicastSendPhysicalNode(int id, PhysicalNode upstream, int edgeId, RowHashFunction hashFunction) {
         super(id, upstream);
 
         this.edgeId = edgeId;
         this.hashFunction = hashFunction;
     }
 
-    public HashFunction getHashFunction() {
+    public RowHashFunction getHashFunction() {
         return hashFunction;
     }
 
