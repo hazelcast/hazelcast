@@ -28,6 +28,8 @@ import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.exec.Exec;
 import com.hazelcast.sql.impl.mailbox.AbstractInbox;
+import com.hazelcast.sql.impl.mailbox.InboundHandler;
+import com.hazelcast.sql.impl.mailbox.OutboundHandler;
 import com.hazelcast.sql.impl.mailbox.Outbox;
 import com.hazelcast.sql.impl.exec.CreateExecVisitor;
 import com.hazelcast.sql.impl.state.QueryState;
@@ -187,8 +189,8 @@ public class QueryOperationHandler implements QueryStateCompletionCallback, Cons
 
             Exec exec = visitor.getExec();
 
-            Map<Integer, AbstractInbox> inboxes = visitor.getInboxes();
-            Map<Integer, Map<UUID, Outbox>> outboxes = visitor.getOutboxes();
+            Map<Integer, InboundHandler> inboxes = visitor.getInboxes();
+            Map<Integer, Map<UUID, OutboundHandler>> outboxes = visitor.getOutboxes();
 
             // Assemble all necessary information into a fragment executable.
             QueryFragmentExecutable fragmentExecutable = new QueryFragmentExecutable(

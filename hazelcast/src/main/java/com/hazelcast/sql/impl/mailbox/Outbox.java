@@ -33,7 +33,7 @@ import java.util.UUID;
 /**
  * Outbox which sends data to a single remote stripe.
  */
-public class Outbox extends AbstractMailbox {
+public class Outbox extends AbstractMailbox implements OutboundHandler {
     /** Minimum number of rows to be sent. */
     private static final int MIN_BATCH_FLUSH_THRESHOLD = 4;
 
@@ -153,6 +153,7 @@ public class Outbox extends AbstractMailbox {
         return flushedLast;
     }
 
+    @Override
     public void onFlowControl(long remainingMemory) {
         this.remainingMemory = remainingMemory;
     }

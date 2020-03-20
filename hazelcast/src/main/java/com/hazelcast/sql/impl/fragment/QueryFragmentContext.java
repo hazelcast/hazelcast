@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.fragment;
 
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
-import com.hazelcast.sql.impl.state.QueryStateCancellationToken;
+import com.hazelcast.sql.impl.state.QueryStateCallback;
 import com.hazelcast.sql.impl.worker.QueryFragmentScheduleCallback;
 
 import java.util.List;
@@ -29,18 +29,18 @@ public final class QueryFragmentContext implements ExpressionEvalContext {
 
     private final List<Object> arguments;
     private final QueryFragmentScheduleCallback scheduleCallback;
-    private final QueryStateCancellationToken cancellationToken;
+    private final QueryStateCallback stateCallback;
 
     public QueryFragmentContext(
         List<Object> arguments,
         QueryFragmentScheduleCallback scheduleCallback,
-        QueryStateCancellationToken cancellationToken
+        QueryStateCallback stateCallback
     ) {
         assert arguments != null;
 
-        this.cancellationToken = cancellationToken;
         this.arguments = arguments;
         this.scheduleCallback = scheduleCallback;
+        this.stateCallback = stateCallback;
     }
 
     @Override
@@ -53,6 +53,6 @@ public final class QueryFragmentContext implements ExpressionEvalContext {
     }
 
     public void checkCancelled() {
-        cancellationToken.checkCancelled();
+        stateCallback.checkCancelled();
     }
 }

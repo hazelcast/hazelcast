@@ -24,7 +24,7 @@ import java.util.UUID;
 /**
  * Controls backpressure for a set of remote sources.
  */
-public class InboxBackpressure {
+public class FlowControlState {
     /** Low watermark: denotes low memory condition. */
     // TODO: How we choose it? Should it be dynamic? Investigate exact flow control algorithms.
     private static final double LWM_PERCENTAGE = 0.4f;
@@ -34,12 +34,12 @@ public class InboxBackpressure {
     private final long maxMemory;
 
     /** Remote sources. */
-    private HashMap<UUID, InboxBackpressureState> memberMap;
+    private HashMap<UUID, FlowControlStreamState> memberMap;
 
     /** Remote sources which should be notified. */
-    private HashMap<UUID, InboxBackpressureState> pendingMemberMap;
+    private HashMap<UUID, FlowControlStreamState> pendingMemberMap;
 
-    public InboxBackpressure(long maxMemory) {
+    public FlowControlState(long maxMemory) {
         this.maxMemory = maxMemory;
     }
 
@@ -61,14 +61,14 @@ public class InboxBackpressure {
         if (memberMap == null) {
             memberMap = new HashMap<>();
 
-            memberMap.put(memberId, new InboxBackpressureState(memberId, remoteMemory, maxMemory - localMemoryDelta));
+            memberMap.put(memberId, new FlowControlStreamState(memberId, remoteMemory, maxMemory - localMemoryDelta));
         } else {
-            InboxBackpressureState state = memberMap.get(memberId);
+            FlowControlStreamState state = memberMap.get(memberId);
 
             if (state != null) {
                 state.updateMemory(remoteMemory, state.getLocalMemory() - localMemoryDelta);
             } else {
-                memberMap.put(memberId, new InboxBackpressureState(memberId, remoteMemory, maxMemory - localMemoryDelta));
+                memberMap.put(memberId, new FlowControlStreamState(memberId, remoteMemory, maxMemory - localMemoryDelta));
             }
         }
     }
@@ -81,7 +81,7 @@ public class InboxBackpressure {
 
         assert memberMap != null;
 
-        InboxBackpressureState state = memberMap.get(memberId);
+        FlowControlStreamState state = memberMap.get(memberId);
 
         if (state == null) {
             // Missing state means that last batch already arrived.
@@ -106,7 +106,7 @@ public class InboxBackpressure {
         }
     }
 
-    public Collection<InboxBackpressureState> getPending() {
+    public Collection<FlowControlStreamState> getPending() {
         return pendingMemberMap != null && !pendingMemberMap.isEmpty() ? pendingMemberMap.values() : Collections.emptySet();
     }
 

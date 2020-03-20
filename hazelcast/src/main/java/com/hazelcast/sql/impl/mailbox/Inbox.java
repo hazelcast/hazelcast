@@ -26,7 +26,7 @@ import java.util.ArrayDeque;
  */
 public class Inbox extends AbstractInbox {
     /** Queue of batches from all remote stripes. */
-    private final ArrayDeque<MailboxBatch> batches = new ArrayDeque<>(INITIAL_QUEUE_SIZE);
+    private final ArrayDeque<InboundBatch> batches = new ArrayDeque<>(INITIAL_QUEUE_SIZE);
 
     public Inbox(
         QueryId queryId,
@@ -40,12 +40,12 @@ public class Inbox extends AbstractInbox {
     }
 
     @Override
-    public void onBatchReceived0(MailboxBatch batch) {
+    public void onBatch0(InboundBatch batch) {
         batches.addLast(batch);
     }
 
-    public MailboxBatch poll() {
-        MailboxBatch batch = batches.pollFirst();
+    public InboundBatch poll() {
+        InboundBatch batch = batches.pollFirst();
 
         onBatchPolled(batch);
 

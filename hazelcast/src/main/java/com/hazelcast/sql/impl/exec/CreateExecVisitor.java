@@ -21,8 +21,6 @@ import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapProxy;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.sql.impl.operation.QueryExecuteOperationFragment;
-import com.hazelcast.sql.impl.exec.root.RootExec;
 import com.hazelcast.sql.impl.exec.agg.AggregateExec;
 import com.hazelcast.sql.impl.exec.fetch.FetchExec;
 import com.hazelcast.sql.impl.exec.index.MapIndexScanExec;
@@ -32,11 +30,14 @@ import com.hazelcast.sql.impl.exec.io.ReceiveSortMergeExec;
 import com.hazelcast.sql.impl.exec.io.UnicastSendExec;
 import com.hazelcast.sql.impl.exec.join.HashJoinExec;
 import com.hazelcast.sql.impl.exec.join.NestedLoopJoinExec;
-import com.hazelcast.sql.impl.mailbox.AbstractInbox;
-import com.hazelcast.sql.impl.mailbox.Outbox;
+import com.hazelcast.sql.impl.exec.root.RootExec;
+import com.hazelcast.sql.impl.mailbox.InboundHandler;
 import com.hazelcast.sql.impl.mailbox.Inbox;
+import com.hazelcast.sql.impl.mailbox.OutboundHandler;
+import com.hazelcast.sql.impl.mailbox.Outbox;
 import com.hazelcast.sql.impl.mailbox.StripedInbox;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
+import com.hazelcast.sql.impl.operation.QueryExecuteOperationFragment;
 import com.hazelcast.sql.impl.operation.QueryOperationHandler;
 import com.hazelcast.sql.impl.physical.AggregatePhysicalNode;
 import com.hazelcast.sql.impl.physical.FetchPhysicalNode;
@@ -44,6 +45,7 @@ import com.hazelcast.sql.impl.physical.FilterPhysicalNode;
 import com.hazelcast.sql.impl.physical.MapIndexScanPhysicalNode;
 import com.hazelcast.sql.impl.physical.MapScanPhysicalNode;
 import com.hazelcast.sql.impl.physical.MaterializedInputPhysicalNode;
+import com.hazelcast.sql.impl.physical.PhysicalNodeVisitor;
 import com.hazelcast.sql.impl.physical.PhysicalNodeWithVisitorCallback;
 import com.hazelcast.sql.impl.physical.ProjectPhysicalNode;
 import com.hazelcast.sql.impl.physical.ReplicatedMapScanPhysicalNode;
@@ -57,7 +59,6 @@ import com.hazelcast.sql.impl.physical.io.ReceiveSortMergePhysicalNode;
 import com.hazelcast.sql.impl.physical.io.UnicastSendPhysicalNode;
 import com.hazelcast.sql.impl.physical.join.HashJoinPhysicalNode;
 import com.hazelcast.sql.impl.physical.join.NestedLoopJoinPhysicalNode;
-import com.hazelcast.sql.impl.physical.PhysicalNodeVisitor;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -92,10 +93,10 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
     private Exec exec;
 
     /** Inboxes. */
-    private final Map<Integer, AbstractInbox> inboxes = new HashMap<>();
+    private final Map<Integer, InboundHandler> inboxes = new HashMap<>();
 
     /** Outboxes. */
-    private Map<Integer, Map<UUID, Outbox>> outboxes = new HashMap<>();
+    private Map<Integer, Map<UUID, OutboundHandler>> outboxes = new HashMap<>();
 
     public CreateExecVisitor(
         NodeEngine nodeEngine,
@@ -237,7 +238,7 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
 
          int i = 0;
 
-         Map<UUID, Outbox> edgeOutboxes = new HashMap<>();
+         Map<UUID, OutboundHandler> edgeOutboxes = new HashMap<>();
          outboxes.put(edgeId, edgeOutboxes);
 
          for (UUID receiveMemberId : receiveFragmentMemberIds) {
@@ -463,11 +464,11 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
         return exec;
     }
 
-    public Map<Integer, AbstractInbox> getInboxes() {
+    public Map<Integer, InboundHandler> getInboxes() {
         return inboxes;
     }
 
-    public Map<Integer, Map<UUID, Outbox>> getOutboxes() {
+    public Map<Integer, Map<UUID, OutboundHandler>> getOutboxes() {
          return outboxes;
     }
 

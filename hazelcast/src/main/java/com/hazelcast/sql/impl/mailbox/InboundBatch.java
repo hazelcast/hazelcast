@@ -23,12 +23,13 @@ import java.util.UUID;
 /**
  * Mailbox batch received from the remote member.
  */
-public class MailboxBatch {
+public class InboundBatch {
+
     private final RowBatch batch;
     private final boolean last;
     private final UUID senderId;
 
-    public MailboxBatch(RowBatch batch, boolean last, UUID senderId) {
+    public InboundBatch(RowBatch batch, boolean last, UUID senderId) {
         this.batch = batch;
         this.last = last;
         this.senderId = senderId;

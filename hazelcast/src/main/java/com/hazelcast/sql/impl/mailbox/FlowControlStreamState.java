@@ -19,15 +19,16 @@ package com.hazelcast.sql.impl.mailbox;
 import java.util.UUID;
 
 /**
- * Backpressure state of a single member.
+ * Flow control state for a single stream.
  */
-public final class InboxBackpressureState {
+public final class FlowControlStreamState {
+
     private final UUID memberId;
     private long remoteMemory;
     private long localMemory;
     private boolean shouldSend;
 
-    public InboxBackpressureState(UUID memberId, long remoteMemory, long localMemory) {
+    public FlowControlStreamState(UUID memberId, long remoteMemory, long localMemory) {
         this.memberId = memberId;
 
         updateMemory(remoteMemory, localMemory);

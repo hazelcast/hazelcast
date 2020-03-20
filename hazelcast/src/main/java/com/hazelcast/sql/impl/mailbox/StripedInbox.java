@@ -32,7 +32,7 @@ public class StripedInbox extends AbstractInbox {
     private final HashMap<UUID, Integer> memberToIdxMap = new HashMap<>();
 
     /** Batches from members. */
-    private final ArrayDeque<MailboxBatch>[] queues;
+    private final ArrayDeque<InboundBatch>[] queues;
 
     @SuppressWarnings("unchecked")
     public StripedInbox(
@@ -63,10 +63,10 @@ public class StripedInbox extends AbstractInbox {
     }
 
     @Override
-    public void onBatchReceived0(MailboxBatch batch) {
+    public void onBatch0(InboundBatch batch) {
         int idx = memberToIdxMap.get(batch.getSenderId());
 
-        ArrayDeque<MailboxBatch> queue = queues[idx];
+        ArrayDeque<InboundBatch> queue = queues[idx];
 
         queue.add(batch);
     }
@@ -75,8 +75,8 @@ public class StripedInbox extends AbstractInbox {
         return queues.length;
     }
 
-    public MailboxBatch poll(int stripe) {
-        MailboxBatch batch = queues[stripe].poll();
+    public InboundBatch poll(int stripe) {
+        InboundBatch batch = queues[stripe].poll();
 
         onBatchPolled(batch);
 

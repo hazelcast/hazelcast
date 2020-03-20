@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.sql.impl.SqlInternalService.STATE_CHECK_FREQUENCY;
 
-public final class QueryState implements QueryStateCancellationToken {
+public final class QueryState implements QueryStateCallback {
     /** Query ID. */
     private final QueryId queryId;
 
@@ -159,9 +159,7 @@ public final class QueryState implements QueryStateCancellationToken {
         return distributedState;
     }
 
-    /**
-     * Callback invoked when a fragment execution is finished.
-     */
+    @Override
     public void onFragmentFinished() {
         if (distributedState.onFragmentFinished()) {
             assert completionCallback != null;
@@ -174,11 +172,7 @@ public final class QueryState implements QueryStateCancellationToken {
         }
     }
 
-    /**
-     * Cancel the query due to an error.
-     *
-     * @param error Condition caused query cancel.
-     */
+    @Override
     public void cancel(Exception error) {
         // Wrap into common SQL exception if needed.
         if (!(error instanceof HazelcastSqlException)) {

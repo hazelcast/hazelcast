@@ -14,15 +14,22 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.state;
+package com.hazelcast.sql.impl.mailbox;
 
 /**
- * Token to check for query cancellation.
+ * Core interface for inbound message processing.
  */
-public interface QueryStateCancellationToken {
+public interface InboundHandler {
     /**
-     * Check whether the query is cancelled. If the query is not cancelled, the method returns with no side effects.
-     * Otherwise and exception is thrown.
+     * Handle batch from the remote outbound handler.
+     *
+     * @param batch Data batch.
+     * @param remainingMemory Amount of available memory as seen by the remote outbound handler.
      */
-    void checkCancelled();
+    void onBatch(InboundBatch batch, long remainingMemory);
+
+    /**
+     * Send flow control message to the remote outbound handler.
+     */
+    void sendFlowControl();
 }

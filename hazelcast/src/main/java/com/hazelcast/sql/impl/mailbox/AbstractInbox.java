@@ -27,7 +27,7 @@ import java.util.Collection;
 /**
  * Abstract inbox implementation.
  */
-public abstract class AbstractInbox extends AbstractMailbox {
+public abstract class AbstractInbox extends AbstractMailbox implements InboundHandler {
     /** Initial size of batch queues. */
     protected static final int INITIAL_QUEUE_SIZE = 4;
 
@@ -41,7 +41,7 @@ public abstract class AbstractInbox extends AbstractMailbox {
     private final QueryOperationHandler operationHandler;
 
     /** Backpressure control. */
-    private final InboxBackpressure backpressure;
+    private final FlowControlState backpressure;
 
     protected AbstractInbox(
         QueryId queryId,
@@ -56,14 +56,12 @@ public abstract class AbstractInbox extends AbstractMailbox {
         this.operationHandler = operationHandler;
         this.remainingSources = remainingSources;
 
-        backpressure = new InboxBackpressure(maxMemory);
+        backpressure = new FlowControlState(maxMemory);
     }
 
-    /**
-     * Handle batch arrival. Always invoked from the worker.
-     */
-    public void onBatchReceived(MailboxBatch batch, long remainingMemory) {
-        onBatchReceived0(batch);
+    @Override
+    public final void onBatch(InboundBatch batch, long remainingMemory) {
+        onBatch0(batch);
 
         // Track done condition
         enqueuedBatches++;
@@ -81,9 +79,9 @@ public abstract class AbstractInbox extends AbstractMailbox {
         );
     }
 
-    protected abstract void onBatchReceived0(MailboxBatch batch);
+    protected abstract void onBatch0(InboundBatch batch);
 
-    protected void onBatchPolled(MailboxBatch batch) {
+    protected void onBatchPolled(InboundBatch batch) {
         if (batch == null) {
             return;
         }
@@ -95,14 +93,15 @@ public abstract class AbstractInbox extends AbstractMailbox {
         backpressure.onBatchRemoved(batch.getSenderId(), batch.isLast(), batch.getBatch().getRowCount() * rowWidth);
     }
 
+    @Override
     public void sendFlowControl() {
-        Collection<InboxBackpressureState> states = backpressure.getPending();
+        Collection<FlowControlStreamState> states = backpressure.getPending();
 
         if (states.isEmpty()) {
             return;
         }
 
-        for (InboxBackpressureState state : states) {
+        for (FlowControlStreamState state : states) {
             QueryFlowControlExchangeOperation operation =
                 new QueryFlowControlExchangeOperation(queryId, edgeId, state.getLocalMemory());
 

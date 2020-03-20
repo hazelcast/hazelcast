@@ -21,7 +21,7 @@ import com.hazelcast.sql.impl.exec.AbstractExec;
 import com.hazelcast.sql.impl.exec.IterationResult;
 import com.hazelcast.sql.impl.exec.fetch.Fetch;
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.mailbox.MailboxBatch;
+import com.hazelcast.sql.impl.mailbox.InboundBatch;
 import com.hazelcast.sql.impl.mailbox.StripedInbox;
 import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.ListRowBatch;
@@ -179,7 +179,7 @@ public class ReceiveSortMergeExec extends AbstractExec {
                     return false;
                 }
 
-                MailboxBatch batch = inbox.poll(index);
+                InboundBatch batch = inbox.poll(index);
 
                 if (batch == null) {
                     return false;

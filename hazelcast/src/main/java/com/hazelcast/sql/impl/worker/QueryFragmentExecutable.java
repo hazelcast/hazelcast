@@ -19,14 +19,15 @@ package com.hazelcast.sql.impl.worker;
 import com.hazelcast.sql.impl.exec.Exec;
 import com.hazelcast.sql.impl.exec.IterationResult;
 import com.hazelcast.sql.impl.fragment.QueryFragmentContext;
-import com.hazelcast.sql.impl.mailbox.AbstractInbox;
-import com.hazelcast.sql.impl.mailbox.MailboxBatch;
-import com.hazelcast.sql.impl.mailbox.Outbox;
+import com.hazelcast.sql.impl.mailbox.InboundHandler;
+import com.hazelcast.sql.impl.mailbox.InboundBatch;
+import com.hazelcast.sql.impl.mailbox.OutboundHandler;
 import com.hazelcast.sql.impl.operation.QueryBatchExchangeOperation;
 import com.hazelcast.sql.impl.operation.QueryAbstractExchangeOperation;
 import com.hazelcast.sql.impl.operation.QueryFlowControlExchangeOperation;
 import com.hazelcast.sql.impl.operation.QueryOperation;
 import com.hazelcast.sql.impl.state.QueryState;
+import com.hazelcast.sql.impl.state.QueryStateCallback;
 
 import java.util.Collection;
 import java.util.List;
@@ -41,11 +42,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class QueryFragmentExecutable implements QueryFragmentScheduleCallback {
 
-    private final QueryState state;
+    private final QueryStateCallback stateCallback;
     private final List<Object> arguments;
     private final Exec exec;
-    private final Map<Integer, AbstractInbox> inboxes;
-    private final Map<Integer, Map<UUID, Outbox>> outboxes;
+    private final Map<Integer, InboundHandler> inboxes;
+    private final Map<Integer, Map<UUID, OutboundHandler>> outboxes;
     private final QueryFragmentWorkerPool fragmentPool;
 
     /** Operations to be processed. */
@@ -64,14 +65,14 @@ public class QueryFragmentExecutable implements QueryFragmentScheduleCallback {
     private volatile boolean completed;
 
     public QueryFragmentExecutable(
-        QueryState state,
+        QueryState stateCallback,
         List<Object> arguments,
         Exec exec,
-        Map<Integer, AbstractInbox> inboxes,
-        Map<Integer, Map<UUID, Outbox>> outboxes,
+        Map<Integer, InboundHandler> inboxes,
+        Map<Integer, Map<UUID, OutboundHandler>> outboxes,
         QueryFragmentWorkerPool fragmentPool
     ) {
-        this.state = state;
+        this.stateCallback = stateCallback;
         this.arguments = arguments;
         this.exec = exec;
         this.inboxes = inboxes;
@@ -115,25 +116,25 @@ public class QueryFragmentExecutable implements QueryFragmentScheduleCallback {
                 if (operation instanceof QueryBatchExchangeOperation) {
                     QueryBatchExchangeOperation operation0 = (QueryBatchExchangeOperation) operation;
 
-                    AbstractInbox inbox = inboxes.get(operation0.getEdgeId());
+                    InboundHandler inbox = inboxes.get(operation0.getEdgeId());
                     assert inbox != null;
 
-                    MailboxBatch batch = new MailboxBatch(
+                    InboundBatch batch = new InboundBatch(
                         operation0.getBatch(),
                         operation0.isLast(),
                         operation0.getCallerId()
                     );
 
-                    inbox.onBatchReceived(batch, operation0.getRemainingMemory());
+                    inbox.onBatch(batch, operation0.getRemainingMemory());
                 } else {
                     assert operation instanceof QueryFlowControlExchangeOperation;
 
                     QueryFlowControlExchangeOperation operation0 = (QueryFlowControlExchangeOperation) operation;
 
-                    Map<UUID, Outbox> edgeOutboxes = outboxes.get(operation0.getEdgeId());
+                    Map<UUID, OutboundHandler> edgeOutboxes = outboxes.get(operation0.getEdgeId());
                     assert edgeOutboxes != null;
 
-                    Outbox outbox = edgeOutboxes.get(operation.getCallerId());
+                    OutboundHandler outbox = edgeOutboxes.get(operation.getCallerId());
                     assert outbox != null;
 
                     outbox.onFlowControl(operation0.getRemainingMemory());
@@ -150,7 +151,8 @@ public class QueryFragmentExecutable implements QueryFragmentScheduleCallback {
 
             // Send flow control messages if needed.
             if (res != IterationResult.FETCHED_DONE) {
-                for (AbstractInbox inbox : inboxes.values()) {
+                // TODO: This is unfortunate - we may havemultiple inboxes, and only some of the may require flow control.
+                for (InboundHandler inbox : inboxes.values()) {
                     inbox.sendFlowControl();
                 }
             }
@@ -159,14 +161,14 @@ public class QueryFragmentExecutable implements QueryFragmentScheduleCallback {
             if (res == IterationResult.FETCHED_DONE) {
                 completed = true;
 
-                state.onFragmentFinished();
+                stateCallback.onFragmentFinished();
             }
         } catch (Exception e) {
             // Prevent subsequent invocations.
             completed = true;
 
             // Notify state about the exception to trigger cancel operation.
-            state.cancel(e);
+            stateCallback.cancel(e);
         }
 
         // Unschedule the fragment with double-check for new batches.
@@ -206,7 +208,7 @@ public class QueryFragmentExecutable implements QueryFragmentScheduleCallback {
         }
 
         try {
-            exec.setup(new QueryFragmentContext(arguments, this, state));
+            exec.setup(new QueryFragmentContext(arguments, this, stateCallback));
         } finally {
             initialized = true;
         }

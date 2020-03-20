@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.exec.io;
 import com.hazelcast.sql.impl.exec.AbstractExec;
 import com.hazelcast.sql.impl.exec.IterationResult;
 import com.hazelcast.sql.impl.mailbox.Inbox;
-import com.hazelcast.sql.impl.mailbox.MailboxBatch;
+import com.hazelcast.sql.impl.mailbox.InboundBatch;
 import com.hazelcast.sql.impl.row.RowBatch;
 
 /**
@@ -47,7 +47,7 @@ public class ReceiveExec extends AbstractExec {
             throw new IllegalStateException("Should not be called.");
         }
 
-        MailboxBatch batch = inbox.poll();
+        InboundBatch batch = inbox.poll();
 
         if (batch == null) {
             return IterationResult.WAIT;
