@@ -19,7 +19,6 @@ package com.hazelcast.jet.impl.util;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConfigXmlGenerator;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
-import com.hazelcast.client.impl.proxy.ClientMapProxy;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.HazelcastInstance;
@@ -31,8 +30,6 @@ import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.EntryProcessor;
-import com.hazelcast.map.IMap;
-import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -44,13 +41,9 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import static java.util.concurrent.CompletableFuture.completedFuture;
 import static java.util.stream.Collectors.toList;
 
 public final class ImdgUtil {
@@ -115,35 +108,6 @@ public final class ImdgUtil {
             return ((ImdgFunctionWrapper<T, R>) function).wrapped;
         }
         return function;
-    }
-
-    /**
-     * Async version of {@code IMap.putAll()}. This is based on IMDG's code and
-     * currently does not invalidate the near cache.
-     * <p>
-     * TODO remove this method once https://github.com/hazelcast/hazelcast/issues/16449 is done
-     *
-     * @param targetIMap imap to write to
-     * @param items      items to add
-     */
-    public static <K, V> CompletionStage<Void> mapPutAllAsync(
-            @Nonnull IMap<K, V> targetIMap, Map<? extends K, ? extends V> items
-    ) {
-        if (items.isEmpty()) {
-            return completedFuture(null);
-        }
-        if (items.size() == 1) {
-            Entry<? extends K, ? extends V> onlyEntry = items.entrySet().iterator().next();
-            return targetIMap.setAsync(onlyEntry.getKey(), onlyEntry.getValue()).toCompletableFuture();
-        }
-
-        if (targetIMap instanceof MapProxyImpl) {
-            return ((MapProxyImpl<K, V>) targetIMap).putAllAsync(items);
-        } else if (targetIMap instanceof ClientMapProxy) {
-            return ((ClientMapProxy<K, V>) targetIMap).putAllAsync(items);
-        } else {
-            throw new RuntimeException("Unexpected map class: " + targetIMap.getClass().getName());
-        }
     }
 
     @Nonnull

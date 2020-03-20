@@ -17,7 +17,6 @@
 package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
-import com.hazelcast.client.impl.proxy.ClientMapProxy;
 import com.hazelcast.client.impl.spi.ClientPartitionService;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.BiFunctionEx;
@@ -25,6 +24,7 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.partition.IPartitionService;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceAware;
 import com.hazelcast.jet.JetException;
@@ -37,9 +37,7 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.impl.InternalCompletableFuture;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.CheckReturnValue;
@@ -51,7 +49,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
@@ -71,7 +68,7 @@ public final class UpdateMapP<T, K, V, R> extends AsyncHazelcastWriterP {
     private IPartitionService memberPartitionService;
     private ClientPartitionService clientPartitionService;
     private SerializationService serializationService;
-    private IMap<K, V> map;
+    private IMap<Data, V> map;
 
     // one map per partition to store the temporary values
     private Map<Data, Object>[] tmpMaps;
@@ -144,8 +141,8 @@ public final class UpdateMapP<T, K, V, R> extends AsyncHazelcastWriterP {
             }
 
             Map<Data, Object> buffer = tmpMaps[currentPartitionId];
-            ApplyFnEntryProcessor<K, V, T, R> entryProcessor = new ApplyFnEntryProcessor<>(buffer, updateFn);
-            setCallback(submitToKeys(map, buffer.keySet(), entryProcessor));
+            ApplyFnEntryProcessor<Data, V, T, R> entryProcessor = new ApplyFnEntryProcessor<>(buffer, updateFn);
+            setCallback(map.submitToKeys(buffer.keySet(), entryProcessor));
             pendingItemCount -= tmpCounts[currentPartitionId];
             tmpCounts[currentPartitionId] = 0;
             tmpMaps[currentPartitionId] = new HashMap<>();
@@ -177,21 +174,6 @@ public final class UpdateMapP<T, K, V, R> extends AsyncHazelcastWriterP {
         Data itemData = serializationService.toData(item);
         tmpMaps[partitionId].merge(keyData, itemData, remappingFunction);
         tmpCounts[partitionId]++;
-    }
-
-    @SuppressWarnings("unchecked")
-    private static <K, V, R> InternalCompletableFuture<Map<K, V>> submitToKeys(
-            IMap<K, V> map, Set<Data> keys, EntryProcessor<K, V, R> entryProcessor) {
-        // TODO remove this method once submitToKeys is public API
-        // we force Set<Data> instead of Set<K> to avoid re-serialization of keys
-        // this relies on an implementation detail of submitToKeys method.
-        if (map instanceof MapProxyImpl) {
-            return ((MapProxyImpl) map).submitToKeys(keys, entryProcessor);
-        } else if (map instanceof ClientMapProxy) {
-            return ((ClientMapProxy) map).submitToKeys(keys, entryProcessor);
-        } else {
-            throw new RuntimeException("Unexpected map class: " + map.getClass().getName());
-        }
     }
 
     /**

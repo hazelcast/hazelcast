@@ -26,7 +26,6 @@ import com.hazelcast.map.IMap;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.IntStream;
@@ -71,103 +70,5 @@ public class ImdgUtilTest extends SimpleTestInClusterSupport {
         logger.info("Done copying");
 
         assertEquals(testData, new HashMap<>(instance().getMap("target")));
-    }
-
-    @Test
-    public void mapPutAllAsync_noNearCache_member() throws Exception {
-        IMap<Object, Object> map = instance().getHazelcastInstance().getMap(randomMapName());
-        Map<String, String> tmpMap = new HashMap<>();
-        tmpMap.put("k1", "v1");
-        tmpMap.put("k2", "v1");
-        ImdgUtil.mapPutAllAsync(map, tmpMap)
-                .toCompletableFuture().get();
-
-        assertEquals(tmpMap, new HashMap<>(map));
-    }
-
-    @Test
-    public void mapPutAllAsync_noNearCache_client() throws Exception {
-        IMap<Object, Object> map = client().getHazelcastInstance().getMap(randomMapName());
-        Map<String, String> tmpMap = new HashMap<>();
-        tmpMap.put("k1", "v1");
-        tmpMap.put("k2", "v1");
-        ImdgUtil.mapPutAllAsync(map, tmpMap)
-                .toCompletableFuture().get();
-
-        assertEquals(tmpMap, new HashMap<>(map));
-    }
-
-    @Test
-    public void mapPutAllAsync_large_member() throws Exception {
-        IMap<Object, Object> map = instance().getHazelcastInstance().getMap(randomMapName());
-        Map<Integer, Integer> tmpMap = new HashMap<>();
-        for (int i = 0; i < 32_768; i++) {
-            tmpMap.put(i, i);
-        }
-        ImdgUtil.mapPutAllAsync(map, tmpMap)
-                .toCompletableFuture().get();
-
-        assertEquals(tmpMap, new HashMap<>(map));
-    }
-
-    @Test
-    public void mapPutAllAsync_large_client() throws Exception {
-        IMap<Object, Object> map = client().getHazelcastInstance().getMap(randomMapName());
-        Map<Integer, Integer> tmpMap = new HashMap<>();
-        for (int i = 0; i < 32_768; i++) {
-            tmpMap.put(i, i);
-        }
-        ImdgUtil.mapPutAllAsync(map, tmpMap)
-                .toCompletableFuture().get();
-
-        assertEquals(tmpMap, new HashMap<>(map));
-    }
-
-    @Test
-    public void mapPutAllAsync_withNearCache_serialized_member() throws Exception {
-        IMap<Object, Object> map = instance().getHazelcastInstance().getMap(NEAR_CACHED_SERIALIZED_MAP);
-        map.put("key", "value");
-        map.get("key"); // populate the near cache
-
-        ImdgUtil.mapPutAllAsync(map, Collections.singletonMap("key", "newValue"))
-                .toCompletableFuture().get();
-
-        assertEquals("newValue", map.get("key"));
-    }
-
-    @Test
-    public void mapPutAllAsync_withNearCache_nonSerialized_member() throws Exception {
-        IMap<Object, Object> map = instance().getHazelcastInstance().getMap(NEAR_CACHED_NON_SERIALIZED_MAP);
-        map.put("key", "value");
-        map.get("key"); // populate the near cache
-
-        ImdgUtil.mapPutAllAsync(map, Collections.singletonMap("key", "newValue"))
-            .toCompletableFuture().get();
-
-        assertEquals("newValue", map.get("key"));
-    }
-
-    @Test
-    public void mapPutAllAsync_withNearCache_serialized_client() throws Exception {
-        IMap<Object, Object> map = client().getHazelcastInstance().getMap(NEAR_CACHED_SERIALIZED_MAP);
-        map.put("key", "value");
-        map.get("key"); // populate the near cache
-
-        ImdgUtil.mapPutAllAsync(map, Collections.singletonMap("key", "newValue"))
-            .toCompletableFuture().get();
-
-        assertEquals("newValue", map.get("key"));
-    }
-
-    @Test
-    public void mapPutAllAsync_withNearCache_nonSerialized_client() throws Exception {
-        IMap<Object, Object> map = client().getHazelcastInstance().getMap(NEAR_CACHED_NON_SERIALIZED_MAP);
-        map.put("key", "value");
-        map.get("key"); // populate the near cache
-
-        ImdgUtil.mapPutAllAsync(map, Collections.singletonMap("key", "newValue"))
-            .toCompletableFuture().get();
-
-        assertEquals("newValue", map.get("key"));
     }
 }
