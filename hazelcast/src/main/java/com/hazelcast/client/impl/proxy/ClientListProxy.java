@@ -54,6 +54,7 @@ import com.hazelcast.spi.impl.UnmodifiableLazyList;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
@@ -322,6 +323,22 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
     @Override
     public String toString() {
         return "IList{" + "name='" + name + '\'' + '}';
+    }
+
+    // used by jet
+    public Iterator<Data> rawIterator() {
+        ClientMessage request = ListIteratorCodec.encodeRequest(name);
+        ClientMessage response = invokeOnPartition(request);
+        ListIteratorCodec.ResponseParameters resultParameters = ListIteratorCodec.decodeResponse(response);
+        return Collections.unmodifiableList(resultParameters.response).iterator();
+    }
+
+    // used by jet
+    public List<Data> rawSubList(int fromIndex, int toIndex) {
+        ClientMessage request = ListSubCodec.encodeRequest(name, fromIndex, toIndex);
+        ClientMessage response = invokeOnPartition(request);
+        ListSubCodec.ResponseParameters resultParameters = ListSubCodec.decodeResponse(response);
+        return Collections.unmodifiableList(resultParameters.response);
     }
 
     private class ItemEventHandler extends ListAddListenerCodec.AbstractEventHandler
