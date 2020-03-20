@@ -63,6 +63,21 @@ hazelcast:
         enabled: false
         label: application=hazelcast-jet
         zones: us-east1-b,us-east1-c
+      # Uses the Azure REST API to get a list of candidate IPs to check. For more
+      # details go to the plugin's GitHub page:
+      # https://github.com/hazelcast/hazelcast-azure
+      # This plugin is built into the main Hazelcast Jet JAR found in the
+      # distribution package.
+      azure:
+        enabled: false
+        instance-metadata-available: false
+        client-id: CLIENT_ID
+        tenant-id: TENANT_ID
+        client-secret: CLIENT_SECRET
+        subscription-id: SUB_ID
+        resource-group: RESOURCE-GROUP-NAME
+        scale-set: SCALE-SET-NAME
+        use-public-ip: true
     # Selectively opens some of Hazelcast Jet's REST API endpoints.
     # The "jet-cluster-admin" command-line tool uses REST and you may get an
     # error message telling you which endpoint group you must enable for the
