@@ -263,7 +263,7 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
         Exec res;
 
         if (localParts == null) {
-            res = new EmptyScanExec(node.getId());
+            res = new EmptyExec(node.getId());
         } else {
             String mapName = node.getMapName();
 
@@ -289,7 +289,7 @@ public class CreateExecVisitor implements PhysicalNodeVisitor {
          Exec res;
 
          if (localParts == null) {
-             res = new EmptyScanExec(node.getId());
+             res = new EmptyExec(node.getId());
          } else {
              String mapName = node.getMapName();
 

@@ -36,4 +36,9 @@ public final class EmptyExec extends AbstractExec {
     public RowBatch currentBatch0() {
         return EmptyRowBatch.INSTANCE;
     }
+
+    @Override
+    public boolean canReset() {
+        return true;
+    }
 }
