@@ -178,7 +178,7 @@ public class ClientInvocationServiceImpl implements ClientInvocationService {
     }
 
     @Override
-    public boolean invokeOnRandomTarget(ClientInvocation invocation) {
+    public boolean invoke(ClientInvocation invocation) {
         Connection connection = connectionManager.getRandomConnection();
         if (connection == null) {
             if (invocationLogger.isFinestEnabled()) {

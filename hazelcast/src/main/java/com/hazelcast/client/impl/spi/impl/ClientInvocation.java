@@ -182,13 +182,13 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
                 } else if (uuid != null) {
                     invoked = invocationService.invokeOnTarget(this, uuid);
                 } else {
-                    invoked = invocationService.invokeOnRandomTarget(this);
+                    invoked = invocationService.invoke(this);
                 }
                 if (allowRetryOnRandom && !invoked) {
-                    invoked = invocationService.invokeOnRandomTarget(this);
+                    invoked = invocationService.invoke(this);
                 }
             } else {
-                invoked = invocationService.invokeOnRandomTarget(this);
+                invoked = invocationService.invoke(this);
             }
             if (!invoked) {
                 notifyException(new IOException("No connection found to invoke"));
