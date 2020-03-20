@@ -85,4 +85,9 @@ public class PollMCEventsMessageTask extends AbstractCallableMessageTask<Request
     public Object[] getParameters() {
         return new Object[0];
     }
+
+    @Override
+    public boolean isManagementTask() {
+        return true;
+    }
 }

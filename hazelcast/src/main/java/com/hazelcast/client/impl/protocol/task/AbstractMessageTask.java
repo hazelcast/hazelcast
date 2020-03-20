@@ -41,6 +41,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 
 import java.lang.reflect.Field;
+import java.security.AccessControlException;
 import java.security.Permission;
 import java.util.Arrays;
 import java.util.Collection;
@@ -102,7 +103,13 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
     @Override
     public final void run() {
         try {
-            if (requiresAuthentication() && !endpoint.isAuthenticated()) {
+            Address address = connection.getEndPoint();
+            if (isManagementTask() && !clientEngine.getManagementTasksChecker().isTrusted(address)) {
+                String message = "The client address " + address + " is not allowed for management task "
+                        + getClass().getName();
+                logger.info(message);
+                throw new AccessControlException(message);
+            } else if (requiresAuthentication() && !endpoint.isAuthenticated()) {
                 handleAuthenticationFailure();
             } else {
                 initializeAndProcessMessage();
@@ -336,4 +343,15 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
 
         return peel(t);
     }
+
+
+    /**
+     * The default implementation returns false. Child classes which implement a logic related to a management operation should
+     * override it and return true so the proper access control mechanism is used.
+     */
+    @Override
+    public boolean isManagementTask() {
+        return false;
+    }
+
 }

@@ -1100,6 +1100,14 @@ public final class ClusterProperty {
     public static final HazelcastProperty METRICS_COLLECTION_FREQUENCY
             = new HazelcastProperty("hazelcast.metrics.collection.frequency");
 
+    /**
+     * Allows to restrict management tasks execution on client protocol to given source IP address(es).
+     *
+     * @deprecated This property is valid only for 4.0.z patch stream. Use proper typed configuration in Hazelcast 4.1+.
+     */
+    @Deprecated
+    public static final HazelcastProperty MC_TRUSTED_INTERFACES = new HazelcastProperty("hazelcast.mc.trusted.interfaces");
+
     private ClusterProperty() {
     }
 }

@@ -65,8 +65,8 @@ class TestClientRegistry {
         this.nodeRegistry = nodeRegistry;
     }
 
-    ClientConnectionManagerFactory createClientServiceFactory() {
-        return new MockClientConnectionManagerFactory("127.0.0.1", CLIENT_PORTS);
+    ClientConnectionManagerFactory createClientServiceFactory(String sourceIp) {
+        return new MockClientConnectionManagerFactory(sourceIp == null ? "127.0.0.1" : sourceIp, CLIENT_PORTS);
     }
 
     private class MockClientConnectionManagerFactory implements ClientConnectionManagerFactory {

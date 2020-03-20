@@ -82,4 +82,9 @@ public class ChangeClusterVersionMessageTask extends AbstractInvocationMessageTa
     public Object[] getParameters() {
         return new Object[]{parameters.majorVersion, parameters.minorVersion};
     }
+
+    @Override
+    public boolean isManagementTask() {
+        return true;
+    }
 }
