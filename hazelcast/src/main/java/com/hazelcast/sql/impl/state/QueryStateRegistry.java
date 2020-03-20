@@ -143,7 +143,7 @@ public class QueryStateRegistry {
         for (Map.Entry<UUID, Collection<QueryId>> checkEntry : checkMap.entrySet()) {
             QueryCheckOperation operation = new QueryCheckOperation(checkEntry.getValue());
 
-            operationHandler.execute(checkEntry.getKey(), operation);
+            operationHandler.submit(checkEntry.getKey(), operation);
         }
     }
 }

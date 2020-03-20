@@ -178,7 +178,7 @@ public class Outbox extends AbstractMailbox implements OutboundHandler {
             flushedLast = true;
         }
 
-        boolean success = operationChannel.execute(op);
+        boolean success = operationChannel.submit(op);
 
         if (!success) {
             throw HazelcastSqlException.memberLeave(targetMemberId);

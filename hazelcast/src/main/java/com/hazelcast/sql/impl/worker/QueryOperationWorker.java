@@ -97,7 +97,7 @@ public class QueryOperationWorker implements Runnable {
             }
         }
 
-        operationHandler.handleLocalSync(operation);
+        operationHandler.execute(operation);
     }
 
     /**
@@ -136,7 +136,7 @@ public class QueryOperationWorker implements Runnable {
         );
 
         try {
-            operationHandler.execute(queryId.getMemberId(), cancelOperation);
+            operationHandler.submit(queryId.getMemberId(), cancelOperation);
         } catch (Exception ignore) {
             // This should never happen, since we do not transmit user objects.
         }

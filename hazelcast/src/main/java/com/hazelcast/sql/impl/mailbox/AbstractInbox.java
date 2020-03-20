@@ -107,7 +107,7 @@ public abstract class AbstractInbox extends AbstractMailbox implements InboundHa
 
             state.setShouldSend(false);
 
-            boolean success = operationHandler.execute(state.getMemberId(), operation);
+            boolean success = operationHandler.submit(state.getMemberId(), operation);
 
             if (!success) {
                 throw HazelcastSqlException.error(SqlErrorCode.MEMBER_LEAVE,

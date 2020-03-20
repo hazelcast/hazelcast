@@ -27,7 +27,7 @@ import com.hazelcast.sql.impl.fragment.QueryFragment;
 import com.hazelcast.sql.impl.memory.GlobalMemoryReservationManager;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperationFactory;
-import com.hazelcast.sql.impl.operation.QueryOperationHandler;
+import com.hazelcast.sql.impl.operation.QueryOperationHandlerImpl;
 import com.hazelcast.sql.impl.state.QueryState;
 import com.hazelcast.sql.impl.state.QueryStateRegistry;
 import com.hazelcast.sql.impl.state.QueryStateRegistryUpdater;
@@ -57,7 +57,7 @@ public class SqlInternalService {
     private final QueryClientStateRegistry clientStateRegistry;
 
     /** Operation manager. */
-    private final QueryOperationHandler operationHandler;
+    private final QueryOperationHandlerImpl operationHandler;
 
     /** State registry updater. */
     private final QueryStateRegistryUpdater stateRegistryUpdater;
@@ -75,7 +75,7 @@ public class SqlInternalService {
         clientStateRegistry = new QueryClientStateRegistry();
 
         // Operation handler depends on state registry.
-        operationHandler = new QueryOperationHandler(
+        operationHandler = new QueryOperationHandlerImpl(
             nodeEngine,
             stateRegistry,
             config.getThreadCount(),
@@ -155,7 +155,7 @@ public class SqlInternalService {
 
             localOp.setRootConsumer(consumer);
 
-            operationHandler.execute(localMemberId, localOp);
+            operationHandler.submit(localMemberId, localOp);
 
             // Start execution on remote members.
             for (int i = 0; i < plan.getDataMemberIds().size(); i++) {
@@ -167,7 +167,7 @@ public class SqlInternalService {
 
                 QueryExecuteOperation remoteOp = operationFactory.create(state.getQueryId(), fragmentMappings, memberId);
 
-                if (!operationHandler.execute(memberId, remoteOp)) {
+                if (!operationHandler.submit(memberId, remoteOp)) {
                     throw HazelcastSqlException.memberLeave(memberId);
                 }
             }
@@ -198,7 +198,7 @@ public class SqlInternalService {
         return state;
     }
 
-    public QueryOperationHandler getOperationHandler() {
+    public QueryOperationHandlerImpl getOperationHandler() {
         return operationHandler;
     }
 

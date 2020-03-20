@@ -16,28 +16,15 @@
 
 package com.hazelcast.sql.impl.operation;
 
-import com.hazelcast.internal.nio.Connection;
-
 /**
- * A channel for sequential execution of multiple operations.
+ * A channel for ordered execution of multiple operations.
  */
-public class QueryOperationChannel {
-
-    private final QueryOperationHandler operationHandler;
-    private final Connection connection;
-
-    public QueryOperationChannel(QueryOperationHandler operationHandler, Connection connection) {
-        this.operationHandler = operationHandler;
-        this.connection = connection;
-    }
-
-    public boolean execute(QueryOperation operation) {
-        if (connection != null) {
-            return operationHandler.executeRemote(connection, operation, true);
-        } else {
-            operationHandler.executeLocal(operation);
-
-            return true;
-        }
-    }
+public interface QueryOperationChannel {
+    /**
+     * Submit operation for execution. Order of execution is preserved across invocations.
+     *
+     * @param operation Operation.
+     * @return {@code True} if operation was submitted for execution successfully, {@code false} if the channel is broken.
+     */
+    boolean submit(QueryOperation operation);
 }
