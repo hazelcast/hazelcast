@@ -86,6 +86,7 @@ import com.hazelcast.map.impl.operation.MultipleEntryOperationFactory;
 import com.hazelcast.map.impl.operation.MultipleEntryWithPredicateBackupOperation;
 import com.hazelcast.map.impl.operation.MultipleEntryWithPredicateOperation;
 import com.hazelcast.map.impl.operation.NotifyMapFlushOperation;
+import com.hazelcast.map.impl.operation.PutAllDeleteAllBackupOperation;
 import com.hazelcast.map.impl.operation.PartitionWideEntryBackupOperation;
 import com.hazelcast.map.impl.operation.PartitionWideEntryOperation;
 import com.hazelcast.map.impl.operation.PartitionWideEntryOperationFactory;
@@ -310,8 +311,10 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int PUT_TRANSIENT_WITH_EXPIRY = 145;
     public static final int PUT_IF_ABSENT_WITH_EXPIRY = 146;
     public static final int PUT_TRANSIENT_BACKUP = 147;
+    public static final int PUT_ALL_DELETE_ALL_BACKUP = 148;
+    public static final int DIRECT_BACKUP_ENTRY_PROCESSOR = 149;
 
-    private static final int LEN = PUT_TRANSIENT_BACKUP + 1;
+    private static final int LEN = DIRECT_BACKUP_ENTRY_PROCESSOR + 1;
 
     @Override
     public int getFactoryId() {
@@ -467,6 +470,8 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[PUT_TRANSIENT_WITH_EXPIRY] = arg -> new PutTransientWithExpiryOperation();
         constructors[PUT_IF_ABSENT_WITH_EXPIRY] = arg -> new PutIfAbsentWithExpiryOperation();
         constructors[PUT_TRANSIENT_BACKUP] = arg -> new PutTransientBackupOperation();
+        constructors[PUT_ALL_DELETE_ALL_BACKUP] = arg -> new PutAllDeleteAllBackupOperation();
+        constructors[DIRECT_BACKUP_ENTRY_PROCESSOR] = arg -> DirectBackupEntryProcessor.DIRECT_BACKUP_PROCESSOR;
 
         return new ArrayDataSerializableFactory(constructors);
     }

@@ -203,6 +203,10 @@ public final class EntryOperator {
         return entry.getByPrioritizingDataValue();
     }
 
+    public Data getValueData() {
+        return entry.getValueData();
+    }
+
     public Object getOldValue() {
         return oldValue;
     }
