@@ -136,7 +136,7 @@ See [examples folder](examples) for some examples.
 
 ## Architecture
 
-See the following architecture pages for more insight into the internal of Jet:
+See the following architecture pages for more insight into the internals of Jet:
 
 * [Cooperative Multithreading](https://jet-start.sh/docs/architecture/execution-engine)
 * [Fault Tolerance](https://jet-start.sh/docs/architecture/fault-tolerance)
