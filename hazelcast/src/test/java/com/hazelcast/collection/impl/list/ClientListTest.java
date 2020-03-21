@@ -20,8 +20,6 @@ import com.google.common.collect.Iterators;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.proxy.ClientListProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.config.Config;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -44,17 +42,15 @@ public class ClientListTest extends HazelcastTestSupport {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
-    @SuppressWarnings("FieldCanBeLocal")
-    private HazelcastInstance server;
-    private HazelcastInstance client;
+    private ClientListProxy<Integer> list;
 
+    @SuppressWarnings({"unchecked", "rawtypes"})
     @Before
     public void setup() {
-        Config config = getConfig();
-        server = hazelcastFactory.newHazelcastInstance(config);
+        hazelcastFactory.newHazelcastInstance(getConfig());
 
-        ClientConfig clientConfig = new ClientConfig();
-        client = hazelcastFactory.newHazelcastClient(clientConfig);
+        list = (ClientListProxy) hazelcastFactory.newHazelcastClient(new ClientConfig())
+                                                 .getList(randomName());
     }
 
     @After
@@ -64,8 +60,6 @@ public class ClientListTest extends HazelcastTestSupport {
 
     @Test
     public void testRawIterator() {
-        ClientListProxy<Integer> list = list();
-
         list.add(1);
         list.add(2);
 
@@ -74,7 +68,6 @@ public class ClientListTest extends HazelcastTestSupport {
 
     @Test(expected = UnsupportedOperationException.class)
     public void testRawIterator_throwsException_whenRemove() {
-        ClientListProxy<Integer> list = list();
         list.add(1);
 
         Iterator<Data> iterator = list.rawIterator();
@@ -85,7 +78,6 @@ public class ClientListTest extends HazelcastTestSupport {
 
     @Test
     public void testRawSublist() {
-        ClientListProxy<Integer> list = list();
         list.add(1);
         list.add(2);
         list.add(3);
@@ -97,22 +89,14 @@ public class ClientListTest extends HazelcastTestSupport {
 
     @Test(expected = IndexOutOfBoundsException.class)
     public void testRawSublist_whenFromIndexIllegal() {
-        ClientListProxy<Integer> list = list();
-
         list.subList(8, 7);
     }
 
     @Test(expected = IndexOutOfBoundsException.class)
     public void testRawSublist_whenToIndexIllegal() {
-        ClientListProxy<Integer> list = list();
         list.add(1);
         list.add(2);
 
         list.subList(1, 3);
-    }
-
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    private <T> ClientListProxy<T> list() {
-        return (ClientListProxy) client.getList(randomName());
     }
 }

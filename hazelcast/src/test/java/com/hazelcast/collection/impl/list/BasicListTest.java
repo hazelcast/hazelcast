@@ -18,8 +18,6 @@ package com.hazelcast.collection.impl.list;
 
 import com.google.common.collect.Iterators;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.config.Config;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -42,12 +40,13 @@ public class BasicListTest extends HazelcastTestSupport {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
-    private HazelcastInstance server;
+    private ListProxyImpl<Integer> list;
 
+    @SuppressWarnings({"unchecked", "rawtypes"})
     @Before
     public void setup() {
-        Config config = getConfig();
-        server = hazelcastFactory.newHazelcastInstance(config);
+        list = (ListProxyImpl) hazelcastFactory.newHazelcastInstance(getConfig())
+                                               .getList(randomName());
     }
 
     @After
@@ -57,8 +56,6 @@ public class BasicListTest extends HazelcastTestSupport {
 
     @Test
     public void testRawIterator() {
-        ListProxyImpl<Integer> list = list();
-
         list.add(1);
         list.add(2);
 
@@ -67,7 +64,6 @@ public class BasicListTest extends HazelcastTestSupport {
 
     @Test(expected = UnsupportedOperationException.class)
     public void testRawIterator_throwsException_whenRemove() {
-        ListProxyImpl<Integer> list = list();
         list.add(1);
 
         Iterator<Data> iterator = list.rawIterator();
@@ -78,7 +74,6 @@ public class BasicListTest extends HazelcastTestSupport {
 
     @Test
     public void testRawSublist() {
-        ListProxyImpl<Integer> list = list();
         list.add(1);
         list.add(2);
         list.add(3);
@@ -90,22 +85,14 @@ public class BasicListTest extends HazelcastTestSupport {
 
     @Test(expected = IndexOutOfBoundsException.class)
     public void testRawSublist_whenFromIndexIllegal() {
-        ListProxyImpl<Integer> list = list();
-
         list.subList(8, 7);
     }
 
     @Test(expected = IndexOutOfBoundsException.class)
     public void testRawSublist_whenToIndexIllegal() {
-        ListProxyImpl<Integer> list = list();
         list.add(1);
         list.add(2);
 
         list.subList(1, 3);
-    }
-
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    private <T> ListProxyImpl<T> list() {
-        return (ListProxyImpl) server.getList(randomName());
     }
 }
