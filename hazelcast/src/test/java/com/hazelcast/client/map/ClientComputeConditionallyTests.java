@@ -14,21 +14,24 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map;
+package com.hazelcast.client.map;
 
-import com.hazelcast.config.Config;
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.test.ClientTestSupport;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
+import testsubjects.ClientOnlyStaticSerializableBiFunction;
 import testsubjects.NonStaticFunctionFactory;
 import testsubjects.StaticNonSerializableBiFunction;
 import testsubjects.StaticSerializableBiFunction;
@@ -42,23 +45,24 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ComputeConditionallyTests extends HazelcastTestSupport {
+public class ClientComputeConditionallyTests extends ClientTestSupport {
 
     @Rule
     public ExpectedException expected = ExpectedException.none();
 
-    HazelcastInstance[] instances;
-    private HazelcastInstance firstNode;
-    private HazelcastInstance secondNode;
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+    private HazelcastInstance server;
+    private HazelcastInstance client;
 
     @Before
     public void setup() {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        Config config = getConfig();
+        server = hazelcastFactory.newHazelcastInstance(getConfig());
+        client = hazelcastFactory.newHazelcastClient(new ClientConfig());
+    }
 
-        instances = factory.newInstances(config);
-        firstNode = instances[0];
-        secondNode = instances[1];
+    @After
+    public void tearDown() {
+        hazelcastFactory.terminateAll();
     }
 
     @Test
@@ -89,8 +93,14 @@ public class ComputeConditionallyTests extends HazelcastTestSupport {
     }
 
     @Test
+    public void testComputeIfPresentWithRemappingFunctionPresentOnClientJVMOnly() throws Throwable {
+        ClientOnlyStaticSerializableBiFunction biFunction = new ClientOnlyStaticSerializableBiFunction("new_value");
+        testComputeIfPresentForFunction(biFunction, "new_value");
+    }
+
+    @Test
     public void testComputeIfPresentWithLambdaReMappingFunction_AndInPlaceModification() {
-        final IMap<String, AtomicBoolean> map = firstNode.getMap("testComputeIfPresent");
+        final IMap<String, AtomicBoolean> map = client.getMap("testComputeIfPresent");
         map.put("present_key", new AtomicBoolean(true));
         AtomicBoolean newValue = map.computeIfPresent("present_key", (k, o) -> {
                     o.set(false);
@@ -109,7 +119,7 @@ public class ComputeConditionallyTests extends HazelcastTestSupport {
 
     @Test
     public void testComputeIfPresentShouldNotExecuteRemappingFunctionForAbsentKeys() {
-        final IMap<String, String> map = firstNode.getMap("testComputeIfPresent");
+        final IMap<String, String> map = client.getMap("testComputeIfPresent");
         map.computeIfPresent("absent_key", (key, oldValue) -> {
             fail("should not be called");
             return "test_value";
@@ -117,8 +127,7 @@ public class ComputeConditionallyTests extends HazelcastTestSupport {
     }
 
     private void testComputeIfPresentForFunction(BiFunction testFunction, Object expectedValue) {
-        testComputeIfPresentForFunction(firstNode, testFunction, expectedValue);
-        testComputeIfPresentForFunction(secondNode, testFunction, expectedValue);
+        testComputeIfPresentForFunction(client, testFunction, expectedValue);
     }
 
     private void testComputeIfPresentForFunction(HazelcastInstance hz, BiFunction testFunction, Object expectedValue) {
@@ -133,4 +142,6 @@ public class ComputeConditionallyTests extends HazelcastTestSupport {
             assertFalse(map.containsKey("present_key"));
         }
     }
+
+
 }

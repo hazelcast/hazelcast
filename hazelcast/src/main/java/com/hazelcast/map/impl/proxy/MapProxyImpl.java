@@ -20,6 +20,7 @@ import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.internal.serialization.Data;
@@ -55,6 +56,7 @@ import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.version.Version;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -1034,8 +1036,10 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
                               BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(key, NULL_BIFUNCTION_IS_NOT_ALLOWED);
+        Version clusterVersion = getNodeEngine().getClusterService().getClusterVersion();
 
-        if (SerializationUtil.isClassStaticAndSerializable(remappingFunction)) {
+        if (SerializationUtil.isClassStaticAndSerializable(remappingFunction)
+                && clusterVersion.isGreaterOrEqual(Versions.V4_1)) {
             BiFunctionExecutingEntryProcessor<K, V> ep = new BiFunctionExecutingEntryProcessor<>(remappingFunction);
             return executeOnKey(key, ep);
         } else {

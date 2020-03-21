@@ -109,7 +109,6 @@ import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.map.EntryProcessor;
@@ -121,7 +120,6 @@ import com.hazelcast.map.MapEvent;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.MapPartitionLostEvent;
 import com.hazelcast.map.QueryCache;
-import com.hazelcast.map.impl.BiFunctionExecutingEntryProcessor;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.map.impl.ListenerAdapter;
 import com.hazelcast.map.impl.SimpleEntryView;
@@ -1994,12 +1992,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(key, NULL_BIFUNCTION_IS_NOT_ALLOWED);
 
-        if (SerializationUtil.isClassStaticAndSerializable(remappingFunction)) {
-            BiFunctionExecutingEntryProcessor<K, V> ep = new BiFunctionExecutingEntryProcessor<>(remappingFunction);
-            return executeOnKeyInternal(key, ep);
-        } else {
-            return computeIfPresentLocally(key, remappingFunction);
-        }
+        return computeIfPresentLocally(key, remappingFunction);
     }
 
 
