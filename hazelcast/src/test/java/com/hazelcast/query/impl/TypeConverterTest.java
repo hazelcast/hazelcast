@@ -374,7 +374,7 @@ public class TypeConverterTest {
                 is(equalTo((Comparable) expected))
         ));
     }
-    
+
     @Test
     public void testLocalDateConverter_whenNumberPassed() {
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);
@@ -382,9 +382,9 @@ public class TypeConverterTest {
         Comparable actual = TypeConverters.LOCALDATE_CONVERTER.convert(format);
 
         assertThat(actual, instanceOf(LocalDate.class));
-        assertThat(actual, CoreMatchers.<Comparable>is( LocalDateHelper.toLocalDate(format)));
+        assertThat(actual, CoreMatchers.<Comparable>is(LocalDateHelper.toLocalDate(format)));
     }
-    
+
     @Test
     public void testLocalDateTimeConverter_whenNumberPassed() {
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);
@@ -392,7 +392,7 @@ public class TypeConverterTest {
         Comparable actual = TypeConverters.LOCALDATE_TIME_CONVERTER.convert(format);
 
         assertThat(actual, instanceOf(LocalDateTime.class));
-        assertThat(actual, CoreMatchers.<Comparable>is( LocalDateHelper.toLocalDateTime(format)));
+        assertThat(actual, CoreMatchers.<Comparable>is(LocalDateHelper.toLocalDateTime(format)));
     }
 
     @Test
