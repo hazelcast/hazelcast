@@ -51,6 +51,6 @@ public class PutAllPartitionAwareOperationFactoryTest extends HazelcastTestSuppo
     }
 
     protected PutAllPartitionAwareOperationFactory getFactory(String name, int[] partitions, MapEntries[] mapEntries) {
-        return new PutAllPartitionAwareOperationFactory(name, partitions, mapEntries);
+        return new PutAllPartitionAwareOperationFactory(name, partitions, mapEntries, true);
     }
 }

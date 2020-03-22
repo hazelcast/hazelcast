@@ -221,7 +221,9 @@ import java.util.function.BiFunction;
  * The methods to which this procedure applies: {@link #put(Object, Object) put},
  * {@link #set(Object, Object) set}, {@link #putAsync(Object, Object) putAsync},
  * {@link #setAsync(Object, Object) setAsync},
- * {@link #tryPut(Object, Object, long, TimeUnit) tryPut}, {@link #putAll(Map) putAll},
+ * {@link #tryPut(Object, Object, long, TimeUnit) tryPut},
+ * {@link #putAll(Map) putAll}, {@link #setAll(Map) setAll},
+ * {@link #putAllAsync(Map) putAllAsync}, {@link #setAllAsync(Map) setAllAsync},
  * {@link #replace(Object, Object, Object)} and {@link #replace(Object, Object)}.
  *
  *  <p>
@@ -1761,6 +1763,82 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
     void set(@Nonnull K key, @Nonnull V value,
              long ttl, @Nonnull TimeUnit ttlUnit,
              long maxIdle, @Nonnull TimeUnit maxIdleUnit);
+
+    /**
+     * Copies all of the mappings from the specified map to this map without loading
+     * non-existing elements from map store (which is more efficient than {@code putAll()}).
+     * Do not concurrently mutate the given map.
+     * <p>
+     * This method breaks the contract of EntryListener.
+     * EntryEvent of all the updated entries will have null oldValue even if they exist previously.
+     * <p>
+     * No atomicity guarantees are given. It could be that in case of failure
+     * some of the key/value-pairs get written, while others are not.
+     *
+     * <p><b>Interactions with the map store</b>
+     * <p>
+     * If write-through persistence mode is configured,
+     * {@link MapStore#store(Object, Object)} is invoked for each element
+     * before the element is added in memory, which may come at a
+     * significant performance cost. Exceptions thrown by store fail the
+     * operation and are propagated to the caller. The elements which
+     * were added before the exception was thrown will remain in the map,
+     * the rest will not be added.
+     * <p>
+     * If write-behind persistence mode is configured with
+     * write-coalescing turned off,
+     * {@link com.hazelcast.map.ReachedMaxSizeException} may be thrown
+     * if the write-behind queue has reached its per-node maximum
+     * capacity.
+     */
+    void setAll(@Nonnull Map<? extends K, ? extends V> map);
+
+    /**
+     * Asynchronously copies all of the mappings from the specified map to this map
+     * without loading non-existing elements from map store. This version doesn't
+     * support batching. Don't mutate the given map until the future completes.
+     * <pre>{@code
+     *     CompletionStage<Void> future = map.setAllAsync(map);
+     *     // do some other stuff, when ready wait for completion
+     *     future.toCompletableFuture.get();
+     * }</pre>
+     * {@code CompletionStage.toCompletableFuture.get()} will block until the actual map.setAll(map) operation completes
+     * You can also register further computation stages to be invoked upon
+     * completion of the {@code CompletionStage} via any of {@link CompletionStage}
+     * methods:
+     * <pre>{@code
+     *      CompletionStage<Void> future = map.setAllAsync(map);
+     *      future.thenRunAsync(() -> System.out.println("All the entries are set"));
+     * }</pre>
+     * <p>
+     * This method breaks the contract of EntryListener.
+     * EntryEvent of all the updated entries will have null oldValue even if they exist previously.
+     * <p>
+     * No atomicity guarantees are given. It could be that in case of failure
+     * some of the key/value-pairs get written, while others are not.
+     *
+     * <p><b>Interactions with the map store</b>
+     * <p>
+     * If write-through persistence mode is configured,
+     * {@link MapStore#store(Object, Object)} is invoked for each element
+     * before the element is added in memory, which may come at a
+     * significant performance cost. Exceptions thrown by store fail the
+     * operation and are propagated to the caller. The elements which
+     * were added before the exception was thrown will remain in the map,
+     * the rest will not be added.
+     * <p>
+     * If write-behind persistence mode is configured with
+     * write-coalescing turned off,
+     * {@link com.hazelcast.map.ReachedMaxSizeException} may be thrown
+     * if the write-behind queue has reached its per-node maximum
+     * capacity.
+     * @param map mappings to be stored in this map
+     * @return CompletionStage on which client code can block waiting for the
+     * operation to complete or register callbacks to be invoked
+     * upon setAll operation completion
+     * @see CompletionStage
+     */
+    CompletionStage<Void> setAllAsync(@Nonnull Map<? extends K, ? extends V> map);
 
     /**
      * Acquires the lock for the specified key.

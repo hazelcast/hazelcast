@@ -318,6 +318,36 @@ public class NearCacheTest extends NearCacheTestSupport {
     }
 
     @Test
+    public void testNearCacheInvalidationByUsingMapSetAll() {
+        int clusterSize = 3;
+        int mapSize = 5000;
+        String mapName = randomMapName();
+
+        Config config = getConfig();
+        config.getMapConfig(mapName).setNearCacheConfig(newNearCacheConfig().setInvalidateOnChange(true));
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(clusterSize);
+
+        HazelcastInstance[] instances = factory.newInstances(config);
+        final IMap<Integer, Integer> map = instances[0].getMap(mapName);
+
+        populateMap(map, mapSize);
+        populateNearCache(map, mapSize);
+
+        // more-or-less (count / no_of_nodes) should be in the Near Cache now
+        assertTrue(getNearCacheSize(map) > (mapSize / clusterSize - mapSize * 0.1));
+
+        Map<Integer, Integer> invalidationMap = new HashMap<>(mapSize);
+        populateMap(invalidationMap, mapSize);
+
+        // this should invalidate the Near Cache
+        map.setAll(invalidationMap);
+
+        assertTrueEventually(
+            () -> assertEquals("Invalidation is not working on setAll()", 0, getNearCacheSize(map))
+        );
+    }
+
+    @Test
     public void testMapContainsKey_withNearCache() {
         int clusterSize = 3;
         String mapName = randomMapName();
