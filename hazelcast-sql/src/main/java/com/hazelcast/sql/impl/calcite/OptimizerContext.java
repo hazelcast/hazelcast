@@ -21,7 +21,6 @@ import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlErrorCode;
-import com.hazelcast.sql.impl.optimizer.OptimizerRuleCallTracker;
 import com.hazelcast.sql.impl.calcite.cost.CostFactory;
 import com.hazelcast.sql.impl.calcite.cost.metadata.MetadataProvider;
 import com.hazelcast.sql.impl.calcite.distribution.DistributionTrait;
@@ -43,6 +42,7 @@ import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.sql.impl.calcite.schema.SchemaUtils;
 import com.hazelcast.sql.impl.calcite.statistics.StatisticProvider;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
+import com.hazelcast.sql.impl.optimizer.OptimizerRuleCallTracker;
 import com.hazelcast.sql.impl.schema.SqlSchemaResolver;
 import org.apache.calcite.adapter.java.JavaTypeFactory;
 import org.apache.calcite.avatica.util.Casing;
@@ -196,6 +196,7 @@ public final class OptimizerContext {
 
             node = parser.parseStmt();
 
+            // TODO: Get column names through SqlSelect.selectList[i].toString() (and, possibly, origins?)
             return validator.validate(node);
         } catch (Exception e) {
             throw HazelcastSqlException.error(SqlErrorCode.PARSING, e.getMessage(), e);
