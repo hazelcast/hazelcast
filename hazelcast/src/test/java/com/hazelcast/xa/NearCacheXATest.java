@@ -29,6 +29,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
+import com.hazelcast.util.ExceptionUtil;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -146,8 +147,8 @@ public class NearCacheXATest extends HazelcastTestSupport {
             valueReadInsideTxnFromTxnMapAfterUpdate = txnMap.get(key);
             valueReadInsideTxnFromNonTxnMapAfterUpdate = map.get(key);
         } catch (Exception e) {
-            e.printStackTrace();
             error = true;
+            throw ExceptionUtil.rethrow(e);
         } finally {
             close(error, xaResource);
         }
