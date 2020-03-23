@@ -108,7 +108,7 @@ public abstract class JmsSourceIntegrationTestBase extends SimpleTestInClusterSu
 
     @Test
     public void sourceQueue() throws JMSException {
-        p.readFrom(Sources.jmsQueue(getConnectionFactory(), destinationName))
+        p.readFrom(Sources.jmsQueue(destinationName, getConnectionFactory()))
          .withoutTimestamps()
          .map(TEXT_MESSAGE_FN)
          .writeTo(Sinks.list(sinkList));
@@ -122,7 +122,7 @@ public abstract class JmsSourceIntegrationTestBase extends SimpleTestInClusterSu
 
     @Test
     public void sourceTopic() throws JMSException {
-        p.readFrom(Sources.jmsTopic(getConnectionFactory(), destinationName))
+        p.readFrom(Sources.jmsTopic(destinationName, getConnectionFactory()))
          .withoutTimestamps()
          .map(TEXT_MESSAGE_FN)
          .writeTo(Sinks.list(sinkList));
@@ -216,7 +216,7 @@ public abstract class JmsSourceIntegrationTestBase extends SimpleTestInClusterSu
             return (ConnectionFactory) mockConnectionFactory;
         };
 
-        p.readFrom(Sources.jmsTopic(mockSupplier, destinationName))
+        p.readFrom(Sources.jmsTopic(destinationName, mockSupplier))
          .withoutTimestamps()
          .writeTo(Sinks.logger());
 
@@ -229,7 +229,7 @@ public abstract class JmsSourceIntegrationTestBase extends SimpleTestInClusterSu
 
     @Test
     public void sourceTopic_withNativeTimestamps() throws Exception {
-        p.readFrom(Sources.jmsTopic(getConnectionFactory(), destinationName))
+        p.readFrom(Sources.jmsTopic(destinationName, getConnectionFactory()))
          .withNativeTimestamps(0)
          .map(Message::getJMSTimestamp)
          .window(tumbling(1))
@@ -403,7 +403,7 @@ public abstract class JmsSourceIntegrationTestBase extends SimpleTestInClusterSu
 
         int idleTimeout = 2000;
         Pipeline p = Pipeline.create();
-        p.readFrom(Sources.jmsQueue(getConnectionFactory(), destinationName)
+        p.readFrom(Sources.jmsQueue(destinationName, getConnectionFactory())
                           .setPartitionIdleTimeout(idleTimeout))
          .withNativeTimestamps(0)
          .setLocalParallelism(2)
@@ -440,7 +440,7 @@ public abstract class JmsSourceIntegrationTestBase extends SimpleTestInClusterSu
         sendMessages(true, MESSAGE_COUNT);
 
         Pipeline p = Pipeline.create();
-        p.readFrom(Sources.jmsQueue(getConnectionFactory(), destinationName))
+        p.readFrom(Sources.jmsQueue(destinationName, getConnectionFactory()))
          .withoutTimestamps()
          .peek()
          .writeTo(Sinks.noop());

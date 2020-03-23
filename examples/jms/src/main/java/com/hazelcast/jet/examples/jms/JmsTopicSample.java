@@ -46,7 +46,7 @@ public class JmsTopicSample {
     private static Pipeline buildPipeline() {
         Pipeline p = Pipeline.create();
 
-        p.readFrom(Sources.jmsTopic(() -> new ActiveMQConnectionFactory(ActiveMQBroker.BROKER_URL), INPUT_TOPIC))
+        p.readFrom(Sources.jmsTopic(INPUT_TOPIC, () -> new ActiveMQConnectionFactory(ActiveMQBroker.BROKER_URL)))
          .withoutTimestamps()
          .filter(message -> message.getJMSPriority() > 3)
          .map(message -> (TextMessage) message)

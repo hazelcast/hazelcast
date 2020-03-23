@@ -28,8 +28,8 @@ public class JMS {
     static void s1() {
         //tag::s1[]
         Pipeline p = Pipeline.create();
-        p.readFrom(Sources.jmsQueue(() -> new ActiveMQConnectionFactory(
-                "tcp://localhost:61616"), "queue"))
+        p.readFrom(Sources.jmsQueue("queue",
+                () -> new ActiveMQConnectionFactory("tcp://localhost:61616")))
          .withoutTimestamps()
          .writeTo(Sinks.logger());
         //end::s1[]

@@ -35,8 +35,8 @@ import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.function.ToResultSetFunction;
 import com.hazelcast.jet.impl.pipeline.transform.BatchSourceTransform;
 import com.hazelcast.jet.impl.pipeline.transform.StreamSourceTransform;
-import com.hazelcast.map.IMap;
 import com.hazelcast.map.EventJournalMapEvent;
+import com.hazelcast.map.IMap;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.projection.Projections;
 import com.hazelcast.query.Predicate;
@@ -1013,6 +1013,18 @@ public final class Sources {
     }
 
     /**
+     * @deprecated see {@linkplain #jmsQueue(String, SupplierEx)}.
+     */
+    @Nonnull
+    @Deprecated
+    public static StreamSource<Message> jmsQueue(
+            @Nonnull SupplierEx<? extends ConnectionFactory> factorySupplier,
+            @Nonnull String name
+    ) {
+        return jmsQueue(name, factorySupplier);
+    }
+
+    /**
      * Shortcut equivalent to:
      * <pre>
      *         return jmsQueueBuilder(factorySupplier)
@@ -1027,13 +1039,15 @@ public final class Sources {
      * that case you can use {@linkplain #jmsQueueBuilder(SupplierEx) the
      * builder} and add a projection.
      *
-     * @param factorySupplier supplier to obtain JMS connection factory
      * @param name            the name of the queue
+     * @param factorySupplier supplier to obtain JMS connection factory
+     *
+     * @since 4.1
      */
     @Nonnull
     public static StreamSource<Message> jmsQueue(
-            @Nonnull SupplierEx<? extends ConnectionFactory> factorySupplier,
-            @Nonnull String name
+            @Nonnull String name,
+            @Nonnull SupplierEx<? extends ConnectionFactory> factorySupplier
     ) {
         return jmsQueueBuilder(factorySupplier)
                 .destinationName(name)
@@ -1066,6 +1080,18 @@ public final class Sources {
     }
 
     /**
+     * @deprecated see {@linkplain #jmsTopic(String, SupplierEx)}.
+     */
+    @Nonnull
+    @Deprecated
+    public static StreamSource<Message> jmsTopic(
+            @Nonnull SupplierEx<? extends ConnectionFactory> factorySupplier,
+            @Nonnull String name
+    ) {
+        return jmsTopic(name, factorySupplier);
+    }
+
+    /**
      * Shortcut equivalent to:
      * <pre>
      *         return jmsTopicBuilder(factorySupplier)
@@ -1082,13 +1108,15 @@ public final class Sources {
      * that case you can use {@linkplain #jmsQueueBuilder(SupplierEx) the
      * builder} and add a projection.
      *
-     * @param factorySupplier supplier to obtain JMS connection factory
      * @param name            the name of the queue
+     * @param factorySupplier supplier to obtain JMS connection factory
+     *
+     * @since 4.1
      */
     @Nonnull
     public static StreamSource<Message> jmsTopic(
-            @Nonnull SupplierEx<? extends ConnectionFactory> factorySupplier,
-            @Nonnull String name
+            @Nonnull String name,
+            @Nonnull SupplierEx<? extends ConnectionFactory> factorySupplier
     ) {
         return jmsTopicBuilder(factorySupplier)
                 .destinationName(name)

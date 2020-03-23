@@ -133,7 +133,7 @@ public class JmsIntegration_NonSharedClusterTest extends JetTestSupport {
 
         JetInstance instance = createJetMember(config);
         Pipeline p = Pipeline.create();
-        p.readFrom(Sources.jmsQueue(JmsIntegration_NonSharedClusterTest::getConnectionFactory, "queue"))
+        p.readFrom(Sources.jmsQueue("queue", JmsIntegration_NonSharedClusterTest::getConnectionFactory))
          .withoutTimestamps()
          .writeTo(Sinks.noop());
 
