@@ -139,7 +139,7 @@ public final class TradeSource {
     private static final class TradeGenerator {
 
         private static final int LOT = 100;
-        private static final long PRICE_UNITS_PER_CENT = 1000L;
+        private static final long MONEY_SCALE_FACTOR = 1000L;
 
         private final List<String> tickers;
         private final long emitPeriodNanos;
@@ -154,7 +154,8 @@ public final class TradeSource {
             this.tickers = loadTickers(numTickers);
             this.maxLagNanos = MILLISECONDS.toNanos(maxLagMillis);
             this.pricesAndTrends = tickers.stream()
-                    .collect(toMap(t -> t, t -> new LongLongAccumulator(500, 5)));
+                    .collect(toMap(t -> t, t -> new LongLongAccumulator(50 * MONEY_SCALE_FACTOR,
+                            MONEY_SCALE_FACTOR / 10)));
             this.emitPeriodNanos = SECONDS.toNanos(1) / tradesPerSec;
             this.startTimeNanos = this.scheduledTimeNanos = System.nanoTime();
             this.startTimeMillis = System.currentTimeMillis();
@@ -166,7 +167,7 @@ public final class TradeSource {
             while (scheduledTimeNanos <= nowNanos) {
                 String ticker = tickers.get(rnd.nextInt(tickers.size()));
                 LongLongAccumulator priceAndDelta = pricesAndTrends.get(ticker);
-                long price = getNextPrice(priceAndDelta, rnd) / PRICE_UNITS_PER_CENT;
+                long price = getNextPrice(priceAndDelta, rnd) / MONEY_SCALE_FACTOR;
                 long tradeTimeNanos = scheduledTimeNanos - (maxLagNanos > 0 ? rnd.nextLong(maxLagNanos) : 0L);
                 long tradeTimeMillis = startTimeMillis + NANOSECONDS.toMillis(tradeTimeNanos - startTimeNanos);
                 Trade trade = new Trade(tradeTimeMillis, ticker, rnd.nextInt(1, 10) * LOT, price);
@@ -187,7 +188,7 @@ public final class TradeSource {
                 delta = -delta;
             }
             price = price + delta;
-            delta = delta + rnd.nextLong(101) - 50;
+            delta = delta + rnd.nextLong(MONEY_SCALE_FACTOR + 1) - MONEY_SCALE_FACTOR / 2;
 
             priceAndDelta.set1(price);
             priceAndDelta.set2(delta);

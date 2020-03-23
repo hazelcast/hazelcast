@@ -73,7 +73,7 @@ public class TopNStocks {
                 topN(5, comparingValue.reversed()),
                 TopNResult::new);
 
-        p.readFrom(TradeSource.tradeStream(6_000))
+        p.readFrom(TradeSource.tradeStream(500, 6_000))
          .withNativeTimestamps(1_000)
          .groupingKey(Trade::getTicker)
          .window(sliding(10_000, 1_000))
@@ -116,9 +116,9 @@ public class TopNStocks {
         public String toString() {
             return String.format(
                     "Top rising stocks:%n%s\nTop falling stocks:%n%s",
-                    topIncrease.stream().map(kwr -> String.format("   %s by %.2f", kwr.key(), kwr.result()))
+                    topIncrease.stream().map(kwr -> String.format("   %s by %.2f%%", kwr.key(), 100d * kwr.result()))
                                .collect(joining("\n")),
-                    topDecrease.stream().map(kwr -> String.format("   %s by %.2f", kwr.key(), kwr.result()))
+                    topDecrease.stream().map(kwr -> String.format("   %s by %.2f%%", kwr.key(), 100d * kwr.result()))
                                .collect(joining("\n"))
             );
         }
