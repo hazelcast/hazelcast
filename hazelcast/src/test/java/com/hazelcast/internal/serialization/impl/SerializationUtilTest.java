@@ -65,6 +65,10 @@ public class SerializationUtilTest {
         public int getTypeId() {
             return 0;
         }
+
+        @Override
+        public void destroy() {
+        }
     }
 
     private class DummyVersionedPortable implements VersionedPortable {

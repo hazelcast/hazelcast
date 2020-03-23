@@ -202,5 +202,9 @@ public class CustomSerializationTest {
             XMLDecoder decoder = new XMLDecoder(inputStream);
             return (Foo) decoder.readObject();
         }
+
+        @Override
+        public void destroy() {
+        }
     }
 }

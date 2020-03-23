@@ -41,4 +41,8 @@ public class CustomByteArraySerializer implements ByteArraySerializer<CustomByte
         ByteBuffer wrap = ByteBuffer.wrap(buffer);
         return new CustomByteArraySerializable(wrap.getInt(), wrap.getFloat());
     }
+
+    @Override
+    public void destroy() {
+    }
 }
