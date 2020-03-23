@@ -208,6 +208,9 @@ public class IssuesTest extends HazelcastTestSupport {
                     public int getTypeId() {
                         return 123;
                     }
+
+                    public void destroy() {
+                    }
                 }));
 
         HazelcastInstance hz = factory.newHazelcastInstance(config);

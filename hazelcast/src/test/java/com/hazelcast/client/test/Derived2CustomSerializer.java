@@ -43,4 +43,9 @@ public class Derived2CustomSerializer implements StreamSerializer<Derived2Custom
     public int getTypeId() {
         return 5;
     }
+
+    @Override
+    public void destroy() {
+
+    }
 }

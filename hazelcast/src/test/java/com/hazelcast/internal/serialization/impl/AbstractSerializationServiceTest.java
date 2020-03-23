@@ -431,6 +431,10 @@ public class AbstractSerializationServiceTest {
         }
 
         @Override
+        public void destroy() {
+        }
+
+        @Override
         public void write(ObjectDataOutput out, StringBuffer stringBuffer) throws IOException {
             if (fail) {
                 throw new RuntimeException();
