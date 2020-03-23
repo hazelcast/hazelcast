@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.util;
 
+import com.hazelcast.jet.impl.util.ReflectionUtils.ClassResource;
 import com.hazelcast.jet.impl.util.ReflectionUtils.Resources;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.junit.Test;
@@ -87,16 +88,23 @@ public class ReflectionUtilsTest {
         Resources resources = ReflectionUtils.resourcesOf(OuterClass.class.getPackage().getName());
 
         // Then
-        Collection<Class<?>> classes = resources.classes().collect(toList());
-        assertThat(classes, hasSize(greaterThan(3)));
-        assertThat(classes, hasItem(OuterClass.class));
-        assertThat(classes, hasItem(OuterClass.NestedClass.class));
-        assertThat(classes, hasItem(OuterClass.NestedClass.DeeplyNestedClass.class));
-        assertThat(classes, hasItem(Class.forName(OuterClass.class.getName() + "$1")));
-        assertThat(classes, hasItem(Class.forName(OuterClass.NestedClass.DeeplyNestedClass.class.getName() + "$1")));
+        Collection<ClassResource> classes = resources.classes().collect(toList());
+        assertThat(classes, hasSize(greaterThan(5)));
+        assertThat(classes, hasItem(classResource(OuterClass.class)));
+        assertThat(classes, hasItem(classResource(OuterClass.NestedClass.class)));
+        assertThat(classes, hasItem(classResource(OuterClass.NestedClass.DeeplyNestedClass.class)));
+        assertThat(classes, hasItem(classResource(Class.forName(OuterClass.class.getName() + "$1"))));
+        assertThat(classes, hasItem(
+                classResource(Class.forName(OuterClass.NestedClass.DeeplyNestedClass.class.getName() + "$1"))
+        ));
 
         List<URL> nonClasses = resources.nonClasses().collect(toList());
         assertThat(nonClasses, contains(hasToString(containsString("package.properties"))));
+    }
+
+    private static ClassResource classResource(Class<?> clazz) {
+        URL url = clazz.getClassLoader().getResource(clazz.getName().replace('.', '/') + ".class");
+        return new ClassResource(clazz.getName(), url);
     }
 
     @Test

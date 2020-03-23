@@ -26,6 +26,7 @@ import javax.annotation.Nonnull;
 import java.lang.reflect.Field;
 import java.net.URL;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -50,6 +51,7 @@ public final class ReflectionUtils {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private static <T> T readStaticField(Class<?> clazz, String fieldName) throws NoSuchFieldException,
             IllegalAccessException {
         Field field = clazz.getDeclaredField(fieldName);
@@ -93,20 +95,20 @@ public final class ReflectionUtils {
         ClassGraph classGraph = new ClassGraph()
                 .whitelistPackages(packages)
                 .whitelistPaths(paths)
-                .enableClassInfo()
                 .ignoreClassVisibility();
         try (ScanResult scanResult = classGraph.scan()) {
-            Collection<Class<?>> classes = scanResult.getAllClasses()
-                                                     .stream()
-                                                     .map(ClassInfo::loadClass)
-                                                     .collect(toList());
+            Collection<ClassResource> classes = Util.toList(scanResult.getAllClasses(), ClassResource::new);
             Collection<URL> nonClasses = scanResult.getAllResources().nonClassFilesOnly().getURLs();
             return new Resources(classes, nonClasses);
         }
     }
 
-    private static String toPath(String packageName) {
-        return packageName.replace('.', '/');
+    private static String toPath(String name) {
+        return name.replace('.', '/');
+    }
+
+    public static String toClassResourceId(String name) {
+        return toPath(name) + ".class";
     }
 
     public static Class<?> loadClass(ClassLoader classLoader, String name) {
@@ -127,20 +129,61 @@ public final class ReflectionUtils {
 
     public static final class Resources {
 
-        private final Collection<Class<?>> classes;
+        private final Collection<ClassResource> classes;
         private final Collection<URL> nonClasses;
 
-        private Resources(Collection<Class<?>> classes, Collection<URL> nonClasses) {
+        private Resources(Collection<ClassResource> classes, Collection<URL> nonClasses) {
             this.classes = classes;
             this.nonClasses = nonClasses;
         }
 
-        public Stream<Class<?>> classes() {
+        public Stream<ClassResource> classes() {
             return classes.stream();
         }
 
         public Stream<URL> nonClasses() {
             return nonClasses.stream();
+        }
+    }
+
+    public static final class ClassResource {
+
+        private final String id;
+        private final URL url;
+
+        private ClassResource(ClassInfo classInfo) {
+            this(classInfo.getName(), classInfo.getResource().getURL());
+        }
+
+        public ClassResource(String name, URL url) {
+            this.id = toClassResourceId(name);
+            this.url = url;
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        public URL getUrl() {
+            return url;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            ClassResource that = (ClassResource) o;
+            return Objects.equals(id, that.id) &&
+                    Objects.equals(url, that.url);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(id, url);
         }
     }
 }

@@ -39,6 +39,7 @@ import java.util.zip.InflaterInputStream;
 
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.impl.JobRepository.classKeyName;
+import static com.hazelcast.jet.impl.util.ReflectionUtils.toClassResourceId;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 
 public class JetClassLoader extends ClassLoader {
@@ -73,7 +74,7 @@ public class JetClassLoader extends ClassLoader {
         if (isEmpty(name)) {
             return null;
         }
-        InputStream classBytesStream = resourceStream(name.replace('.', '/') + ".class");
+        InputStream classBytesStream = resourceStream(toClassResourceId(name));
         if (classBytesStream == null) {
             throw new ClassNotFoundException(name + ". Add it using " + JobConfig.class.getSimpleName()
                     + " or start all members with it on classpath");
