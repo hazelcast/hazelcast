@@ -29,6 +29,7 @@ import com.hazelcast.security.permission.ReplicatedMapPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
+import java.util.concurrent.TimeUnit;
 
 public class ReplicatedMapGetMessageTask
         extends AbstractPartitionMessageTask<ReplicatedMapGetCodec.RequestParameters> {
@@ -59,7 +60,7 @@ public class ReplicatedMapGetMessageTask
         ReplicatedMapService replicatedMapService = getService(ReplicatedMapService.SERVICE_NAME);
         if (replicatedMapService.getReplicatedMapConfig(parameters.name).isStatisticsEnabled()) {
             LocalReplicatedMapStatsImpl stats = replicatedMapService.getLocalReplicatedMapStatsImpl(parameters.name);
-            stats.incrementGets(System.nanoTime() - startTimeNanos);
+            stats.incrementGets(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTimeNanos));
         }
         return response;
     }
