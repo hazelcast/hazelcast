@@ -398,6 +398,22 @@ public final class SerializationUtil {
         return result;
     }
 
+    public static boolean isClassStaticAndSerializable(Object object) {
+        Class clazz = object.getClass();
+        boolean isStatic = !clazz.isSynthetic() && !clazz.isAnonymousClass() && !clazz.isLocalClass();
+        if (!isStatic) {
+            return false;
+        }
+
+        try {
+            checkSerializable(object, "object");
+        } catch (Throwable t) {
+            return false;
+        }
+
+        return true;
+    }
+
     private static class NullOutputStream extends OutputStream {
         @Override
         public void write(int b) {
