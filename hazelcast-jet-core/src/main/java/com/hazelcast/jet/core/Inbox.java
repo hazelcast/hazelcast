@@ -22,6 +22,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * A subset of {@code Queue<Object>} API restricted to the consumer side,
@@ -98,6 +99,26 @@ public interface Inbox extends Iterable<Object> {
         int drained = 0;
         for (E o; drained < limit && (o = (E) poll()) != null; drained++) {
             target.add(o);
+        }
+        return drained;
+    }
+
+    /**
+     * Drains and maps at most {@code limit} elements into the provided
+     * {@link Collection}.
+     *
+     * @param target the collection to drain this object's items into
+     * @param limit the maximum amount of items to drain
+     * @param mapper mapping function to apply to this object's items
+     * @return the number of elements actually drained
+     *
+     * @since 4.1
+     */
+    @SuppressWarnings("unchecked")
+    default <E, M> int drainTo(@Nonnull Collection<M> target, int limit, @Nonnull Function<E, M> mapper) {
+        int drained = 0;
+        for (E o; drained < limit && (o = (E) poll()) != null; drained++) {
+            target.add(mapper.apply(o));
         }
         return drained;
     }

@@ -24,8 +24,10 @@ import org.junit.runner.RunWith;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.function.Function;
 
 import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
@@ -33,6 +35,7 @@ import static org.junit.Assert.assertNull;
 public class ArrayDequeInboxTest {
 
     private static final List<Integer> ITEMS = asList(1, 2);
+    private static final Function<Object, Integer> DOUBLE_INT = n -> (int) n * 2;
 
     private ArrayDequeInbox inbox = new ArrayDequeInbox(new ProgressTracker());
 
@@ -95,6 +98,32 @@ public class ArrayDequeInboxTest {
         ArrayList<Object> sink = new ArrayList<>();
         inbox.drainTo(sink, n);
         assertEquals(ITEMS.subList(0, Math.min(n, ITEMS.size())), sink);
+    }
+
+    @Test
+    public void test_drainToCollectionWithLimitAndMapper_0() {
+        test_drainToCollectionWithLimitAndMapper(0);
+    }
+
+    @Test
+    public void test_drainToCollectionWithLimitAndMapper_1() {
+        test_drainToCollectionWithLimitAndMapper(1);
+    }
+
+    @Test
+    public void test_drainToCollectionWithLimitAndMapper_2() {
+        test_drainToCollectionWithLimitAndMapper(2);
+    }
+
+    @Test
+    public void test_drainToCollectionWithLimitAndMapper_3() {
+        test_drainToCollectionWithLimitAndMapper(3);
+    }
+
+    private void test_drainToCollectionWithLimitAndMapper(int n) {
+        List<Integer> sink = new ArrayList<>();
+        inbox.drainTo(sink, n, DOUBLE_INT);
+        assertEquals(ITEMS.stream().limit(n).map(DOUBLE_INT).collect(toList()), sink);
     }
 
     @Test
