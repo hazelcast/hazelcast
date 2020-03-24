@@ -48,6 +48,9 @@ import static com.hazelcast.internal.metrics.ProbeUnit.BYTES;
 import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.util.ConcurrencyUtil.setMax;
 import static com.hazelcast.internal.util.JsonUtil.getLong;
+import static com.hazelcast.internal.util.TimeUtil.timeInMsOrOneIfResultIsZero;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
 /**
@@ -74,11 +77,11 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats, Jso
     private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> REMOVE_COUNT =
             newUpdater(LocalReplicatedMapStatsImpl.class, "removeCount");
     private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> TOTAL_GET_LATENCIES =
-            newUpdater(LocalReplicatedMapStatsImpl.class, "totalGetLatencies");
+            newUpdater(LocalReplicatedMapStatsImpl.class, "totalGetLatenciesNanos");
     private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> TOTAL_PUT_LATENCIES =
-            newUpdater(LocalReplicatedMapStatsImpl.class, "totalPutLatencies");
+            newUpdater(LocalReplicatedMapStatsImpl.class, "totalPutLatenciesNanos");
     private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> TOTAL_REMOVE_LATENCIES =
-            newUpdater(LocalReplicatedMapStatsImpl.class, "totalRemoveLatencies");
+            newUpdater(LocalReplicatedMapStatsImpl.class, "totalRemoveLatenciesNanos");
     private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> MAX_GET_LATENCY =
             newUpdater(LocalReplicatedMapStatsImpl.class, "maxGetLatency");
     private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> MAX_PUT_LATENCY =
@@ -105,12 +108,11 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats, Jso
     private volatile long putCount;
     @Probe(name = REPLICATED_MAP_METRIC_REMOVE_COUNT)
     private volatile long removeCount;
-    @Probe(name = REPLICATED_MAP_METRIC_TOTAL_GET_LATENCIES, unit = MS)
-    private volatile long totalGetLatencies;
-    @Probe(name = REPLICATED_MAP_METRIC_TOTAL_PUT_LATENCIES, unit = MS)
-    private volatile long totalPutLatencies;
-    @Probe(name = REPLICATED_MAP_METRIC_TOTAL_REMOVE_LATENCIES, unit = MS)
-    private volatile long totalRemoveLatencies;
+
+    private volatile long totalGetLatenciesNanos;
+    private volatile long totalPutLatenciesNanos;
+    private volatile long totalRemoveLatenciesNanos;
+
     @Probe(name = REPLICATED_MAP_MAX_GET_LATENCY, unit = MS)
     private volatile long maxGetLatency;
     @Probe(name = REPLICATED_MAP_MAX_PUT_LATENCY, unit = MS)
@@ -263,19 +265,22 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats, Jso
         setMax(this, MAX_REMOVE_LATENCY, latency);
     }
 
+    @Probe(name = REPLICATED_MAP_METRIC_TOTAL_PUT_LATENCIES, unit = MS)
     @Override
     public long getTotalPutLatency() {
-        return totalPutLatencies;
+        return convertNanosToMillis(totalPutLatenciesNanos);
     }
 
+    @Probe(name = REPLICATED_MAP_METRIC_TOTAL_GET_LATENCIES, unit = MS)
     @Override
     public long getTotalGetLatency() {
-        return totalGetLatencies;
+        return convertNanosToMillis(totalGetLatenciesNanos);
     }
 
+    @Probe(name = REPLICATED_MAP_METRIC_TOTAL_REMOVE_LATENCIES, unit = MS)
     @Override
     public long getTotalRemoveLatency() {
-        return totalRemoveLatencies;
+        return convertNanosToMillis(totalRemoveLatenciesNanos);
     }
 
     @Override
@@ -378,9 +383,9 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats, Jso
         root.add("ownedEntryCount", ownedEntryCount);
         root.add("ownedEntryMemoryCost", ownedEntryMemoryCost);
         root.add("creationTime", creationTime);
-        root.add("totalGetLatencies", totalGetLatencies);
-        root.add("totalPutLatencies", totalPutLatencies);
-        root.add("totalRemoveLatencies", totalRemoveLatencies);
+        root.add("totalGetLatencies", convertNanosToMillis(totalGetLatenciesNanos));
+        root.add("totalPutLatencies", convertNanosToMillis(totalPutLatenciesNanos));
+        root.add("totalRemoveLatencies", convertNanosToMillis(totalRemoveLatenciesNanos));
         root.add("maxGetLatency", maxGetLatency);
         root.add("maxPutLatency", maxPutLatency);
         root.add("maxRemoveLatency", maxRemoveLatency);
@@ -400,12 +405,20 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats, Jso
         ownedEntryCount = getLong(json, "ownedEntryCount", -1L);
         ownedEntryMemoryCost = getLong(json, "ownedEntryMemoryCost", -1L);
         creationTime = getLong(json, "creationTime", -1L);
-        totalGetLatencies = getLong(json, "totalGetLatencies", -1L);
-        totalPutLatencies = getLong(json, "totalPutLatencies", -1L);
-        totalRemoveLatencies = getLong(json, "totalRemoveLatencies", -1L);
+        totalGetLatenciesNanos = convertMillisToNanos(getLong(json, "totalGetLatencies", -1L));
+        totalPutLatenciesNanos = convertMillisToNanos(getLong(json, "totalPutLatencies", -1L));
+        totalRemoveLatenciesNanos = convertMillisToNanos(getLong(json, "totalRemoveLatencies", -1L));
         maxGetLatency = getLong(json, "maxGetLatency", -1L);
         maxPutLatency = getLong(json, "maxPutLatency", -1L);
         maxRemoveLatency = getLong(json, "maxRemoveLatency", -1L);
+    }
+
+    private static long convertNanosToMillis(long nanos) {
+        return timeInMsOrOneIfResultIsZero(nanos, NANOSECONDS);
+    }
+
+    private static long convertMillisToNanos(long millis) {
+        return MILLISECONDS.toNanos(millis);
     }
 
     @Override
@@ -419,9 +432,9 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats, Jso
                 + ", getCount=" + getCount
                 + ", putCount=" + putCount
                 + ", removeCount=" + removeCount
-                + ", totalGetLatencies=" + totalGetLatencies
-                + ", totalPutLatencies=" + totalPutLatencies
-                + ", totalRemoveLatencies=" + totalRemoveLatencies
+                + ", totalGetLatencies=" + convertNanosToMillis(totalGetLatenciesNanos)
+                + ", totalPutLatencies=" + convertNanosToMillis(totalPutLatenciesNanos)
+                + ", totalRemoveLatencies=" + convertNanosToMillis(totalRemoveLatenciesNanos)
                 + ", ownedEntryCount=" + ownedEntryCount
                 + ", ownedEntryMemoryCost=" + ownedEntryMemoryCost
                 + ", creationTime=" + creationTime
