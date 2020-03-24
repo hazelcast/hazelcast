@@ -4832,33 +4832,50 @@
             <xs:element name="jaas" type="login-modules"/>
             <xs:element name="tls" type="tls-authentication"/>
             <xs:element name="ldap" type="ldap-authentication"/>
+            <xs:element name="kerberos" type="kerberos-authentication"/>
+        </xs:choice>
+    </xs:complexType>
+    <xs:complexType name="basic-authentication">
+        <xs:choice maxOccurs="unbounded">
+            <xs:element name="skip-identity" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="skip-endpoint" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="skip-role" type="xs:boolean" minOccurs="0"/>
         </xs:choice>
     </xs:complexType>
     <xs:complexType name="tls-authentication">
-        <xs:attribute name="roleAttribute" type="xs:string" use="optional" default="cn" />
+        <xs:complexContent>
+            <xs:extension base="basic-authentication">
+                <xs:attribute name="roleAttribute" type="xs:string" use="optional" default="cn" />
+            </xs:extension>
+        </xs:complexContent>
     </xs:complexType>
     <xs:complexType name="ldap-authentication">
-        <xs:all>
-            <xs:element name="url" type="xs:string"/>
-            <xs:element name="socket-factory-class-name" type="xs:string" minOccurs="0"/>
-
-            <xs:element name="parse-dn" type="xs:boolean" minOccurs="0"/>
-            <xs:element name="role-context" type="xs:string" minOccurs="0"/>
-            <xs:element name="role-filter" type="xs:string" minOccurs="0"/>
-            <xs:element name="role-mapping-attribute" type="xs:string" minOccurs="0"/>
-            <xs:element name="role-mapping-mode" type="ldap-role-mapping-mode" minOccurs="0"/>
-            <xs:element name="role-name-attribute" type="xs:string" minOccurs="0"/>
-            <xs:element name="role-recursion-max-depth" type="xs:int" minOccurs="0"/>
-            <xs:element name="role-search-scope" type="ldap-search-scope" minOccurs="0"/>
-            <xs:element name="user-name-attribute" type="xs:string" minOccurs="0"/>
-
-            <xs:element name="system-user-dn" type="xs:string" minOccurs="0"/>
-            <xs:element name="system-user-password" type="xs:string" minOccurs="0"/>
-            <xs:element name="password-attribute" type="xs:string" minOccurs="0"/>
-            <xs:element name="user-context" type="xs:string" minOccurs="0"/>
-            <xs:element name="user-filter" type="xs:string" minOccurs="0"/>
-            <xs:element name="user-search-scope" type="ldap-search-scope" minOccurs="0"/>
-        </xs:all>
+        <xs:complexContent>
+            <xs:extension base="basic-authentication">
+                <xs:choice maxOccurs="unbounded">
+                    <xs:element name="url" type="xs:string"/>
+                    <xs:element name="socket-factory-class-name" type="xs:string" minOccurs="0"/>
+        
+                    <xs:element name="parse-dn" type="xs:boolean" minOccurs="0"/>
+                    <xs:element name="role-context" type="xs:string" minOccurs="0"/>
+                    <xs:element name="role-filter" type="xs:string" minOccurs="0"/>
+                    <xs:element name="role-mapping-attribute" type="xs:string" minOccurs="0"/>
+                    <xs:element name="role-mapping-mode" type="ldap-role-mapping-mode" minOccurs="0"/>
+                    <xs:element name="role-name-attribute" type="xs:string" minOccurs="0"/>
+                    <xs:element name="role-recursion-max-depth" type="xs:int" minOccurs="0"/>
+                    <xs:element name="role-search-scope" type="ldap-search-scope" minOccurs="0"/>
+                    <xs:element name="user-name-attribute" type="xs:string" minOccurs="0"/>
+        
+                    <xs:element name="system-user-dn" type="xs:string" minOccurs="0"/>
+                    <xs:element name="system-user-password" type="xs:string" minOccurs="0"/>
+                    <xs:element name="password-attribute" type="xs:string" minOccurs="0"/>
+                    <xs:element name="user-context" type="xs:string" minOccurs="0"/>
+                    <xs:element name="user-filter" type="xs:string" minOccurs="0"/>
+                    <xs:element name="user-search-scope" type="ldap-search-scope" minOccurs="0"/>
+                    <xs:element name="skip-authentication" type="xs:boolean" minOccurs="0"/>
+                </xs:choice>
+            </xs:extension>
+        </xs:complexContent>
     </xs:complexType>
     <xs:simpleType name="ldap-role-mapping-mode">
         <xs:restriction base="non-space-string">
@@ -4874,12 +4891,32 @@
             <xs:enumeration value="subtree"/>
         </xs:restriction>
     </xs:simpleType>
+    <xs:complexType name="kerberos-authentication">
+        <xs:complexContent>
+            <xs:extension base="basic-authentication">
+                <xs:choice maxOccurs="unbounded">
+                    <xs:element name="relax-flags-check" type="xs:boolean" minOccurs="0"/>
+                    <xs:element name="security-realm" type="xs:string" minOccurs="0"/>
+                    <xs:element name="ldap" type="ldap-authentication" minOccurs="0"/>
+                </xs:choice>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
     <xs:complexType name="identity">
         <xs:choice>
             <xs:element name="username-password" type="username-password"/>
             <xs:element name="credentials-factory" type="security-object"/>
             <xs:element name="token" type="token"/>
+            <xs:element name="kerberos" type="kerberos-identity"/>
         </xs:choice>
+    </xs:complexType>
+    <xs:complexType name="kerberos-identity">
+        <xs:all>
+            <xs:element name="realm" type="xs:string" minOccurs="0"/>
+            <xs:element name="security-realm" type="xs:string" minOccurs="0"/>
+            <xs:element name="service-name-prefix" type="xs:string" minOccurs="0"/>
+            <xs:element name="spn" type="xs:string" minOccurs="0"/>
+        </xs:all>
     </xs:complexType>
     <xs:complexType name="username-password">
         <xs:attribute name="username" type="xs:string" use="required" />

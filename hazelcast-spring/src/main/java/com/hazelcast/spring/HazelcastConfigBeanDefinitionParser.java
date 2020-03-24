@@ -112,6 +112,8 @@ import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.config.security.JaasAuthenticationConfig;
+import com.hazelcast.config.security.KerberosAuthenticationConfig;
+import com.hazelcast.config.security.KerberosIdentityConfig;
 import com.hazelcast.config.security.LdapAuthenticationConfig;
 import com.hazelcast.config.security.LdapRoleMappingMode;
 import com.hazelcast.config.security.LdapSearchScope;
@@ -1678,19 +1680,33 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                             realmConfigBuilder);
                 } else if ("ldap".equals(nodeName)) {
                     handleLdapAuthenticationConfig(realmConfigBuilder, child);
+                } else if ("kerberos".equals(nodeName)) {
+                    handleKerberosAuthenticationConfig(realmConfigBuilder, child);
                 }
             }
         }
 
-        private BeanDefinitionBuilder handleLdapAuthenticationConfig(BeanDefinitionBuilder realmConfigBuilder, Node node) {
+        private BeanDefinitionBuilder handleLdapAuthenticationConfig(BeanDefinitionBuilder parentBuilder, Node node) {
             BeanDefinitionBuilder builder = createAndFillBeanBuilder(node, LdapAuthenticationConfig.class,
-                    "LdapAuthenticationConfig", realmConfigBuilder, "roleMappingMode", "userSearchScope", "roleSearchScope");
+                    "LdapAuthenticationConfig", parentBuilder, "roleMappingMode", "userSearchScope", "roleSearchScope");
             for (Node n : childElements(node)) {
                 String name = xmlToJavaName(cleanNodeName(n));
                 if ("roleMappingMode".equals(name)) {
                     builder.addPropertyValue(name, LdapRoleMappingMode.getRoleMappingMode(getTextContent(n)));
                 } else if ("userSearchScope".equals(name) || "roleSearchScope".equals(name)) {
                     builder.addPropertyValue(name, LdapSearchScope.getSearchScope(getTextContent(n)));
+                }
+            }
+            return builder;
+        }
+
+        private BeanDefinitionBuilder handleKerberosAuthenticationConfig(BeanDefinitionBuilder realmConfigBuilder, Node node) {
+            BeanDefinitionBuilder builder = createAndFillBeanBuilder(node, KerberosAuthenticationConfig.class,
+                    "KerberosAuthenticationConfig", realmConfigBuilder, "ldap");
+            for (Node n : childElements(node)) {
+                String name = xmlToJavaName(cleanNodeName(n));
+                if ("ldap".equals(name)) {
+                    handleLdapAuthenticationConfig(builder, n);
                 }
             }
             return builder;
@@ -1711,6 +1727,9 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                             .addConstructorArgValue(TokenEncoding.getTokenEncoding(getAttribute(child, "encoding")))
                             .addConstructorArgValue(getTextContent(child));
                     realmConfigBuilder.addPropertyValue("TokenIdentityConfig", configBuilder.getBeanDefinition());
+                } else if ("kerberos".equals(nodeName)) {
+                    createAndFillBeanBuilder(child, KerberosIdentityConfig.class, "KerberosIdentityConfig",
+                            realmConfigBuilder);
                 } else if ("credentials-ref".equals(nodeName)) {
                     realmConfigBuilder.addPropertyReference("credentials", getTextContent(child));
                 }

@@ -628,7 +628,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         HazelcastInstance hz2 = factory.newHazelcastInstance();
         assertClusterSizeEventually(2, hz1, hz2);
 
-        JoinRequest staleJoinReq = getNode(hz2).createJoinRequest(true);
+        JoinRequest staleJoinReq = getNode(hz2).createJoinRequest(getNode(hz1).address);
         hz2.shutdown();
         assertClusterSizeEventually(1, hz1);
 
@@ -647,7 +647,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         HazelcastInstance hz3 = factory.newHazelcastInstance();
         assertClusterSizeEventually(3, hz1, hz2, hz3);
 
-        JoinRequest staleJoinReq = getNode(hz3).createJoinRequest(true);
+        JoinRequest staleJoinReq = getNode(hz3).createJoinRequest(getNode(hz2).address);
         hz3.shutdown();
         hz1.shutdown();
         assertClusterSizeEventually(1, hz2);

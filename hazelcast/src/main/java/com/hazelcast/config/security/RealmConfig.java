@@ -65,6 +65,15 @@ public class RealmConfig {
         return this;
     }
 
+    public KerberosAuthenticationConfig getKerberosAuthenticationConfig() {
+        return getIfType(authenticationConfig, KerberosAuthenticationConfig.class);
+    }
+
+    public RealmConfig setKerberosAuthenticationConfig(KerberosAuthenticationConfig authenticationConfig) {
+        this.authenticationConfig = requireNonNull(authenticationConfig, "Authentication config can't be null");
+        return this;
+    }
+
     public UsernamePasswordIdentityConfig getUsernamePasswordIdentityConfig() {
         return getIfType(identityConfig, UsernamePasswordIdentityConfig.class);
     }
@@ -108,6 +117,15 @@ public class RealmConfig {
 
     public RealmConfig setCredentials(Credentials credentials) {
         this.identityConfig = new CredentialsIdentityConfig(credentials);
+        return this;
+    }
+
+    public KerberosIdentityConfig getKerberosIdentityConfig() {
+        return getIfType(identityConfig, KerberosIdentityConfig.class);
+    }
+
+    public RealmConfig setKerberosIdentityConfig(KerberosIdentityConfig identityConfig) {
+        this.identityConfig = identityConfig;
         return this;
     }
 

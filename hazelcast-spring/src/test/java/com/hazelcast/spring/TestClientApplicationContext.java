@@ -41,12 +41,15 @@ import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
+import com.hazelcast.config.LoginModuleConfig;
 import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
+import com.hazelcast.config.security.JaasAuthenticationConfig;
+import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.IAtomicLong;
@@ -283,6 +286,20 @@ public class TestClientApplicationContext {
 
         ClientConfig config = client5.getClientConfig();
         assertEquals(1000, config.getConnectionStrategyConfig().getConnectionRetryConfig().getClusterConnectTimeoutMillis());
+    }
+
+    @Test
+    public void testSecurityRealms() {
+        assertNotNull(client5);
+
+        RealmConfig realmConfig = client5.getClientConfig().getSecurityConfig().getRealmConfig("krb5Initiator");
+        assertNotNull(realmConfig);
+        JaasAuthenticationConfig jaasAuthenticationConfig = realmConfig.getJaasAuthenticationConfig();
+        assertNotNull(jaasAuthenticationConfig);
+        assertEquals(1, jaasAuthenticationConfig.getLoginModuleConfigs().size());
+        LoginModuleConfig loginModuleConfig = jaasAuthenticationConfig.getLoginModuleConfigs().get(0);
+        assertEquals("com.sun.security.auth.module.Krb5LoginModule", loginModuleConfig.getClassName());
+        assertEquals("jduke@HAZELCAST.COM", loginModuleConfig.getProperties().getProperty("principal"));
     }
 
     @Test

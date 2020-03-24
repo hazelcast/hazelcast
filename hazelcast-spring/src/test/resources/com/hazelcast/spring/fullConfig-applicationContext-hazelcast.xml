@@ -655,6 +655,64 @@
                             <hz:token encoding="base64">aGF6ZWxjYXN0</hz:token>
                         </hz:identity>
                     </hz:realm>
+                    <hz:realm name="kerberosRealm">
+                        <hz:authentication>
+                            <hz:kerberos>
+                                <hz:relax-flags-check>true</hz:relax-flags-check>
+                                <hz:security-realm>krb5Acceptor</hz:security-realm>
+                                <hz:ldap>
+                                    <hz:url>ldap://127.0.0.1/</hz:url>
+                                    <hz:system-user-dn>uid=admin,ou=system</hz:system-user-dn>
+                                    <hz:system-user-password>secret</hz:system-user-password>
+                                    <hz:skip-authentication>true</hz:skip-authentication>
+                                    <hz:user-filter>(krb5PrincipalName={login})</hz:user-filter>
+                                    <hz:role-mapping-attribute>cn</hz:role-mapping-attribute>
+                                </hz:ldap>
+                            </hz:kerberos>
+                        </hz:authentication>
+                        <hz:identity>
+                            <hz:kerberos>
+                                <hz:realm>HAZELCAST.COM</hz:realm>
+                                <hz:security-realm>krb5Initiator</hz:security-realm>
+                                <hz:service-name-prefix>hz/</hz:service-name-prefix>
+                                <hz:spn>hz/127.0.0.1@HAZELCAST.COM</hz:spn>
+                            </hz:kerberos>
+                        </hz:identity>
+                    </hz:realm>
+                    <hz:realm name="krb5Acceptor">
+                        <hz:authentication>
+                            <hz:jaas>
+                                <hz:login-module class-name="com.sun.security.auth.module.Krb5LoginModule" usage="REQUIRED">
+                                    <hz:properties>
+                                        <hz:property name="isInitiator">false</hz:property>
+                                        <hz:property name="useTicketCache">false</hz:property>
+                                        <hz:property name="doNotPrompt">true</hz:property>
+                                        <hz:property name="useKeyTab">true</hz:property>
+                                        <hz:property name="storeKey">true</hz:property>
+                                        <hz:property name="principal">hz/127.0.0.1@HAZELCAST.COM</hz:property>
+                                        <hz:property name="keyTab">/opt/hz-localhost.keytab</hz:property>
+                                    </hz:properties>
+                                </hz:login-module>
+                            </hz:jaas>
+                        </hz:authentication>
+                    </hz:realm>
+                    <hz:realm name="krb5Initiator">
+                        <hz:authentication>
+                            <hz:jaas>
+                                <hz:login-module class-name="com.sun.security.auth.module.Krb5LoginModule" usage="REQUIRED">
+                                    <hz:properties>
+                                        <hz:property name="isInitiator">true</hz:property>
+                                        <hz:property name="useTicketCache">false</hz:property>
+                                        <hz:property name="doNotPrompt">true</hz:property>
+                                        <hz:property name="useKeyTab">true</hz:property>
+                                        <hz:property name="storeKey">true</hz:property>
+                                        <hz:property name="principal">hz/127.0.0.1@HAZELCAST.COM</hz:property>
+                                        <hz:property name="keyTab">/opt/hz-localhost.keytab</hz:property>
+                                    </hz:properties>
+                                </hz:login-module>
+                            </hz:jaas>
+                        </hz:authentication>
+                    </hz:realm>
                 </hz:realms>
                 <hz:member-authentication realm="r1"/>
                 <hz:client-authentication realm="r2"/>
