@@ -30,7 +30,7 @@ import java.sql.PreparedStatement;
  *
  * @param <T> type of the items the sink accepts
  *
- * @since 4.0
+ * @since 4.1
  */
 public class JdbcSinkBuilder<T> {
     private String updateQuery;

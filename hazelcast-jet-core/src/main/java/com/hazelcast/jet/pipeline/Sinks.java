@@ -1161,7 +1161,7 @@ public final class Sinks {
      * The default local parallelism for this sink is 1.
      *
      * @param <T> type of the items the sink accepts
-     * @since 4.0
+     * @since 4.1
      */
     @Nonnull
     public static <T> JdbcSinkBuilder<T> jdbcBuilder() {

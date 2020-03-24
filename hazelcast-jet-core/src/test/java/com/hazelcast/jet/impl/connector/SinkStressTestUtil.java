@@ -102,7 +102,7 @@ public final class SinkStressTestUtil {
                         && System.nanoTime() < endTime);
                 lastCount = distinctActualItems.size();
                 logger.info("number of committed items in the sink so far: " + lastCount);
-                if (exactlyOnce || graceful) {
+                if (exactlyOnce) {
                     String actualItemsStr = actualItems.stream()
                             .collect(groupingBy(identity(), TreeMap::new, counting()))
                             .entrySet().stream()

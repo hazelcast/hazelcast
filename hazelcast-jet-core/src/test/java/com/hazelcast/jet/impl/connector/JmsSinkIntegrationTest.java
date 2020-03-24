@@ -190,7 +190,7 @@ public class JmsSinkIntegrationTest extends SimpleTestInClusterSupport {
 
     @Test
     public void test_transactional_withRestarts_graceful_atLeastOnce() throws Exception {
-        test_transactional_withRestarts(false, false);
+        test_transactional_withRestarts(true, false);
     }
 
     @Test

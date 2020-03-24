@@ -129,7 +129,6 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
          ));
 
         instance().newJob(p).join();
-        assertEquals(PERSON_COUNT, rowCount());
     }
 
     @Test
@@ -247,7 +246,7 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
 
     @Test
     public void test_transactional_withRestarts_graceful_atLeastOnce() throws Exception {
-        test_transactional_withRestarts(false, false);
+        test_transactional_withRestarts(true, false);
     }
 
     @Test
