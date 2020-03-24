@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 
+import static com.hazelcast.jet.TestContextSupport.adaptSupplier;
 import static com.hazelcast.jet.Util.entry;
 import static java.util.Collections.emptyList;
 
@@ -46,7 +47,7 @@ public class ReadMapOrCachePTest extends SimpleTestInClusterSupport {
     @Test
     public void test_whenEmpty() {
         TestSupport
-                .verifyProcessor(SourceProcessors.readMapP(randomMapName()))
+                .verifyProcessor(adaptSupplier(SourceProcessors.readMapP(randomMapName())))
                 .jetInstance(instance())
                 .disableSnapshots()
                 .disableProgressAssertion()
@@ -63,7 +64,7 @@ public class ReadMapOrCachePTest extends SimpleTestInClusterSupport {
         }
 
         TestSupport
-                .verifyProcessor(SourceProcessors.readMapP(map.getName()))
+                .verifyProcessor(adaptSupplier(SourceProcessors.readMapP(map.getName())))
                 .jetInstance(instance())
                 .disableSnapshots()
                 .disableProgressAssertion()
@@ -85,7 +86,7 @@ public class ReadMapOrCachePTest extends SimpleTestInClusterSupport {
         Predicate<Integer, String> predicate = entry -> entry.getKey() % 2 == 0;
         Projection<Entry<Integer, String>, String> projection = toProjection(Entry::getValue);
         TestSupport
-                .verifyProcessor(SourceProcessors.readMapP(map.getName(), predicate, projection))
+                .verifyProcessor(adaptSupplier(SourceProcessors.readMapP(map.getName(), predicate, projection)))
                 .jetInstance(instance())
                 .disableSnapshots()
                 .disableProgressAssertion()
@@ -94,11 +95,6 @@ public class ReadMapOrCachePTest extends SimpleTestInClusterSupport {
     }
 
     private static <I, O> Projection<I, O> toProjection(FunctionEx<I, O> projectionFn) {
-        return new Projection<I, O>() {
-            @Override
-            public O transform(I input) {
-                return projectionFn.apply(input);
-            }
-        };
+        return (Projection<I, O>) projectionFn::apply;
     }
 }

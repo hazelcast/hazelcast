@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.map.EntryProcessor;
@@ -79,7 +80,7 @@ public final class UpdateMapWithEntryProcessorP<T, K, V, R> extends AsyncHazelca
         }
 
         @Override
-        protected Processor createProcessor(HazelcastInstance instance) {
+        protected Processor createProcessor(HazelcastInstance instance, SerializationService serializationService) {
             return new UpdateMapWithEntryProcessorP<>(
                 instance, MAX_PARALLEL_ASYNC_OPS_DEFAULT, name, toKeyFn, toEntryProcessorFn
             );

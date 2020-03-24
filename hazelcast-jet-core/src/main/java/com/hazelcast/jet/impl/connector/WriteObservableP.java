@@ -22,7 +22,6 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
 import com.hazelcast.jet.impl.observer.ObservableImpl;
 import com.hazelcast.ringbuffer.OverflowPolicy;
 import com.hazelcast.ringbuffer.Ringbuffer;
@@ -39,14 +38,17 @@ public final class WriteObservableP<T> extends AsyncHazelcastWriterP {
     private static final int MAX_BATCH_SIZE = RingbufferProxy.MAX_BATCH_SIZE;
 
     private final String observableName;
+    private final Function<T, Data> mapper;
     private final List<Data> batch = new ArrayList<>(MAX_BATCH_SIZE);
 
     private Ringbuffer<Data> ringbuffer;
-    private Function<T, Data> mapper;
 
-    private WriteObservableP(String observableName, HazelcastInstance instance) {
+    private WriteObservableP(String observableName,
+                             @Nonnull HazelcastInstance instance,
+                             @Nonnull SerializationService serializationService) {
         super(instance, MAX_PARALLEL_ASYNC_OPS);
         this.observableName = observableName;
+        this.mapper = serializationService::toData;
     }
 
     @Override
@@ -55,9 +57,6 @@ public final class WriteObservableP<T> extends AsyncHazelcastWriterP {
         // maximize the window when its properties (like capacity) can still be
         // configured
         ringbuffer = instance().getRingbuffer(ObservableImpl.ringbufferName(observableName));
-
-        SerializationService serializationService = ((ProcCtx) context).serializationService();
-        mapper = serializationService::toData;
     }
 
     @Override
@@ -95,8 +94,8 @@ public final class WriteObservableP<T> extends AsyncHazelcastWriterP {
         }
 
         @Override
-        protected Processor createProcessor(HazelcastInstance instance) {
-            return new WriteObservableP<>(observableName, instance);
+        protected Processor createProcessor(HazelcastInstance instance, SerializationService serializationService) {
+            return new WriteObservableP<>(observableName, instance, serializationService);
         }
     }
 }

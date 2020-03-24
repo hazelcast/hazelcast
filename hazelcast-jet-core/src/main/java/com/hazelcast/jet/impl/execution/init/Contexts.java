@@ -142,7 +142,7 @@ public final class Contexts {
         }
     }
 
-    static class ProcSupplierCtx extends MetaSupplierCtx implements ProcessorSupplier.Context {
+    public static class ProcSupplierCtx extends MetaSupplierCtx implements ProcessorSupplier.Context {
 
         private final int memberIndex;
         private final ConcurrentHashMap<String, File> tempDirectories;

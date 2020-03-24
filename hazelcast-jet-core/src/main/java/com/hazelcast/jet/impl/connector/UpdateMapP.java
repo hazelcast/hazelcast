@@ -208,7 +208,7 @@ public final class UpdateMapP<T, K, V, R> extends AsyncHazelcastWriterP {
         }
 
         @Override
-        protected Processor createProcessor(HazelcastInstance instance) {
+        protected Processor createProcessor(HazelcastInstance instance, SerializationService serializationService) {
             return new UpdateMapP<>(
                 instance, MAX_PARALLEL_ASYNC_OPS_DEFAULT, name, toKeyFn, updateFn
             );

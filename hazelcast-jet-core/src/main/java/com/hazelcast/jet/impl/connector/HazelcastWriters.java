@@ -28,6 +28,8 @@ import com.hazelcast.function.BinaryOperatorEx;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.RestartableException;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
@@ -39,6 +41,7 @@ import com.hazelcast.map.EntryProcessor;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.AbstractMap;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.AbstractSet;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -63,11 +66,11 @@ public final class HazelcastWriters {
     }
 
     @Nonnull
-    public static <K, V> ProcessorMetaSupplier writeMapSupplier(
+    public static ProcessorMetaSupplier writeMapSupplier(
             @Nonnull String name,
             @Nullable ClientConfig clientConfig
     ) {
-        return preferLocalParallelismOne(new WriteMapP.Supplier<>(asXmlString(clientConfig), name));
+        return preferLocalParallelismOne(new WriteMapP.Supplier(asXmlString(clientConfig), name));
     }
 
     @Nonnull
@@ -125,14 +128,7 @@ public final class HazelcastWriters {
     public static <K, V> ProcessorMetaSupplier writeCacheSupplier(
             @Nonnull String name, @Nullable ClientConfig clientConfig
     ) {
-        boolean isLocal = clientConfig == null;
-        return ProcessorMetaSupplier.of(2, new WriterSupplier<ArrayMap<K, V>, Entry<K, V>>(
-                asXmlString(clientConfig),
-                ArrayMap::new,
-                ArrayMap::add,
-                CacheFlush.flushToCache(name, isLocal),
-                ConsumerEx.noop()
-        ));
+        return ProcessorMetaSupplier.of(2, new WriteCachePSupplier<>(clientConfig, name));
     }
 
     @Nonnull
@@ -182,27 +178,37 @@ public final class HazelcastWriters {
         return isLocal ? new RestartableException(e) : e;
     }
 
-    /**
-     * Wrapper class needed to conceal the JCache API while
-     * serializing/deserializing other lambdas
-     */
-    private static class CacheFlush {
+    private static class WriteCachePSupplier<K, V> extends AbstractHazelcastConnectorSupplier {
 
-        static <K, V> FunctionEx<HazelcastInstance, ConsumerEx<ArrayMap<K, V>>> flushToCache(
-                String name,
-                boolean isLocal
-        ) {
-            return instance -> {
-                ICache<K, V> cache = instance.getCacheManager().getCache(name);
-                return buffer -> {
-                    try {
-                        cache.putAll(buffer);
-                    } catch (HazelcastInstanceNotActiveException e) {
-                        throw handleInstanceNotActive(e, isLocal);
-                    }
-                    buffer.clear();
-                };
+        static final long serialVersionUID = 1L;
+
+        private final String name;
+
+        WriteCachePSupplier(@Nullable ClientConfig clientConfig, @Nonnull String name) {
+            super(asXmlString(clientConfig));
+            this.name = name;
+        }
+
+        @Override
+        protected Processor createProcessor(HazelcastInstance instance, SerializationService serializationService) {
+            ICache<Data, Data> cache = instance.getCacheManager().getCache(name);
+
+            FunctionEx<Context, ArrayMap<Data, Data>> bufferCreator = context -> new ArrayMap<>();
+            BiConsumerEx<ArrayMap<Data, Data>, Entry<K, V>> entryReceiver = (buffer, entry) -> {
+                Data key = serializationService.toData(entry.getKey());
+                Data value = serializationService.toData(entry.getValue());
+                buffer.add(new SimpleEntry<>(key, value));
             };
+            ConsumerEx<ArrayMap<Data, Data>> bufferFlusher = buffer -> {
+                try {
+                    cache.putAll(buffer);
+                } catch (HazelcastInstanceNotActiveException e) {
+                    throw handleInstanceNotActive(e, isLocal());
+                }
+                buffer.clear();
+            };
+
+            return new WriteBufferedP<>(bufferCreator, entryReceiver, bufferFlusher, ConsumerEx.noop());
         }
     }
 
@@ -281,7 +287,7 @@ public final class HazelcastWriters {
         }
 
         @Override
-        protected Processor createProcessor(HazelcastInstance instance) {
+        protected Processor createProcessor(HazelcastInstance instance, SerializationService serializationService) {
             ConsumerEx<B> flushBufferFn = instanceToFlushBufferFn.apply(instance);
             return new WriteBufferedP<>(ctx -> newBufferFn.get(), addToBufferFn, flushBufferFn, disposeBufferFn);
         }
