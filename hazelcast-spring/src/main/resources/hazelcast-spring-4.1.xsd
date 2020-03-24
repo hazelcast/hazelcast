@@ -1979,7 +1979,7 @@
 
     <xs:complexType name="multicast">
         <xs:sequence>
-            <xs:element name="trusted-interfaces" minOccurs="0" maxOccurs="1">
+            <xs:element name="trusted-interfaces" type="trusted-interfaces" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
                         Includes IP addresses of trusted members. When a node wants to join to the cluster,
@@ -1988,11 +1988,6 @@
                         (e.g. 192.168.1.* or 192.168.1.100-110).
                     </xs:documentation>
                 </xs:annotation>
-                <xs:complexType>
-                    <xs:sequence>
-                        <xs:element name="interface" type="interface" minOccurs="0" maxOccurs="unbounded"/>
-                    </xs:sequence>
-                </xs:complexType>
             </xs:element>
         </xs:sequence>
         <xs:attribute name="enabled" type="xs:string" use="optional" default="true"/>
@@ -2728,8 +2723,26 @@
         <xs:attribute name="group-type" type="xs:string" use="optional"/>
     </xs:complexType>
 
-    <xs:complexType name="management-center" mixed="true">
+    <xs:complexType name="management-center">
+        <xs:sequence>
+            <xs:element name="trusted-interfaces" type="trusted-interfaces" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Includes allowed IP addresses for Management Center connections.
+                        More preciselly, the element configures addresses from which clients are allowed to run cluster
+                        management tasks over the Hazelcast client protocol.
+                        You can give an IP addresses range using the wildcard (*) on the last digit of the IP address
+                        (e.g. 192.168.1.* or 192.168.1.100-110).
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
         <xs:attribute name="scripting-enabled" type="xs:boolean" use="optional"/>
+    </xs:complexType>
+    <xs:complexType name="trusted-interfaces">
+        <xs:sequence>
+            <xs:element name="interface" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
     </xs:complexType>
     <xs:complexType name="cache-entry-listener">
         <xs:attribute name="cache-entry-listener-factory" type="non-space-string" use="optional"/>

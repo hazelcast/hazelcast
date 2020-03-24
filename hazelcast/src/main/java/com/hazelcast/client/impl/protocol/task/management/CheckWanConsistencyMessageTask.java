@@ -72,4 +72,9 @@ public class CheckWanConsistencyMessageTask extends AbstractCallableMessageTask<
     public Object[] getParameters() {
         return new Object[]{parameters.wanReplicationName, parameters.wanPublisherId, parameters.mapName};
     }
+
+    @Override
+    public boolean isManagementTask() {
+        return true;
+    }
 }

@@ -41,7 +41,6 @@ import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.config.MulticastConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.OnJoinPermissionOperationName;
 import com.hazelcast.config.PNCounterConfig;
@@ -64,6 +63,7 @@ import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.config.SplitBrainProtectionListenerConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TopicConfig;
+import com.hazelcast.config.TrustedInterfacesConfigurable;
 import com.hazelcast.config.WanBatchPublisherConfig;
 import com.hazelcast.config.WanCustomPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
@@ -167,13 +167,13 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     }
 
     @Override
-    protected void handleTrustedInterfaces(MulticastConfig multicastConfig, Node n) {
+    protected void handleTrustedInterfaces(TrustedInterfacesConfigurable<?> tiConfig, Node n) {
         YamlSequence yamlNode = getWrappedYamlSequence(n);
         for (YamlNode interfaceNode : yamlNode.children()) {
             String trustedInterface = asScalar(interfaceNode).nodeValue();
-            multicastConfig.addTrustedInterface(trustedInterface);
+            tiConfig.addTrustedInterface(trustedInterface);
         }
-        super.handleTrustedInterfaces(multicastConfig, n);
+        super.handleTrustedInterfaces(tiConfig, n);
     }
 
     @Override

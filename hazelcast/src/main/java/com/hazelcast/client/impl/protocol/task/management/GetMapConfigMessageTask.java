@@ -99,4 +99,9 @@ public class GetMapConfigMessageTask extends AbstractInvocationMessageTask<Reque
     public Object[] getParameters() {
         return new Object[]{parameters.mapName};
     }
+
+    @Override
+    public boolean isManagementTask() {
+        return true;
+    }
 }
