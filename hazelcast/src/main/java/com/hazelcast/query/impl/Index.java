@@ -31,10 +31,11 @@ public interface Index {
 
     /**
      * @return the canonical name of this index: for single-attribute
-     * non-composite indexes, it's the attribute name itself stripping an
-     * unnecessary "this." qualifier, if any; for composite indexes, it's a
-     * comma-separated list of index components with a single space character
-     * going after every comma, any unnecessary "this." qualifiers are stripped.
+     * non-composite indexes, it's an attribute name itself stripping an
+     * unnecessary "this." qualifier and replacing "#" qualifier with ".",
+     * if any; for composite indexes, it's a comma-separated list of
+     * canonicalized index component attribute names with a single space
+     * character going after every comma.
      * @see PredicateUtils#canonicalizeAttribute
      * @see PredicateUtils#constructCanonicalCompositeIndexName
      */

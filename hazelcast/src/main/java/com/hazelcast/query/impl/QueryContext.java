@@ -16,6 +16,10 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.query.impl.predicates.PredicateUtils;
+
+import static com.hazelcast.query.impl.predicates.PredicateUtils.canonicalizeAttribute;
+
 /**
  * Provides the context for queries execution.
  */
@@ -84,14 +88,17 @@ public class QueryContext {
      * for the given attribute.
      */
     public Index getIndex(String attribute) {
-        return matchIndex(attribute, IndexMatchHint.NONE);
+        return matchIndex(canonicalizeAttribute(attribute), IndexMatchHint.NONE);
     }
 
     /**
      * Matches an index for the given pattern and match hint.
      *
      * @param pattern   the pattern to match an index for. May be either an
-     *                  attribute name or an exact index name.
+     *                  attribute name or an exact index name. It's a caller's
+     *                  responsibility to canonicalize the passed pattern as
+     *                  specified by {@link PredicateUtils#canonicalizeAttribute}
+     *                  and {@link Index#getName}.
      * @param matchHint the match hint.
      * @return the matched index or {@code null} if nothing matched.
      * @see QueryContext.IndexMatchHint

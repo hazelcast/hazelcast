@@ -57,6 +57,7 @@ public class AttributeCanonicalizationTest {
         assertEquals("foo.bar", canonicalizeAttribute("foo.bar"));
         assertEquals("__key", canonicalizeAttribute("__key"));
         assertEquals("__key.foo", canonicalizeAttribute("__key.foo"));
+        assertEquals("__key.foo", canonicalizeAttribute("__key#foo"));
     }
 
     @Test
@@ -69,6 +70,7 @@ public class AttributeCanonicalizationTest {
         assertEquals("foo.bar", new TestPredicate("foo.bar").attributeName);
         assertEquals("__key", new TestPredicate("__key").attributeName);
         assertEquals("__key.foo", new TestPredicate("__key.foo").attributeName);
+        assertEquals("__key.foo", new TestPredicate("__key#foo").attributeName);
     }
 
     @Test
@@ -83,6 +85,7 @@ public class AttributeCanonicalizationTest {
         checkIndex(indexes, "foo.bar", "foo.bar");
         checkIndex(indexes, "__key", "__key");
         checkIndex(indexes, "__key.foo", "__key.foo");
+        checkIndex(indexes, "__key.foo", "__key#foo");
     }
 
     @Test
@@ -97,6 +100,7 @@ public class AttributeCanonicalizationTest {
         checkIndex(indexes, "foo, bar.baz", "this.foo, this.bar.baz");
         checkIndex(indexes, "foo.bar, baz", "foo.bar, baz");
         checkIndex(indexes, "foo, bar, __key.baz", "foo, this.bar, __key.baz");
+        checkIndex(indexes, "foo, bar, __key.baz", "foo, this.bar, __key#baz");
     }
 
     private static void checkIndex(Indexes indexes, String expected, String name) {
