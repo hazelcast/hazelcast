@@ -342,7 +342,7 @@ I              P1            P2
 |----start->---|             |
 |------start->---------------|
 |----cancel->--|
-|              |--<-batch----|
+|              |--<-batch----| // Batch for inactive query
 |------cancel->--------------|
 ```
 
@@ -353,7 +353,7 @@ demonstrates the problem.
 ```
 I              P1            P2
 |------start->---------------|
-|              |--<-batch----|
+|              |--<-batch----| // Batch for active query
 |----start->---|             |
 ```
 
