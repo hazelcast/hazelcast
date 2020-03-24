@@ -3,66 +3,66 @@
 ## Overview
 
 Hazelcast Mustang is a distributed SQL engine. Network communication between nodes is required to produce the final result.
-In this document, we describe the design of the communication protocol. This includes query initiation, data exchange,
-query cancellation, and maintenance operations.
+In this document, we describe the design of the communication protocol, that includes query start and cancel, data exchange,
+and maintenance operations.
 
-The remainder of this document is structured as follows. Section 1 describes the main design consideration we rely on. In
-Section 2 we discuss the existing networking infrastructure of the Hazelcast cluster and whether it satisfies our design
+The remainder of this document is structured as follows. Section 1 describes the primary design considerations. Section 2
+discusses the existing networking infrastructure of the Hazelcast cluster and whether it satisfies our design
 principles. Section 3 explains the protocol.
 
 ## 1 Design Considerations
 
-In this section we summarize the key principles to the engine which influences the protocol design decisions, which are:
+In this section, we summarize the fundamental principles that influence the protocol design:
 1. Low latency
 1. Fail-fast
 1. Ordered data exchange
 
 ### 1.1 Low Latency
 
-Hazelcast Mustang is a modern distributed SQL engine which targets the OLTP workloads operating on in-memory data. We expect
-that the engine will be used mostly for queries, which should be completed in a matter of milliseconds or seconds. This
-influences the protocol design significantly, because network calls still have relatively high latencies as of 2020. The network
-protocol should be designed in a way, that members avoid waiting for each other when possible.
+Hazelcast Mustang is a modern distributed SQL engine that targets the OLTP workloads for in-memory data. We expect
+that the engine will be used mostly for relatively short queries, taking milliseconds or seconds to complete. Because network
+latency is still relatively as of 2020, the protocol should be designed to minimize the number of blocking network calls,
+when one member waits for the other.
 
 ### 1.2 Fail-Fast
 
 Distributed systems must account for network and hardware failures. Query execution is a stateful process. Whenever a participant
-of a distributed query goes down, there are two options: try tolerating the failure and continue execution, of fail the query.
+of a distributed query goes down, there are two options: try tolerating the failure and continue execution, or fail it.
 
-In order to tolerate the failure of a query participant, the system needs to track the progress of query execution. An example of
-such a system is Google Spanner [[1]], which uses restart tokens to track the progress of the query, hiding network failures from
-users. Another approach is to persist intermediate state to disk, which is used in OLAP engines where query restart may cause
-inappropriate delays to user business processes.
+The system needs to track the progress of query execution to tolerate the failure of a query participant. An example of such a
+system is Google Spanner [[1]], which uses restart tokens to track the progress of the query, hiding network failures from
+users. Another approach is to persist intermediate state to disk, which is used in OLAP engines where query restart is not an
+appropriate choice.
 
 While the idea of hiding intermittent failures from users is compelling from the usability point of view, it comes at a massive
-engineering costs, as mentioned by Google Spanner engineers. The Hazelcast Mustang engine is designed with the **fail-fast**
-behavior in mind: whenever a failure occurs, the query is terminated and a proper transient error is delivered to the user.
-The user is expected to restart the query manually then. The query will fail in the following scenarios:
+engineering cost, as mentioned by Google Spanner engineers. The Hazelcast Mustang engine is designed with the **fail-fast**
+behavior in mind: whenever a failure occurs, the query is terminated, and a proper transient error is delivered to the user.
+The user should restart the query manually then. The query will fail in the following scenarios:
 1. Member executing the query (participant) has left the cluster
 1. Temporal network problem between two members which resulted in a broken TCP connection
 
-We understand that fail-fast behavior might be not the best solution for some use cases, including machine shutdowns in cloud
-environments. We therefore do not reject the idea to implement transparent handling of network errors in future releases.
+We understand that fail-fast behavior might not be the best solution for some use cases, including machine shutdowns in cloud
+environments. We, therefore, do not reject the idea of implementing transparent handling of network errors in future releases.
 Instead, we treat the fail-fast behavior as a starting point for future improvements, which provides a good trade-off between
 the added value and implementation complexity.
 
 ### 1.3 Ordered Data Exchange
 
-The Hazelcast Mustang engine employs the **Volcano Model** approach as described in [[2]]. Data flows from children relational
-operators to parents operators. The order of rows transferred between operators is important for correctness. For example, a
-parent operator may expect that the rows pulled from the child operator are sorted on a certain attribute.
+The Hazelcast Mustang engine employs the **Volcano Model** approach, as described in [[2]]. Data flows from children relational
+operators to parents operators. The order of rows transferred between operators is essential for correctness. For example, a
+parent operator may expect the child operator to produce rows that are sorted on a particular attribute.
 
 Adjacent operators may be located on different members, exchanging data through network requests. The implementation must ensure
-that the order of rows is preserved when they are being transferred over the wire.
+that the order of rows is preserved during data transfer.
 
-It is possible to relax this requirement if the order of rows is somehow preserved at the engine level. But to acheive this, we
+It is possible to relax this requirement if the order of rows is somehow preserved at the engine level. But to achieve this, we
 would have to introduce TCP-like ordering and packet loss detection, which requires more RAM and additional network messages,
-reducing performance dramatically. This makes such design inappropriate for us.
+reducing performance dramatically, which makes such design inappropriate for us.
 
 ## 2 Existing Infrastructure
 
-The Hazelcast Mustange engine is a part of Hazelcast IMDG product, which is a distributed system with own networking
-infrastructure, built on top of TCP/IP protocol. In this section we discuss the key networking abstractions used Hazelcast IMDG.
+The Hazelcast Mustang engine is a part of the Hazelcast IMDG product, which is a distributed system with its own networking
+infrastructure built on top of TCP/IP protocol. In this section, we discuss the key networking abstractions used Hazelcast IMDG.
 which are `Packet`, `Connection` and `Operation`. We then analyze how they are used in Hazelcast Mustang.
 
 ### 2.1 Packet
@@ -70,7 +70,7 @@ which are `Packet`, `Connection` and `Operation`. We then analyze how they are u
 `Packet` is a chunk of data sent over the wire. The packet has length and type. **Length** defines the boundaries of the
 packet's data within the network stream of data. Several packets could be sent in a single network request. Likewise, a
 single packet could span multiple network requests. The original request is restored on the receiver side and submitted for
-processing.A packet has a **type** that defines the handler for the packet. Examples are partition handler, generic handler,
+processing. A packet has a **type** that defines the handler for the packet. Examples are partition handler, generic handler,
 Hazelcast Jet handler.
 
 ### 2.2 Connection
@@ -82,18 +82,18 @@ re-established later. Connection to a particular member is provided by the `Endp
 `getConnection()` and `getOrConnect()` methods. Subsequent calls to these methods may return different connection objects.
 
 The order of the delivery of messages sent over a single `Connection` object is **not defined** in the general case. However,
-the current implementations have relatively strong ordering and delivery guarantees, because internally they use a single socket
-connection:
+the current implementations have relatively strong ordering and delivery guarantees, because internally, they use a single
+socket connection:
 1. If a packet is delivered to a receiver, then all previous packets sent through the same connection are also delivered
-1. If the sending of the packet A happens-before the sending of the packet B, then submission of the packet A for execution on
-the receiver happens-before the submission of the packet B.
+1. If sending of packet A happens-before sending of packet B, then submission of packet A for execution on the receiver
+happens-before the submission of packet B.
 
 Hazelcast Jet relies on these guarantees.
 
 ### 2.3 Operation
 
-Most Hazelcast components don't operate on packets directly. Instead, the `Operation` abstraction is used, which encapsulates the
-command to be executed фтв additional information such as the caller ID, timeouts, retries, etc.
+Most Hazelcast components don't operate on packets directly. Instead, the `Operation` abstraction is used, which encapsulates
+the message and additional information such as the caller ID, timeouts, retries, etc.
 
 Operations are submitted to the `OperationService` which obtains the connection, serializes operations to packets, and manage
 completion futures, timeouts, and retries.
@@ -106,11 +106,11 @@ exchange. Second, due to fail-fast design choice, the engine doesn't need to kee
 from the receiver. The fire-and-forget approach is used instead. Last, since `Operation` and `OperationService` interfaces do
 not guarantee that the same `Connection` object will be used between invocations, the ordering requirement cannot be satisfied.
 
-Instead, `Packet` and `Connection` interfaces are used directly. For every stream of data we obtain the `Connection` object
-from the connection manager. This object is used for the duration of query for the given stream, thus ensuring ordering of
+Instead, `Packet` and `Connection` interfaces are used directly. For every stream of data, we obtain the `Connection` object
+from the connection manager. This object is used for the duration of query for the given stream, thus ensuring the ordering of
 data delivery.
 
-Future implementations of the `Connection` interface must provide the ordering guarantees as described in Section 2.2.
+Future implementations of the `Connection` interface must provide the ordering guarantees, as described in Section 2.2.
 
 ## 3 Protocol
 
@@ -125,10 +125,8 @@ which we discuss in details below:
 
 ### 3.1 Query ID
 
-Query execution is a distributed process that spans one or more nodes. Every query execution is assigned with a unique
-ID which is propagated to participating members. The ID is unique cluster-wide.
-
-We thus define the query ID as follows.
+Query execution is a distributed process that spans one or more nodes. Every query execution has a cluster-wide unique
+ID which is propagated to participating members. The query ID has the following structure.
 
 *Snippet 1: Query ID*
 ```java
@@ -174,8 +172,8 @@ class QueryExecuteOperation {
 
 ### 3.3 Query Cancel
 
-Query cancel stops execution of the query on participants. Query cancel might be requested for different reasons, such as user
-request, timeout, exception, participant failure. Participants may request the cancellation of the query at any time.
+Query cancel stops the execution of the query on participants. Query cancel might be requested for different reasons, such as
+user request, timeout, exception, participant failure. Participants may request the cancellation of the query at any time.
 
 The `cancel` request is first sent from the cancel initiator to the query initiator. The query initiator then broadcasts
 the request to all participants. If the cancel initiator is the query initiator, then only the broadcast to participants is
@@ -195,8 +193,8 @@ C/I              P1  P2
 |----cancel->----|   |
 |--------cancel->----|
 ```
-This two-step process reduces the total number of cancel messages which might be sent in the worst case. Consider the case when
-all participants initiate the query cancel at the same time, e.g. due to participant failure. If we implement the cancellation
+This two-step process reduces the total number of cancel messages, which might be sent in the worst case. Consider the case when
+all participants initiate the query cancel at the same time, e.g., due to participant failure. If we implement the cancellation
 as a broadcast from the cancel initiator to participants, then up to `N * N` of messages could be sent. With the two-step approach
 no more than `2 * N` messages are sent: N from all cancel initiators to query initiator, N from query initiator to participants.
 The two-step approach has higher latency, but latency is not important for the cancellation process.
@@ -229,7 +227,7 @@ Every stream uses the **same** `Connection` object for the duration of the query
 rows is equal to the send order, as described in Section 1.3. If a connection is broken in the middle of query execution, the
 query is canceled with an error.
 
-The original query plan is split into one or more **fragments**. The split occurs across relational operators which require
+The original query plan is split into one or more **fragments**. The split occurs across relational operators that require
 data movement between members, called **exchanges**.
 
 Below is the example of a distributed sorting which requires data exchange and two fragments obtained after the split.
@@ -264,7 +262,7 @@ The following messages are used:
 
 Data is first accumulated in batches on the sender's side. The batch is then serialized and sent over the wire in the `batch`
 message. The sender doesn't wait for an explicit ack for every batch from the receiver. Multiple batches could be sent one
-after the other. The last batch in the stream has a special marker, denoting the end of the stream.
+after the other. The last batch in the stream has a marker, denoting the end of the stream.
 
 *Snippet 9: Batch protocol*
 ```
@@ -328,11 +326,11 @@ class QueryFlowControlOperation {
 
 ### 3.5 Cleanup
 
-The engine needs to ensure that execution of a query is eventually completed on all members, either normally or due to an error.
-Otherwise resources leaks are possible. At some point in time, two members may have different views on whether the particular
+The engine must ensure that the execution of a query is eventually completed on all members, either normally or due to an error.
+Otherwise, resource leaks are possible. At some point in time, two members may have different views on whether the particular
 query is active or not. This may happen due to network problems (including split-brain), or due to inherent race conditions
-because query start and query finish is not synchronized between members. The following example demonstrates a race condition
-which may lead to memory leak on a participant.
+because query start and query finish are not synchronized between members. The following example demonstrates a race condition
+which may lead to a memory leak on a participant.
 
 #### 3.5.1 Example of a Race Condition
 
@@ -359,36 +357,37 @@ I              P1            P2
 |----start->---|             |
 ```
 
-When the batch arrives and there is no active query associated with the given ID, we cannot distinguish between the query
-which has not started yet, and the query which has been canceled. To mitigate this we introduce a pair of messages to clean
-stale batches:
+When the batch arrives, and there is no active query associated with the given ID, we cannot distinguish between the query
+which has not started yet and the query which has been canceled. To mitigate this, we introduce a pair of messages to clean
+old batches:
 
 #### 3.5.2 Query Check
 
-To ensure eventual completion of queries on members we introduce a pair of messages:
+To ensure that a query is completed eventually on all members, we introduce a pair of messages:
 
 1. `check` - verifies whether queries with the given IDs are still active on the query initiator
-1. `checkResponse` - a response to the `check` message with the subset of suspected query IDs, which are no longer active on the
+1. `check_response` - a response to the `check` message with the subset of suspected query IDs, which are no longer active on the
 query initiator
 
-A participant maintains a list of queries which are currently active. The participant may suspect a query from the list to
-be completed. Then the participant may send the `check` message with the list of suspected query IDs to the query initiator.
-The query initiator ID could be derived from the query ID. The query initiator then iterates over the list of own active queries
-and determines the list of suspected query IDs that are no longer active. This list of IDs of inactive queries is sent back to
-the participant in the `checkResponse` message. The participant then release the resources associated with these queries.
+A participant maintains a list of queries that are currently active. The participant may suspect that a query from the list is
+already completed. In this case, the participant may send the `check` message with the list of suspected query IDs to the query
+initiator. The query initiator ID could be derived from the query ID. The query initiator then iterates over the list of own
+active queries and determines the list of suspected query IDs that are no longer active. This list of IDs of inactive queries is
+sent back to the participant in the `check_response` message. The participant then releases the resources associated with
+inactive queries.
 
 The precise conditions when the `check` message is triggered are implementation-specific and are not part of the protocol.
 
 *Snippet 15: Check protocol*
 ```
-P                            I
-|                            |
-|----check[id1, id2]->-------| 
-|                            |
-|----<-checkResponse[id1]----|
+P                             I
+|                             |
+|----check[id1, id2]->--------| 
+|                             |
+|----<-check_response[id1]----|
 ```
 
-*Snippet 16: `check` and `checkResponse` messages structure*
+*Snippet 16: `check` and `check_response` messages structure*
 ```java
 class QueryCheckOperation {
     List<QueryId> suspectedQueryIds;
