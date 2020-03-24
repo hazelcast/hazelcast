@@ -23,7 +23,6 @@ import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.test.TestSources;
-import com.hazelcast.transaction.impl.xa.SerializableXID;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -35,11 +34,6 @@ import org.testcontainers.containers.PostgreSQLContainer;
 
 import javax.sql.CommonDataSource;
 import javax.sql.DataSource;
-import javax.sql.XAConnection;
-import javax.sql.XADataSource;
-import javax.transaction.xa.XAException;
-import javax.transaction.xa.XAResource;
-import javax.transaction.xa.Xid;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -54,7 +48,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Util.entry;
-import static javax.transaction.xa.XAResource.TMFAIL;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -129,109 +122,6 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
          ));
 
         instance().newJob(p).join();
-    }
-
-    @Test
-    public void test2() throws Exception {
-        XADataSource dataSource = (XADataSource) createDataSource(true);
-        Xid xid1 = new SerializableXID(1, new byte[] {1}, new byte[1]);
-        XAConnection conn = dataSource.getXAConnection();
-        conn.getConnection().setAutoCommit(false);
-        conn.getXAResource().start(xid1, XAResource.TMNOFLAGS);
-        PreparedStatement stmt = conn.getConnection().prepareStatement("insert into " + tableName + " values (?, ?)");
-        for (int i = 0; i < 10; i++) {
-            stmt.setInt(1, i);
-            stmt.setString(2, "name-" + i);
-            stmt.addBatch();
-        }
-        stmt.executeBatch();
-        try {
-            conn.getXAResource().end(xid1, TMFAIL);
-            conn.getXAResource().rollback(xid1);
-            conn.getConnection().close();
-        } catch (Exception e) {
-            // log and ignore
-            e.printStackTrace();
-            conn = null;
-            System.gc();
-            System.gc();
-            System.gc();
-            System.runFinalization();
-        }
-
-        conn = dataSource.getXAConnection();
-        conn.getConnection().setAutoCommit(false);
-        try {
-            conn.getXAResource().rollback(xid1);
-        } catch (XAException e) {
-            e.printStackTrace();
-            if (e.errorCode != XAException.XAER_NOTA) {
-                throw e;
-            }
-        }
-        conn.getXAResource().start(xid1, XAResource.TMNOFLAGS);
-    }
-
-    @Test
-    public void test1() throws Exception {
-        XADataSource dataSource = (XADataSource) createDataSource(true);
-        Xid xid1 = new SerializableXID(1, new byte[] {1}, new byte[1]);
-        Xid xid2 = new SerializableXID(1, new byte[] {2}, new byte[1]);
-        XAConnection conn = dataSource.getXAConnection();
-        XAConnection conn2 = dataSource.getXAConnection();
-        conn.getConnection().setAutoCommit(false);
-        conn2.getConnection().setAutoCommit(false);
-        try {
-            conn.getXAResource().rollback(xid1);
-        } catch (XAException e) {
-            if (e.errorCode != XAException.XAER_NOTA) {
-                throw e;
-            }
-        }
-        try {
-            conn2.getXAResource().rollback(xid1);
-        } catch (XAException e) {
-            if (e.errorCode != XAException.XAER_NOTA) {
-                throw e;
-            }
-        }
-        conn.getXAResource().start(xid1, XAResource.TMNOFLAGS);
-        PreparedStatement stmt = conn.getConnection().prepareStatement("insert into " + tableName + " values (?, ?)");
-        for (int i = 0; i < 10; i++) {
-            stmt.setInt(1, i);
-            stmt.setString(2, "name-" + i);
-            stmt.addBatch();
-        }
-        stmt.executeBatch();
-        conn.getConnection().close();
-        conn2.getConnection().close();
-
-        conn = dataSource.getXAConnection();
-        conn2 = dataSource.getXAConnection();
-        conn.getConnection().setAutoCommit(false);
-        conn2.getConnection().setAutoCommit(false);
-        try {
-            conn.getXAResource().rollback(xid1);
-        } catch (XAException e) {
-            if (e.errorCode != XAException.XAER_NOTA) {
-                throw e;
-            }
-        }
-        try {
-            conn2.getXAResource().rollback(xid1);
-        } catch (XAException e) {
-            if (e.errorCode != XAException.XAER_NOTA) {
-                throw e;
-            }
-        }
-        conn.getXAResource().start(xid1, XAResource.TMNOFLAGS);
-        stmt = conn.getConnection().prepareStatement("insert into " + tableName + " values (?, ?)");
-        for (int i = 0; i < 10; i++) {
-            stmt.setInt(1, i);
-            stmt.setString(2, "name-" + i);
-            stmt.addBatch();
-        }
-        stmt.executeBatch();
     }
 
     @Test
