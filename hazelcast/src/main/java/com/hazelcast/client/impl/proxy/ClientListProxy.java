@@ -326,7 +326,7 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
     }
 
     // used by jet
-    public Iterator<Data> rawIterator() {
+    public Iterator<Data> dataIterator() {
         ClientMessage request = ListIteratorCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request);
         ListIteratorCodec.ResponseParameters resultParameters = ListIteratorCodec.decodeResponse(response);
@@ -334,7 +334,7 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
     }
 
     // used by jet
-    public List<Data> rawSubList(int fromIndex, int toIndex) {
+    public List<Data> dataSubList(int fromIndex, int toIndex) {
         ClientMessage request = ListSubCodec.encodeRequest(name, fromIndex, toIndex);
         ClientMessage response = invokeOnPartition(request);
         ListSubCodec.ResponseParameters resultParameters = ListSubCodec.decodeResponse(response);

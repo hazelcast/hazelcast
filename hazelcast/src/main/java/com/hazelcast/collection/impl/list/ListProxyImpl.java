@@ -166,12 +166,12 @@ public class ListProxyImpl<E> extends AbstractCollectionProxyImpl<ListService, E
     }
 
     // used by jet
-    public Iterator<Data> rawIterator() {
-        return rawSubList(-1, -1).listIterator();
+    public Iterator<Data> dataIterator() {
+        return dataSubList(-1, -1).listIterator();
     }
 
     // used by jet
-    public List<Data> rawSubList(int fromIndex, int toIndex) {
+    public List<Data> dataSubList(int fromIndex, int toIndex) {
         ListSubOperation operation = new ListSubOperation(name, fromIndex, toIndex);
         SerializableList result = invoke(operation);
         return Collections.unmodifiableList(result.getCollection());

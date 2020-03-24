@@ -59,41 +59,41 @@ public class ClientListTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testRawIterator() {
+    public void testDataIterator() {
         list.add(1);
         list.add(2);
 
-        assertEquals(2, Iterators.size(list.rawIterator()));
+        assertEquals(2, Iterators.size(list.dataIterator()));
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testRawIterator_throwsException_whenRemove() {
+    public void testDataIterator_throwsException_whenRemove() {
         list.add(1);
 
-        Iterator<Data> iterator = list.rawIterator();
+        Iterator<Data> iterator = list.dataIterator();
 
         iterator.next();
         iterator.remove();
     }
 
     @Test
-    public void testRawSublist() {
+    public void testDataSublist() {
         list.add(1);
         list.add(2);
         list.add(3);
 
-        List<Data> listTest = list.rawSubList(1, 2);
+        List<Data> listTest = list.dataSubList(1, 2);
 
         assertEquals(1, listTest.size());
     }
 
     @Test(expected = IndexOutOfBoundsException.class)
-    public void testRawSublist_whenFromIndexIllegal() {
+    public void testDataSublist_whenFromIndexIllegal() {
         list.subList(8, 7);
     }
 
     @Test(expected = IndexOutOfBoundsException.class)
-    public void testRawSublist_whenToIndexIllegal() {
+    public void testDataSublist_whenToIndexIllegal() {
         list.add(1);
         list.add(2);
 
