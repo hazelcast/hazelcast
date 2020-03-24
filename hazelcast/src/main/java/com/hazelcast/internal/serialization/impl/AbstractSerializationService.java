@@ -25,6 +25,7 @@ import com.hazelcast.internal.serialization.InputOutputFactory;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPool;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolFactory;
+import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolFactoryImpl;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolThreadLocal;
 import com.hazelcast.internal.usercodedeployment.impl.ClassLocator;
 import com.hazelcast.logging.ILogger;
@@ -100,6 +101,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
         this.nullSerializerAdapter = createSerializerAdapter(new ConstantSerializers.NullSerializer());
     }
 
+    // used by jet
     protected AbstractSerializationService(AbstractSerializationService prototype) {
         this.version = prototype.version;
         this.inputOutputFactory = prototype.inputOutputFactory;
@@ -107,8 +109,9 @@ public abstract class AbstractSerializationService implements InternalSerializat
         this.managedContext = prototype.managedContext;
         this.globalPartitioningStrategy = prototype.globalPartitioningStrategy;
         this.outputBufferSize = prototype.outputBufferSize;
-        this.bufferPoolThreadLocal = prototype.bufferPoolThreadLocal;
         this.nullSerializerAdapter = prototype.nullSerializerAdapter;
+        this.bufferPoolThreadLocal = new BufferPoolThreadLocal(this, new BufferPoolFactoryImpl(),
+                HazelcastInstanceNotActiveException::new);
     }
 
     //region Serialization Service
