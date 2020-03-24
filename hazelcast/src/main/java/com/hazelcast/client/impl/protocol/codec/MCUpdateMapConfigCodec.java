@@ -34,9 +34,9 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Updates the config of a map on the member it's called on.
+ * Updates the config of a map on the specified member.
  */
-@Generated("89b21beb7a16c273e70bdd938dbdde2b")
+@Generated("bd0da8934043c967d117e2c22a36e1e1")
 public final class MCUpdateMapConfigCodec {
     //hex: 0x200400
     public static final int REQUEST_MESSAGE_TYPE = 2098176;
@@ -48,7 +48,8 @@ public final class MCUpdateMapConfigCodec {
     private static final int REQUEST_READ_BACKUP_DATA_FIELD_OFFSET = REQUEST_EVICTION_POLICY_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_MAX_SIZE_FIELD_OFFSET = REQUEST_READ_BACKUP_DATA_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int REQUEST_MAX_SIZE_POLICY_FIELD_OFFSET = REQUEST_MAX_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_MAX_SIZE_POLICY_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_MEMBER_UUID_FIELD_OFFSET = REQUEST_MAX_SIZE_POLICY_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_MEMBER_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private MCUpdateMapConfigCodec() {
@@ -105,9 +106,20 @@ public final class MCUpdateMapConfigCodec {
          * 9 - FREE_NATIVE_MEMORY_PERCENTAGE
          */
         public int maxSizePolicy;
+
+        /**
+         * UUID of the member.
+         */
+        public java.util.UUID memberUuid;
+
+        /**
+         * True if the memberUuid is received from the client, false otherwise.
+         * If this is false, memberUuid has the default value for its type.
+        */
+        public boolean isMemberUuidExists;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String mapName, int timeToLiveSeconds, int maxIdleSeconds, int evictionPolicy, boolean readBackupData, int maxSize, int maxSizePolicy) {
+    public static ClientMessage encodeRequest(java.lang.String mapName, int timeToLiveSeconds, int maxIdleSeconds, int evictionPolicy, boolean readBackupData, int maxSize, int maxSizePolicy, java.util.UUID memberUuid) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("MC.UpdateMapConfig");
@@ -120,6 +132,7 @@ public final class MCUpdateMapConfigCodec {
         encodeBoolean(initialFrame.content, REQUEST_READ_BACKUP_DATA_FIELD_OFFSET, readBackupData);
         encodeInt(initialFrame.content, REQUEST_MAX_SIZE_FIELD_OFFSET, maxSize);
         encodeInt(initialFrame.content, REQUEST_MAX_SIZE_POLICY_FIELD_OFFSET, maxSizePolicy);
+        encodeUUID(initialFrame.content, REQUEST_MEMBER_UUID_FIELD_OFFSET, memberUuid);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, mapName);
         return clientMessage;
@@ -135,6 +148,12 @@ public final class MCUpdateMapConfigCodec {
         request.readBackupData = decodeBoolean(initialFrame.content, REQUEST_READ_BACKUP_DATA_FIELD_OFFSET);
         request.maxSize = decodeInt(initialFrame.content, REQUEST_MAX_SIZE_FIELD_OFFSET);
         request.maxSizePolicy = decodeInt(initialFrame.content, REQUEST_MAX_SIZE_POLICY_FIELD_OFFSET);
+        if (initialFrame.content.length >= REQUEST_MEMBER_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES) {
+            request.memberUuid = decodeUUID(initialFrame.content, REQUEST_MEMBER_UUID_FIELD_OFFSET);
+            request.isMemberUuidExists = true;
+        } else {
+            request.isMemberUuidExists = false;
+        }
         request.mapName = StringCodec.decode(iterator);
         return request;
     }

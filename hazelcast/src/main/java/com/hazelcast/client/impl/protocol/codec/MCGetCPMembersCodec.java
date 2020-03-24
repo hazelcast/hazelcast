@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns the current list of CP members.
  */
-@Generated("5d87875e5a8eebd89337a2f645500759")
+@Generated("c1349f63e9dc49aea3346b4a9ddc6201")
 public final class MCGetCPMembersCodec {
     //hex: 0x201900
     public static final int REQUEST_MESSAGE_TYPE = 2103552;
@@ -75,8 +75,9 @@ public final class MCGetCPMembersCodec {
     public static class ResponseParameters {
 
         /**
-         * List of CP member UUIDs. The mapping is from the UUID of the CP member to UUID of that member on the
-         * member list of the cluster service.
+         * List of CP member UUIDs. The mapping is from the UUID of
+         * the CP member to UUID of that member on the member list
+         * of the cluster service.
          */
         public java.util.List<java.util.Map.Entry<java.util.UUID, java.util.UUID>> cpMembers;
     }

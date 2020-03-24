@@ -34,16 +34,17 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Polls events available on member. Once read, events are removed from
- * member's internal queue.
+ * Polls events available on the specified member. Once read,
+ * events are removed from member's internal queue.
  */
-@Generated("fd9008fc4d686b8cd0a5b23bb2a3d616")
+@Generated("77b5521b72b25282d3015991e64a0815")
 public final class MCPollMCEventsCodec {
     //hex: 0x201800
     public static final int REQUEST_MESSAGE_TYPE = 2103296;
     //hex: 0x201801
     public static final int RESPONSE_MESSAGE_TYPE = 2103297;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_MEMBER_UUID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_MEMBER_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private MCPollMCEventsCodec() {
@@ -51,15 +52,27 @@ public final class MCPollMCEventsCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
+
+        /**
+         * UUID of the member.
+         */
+        public java.util.UUID memberUuid;
+
+        /**
+         * True if the memberUuid is received from the client, false otherwise.
+         * If this is false, memberUuid has the default value for its type.
+        */
+        public boolean isMemberUuidExists;
     }
 
-    public static ClientMessage encodeRequest() {
+    public static ClientMessage encodeRequest(java.util.UUID memberUuid) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("MC.PollMCEvents");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
+        encodeUUID(initialFrame.content, REQUEST_MEMBER_UUID_FIELD_OFFSET, memberUuid);
         clientMessage.add(initialFrame);
         return clientMessage;
     }
@@ -67,8 +80,13 @@ public final class MCPollMCEventsCodec {
     public static MCPollMCEventsCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
-        //empty initial frame
-        iterator.next();
+        ClientMessage.Frame initialFrame = iterator.next();
+        if (initialFrame.content.length >= REQUEST_MEMBER_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES) {
+            request.memberUuid = decodeUUID(initialFrame.content, REQUEST_MEMBER_UUID_FIELD_OFFSET);
+            request.isMemberUuidExists = true;
+        } else {
+            request.isMemberUuidExists = false;
+        }
         return request;
     }
 

@@ -34,15 +34,16 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Runs given console command on the member it's called on.
+ * Runs given console command on the specified member.
  */
-@Generated("b6e67b6468dd48ccc1a550ac4865b1d3")
+@Generated("7525201b639cab4e3b9e601da2ada21c")
 public final class MCRunConsoleCommandCodec {
     //hex: 0x201200
     public static final int REQUEST_MESSAGE_TYPE = 2101760;
     //hex: 0x201201
     public static final int RESPONSE_MESSAGE_TYPE = 2101761;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_MEMBER_UUID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_MEMBER_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private MCRunConsoleCommandCodec() {
@@ -60,15 +61,27 @@ public final class MCRunConsoleCommandCodec {
          * The console command to be executed.
          */
         public java.lang.String command;
+
+        /**
+         * UUID of the member.
+         */
+        public java.util.UUID memberUuid;
+
+        /**
+         * True if the memberUuid is received from the client, false otherwise.
+         * If this is false, memberUuid has the default value for its type.
+        */
+        public boolean isMemberUuidExists;
     }
 
-    public static ClientMessage encodeRequest(@Nullable java.lang.String namespace, java.lang.String command) {
+    public static ClientMessage encodeRequest(@Nullable java.lang.String namespace, java.lang.String command, java.util.UUID memberUuid) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("MC.RunConsoleCommand");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
+        encodeUUID(initialFrame.content, REQUEST_MEMBER_UUID_FIELD_OFFSET, memberUuid);
         clientMessage.add(initialFrame);
         CodecUtil.encodeNullable(clientMessage, namespace, StringCodec::encode);
         StringCodec.encode(clientMessage, command);
@@ -78,8 +91,13 @@ public final class MCRunConsoleCommandCodec {
     public static MCRunConsoleCommandCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
-        //empty initial frame
-        iterator.next();
+        ClientMessage.Frame initialFrame = iterator.next();
+        if (initialFrame.content.length >= REQUEST_MEMBER_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES) {
+            request.memberUuid = decodeUUID(initialFrame.content, REQUEST_MEMBER_UUID_FIELD_OFFSET);
+            request.isMemberUuidExists = true;
+        } else {
+            request.isMemberUuidExists = false;
+        }
         request.namespace = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         request.command = StringCodec.decode(iterator);
         return request;

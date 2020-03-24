@@ -34,15 +34,16 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Shuts down the member it's called on.
+ * Shuts down the specified member.
  */
-@Generated("b06c35a2a316412d1f30530307f2556f")
+@Generated("f59602906c4b65c6b26f302a3c7c4d11")
 public final class MCShutdownMemberCodec {
     //hex: 0x200800
     public static final int REQUEST_MESSAGE_TYPE = 2099200;
     //hex: 0x200801
     public static final int RESPONSE_MESSAGE_TYPE = 2099201;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_MEMBER_UUID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_MEMBER_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private MCShutdownMemberCodec() {
@@ -50,15 +51,27 @@ public final class MCShutdownMemberCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
+
+        /**
+         * UUID of the member.
+         */
+        public java.util.UUID memberUuid;
+
+        /**
+         * True if the memberUuid is received from the client, false otherwise.
+         * If this is false, memberUuid has the default value for its type.
+        */
+        public boolean isMemberUuidExists;
     }
 
-    public static ClientMessage encodeRequest() {
+    public static ClientMessage encodeRequest(java.util.UUID memberUuid) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("MC.ShutdownMember");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
+        encodeUUID(initialFrame.content, REQUEST_MEMBER_UUID_FIELD_OFFSET, memberUuid);
         clientMessage.add(initialFrame);
         return clientMessage;
     }
@@ -66,8 +79,13 @@ public final class MCShutdownMemberCodec {
     public static MCShutdownMemberCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
-        //empty initial frame
-        iterator.next();
+        ClientMessage.Frame initialFrame = iterator.next();
+        if (initialFrame.content.length >= REQUEST_MEMBER_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES) {
+            request.memberUuid = decodeUUID(initialFrame.content, REQUEST_MEMBER_UUID_FIELD_OFFSET);
+            request.isMemberUuidExists = true;
+        } else {
+            request.isMemberUuidExists = false;
+        }
         return request;
     }
 

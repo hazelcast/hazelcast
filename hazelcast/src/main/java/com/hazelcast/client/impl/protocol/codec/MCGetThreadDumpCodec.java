@@ -34,16 +34,17 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Takes a thread dump of the member it's called on.
+ * Takes a thread dump of the specified member.
  */
-@Generated("ca7ae20159260673f9df18e0d3a10823")
+@Generated("788a10e9dafa74485c35c1a46045d1cc")
 public final class MCGetThreadDumpCodec {
     //hex: 0x200700
     public static final int REQUEST_MESSAGE_TYPE = 2098944;
     //hex: 0x200701
     public static final int RESPONSE_MESSAGE_TYPE = 2098945;
     private static final int REQUEST_DUMP_DEAD_LOCKS_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_DUMP_DEAD_LOCKS_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
+    private static final int REQUEST_MEMBER_UUID_FIELD_OFFSET = REQUEST_DUMP_DEAD_LOCKS_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_MEMBER_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private MCGetThreadDumpCodec() {
@@ -56,9 +57,20 @@ public final class MCGetThreadDumpCodec {
          * Whether only dead-locked threads or all threads should be dumped.
          */
         public boolean dumpDeadLocks;
+
+        /**
+         * UUID of the member.
+         */
+        public java.util.UUID memberUuid;
+
+        /**
+         * True if the memberUuid is received from the client, false otherwise.
+         * If this is false, memberUuid has the default value for its type.
+        */
+        public boolean isMemberUuidExists;
     }
 
-    public static ClientMessage encodeRequest(boolean dumpDeadLocks) {
+    public static ClientMessage encodeRequest(boolean dumpDeadLocks, java.util.UUID memberUuid) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("MC.GetThreadDump");
@@ -66,6 +78,7 @@ public final class MCGetThreadDumpCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeBoolean(initialFrame.content, REQUEST_DUMP_DEAD_LOCKS_FIELD_OFFSET, dumpDeadLocks);
+        encodeUUID(initialFrame.content, REQUEST_MEMBER_UUID_FIELD_OFFSET, memberUuid);
         clientMessage.add(initialFrame);
         return clientMessage;
     }
@@ -75,6 +88,12 @@ public final class MCGetThreadDumpCodec {
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         request.dumpDeadLocks = decodeBoolean(initialFrame.content, REQUEST_DUMP_DEAD_LOCKS_FIELD_OFFSET);
+        if (initialFrame.content.length >= REQUEST_MEMBER_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES) {
+            request.memberUuid = decodeUUID(initialFrame.content, REQUEST_MEMBER_UUID_FIELD_OFFSET);
+            request.isMemberUuidExists = true;
+        } else {
+            request.isMemberUuidExists = false;
+        }
         return request;
     }
 

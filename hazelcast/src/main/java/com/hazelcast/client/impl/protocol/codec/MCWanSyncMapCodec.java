@@ -34,9 +34,9 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Initiate WAN sync for a specific map or all maps
+ * Initiates WAN sync for the given map or all maps.
  */
-@Generated("8298af5af597ceda211d93a69239ddb8")
+@Generated("40d90722e28063e3ebd33ddc60ea5b2a")
 public final class MCWanSyncMapCodec {
     //hex: 0x201600
     public static final int REQUEST_MESSAGE_TYPE = 2102784;
@@ -54,12 +54,12 @@ public final class MCWanSyncMapCodec {
     public static class RequestParameters {
 
         /**
-         * Name of the WAN replication to initiate WAN sync for
+         * Name of the WAN replication to initiate WAN sync for.
          */
         public java.lang.String wanReplicationName;
 
         /**
-         * ID of the WAN publisher to initiate WAN sync for
+         * ID of the WAN publisher to initiate WAN sync for.
          */
         public java.lang.String wanPublisherId;
 
@@ -71,7 +71,8 @@ public final class MCWanSyncMapCodec {
         public int wanSyncType;
 
         /**
-         * Name of the map to trigger WAN sync on, null if all maps are to be synced
+         * Name of the map to trigger WAN sync on, null if all maps
+         * are to be synced.
          */
         public @Nullable java.lang.String mapName;
     }

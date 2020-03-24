@@ -6439,7 +6439,7 @@ public class ClientCompatibilityTest_2_0 {
     @Test
     public void test_MCGetMapConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 763;
-        ClientMessage encoded = MCGetMapConfigCodec.encodeRequest(aString);
+        ClientMessage encoded = MCGetMapConfigCodec.encodeRequest(aString, aUUID);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6464,7 +6464,7 @@ public class ClientCompatibilityTest_2_0 {
     @Test
     public void test_MCUpdateMapConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 765;
-        ClientMessage encoded = MCUpdateMapConfigCodec.encodeRequest(aString, anInt, anInt, anInt, aBoolean, anInt, anInt);
+        ClientMessage encoded = MCUpdateMapConfigCodec.encodeRequest(aString, anInt, anInt, anInt, aBoolean, anInt, anInt, aUUID);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6479,7 +6479,7 @@ public class ClientCompatibilityTest_2_0 {
     @Test
     public void test_MCGetMemberConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 767;
-        ClientMessage encoded = MCGetMemberConfigCodec.encodeRequest();
+        ClientMessage encoded = MCGetMemberConfigCodec.encodeRequest(aUUID);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6495,7 +6495,7 @@ public class ClientCompatibilityTest_2_0 {
     @Test
     public void test_MCRunGcCodec_encodeRequest() {
         int fileClientMessageIndex = 769;
-        ClientMessage encoded = MCRunGcCodec.encodeRequest();
+        ClientMessage encoded = MCRunGcCodec.encodeRequest(aUUID);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6510,7 +6510,7 @@ public class ClientCompatibilityTest_2_0 {
     @Test
     public void test_MCGetThreadDumpCodec_encodeRequest() {
         int fileClientMessageIndex = 771;
-        ClientMessage encoded = MCGetThreadDumpCodec.encodeRequest(aBoolean);
+        ClientMessage encoded = MCGetThreadDumpCodec.encodeRequest(aBoolean, aUUID);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6526,7 +6526,7 @@ public class ClientCompatibilityTest_2_0 {
     @Test
     public void test_MCShutdownMemberCodec_encodeRequest() {
         int fileClientMessageIndex = 773;
-        ClientMessage encoded = MCShutdownMemberCodec.encodeRequest();
+        ClientMessage encoded = MCShutdownMemberCodec.encodeRequest(aUUID);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6541,7 +6541,7 @@ public class ClientCompatibilityTest_2_0 {
     @Test
     public void test_MCPromoteLiteMemberCodec_encodeRequest() {
         int fileClientMessageIndex = 775;
-        ClientMessage encoded = MCPromoteLiteMemberCodec.encodeRequest();
+        ClientMessage encoded = MCPromoteLiteMemberCodec.encodeRequest(aUUID);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6556,7 +6556,7 @@ public class ClientCompatibilityTest_2_0 {
     @Test
     public void test_MCGetSystemPropertiesCodec_encodeRequest() {
         int fileClientMessageIndex = 777;
-        ClientMessage encoded = MCGetSystemPropertiesCodec.encodeRequest();
+        ClientMessage encoded = MCGetSystemPropertiesCodec.encodeRequest(aUUID);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6572,7 +6572,7 @@ public class ClientCompatibilityTest_2_0 {
     @Test
     public void test_MCGetTimedMemberStateCodec_encodeRequest() {
         int fileClientMessageIndex = 779;
-        ClientMessage encoded = MCGetTimedMemberStateCodec.encodeRequest();
+        ClientMessage encoded = MCGetTimedMemberStateCodec.encodeRequest(aUUID);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6588,7 +6588,7 @@ public class ClientCompatibilityTest_2_0 {
     @Test
     public void test_MCMatchMCConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 781;
-        ClientMessage encoded = MCMatchMCConfigCodec.encodeRequest(aString);
+        ClientMessage encoded = MCMatchMCConfigCodec.encodeRequest(aString, aUUID);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6604,7 +6604,7 @@ public class ClientCompatibilityTest_2_0 {
     @Test
     public void test_MCApplyMCConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 783;
-        ClientMessage encoded = MCApplyMCConfigCodec.encodeRequest(aString, anInt, aListOfClientBwListEntries);
+        ClientMessage encoded = MCApplyMCConfigCodec.encodeRequest(aString, anInt, aListOfClientBwListEntries, aUUID);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6668,7 +6668,7 @@ public class ClientCompatibilityTest_2_0 {
     @Test
     public void test_MCRunScriptCodec_encodeRequest() {
         int fileClientMessageIndex = 791;
-        ClientMessage encoded = MCRunScriptCodec.encodeRequest(aString, aString);
+        ClientMessage encoded = MCRunScriptCodec.encodeRequest(aString, aString, aUUID);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6684,7 +6684,7 @@ public class ClientCompatibilityTest_2_0 {
     @Test
     public void test_MCRunConsoleCommandCodec_encodeRequest() {
         int fileClientMessageIndex = 793;
-        ClientMessage encoded = MCRunConsoleCommandCodec.encodeRequest(aString, aString);
+        ClientMessage encoded = MCRunConsoleCommandCodec.encodeRequest(aString, aString, aUUID);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6700,7 +6700,7 @@ public class ClientCompatibilityTest_2_0 {
     @Test
     public void test_MCChangeWanReplicationStateCodec_encodeRequest() {
         int fileClientMessageIndex = 795;
-        ClientMessage encoded = MCChangeWanReplicationStateCodec.encodeRequest(aString, aString, aByte);
+        ClientMessage encoded = MCChangeWanReplicationStateCodec.encodeRequest(aString, aString, aByte, aUUID);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6715,7 +6715,7 @@ public class ClientCompatibilityTest_2_0 {
     @Test
     public void test_MCClearWanQueuesCodec_encodeRequest() {
         int fileClientMessageIndex = 797;
-        ClientMessage encoded = MCClearWanQueuesCodec.encodeRequest(aString, aString);
+        ClientMessage encoded = MCClearWanQueuesCodec.encodeRequest(aString, aString, aUUID);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6779,7 +6779,7 @@ public class ClientCompatibilityTest_2_0 {
     @Test
     public void test_MCPollMCEventsCodec_encodeRequest() {
         int fileClientMessageIndex = 805;
-        ClientMessage encoded = MCPollMCEventsCodec.encodeRequest();
+        ClientMessage encoded = MCPollMCEventsCodec.encodeRequest(aUUID);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6811,7 +6811,7 @@ public class ClientCompatibilityTest_2_0 {
     @Test
     public void test_MCPromoteToCPMemberCodec_encodeRequest() {
         int fileClientMessageIndex = 809;
-        ClientMessage encoded = MCPromoteToCPMemberCodec.encodeRequest();
+        ClientMessage encoded = MCPromoteToCPMemberCodec.encodeRequest(aUUID);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

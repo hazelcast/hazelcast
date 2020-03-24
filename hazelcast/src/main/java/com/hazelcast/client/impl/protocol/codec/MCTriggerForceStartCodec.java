@@ -34,9 +34,9 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Triggers force start
+ * Triggers force start of the cluster.
  */
-@Generated("548b76e783821fac91bf9ad7843037c1")
+@Generated("c03f31b7ae1a334097a204330c75d6e7")
 public final class MCTriggerForceStartCodec {
     //hex: 0x201E00
     public static final int REQUEST_MESSAGE_TYPE = 2104832;
@@ -76,7 +76,8 @@ public final class MCTriggerForceStartCodec {
     public static class ResponseParameters {
 
         /**
-         * True if the forced start was successfully initiated, false otherwise
+         * True if the forced start was successfully initiated,
+         * false otherwise.
          */
         public boolean result;
     }

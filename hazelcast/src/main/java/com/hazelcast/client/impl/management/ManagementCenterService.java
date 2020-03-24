@@ -165,15 +165,16 @@ public class ManagementCenterService {
     private CompletableFuture<MCMapConfig> doGetMapConfig(Member member, String map) {
         ClientInvocation invocation;
         if (member == null) {
+            // TODO pick up any member
             invocation = new ClientInvocation(
                     client,
-                    MCGetMapConfigCodec.encodeRequest(map),
+                    MCGetMapConfigCodec.encodeRequest(map, null),
                     map
             );
         } else {
             invocation = new ClientInvocation(
                     client,
-                    MCGetMapConfigCodec.encodeRequest(map),
+                    MCGetMapConfigCodec.encodeRequest(map, member.getUuid()),
                     map,
                     member.getUuid()
             );
@@ -211,7 +212,8 @@ public class ManagementCenterService {
                         parameters.getEvictionPolicy().getId(),
                         parameters.isReadBackupData(),
                         parameters.getMaxSize(),
-                        parameters.getMaxSizePolicy().getId()),
+                        parameters.getMaxSizePolicy().getId(),
+                        member.getUuid()),
                 parameters.getMap(),
                 member.getUuid()
         );
@@ -232,7 +234,7 @@ public class ManagementCenterService {
 
         ClientInvocation invocation = new ClientInvocation(
                 client,
-                MCGetMemberConfigCodec.encodeRequest(),
+                MCGetMemberConfigCodec.encodeRequest(member.getUuid()),
                 null,
                 member.getUuid()
         );
@@ -253,7 +255,7 @@ public class ManagementCenterService {
 
         ClientInvocation invocation = new ClientInvocation(
                 client,
-                MCRunGcCodec.encodeRequest(),
+                MCRunGcCodec.encodeRequest(member.getUuid()),
                 null,
                 member.getUuid()
         );
@@ -277,7 +279,7 @@ public class ManagementCenterService {
 
         ClientInvocation invocation = new ClientInvocation(
                 client,
-                MCGetThreadDumpCodec.encodeRequest(dumpDeadLocks),
+                MCGetThreadDumpCodec.encodeRequest(dumpDeadLocks, member.getUuid()),
                 null,
                 member.getUuid()
         );
@@ -299,7 +301,7 @@ public class ManagementCenterService {
 
         ClientInvocation invocation = new ClientInvocation(
                 client,
-                MCShutdownMemberCodec.encodeRequest(),
+                MCShutdownMemberCodec.encodeRequest(member.getUuid()),
                 null,
                 member.getUuid()
         );
@@ -317,7 +319,7 @@ public class ManagementCenterService {
 
         ClientInvocation invocation = new ClientInvocation(
                 client,
-                MCPromoteLiteMemberCodec.encodeRequest(),
+                MCPromoteLiteMemberCodec.encodeRequest(member.getUuid()),
                 null,
                 member.getUuid()
         );
@@ -340,7 +342,7 @@ public class ManagementCenterService {
 
         ClientInvocation invocation = new ClientInvocation(
                 client,
-                MCGetSystemPropertiesCodec.encodeRequest(),
+                MCGetSystemPropertiesCodec.encodeRequest(member.getUuid()),
                 null,
                 member.getUuid()
         );
@@ -372,7 +374,7 @@ public class ManagementCenterService {
 
         ClientInvocation invocation = new ClientInvocation(
                 client,
-                MCGetTimedMemberStateCodec.encodeRequest(),
+                MCGetTimedMemberStateCodec.encodeRequest(member.getUuid()),
                 null,
                 member.getUuid()
         );
@@ -399,7 +401,7 @@ public class ManagementCenterService {
 
         ClientInvocation invocation = new ClientInvocation(
                 client,
-                MCMatchMCConfigCodec.encodeRequest(eTag),
+                MCMatchMCConfigCodec.encodeRequest(eTag, member.getUuid()),
                 null,
                 member.getUuid()
         );
@@ -433,7 +435,7 @@ public class ManagementCenterService {
 
         ClientInvocation invocation = new ClientInvocation(
                 client,
-                MCApplyMCConfigCodec.encodeRequest(eTag, clientBwList.mode.getId(), clientBwList.entries),
+                MCApplyMCConfigCodec.encodeRequest(eTag, clientBwList.mode.getId(), clientBwList.entries, member.getUuid()),
                 null,
                 member.getUuid()
         );
@@ -520,7 +522,7 @@ public class ManagementCenterService {
 
         ClientInvocation invocation = new ClientInvocation(
                 client,
-                MCRunScriptCodec.encodeRequest(engine, script),
+                MCRunScriptCodec.encodeRequest(engine, script, member.getUuid()),
                 null,
                 member.getUuid()
         );
@@ -547,7 +549,7 @@ public class ManagementCenterService {
 
         ClientInvocation invocation = new ClientInvocation(
                 client,
-                MCRunConsoleCommandCodec.encodeRequest(namespace, command),
+                MCRunConsoleCommandCodec.encodeRequest(namespace, command, member.getUuid()),
                 null,
                 member.getUuid()
         );
@@ -581,7 +583,11 @@ public class ManagementCenterService {
 
         ClientInvocation invocation = new ClientInvocation(
                 client,
-                MCChangeWanReplicationStateCodec.encodeRequest(wanReplicationName, wanPublisherId, newState.getId()),
+                MCChangeWanReplicationStateCodec.encodeRequest(
+                        wanReplicationName,wanPublisherId,
+                        newState.getId(),
+                        member.getUuid()
+                ),
                 null,
                 member.getUuid()
         );
@@ -612,7 +618,7 @@ public class ManagementCenterService {
 
         ClientInvocation invocation = new ClientInvocation(
                 client,
-                MCClearWanQueuesCodec.encodeRequest(wanReplicationName, wanPublisherId),
+                MCClearWanQueuesCodec.encodeRequest(wanReplicationName, wanPublisherId, member.getUuid()),
                 null,
                 member.getUuid()
         );
@@ -762,7 +768,7 @@ public class ManagementCenterService {
 
         ClientInvocation invocation = new ClientInvocation(
                 client,
-                MCPollMCEventsCodec.encodeRequest(),
+                MCPollMCEventsCodec.encodeRequest(member.getUuid()),
                 null,
                 member.getUuid()
         );
@@ -812,7 +818,7 @@ public class ManagementCenterService {
 
         ClientInvocation invocation = new ClientInvocation(
                 client,
-                MCPromoteToCPMemberCodec.encodeRequest(),
+                MCPromoteToCPMemberCodec.encodeRequest(member.getUuid()),
                 null,
                 member.getUuid()
         );

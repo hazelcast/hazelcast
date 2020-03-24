@@ -47,12 +47,12 @@ import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class MemberCompatibilityNullTest_2_0 {
+public class MemberCompatibilityNullTest_2_0_1 {
     private List<ClientMessage> clientMessages = new ArrayList<>();
 
     @Before
     public void setUp() throws IOException {
-        File file = new File(getClass().getResource("/2.0.protocol.compatibility.null.binary").getFile());
+        File file = new File(getClass().getResource("/2.0.1.protocol.compatibility.null.binary").getFile());
         InputStream inputStream = new FileInputStream(file);
         byte[] data = new byte[(int) file.length()];
         inputStream.read(data);
@@ -6933,7 +6933,8 @@ public class MemberCompatibilityNullTest_2_0 {
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MCGetMapConfigCodec.RequestParameters parameters = MCGetMapConfigCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.mapName));
-        assertFalse(parameters.isMemberUuidExists);
+        assertTrue(parameters.isMemberUuidExists);
+        assertTrue(isEqual(aUUID, parameters.memberUuid));
     }
 
     @Test
@@ -6956,7 +6957,8 @@ public class MemberCompatibilityNullTest_2_0 {
         assertTrue(isEqual(aBoolean, parameters.readBackupData));
         assertTrue(isEqual(anInt, parameters.maxSize));
         assertTrue(isEqual(anInt, parameters.maxSizePolicy));
-        assertFalse(parameters.isMemberUuidExists);
+        assertTrue(parameters.isMemberUuidExists);
+        assertTrue(isEqual(aUUID, parameters.memberUuid));
     }
 
     @Test
@@ -6972,7 +6974,8 @@ public class MemberCompatibilityNullTest_2_0 {
         int fileClientMessageIndex = 767;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MCGetMemberConfigCodec.RequestParameters parameters = MCGetMemberConfigCodec.decodeRequest(fromFile);
-        assertFalse(parameters.isMemberUuidExists);
+        assertTrue(parameters.isMemberUuidExists);
+        assertTrue(isEqual(aUUID, parameters.memberUuid));
     }
 
     @Test
@@ -6988,7 +6991,8 @@ public class MemberCompatibilityNullTest_2_0 {
         int fileClientMessageIndex = 769;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MCRunGcCodec.RequestParameters parameters = MCRunGcCodec.decodeRequest(fromFile);
-        assertFalse(parameters.isMemberUuidExists);
+        assertTrue(parameters.isMemberUuidExists);
+        assertTrue(isEqual(aUUID, parameters.memberUuid));
     }
 
     @Test
@@ -7005,7 +7009,8 @@ public class MemberCompatibilityNullTest_2_0 {
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MCGetThreadDumpCodec.RequestParameters parameters = MCGetThreadDumpCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aBoolean, parameters.dumpDeadLocks));
-        assertFalse(parameters.isMemberUuidExists);
+        assertTrue(parameters.isMemberUuidExists);
+        assertTrue(isEqual(aUUID, parameters.memberUuid));
     }
 
     @Test
@@ -7021,7 +7026,8 @@ public class MemberCompatibilityNullTest_2_0 {
         int fileClientMessageIndex = 773;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MCShutdownMemberCodec.RequestParameters parameters = MCShutdownMemberCodec.decodeRequest(fromFile);
-        assertFalse(parameters.isMemberUuidExists);
+        assertTrue(parameters.isMemberUuidExists);
+        assertTrue(isEqual(aUUID, parameters.memberUuid));
     }
 
     @Test
@@ -7037,7 +7043,8 @@ public class MemberCompatibilityNullTest_2_0 {
         int fileClientMessageIndex = 775;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MCPromoteLiteMemberCodec.RequestParameters parameters = MCPromoteLiteMemberCodec.decodeRequest(fromFile);
-        assertFalse(parameters.isMemberUuidExists);
+        assertTrue(parameters.isMemberUuidExists);
+        assertTrue(isEqual(aUUID, parameters.memberUuid));
     }
 
     @Test
@@ -7053,7 +7060,8 @@ public class MemberCompatibilityNullTest_2_0 {
         int fileClientMessageIndex = 777;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MCGetSystemPropertiesCodec.RequestParameters parameters = MCGetSystemPropertiesCodec.decodeRequest(fromFile);
-        assertFalse(parameters.isMemberUuidExists);
+        assertTrue(parameters.isMemberUuidExists);
+        assertTrue(isEqual(aUUID, parameters.memberUuid));
     }
 
     @Test
@@ -7069,7 +7077,8 @@ public class MemberCompatibilityNullTest_2_0 {
         int fileClientMessageIndex = 779;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MCGetTimedMemberStateCodec.RequestParameters parameters = MCGetTimedMemberStateCodec.decodeRequest(fromFile);
-        assertFalse(parameters.isMemberUuidExists);
+        assertTrue(parameters.isMemberUuidExists);
+        assertTrue(isEqual(aUUID, parameters.memberUuid));
     }
 
     @Test
@@ -7086,7 +7095,8 @@ public class MemberCompatibilityNullTest_2_0 {
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MCMatchMCConfigCodec.RequestParameters parameters = MCMatchMCConfigCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.eTag));
-        assertFalse(parameters.isMemberUuidExists);
+        assertTrue(parameters.isMemberUuidExists);
+        assertTrue(isEqual(aUUID, parameters.memberUuid));
     }
 
     @Test
@@ -7105,7 +7115,8 @@ public class MemberCompatibilityNullTest_2_0 {
         assertTrue(isEqual(aString, parameters.eTag));
         assertTrue(isEqual(anInt, parameters.clientBwListMode));
         assertTrue(isEqual(aListOfClientBwListEntries, parameters.clientBwListEntries));
-        assertFalse(parameters.isMemberUuidExists);
+        assertTrue(parameters.isMemberUuidExists);
+        assertTrue(isEqual(aUUID, parameters.memberUuid));
     }
 
     @Test
@@ -7170,7 +7181,8 @@ public class MemberCompatibilityNullTest_2_0 {
         MCRunScriptCodec.RequestParameters parameters = MCRunScriptCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.engine));
         assertTrue(isEqual(aString, parameters.script));
-        assertFalse(parameters.isMemberUuidExists);
+        assertTrue(parameters.isMemberUuidExists);
+        assertTrue(isEqual(aUUID, parameters.memberUuid));
     }
 
     @Test
@@ -7188,7 +7200,8 @@ public class MemberCompatibilityNullTest_2_0 {
         MCRunConsoleCommandCodec.RequestParameters parameters = MCRunConsoleCommandCodec.decodeRequest(fromFile);
         assertTrue(isEqual(null, parameters.namespace));
         assertTrue(isEqual(aString, parameters.command));
-        assertFalse(parameters.isMemberUuidExists);
+        assertTrue(parameters.isMemberUuidExists);
+        assertTrue(isEqual(aUUID, parameters.memberUuid));
     }
 
     @Test
@@ -7207,7 +7220,8 @@ public class MemberCompatibilityNullTest_2_0 {
         assertTrue(isEqual(aString, parameters.wanReplicationName));
         assertTrue(isEqual(aString, parameters.wanPublisherId));
         assertTrue(isEqual(aByte, parameters.newState));
-        assertFalse(parameters.isMemberUuidExists);
+        assertTrue(parameters.isMemberUuidExists);
+        assertTrue(isEqual(aUUID, parameters.memberUuid));
     }
 
     @Test
@@ -7225,7 +7239,8 @@ public class MemberCompatibilityNullTest_2_0 {
         MCClearWanQueuesCodec.RequestParameters parameters = MCClearWanQueuesCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.wanReplicationName));
         assertTrue(isEqual(aString, parameters.wanPublisherId));
-        assertFalse(parameters.isMemberUuidExists);
+        assertTrue(parameters.isMemberUuidExists);
+        assertTrue(isEqual(aUUID, parameters.memberUuid));
     }
 
     @Test
@@ -7303,7 +7318,8 @@ public class MemberCompatibilityNullTest_2_0 {
         int fileClientMessageIndex = 805;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MCPollMCEventsCodec.RequestParameters parameters = MCPollMCEventsCodec.decodeRequest(fromFile);
-        assertFalse(parameters.isMemberUuidExists);
+        assertTrue(parameters.isMemberUuidExists);
+        assertTrue(isEqual(aUUID, parameters.memberUuid));
     }
 
     @Test
@@ -7334,7 +7350,8 @@ public class MemberCompatibilityNullTest_2_0 {
         int fileClientMessageIndex = 809;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MCPromoteToCPMemberCodec.RequestParameters parameters = MCPromoteToCPMemberCodec.decodeRequest(fromFile);
-        assertFalse(parameters.isMemberUuidExists);
+        assertTrue(parameters.isMemberUuidExists);
+        assertTrue(isEqual(aUUID, parameters.memberUuid));
     }
 
     @Test

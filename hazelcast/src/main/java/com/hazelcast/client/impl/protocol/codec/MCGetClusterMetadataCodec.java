@@ -34,9 +34,9 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Gets the current metadata of a cluster.
+ * Gets current metadata of the cluster.
  */
-@Generated("a87b4046ecb197e914e371539dad1708")
+@Generated("19473e7b5e59b10132eae48e197588c6")
 public final class MCGetClusterMetadataCodec {
     //hex: 0x200E00
     public static final int REQUEST_MESSAGE_TYPE = 2100736;

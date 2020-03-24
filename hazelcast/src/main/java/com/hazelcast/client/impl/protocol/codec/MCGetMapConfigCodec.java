@@ -34,15 +34,16 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Gets the config of a map on the member it's called on.
+ * Gets the config of a map on the specified member.
  */
-@Generated("95f82c6b77658a38b6264ef6e72e9eed")
+@Generated("cacc2dad18da9e94b00c8849c027361d")
 public final class MCGetMapConfigCodec {
     //hex: 0x200300
     public static final int REQUEST_MESSAGE_TYPE = 2097920;
     //hex: 0x200301
     public static final int RESPONSE_MESSAGE_TYPE = 2097921;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_MEMBER_UUID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_MEMBER_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int RESPONSE_IN_MEMORY_FORMAT_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_BACKUP_COUNT_FIELD_OFFSET = RESPONSE_IN_MEMORY_FORMAT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_ASYNC_BACKUP_COUNT_FIELD_OFFSET = RESPONSE_BACKUP_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -64,15 +65,27 @@ public final class MCGetMapConfigCodec {
          * Name of the map.
          */
         public java.lang.String mapName;
+
+        /**
+         * UUID of the member.
+         */
+        public java.util.UUID memberUuid;
+
+        /**
+         * True if the memberUuid is received from the client, false otherwise.
+         * If this is false, memberUuid has the default value for its type.
+        */
+        public boolean isMemberUuidExists;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String mapName) {
+    public static ClientMessage encodeRequest(java.lang.String mapName, java.util.UUID memberUuid) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setOperationName("MC.GetMapConfig");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
+        encodeUUID(initialFrame.content, REQUEST_MEMBER_UUID_FIELD_OFFSET, memberUuid);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, mapName);
         return clientMessage;
@@ -81,8 +94,13 @@ public final class MCGetMapConfigCodec {
     public static MCGetMapConfigCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
-        //empty initial frame
-        iterator.next();
+        ClientMessage.Frame initialFrame = iterator.next();
+        if (initialFrame.content.length >= REQUEST_MEMBER_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES) {
+            request.memberUuid = decodeUUID(initialFrame.content, REQUEST_MEMBER_UUID_FIELD_OFFSET);
+            request.isMemberUuidExists = true;
+        } else {
+            request.isMemberUuidExists = false;
+        }
         request.mapName = StringCodec.decode(iterator);
         return request;
     }
@@ -91,7 +109,7 @@ public final class MCGetMapConfigCodec {
     public static class ResponseParameters {
 
         /**
-         * The in memory storage format of the map:
+         * In memory storage format of the map:
          * 0 - Binary
          * 1 - Object
          * 2 - Native

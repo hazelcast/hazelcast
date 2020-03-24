@@ -34,9 +34,9 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Triggers hot restart backup
+ * Triggers hot restart backup for the cluster.
  */
-@Generated("4808bc8a17eaf2b4c95e214575524c9b")
+@Generated("b5c8b4d0794640af887f884eccdd652f")
 public final class MCTriggerHotRestartBackupCodec {
     //hex: 0x201F00
     public static final int REQUEST_MESSAGE_TYPE = 2105088;

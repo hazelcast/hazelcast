@@ -34,9 +34,9 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Add a new WAN batch publisher configuration
+ * Adds a new WAN batch publisher configuration.
  */
-@Generated("8b084e36fb19eec8062549b831c338d1")
+@Generated("8c30cd6edc51186e7f58a6ed849498a4")
 public final class MCAddWanBatchPublisherConfigCodec {
     //hex: 0x201500
     public static final int REQUEST_MESSAGE_TYPE = 2102528;
@@ -58,7 +58,7 @@ public final class MCAddWanBatchPublisherConfigCodec {
     public static class RequestParameters {
 
         /**
-         * Name of the WAN replication to add
+         * Name of the WAN replication to add.
          */
         public java.lang.String name;
 
@@ -68,36 +68,36 @@ public final class MCAddWanBatchPublisherConfigCodec {
         public java.lang.String targetCluster;
 
         /**
-         * - ID used for identifying the publisher in a WanReplicationConfig
+         * - ID used for identifying the publisher in a WanReplicationConfig.
          */
         public @Nullable java.lang.String publisherId;
 
         /**
-         * Comma separated list of target cluster members
+         * Comma separated list of target cluster members.
          */
         public java.lang.String endpoints;
 
         /**
-         * Capacity of the primary and backup queue for WAN replication events
+         * Capacity of the primary and backup queue for WAN replication events.
          */
         public int queueCapacity;
 
         /**
-         * The maximum batch size that can be sent to target cluster
+         * The maximum batch size that can be sent to target cluster.
          */
         public int batchSize;
 
         /**
          * The maximum amount of time in milliseconds to wait before sending a batch
          *  of events to target cluster, if `batch size` of events have not arrived
-         *  within this duration
+         *  within this duration.
          */
         public int batchMaxDelayMillis;
 
         /**
          * The duration in milliseconds for the wait time before retrying to
          * send the events to target cluster again in case the acknowledgement
-         * has not arrived
+         * has not arrived.
          */
         public int responseTimeoutMillis;
 
@@ -160,7 +160,7 @@ public final class MCAddWanBatchPublisherConfigCodec {
     public static class ResponseParameters {
 
         /**
-         * Returns the IDs for the WAN publishers which were added to the configuration
+         * Returns the IDs for the WAN publishers which were added to the configuration.
          */
         public java.util.List<java.lang.String> addedPublisherIds;
 

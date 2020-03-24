@@ -34,9 +34,9 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Triggers partial start
+ * Triggers partial start of the cluster.
  */
-@Generated("6f9399ec3d579a547732487893f5124e")
+@Generated("8469b73fdb3780440c27ccf1e14dec80")
 public final class MCTriggerPartialStartCodec {
     //hex: 0x201D00
     public static final int REQUEST_MESSAGE_TYPE = 2104576;
@@ -76,7 +76,8 @@ public final class MCTriggerPartialStartCodec {
     public static class ResponseParameters {
 
         /**
-         * True if the partial restart was successfully initiated, false otherwise
+         * True if the partial restart was successfully initiated,
+         * false otherwise.
          */
         public boolean result;
     }
