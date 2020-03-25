@@ -25,6 +25,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -33,7 +34,7 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class PhysicalNodeSchemaTest {
     @Test
-    public void testPhysicalNodeSchema() {
+    public void testSingleSchema() {
         QueryDataType type0 = QueryDataType.VARCHAR;
         QueryDataType type1 = QueryDataType.DOUBLE;
 
@@ -49,5 +50,20 @@ public class PhysicalNodeSchemaTest {
         assertEquals(type1, schema.getType(1));
 
         assertEquals(type0.getTypeFamily().getEstimatedSize() + type1.getTypeFamily().getEstimatedSize(), schema.getRowWidth());
+    }
+
+    @Test
+    public void testCombinedSchemas() {
+        QueryDataType type0 = QueryDataType.VARCHAR;
+        QueryDataType type1 = QueryDataType.DOUBLE;
+
+        PhysicalNodeSchema schema0 = new PhysicalNodeSchema(Collections.singletonList(type0));
+        PhysicalNodeSchema schema1 = new PhysicalNodeSchema(Collections.singletonList(type1));
+
+        PhysicalNodeSchema combinedSchema = PhysicalNodeSchema.combine(schema0, schema1);
+
+        assertEquals(2, combinedSchema.getTypes().size());
+        assertEquals(type0, combinedSchema.getType(0));
+        assertEquals(type1, combinedSchema.getType(1));
     }
 }

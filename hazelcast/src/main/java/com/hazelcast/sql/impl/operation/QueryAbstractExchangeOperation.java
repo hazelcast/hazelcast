@@ -26,6 +26,7 @@ import java.io.IOException;
  * Common class for data exchange operations.
  */
 public abstract class QueryAbstractExchangeOperation extends QueryAbstractIdAwareOperation {
+
     protected int edgeId;
 
     public QueryAbstractExchangeOperation() {

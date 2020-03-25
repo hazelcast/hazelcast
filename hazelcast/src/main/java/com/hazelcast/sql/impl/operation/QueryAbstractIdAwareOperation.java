@@ -26,7 +26,7 @@ import java.io.IOException;
  * Base class for query operations which has query ID.
  */
 public abstract class QueryAbstractIdAwareOperation extends QueryOperation {
-    /** Query ID. */
+
     protected QueryId queryId;
 
     protected QueryAbstractIdAwareOperation() {

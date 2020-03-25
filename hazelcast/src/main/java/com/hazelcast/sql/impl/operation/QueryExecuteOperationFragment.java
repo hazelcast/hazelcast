@@ -32,10 +32,8 @@ import java.util.UUID;
  * Query fragment descriptor which is sent over a wire.
  */
 public class QueryExecuteOperationFragment implements DataSerializable {
-    /** Physical node. */
-    private PhysicalNode node;
 
-    /** IDs of members where the fragment should be executed. */
+    private PhysicalNode node;
     private Collection<UUID> memberIds;
 
     public QueryExecuteOperationFragment() {

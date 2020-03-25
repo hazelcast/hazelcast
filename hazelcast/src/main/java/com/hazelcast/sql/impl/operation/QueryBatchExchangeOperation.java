@@ -28,6 +28,7 @@ import java.io.IOException;
  * Batch operation.
  */
 public class QueryBatchExchangeOperation extends QueryAbstractExchangeOperation {
+
     private RowBatch batch;
     private boolean last;
     private long remainingMemory;

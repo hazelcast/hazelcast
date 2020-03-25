@@ -51,10 +51,7 @@ public class QueryExecuteOperation extends QueryAbstractIdAwareOperation {
     /** Map from edge ID to initial credits assigned to senders. */
     private Map<Integer, Long> edgeCreditMap;
 
-    /** Arguments. */
     private List<Object> arguments;
-
-    /** Timeout. */
     private long timeout;
 
     public QueryExecuteOperation() {
