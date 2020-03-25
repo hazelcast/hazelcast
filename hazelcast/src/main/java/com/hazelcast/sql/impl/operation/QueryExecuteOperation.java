@@ -135,7 +135,7 @@ public class QueryExecuteOperation extends QueryAbstractIdAwareOperation {
         out.writeInt(fragments.size());
 
         for (QueryExecuteOperationFragment fragment : fragments) {
-            fragment.writeData(out);
+            out.writeObject(fragment);
         }
 
         // Write edge mappings.
@@ -195,9 +195,7 @@ public class QueryExecuteOperation extends QueryAbstractIdAwareOperation {
         fragments = new ArrayList<>(fragmentCnt);
 
         for (int i = 0; i < fragmentCnt; i++) {
-            QueryExecuteOperationFragment fragment = new QueryExecuteOperationFragment();
-
-            fragment.readData(in);
+            QueryExecuteOperationFragment fragment = in.readObject();
 
             fragments.add(fragment);
         }

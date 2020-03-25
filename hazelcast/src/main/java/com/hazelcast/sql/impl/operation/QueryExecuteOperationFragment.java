@@ -19,7 +19,8 @@ package com.hazelcast.sql.impl.operation;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.physical.PhysicalNode;
 
 import java.io.IOException;
@@ -31,7 +32,7 @@ import java.util.UUID;
 /**
  * Query fragment descriptor which is sent over a wire.
  */
-public class QueryExecuteOperationFragment implements DataSerializable {
+public class QueryExecuteOperationFragment implements IdentifiedDataSerializable {
 
     private PhysicalNode node;
     private Collection<UUID> memberIds;
@@ -51,6 +52,16 @@ public class QueryExecuteOperationFragment implements DataSerializable {
 
     public Collection<UUID> getMemberIds() {
         return memberIds;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SqlDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return SqlDataSerializerHook.OPERATION_EXECUTE_FRAGMENT;
     }
 
     @Override

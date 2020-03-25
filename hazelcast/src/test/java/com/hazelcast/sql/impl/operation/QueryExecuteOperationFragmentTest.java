@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.operation;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.physical.MockPhysicalNode;
 import com.hazelcast.sql.impl.physical.PhysicalNode;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -54,6 +55,9 @@ public class QueryExecuteOperationFragmentTest {
             MockPhysicalNode.create(1, QueryDataType.INT),
             Arrays.asList(UUID.randomUUID(), UUID.randomUUID())
         );
+
+        assertEquals(SqlDataSerializerHook.F_ID, original.getFactoryId());
+        assertEquals(SqlDataSerializerHook.OPERATION_EXECUTE_FRAGMENT, original.getClassId());
 
         InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
 

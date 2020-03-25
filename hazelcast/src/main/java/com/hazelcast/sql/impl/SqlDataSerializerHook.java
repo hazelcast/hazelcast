@@ -27,6 +27,7 @@ import com.hazelcast.sql.impl.operation.QueryCancelOperation;
 import com.hazelcast.sql.impl.operation.QueryCheckOperation;
 import com.hazelcast.sql.impl.operation.QueryCheckResponseOperation;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
+import com.hazelcast.sql.impl.operation.QueryExecuteOperationFragment;
 import com.hazelcast.sql.impl.operation.QueryFlowControlExchangeOperation;
 import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.HeapRow;
@@ -54,11 +55,12 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int ROW_BATCH_EMPTY = 5;
 
     public static final int OPERATION_EXECUTE = 6;
-    public static final int OPERATION_BATCH = 7;
-    public static final int OPERATION_FLOW_CONTROL = 8;
-    public static final int OPERATION_CANCEL = 9;
-    public static final int OPERATION_CHECK = 10;
-    public static final int OPERATION_CHECK_RESPONSE = 11;
+    public static final int OPERATION_EXECUTE_FRAGMENT = 7;
+    public static final int OPERATION_BATCH = 8;
+    public static final int OPERATION_FLOW_CONTROL = 9;
+    public static final int OPERATION_CANCEL = 10;
+    public static final int OPERATION_CHECK = 11;
+    public static final int OPERATION_CHECK_RESPONSE = 12;
 
     public static final int LEN = OPERATION_CHECK_RESPONSE + 1;
 
@@ -82,6 +84,7 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[ROW_BATCH_EMPTY] = arg -> EmptyRowBatch.INSTANCE;
 
         constructors[OPERATION_EXECUTE] = arg -> new QueryExecuteOperation();
+        constructors[OPERATION_EXECUTE_FRAGMENT] = arg -> new QueryExecuteOperationFragment();
         constructors[OPERATION_BATCH] = arg -> new QueryBatchExchangeOperation();
         constructors[OPERATION_FLOW_CONTROL] = arg -> new QueryFlowControlExchangeOperation();
         constructors[OPERATION_CANCEL] = arg -> new QueryCancelOperation();
