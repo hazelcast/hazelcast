@@ -55,7 +55,7 @@ public class UpstreamState implements Iterable<Row> {
     /**
      * Try advancing the upstream.
      *
-     * @return {@code True} if the caller may try iteration over results; {@code false} if the caller should give
+     * @return {@code true} if the caller may try iteration over results; {@code false} if the caller should give
      * up execution and wait.
      */
     public boolean advance() {
@@ -109,7 +109,7 @@ public class UpstreamState implements Iterable<Row> {
     }
 
     /**
-     * @return {@code True} if no more results will appear in future.
+     * @return {@code true} if no more results will appear in future.
      */
     public boolean isDone() {
         return state == FETCHED_DONE && !iter.hasNext();

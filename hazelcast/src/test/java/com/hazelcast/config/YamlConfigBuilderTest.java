@@ -792,12 +792,17 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         String yaml = ""
                 + "hazelcast:\n"
                 + "  management-center:\n"
-                + "    scripting-enabled: true\n";
+                + "    scripting-enabled: true\n"
+                + "    trusted-interfaces:\n"
+                + "      - 127.0.0.1\n"
+                + "      - 192.168.1.*\n";
 
         Config config = buildConfig(yaml);
         ManagementCenterConfig mcConfig = config.getManagementCenterConfig();
 
         assertTrue(mcConfig.isScriptingEnabled());
+        assertEquals(2, mcConfig.getTrustedInterfaces().size());
+        assertTrue(mcConfig.getTrustedInterfaces().containsAll(ImmutableSet.of("127.0.0.1", "192.168.1.*")));
     }
 
     @Override

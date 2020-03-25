@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.protocol.ClientExceptions;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.statistics.ClientStatistics;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.cluster.AddressChecker;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.logging.ILogger;
@@ -154,5 +155,10 @@ public class NoOpClientEngine implements ClientEngine {
     @Override
     public boolean deregisterBackupListener(UUID clientUUID) {
         return false;
+    }
+
+    @Override
+    public AddressChecker getManagementTasksChecker() {
+        return null;
     }
 }

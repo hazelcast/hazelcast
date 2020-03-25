@@ -19,6 +19,8 @@ package com.hazelcast.internal.metrics.jmx;
 import com.hazelcast.internal.metrics.jmx.MetricsMBean.Type;
 import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.internal.util.TriTuple;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanServer;
@@ -41,6 +43,7 @@ public class JmxPublisherTestHelper {
     private final MBeanServer platformMBeanServer;
     private final ObjectName objectNameNoModule;
     private final ObjectName objectNameWithModule;
+    private final ILogger logger = Logger.getLogger(JmxPublisherTestHelper.class);
 
     public JmxPublisherTestHelper(String domainPrefix) throws Exception {
         objectNameNoModule = new ObjectName(domainPrefix + ":*");
@@ -50,6 +53,10 @@ public class JmxPublisherTestHelper {
 
     public void assertNoMBeans() {
         Set<ObjectInstance> instances = queryOurInstances();
+        if (instances.size() > 0) {
+            String jvmName = ManagementFactory.getRuntimeMXBean().getName();
+            logger.info("Dangling metrics MBeans created by " + jvmName + ": " + instances);
+        }
         assertEquals(0, instances.size());
     }
 

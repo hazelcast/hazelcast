@@ -984,8 +984,13 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         }
 
         public void handleMulticast(Node node, BeanDefinitionBuilder joinConfigBuilder) {
-            BeanDefinitionBuilder builder = createAndFillBeanBuilder(node, MulticastConfig.class, "multicastConfig",
-                    joinConfigBuilder, "trusted-interfaces", "interface");
+            handleTrustedInterfacesBean(node, joinConfigBuilder, MulticastConfig.class, "multicastConfig");
+        }
+
+        private void handleTrustedInterfacesBean(Node node, BeanDefinitionBuilder configBuilder,
+                Class<?> configClass, String propertyName) {
+            BeanDefinitionBuilder builder = createAndFillBeanBuilder(node, configClass, propertyName,
+                    configBuilder, "trusted-interfaces", "interface");
             ManagedList<String> interfaces = new ManagedList<>();
             for (Node n : childElements(node)) {
                 String name = cleanNodeName(n);
@@ -1481,9 +1486,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         }
 
         private void handleManagementCenter(Node node) {
-            BeanDefinitionBuilder managementCenterConfigBuilder = createBeanBuilder(ManagementCenterConfig.class);
-            fillAttributeValues(node, managementCenterConfigBuilder);
-            configBuilder.addPropertyValue("managementCenterConfig", managementCenterConfigBuilder.getBeanDefinition());
+            handleTrustedInterfacesBean(node, configBuilder, ManagementCenterConfig.class, "managementCenterConfig");
         }
 
         public void handleNearCacheConfig(Node node, BeanDefinitionBuilder configBuilder) {

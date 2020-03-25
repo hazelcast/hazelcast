@@ -107,7 +107,7 @@ public class ClientTransactionManagerServiceImpl implements ClientTransactionMan
     }
 
     public ClientConnection connect() throws Exception {
-        AbstractClientInvocationService invocationService = (AbstractClientInvocationService) client.getInvocationService();
+        ClientInvocationServiceImpl invocationService = (ClientInvocationServiceImpl) client.getInvocationService();
         long startTimeMillis = System.currentTimeMillis();
         long invocationTimeoutMillis = invocationService.getInvocationTimeoutMillis();
         ClientConfig clientConfig = client.getClientConfig();

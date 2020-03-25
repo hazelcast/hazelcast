@@ -14,18 +14,23 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.impl.protocol.task;
+package testsubjects;
 
-/**
- * Interface for all client message tasks to implement
- */
-public interface MessageTask extends Runnable {
+import java.util.function.BiFunction;
 
-    /**
-     * Returns {@code true} if current task is a management one and should be protected by additional access checks (e.g. the
-     * client source address).
-     *
-     * @return {@code true} when the task is a protected management task; {@code false} otherwise
-     */
-    boolean isManagementTask();
+public class StaticNonSerializableBiFunction implements BiFunction<String, String, String> {
+
+    private String returnValue;
+
+    public StaticNonSerializableBiFunction(String returnValue) {
+        this.returnValue = returnValue;
+    }
+
+    @Override
+    public String apply(String key, String oldValue) {
+        return returnValue;
+    }
+
 }
+
+

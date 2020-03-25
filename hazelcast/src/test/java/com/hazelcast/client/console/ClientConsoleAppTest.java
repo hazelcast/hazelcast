@@ -16,10 +16,9 @@
 
 package com.hazelcast.client.console;
 
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -52,7 +51,8 @@ public class ClientConsoleAppTest extends HazelcastTestSupport {
     private static ByteArrayOutputStream baos;
     private static PrintStream printStream;
 
-    private  HazelcastInstance hazelcastInstance;
+    private HazelcastInstance hazelcastInstance;
+    private TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
     @BeforeClass
     public static void beforeClass() {
@@ -67,17 +67,18 @@ public class ClientConsoleAppTest extends HazelcastTestSupport {
     @Before
     public void before() {
         resetSystemOut();
-        hazelcastInstance = Hazelcast.newHazelcastInstance(new Config());
+        hazelcastInstance = hazelcastFactory.newHazelcastInstance(new Config());
     }
 
     @After
     public void after() {
         hazelcastInstance.shutdown();
+        hazelcastFactory.terminateAll();
     }
 
     @Test
     public void executeOnKey() {
-        ClientConsoleApp consoleApp = new ClientConsoleApp(HazelcastClient.newHazelcastClient(new ClientConfig()), printStream);
+        ClientConsoleApp consoleApp = new ClientConsoleApp(hazelcastFactory.newHazelcastClient(new ClientConfig()), printStream);
         for (int i = 0; i < 100; i++) {
             consoleApp.handleCommand(String.format("executeOnKey message%d key%d", i, i));
             assertTextInSystemOut("message" + i);
@@ -89,7 +90,7 @@ public class ClientConsoleAppTest extends HazelcastTestSupport {
      */
     @Test
     public void mapPut() {
-        HazelcastInstance hz = HazelcastClient.newHazelcastClient(new ClientConfig());
+        HazelcastInstance hz = hazelcastFactory.newHazelcastClient(new ClientConfig());
         ClientConsoleApp consoleApp = new ClientConsoleApp(hz, printStream);
 
         IMap<String, String> map = hz.getMap("default");
@@ -113,7 +114,7 @@ public class ClientConsoleAppTest extends HazelcastTestSupport {
      */
     @Test
     public void mapRemove() {
-        HazelcastInstance hz = HazelcastClient.newHazelcastClient(new ClientConfig());
+        HazelcastInstance hz = hazelcastFactory.newHazelcastClient(new ClientConfig());
         ClientConsoleApp consoleApp = new ClientConsoleApp(hz, printStream);
         IMap<String, String> map = hz.getMap("default");
         map.put("a", "valueOfA");
@@ -130,7 +131,7 @@ public class ClientConsoleAppTest extends HazelcastTestSupport {
      */
     @Test
     public void mapDelete() {
-        HazelcastInstance hz = HazelcastClient.newHazelcastClient(new ClientConfig());
+        HazelcastInstance hz = hazelcastFactory.newHazelcastClient(new ClientConfig());
         ClientConsoleApp consoleApp = new ClientConsoleApp(hz, printStream);
         IMap<String, String> map = hz.getMap("default");
         map.put("a", "valueOfA");
@@ -147,7 +148,7 @@ public class ClientConsoleAppTest extends HazelcastTestSupport {
      */
     @Test
     public void mapGet() {
-        HazelcastInstance hz = HazelcastClient.newHazelcastClient(new ClientConfig());
+        HazelcastInstance hz = hazelcastFactory.newHazelcastClient(new ClientConfig());
         ClientConsoleApp consoleApp = new ClientConsoleApp(hz, printStream);
         hz.<String, String>getMap("default").put("testGetKey", "testGetValue");
         consoleApp.handleCommand("m.get testGetKey");
@@ -159,7 +160,7 @@ public class ClientConsoleAppTest extends HazelcastTestSupport {
      */
     @Test
     public void mapPutMany() {
-        HazelcastInstance hz = HazelcastClient.newHazelcastClient(new ClientConfig());
+        HazelcastInstance hz = hazelcastFactory.newHazelcastClient(new ClientConfig());
         ClientConsoleApp consoleApp = new ClientConsoleApp(hz, printStream);
         IMap<String, ?> map = hz.getMap("default");
         consoleApp.handleCommand("m.putmany 100 8 1000");

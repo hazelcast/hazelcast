@@ -64,6 +64,10 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
     }
 
     public HazelcastInstance newHazelcastClient(ClientConfig config) {
+        return newHazelcastClient(config, null);
+    }
+
+    public HazelcastInstance newHazelcastClient(ClientConfig config, String sourceIp) {
         if (!mockNetwork) {
             return HazelcastClient.newHazelcastClient(config);
         }
@@ -79,11 +83,11 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
                 currentThread.setContextClassLoader(HazelcastClient.class.getClassLoader());
             }
             HazelcastClientInstanceImpl client = new HazelcastClientInstanceImpl(getInstanceName(config), config,
-                    null, clientRegistry.createClientServiceFactory(), createAddressProvider(config));
+                    null, clientRegistry.createClientServiceFactory(sourceIp), createAddressProvider(config));
             client.start();
             if (clients.putIfAbsent(client.getName(), client) != null) {
                 throw new InvalidConfigurationException("HazelcastClientInstance with name '" + client.getName()
-                        + "' already exists!");
+                + "' already exists!");
             }
 
             OutOfMemoryErrorDispatcher.registerClient(client);

@@ -82,4 +82,9 @@ public class RunConsoleCommandMessageTask extends AbstractInvocationMessageTask<
                 parameters.namespace
         };
     }
+
+    @Override
+    public boolean isManagementTask() {
+        return true;
+    }
 }

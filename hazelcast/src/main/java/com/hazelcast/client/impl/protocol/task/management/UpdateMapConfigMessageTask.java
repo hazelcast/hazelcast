@@ -94,4 +94,9 @@ public class UpdateMapConfigMessageTask extends AbstractInvocationMessageTask<Re
                 parameters.evictionPolicy
         };
     }
+
+    @Override
+    public boolean isManagementTask() {
+        return true;
+    }
 }

@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.protocol.ClientExceptions;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.statistics.ClientStatistics;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.cluster.AddressChecker;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.partition.IPartitionService;
@@ -135,4 +136,5 @@ public interface ClientEngine extends Consumer<ClientMessage> {
 
     void dispatchBackupEvent(UUID clientUUID, long clientCorrelationId);
 
+    AddressChecker getManagementTasksChecker();
 }
