@@ -18,7 +18,7 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.spi.EventHandler;
-import com.hazelcast.client.impl.spi.impl.SmartClientInvocationService;
+import com.hazelcast.client.impl.spi.impl.ClientInvocationServiceImpl;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
@@ -81,7 +81,7 @@ public class ClientBackupAckTest extends ClientTestSupport {
     private boolean isEnabled(HazelcastInstance client) {
         Collection<EventHandler> values = getAllEventHandlers(client).values();
         for (EventHandler value : values) {
-            if (value instanceof SmartClientInvocationService.BackupEventHandler) {
+            if (value instanceof ClientInvocationServiceImpl.BackupEventHandler) {
                 return true;
             }
         }

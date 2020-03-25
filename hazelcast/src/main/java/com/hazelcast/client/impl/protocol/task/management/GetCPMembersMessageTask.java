@@ -91,4 +91,9 @@ public class GetCPMembersMessageTask extends AbstractAsyncMessageTask<RequestPar
     public Object[] getParameters() {
         return new Object[0];
     }
+
+    @Override
+    public boolean isManagementTask() {
+        return true;
+    }
 }

@@ -28,8 +28,6 @@ import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConsistencyCheckStrategy;
 import com.hazelcast.config.CredentialsFactoryConfig;
-import com.hazelcast.config.WanBatchPublisherConfig;
-import com.hazelcast.config.WanCustomPublisherConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.DurableExecutorConfig;
@@ -109,12 +107,15 @@ import com.hazelcast.config.SplitBrainProtectionListenerConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TopicConfig;
+import com.hazelcast.config.TrustedInterfacesConfigurable;
 import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.config.VaultSecureStoreConfig;
 import com.hazelcast.config.WanAcknowledgeType;
-import com.hazelcast.config.WanReplicationConfig;
+import com.hazelcast.config.WanBatchPublisherConfig;
 import com.hazelcast.config.WanConsumerConfig;
+import com.hazelcast.config.WanCustomPublisherConfig;
 import com.hazelcast.config.WanQueueFullBehavior;
+import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanSyncConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
@@ -1381,10 +1382,10 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    protected void handleTrustedInterfaces(MulticastConfig multicastConfig, Node n) {
+    protected void handleTrustedInterfaces(TrustedInterfacesConfigurable<?> tiConfig, Node n) {
         for (Node child : childElements(n)) {
             if ("interface".equals(lowerCaseInternal(cleanNodeName(child)))) {
-                multicastConfig.addTrustedInterface(getTextContent(child).trim());
+                tiConfig.addTrustedInterface(getTextContent(child).trim());
             }
         }
     }
@@ -2555,14 +2556,20 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     private void handleManagementCenterConfig(Node node) {
-        NamedNodeMap attrs = node.getAttributes();
-
         ManagementCenterConfig managementCenterConfig = config.getManagementCenterConfig();
 
-        Node scriptingEnabledNode = attrs.getNamedItem("scripting-enabled");
+        Node scriptingEnabledNode = node.getAttributes().getNamedItem("scripting-enabled");
         if (scriptingEnabledNode != null) {
             managementCenterConfig.setScriptingEnabled(getBooleanValue(getTextContent(scriptingEnabledNode)));
         }
+
+        for (Node n : childElements(node)) {
+            String value = getTextContent(n).trim();
+            if ("trusted-interfaces".equals(cleanNodeName(n))) {
+                handleTrustedInterfaces(managementCenterConfig, n);
+            }
+        }
+
     }
 
     private void handleSecurity(Node node) {
@@ -2675,53 +2682,9 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
-            PermissionType type;
-            if ("map-permission".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.MAP;
-            } else if ("queue-permission".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.QUEUE;
-            } else if ("multimap-permission".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.MULTIMAP;
-            } else if ("topic-permission".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.TOPIC;
-            } else if ("list-permission".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.LIST;
-            } else if ("set-permission".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.SET;
-            } else if ("lock-permission".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.LOCK;
-            } else if ("atomic-long-permission".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.ATOMIC_LONG;
-            } else if ("atomic-reference-permission".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.ATOMIC_REFERENCE;
-            } else if ("countdown-latch-permission".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.COUNTDOWN_LATCH;
-            } else if ("semaphore-permission".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.SEMAPHORE;
-            } else if ("flake-id-generator-permission".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.FLAKE_ID_GENERATOR;
-            } else if ("executor-service-permission".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.EXECUTOR_SERVICE;
-            } else if ("transaction-permission".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.TRANSACTION;
-            } else if ("all-permissions".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.ALL;
-            } else if ("durable-executor-service-permission".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.DURABLE_EXECUTOR_SERVICE;
-            } else if ("cardinality-estimator-permission".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.CARDINALITY_ESTIMATOR;
-            } else if ("scheduled-executor-permission".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.SCHEDULED_EXECUTOR;
-            } else if ("pn-counter-permission".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.PN_COUNTER;
-            } else if ("cache-permission".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.CACHE;
-            } else if ("user-code-deployment-permission".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.USER_CODE_DEPLOYMENT;
-            } else if (PermissionConfig.PermissionType.CONFIG.getNodeName().equals(nodeName)) {
-                type = PermissionConfig.PermissionType.CONFIG;
-            } else {
-                continue;
+            PermissionType type = PermissionConfig.PermissionType.getType(nodeName);
+            if (type == null) {
+                throw new InvalidConfigurationException("Security permission type is not valid " + nodeName);
             }
             handleSecurityPermission(child, type);
         }

@@ -25,7 +25,6 @@ import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.config.ClientFailoverConfig;
-import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.cp.internal.CPSubsystemImpl;
 import com.hazelcast.client.cp.internal.session.ClientProxySessionManager;
 import com.hazelcast.client.impl.ClientExtension;
@@ -44,15 +43,13 @@ import com.hazelcast.client.impl.spi.ClientListenerService;
 import com.hazelcast.client.impl.spi.ClientPartitionService;
 import com.hazelcast.client.impl.spi.ClientTransactionManagerService;
 import com.hazelcast.client.impl.spi.ProxyManager;
-import com.hazelcast.client.impl.spi.impl.AbstractClientInvocationService;
 import com.hazelcast.client.impl.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.impl.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
+import com.hazelcast.client.impl.spi.impl.ClientInvocationServiceImpl;
 import com.hazelcast.client.impl.spi.impl.ClientPartitionServiceImpl;
 import com.hazelcast.client.impl.spi.impl.ClientTransactionManagerServiceImpl;
 import com.hazelcast.client.impl.spi.impl.ClientUserCodeDeploymentService;
-import com.hazelcast.client.impl.spi.impl.NonSmartClientInvocationService;
-import com.hazelcast.client.impl.spi.impl.SmartClientInvocationService;
 import com.hazelcast.client.impl.spi.impl.listener.ClientClusterViewListenerService;
 import com.hazelcast.client.impl.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.client.impl.statistics.ClientStatisticsService;
@@ -176,7 +173,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final ClientConnectionManagerImpl connectionManager;
     private final ClientClusterServiceImpl clusterService;
     private final ClientPartitionServiceImpl partitionService;
-    private final AbstractClientInvocationService invocationService;
+    private final ClientInvocationServiceImpl invocationService;
     private final ClientExecutionServiceImpl executionService;
     private final ClientListenerServiceImpl listenerService;
     private final ClientClusterViewListenerService clientClusterViewListenerService;
@@ -246,7 +243,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         partitionService = new ClientPartitionServiceImpl(this);
         clusterDiscoveryService = initClusterDiscoveryService(externalAddressProvider);
         connectionManager = (ClientConnectionManagerImpl) clientConnectionManagerFactory.createConnectionManager(this);
-        invocationService = initInvocationService();
+        invocationService = new ClientInvocationServiceImpl(this);
         listenerService = new ClientListenerServiceImpl(this);
         clusterService = new ClientClusterServiceImpl(this);
         clientClusterViewListenerService = new ClientClusterViewListenerService(this);
@@ -322,16 +319,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         return lb;
     }
 
-    @SuppressWarnings("checkstyle:illegaltype")
-    private AbstractClientInvocationService initInvocationService() {
-        final ClientNetworkConfig networkConfig = config.getNetworkConfig();
-        if (networkConfig.isSmartRouting()) {
-            return new SmartClientInvocationService(this);
-        } else {
-            return new NonSmartClientInvocationService(this);
-        }
-    }
-
     public int getId() {
         return id;
     }
@@ -401,9 +388,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
             listenerService.start();
             proxyManager.init(config, clientContext);
-            if (invocationService instanceof SmartClientInvocationService) {
-                ((SmartClientInvocationService) invocationService).addBackupListener();
-            }
+            invocationService.addBackupListener();
             loadBalancer.init(getCluster(), config);
             clientStatisticsService.start();
             clientExtension.afterStart(this);
@@ -885,10 +870,10 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     private void addClientConfigAddedListeners(Collection<EventListener> configuredListeners) {
         configuredListeners.stream().filter(listener -> listener instanceof DistributedObjectListener)
-                           .forEach(listener -> proxyManager.addDistributedObjectListener((DistributedObjectListener) listener));
+                .forEach(listener -> proxyManager.addDistributedObjectListener((DistributedObjectListener) listener));
 
         configuredListeners.stream().filter(listener -> listener instanceof PartitionLostListener)
-                           .forEach(listener -> getPartitionService().addPartitionLostListener((PartitionLostListener) listener));
+                .forEach(listener -> getPartitionService().addPartitionLostListener((PartitionLostListener) listener));
     }
 
 }

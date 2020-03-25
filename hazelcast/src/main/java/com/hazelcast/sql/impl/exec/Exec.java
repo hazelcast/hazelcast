@@ -24,7 +24,7 @@ import com.hazelcast.sql.impl.row.RowBatch;
  */
 public interface Exec {
     /**
-     * @return ID of the executor.
+     * @return ID of the executor, which uniquely identifies the executor within the query.
      */
     int getId();
 

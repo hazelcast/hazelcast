@@ -790,7 +790,9 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 handleSuccessfulAuth(connection, response);
                 break;
             case CREDENTIALS_FAILED:
-                AuthenticationException authException = new AuthenticationException("Invalid credentials!");
+                AuthenticationException authException = new AuthenticationException("Authentication failed. The configured "
+                        + "cluster name on the client (see ClientConfig.setClusterName()) does not match the one configured in "
+                        + "the cluster or the credentials set in the Client security config could not be authenticated");
                 connection.close("Failed to authenticate connection", authException);
                 throw authException;
             case NOT_ALLOWED_IN_CLUSTER:

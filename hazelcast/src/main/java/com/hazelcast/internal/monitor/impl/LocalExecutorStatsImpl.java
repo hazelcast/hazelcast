@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_METRIC_CANCELLED;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_METRIC_COMPLETED;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_METRIC_CREATION_TIME;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_METRIC_PENDING;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_METRIC_STARTED;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_METRIC_TOTAL_EXECUTION_TIME;
@@ -47,6 +48,8 @@ public class LocalExecutorStatsImpl implements LocalExecutorStats, JsonSerializa
             .newUpdater(LocalExecutorStatsImpl.class, "totalStartLatency");
     private static final AtomicLongFieldUpdater<LocalExecutorStatsImpl> TOTAL_EXECUTION_TIME = AtomicLongFieldUpdater
             .newUpdater(LocalExecutorStatsImpl.class, "totalExecutionTime");
+
+    @Probe(name = EXECUTOR_METRIC_CREATION_TIME, unit = MS)
     private long creationTime;
 
     // These fields are only accessed through the updaters

@@ -16,12 +16,12 @@
 
 package com.hazelcast.client.impl.spi;
 
+import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.impl.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.cluster.Member;
 
-import java.io.IOException;
 import java.util.UUID;
 import java.util.function.Consumer;
 
@@ -33,13 +33,36 @@ import java.util.function.Consumer;
  */
 public interface ClientInvocationService {
 
-    void invokeOnConnection(ClientInvocation invocation, ClientConnection connection) throws IOException;
+    /**
+     * @param invocation to be invoked
+     * @param connection to be invoked on
+     * @return true if successfully send to given connection, false otherwise
+     */
+    boolean invokeOnConnection(ClientInvocation invocation, ClientConnection connection);
 
-    void invokeOnPartitionOwner(ClientInvocation invocation, int partitionId) throws IOException;
+    /**
+     * @param invocation  to be invoked
+     * @param partitionId partition id that invocation should go to
+     * @return true if successfully send to partition owner, false otherwise
+     */
+    boolean invokeOnPartitionOwner(ClientInvocation invocation, int partitionId);
 
-    void invokeOnRandomTarget(ClientInvocation invocation) throws IOException;
+    /**
+     * @param invocation to be invoked
+     * @param uuid       member uuid that invocation should go to
+     * @return true if successfully send the member with given uuid, false otherwise
+     */
+    boolean invokeOnTarget(ClientInvocation invocation, UUID uuid);
 
-    void invokeOnTarget(ClientInvocation invocation, UUID uuid) throws IOException;
+    /**
+     * Behaviour of this method varies for unisocket and smart client
+     * Unisocket invokes on only available connection
+     * SmartClient randomly picks a connection to invoke on via {@link LoadBalancer}
+     *
+     * @param invocation to be invoked
+     * @return true if successfully send , false otherwise
+     */
+    boolean invoke(ClientInvocation invocation);
 
     boolean isRedoOperation();
 

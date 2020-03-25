@@ -83,4 +83,9 @@ public class ChangeClusterStateMessageTask extends AbstractInvocationMessageTask
     public String getDistributedObjectName() {
         return null;
     }
+
+    @Override
+    public boolean isManagementTask() {
+        return true;
+    }
 }

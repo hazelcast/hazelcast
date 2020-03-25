@@ -115,11 +115,10 @@ public final class SerializationUtil {
         throw new HazelcastSerializationException("Failed to serialize '" + clazz + '\'', e);
     }
 
-    public static SerializerAdapter createSerializerAdapter(Serializer serializer,
-                                                            InternalSerializationService serializationService) {
+    public static SerializerAdapter createSerializerAdapter(Serializer serializer) {
         final SerializerAdapter s;
         if (serializer instanceof StreamSerializer) {
-            s = new StreamSerializerAdapter(serializationService, (StreamSerializer) serializer);
+            s = new StreamSerializerAdapter((StreamSerializer) serializer);
         } else if (serializer instanceof ByteArraySerializer) {
             s = new ByteArraySerializerAdapter((ByteArraySerializer) serializer);
         } else {
@@ -397,6 +396,22 @@ public final class SerializationUtil {
             result.add(in.readInt());
         }
         return result;
+    }
+
+    public static boolean isClassStaticAndSerializable(Object object) {
+        Class clazz = object.getClass();
+        boolean isStatic = !clazz.isSynthetic() && !clazz.isAnonymousClass() && !clazz.isLocalClass();
+        if (!isStatic) {
+            return false;
+        }
+
+        try {
+            checkSerializable(object, "object");
+        } catch (Throwable t) {
+            return false;
+        }
+
+        return true;
     }
 
     private static class NullOutputStream extends OutputStream {

@@ -1449,7 +1449,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="trusted-interfaces" minOccurs="0" maxOccurs="1">
+            <xs:element name="trusted-interfaces" type="trusted-interfaces" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
                         Includes IP addresses of trusted members. When a node wants to join to the cluster,
@@ -1458,11 +1458,6 @@
                         (e.g. 192.168.1.* or 192.168.1.100-110).
                     </xs:documentation>
                 </xs:annotation>
-                <xs:complexType>
-                    <xs:sequence>
-                        <xs:element name="interface" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
-                    </xs:sequence>
-                </xs:complexType>
             </xs:element>
         </xs:all>
         <xs:attribute name="enabled" type="xs:boolean" use="optional" default="true">
@@ -1473,6 +1468,11 @@
             </xs:annotation>
         </xs:attribute>
         <xs:attribute name="loopbackModeEnabled" type="xs:boolean" use="optional" default="false"/>
+    </xs:complexType>
+    <xs:complexType name="trusted-interfaces">
+        <xs:sequence>
+            <xs:element name="interface" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
     </xs:complexType>
     <xs:complexType name="aliased-discovery-strategy">
         <xs:sequence>
@@ -2554,7 +2554,20 @@
             </xs:simpleType>
         </xs:attribute>
     </xs:complexType>
-    <xs:complexType name="management-center" mixed="true">
+    <xs:complexType name="management-center">
+        <xs:all>
+            <xs:element name="trusted-interfaces" type="trusted-interfaces" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Includes allowed IP addresses for Management Center connections.
+                        More preciselly, the element configures addresses from which clients are allowed to run cluster
+                        management tasks over the Hazelcast client protocol.
+                        You can give an IP addresses range using the wildcard (*) on the last digit of the IP address
+                        (e.g. 192.168.1.* or 192.168.1.100-110).
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
         <xs:attribute name="scripting-enabled" type="xs:boolean" use="optional">
             <xs:annotation>
                 <xs:documentation>
@@ -2646,6 +2659,8 @@
             <xs:element name="cache-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="user-code-deployment-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="config-permission" type="base-permission" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="ring-buffer-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="reliable-topic-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
         </xs:choice>
         <xs:attribute name="on-join-operation" type="permission-on-join-operation" use="optional" default="RECEIVE"/>
     </xs:complexType>

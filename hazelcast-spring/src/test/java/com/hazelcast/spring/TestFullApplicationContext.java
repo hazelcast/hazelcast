@@ -585,7 +585,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         final Set<PermissionConfig> clientPermissionConfigs = securityConfig.getClientPermissionConfigs();
         assertFalse(securityConfig.getClientBlockUnmappedActions());
         assertTrue(isNotEmpty(clientPermissionConfigs));
-        assertEquals(22, clientPermissionConfigs.size());
+        assertEquals(24, clientPermissionConfigs.size());
         final PermissionConfig pnCounterPermission = new PermissionConfig(PermissionType.PN_COUNTER, "pnCounterPermission", "*")
                 .addAction("create")
                 .setEndpoints(Collections.emptySet());
@@ -1056,6 +1056,9 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         ManagementCenterConfig managementCenterConfig = config.getManagementCenterConfig();
         assertNotNull(managementCenterConfig);
         assertTrue(managementCenterConfig.isScriptingEnabled());
+        Set<String> tis = managementCenterConfig.getTrustedInterfaces();
+        assertEquals(1, tis.size());
+        assertEquals("10.1.2.*", tis.iterator().next());
     }
 
     @Test

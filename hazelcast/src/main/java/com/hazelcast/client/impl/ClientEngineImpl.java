@@ -34,7 +34,9 @@ import com.hazelcast.client.impl.statistics.ClientStatistics;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.cluster.AddressChecker;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.impl.AddressCheckerImpl;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.internal.nio.ConnectionType;
@@ -61,6 +63,7 @@ import com.hazelcast.transaction.TransactionManagerService;
 
 import javax.annotation.Nonnull;
 import javax.security.auth.login.LoginException;
+
 import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.HashMap;
@@ -111,6 +114,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     private final boolean advancedNetworkConfigEnabled;
     private final ClientLifecycleMonitor lifecycleMonitor;
     private final Map<UUID, Consumer<Long>> backupListeners = new ConcurrentHashMap<>();
+    private final AddressChecker addressChecker;
 
     public ClientEngineImpl(Node node) {
         this.logger = node.getLogger(ClientEngine.class);
@@ -126,6 +130,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         this.advancedNetworkConfigEnabled = node.getConfig().getAdvancedNetworkConfig().isEnabled();
         this.lifecycleMonitor = new ClientLifecycleMonitor(endpointManager, this, logger, nodeEngine,
                 nodeEngine.getExecutionService(), node.getProperties());
+        Set<String> trustedInterfaces = node.getConfig().getManagementCenterConfig().getTrustedInterfaces();
+        this.addressChecker = new AddressCheckerImpl(trustedInterfaces, logger);
     }
 
     private ClientExceptions initClientExceptionFactory() {
@@ -495,5 +501,10 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
 
     public Map<UUID, Consumer<Long>> getBackupListeners() {
         return backupListeners;
+    }
+
+    @Override
+    public AddressChecker getManagementTasksChecker() {
+        return addressChecker;
     }
 }

@@ -245,6 +245,10 @@ public final class ConstantSerializers {
         public byte[] read(byte[] buffer) throws IOException {
             return buffer;
         }
+
+        @Override
+        public void destroy() {
+        }
     }
 
     public static final class BooleanArraySerializer extends SingletonSerializer<boolean[]> {
@@ -449,6 +453,10 @@ public final class ConstantSerializers {
     }
 
     private abstract static class SingletonSerializer<T> implements StreamSerializer<T> {
+
+        @Override
+        public void destroy() {
+        }
     }
 
     private ConstantSerializers() {

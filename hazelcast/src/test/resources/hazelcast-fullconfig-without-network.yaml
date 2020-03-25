@@ -39,6 +39,9 @@ hazelcast:
 
   management-center:
     scripting-enabled: false
+    trusted-interfaces:
+      - 10.10.1.*
+      - 10.10.2.*
 
   properties:
     foo: bar
@@ -723,6 +726,16 @@ hazelcast:
           actions:
             - all
       executor-service:
+        - name: "*"
+          principal: "*"
+          actions:
+            - all
+      ring-buffer:
+        - name: "*"
+          principal: "*"
+          actions:
+            - all
+      reliable-topic:
         - name: "*"
           principal: "*"
           actions:
