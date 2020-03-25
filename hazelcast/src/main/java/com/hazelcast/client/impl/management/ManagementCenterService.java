@@ -112,6 +112,7 @@ public class ManagementCenterService {
     public CompletableFuture<MetricsResultSet> readMetricsAsync(Member member, long startSequence) {
         ClientMessage request = MCReadMetricsCodec.encodeRequest(member.getUuid(), startSequence);
         ClientInvocation invocation = new ClientInvocation(client, request, null, member.getUuid());
+        invocation.disallowRetryOnRandom();
 
         ClientMessageDecoder<MetricsResultSet> decoder = (clientMessage) -> {
             MCReadMetricsCodec.ResponseParameters response = MCReadMetricsCodec.decodeResponse(clientMessage);
@@ -177,6 +178,7 @@ public class ManagementCenterService {
                     map,
                     member.getUuid()
             );
+            invocation.disallowRetryOnRandom();
         }
 
         return new ClientDelegatingFuture<>(
@@ -215,6 +217,7 @@ public class ManagementCenterService {
                 parameters.getMap(),
                 member.getUuid()
         );
+        invocation.disallowRetryOnRandom();
 
         return new ClientDelegatingFuture<>(
                 invocation.invoke(),
@@ -236,6 +239,7 @@ public class ManagementCenterService {
                 null,
                 member.getUuid()
         );
+        invocation.disallowRetryOnRandom();
 
         return new ClientDelegatingFuture<>(
                 invocation.invoke(),
@@ -257,6 +261,7 @@ public class ManagementCenterService {
                 null,
                 member.getUuid()
         );
+        invocation.disallowRetryOnRandom();
 
         return new ClientDelegatingFuture<>(
                 invocation.invoke(),
@@ -281,6 +286,7 @@ public class ManagementCenterService {
                 null,
                 member.getUuid()
         );
+        invocation.disallowRetryOnRandom();
 
         return new ClientDelegatingFuture<>(
                 invocation.invoke(),
@@ -303,6 +309,7 @@ public class ManagementCenterService {
                 null,
                 member.getUuid()
         );
+        invocation.disallowRetryOnRandom();
         invocation.invoke();
     }
 
@@ -321,6 +328,7 @@ public class ManagementCenterService {
                 null,
                 member.getUuid()
         );
+        invocation.disallowRetryOnRandom();
 
         return new ClientDelegatingFuture<>(
                 invocation.invoke(),
@@ -344,6 +352,7 @@ public class ManagementCenterService {
                 null,
                 member.getUuid()
         );
+        invocation.disallowRetryOnRandom();
 
         return new ClientDelegatingFuture<>(
                 invocation.invoke(),
@@ -376,6 +385,7 @@ public class ManagementCenterService {
                 null,
                 member.getUuid()
         );
+        invocation.disallowRetryOnRandom();
 
         return new ClientDelegatingFuture<>(
                 invocation.invoke(),
@@ -403,6 +413,7 @@ public class ManagementCenterService {
                 null,
                 member.getUuid()
         );
+        invocation.disallowRetryOnRandom();
 
         return new ClientDelegatingFuture<>(
                 invocation.invoke(),
@@ -437,6 +448,7 @@ public class ManagementCenterService {
                 null,
                 member.getUuid()
         );
+        invocation.disallowRetryOnRandom();
 
         return new ClientDelegatingFuture<>(
                 invocation.invoke(),
@@ -460,6 +472,7 @@ public class ManagementCenterService {
                 null,
                 member.getUuid()
         );
+        invocation.disallowRetryOnRandom();
 
         return new ClientDelegatingFuture<>(
                 invocation.invoke(),
@@ -524,6 +537,7 @@ public class ManagementCenterService {
                 null,
                 member.getUuid()
         );
+        invocation.disallowRetryOnRandom();
 
         return new ClientDelegatingFuture<>(
                 invocation.invoke(),
@@ -551,6 +565,7 @@ public class ManagementCenterService {
                 null,
                 member.getUuid()
         );
+        invocation.disallowRetryOnRandom();
 
         return new ClientDelegatingFuture<>(
                 invocation.invoke(),
@@ -585,6 +600,7 @@ public class ManagementCenterService {
                 null,
                 member.getUuid()
         );
+        invocation.disallowRetryOnRandom();
 
         return new ClientDelegatingFuture<>(
                 invocation.invoke(),
@@ -616,6 +632,7 @@ public class ManagementCenterService {
                 null,
                 member.getUuid()
         );
+        invocation.disallowRetryOnRandom();
 
         return new ClientDelegatingFuture<>(
                 invocation.invoke(),
@@ -766,6 +783,7 @@ public class ManagementCenterService {
                 null,
                 member.getUuid()
         );
+        invocation.disallowRetryOnRandom();
 
         return new ClientDelegatingFuture<>(
                 invocation.invoke(),
@@ -816,6 +834,7 @@ public class ManagementCenterService {
                 null,
                 member.getUuid()
         );
+        invocation.disallowRetryOnRandom();
 
         return new ClientDelegatingFuture<>(
                 invocation.invoke(),
