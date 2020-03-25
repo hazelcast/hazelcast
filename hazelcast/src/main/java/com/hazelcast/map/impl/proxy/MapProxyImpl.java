@@ -20,8 +20,11 @@ import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.map.EntryProcessor;
@@ -29,6 +32,7 @@ import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.QueryCache;
+import com.hazelcast.map.impl.BiFunctionExecutingEntryProcessor;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.iterator.MapPartitionIterator;
@@ -44,7 +48,6 @@ import com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest;
 import com.hazelcast.map.impl.querycache.subscriber.SubscriberContext;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
@@ -53,6 +56,7 @@ import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.version.Version;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -68,6 +72,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
 
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
@@ -1019,4 +1024,43 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
             throw new IllegalArgumentException("PagingPredicate not supported in " + method + " method");
         }
     }
+
+    @Override
+    public V computeIfPresent(K key,
+                              BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(key, NULL_BIFUNCTION_IS_NOT_ALLOWED);
+        Version clusterVersion = getNodeEngine().getClusterService().getClusterVersion();
+
+        if (SerializationUtil.isClassStaticAndSerializable(remappingFunction)
+                && clusterVersion.isGreaterOrEqual(Versions.V4_1)) {
+            BiFunctionExecutingEntryProcessor<K, V> ep = new BiFunctionExecutingEntryProcessor<>(remappingFunction);
+            return executeOnKey(key, ep);
+        } else {
+            return computeIfPresentLocally(key, remappingFunction);
+        }
+    }
+
+
+    private V computeIfPresentLocally(K key,
+                                      BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+
+        while (true) {
+            Data oldValueAsData = toData(getInternal(key));
+            if (oldValueAsData == null) {
+                return null;
+            }
+
+            V oldValueClone = toObject(oldValueAsData);
+            V newValue = remappingFunction.apply(key, oldValueClone);
+            if (newValue != null) {
+                if (replaceInternal(key, oldValueAsData, toData(newValue))) {
+                    return newValue;
+                }
+            } else if (removeInternal(key, oldValueAsData)) {
+                return null;
+            }
+        }
+    }
+
 }
