@@ -32,7 +32,7 @@ public class QueryFragmentContext {
     }
 
     public Object getArgument(int index) {
-        assert index >= 0 && index <= arguments.size();
+        assert index >= 0 && index < arguments.size();
 
         return arguments.get(index);
     }

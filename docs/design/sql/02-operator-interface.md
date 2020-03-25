@@ -82,7 +82,7 @@ To achieve high performance, we introduce several changes to the original Volcan
 non-blocking execution.
 
 ### Row and RowBatch
-We define the `RowBatch` interface which a collection of rows (tuples).
+We define the `RowBatch` interface which is a collection of rows (tuples).
 
 *Snippet 5: RowBatch interface*
 ```java
