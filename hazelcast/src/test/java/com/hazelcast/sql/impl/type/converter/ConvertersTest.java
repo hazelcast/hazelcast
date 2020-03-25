@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.type.converter;
 
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlErrorCode;
+import com.hazelcast.sql.impl.SqlCustomClass;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -121,7 +122,7 @@ public class ConvertersTest {
         checkGetByClass(OffsetDateTimeConverter.INSTANCE, OffsetDateTime.class);
         checkGetByClass(ZonedDateTimeConverter.INSTANCE, ZonedDateTime.class);
 
-        checkGetByClass(ObjectConverter.INSTANCE, Object.class, CustomClass.class);
+        checkGetByClass(ObjectConverter.INSTANCE, Object.class, SqlCustomClass.class);
     }
 
     @Test
@@ -694,12 +695,12 @@ public class ConvertersTest {
         assertEquals("c", c.asVarchar('c'));
         assertEquals("val", c.asVarchar("val"));
         assertEquals("2020-01-01T11:22:33.444444444", c.asVarchar(LocalDateTime.parse("2020-01-01T11:22:33.444444444")));
-        assertEquals(new CustomClass(1).toString(), c.asVarchar(new CustomClass(1)));
+        assertEquals(new SqlCustomClass(1).toString(), c.asVarchar(new SqlCustomClass(1)));
 
         // Object
         assertEquals("val", c.asObject("val"));
         assertEquals(1, c.asObject(1));
-        assertEquals(new CustomClass(1), c.asObject(new CustomClass(1)));
+        assertEquals(new SqlCustomClass(1), c.asObject(new SqlCustomClass(1)));
     }
 
     private void checkGetById(Converter converter) {
@@ -909,39 +910,6 @@ public class ConvertersTest {
         converter.convertToSelf(mockConverter, new Object());
 
         assertEquals(converter.getTypeFamily(), mockConverter.getInvoked());
-    }
-
-    private static final class CustomClass {
-        private int val;
-
-        private CustomClass(int val) {
-            this.val = val;
-        }
-
-        @Override
-        public int hashCode() {
-            return val;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-
-            CustomClass that = (CustomClass) o;
-
-            return val == that.val;
-        }
-
-        @Override
-        public String toString() {
-            return getClass().getSimpleName() + "{val=" + val + '}';
-        }
     }
 
     private static final class MockConverter extends Converter {

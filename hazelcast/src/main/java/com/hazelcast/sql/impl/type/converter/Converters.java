@@ -20,6 +20,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.sql.HazelcastSqlException;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
@@ -38,7 +39,7 @@ public final class Converters {
     private static final Map<Class<?>, Converter> CLASS_TO_CONVERTER;
 
     static {
-        List<Converter> converters = getConverters();
+        List<Converter> converters = prepareConverters();
 
         CONVERTERS = createConvertersArray(converters);
         CLASS_TO_CONVERTER = createConvertersMap(converters);
@@ -77,9 +78,16 @@ public final class Converters {
     }
 
     /**
+     * For testing only.
+     */
+    public static List<Converter> getConverters() {
+        return Arrays.asList(CONVERTERS);
+    }
+
+    /**
      * @return List of all supported converters.
      */
-    private static List<Converter> getConverters() {
+    private static List<Converter> prepareConverters() {
         List<Converter> converters = new ArrayList<>();
 
         // Late binding support.
