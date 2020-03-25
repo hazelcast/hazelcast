@@ -16,13 +16,16 @@
 
 package com.hazelcast.internal.metrics.managementcenter;
 
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.internal.metrics.MetricConsumer;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.impl.MetricsCompressor;
@@ -83,7 +86,6 @@ public class ReadMetricsTest extends HazelcastTestSupport {
             // call should not return empty result - it should wait until a result is available
             assertFalse("empty result", result.collections().isEmpty());
 
-            boolean operationMetricFound = false;
             byte[] blob = result.collections().get(0).getValue();
             MetricDescriptor expectedDescriptor = DEFAULT_DESCRIPTOR_SUPPLIER.get()
                                                                              .withPrefix(OPERATION_PREFIX)
@@ -98,12 +100,14 @@ public class ReadMetricsTest extends HazelcastTestSupport {
     @Test
     public void when_invalidUUID() throws ExecutionException, InterruptedException {
         HazelcastInstance instance = hazelcastFactory.newHazelcastInstance(getConfig());
-        HazelcastClientInstanceImpl client = getHazelcastClientInstanceImpl(hazelcastFactory.newHazelcastClient());
+        ClientConfig config = new ClientConfig();
+        config.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), "3");
+        HazelcastClientInstanceImpl client = getHazelcastClientInstanceImpl(hazelcastFactory.newHazelcastClient(config));
         Address addr = instance.getCluster().getLocalMember().getAddress();
         MemberVersion ver = instance.getCluster().getLocalMember().getVersion();
         MemberImpl member = new MemberImpl(addr, ver, false, UuidUtil.newUnsecureUUID());
 
-        exception.expectCause(Matchers.instanceOf(IllegalArgumentException.class));
+        exception.expectCause(Matchers.instanceOf(OperationTimeoutException.class));
         client.getManagementCenterService().readMetricsAsync(member, 0).get();
     }
 
