@@ -57,6 +57,11 @@ public class MockPhysicalNode implements PhysicalNode {
     }
 
     @Override
+    public void visit(PhysicalNodeVisitor visitor) {
+        // No-op.
+    }
+
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(id);
         SerializationUtil.writeList(schema, out);
