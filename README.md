@@ -8,6 +8,7 @@
     * [Configuration for Hazelcast Clients Connecting from outside Azure](#configuration-for-hazelcast-clients-connecting-from-outside-azure)
     * [Configuration for WAN Replication Target Cluster Discovery](#configuration-for-wan-replication-target-cluster-discovery)
     * [Property Definitions](#property-definitions)
+    * [Azure App Services Support](#azure-app-services-support)
     * [ZONE_AWARE Partition Group](#zone_aware-partition-group)
 * [Automated Deployment](#automated-deployment)
 
