@@ -86,7 +86,7 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
             storage.remove(marshalledKey, current);
         }
         if (replicatedMapConfig.isStatisticsEnabled()) {
-            getStats().incrementRemoves(System.nanoTime() - time);
+            getStats().incrementRemovesNanos(System.nanoTime() - time);
         }
         cancelTtlEntry(marshalledKey);
         return oldValue;
@@ -112,7 +112,7 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
         ReplicatedMapEventPublishingService eventPublishingService = replicatedMapService.getEventPublishingService();
         eventPublishingService.fireEntryListenerEvent(dataKey, dataOldValue, null, EVICTED, name, nodeEngine.getThisAddress());
         if (replicatedMapConfig.isStatisticsEnabled()) {
-            getStats().incrementRemoves(System.nanoTime() - time);
+            getStats().incrementRemovesNanos(System.nanoTime() - time);
         }
     }
 
@@ -130,7 +130,7 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
 
         Object value = replicatedRecord == null ? null : unmarshall(replicatedRecord.getValue());
         if (replicatedMapConfig.isStatisticsEnabled()) {
-            getStats().incrementGets(System.nanoTime() - time);
+            getStats().incrementGetsNanos(System.nanoTime() - time);
         }
         return value;
     }
@@ -192,7 +192,7 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
             cancelTtlEntry(marshalledKey);
         }
         if (replicatedMapConfig.isStatisticsEnabled()) {
-            getStats().incrementPuts(System.nanoTime() - time);
+            getStats().incrementPutsNanos(System.nanoTime() - time);
         }
         return oldValue;
     }

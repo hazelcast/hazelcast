@@ -50,12 +50,12 @@ public class LocalReplicatedMapStatsImplTest {
         localReplicatedMapStats.setLockedEntryCount(1231);
         localReplicatedMapStats.setDirtyEntryCount(4252);
 
-        localReplicatedMapStats.incrementPuts(5631);
-        localReplicatedMapStats.incrementPuts(1);
-        localReplicatedMapStats.incrementGets(1233);
-        localReplicatedMapStats.incrementGets(5);
-        localReplicatedMapStats.incrementGets(9);
-        localReplicatedMapStats.incrementRemoves(1238);
+        localReplicatedMapStats.incrementPutsNanos(5631);
+        localReplicatedMapStats.incrementPutsNanos(1);
+        localReplicatedMapStats.incrementGetsNanos(1233);
+        localReplicatedMapStats.incrementGetsNanos(5);
+        localReplicatedMapStats.incrementGetsNanos(9);
+        localReplicatedMapStats.incrementRemovesNanos(1238);
         localReplicatedMapStats.incrementOtherOperations();
         localReplicatedMapStats.incrementOtherOperations();
         localReplicatedMapStats.incrementOtherOperations();
