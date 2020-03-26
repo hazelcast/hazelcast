@@ -1,10 +1,10 @@
 # SQL Type System
 
 ## Overview
-Hazelcast SQL type system defines how objects of different types interact with each other. The type system
-is defined by the list of supported types, type mapping, and type conversion rules.
+The type system defines how objects of different types interact with each other in the Hazelcast Mustang engine.
+The type system is defined by the list of supported types, type mapping, and type conversion rules.
 
-Type is described by name, precedence, precision, and scale.
+A type is defined by name, precedence, precision, and scale.
 - **Name** is a textual representation of type name
 - **Precision** is the total count of significant digits in the whole number, applicable to **numeric types**
 - **Precedence** is a comparable value that is used for type inference in expressions. A type with a
@@ -15,15 +15,15 @@ the type with higher precision has precedence.
 within a family have the same name and precedence. For example, `INT(11)` and `INT(12)` are two types
 from the same `INT` family.
 
-The scale is not used in Hazelcast SQL. It is applicable only for `DECIMAL`, `REAL`, and `DOUBLE` types.
+The scale is not used in Hazelcast Mustang. It is applicable only for `DECIMAL`, `REAL`, and `DOUBLE` types.
 Instead of defining it as a separate value, we just treat these types as types with infinite scale.
 
-## Supported types
-Types supported by the Hazelcast SQL engine are listed in Table 1. Precision is the smallest precision in the type family.
+## 1 Supported Types
+Types supported by the Hazelcast Mustang are listed in Table 1. Precision is the smallest precision in the type family.
 
 `OBJECT` is a Hazelcast-specific type representing an object which doesn't match any other type.
 
-*Table 1: Hazelcast SQL Data Types*
+*Table 1: Hazelcast Mustang Data Types*
 
 | SQL Type | Precedence | Precision |
 |---|---|---|
@@ -48,7 +48,7 @@ type might be added in future releases if we find useful use cases for it.
 
 Structured and UDF data types are not supported at the moment. The support for these types will be added in future releases.
 
-## Type mapping
+## 2 Type Mapping
 Hazelcast is implemented in Java. It is necessary to map SQL types to Java types. We define two mapping tables:
 1. SQL-to-Java mapping: defines the Java class of the value returned by a query depending on the SQL type
 1. Java-to-SQL mapping: defines how user values stored in Hazelcast data structures are mapped to relevant SQL types
@@ -61,7 +61,7 @@ For example, an input value of the type `java.math.BigInteger` is mapped to `DEC
 type is mapped to `java.math.BigDecimal`, the input value is converted from `java.math.BigInteger` to `java.math.BigDecimal`
 on first access.
 
-### SQL to Java mapping
+### 2.1 SQL to Java Mapping
 Table 2 establishes a strict one-to-one mapping between SQL and Java types.
 
 *Table 2: SQL-to-Java mapping*
@@ -86,7 +86,7 @@ Table 2 establishes a strict one-to-one mapping between SQL and Java types.
 `TIMESTAMP WITH TIME ZONE` is mapped to the `java.time.OffsetDateTime` class because ANSI SQL requires only zone
 displacement, so full zone information from the `java.time.ZonedDateTime` class is not needed.
 
-### Java to SQL mapping
+### 2.2 Java to SQL Mapping
 Table 3 establishes a many-to-one mapping between Java and SQL types.
 
 *Table 3: Java-to-SQL mapping*
@@ -119,7 +119,7 @@ The following SQL types are mapped to several Java types:
 - `DECIMAL` is mapped to `java.math.BigInteger` and `java.math.BigDecimal`
 - `TIMESTAMP W/ TZ` is mapped to multiple date/time classes which represent a time instant.
 
-## Type conversions
+## 3. Type Conversions
 Different types might be converted to each other either implicitly or explicitly. Implicit conversion is performed between
 compatible types without explicit user requests based on type compatibility matrix and **type precedence**. Explicit
 conversion is performed through `CAST` or `CONVERT` functions. Explicit conversion may fail if the source value cannot be
