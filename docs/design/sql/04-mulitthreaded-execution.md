@@ -115,14 +115,14 @@ execution of several fragments.
 Given the different nature of query operations and fragment execution, we split them into independent stages, called
 **operation pool** and **fragment pool**. The former executes query operations, and the latter executes fragments. This design
 provides a clear separation of concerns and allows us to optimize stages for their tasks as described below, which improves
-performance. On the other hand, this design introduces an additional thread notification, as shown on the snippets below, which
+performance. On the other hand, this design introduces an additional thread notification, as shown in the snippet below, which
 may negatively affect performance. Nevertheless, we think that the advantages of this approach outweigh the disadvantages.
 
 *Snippet 2: Query start flow (receiver only)*
 ```
-IO                Operation pool         Fragment pool
- |----enqueue/notify-->-|                      |
- |                      |----enqueue/notify-->-|
+IO               Operation pool         Fragment pool
+|----enqueue/notify-->-|                      |
+|                      |----enqueue/notify-->-|
 ```
 
 ### 2.2 Operation Pool
