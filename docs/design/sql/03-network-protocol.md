@@ -21,7 +21,7 @@ In this section, we summarize the fundamental principles that influence the prot
 
 Hazelcast Mustang is a modern distributed SQL engine that targets the OLTP workloads for in-memory data. We expect
 that the engine will be used mostly for relatively short queries, taking milliseconds or seconds to complete. Because network
-latency is still relatively as of 2020, the protocol should be designed to minimize the number of blocking network calls,
+latency is still relatively high as of 2020, the protocol should be designed to minimize the number of blocking network calls,
 when one member waits for the other.
 
 ### 1.2 Fail-Fast
@@ -211,7 +211,7 @@ class QueryCancelOperation {
 }
 ```
 
-If the query coordinator is down, all participants will notice this eventually, and perform query cancellation locally without
+If the query initiator is down, all participants will notice this eventually, and perform query cancellation locally without
 sending any messages.
 
 ### 3.4 Data Exchange

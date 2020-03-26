@@ -19,8 +19,14 @@ package com.hazelcast.sql.impl.physical;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 /**
- * Interface to resovle field types.
+ * Interface to resolve field types.
  */
 public interface FieldTypeProvider {
+    /**
+     * Gets the type of the operator's column at the given index (zero-based).
+     *
+     * @param index Index.
+     * @return Type of the column.
+     */
     QueryDataType getType(int index);
 }

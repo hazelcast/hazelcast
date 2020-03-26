@@ -33,7 +33,7 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Operation which is broadcast to participating members to start query execution.
+ * Operation which is broadcasted to participating members to start query execution.
  */
 public class QueryExecuteOperation extends QueryAbstractIdAwareOperation {
     /** Mapped ownership of partitions. */

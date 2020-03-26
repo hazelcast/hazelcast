@@ -27,13 +27,13 @@ import java.util.UUID;
 
 /**
  * Operation to cancel query execution on participant node. Cancellation process is two-phase:
- * 1) When a participant would like to cancel the query, this request is sent to the query coordinator
- * 2) When coordinator receives cancel request from a participant (including self), it is broadcast to
+ * 1) When a participant would like to cancel the query, this request is sent to the query initiator
+ * 2) When initiator receives cancel request from a participant (including self), it broadcasts it to
  *    other participants.
  *
  * This two-phase process is required to minimize the number of messages passed between nodes. Consider a query cancel due to
  * timeout. If only broadcast is used from participants, then every participant will send a message to all other participants,
- * leading to N*N messages in the worst case. With two-phase approach query coordinator ensures that broadcast is performed no
+ * leading to N*N messages in the worst case. With two-phase approach query initiator ensures that broadcast is performed no
  * more than once, putting upper bound on the total number of cancel messages to 2*N.
  */
 public class QueryCancelOperation extends QueryAbstractIdAwareOperation {
