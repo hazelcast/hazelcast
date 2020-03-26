@@ -241,6 +241,12 @@ You will need to setup [Azure Active Directory Service Principal credentials](ht
 - `scale-set` - *(Optional)* The name of Azure [VM scale set](https://docs.microsoft.com/en-us/azure/virtual-machine-scale-sets/overview). If this setting is configured, the plugin will search for instances over the resources only within this scale set.
 - `use-public-ip` - Enables the discovery joiner to use public IPs. It should be set to `true` in client instances running outside the Azure environment.
 
+## Azure App Services Support
+
+[Azure App Services](https://azure.microsoft.com/en-gb/services/app-service/) is a platform as a service (PaaS) which allows publishing applications running on multiple frameworks and written in different programming languages. If you would like to use Hazelcast in your App Service applications, you can use Hazelcast Client and this plugin to connect to a Hazelcast cluster running in Azure environment. It is the same configuration to run a Hazelcast client outside Azure environment, thus please see the [Configuration for Hazelcast Clients Connecting from outside Azure](#configuration-for-hazelcast-clients-connecting-from-outside-azure) section to setup your client in App Services.
+
+Azure App Services are unaware of the underlying VMs' network interfaces so it is not available to communicate among App Services using TCP/IP. Because of this reason, it is not possible to build a Hazelcast cluster through Azure App Services.  
+
 ## ZONE_AWARE Partition Group
 
 When you use Azure plugin as discovery provider, you can configure Hazelcast Partition Grouping with Azure. You need to add fault domain or DNS domain to your machines. So machines will be grouped with respect to their fault or DNS domains.
