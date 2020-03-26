@@ -124,6 +124,17 @@ public final class ServiceFactory<C, S> implements Serializable, Cloneable {
      * ServiceFactories#sharedService} instead of this method. If you don't need
      * a shared context at all, just independent service instances, you can use
      * the convenience of {@link ServiceFactories#nonSharedService}.
+     * <p>
+     * <strong>Note:</strong> if your service has a blocking API (e.g., doing
+     * synchronous IO or acquiring locks), you must call {@link
+     * #toNonCooperative()} as a hint to the Jet execution engine to start a
+     * dedicated thread for those calls. Failing to do this can cause severe
+     * performance problems. You should also carefully consider how much local
+     * parallelism you need for this step since each parallel tasklet needs its
+     * own thread. Call {@link GeneralStage#setLocalParallelism
+     * stage.setLocalParallelism()} to set an explicit level, otherwise it will
+     * depend on the number of cores on the Jet machine, which makes no sense
+     * for blocking code.
      *
      * @param createContextFn the function to create new context object, given a {@link
      *                        ProcessorSupplier.Context}. Called once per Jet member.

@@ -98,6 +98,17 @@ public final class ServiceFactories {
      * A variant of {@link #sharedService(FunctionEx, ConsumerEx)
      * sharedService(createFn, destroyFn)} with a no-op {@code
      * destroyFn}.
+     * <p>
+     * <strong>Note:</strong> if your service has a blocking API (e.g., doing
+     * synchronous IO or acquiring locks), you must call {@link
+     * ServiceFactory#toNonCooperative()} as a hint to the Jet execution engine
+     * to start a dedicated thread for those calls. Failing to do this can
+     * cause severe performance problems. You should also carefully consider
+     * how much local parallelism you need for this step since each parallel
+     * tasklet needs its own thread. Call {@link GeneralStage#setLocalParallelism
+     * stage.setLocalParallelism()} to set an explicit level, otherwise it will
+     * depend on the number of cores on the Jet machine, which makes no sense
+     * for blocking code.
      *
      * @since 4.0
      */
@@ -114,6 +125,17 @@ public final class ServiceFactories {
      * associated pipeline stage will use the same object. Since the service
      * object will be accessed from many parallel threads, it must be
      * thread-safe.
+     * <p>
+     * <strong>Note:</strong> if your service has a blocking API (e.g., doing
+     * synchronous IO or acquiring locks), you must call {@link
+     * ServiceFactory#toNonCooperative()} as a hint to the Jet execution engine
+     * to start a dedicated thread for those calls. Failing to do this can
+     * cause severe performance problems. You should also carefully consider
+     * how much local parallelism you need for this step since each parallel
+     * tasklet needs its own thread. Call {@link GeneralStage#setLocalParallelism
+     * stage.setLocalParallelism()} to set an explicit level, otherwise it will
+     * depend on the number of cores on the Jet machine, which makes no sense
+     * for blocking code.
      *
      * @param createServiceFn the function that creates the service. It will be called once on each
      *                        Jet member.
@@ -137,6 +159,17 @@ public final class ServiceFactories {
      * A variant of {@link #nonSharedService(FunctionEx, ConsumerEx)
      * nonSharedService(createFn, destroyFn)} with a no-op {@code
      * destroyFn}.
+     * <p>
+     * <strong>Note:</strong> if your service has a blocking API (e.g., doing
+     * synchronous IO or acquiring locks), you must call {@link
+     * ServiceFactory#toNonCooperative()} as a hint to the Jet execution engine
+     * to start a dedicated thread for those calls. Failing to do this can
+     * cause severe performance problems. You should also carefully consider
+     * how much local parallelism you need for this step since each parallel
+     * tasklet needs its own thread. Call {@link GeneralStage#setLocalParallelism
+     * stage.setLocalParallelism()} to set an explicit level, otherwise it will
+     * depend on the number of cores on the Jet machine, which makes no sense
+     * for blocking code.
      *
      * @since 4.0
      */
@@ -153,6 +186,17 @@ public final class ServiceFactories {
      * each cluster member is dictated by {@link GeneralStage#setLocalParallelism
      * stage.localParallelism}. Use this when the service instance should not
      * be shared across multiple threads.
+     * <p>
+     * <strong>Note:</strong> if your service has a blocking API (e.g., doing
+     * synchronous IO or acquiring locks), you must call {@link
+     * ServiceFactory#toNonCooperative()} as a hint to the Jet execution engine
+     * to start a dedicated thread for those calls. Failing to do this can
+     * cause severe performance problems. You should also carefully consider
+     * how much local parallelism you need for this step since each parallel
+     * tasklet needs its own thread. Call {@link GeneralStage#setLocalParallelism
+     * stage.setLocalParallelism()} to set an explicit level, otherwise it will
+     * depend on the number of cores on the Jet machine, which makes no sense
+     * for blocking code.
      *
      * @param createServiceFn the function that creates the service. It will be called once per
      *                        processor instance.
