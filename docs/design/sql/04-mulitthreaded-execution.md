@@ -113,7 +113,7 @@ and flow control. These operations take short time to complete. Moreover, query 
 execution of several fragments.
 
 Given the different nature of query operations and fragment execution, we split them into independent stages, called
-**operation pool** and **fragment pool**. The former executes query operation, and the latter executes fragments. This design
+**operation pool** and **fragment pool**. The former executes query operations, and the latter executes fragments. This design
 provides a clear separation of concerns and allows us to optimize stages for their tasks as described below, which improves
 performance. On the other hand, this design introduces an additional thread notification, as shown on the snippets below, which
 may negatively affect performance. Nevertheless, we think that the advantages of this approach outweigh the disadvantages.
