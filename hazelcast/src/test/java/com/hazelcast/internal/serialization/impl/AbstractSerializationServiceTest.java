@@ -64,8 +64,10 @@ public class AbstractSerializationServiceTest {
     }
 
     protected AbstractSerializationService newAbstractSerializationService() {
-        DefaultSerializationServiceBuilder defaultSerializationServiceBuilder = new DefaultSerializationServiceBuilder();
-        return defaultSerializationServiceBuilder.setVersion(InternalSerializationService.VERSION_1).build();
+        return new DefaultSerializationServiceBuilder()
+                .setVersion(InternalSerializationService.VERSION_1)
+                .setNotActiveExceptionSupplier(HazelcastInstanceNotActiveException::new)
+                .build();
     }
 
     @Test
