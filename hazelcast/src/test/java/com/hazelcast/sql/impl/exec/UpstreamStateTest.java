@@ -56,7 +56,7 @@ public class UpstreamStateTest {
         UpstreamState state = new UpstreamState(exec);
 
         // Test setup.
-        QueryFragmentContext context = new QueryFragmentContext(Collections.emptyList());
+        QueryFragmentContext context = new QueryFragmentContext(Collections.emptyList(), null, null);
 
         state.setup(context);
 

@@ -43,7 +43,7 @@ public class AbstractExecTest {
         assertEquals(1, exec.getId());
 
         // Setup.
-        QueryFragmentContext context = new QueryFragmentContext(Collections.emptyList());
+        QueryFragmentContext context = new QueryFragmentContext(Collections.emptyList(), null, null);
 
         exec.setup(context);
 

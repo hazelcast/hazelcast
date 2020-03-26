@@ -60,7 +60,11 @@ public abstract class QueryAbstractIdAwareOperation extends QueryOperation {
         queryId = new QueryId();
         queryId.readData(in);
 
-        readInternal1(in);
+        try {
+            readInternal1(in);
+        } catch (Exception e) {
+            throw new QueryOperationDeserializationException(queryId, getCallerId(), getClass().getSimpleName(), e);
+        }
     }
 
     protected abstract void writeInternal1(ObjectDataOutput out) throws IOException;

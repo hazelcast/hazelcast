@@ -16,24 +16,43 @@
 
 package com.hazelcast.sql.impl.fragment;
 
+import com.hazelcast.sql.impl.state.QueryStateCallback;
+import com.hazelcast.sql.impl.worker.QueryFragmentScheduleCallback;
+
 import java.util.List;
 
 /**
  * Context of a running query fragment.
  */
-public class QueryFragmentContext {
+public final class QueryFragmentContext {
 
     private final List<Object> arguments;
+    private final QueryFragmentScheduleCallback scheduleCallback;
+    private final QueryStateCallback stateCallback;
 
-    public QueryFragmentContext(List<Object> arguments) {
+    public QueryFragmentContext(
+        List<Object> arguments,
+        QueryFragmentScheduleCallback scheduleCallback,
+        QueryStateCallback stateCallback
+    ) {
         assert arguments != null;
 
         this.arguments = arguments;
+        this.scheduleCallback = scheduleCallback;
+        this.stateCallback = stateCallback;
     }
 
     public Object getArgument(int index) {
         assert index >= 0 && index < arguments.size();
 
         return arguments.get(index);
+    }
+
+    public void schedule() {
+        scheduleCallback.schedule();
+    }
+
+    public void checkCancelled() {
+        stateCallback.checkCancelled();
     }
 }
