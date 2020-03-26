@@ -19,22 +19,22 @@ package com.hazelcast.sql.impl.operation;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.physical.PhysicalNode;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
  * Query fragment descriptor which is sent over a wire.
  */
-public class QueryExecuteOperationFragment implements DataSerializable {
-    /** Physical node. */
-    private PhysicalNode node;
+public class QueryExecuteOperationFragment implements IdentifiedDataSerializable {
 
-    /** IDs of members where the fragment should be executed. */
+    private PhysicalNode node;
     private Collection<UUID> memberIds;
 
     public QueryExecuteOperationFragment() {
@@ -52,6 +52,16 @@ public class QueryExecuteOperationFragment implements DataSerializable {
 
     public Collection<UUID> getMemberIds() {
         return memberIds;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SqlDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return SqlDataSerializerHook.OPERATION_EXECUTE_FRAGMENT;
     }
 
     @Override
@@ -78,5 +88,25 @@ public class QueryExecuteOperationFragment implements DataSerializable {
                 memberIds.add(UUIDSerializationUtil.readUUID(in));
             }
         }
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(node, memberIds);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        QueryExecuteOperationFragment fragment = (QueryExecuteOperationFragment) o;
+
+        return Objects.equals(node, fragment.node) && Objects.equals(memberIds, fragment.memberIds);
     }
 }

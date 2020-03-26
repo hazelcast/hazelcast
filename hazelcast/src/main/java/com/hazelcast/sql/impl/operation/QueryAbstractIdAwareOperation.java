@@ -26,10 +26,9 @@ import java.io.IOException;
  * Base class for query operations which has query ID.
  */
 public abstract class QueryAbstractIdAwareOperation extends QueryOperation {
-    /** Thread local which catches query ID in case of error. */
+
     private static final ThreadLocal<QueryAbstractIdAwareOperation> ERROR_OPERATION = new ThreadLocal<>();
 
-    /** Query ID. */
     protected QueryId queryId;
 
     protected QueryAbstractIdAwareOperation() {
@@ -37,11 +36,18 @@ public abstract class QueryAbstractIdAwareOperation extends QueryOperation {
     }
 
     protected QueryAbstractIdAwareOperation(QueryId queryId) {
+        assert queryId != null;
+
         this.queryId = queryId;
     }
 
     public QueryId getQueryId() {
         return queryId;
+    }
+
+    @Override
+    public int getPartition() {
+        return getPartitionForHash(queryId.hashCode());
     }
 
     @Override

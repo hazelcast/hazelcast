@@ -27,7 +27,7 @@ import java.io.IOException;
  * Flow control operation which allows for remote sender to proceed with sending.
  */
 public class QueryFlowControlExchangeOperation extends QueryAbstractExchangeOperation {
-    /** Amount of memory available on the receiver. */
+
     private long remainingMemory;
 
     public QueryFlowControlExchangeOperation() {
@@ -36,6 +36,8 @@ public class QueryFlowControlExchangeOperation extends QueryAbstractExchangeOper
 
     public QueryFlowControlExchangeOperation(QueryId queryId, int edgeId, long remainingMemory) {
         super(queryId, edgeId);
+
+        assert remainingMemory >= 0L;
 
         this.remainingMemory = remainingMemory;
     }

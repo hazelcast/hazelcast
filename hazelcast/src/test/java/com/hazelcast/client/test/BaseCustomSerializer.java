@@ -43,4 +43,9 @@ public class BaseCustomSerializer implements StreamSerializer<BaseCustom> {
     public int getTypeId() {
         return 3;
     }
+
+    @Override
+    public void destroy() {
+
+    }
 }

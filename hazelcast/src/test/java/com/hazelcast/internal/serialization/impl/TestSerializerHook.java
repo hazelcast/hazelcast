@@ -55,6 +55,11 @@ public class TestSerializerHook implements SerializerHook {
         }
 
         @Override
+        public void destroy() {
+
+        }
+
+        @Override
         public void write(ObjectDataOutput out, SampleIdentifiedDataSerializable object) throws IOException {
 
         }
@@ -83,6 +88,11 @@ public class TestSerializerHook implements SerializerHook {
         @Override
         public int getTypeId() {
             return 1001;
+        }
+
+        @Override
+        public void destroy() {
+
         }
 
         @Override

@@ -26,10 +26,13 @@ import java.util.List;
  * Schema of a node.
  */
 public class PhysicalNodeSchema implements FieldTypeProvider {
+
     private final List<QueryDataType> types;
     private final int rowWidth;
 
     public PhysicalNodeSchema(List<QueryDataType> types) {
+        assert types != null;
+
         this.types = Collections.unmodifiableList(types);
 
         rowWidth = calculateRowWidth(types);

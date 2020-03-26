@@ -34,7 +34,7 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Operation which is broadcast to participating members to start query execution.
+ * Operation which is broadcasted to participating members to start query execution.
  */
 public class QueryExecuteOperation extends QueryAbstractIdAwareOperation {
     /** Mapped ownership of partitions. */
@@ -52,10 +52,7 @@ public class QueryExecuteOperation extends QueryAbstractIdAwareOperation {
     /** Map from edge ID to initial credits assigned to senders. */
     private Map<Integer, Long> edgeCreditMap;
 
-    /** Arguments. */
     private List<Object> arguments;
-
-    /** Timeout. */
     private long timeout;
 
     /** Root fragment result consumer. Applicable only to root fragment being executed on local node. */
@@ -76,6 +73,14 @@ public class QueryExecuteOperation extends QueryAbstractIdAwareOperation {
         long timeout
     ) {
         super(queryId);
+
+        assert partitionMapping != null && !partitionMapping.isEmpty() : partitionMapping;
+        assert fragments != null && fragments.size() > 0 : fragments;
+        assert outboundEdgeMap != null;
+        assert inboundEdgeMap != null;
+        assert inboundEdgeMap.size() == outboundEdgeMap.size();
+        assert edgeCreditMap != null;
+        assert edgeCreditMap.size() == outboundEdgeMap.size();
 
         this.queryId = queryId;
         this.partitionMapping = partitionMapping;
@@ -142,7 +147,7 @@ public class QueryExecuteOperation extends QueryAbstractIdAwareOperation {
         out.writeInt(fragments.size());
 
         for (QueryExecuteOperationFragment fragment : fragments) {
-            fragment.writeData(out);
+            out.writeObject(fragment);
         }
 
         // Write edge mappings.
@@ -202,9 +207,7 @@ public class QueryExecuteOperation extends QueryAbstractIdAwareOperation {
         fragments = new ArrayList<>(fragmentCnt);
 
         for (int i = 0; i < fragmentCnt; i++) {
-            QueryExecuteOperationFragment fragment = new QueryExecuteOperationFragment();
-
-            fragment.readData(in);
+            QueryExecuteOperationFragment fragment = in.readObject();
 
             fragments.add(fragment);
         }

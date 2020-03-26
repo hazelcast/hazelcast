@@ -26,6 +26,7 @@ import java.io.IOException;
  * Common class for data exchange operations.
  */
 public abstract class QueryAbstractExchangeOperation extends QueryAbstractIdAwareOperation {
+
     protected int edgeId;
 
     public QueryAbstractExchangeOperation() {
@@ -50,7 +51,7 @@ public abstract class QueryAbstractExchangeOperation extends QueryAbstractIdAwar
     @SuppressWarnings("checkstyle:MagicNumber")
     @Override
     public int getPartition() {
-        return Math.abs(31 * queryId.hashCode() + edgeId);
+        return getPartitionForHash(31 * queryId.hashCode() + edgeId);
     }
 
     @Override
