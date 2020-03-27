@@ -55,8 +55,8 @@ The partition pool has the following disadvantage:
 indefinitely; likewise, an imbalance between partitions may cause resource underutilization
 
 The partition pool is thus most suitable for small tasks that operate on independent physical resources, and that are
-distributed equally between logical partitions. An example is `IMap` operations, which update separate physical partitions,
-such as `GET` and `PUT`.
+distributed equally between logical partitions. An example is `IMap` operations, which operate on separate physical
+partitions, such as `GET` and `PUT`.
 
 Since the partition is a logical notion, it is possible to multiplex tasks from different components to a single partition pool.
 For example, CP Subsystem schedules tasks, all with the same partition, to the partition pool to ensure total processing order.
@@ -90,9 +90,9 @@ Hazelcast Jet follows this principle, as only one thread may execute a particula
 satisfy the load balancing requirement discussed below.
 
 Second, the execution environment must support load balancing. Query execution may take a long time to complete. If several query
-fragments have been assigned to a single execution thread, it should be possible to reassign them to available free thread
-dynamically. Hence neither partition pool nor Hazelcast Jet pool designs are applicable to Hazelcast Mustang because they lack
-balancing capabilities.
+fragments have been assigned to a single execution thread, it should be possible to reassign them to idle threads dynamically.
+Hence neither partition pool nor Hazelcast Jet pool designs are applicable to Hazelcast Mustang because they lack balancing
+capabilities.
 
 Third, it should be possible to execute some tasks in order. That is, if task `A` is received before task `B`, then it
 should be executed before `B`. It is always possible to implement an ordering guarantee with the help of additional
