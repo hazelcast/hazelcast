@@ -175,7 +175,7 @@ checked periodically by fragment tasks. This may lead to wasted CPU cycles and f
 **Example 2**
 
 Consider a fragment which occupied the thread `A`. Then a `batch` message arrives, which should resume execution of another
-fragment. Given that the processing of `batch` message should is ordered, it has logical partition defined. It may happen that
+fragment. Given that the processing of `batch` message should be ordered, it has logical partition defined. It may happen that
 the thread chosen for `batch` operation processing will also be the thread `A`, that is currently busy. So we either delay
 the resume of the fragment associated with the batch, reducing the throughput, or we introduce a priority queue and interrupt
 the running fragment, wasting CPU cycles.
