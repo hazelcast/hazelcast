@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.worker;
 
+import com.hazelcast.logging.NoLogFactory;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.exec.AbstractExec;
 import com.hazelcast.sql.impl.exec.IterationResult;
@@ -365,7 +366,7 @@ public class QueryFragmentExecutableTest extends HazelcastTestSupport {
     }
 
     private QueryFragmentWorkerPool createPool() {
-        return new QueryFragmentWorkerPool("instance", 4);
+        return new QueryFragmentWorkerPool("instance", 4, new NoLogFactory().getLogger("logger"));
     }
 
     private interface ExecPayload {

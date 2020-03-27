@@ -30,6 +30,7 @@ import com.hazelcast.sql.impl.operation.QueryOperationHandler;
 
 import java.util.UUID;
 
+import static com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
 import static com.hazelcast.sql.impl.QueryUtils.WORKER_TYPE_OPERATION;
 
 /**
@@ -82,6 +83,15 @@ public class QueryOperationWorker implements Runnable {
     @Override
     public void run() {
         try {
+            run0();
+        } catch (Throwable t) {
+            inspectOutOfMemoryError(t);
+            logger.severe(t);
+        }
+    }
+
+    private void run0() {
+        try {
             while (true) {
                 Object task = queue.take();
 
@@ -128,7 +138,7 @@ public class QueryOperationWorker implements Runnable {
                 // It is not easy to decide how to handle an arbitrary exception. We do not have caller coordinates, so
                 // we do not know how to notify it. We also cannot panic (i.e. kill local member), because it would be a
                 // security threat. So the only sensible solution is to log the error.
-                logger.warning("Failed to deserialize query operation received from " + packet.getConn().getEndPoint()
+                logger.severe("Failed to deserialize query operation received from " + packet.getConn().getEndPoint()
                     + " (will be ignored)", e);
             }
         }

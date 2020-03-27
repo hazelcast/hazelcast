@@ -16,12 +16,14 @@
 
 package com.hazelcast.sql.impl.worker;
 
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.sql.impl.QueryUtils;
 
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinWorkerThread;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
 import static com.hazelcast.sql.impl.QueryUtils.WORKER_TYPE_FRAGMENT;
 
 /**
@@ -30,9 +32,12 @@ import static com.hazelcast.sql.impl.QueryUtils.WORKER_TYPE_FRAGMENT;
 public class QueryFragmentWorkerPool {
 
     private final ForkJoinPool pool;
+    private final ILogger logger;
 
-    public QueryFragmentWorkerPool(String instanceName, int threadCount) {
-        pool = new ForkJoinPool(threadCount, new WorkerThreadFactory(instanceName), null, false);
+    public QueryFragmentWorkerPool(String instanceName, int threadCount, ILogger logger) {
+        pool = new ForkJoinPool(threadCount, new WorkerThreadFactory(instanceName), new ExceptionHandler(), true);
+
+        this.logger = logger;
     }
 
     /**
@@ -75,6 +80,14 @@ public class QueryFragmentWorkerPool {
             thread.setName(name);
 
             return thread;
+        }
+    }
+
+    private class ExceptionHandler implements Thread.UncaughtExceptionHandler {
+        @Override
+        public void uncaughtException(Thread thread, Throwable t) {
+            inspectOutOfMemoryError(t);
+            logger.severe(t);
         }
     }
 }
