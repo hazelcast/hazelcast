@@ -45,7 +45,7 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
 
         SqlNode from = select.getFrom();
 
-        if (from.getKind() == SqlKind.UNION)  {
+        if (from != null && from.getKind() == SqlKind.UNION)  {
             throw newValidationError(from, HZ_RESOURCE.unionNotSupported());
         }
     }
