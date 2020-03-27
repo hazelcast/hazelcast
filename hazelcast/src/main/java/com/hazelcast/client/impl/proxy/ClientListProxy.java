@@ -16,6 +16,15 @@
 
 package com.hazelcast.client.impl.proxy;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.UUID;
+
+import javax.annotation.Nonnull;
+
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ListAddAllCodec;
 import com.hazelcast.client.impl.protocol.codec.ListAddAllWithIndexCodec;
@@ -47,18 +56,11 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.collection.IList;
 import com.hazelcast.collection.ItemEvent;
 import com.hazelcast.collection.ItemListener;
+import com.hazelcast.collection.LocalListStats;
 import com.hazelcast.collection.impl.common.DataAwareItemEvent;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
-
-import javax.annotation.Nonnull;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.UUID;
 
 import static com.hazelcast.internal.util.CollectionUtil.objectToDataCollection;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -318,6 +320,11 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
         ListSubCodec.ResponseParameters resultParameters = ListSubCodec.decodeResponse(response);
         List<Data> resultCollection = resultParameters.response;
         return new UnmodifiableLazyList(resultCollection, getSerializationService());
+    }
+
+    @Override
+    public LocalListStats getLocalListStats() {
+        throw new UnsupportedOperationException("Locality is ambiguous for client!");
     }
 
     @Override

@@ -20,8 +20,8 @@ import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.Map;
 
@@ -57,6 +57,7 @@ public class CollectionClearOperation extends CollectionBackupAwareOperation imp
         for (Data value : itemIdMap.values()) {
             publishEvent(ItemEventType.REMOVED, value);
         }
+        super.afterRun();
     }
 
     @Override

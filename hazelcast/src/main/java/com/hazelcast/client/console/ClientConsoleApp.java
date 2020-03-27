@@ -940,6 +940,10 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
             println(getMultiMap().getLocalMultiMapStats());
         } else if (iteratorStr.startsWith("q.")) {
             println(getQueue().getLocalQueueStats());
+        } else if (iteratorStr.startsWith("l.")) {
+            println(getList().getLocalListStats());
+        } else if (iteratorStr.startsWith("s.")) {
+            println(getSet().getLocalSetStats());
         }
     }
 

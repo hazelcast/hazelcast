@@ -16,8 +16,17 @@
 
 package com.hazelcast.internal.diagnostics;
 
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map.Entry;
+import java.util.Random;
+import java.util.concurrent.CountDownLatch;
+import java.util.regex.Pattern;
+
 import com.hazelcast.cache.ICache;
+import com.hazelcast.collection.IList;
 import com.hazelcast.collection.IQueue;
+import com.hazelcast.collection.ISet;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
@@ -44,13 +53,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map.Entry;
-import java.util.Random;
-import java.util.concurrent.CountDownLatch;
-import java.util.regex.Pattern;
-
 import static com.hazelcast.cache.CacheUtil.getDistributedObjectName;
 import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertFalse;
@@ -70,6 +72,10 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
     private static final String EXECUTOR_NAME_NO_STAT = "myExecutor-noStat";
     private static final String QUEUE_NAME = "myQueue";
     private static final String QUEUE_NAME_NO_STAT = "myQueue-noStat";
+    private static final String LIST_NAME = "myList";
+    private static final String LIST_NAME_NO_STAT = "myList-noStat";
+    private static final String SET_NAME = "mySet";
+    private static final String SET_NAME_NO_STAT = "mySet-noStat";
     private static final String REPLICATED_MAP_NAME = "myReplicatedMap";
     private static final String REPLICATED_MAP_NAME_NO_STAT = "myReplicatedMap-noStat";
     private static final String TOPIC_NAME = "myTopic";
@@ -98,6 +104,8 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
         config.getReplicatedMapConfig(REPLICATED_MAP_NAME_NO_STAT).setStatisticsEnabled(false);
         config.getExecutorConfig(EXECUTOR_NAME_NO_STAT).setStatisticsEnabled(false);
         config.getQueueConfig(QUEUE_NAME_NO_STAT).setStatisticsEnabled(false);
+        config.getListConfig(LIST_NAME_NO_STAT).setStatisticsEnabled(false);
+        config.getSetConfig(SET_NAME_NO_STAT).setStatisticsEnabled(false);
         config.getTopicConfig(TOPIC_NAME_NO_STAT).setStatisticsEnabled(false);
         config.getReliableTopicConfig(TOPIC_NAME_NO_STAT).setStatisticsEnabled(false);
         config.getPNCounterConfig(PN_COUNTER_NAME_NO_STAT).setStatisticsEnabled(false);
@@ -224,6 +232,34 @@ public class DistributedDatastructuresMetricsTest extends HazelcastTestSupport {
 
         assertHasStatsEventually(QUEUE_NAME, "queue.");
         assertHasNoStats(QUEUE_NAME_NO_STAT, "queue.");
+    }
+
+    @Test
+    public void testList() {
+        final IList<Object> list = hz.getList(LIST_NAME);
+        final IList<Object> listNoStat = hz.getList(LIST_NAME_NO_STAT);
+
+        for (int i = 0; i < EVENT_COUNTER; i++) {
+            list.add(i);
+            listNoStat.add(i);
+        }
+
+        assertHasStatsEventually(LIST_NAME, "list.");
+        assertHasNoStats(LIST_NAME_NO_STAT, "list.");
+    }
+
+    @Test
+    public void testSet() {
+        final ISet<Object> set = hz.getSet(SET_NAME);
+        final ISet<Object> setNoStat = hz.getSet(SET_NAME_NO_STAT);
+
+        for (int i = 0; i < EVENT_COUNTER; i++) {
+            set.add(i);
+            setNoStat.add(i);
+        }
+
+        assertHasStatsEventually(SET_NAME, "set.");
+        assertHasNoStats(SET_NAME_NO_STAT, "set.");
     }
 
     @Test
