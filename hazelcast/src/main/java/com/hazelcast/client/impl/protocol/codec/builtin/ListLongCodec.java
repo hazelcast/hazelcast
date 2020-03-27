@@ -47,7 +47,7 @@ public final class ListLongCodec {
     }
 
     public static List<Long> decode(ClientMessage.Frame frame) {
-        int itemCount = frame.content == null ? 0 : frame.content.length / LONG_SIZE_IN_BYTES;
+        int itemCount = frame.content.length / LONG_SIZE_IN_BYTES;
         List<Long> result = new ArrayList<>(itemCount);
         for (int i = 0; i < itemCount; i++) {
             result.add(decodeLong(frame.content, i * LONG_SIZE_IN_BYTES));

@@ -40,16 +40,12 @@ public final class DataCodec {
         }
     }
 
-    public static Data decode(ClientMessage.Frame frame) {
-        return new HeapData(frame.content);
-    }
-
     public static Data decode(ClientMessage.ForwardFrameIterator iterator) {
-        return decode(iterator.next());
+        return new HeapData(iterator.next().content);
     }
 
     public static Data decodeNullable(ClientMessage.ForwardFrameIterator iterator) {
-        return nextFrameIsNullEndFrame(iterator) ? null : decode(iterator.next());
+        return nextFrameIsNullEndFrame(iterator) ? null : decode(iterator);
     }
 
 }

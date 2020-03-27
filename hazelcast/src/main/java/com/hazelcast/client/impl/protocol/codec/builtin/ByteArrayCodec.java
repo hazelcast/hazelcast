@@ -27,11 +27,7 @@ public final class ByteArrayCodec {
         clientMessage.add(new ClientMessage.Frame(bytes));
     }
 
-    public static byte[] decode(ClientMessage.Frame frame) {
-        return frame.content;
-    }
-
     public static byte[] decode(ClientMessage.ForwardFrameIterator iterator) {
-        return decode(iterator.next());
+        return iterator.next().content;
     }
 }
