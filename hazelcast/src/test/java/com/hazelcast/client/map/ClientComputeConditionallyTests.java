@@ -31,8 +31,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
-import testsubjects.ClientOnlyStaticSerializableBiFunction;
-import testsubjects.ClientOnlyStaticSerializableFunction;
 import testsubjects.NonStaticFunctionFactory;
 import testsubjects.StaticNonSerializableBiFunction;
 import testsubjects.StaticNonSerializableFunction;
@@ -93,12 +91,6 @@ public class ClientComputeConditionallyTests extends ClientTestSupport {
     @Test
     public void testComputeIfPresentWithStaticNonSerializableRemappingFunction() {
         StaticNonSerializableBiFunction biFunction = new StaticNonSerializableBiFunction("new_value");
-        testComputeIfPresentForFunction(biFunction, "new_value");
-    }
-
-    @Test
-    public void testComputeIfPresentWithRemappingFunctionPresentOnClientJVMOnly() {
-        ClientOnlyStaticSerializableBiFunction biFunction = new ClientOnlyStaticSerializableBiFunction("new_value");
         testComputeIfPresentForFunction(biFunction, "new_value");
     }
 
@@ -171,12 +163,6 @@ public class ClientComputeConditionallyTests extends ClientTestSupport {
     @Test
     public void testComputeIfAbsentWithStaticNonSerializableMappingFunction() {
         StaticNonSerializableFunction function = new StaticNonSerializableFunction("new_value");
-        testComputeIfAbsentForFunction(function, "new_value");
-    }
-
-    @Test
-    public void testComputeIfAbsentWithMappingFunctionPresentOnClientJVMOnly() {
-        ClientOnlyStaticSerializableFunction function = new ClientOnlyStaticSerializableFunction("new_value");
         testComputeIfAbsentForFunction(function, "new_value");
     }
 
