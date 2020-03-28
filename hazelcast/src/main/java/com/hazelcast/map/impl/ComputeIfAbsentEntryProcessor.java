@@ -23,27 +23,32 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.function.BiFunction;
+import java.util.function.Function;
 
-public class BiFunctionExecutingEntryProcessor<K, V> implements EntryProcessor<K, V, V>, IdentifiedDataSerializable {
+public class ComputeIfAbsentEntryProcessor<K, V> implements EntryProcessor<K, V, V>, IdentifiedDataSerializable {
 
-    BiFunction<? super K, ? super V, ? extends V> biFunction;
+    Function<? super K, ? extends V> function;
 
-    public BiFunctionExecutingEntryProcessor() {
+    public ComputeIfAbsentEntryProcessor() {
     }
 
-    public BiFunctionExecutingEntryProcessor(BiFunction<? super K, ? super V, ? extends V> biFunction) {
-        this.biFunction = biFunction;
+    public ComputeIfAbsentEntryProcessor(Function<? super K, ? extends V> function) {
+        this.function = function;
     }
 
     @Override
     public V process(Map.Entry<K, V> entry) {
-        V newValue = biFunction.apply(entry.getKey(), entry.getValue());
-        if (newValue != null) {
-            entry.setValue(newValue);
-        } else {
-            ((LazyMapEntry) entry).remove();
+        V currentValue = entry.getValue();
+        if (currentValue != null) {
+            return currentValue;
         }
+
+        V newValue = function.apply(entry.getKey());
+        if (newValue == null) {
+            return null;
+        }
+
+        entry.setValue(newValue);
         return newValue;
     }
 
@@ -54,16 +59,16 @@ public class BiFunctionExecutingEntryProcessor<K, V> implements EntryProcessor<K
 
     @Override
     public int getClassId() {
-        return MapDataSerializerHook.BIFUNCTION_EXECUTING_PROCESSOR;
+        return MapDataSerializerHook.COMPUTE_IF_ABSENT_PROCESSOR;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeObject(biFunction);
+        out.writeObject(function);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        biFunction = in.readObject();
+        function = in.readObject();
     }
 }

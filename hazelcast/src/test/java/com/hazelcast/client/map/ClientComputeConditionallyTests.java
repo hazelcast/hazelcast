@@ -32,12 +32,16 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import testsubjects.ClientOnlyStaticSerializableBiFunction;
+import testsubjects.ClientOnlyStaticSerializableFunction;
 import testsubjects.NonStaticFunctionFactory;
 import testsubjects.StaticNonSerializableBiFunction;
+import testsubjects.StaticNonSerializableFunction;
 import testsubjects.StaticSerializableBiFunction;
+import testsubjects.StaticSerializableFunction;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -93,7 +97,7 @@ public class ClientComputeConditionallyTests extends ClientTestSupport {
     }
 
     @Test
-    public void testComputeIfPresentWithRemappingFunctionPresentOnClientJVMOnly() throws Throwable {
+    public void testComputeIfPresentWithRemappingFunctionPresentOnClientJVMOnly() {
         ClientOnlyStaticSerializableBiFunction biFunction = new ClientOnlyStaticSerializableBiFunction("new_value");
         testComputeIfPresentForFunction(biFunction, "new_value");
     }
@@ -143,5 +147,75 @@ public class ClientComputeConditionallyTests extends ClientTestSupport {
         }
     }
 
+    @Test
+    public void testComputeIfAbsentWithLambdaMappingFunction() {
+        final String outer_state = "outer_state";
+        Function function = (key) -> "new_value_from_lambda_and_" + outer_state;
+        testComputeIfAbsentForFunction(function, "new_value_from_lambda_and_outer_state");
+    }
+
+
+    @Test
+    public void testComputeIfAbsentWithAnonymousMappingFunction() {
+        Function<String, String> function = NonStaticFunctionFactory
+                .getAnonymousNonSerializableFunction("new_value");
+        testComputeIfAbsentForFunction(function, "new_value");
+    }
+
+    @Test
+    public void testComputeIfAbsentWithStaticSerializableMappingFunction() {
+        StaticSerializableFunction function = new StaticSerializableFunction("new_value");
+        testComputeIfAbsentForFunction(function, "new_value");
+    }
+
+    @Test
+    public void testComputeIfAbsentWithStaticNonSerializableMappingFunction() {
+        StaticNonSerializableFunction function = new StaticNonSerializableFunction("new_value");
+        testComputeIfAbsentForFunction(function, "new_value");
+    }
+
+    @Test
+    public void testComputeIfAbsentWithMappingFunctionPresentOnClientJVMOnly() {
+        ClientOnlyStaticSerializableFunction function = new ClientOnlyStaticSerializableFunction("new_value");
+        testComputeIfAbsentForFunction(function, "new_value");
+    }
+
+    @Test
+    public void testComputeIfAbsentShouldReturnNullWhenMappingFunctionReturnsNull() {
+        Function function = (k) -> null;
+        testComputeIfAbsentForFunction(function, null);
+    }
+
+    @Test
+    public void testComputeIfAbsentShouldReturnExistingValueWhenItExists() {
+        final IMap<String, String> map = client.getMap("testComputeIfAbsent");
+        map.put("present_key", "present_value");
+
+        Function function = (k) -> "new_value";
+        assertEquals(map.computeIfAbsent("present_key", function), "present_value");
+        assertEquals(map.get("present_key"), "present_value");
+    }
+
+    @Test
+    public void testComputeIfAbsentShouldNotExecuteMappingFunctionForPresentKeys() {
+        final IMap<String, String> map = client.getMap("testComputeIfAbsent");
+        map.put("present_key", "present_value");
+        map.computeIfAbsent("present_key", (key) -> {
+            fail("should not be called");
+            return "test_value";
+        });
+    }
+
+    private void testComputeIfAbsentForFunction(Function testFunction, Object expectedValue) {
+        testComputeIfAbsentForFunction(client, testFunction, expectedValue);
+    }
+
+    private void testComputeIfAbsentForFunction(HazelcastInstance hz, Function testFunction, Object expectedValue) {
+        final IMap<String, String> map = hz.getMap("testComputeIfPresent" + hz.getName());
+        String newValue = map.computeIfAbsent("absent_key", testFunction);
+
+        assertEquals(expectedValue, newValue);
+        assertEquals(expectedValue, map.get("absent_key"));
+    }
 
 }
