@@ -23,7 +23,7 @@ public interface OutboundHandler {
     /**
      * Handle flow control response from the remote inbound handler.
      *
-     * @param remainingMemory Amount of memory which available on the remote end.
+     * @param remainingMemory Amount of memory which is available on the remote end.
      */
     void onFlowControl(long remainingMemory);
 }

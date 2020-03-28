@@ -20,7 +20,7 @@ public interface QueryFragmentScheduleCallback {
     /**
      * Schedule the fragment for execution.
      *
-     * @return {@code True} if the fragment was scheduled, {@code false} if already scheduled.
+     * @return {@code true} if the fragment was scheduled, {@code false} if already scheduled.
      */
     boolean schedule();
 }
