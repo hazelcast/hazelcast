@@ -193,6 +193,8 @@ public class QueryFragmentExecutable implements QueryFragmentScheduleCallback {
         if (!completed0 && !operations.isEmpty()) {
             // New operations arrived. Submit the fragment for execution again.
             submit();
+
+            return;
         }
 
         // Otherwise, reset the "scheduled" flag to let other threads re-submit the fragment when needed.

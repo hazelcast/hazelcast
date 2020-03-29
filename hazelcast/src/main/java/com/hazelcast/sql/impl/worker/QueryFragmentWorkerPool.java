@@ -53,7 +53,7 @@ public class QueryFragmentWorkerPool {
      * @param task Fragment.
      */
     public void submit(QueryFragmentExecutable task) {
-        pool.submit(task::run);
+        pool.execute(task::run);
     }
 
     private static final class WorkerThread extends ForkJoinWorkerThread {
