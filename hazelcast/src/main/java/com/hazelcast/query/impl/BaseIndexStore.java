@@ -163,7 +163,7 @@ public abstract class BaseIndexStore implements IndexStore {
 
         @Override
         public Map<Data, QueryableEntry> invoke(Map<Data, QueryableEntry> map) {
-            if (isExpirable()) {
+            if (map != null && isExpirable()) {
                 return new ExpirationAwareHashMapDelegate(map);
             }
             return map;
