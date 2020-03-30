@@ -1,0 +1,112 @@
+body {
+  font-family: Source Sans Pro, Ubuntu, sans-serif;
+  /* font-weight: lighter; */
+  background-color: #fffdfa;
+  color: #073642;
+  font-size: 1.05em;
+}
+
+.fixedHeaderContainer {
+  background-color: #f0f0f0;
+}
+
+.fixedHeaderContainer a h3 {
+  color: #707482;
+  text-decoration: none;
+  border-bottom: 1px solid #2d7de4;
+}
+
+.projectTitle {
+  color: #073642;
+  font-weight: 800;
+}
+
+.projectLogo {
+  height: 85%;
+}
+
+a.button {
+  font-weight: bold;
+}
+
+.promoRow a.button {
+  color: #ff5f00;
+  border-color: #ff5f00;
+}
+
+.promoRow a.button:hover {
+  background-color: #ff5f00;
+  color: #fffdfa;
+}
+
+.navigationSlider .slidingNav ul li a {
+  color: #707482;
+  font-weight: 600;
+  letter-spacing: 0.35px;
+  font-size: 16px;
+  border-bottom: 3px solid transparent;
+  margin-left: 6px;
+  margin-right: 10px;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.navigationSlider .slidingNav ul li.siteNavGroupActive a,
+.navigationSlider .slidingNav ul li.siteNavItemActive a,
+.navigationSlider .slidingNav ul li a:focus,
+.navigationSlider .slidingNav ul li a:hover {
+  color: #707482 !important;
+  border-bottom: 3px solid #2d7de4;
+  background: none;
+}
+
+.imageAlignTop .blockImage {
+  height: 160px;
+  max-width: 160px;
+}
+
+.imageAlignRight .blockImage {
+  max-height: 200px;
+  max-width: 200px;
+}
+
+.nav-footer {
+  background-color: #002b36;
+}
+
+.nav-footer .sitemap .nav-home {
+  height: 34px;
+  opacity: 0.8;
+  padding: 10px;
+  transition: opacity 0.15s ease-in-out;
+  width: 200px;
+}
+
+.blog .wrapper {
+  max-width: 1400px;
+}
+.blog .post {
+  max-width: 780px;
+}
+
+.versionsContainer {
+  max-width: 780px;
+}
+
+.mainContainer .container {
+}
+
+@media only screen and (min-device-width: 360px) and (max-device-width: 736px) {
+}
+
+@media only screen and (min-width: 1024px) {
+}
+
+@media only screen and (max-width: 1023px) {
+}
+
+@media only screen and (min-width: 1400px) {
+}
+
+@media only screen and (min-width: 1500px) {
+}

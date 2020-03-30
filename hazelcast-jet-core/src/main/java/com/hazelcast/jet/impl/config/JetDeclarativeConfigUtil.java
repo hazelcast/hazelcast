@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.impl.config;
 
-
 public final class JetDeclarativeConfigUtil {
 
     /**

@@ -55,7 +55,7 @@ public class SimpleEvent implements Serializable {
 
     @Override
     public String toString() {
-        return "(" +
+        return "SimpleEvent(" +
             "timestamp=" + Util.toLocalTime(timestamp) +
             ", sequence=" + sequence +
             ')';
