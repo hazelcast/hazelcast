@@ -109,11 +109,19 @@ public class QueryOperationWorker implements Runnable {
     }
 
     private void execute(QueryOperationExecutable task) {
-        QueryOperation operation = task.getLocalOperation();
+        QueryOperation operation;
 
-        if (operation == null) {
+        if (task.isLocal()) {
+            operation = task.getLocalOperation();
+        } else {
             operation = deserialize(task.getRemoteOperation());
+
+            if (operation == null) {
+                return;
+            }
         }
+
+        assert operation != null;
 
         operationHandler.execute(operation);
     }
