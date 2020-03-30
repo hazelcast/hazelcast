@@ -17,6 +17,7 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.cache.ICache;
+import com.hazelcast.collection.IList;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.jet.Observable;
@@ -44,6 +45,7 @@ import org.testcontainers.shaded.com.google.common.collect.ImmutableSet;
 import javax.cache.Cache;
 import java.io.IOException;
 import java.util.AbstractMap.SimpleEntry;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -60,6 +62,8 @@ public class JobSerializerTest extends SimpleTestInClusterSupport {
     private static final String SINK_MAP_NAME = "sink-map";
     private static final String SOURCE_CACHE_NAME = "source-cache";
     private static final String SINK_CACHE_NAME = "sink-cache";
+    private static final String SOURCE_LIST_NAME = "source-list";
+    private static final String SINK_LIST_NAME = "sink-list";
     private static final String OBSERVABLE_NAME = "observable";
 
     @BeforeClass
@@ -105,7 +109,7 @@ public class JobSerializerTest extends SimpleTestInClusterSupport {
 
         client().newJob(pipeline, jobConfig()).join();
 
-        IMap<Object, Object> map = client().getMap(SINK_MAP_NAME);
+        IMap<Integer, Value> map = client().getMap(SINK_MAP_NAME);
         assertThat(map).containsExactlyInAnyOrderEntriesOf(
                 ImmutableMap.of(1, new Value(1), 2, new Value(2))
         );
@@ -144,6 +148,41 @@ public class JobSerializerTest extends SimpleTestInClusterSupport {
         assertThat(cache).hasSize(2);
         assertThat(cache.getAll(ImmutableSet.of(1, 2))).containsExactlyInAnyOrderEntriesOf(
                 ImmutableMap.of(1, new Value(1), 2, new Value(2))
+        );
+    }
+
+    @Test
+    public void when_serializerIsNotRegistered_then_listThrowsException() {
+        List<Value> list = instance().getList(SOURCE_MAP_NAME);
+
+        assertThatThrownBy(() -> list.add(new Value(1))).isInstanceOf(HazelcastSerializationException.class);
+    }
+
+    @Test
+    public void when_serializerIsRegistered_then_itIsAvailableForLocalListSource() {
+        List<Value> list = client().getList(SOURCE_LIST_NAME);
+        list.addAll(asList(new Value(1), new Value(2)));
+
+        Pipeline pipeline = Pipeline.create();
+        pipeline.readFrom(Sources.<Value>list(SOURCE_LIST_NAME))
+                .map(Value::value)
+                .writeTo(AssertionSinks.assertAnyOrder(asList(1, 2)));
+
+        client().newJob(pipeline, jobConfig()).join();
+    }
+
+    @Test
+    public void when_serializerIsRegistered_then_itIsAvailableForLocalListSink() {
+        Pipeline pipeline = Pipeline.create();
+        pipeline.readFrom(TestSources.items(1, 2))
+                .map(Value::new)
+                .writeTo(Sinks.list(SINK_LIST_NAME));
+
+        client().newJob(pipeline, jobConfig()).join();
+
+        IList<Value> list = client().getList(SINK_LIST_NAME);
+        assertThat(list).containsExactly(
+                new Value(1), new Value(2)
         );
     }
 

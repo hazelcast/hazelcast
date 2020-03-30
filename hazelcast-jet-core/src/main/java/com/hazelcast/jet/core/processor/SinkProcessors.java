@@ -175,7 +175,7 @@ public final class SinkProcessors {
      */
     @Nonnull
     public static <K, V> ProcessorMetaSupplier writeCacheP(@Nonnull String cacheName) {
-        return HazelcastWriters.<K, V>writeCacheSupplier(cacheName, null);
+        return HazelcastWriters.writeCacheSupplier(cacheName, null);
     }
 
     /**
@@ -186,7 +186,7 @@ public final class SinkProcessors {
     public static <K, V> ProcessorMetaSupplier writeRemoteCacheP(
             @Nonnull String cacheName, @Nonnull ClientConfig clientConfig
     ) {
-        return HazelcastWriters.<K, V>writeCacheSupplier(cacheName, clientConfig);
+        return HazelcastWriters.writeCacheSupplier(cacheName, clientConfig);
     }
 
     /**

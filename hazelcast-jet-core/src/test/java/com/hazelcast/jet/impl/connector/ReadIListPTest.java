@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl.connector;
 import com.hazelcast.collection.IList;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.junit.Before;
@@ -28,6 +29,7 @@ import org.junit.runner.RunWith;
 import java.util.List;
 import java.util.stream.IntStream;
 
+import static com.hazelcast.jet.TestContextSupport.adaptSupplier;
 import static java.util.stream.Collectors.toList;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -55,7 +57,7 @@ public class ReadIListPTest extends JetTestSupport {
         List<Object> data = IntStream.range(0, listLength).boxed().collect(toList());
         list.addAll(data);
         TestSupport
-                .verifyProcessor(() -> new ReadIListP(list.getName(), null))
+                .verifyProcessor(adaptSupplier(SourceProcessors.readListP(list.getName())))
                 .jetInstance(instance)
                 .disableSnapshots()
                 .disableLogging()

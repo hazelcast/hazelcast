@@ -20,9 +20,13 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.jet.core.Inbox;
+import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.core.Watermark;
+import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.jet.core.test.TestProcessorSupplierContext;
 import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
 import com.hazelcast.jet.impl.execution.init.Contexts.ProcSupplierCtx;
@@ -33,6 +37,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+
+import static java.util.stream.Collectors.toList;
 
 /**
  * A rather hacky way to allow `TestSupport` usage with IMDG data structures
@@ -80,7 +86,7 @@ public final class TestContextSupport {
         @Nonnull
         @Override
         public Collection<? extends Processor> get(int count) {
-            return delegate.get(count);
+            return delegate.get(count).stream().map(TestProcessorAdapter::new).collect(toList());
         }
 
         @Override
@@ -94,6 +100,63 @@ public final class TestContextSupport {
                         (InternalSerializationService) nodeEngine.getSerializationService());
             }
             delegate.init(context);
+        }
+    }
+
+    private static final class TestProcessorAdapter implements Processor {
+
+        private final Processor delegate;
+
+        private TestProcessorAdapter(Processor delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public void init(@Nonnull Outbox outbox, @Nonnull Context context) throws Exception {
+            if (context instanceof TestProcessorContext) {
+                TestProcessorContext c = (TestProcessorContext) context;
+                NodeEngine nodeEngine = ((HazelcastInstanceImpl) c.jetInstance().getHazelcastInstance()).node.nodeEngine;
+                context = new ProcCtx(c.jetInstance(), c.jobId(), c.executionId(), c.jobConfig(),
+                        c.logger(), c.vertexName(), c.localProcessorIndex(), c.globalProcessorIndex(),
+                        c.processingGuarantee(), c.localParallelism(), c.memberIndex(), c.memberCount(),
+                        new ConcurrentHashMap<>(), (InternalSerializationService) nodeEngine.getSerializationService());
+            }
+            delegate.init(outbox, context);
+        }
+
+        @Override
+        public boolean isCooperative() {
+            return delegate.isCooperative();
+        }
+
+        @Override
+        public void process(int ordinal, @Nonnull Inbox inbox) {
+            delegate.process(ordinal, inbox);
+        }
+
+        @Override
+        public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
+            return delegate.tryProcessWatermark(watermark);
+        }
+
+        @Override
+        public boolean tryProcess() {
+            return delegate.tryProcess();
+        }
+
+        @Override
+        public boolean completeEdge(int ordinal) {
+            return delegate.completeEdge(ordinal);
+        }
+
+        @Override
+        public boolean complete() {
+            return delegate.complete();
+        }
+
+        @Override
+        public void close() throws Exception {
+            delegate.close();
         }
     }
 }
