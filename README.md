@@ -77,7 +77,7 @@ hazelcast:
         multicast:
           enabled: false
         aws:
-          enabled: false
+          enabled: true
           access-key: my-access-key
           secret-key: my-secret-key
           iam-role: dummy
