@@ -65,9 +65,16 @@ public class ResourceConfig implements Serializable {
         Preconditions.checkNotNull(clazz, "clazz");
 
         String id = toClassResourceId(clazz.getName());
-        URL url = clazz.getClassLoader().getResource(id);
+        ClassLoader cl = clazz.getClassLoader();
+        if (cl == null) {
+            throw new IllegalArgumentException(clazz.getName() + ".getClassLoader() returned null, cannot" +
+                    " access the class resource. You may have added a JDK class that is loaded by the" +
+                    " bootstrap classloader. There is no need to add JDK classes to the job configuration.");
+        }
+        URL url = cl.getResource(id);
         if (url == null) {
-            throw new IllegalArgumentException("Couldn't derive URL from class " + clazz);
+            throw new IllegalArgumentException("The classloader of " + clazz.getName() + " couldn't resolve" +
+                    " the resource URL of " + id);
         }
 
         this.id = id;
