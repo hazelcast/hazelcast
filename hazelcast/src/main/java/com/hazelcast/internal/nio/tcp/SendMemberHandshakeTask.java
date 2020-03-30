@@ -19,7 +19,7 @@ package com.hazelcast.internal.nio.tcp;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
-import com.hazelcast.internal.cluster.impl.BindMessage;
+import com.hazelcast.internal.cluster.impl.MemberHandshake;
 import com.hazelcast.internal.nio.IOService;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.logging.ILogger;
@@ -29,17 +29,16 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-public class BindRequest {
+public class SendMemberHandshakeTask implements Runnable {
 
     private final ILogger logger;
-
     private final IOService ioService;
-
     private final TcpIpConnection connection;
     private final Address remoteEndPoint;
     private final boolean reply;
 
-    BindRequest(ILogger logger, IOService ioService, TcpIpConnection connection, Address remoteEndPoint, boolean reply) {
+    SendMemberHandshakeTask(ILogger logger, IOService ioService, TcpIpConnection connection, Address remoteEndPoint,
+                            boolean reply) {
         this.logger = logger;
         this.ioService = ioService;
         this.connection = connection;
@@ -47,16 +46,18 @@ public class BindRequest {
         this.reply = reply;
     }
 
-    public void send() {
+    @Override
+    public void run() {
         connection.setEndPoint(remoteEndPoint);
         ioService.onSuccessfulConnection(remoteEndPoint);
-        //make sure bind packet is the first packet sent to the end point.
+        //make sure memberHandshake packet is the first packet sent to the end point.
         if (logger.isFinestEnabled()) {
-            logger.finest("Sending bind packet to " + remoteEndPoint);
+            logger.finest("Sending memberHandshake packet to " + remoteEndPoint);
         }
-        BindMessage bind = new BindMessage((byte) 1, getConfiguredLocalAddresses(), remoteEndPoint, reply, ioService.getUuid());
-        byte[] bytes = ioService.getSerializationService().toBytes(bind);
-        Packet packet = new Packet(bytes).setPacketType(Packet.Type.BIND);
+        MemberHandshake memberHandshake
+                = new MemberHandshake((byte) 1, getConfiguredLocalAddresses(), remoteEndPoint, reply, ioService.getUuid());
+        byte[] bytes = ioService.getSerializationService().toBytes(memberHandshake);
+        Packet packet = new Packet(bytes).setPacketType(Packet.Type.MEMBER_HANDSHAKE);
         connection.write(packet);
         //now you can send anything...
     }

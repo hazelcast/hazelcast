@@ -34,7 +34,7 @@ public interface EndpointManager<T extends Connection>
     Collection<T> getConnections();
 
     /**
-     * Returns <b>all</b> connections bind or not that are currently holding resources on this member.
+     * Returns <b>all</b> active connections or not that are currently holding resources on this member.
      * If the connection never successfully finishes with the handshake then it will only be visible
      * through this sub-set.
      *

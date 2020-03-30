@@ -60,8 +60,8 @@ public class TcpIpConnection implements Connection {
 
     private final AtomicBoolean alive = new AtomicBoolean(true);
 
-    // indicate whether connection bind exchange is in progress/done (true) or not yet initiated (when false)
-    private final AtomicBoolean binding = new AtomicBoolean();
+    // indicate whether connection handshake is in progress/done (true) or not yet initiated (when false)
+    private final AtomicBoolean handshake = new AtomicBoolean();
 
     private final ILogger logger;
 
@@ -80,7 +80,6 @@ public class TcpIpConnection implements Connection {
     private volatile Throwable closeCause;
 
     private volatile String closeReason;
-
 
     public TcpIpConnection(TcpIpEndpointManager endpointManager,
                            ConnectionLifecycleListener lifecycleListener,
@@ -234,8 +233,8 @@ public class TcpIpConnection implements Connection {
         }
     }
 
-    public boolean setBinding() {
-        return binding.compareAndSet(false, true);
+    public boolean setHandshake() {
+        return handshake.compareAndSet(false, true);
     }
 
     private void logClose() {

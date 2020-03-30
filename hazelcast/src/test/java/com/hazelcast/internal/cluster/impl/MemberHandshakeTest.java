@@ -44,9 +44,9 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class BindMessageTest {
+public class MemberHandshakeTest {
 
-    private BindMessage bindMessage;
+    private MemberHandshake bindMessage;
     private SerializationService serializationService;
     private Address targetAddress;
     private UUID uuid;
@@ -60,9 +60,9 @@ public class BindMessageTest {
 
     @Test
     public void testSerialization_withMultipleLocalAddresses() throws Exception {
-        bindMessage = new BindMessage((byte) 1, localAddresses(), targetAddress, true, uuid);
+        bindMessage = new MemberHandshake((byte) 1, localAddresses(), targetAddress, true, uuid);
         Data serialized = serializationService.toData(bindMessage);
-        BindMessage deserialized = serializationService.toObject(serialized);
+        MemberHandshake deserialized = serializationService.toObject(serialized);
         assertEquals(1, deserialized.getSchemaVersion());
         assertEquals(localAddresses(), deserialized.getLocalAddresses());
         assertEquals(targetAddress, deserialized.getTargetAddress());
@@ -72,9 +72,9 @@ public class BindMessageTest {
 
     @Test
     public void testSerialization_whenBindMessageEmpty() {
-        bindMessage = new BindMessage();
+        bindMessage = new MemberHandshake();
         Data serialized = serializationService.toData(bindMessage);
-        BindMessage deserialized = serializationService.toObject(serialized);
+        MemberHandshake deserialized = serializationService.toObject(serialized);
         assertEquals(0, deserialized.getSchemaVersion());
         assertTrue(deserialized.getLocalAddresses().isEmpty());
         assertNull(null, deserialized.getTargetAddress());
