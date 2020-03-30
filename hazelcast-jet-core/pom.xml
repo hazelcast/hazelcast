@@ -128,14 +128,22 @@
         <!--TEST DEPENDENCIES-->
         <dependency>
             <groupId>org.apache.activemq</groupId>
-            <artifactId>activemq-all</artifactId>
-            <version>${activemq.version}</version>
-            <scope>test</scope>
+            <artifactId>apache-artemis</artifactId>
+            <version>${activemq-artemis.version}</version>
+            <type>pom</type>
+
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.activemq</groupId>
+                    <artifactId>artemis-jms-client-all</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
+
         <dependency>
-            <groupId>org.apache.activemq.tooling</groupId>
-            <artifactId>activemq-junit</artifactId>
-            <version>${activemq.version}</version>
+            <groupId>org.apache.activemq</groupId>
+            <artifactId>artemis-junit</artifactId>
+            <version>${activemq-artemis.version}</version>
             <scope>test</scope>
         </dependency>
 

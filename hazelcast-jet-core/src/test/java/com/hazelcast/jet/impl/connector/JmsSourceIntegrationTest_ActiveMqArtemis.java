@@ -17,16 +17,16 @@
 package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.function.SupplierEx;
-import org.apache.activemq.ActiveMQConnectionFactory;
-import org.apache.activemq.junit.EmbeddedActiveMQBroker;
+import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory;
+import org.apache.activemq.artemis.junit.EmbeddedActiveMQResource;
 import org.junit.ClassRule;
 
 import javax.jms.ConnectionFactory;
 
-public class JmsSourceIntegrationTest_ActiveMQ extends JmsSourceIntegrationTestBase {
+public class JmsSourceIntegrationTest_ActiveMqArtemis extends JmsSourceIntegrationTestBase {
 
     @ClassRule
-    public static EmbeddedActiveMQBroker broker = new EmbeddedActiveMQBroker();
+    public static EmbeddedActiveMQResource broker = new EmbeddedActiveMQResource();
 
     private static final SupplierEx<ConnectionFactory> FACTORY_SUPPLIER =
             () -> new ActiveMQConnectionFactory(broker.getVmURL());

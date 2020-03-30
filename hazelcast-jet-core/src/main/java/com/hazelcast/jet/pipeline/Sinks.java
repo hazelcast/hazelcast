@@ -930,10 +930,11 @@ public final class Sinks {
      * JmsSinkBuilder} methods for more details.
      * <p>
      * In <b>exactly-once mode</b> the processor uses two-phase XA transactions
-     * to guarantee exactly-once delivery. The transaction is committed after
-     * all processors finished processing the items and stored all data to the
-     * snapshot. Processor is also able to finish the commit after a restart,
-     * should the job fail mid-way of the commit process. This mode
+     * to guarantee exactly-once delivery. The supplier is expected to return
+     * an {@link javax.jms.XAConnectionFactory}. The transaction is committed
+     * after all processors finished processing the items and stored all data
+     * to the snapshot. Processor is also able to finish the commit after a
+     * restart, should the job fail mid-way of the commit process. This mode
      * significantly increases latency because produced messages are visible
      * only after they are committed; if you want to avoid it, you can reduce
      * the guarantee just for this sink. To do so call {@link
@@ -1006,10 +1007,11 @@ public final class Sinks {
      * JmsSinkBuilder} methods for more details.
      * <p>
      * In <b>exactly-once mode</b> the processor uses two-phase XA transactions
-     * to guarantee exactly-once delivery. The transaction is committed after
-     * all processors finished processing the items and stored all data to the
-     * snapshot. Processor is also able to finish the commit after a restart,
-     * should the job fail mid-way of the commit process. This mode
+     * to guarantee exactly-once delivery. The supplier is expected to return
+     * an {@link javax.jms.XAConnectionFactory}. The transaction is committed
+     * after all processors finished processing the items and stored all data
+     * to the snapshot. Processor is also able to finish the commit after a
+     * restart, should the job fail mid-way of the commit process. This mode
      * significantly increases latency because produced messages are visible
      * only after they are committed; if you want to avoid it, you can reduce
      * the guarantee just for this sink. To do so call {@link

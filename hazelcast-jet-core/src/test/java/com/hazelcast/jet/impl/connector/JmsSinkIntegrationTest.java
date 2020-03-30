@@ -22,9 +22,9 @@ import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
-import org.apache.activemq.ActiveMQConnectionFactory;
-import org.apache.activemq.ActiveMQXAConnectionFactory;
-import org.apache.activemq.junit.EmbeddedActiveMQBroker;
+import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory;
+import org.apache.activemq.artemis.jms.client.ActiveMQXAConnectionFactory;
+import org.apache.activemq.artemis.junit.EmbeddedActiveMQResource;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -46,7 +46,7 @@ import static javax.jms.Session.DUPS_OK_ACKNOWLEDGE;
 public class JmsSinkIntegrationTest extends SimpleTestInClusterSupport {
 
     @ClassRule
-    public static EmbeddedActiveMQBroker broker = new EmbeddedActiveMQBroker();
+    public static EmbeddedActiveMQResource broker = new EmbeddedActiveMQResource();
 
     private static final int MESSAGE_COUNT = 100;
 
@@ -209,7 +209,8 @@ public class JmsSinkIntegrationTest extends SimpleTestInClusterSupport {
                 .build();
 
         try (
-                Connection connection = broker.createConnectionFactory().createConnection();
+                Connection connection = new ActiveMQConnectionFactory(broker.getVmURL())
+                        .createConnection();
                 Session session = connection.createSession(false, DUPS_OK_ACKNOWLEDGE);
                 MessageConsumer consumer = session.createConsumer(session.createQueue(destinationName))
         ) {
@@ -229,6 +230,6 @@ public class JmsSinkIntegrationTest extends SimpleTestInClusterSupport {
     }
 
     private static ConnectionFactory getConnectionFactory() {
-        return new ActiveMQConnectionFactory(broker.getVmURL());
+        return new ActiveMQXAConnectionFactory(broker.getVmURL());
     }
 }

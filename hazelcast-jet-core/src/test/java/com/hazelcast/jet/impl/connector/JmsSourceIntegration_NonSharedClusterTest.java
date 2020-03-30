@@ -30,10 +30,8 @@ import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
-import org.apache.activemq.ActiveMQConnectionFactory;
-import org.apache.activemq.broker.region.policy.PolicyEntry;
-import org.apache.activemq.broker.region.policy.PolicyMap;
-import org.apache.activemq.junit.EmbeddedActiveMQBroker;
+import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory;
+import org.apache.activemq.artemis.junit.EmbeddedActiveMQResource;
 import org.junit.ClassRule;
 import org.junit.Test;
 
@@ -54,22 +52,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
-public class JmsIntegration_NonSharedClusterTest extends JetTestSupport {
-
-    private static final int MESSAGE_COUNT = 10_000;
+public class JmsSourceIntegration_NonSharedClusterTest extends JetTestSupport {
 
     @ClassRule
-    public static EmbeddedActiveMQBroker realBroker = new EmbeddedActiveMQBroker() {
-        @Override
-        protected void configure() {
-            // this is needed to work https://issues.apache.org/jira/browse/AMQ-7369 around
-            PolicyMap destinationPolicy = new PolicyMap();
-            PolicyEntry defaultEntry = new PolicyEntry();
-            defaultEntry.setMaxPageSize(MESSAGE_COUNT);
-            destinationPolicy.setDefaultEntry(defaultEntry);
-            getBrokerService().setDestinationPolicy(destinationPolicy);
-        }
-    };
+    public static EmbeddedActiveMQResource realBroker = new EmbeddedActiveMQResource();
+
+    private static final int MESSAGE_COUNT = 10_000;
 
     private static volatile boolean storeFailed;
 
@@ -83,7 +71,7 @@ public class JmsIntegration_NonSharedClusterTest extends JetTestSupport {
 
         Pipeline p = Pipeline.create();
         IList<String> sinkList = instance1.getList("sinkList");
-        p.readFrom(Sources.jmsQueueBuilder(JmsIntegration_NonSharedClusterTest::getConnectionFactory)
+        p.readFrom(Sources.jmsQueueBuilder(JmsSourceIntegration_NonSharedClusterTest::getConnectionFactory)
                           .destinationName("queue")
                           .build(msg -> ((TextMessage) msg).getText()))
          .withoutTimestamps()
@@ -133,7 +121,7 @@ public class JmsIntegration_NonSharedClusterTest extends JetTestSupport {
 
         JetInstance instance = createJetMember(config);
         Pipeline p = Pipeline.create();
-        p.readFrom(Sources.jmsQueue("queue", JmsIntegration_NonSharedClusterTest::getConnectionFactory))
+        p.readFrom(Sources.jmsQueue("queue", JmsSourceIntegration_NonSharedClusterTest::getConnectionFactory))
          .withoutTimestamps()
          .writeTo(Sinks.noop());
 

@@ -29,6 +29,7 @@ import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.Message;
 import javax.jms.Session;
+import javax.jms.XAConnectionFactory;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
@@ -77,11 +78,21 @@ public final class JmsSinkBuilder<T> {
     }
 
     /**
-     * Sets the function which creates the connection from connection factory.
+     * Sets the function which creates a connection given a connection factory.
      * <p>
-     * If not provided, the builder creates a function which uses {@code
-     * ConnectionFactory#createConnection(username, password)} to create the
-     * connection. See {@link #connectionParams(String, String)}.
+     * If not provided, the following will be used:
+     * <pre>{@code
+     *     if (factory instanceof XAConnectionFactory) {
+     *         XAConnectionFactory xaFactory = (XAConnectionFactory) factory;
+     *         return usernameLocal != null || passwordLocal != null
+     *                 ? xaFactory.createXAConnection(usernameLocal, passwordLocal)
+     *                 : xaFactory.createXAConnection();
+     *     } else {
+     *         return usernameLocal != null || passwordLocal != null
+     *                 ? factory.createConnection(usernameLocal, passwordLocal)
+     *                 : factory.createConnection();
+     *     }
+     * }</pre>
      */
     @Nonnull
     public JmsSinkBuilder<T> connectionFn(@Nullable FunctionEx<ConnectionFactory, Connection> connectionFn) {
@@ -146,9 +157,18 @@ public final class JmsSinkBuilder<T> {
 
         checkNotNull(destinationName);
         if (connectionFn == null) {
-            connectionFn = factory -> usernameLocal != null || passwordLocal != null
-                    ? factory.createConnection(usernameLocal, passwordLocal)
-                    : factory.createConnection();
+            connectionFn = factory -> {
+                if (factory instanceof XAConnectionFactory) {
+                    XAConnectionFactory xaFactory = (XAConnectionFactory) factory;
+                    return usernameLocal != null || passwordLocal != null
+                            ? xaFactory.createXAConnection(usernameLocal, passwordLocal)
+                            : xaFactory.createXAConnection();
+                } else {
+                    return usernameLocal != null || passwordLocal != null
+                            ? factory.createConnection(usernameLocal, passwordLocal)
+                            : factory.createConnection();
+                }
+            };
         }
         if (messageFn == null) {
             messageFn = (session, item) ->
