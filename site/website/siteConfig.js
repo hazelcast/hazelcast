@@ -102,7 +102,7 @@ const siteConfig = {
     // No .html extensions for paths.
     cleanUrl: true,
 
-    editUrl: 'https://github.com/hazelcast/hazelcast-jet/edit/docs/site/docs/',
+    editUrl: 'https://github.com/hazelcast/hazelcast-jet/edit/master/site/docs/',
 
     // Open Graph and Twitter card images.
     // ogImage: 'img/undraw_online.svg',
