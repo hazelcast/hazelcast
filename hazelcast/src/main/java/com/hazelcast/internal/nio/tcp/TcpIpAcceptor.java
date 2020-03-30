@@ -96,7 +96,7 @@ public class TcpIpAcceptor implements DynamicMetricsProvider {
 
     TcpIpAcceptor(ServerSocketRegistry registry, TcpIpNetworkingService networkingService, IOService ioService) {
         this.registry = registry;
-            this.networkingService = networkingService;
+        this.networkingService = networkingService;
         this.ioService = networkingService.getIoService();
         this.logger = ioService.getLoggingService().getLogger(getClass());
         this.acceptorThread = new AcceptorIOThread();
