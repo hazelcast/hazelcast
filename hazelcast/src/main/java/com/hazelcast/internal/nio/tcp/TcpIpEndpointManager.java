@@ -42,7 +42,6 @@ import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.internal.util.executor.StripedRunnable;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -130,9 +129,12 @@ public class TcpIpEndpointManager
 
     private final EndpointConnectionLifecycleListener connectionLifecycleListener = new EndpointConnectionLifecycleListener();
 
-    TcpIpEndpointManager(NetworkingService networkingService, EndpointConfig endpointConfig,
-                         ChannelInitializerProvider channelInitializerProvider, IOService ioService,
-                         LoggingService loggingService, HazelcastProperties properties,
+    TcpIpEndpointManager(NetworkingService networkingService,
+                         EndpointConfig endpointConfig,
+                         ChannelInitializerProvider channelInitializerProvider,
+                         IOService ioService,
+                         LoggingService loggingService,
+                         HazelcastProperties properties,
                          Set<ProtocolType> supportedProtocolTypes) {
         this.networkingService = networkingService;
         this.endpointConfig = endpointConfig;
@@ -141,15 +143,8 @@ public class TcpIpEndpointManager
         this.ioService = ioService;
         this.logger = loggingService.getLogger(TcpIpEndpointManager.class);
         this.connector = new TcpIpConnector(this);
-
-        boolean spoofingChecks = properties != null && properties.getBoolean(ClusterProperty.BIND_SPOOFING_CHECKS);
-        this.bindHandler = new BindHandler(this, ioService, logger, spoofingChecks, supportedProtocolTypes);
-
-        if (endpointQualifier == null) {
-            networkStats = null;
-        } else {
-            networkStats = new NetworkStatsImpl();
-        }
+        this.bindHandler = new BindHandler(this, ioService, logger, supportedProtocolTypes);
+        this.networkStats = endpointQualifier == null ? null : new NetworkStatsImpl();
     }
 
     public NetworkingService getNetworkingService() {
