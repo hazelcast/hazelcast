@@ -1,5 +1,5 @@
 ---
-title: Directed Acylic Graph (DAG)
+title: Directed Acyclic Graph (DAG)
 description: How streaming computation is modelled as a Direct Acyclic Graph (DAG) in Jet.
 ---
 
@@ -165,7 +165,7 @@ of data exchanged between servers at the cost of using more RAM.
 
 ## Tasks Concurrency is Cooperative
 
-Hazelast Jet avoids starting a heavyweight system thread for each
+Hazelcast Jet avoids starting a heavyweight system thread for each
 concurrent task of the DAG. Instead it uses a *cooperative
 multithreading* model. This has high-level implications as well: all the
 lambdas you write in the Pipeline API must cooperate by not calling
@@ -176,7 +176,7 @@ as well.
 Since sometimes you can't avoid making blocking calls, Jet provides
 dedicated support for such cases. You should use the `mapUsingService`
 transform that allows you to declare your code as "non-cooperative". Jet
-will adapt to this by running the code in a dedicade thread.
+will adapt to this by running the code in a dedicated thread.
 
 However, whenever you have a choice, you should go for non-blocking,
 asynchronous calls and use `mapUsingServiceAsync`.

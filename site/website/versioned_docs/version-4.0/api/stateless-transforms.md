@@ -197,7 +197,7 @@ you to return
 ```java
 StreamStage<OrderDetails> details = orders.mapUsingServiceAsync(productService,
   (service, order) -> {
-      CompletableFuture<ProductDetails> f = ProductDetaiservice
+      CompletableFuture<ProductDetails> f = ProductDetailService
           .getDetailsAsync(order.getProductId);
       return f.thenApply(details -> new OrderDetails(order, details));
   }
@@ -237,7 +237,7 @@ StreamStage<OrderDetails> details = orders.mapUsingServiceAsyncBatched(productSe
             .stream()
             .map(o -> o.getProductId())
             .collect(Collectors.toList())
-        CompletableFuture<List<ProductDetails>> f = ProductDetaiservice
+        CompletableFuture<List<ProductDetails>> f = ProductDetailService
             .getDetailsAsync(order.getProductId);
         return f.thenApply(productDetailsList -> {
             List<OrderDetails> orderDetailsList = new ArrayList<>();

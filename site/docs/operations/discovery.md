@@ -143,7 +143,7 @@ hazelcast:
         hz-port: 5701-5708
 ```
 
-For more information on the discovery plugin regarding Zone Awarenes and
+For more information on the discovery plugin regarding Zone Awareness and
 client connections from outside of the AWS network please see
 [Hazelcast Discovery Plugin for GCP](https://github.com/hazelcast/hazelcast-gcp)
 .

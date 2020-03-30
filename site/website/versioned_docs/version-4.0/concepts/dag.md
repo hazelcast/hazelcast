@@ -167,7 +167,7 @@ of data exchanged between servers at the cost of using more RAM.
 
 ## Tasks Concurrency is Cooperative
 
-Hazelast Jet avoids starting a heavyweight system thread for each
+Hazelcast Jet avoids starting a heavyweight system thread for each
 concurrent task of the DAG. Instead it uses a *cooperative
 multithreading* model. This has high-level implications as well: all the
 lambdas you write in the Pipeline API must cooperate by not calling

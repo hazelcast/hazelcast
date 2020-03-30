@@ -196,7 +196,7 @@ helm install --generate-name --set jet.licenseKey=<license-key> hazelcast/hazelc
 
 <!--END_DOCUSAURUS_CODE_TABS-->
 
-The command above will going to create a two node Hazelast Jet
+The command above will going to create a two node Hazelcast Jet
 Enterprise cluster and a Hazelcast Jet Management Center deployment.
 
 After executing the command, you can follow the notes printed on screen

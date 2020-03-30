@@ -175,8 +175,8 @@ with `Jet.newJetInstance()` method.
 
 ## Using random cluster names
 
-If multiple tests are running in parallel there is chance that the
-clusters in each test can discover others, intefere the test
+If multiple tests are running in parallel there is a chance that the
+clusters in each test can discover others, interfere the test
 execution and most of the time causing both of them to fail.
 
 To avoid such scenarios, one needs to isolate the clusters in each test
@@ -449,7 +449,7 @@ The common features are:
 - Ability to print a thread dump in case of a test failure, configured
  via `hazelcast.test.threadDumpOnFailure` property
 - Supports repetitive test execution
-- Uses mock networking, unless configured to use real networking via `hazelscast.test.use.network`
+- Uses mock networking, unless configured to use real networking via `hazelcast.test.use.network`
  property
 - Disabled phone-home feature, configured via `hazelcast.phone.home.enabled`
  property
@@ -482,12 +482,12 @@ yields a faster execution compared to it's serial counterpart.
 While dealing with intermittently failing tests, it is helpful to run
 the test multiple times in series to increase chances to make it
 fail. In those cases `com.hazelcast.test.annotation.Repeat` annotation
-can be used to run the test repeatadly. `@Repeat` annotation can be
+can be used to run the test repeatedly. `@Repeat` annotation can be
 used on both the class and method level. On the class level it repeats the
-whole class execution specified tiems. On the method level it only
+whole class execution specified items. On the method level it only
 repeats particular test method.
 
-Follwing is an example test which repeats the test method execution
+Following is an example test which repeats the test method execution
 5 times:
 
 ```java

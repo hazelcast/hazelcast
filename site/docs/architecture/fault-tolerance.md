@@ -15,18 +15,55 @@ then seamlessly continue from that point.
 
 When you configure the processing guarantee for your job as
 _exactly-once_ or _at-least-once_, Hazelcast Jet uses the distributed
-snapshotting feature to store all the internal computation state to an
-`IMap`. However, this on its own isn't enough to provide the processing
-guarantee because the snapshot must cover the entire pipeline, from
-source to sink. Hazelcast Jet requires certain guarantees from the
-systems used as sources and sinks in a fault-tolerant data pipeline.
+snapshotting feature to store all the **internal** computation state to
+an `IMap`. However, this on its own isn't enough to provide the
+processing guarantee because the snapshot must cover the entire
+pipeline, including the external changes performed by sources and sinks.
+Hazelcast Jet requires certain guarantees from sources and sinks in a
+fault-tolerant data pipeline.
 
 When the job is restarting after a node failure, Jet resets the whole
-data pipeline to the state of the last snapshot. For the source this
-means rewinding back to the point of snapshot, ready to replay the items
-it already emitted in he previous (failed) job run. For the sink it's
-usually enough to support idempotence: when Jet's sink connector asks it
-to apply the same data again, it must simply stay in the same state.
+data pipeline to the state of the last snapshot. More technically,
+processors can save arbitrary data to the snapshot and Jet will present
+that same data to the processors after a restart. Jet performs such
+snapshots in regular intervals. Sources can cooperate with the job in
+multiple ways:
+
+- **Replayable sources:** a replayable source can seek to certain
+position and re-read events from that positions multiple times. An
+example is Apache Kafka or an IMap Journal. Such source saves the
+offset(s) to the snapshot and in case of restart it continues from the
+saved position.
+
+- **Acknowledging sources:** such sources acknowledge messages after
+fully processing them. Typical example is a JMS queue. Unacknowledged
+messages are delivered again in case the job fails. Such sources need to
+do two things: (1) acknowledge messages only after a next snapshot is
+completed and (2) save message IDs for deduplication to snapshot in case
+the job fails after a snapshot is completed but before it manages to
+acknowledge the consumption. Those IDs are used to drop re-delivered
+messages after a restart.
+
+Sinks can cooperate in different ways:
+
+- **Transactional sinks:** such sinks write their output using a
+transaction and they commit it only after the snapshot is completed.
+Since there are multiple parallel workers writing the data, each with
+its own transaction, Jet employs two-phase commit to ensure that either
+all participants commit or all roll back. An example is JMS, JDBC or
+Kafka sinks.
+
+- **Idempotent writes:** Idempotent operation is an operation that, if
+performed multiple times, has the same effect as if performed once. An
+example is writing to an IMap: `map.put("key", "value")` has the same
+effect if you execute it once or twice. Such sinks only need to ensure
+that all in-flight operations are finished before each snapshot is
+performed. That is they need to wait for async operations to finish or
+fsync writes to files. But it's not enough to just use such a sink: you
+also need to ensure that the keys are stable. For example if you use
+random UUID for the key, it won't work, the job must produce identical
+keys after a restart. Also if you process the journal for a map, the
+journal will contain the update event multiple times.
 
 ## Distributed Snapshot
 
@@ -101,10 +138,10 @@ the snapshot:
 3. Snapshot done, barrier forwarded.
 
 Even though `x1` and `x2` occur after the barrier, the processor
-consumed and processed them, updating its state accordingly. If the
-computation job stops and restarts, this state will be restored from the
-snapshot and then the source will replay `x1` and `x2`. The processor
-will think it got two new items.
+consumed and processed them before processing the barrier, updating its
+state accordingly. If the computation job stops and restarts, this state
+will be restored from the snapshot and then the source will replay `x1`
+and `x2`. The processor will think it got two new items.
 
 ## Data Safety
 
@@ -141,8 +178,8 @@ all the jobs on all the data.
 
 Hazelcast Jet offers a mechanism to mitigate this risk: split-brain
 protection. It works by ensuring that a job can be restarted only in a
-cluster whose size is more than half of what it was before the job was
-suspended. Enable split-brain protection like this:
+cluster whose size is more than half of what it ever was. Enable
+split-brain protection like this:
 
 ```java
 jobConfig.setSplitBrainProtection(true);
@@ -155,7 +192,7 @@ equally-sized parts. We recommend having an odd number of members.
 Note also that you should ensure there is no split-brain condition at
 the moment you are introducing new members to the cluster. If that
 happens, both sub-clusters may grow to more than half of the previous
-size, circumventing split-brain protection.
+size, circumventing the split-brain protection.
 
 <!-- ### Disk Snapshot Storage -->
 

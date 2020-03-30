@@ -262,7 +262,7 @@ mode).
 
 The currently supported primitives are:
 
-* `FencedLock` is a distributed and re-enrant lock implementation of
+* `FencedLock` is a distributed and re-entrant lock implementation of
   `java.util.concurrent.Lock`
 * `ISemaphore` is the distributed implementation of Java `Semaphore`
 * `CountdownLatch` implements the Java equivalent in a distributed
