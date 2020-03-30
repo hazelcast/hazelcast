@@ -78,11 +78,15 @@ public class QueryOperationWorkerPoolTest extends HazelcastTestSupport {
         pool = createPool(operationHandler);
 
         // Test specific partition.
-        QueryOperation operation = new QueryExecuteOperation();
+        List<QueryOperation> operations = new ArrayList<>();
 
         int repeatCount = 10;
 
         for (int i = 0; i < repeatCount; i++) {
+            QueryExecuteOperation operation = new QueryExecuteOperation();
+
+            operations.add(operation);
+
             pool.submit(500, QueryOperationExecutable.local(operation));
         }
 
@@ -94,7 +98,7 @@ public class QueryOperationWorkerPoolTest extends HazelcastTestSupport {
             Set<String> threadNames = new HashSet<>();
 
             for (int i = 1; i < infos.size(); i++) {
-                assertSame(operation, infos.get(i).getOperation());
+                assertSame(operations.get(i), infos.get(i).getOperation());
 
                 threadNames.add(infos.get(i).getThreadName());
             }
@@ -104,7 +108,7 @@ public class QueryOperationWorkerPoolTest extends HazelcastTestSupport {
 
         // Test random partitions.
         for (int i = 0; i < repeatCount; i++) {
-            pool.submit(QueryOperation.PARTITION_ANY, QueryOperationExecutable.local(operation));
+            pool.submit(QueryOperation.PARTITION_ANY, QueryOperationExecutable.local(operations.get(i)));
         }
 
         assertTrueEventually(() -> {
@@ -114,10 +118,10 @@ public class QueryOperationWorkerPoolTest extends HazelcastTestSupport {
 
             Set<String> threadNames = new HashSet<>();
 
-            for (ExecuteInfo info : infos) {
-                assertSame(operation, info.getOperation());
+            for (int i = 1; i < infos.size(); i++) {
+                assertTrue(operations.contains(infos.get(i).getOperation()));
 
-                threadNames.add(info.getThreadName());
+                threadNames.add(infos.get(i).getThreadName());
             }
 
             assertTrue(threadNames.size() > 0);
