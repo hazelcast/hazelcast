@@ -158,17 +158,18 @@ jet.newJob(pipeline);
 When submitting a Job using the Jet client, no additional classes are
 sent with the job by default, and will need to be manually added:
 
+
 ```java
 JetInstance jet = Jet.newJetClient();
 jet.newJob(pipeline, new JobConfig().addClass(AppClass.class))
 ```
 
-When adding classes this way, nested classes aren't automatically
-added (though this is changing in 4.1) and you will need to add all
-of them individually.
+When adding classes this way, nested (inner & anonymous) classes are
+automatically added as well.
 
-It's also possible to add a whole JAR, using the `JobConfig.addJar`
-method.
+It's also possible to add all the classes in a given package (and
+recursively in all of its subpackages) using `JobConfig.addPackage` or
+even a whole JAR with `JobConfig.addJar`.
 
 ## Setting the Job Name
 

@@ -159,8 +159,6 @@ types:
 - [java.io.Externalizable](https://docs.oracle.com/javase/8/docs/api/java/io/Externalizable.html)
 - [com.hazelcast.nio.serialization.Portable](https://docs.hazelcast.org/docs/4.0/javadoc/com/hazelcast/nio/serialization/Portable.html)
 - [com.hazelcast.nio.serialization.StreamSerializer](https://docs.hazelcast.org/docs/4.0/javadoc/com/hazelcast/nio/serialization/StreamSerializer.html)
-  &
-  [com.hazelcast.nio.serialization.ByteArraySerializer](https://docs.hazelcast.org/docs/4.0/javadoc/com/hazelcast/nio/serialization/ByteArraySerializer.html)
 
 The following table provides a comparison between them to help you in
 deciding which interface to use in your applications.
@@ -216,44 +214,70 @@ not to mention very wasteful of memory usage.
 ### Writing Custom Serializers
 
 For best performance and simplest implementation we recommend using
-[com.hazelcast.nio.serialization.StreamSerializer](https://docs.hazelcast.org/docs/4.0/javadoc/com/hazelcast/nio/serialization/StreamSerializer.html)
-or
-[com.hazelcast.nio.serialization.ByteArraySerializer](https://docs.hazelcast.org/docs/4.0/javadoc/com/hazelcast/nio/serialization/ByteArraySerializer.html).
+[com.hazelcast.nio.serialization.StreamSerializer](https://docs.hazelcast.org/docs/4.0/javadoc/com/hazelcast/nio/serialization/StreamSerializer.html).
 
 Below you can find a sample implementation of `StreamSerializer` for
-`Person` (mind the type id which should be unique across all serializers):
+`Person`:
 
 ```java
 class PersonSerializer implements StreamSerializer<Person> {
 
-        private static final int TYPE_ID = 1;
+    private static final int TYPE_ID = 1;
 
-        @Override
-        public int getTypeId() {
-            return TYPE_ID;
-        }
-
-        @Override
-        public void write(ObjectDataOutput out, Person person) throws IOException {
-            out.writeUTF(person.firstName);
-            out.writeUTF(person.lastName);
-            out.writeInt(person.age);
-            out.writeFloat(person.height);
-        }
-
-        @Override
-        public Person read(ObjectDataInput in) throws IOException {
-            return new Person(in.readUTF(), in.readUTF(), in.readInt(), in.readFloat());
-        }
+    @Override
+    public int getTypeId() {
+        return TYPE_ID;
     }
+
+    @Override
+    public void write(ObjectDataOutput out, Person person) throws IOException {
+        out.writeUTF(person.firstName);
+        out.writeUTF(person.lastName);
+        out.writeInt(person.age);
+        out.writeFloat(person.height);
+    }
+
+    @Override
+    public Person read(ObjectDataInput in) throws IOException {
+        return new Person(in.readUTF(), in.readUTF(), in.readInt(), in.readFloat());
+    }
+}
 ```
 
-Then the serializer should be registered with Jet up front on cluster
-startup. The best way to do is to create a `SerializerHook` which can
-automatically be registered on startup:
+#### Registering serializer for the job
+
+One way of registering a custom serializer is to do that on a job
+level. Assuming both, value and serializer classes are already added to
+the [classpath](submitting-jobs.md), you can simply:
 
 ```java
-class PersonSerializerHook implements SerializerHook<Value> {
+new JobConfig()
+    .registerSerializer(Person.class, PersonSerializer.class)
+```
+
+Such serializer is scoped - the type id does not have to be globally
+unique, it is enough if it is distinct for the given job - and is used
+to serialize objects between distributed edges & to/from snapshots.
+Moreover, it has precedence over any cluster serializer - if `Person`
+have serializers registered on both levels, cluster and job, the latter
+will be chosen for given job. However, registering serializers for same
+type or using same ids on job and cluster level might lead to unexpected
+behavior and should be avoided.
+
+Job-level serializers can also be used with IMDG
+[sources and sinks](sources-sinks.md). Currently supported is writing and
+reading from local `Observable`s, `List`s, `Map`s & `Cache`s. We are
+working on adding the possibility to query (read with user defined
+predicates & projections) & update `Map`s as well as read from
+`EventJournal`.
+
+#### Registering serializer on cluster
+
+Another way of registering a serializer is to do that upfront on a
+cluster level. The best way to do this is to create a `SerializerHook`:
+
+```java
+class PersonSerializerHook implements SerializerHook<Person> {
 
     @Override
     public Class<Person> getSerializationType() {
@@ -272,9 +296,9 @@ class PersonSerializerHook implements SerializerHook<Value> {
 }
 ```
 
-You'll also need to add the file
+To make it auto-discoverable on startup you also need to add the file
 `META-INF/services/com.hazelcast.SerializerHook` with the following
-content:
+content to the cluster classpath:
 
 ```text
 com.hazelcast.jet.examples.PersonSerializerHook
@@ -292,5 +316,8 @@ hazelcast:
 ```
 
 All the classes - data types, serializers & hooks - should be present
-on the server classpath, ideally in server's `lib` directory packaged as
-a jar file.
+on the cluster classpath, ideally in server's `lib` directory packaged as
+a jar file. Moreover, used type ids have to be unique across all
+serializers. Despite those limitations cluster level serializers offer
+full support for IMDG [sources and sinks](sources-sinks.md) - in particular
+the possibility to query & update `Map`s as well as read from `EventJournal`.
