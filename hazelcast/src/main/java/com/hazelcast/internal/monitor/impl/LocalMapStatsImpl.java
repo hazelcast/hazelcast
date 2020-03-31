@@ -68,9 +68,8 @@ import static com.hazelcast.internal.util.ConcurrencyUtil.setMax;
 import static com.hazelcast.internal.util.JsonUtil.getInt;
 import static com.hazelcast.internal.util.JsonUtil.getLong;
 import static com.hazelcast.internal.util.JsonUtil.getObject;
-import static com.hazelcast.internal.util.TimeUtil.timeInMsOrOneIfResultIsZero;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.NANOSECONDS;
+import static com.hazelcast.internal.util.TimeUtil.convertMillisToNanos;
+import static com.hazelcast.internal.util.TimeUtil.convertNanosToMillis;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
 /**
@@ -635,13 +634,5 @@ public class LocalMapStatsImpl implements LocalMapStats, JsonSerializable {
                 + ", indexedQueryCount=" + indexedQueryCount
                 + ", indexStats=" + indexStats
                 + '}';
-    }
-
-    private static long convertNanosToMillis(long nanos) {
-        return timeInMsOrOneIfResultIsZero(nanos, NANOSECONDS);
-    }
-
-    private static long convertMillisToNanos(long millis) {
-        return MILLISECONDS.toNanos(millis);
     }
 }

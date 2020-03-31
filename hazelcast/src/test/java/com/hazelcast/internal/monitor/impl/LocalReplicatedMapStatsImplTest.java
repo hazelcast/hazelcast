@@ -25,6 +25,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.internal.util.TimeUtil.convertMillisToNanos;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -50,12 +51,12 @@ public class LocalReplicatedMapStatsImplTest {
         localReplicatedMapStats.setLockedEntryCount(1231);
         localReplicatedMapStats.setDirtyEntryCount(4252);
 
-        localReplicatedMapStats.incrementPuts(5631);
-        localReplicatedMapStats.incrementPuts(1);
-        localReplicatedMapStats.incrementGets(1233);
-        localReplicatedMapStats.incrementGets(5);
-        localReplicatedMapStats.incrementGets(9);
-        localReplicatedMapStats.incrementRemoves(1238);
+        localReplicatedMapStats.incrementPutsNanos(convertMillisToNanos(5631));
+        localReplicatedMapStats.incrementPutsNanos(convertMillisToNanos(1));
+        localReplicatedMapStats.incrementGetsNanos(convertMillisToNanos(1233));
+        localReplicatedMapStats.incrementGetsNanos(convertMillisToNanos(5));
+        localReplicatedMapStats.incrementGetsNanos(convertMillisToNanos(9));
+        localReplicatedMapStats.incrementRemovesNanos(convertMillisToNanos(1238));
         localReplicatedMapStats.incrementOtherOperations();
         localReplicatedMapStats.incrementOtherOperations();
         localReplicatedMapStats.incrementOtherOperations();

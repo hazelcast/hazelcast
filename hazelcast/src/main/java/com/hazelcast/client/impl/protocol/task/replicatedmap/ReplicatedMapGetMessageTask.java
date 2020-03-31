@@ -59,7 +59,7 @@ public class ReplicatedMapGetMessageTask
         ReplicatedMapService replicatedMapService = getService(ReplicatedMapService.SERVICE_NAME);
         if (replicatedMapService.getReplicatedMapConfig(parameters.name).isStatisticsEnabled()) {
             LocalReplicatedMapStatsImpl stats = replicatedMapService.getLocalReplicatedMapStatsImpl(parameters.name);
-            stats.incrementGets(System.nanoTime() - startTimeNanos);
+            stats.incrementGetsNanos(System.nanoTime() - startTimeNanos);
         }
         return response;
     }

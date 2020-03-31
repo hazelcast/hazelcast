@@ -76,7 +76,7 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         HazelcastInstance hazelcastInstance = createHazelcastInstance();
 
         LocalReplicatedMapStatsImpl replicatedMapStats = new LocalReplicatedMapStatsImpl();
-        replicatedMapStats.incrementPuts(30);
+        replicatedMapStats.incrementPutsNanos(30);
         CacheStatisticsImpl cacheStatistics = new CacheStatisticsImpl(Clock.currentTimeMillis());
         cacheStatistics.increaseCacheHits(5);
         UUID clientUuid = UUID.randomUUID();
