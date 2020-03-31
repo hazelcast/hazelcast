@@ -1987,7 +1987,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public V computeIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+    public V computeIfPresent(@Nonnull K key, @Nonnull BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(key, NULL_BIFUNCTION_IS_NOT_ALLOWED);
 
@@ -2017,7 +2017,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
-    public V computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction) {
+    public V computeIfAbsent(@Nonnull K key, @Nonnull Function<? super K, ? extends V> mappingFunction) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(mappingFunction, NULL_FUNCTION_IS_NOT_ALLOWED);
 

@@ -2954,7 +2954,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *     When this method is invoked using a hazelcast-client instance, the {@code remappingFunction} is always executed locally
      * </p>
      */
-    V computeIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction);
+    V computeIfPresent(@Nonnull K key, @Nonnull BiFunction<? super K, ? super V, ? extends V> remappingFunction);
 
     /**
      * {@inheritDoc}
@@ -2976,6 +2976,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *     When this method is invoked using a hazelcast-client instance, the {@code mappingFunction} is always executed locally
      * </p>
      */
-    V computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction);
+    V computeIfAbsent(@Nonnull K key, @Nonnull Function<? super K, ? extends V> mappingFunction);
 
 }

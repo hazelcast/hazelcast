@@ -197,7 +197,7 @@ public class ClientComputeConditionallyTests extends ClientTestSupport {
     }
 
     private void testComputeIfAbsentForFunction(HazelcastInstance hz, Function testFunction, Object expectedValue) {
-        final IMap<String, String> map = hz.getMap("testComputeIfPresent" + hz.getName());
+        final IMap<String, String> map = hz.getMap("testComputeIfAbsent" + hz.getName());
         String newValue = map.computeIfAbsent("absent_key", testFunction);
 
         assertEquals(expectedValue, newValue);
