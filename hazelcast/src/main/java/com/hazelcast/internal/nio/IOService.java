@@ -19,7 +19,6 @@ package com.hazelcast.internal.nio;
 import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.config.MemcacheProtocolConfig;
 import com.hazelcast.config.RestApiConfig;
-import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.ascii.TextCommandService;
@@ -75,8 +74,6 @@ public interface IOService {
      * Returns initialized {@link MemcacheProtocolConfig} for the node.
      */
     MemcacheProtocolConfig getMemcacheProtocolConfig();
-
-    SSLConfig getSSLConfig(EndpointQualifier endpointQualifier);
 
     ClientEngine getClientEngine();
 
