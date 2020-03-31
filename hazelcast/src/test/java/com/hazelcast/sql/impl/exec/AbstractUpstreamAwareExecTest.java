@@ -37,7 +37,7 @@ public class AbstractUpstreamAwareExecTest {
         ChildExec childExec = new ChildExec();
         ParentExec parentExec = new ParentExec(childExec);
 
-        QueryFragmentContext context = new QueryFragmentContext(Collections.emptyList());
+        QueryFragmentContext context = new QueryFragmentContext(Collections.emptyList(), null, null);
 
         parentExec.setup(context);
 
