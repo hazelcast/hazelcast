@@ -21,6 +21,7 @@ import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
+import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -34,9 +35,11 @@ import java.time.OffsetDateTime;
  * Converters assume that the passed values are not null, caller of conversion methods must ensure that.
  * We do this because most SQL expressions have special treatment for null values, and in general null check
  * is already performed by the time the converter is called.
+ *
+ * <p>Java serialization is needed for Jet.
  */
 @SuppressWarnings("checkstyle:MethodCount")
-public abstract class Converter {
+public abstract class Converter implements Serializable {
     protected static final int ID_LATE = 0;
     protected static final int ID_BOOLEAN = 1;
     protected static final int ID_BYTE = 2;

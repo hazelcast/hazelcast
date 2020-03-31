@@ -47,11 +47,14 @@ import com.hazelcast.sql.impl.type.converter.StringConverter;
 import com.hazelcast.sql.impl.type.converter.ZonedDateTimeConverter;
 
 import java.io.IOException;
+import java.io.Serializable;
 
 /**
  * Data type represents a type of concrete expression which is based on some basic data type.
+ *
+ * <p>Java serialization is needed for Jet.
  */
-public class QueryDataType implements IdentifiedDataSerializable {
+public class QueryDataType implements IdentifiedDataSerializable, Serializable {
     public static final int PRECISION_BIT = 1;
     public static final int PRECISION_TINYINT = 4;
     public static final int PRECISION_SMALLINT = 7;

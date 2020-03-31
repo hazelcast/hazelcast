@@ -18,11 +18,19 @@ package com.hazelcast.sql.impl.calcite;
 
 import org.apache.calcite.jdbc.JavaTypeFactoryImpl;
 import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.util.ConversionUtil;
+
+import java.nio.charset.Charset;
 
 public class HazelcastTypeFactory extends JavaTypeFactoryImpl {
     @Override
     public RelDataType createTypeWithNullability(RelDataType type, boolean nullable) {
         return super.createTypeWithNullability(type, nullable);
+    }
+
+    @Override
+    public Charset getDefaultCharset() {
+        return Charset.forName(ConversionUtil.NATIVE_UTF16_CHARSET_NAME);
     }
 
     // TODO: Possible nested fields support. See big TODO in HazelcastTableFields.
