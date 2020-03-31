@@ -55,47 +55,47 @@ public abstract class AbstractMapPartitionIteratorTest extends HazelcastTestSupp
 
     @Test
     public void test_HasNext_Returns_False_On_EmptyPartition() throws Exception {
-        ClientMapProxy<Integer, Integer> map = getMapProxy();
+        ClientMapProxy<Integer, Object> map = getMapProxy();
 
-        Iterator<Map.Entry<Integer, Integer>> iterator = map.iterator(10, 1, prefetchValues);
+        Iterator<Map.Entry<Integer, Object>> iterator = map.iterator(10, 1, prefetchValues);
         assertFalse(iterator.hasNext());
     }
 
     @Test
     public void test_HasNext_Returns_True_On_NonEmptyPartition() throws Exception {
-        ClientMapProxy<String, String> map = getMapProxy();
+        ClientMapProxy<String, Object> map = getMapProxy();
 
         String key = generateKeyForPartition(server, 1);
-        String value = randomString();
+        Object value = generateValue();
         map.put(key, value);
 
-        Iterator<Map.Entry<String, String>> iterator = map.iterator(10, 1, prefetchValues);
+        Iterator<Map.Entry<String, Object>> iterator = map.iterator(10, 1, prefetchValues);
         assertTrue(iterator.hasNext());
     }
 
     @Test
     public void test_Next_Returns_Value_On_NonEmptyPartition() throws Exception {
-        ClientMapProxy<String, String> map = getMapProxy();
+        ClientMapProxy<String, Object> map = getMapProxy();
 
         String key = generateKeyForPartition(server, 1);
-        String value = randomString();
+        Object value = generateValue();
         map.put(key, value);
 
-        Iterator<Map.Entry<String, String>> iterator = map.iterator(10, 1, prefetchValues);
+        Iterator<Map.Entry<String, Object>> iterator = map.iterator(10, 1, prefetchValues);
         Map.Entry entry = iterator.next();
         assertEquals(value, entry.getValue());
     }
 
     @Test
     public void test_Next_Returns_Values_When_FetchSizeExceeds_On_NonEmptyPartition() throws Exception {
-        ClientMapProxy<String, String> map = getMapProxy();
-        String value = randomString();
+        ClientMapProxy<String, Object> map = getMapProxy();
+        Object value = generateValue();
         int count = 1000;
         for (int i = 0; i < count; i++) {
             String key = generateKeyForPartition(server, 42);
             map.put(key, value);
         }
-        Iterator<Map.Entry<String, String>> iterator = map.iterator(10, 42, prefetchValues);
+        Iterator<Map.Entry<String, Object>> iterator = map.iterator(10, 42, prefetchValues);
         for (int i = 0; i < count; i++) {
             Map.Entry entry = iterator.next();
             assertEquals(value, entry.getValue());
@@ -104,6 +104,10 @@ public abstract class AbstractMapPartitionIteratorTest extends HazelcastTestSupp
 
     protected ClientConfig getClientConfig() {
         return new ClientConfig();
+    }
+
+    protected Object generateValue() {
+        return randomString();
     }
 
     private <K, V> ClientMapProxy<K, V> getMapProxy() {

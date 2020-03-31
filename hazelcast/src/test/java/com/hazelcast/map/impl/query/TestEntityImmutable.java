@@ -20,7 +20,7 @@ import com.hazelcast.map.Immutable;
 
 import java.io.Serializable;
 
-class TestEntityImmutable implements Immutable, Serializable {
+public class TestEntityImmutable implements Immutable, Serializable {
     private static final long serialVersionUID = 1L;
     private String test;
 
@@ -30,5 +30,24 @@ class TestEntityImmutable implements Immutable, Serializable {
 
     public String getTest() {
         return test;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof TestEntityImmutable)) {
+            return false;
+        }
+
+        TestEntityImmutable that = (TestEntityImmutable) o;
+
+        return getTest() != null ? getTest().equals(that.getTest()) : that.getTest() == null;
+    }
+
+    @Override
+    public int hashCode() {
+        return getTest() != null ? getTest().hashCode() : 0;
     }
 }
