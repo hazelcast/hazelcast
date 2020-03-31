@@ -35,7 +35,6 @@
         <module>hazelcast-jet-distribution</module>
         <module>hazelcast-jet-core</module>
         <module>hazelcast-jet-spring</module>
-        <module>reference-manual</module>
     </modules>
 
     <repositories>
