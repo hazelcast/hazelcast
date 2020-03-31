@@ -19,7 +19,6 @@ package com.hazelcast.internal.nio.tcp;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListener;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -49,12 +48,7 @@ public class TcpIpEndpointManager_ConnectionListenerTest
 
         final Connection c = connect(networkingServiceA, addressB);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                listener.connectionAdded(c);
-            }
-        });
+        assertTrueEventually(() -> listener.connectionAdded(c));
     }
 
     @Test
@@ -68,12 +62,7 @@ public class TcpIpEndpointManager_ConnectionListenerTest
         final Connection c = connect(networkingServiceA, addressB);
         c.close(null, null);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                listener.connectionRemoved(c);
-            }
-        });
+        assertTrueEventually(() -> listener.connectionRemoved(c));
     }
 
     @Test
@@ -85,7 +74,7 @@ public class TcpIpEndpointManager_ConnectionListenerTest
 
         networkingServiceA.shutdown();
 
-        final MemberViewUnifiedEndpointManager endpointManager = (MemberViewUnifiedEndpointManager) networkingServiceA
+        final TcpIpEndpointManager endpointManager = (TcpIpEndpointManager) networkingServiceA
                 .getEndpointManager(EndpointQualifier.MEMBER);
 
         assertEquals(0, endpointManager.getConnectionListenersCount());

@@ -41,7 +41,6 @@ import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.util.EnumMap;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
@@ -137,28 +136,19 @@ public final class TcpIpNetworkingService implements NetworkingService<TcpIpConn
                                      ChannelInitializerProvider channelInitializerProvider,
                                      HazelcastProperties properties) {
         if (unifiedEndpointManager != null) {
-            endpointManagers.put(MEMBER, new MemberViewUnifiedEndpointManager(unifiedEndpointManager));
-            endpointManagers.put(CLIENT, new ClientViewUnifiedEndpointManager(unifiedEndpointManager));
-            endpointManagers.put(REST,  new TextViewUnifiedEndpointManager(unifiedEndpointManager, true));
-            endpointManagers.put(MEMCACHE,  new TextViewUnifiedEndpointManager(unifiedEndpointManager, false));
+            endpointManagers.put(MEMBER, unifiedEndpointManager);
+            endpointManagers.put(CLIENT, unifiedEndpointManager);
+            endpointManagers.put(REST, unifiedEndpointManager);
+            endpointManagers.put(MEMCACHE, unifiedEndpointManager);
         } else {
             for (EndpointConfig endpointConfig : config.getAdvancedNetworkConfig().getEndpointConfigs().values()) {
                 EndpointQualifier qualifier = endpointConfig.getQualifier();
-                EndpointManager em = newEndpointManager(ioService, endpointConfig, channelInitializerProvider,
-                        loggingService, properties, singleton(endpointConfig.getProtocolType()));
-                endpointManagers.put(qualifier, em);
+                EndpointManager endpointManager = new TcpIpEndpointManager(
+                        this, endpointConfig, channelInitializerProvider, ioService, loggingService,
+                        properties, singleton(endpointConfig.getProtocolType()));
+                endpointManagers.put(qualifier, endpointManager);
             }
         }
-    }
-
-    private EndpointManager<TcpIpConnection> newEndpointManager(IOService ioService,
-                                                                EndpointConfig endpointConfig,
-                                                                ChannelInitializerProvider channelInitializerProvider,
-                                                                LoggingService loggingService,
-                                                                HazelcastProperties properties,
-                                                                Set<ProtocolType> supportedProtocolTypes) {
-        return new TcpIpEndpointManager(this, endpointConfig, channelInitializerProvider, ioService, loggingService,
-                properties, supportedProtocolTypes);
     }
 
     @Override

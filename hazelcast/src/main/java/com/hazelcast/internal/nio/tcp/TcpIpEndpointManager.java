@@ -147,6 +147,14 @@ public class TcpIpEndpointManager
         this.networkStats = endpointQualifier == null ? null : new NetworkStatsImpl();
     }
 
+    public int getConnectionCount(String connectionType) {
+        checkNotNull(connectionType, "connectionType can't be null");
+
+        return (int) activeConnections.stream()
+                .filter(conn -> conn.isAlive() && conn.getConnectionType().equals(connectionType))
+                .count();
+    }
+
     public NetworkingService getNetworkingService() {
         return networkingService;
     }

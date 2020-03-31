@@ -78,6 +78,11 @@ public class Invocation_EndpointManagerTest
     class NoopEndpointManager implements EndpointManager {
 
         @Override
+        public int getConnectionCount(String connectionType) {
+            return 0;
+        }
+
+        @Override
         public Collection getConnections() {
             return null;
         }

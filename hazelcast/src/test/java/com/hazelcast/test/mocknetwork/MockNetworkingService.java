@@ -99,6 +99,11 @@ class MockNetworkingService
         }
 
         @Override
+        public int getConnectionCount(String connectionType) {
+            return 0;
+        }
+
+        @Override
         public MockConnection getConnection(Address address) {
             return ns.mapConnections.get(address);
         }

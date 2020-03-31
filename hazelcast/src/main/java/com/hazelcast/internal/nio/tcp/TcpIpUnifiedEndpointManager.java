@@ -25,18 +25,13 @@ import com.hazelcast.internal.nio.NetworkingService;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_UNIFIED_ENDPOINT_MANAGER_CLIENT_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_UNIFIED_ENDPOINT_MANAGER_TEXT_COUNT;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.nio.ConnectionType.MEMCACHE_CLIENT;
 import static com.hazelcast.internal.nio.ConnectionType.REST_CLIENT;
 
-class TcpIpUnifiedEndpointManager
-        extends TcpIpEndpointManager {
+class TcpIpUnifiedEndpointManager extends TcpIpEndpointManager {
 
     TcpIpUnifiedEndpointManager(NetworkingService root, EndpointConfig endpointConfig,
                                 ChannelInitializerProvider channelInitializerProvider,
@@ -46,67 +41,20 @@ class TcpIpUnifiedEndpointManager
                 properties, ProtocolType.valuesAsSet());
     }
 
-    Set<TcpIpConnection> getRestConnections() {
-        Set<TcpIpConnection> connections = activeConnections.isEmpty()
-                ? Collections.emptySet()
-                : new HashSet<>(activeConnections.size());
-
-        for (TcpIpConnection conn : activeConnections) {
-            if (conn.isAlive() && conn.getConnectionType().equals(REST_CLIENT)) {
-                connections.add(conn);
-            }
-        }
-        return connections;
-    }
-
-    Set<TcpIpConnection> getMemachedConnections() {
-        Set<TcpIpConnection> connections = activeConnections.isEmpty()
-                ? Collections.emptySet()
-                : new HashSet<>(activeConnections.size());
-
-        for (TcpIpConnection conn : activeConnections) {
-            if (conn.isAlive() && conn.getConnectionType().equals(MEMCACHE_CLIENT)) {
-                connections.add(conn);
-            }
-        }
-        return connections;
-    }
-
-
-    Set<TcpIpConnection> getTextConnections() {
-        Set<TcpIpConnection> connections = activeConnections.isEmpty()
-                ? Collections.emptySet()
-                : new HashSet<>(activeConnections.size());
-
-        for (TcpIpConnection conn : activeConnections) {
-            String connectionType = conn.getConnectionType();
-            if (conn.isAlive() && connectionType.equals(REST_CLIENT) || connectionType.equals(MEMCACHE_CLIENT)) {
-                connections.add(conn);
-            }
-        }
-        return connections;
-    }
-
-    Set<TcpIpConnection> getCurrentClientConnections() {
-        Set<TcpIpConnection> connections = activeConnections.isEmpty()
-                ? Collections.emptySet()
-                : new HashSet<>(activeConnections.size());
-
-        for (TcpIpConnection conn : activeConnections) {
-            if (conn.isAlive() && conn.isClient()) {
-                connections.add(conn);
-            }
-        }
-        return connections;
-    }
-
     @Probe(name = TCP_METRIC_UNIFIED_ENDPOINT_MANAGER_CLIENT_COUNT, level = MANDATORY)
     public int getCurrentClientConnectionsCount() {
-        return getCurrentClientConnections().size();
+        return (int) activeConnections.stream()
+                .filter(con -> con.isAlive() && con.isClient())
+                .count();
     }
 
     @Probe(name = TCP_METRIC_UNIFIED_ENDPOINT_MANAGER_TEXT_COUNT, level = MANDATORY)
     public int getCurrentTextConnections() {
-        return getTextConnections().size();
+        return (int) activeConnections.stream()
+                .filter(c -> {
+                    String connectionType = c.getConnectionType();
+                    return c.isAlive() && connectionType.equals(REST_CLIENT) || connectionType.equals(MEMCACHE_CLIENT);
+                })
+                .count();
     }
 }

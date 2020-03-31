@@ -42,6 +42,7 @@ import java.util.Collection;
 import java.util.concurrent.CompletionStage;
 
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
+import static com.hazelcast.internal.nio.ConnectionType.REST_CLIENT;
 import static com.hazelcast.internal.util.ExceptionUtil.peel;
 
 @SuppressWarnings({"checkstyle:methodcount"})
@@ -329,7 +330,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
     private void handleCluster(HttpGetCommand command) {
         Node node = textCommandService.getNode();
         NetworkingService ns = node.getNetworkingService();
-        EndpointManager cem = ns.getEndpointManager(CLIENT);
+        EndpointManager endpointManager = ns.getEndpointManager(CLIENT);
         AggregateEndpointManager aem = ns.getAggregateEndpointManager();
         ClusterServiceImpl clusterService = node.getClusterService();
         JsonArray membersArray = new JsonArray();
@@ -344,7 +345,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
                       .forEach(membersArray::add);
         JsonObject response = new JsonObject()
                 .add("members", membersArray)
-                .add("connectionCount", cem == null ? 0 : cem.getActiveConnections().size())
+                .add("connectionCount", endpointManager == null ? 0 : endpointManager.getConnectionCount(REST_CLIENT))
                 .add("allConnectionCount", aem.getActiveConnections().size());
         prepareResponse(command, response);
     }

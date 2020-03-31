@@ -80,6 +80,11 @@ public abstract class AbstractOutOfMemoryHandlerTest extends HazelcastTestSuppor
         EndpointManager dummy = new EndpointManager() {
 
             @Override
+            public int getConnectionCount(String connectionType) {
+                return 0;
+            }
+
+            @Override
             public Set getActiveConnections() {
                 return null;
             }

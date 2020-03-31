@@ -19,7 +19,6 @@ package com.hazelcast.internal.nio.tcp;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.EndpointQualifier;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -37,7 +36,7 @@ import static org.junit.Assert.assertEquals;
  * In the old approach, the channel wasn't registered before the connection was established.
  * So in case of failure, nothing needs to be unregistered.
  * But with the new pipeline the channel gets registered (created) before the connection is established
- * but it didn't get unregistered of the connection could not be established. Leading to a memory leak.
+ * but it didn't get unregistered if the connection could not be established. Leading to a memory leak.
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -52,21 +51,16 @@ public class TcpIpEndpointManager_MemoryLeakTest
     @Test
     public void test() {
         HazelcastInstance hz1 = Hazelcast.newHazelcastInstance();
-        final TcpIpNetworkingService networkingService = (TcpIpNetworkingService) getNode(hz1).getNetworkingService();
+        TcpIpNetworkingService networkingService = (TcpIpNetworkingService) getNode(hz1).getNetworkingService();
 
         HazelcastInstance hz2 = Hazelcast.newHazelcastInstance();
         hz2.shutdown();
 
         assertClusterSizeEventually(1, hz1);
 
-        final MemberViewUnifiedEndpointManager endpointManager = (MemberViewUnifiedEndpointManager) networkingService
+        TcpIpEndpointManager endpointManager = (TcpIpEndpointManager) networkingService
                 .getEndpointManager(EndpointQualifier.MEMBER);
 
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(0, endpointManager.getAcceptedChannelsSize());
-            }
-        }, 5);
+        assertTrueAllTheTime(() -> assertEquals(0, endpointManager.getAcceptedChannelsSize()), 5);
     }
 }

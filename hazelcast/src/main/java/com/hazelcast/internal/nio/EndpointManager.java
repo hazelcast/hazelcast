@@ -28,6 +28,8 @@ import java.util.function.Consumer;
 public interface EndpointManager<T extends Connection>
         extends ConnectionListenable, Consumer<Packet> {
 
+    int getConnectionCount(String connectionType);
+
     /**
      * Returns connections that have been successfully established (ie. Bind was completed)
      */
