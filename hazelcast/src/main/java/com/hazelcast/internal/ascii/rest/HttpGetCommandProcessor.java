@@ -33,6 +33,7 @@ import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.nio.AggregateEndpointManager;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.EndpointManager;
 import com.hazelcast.internal.nio.NetworkingService;
 import com.hazelcast.internal.partition.InternalPartitionService;
@@ -40,6 +41,7 @@ import com.hazelcast.internal.util.StringUtil;
 
 import java.util.Collection;
 import java.util.concurrent.CompletionStage;
+import java.util.stream.Stream;
 
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 import static com.hazelcast.internal.nio.ConnectionType.REST_CLIENT;
@@ -330,7 +332,6 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
     private void handleCluster(HttpGetCommand command) {
         Node node = textCommandService.getNode();
         NetworkingService ns = node.getNetworkingService();
-        EndpointManager endpointManager = ns.getEndpointManager(CLIENT);
         AggregateEndpointManager aem = ns.getAggregateEndpointManager();
         ClusterServiceImpl clusterService = node.getClusterService();
         JsonArray membersArray = new JsonArray();
@@ -345,9 +346,20 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
                       .forEach(membersArray::add);
         JsonObject response = new JsonObject()
                 .add("members", membersArray)
-                .add("connectionCount", endpointManager == null ? 0 : endpointManager.getConnectionCount(REST_CLIENT))
+                .add("connectionCount", getConnectionCount(ns.getEndpointManager(CLIENT)))
                 .add("allConnectionCount", aem.getActiveConnections().size());
         prepareResponse(command, response);
+    }
+
+    private int getConnectionCount(EndpointManager endpointManager) {
+        if (endpointManager == null) {
+            return 0;
+        }
+
+        Stream<Connection> stream = endpointManager.getConnections().stream();
+        return (int) stream
+                .filter(conn -> REST_CLIENT.equals(conn.getConnectionType()))
+                .count();
     }
 
     /**

@@ -214,11 +214,6 @@ public class FirewallingNetworkingService
         }
 
         @Override
-        public int getConnectionCount(String connectionType) {
-            return delegate.getConnectionCount(connectionType);
-        }
-
-        @Override
         public void accept(Packet packet) {
             delegate.accept(packet);
         }
