@@ -63,7 +63,7 @@ public class QueryStateRegistryUpdater {
         this.stateCheckFrequency = stateCheckFrequency;
     }
 
-    public void init(ClusterService clusterService, ClientService clientService) {
+    public void start(ClusterService clusterService, ClientService clientService) {
         worker.start(clusterService, clientService);
     }
 

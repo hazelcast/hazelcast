@@ -92,11 +92,11 @@ public class SqlInternalService {
     }
 
     public void start() {
-        // Initialize state registry with local member ID which was not available at construction phase.
-        stateRegistry.init(nodeEngine.getLocalMember().getUuid());
+        UUID localMemberId = nodeEngine.getLocalMember().getUuid();
 
-        // Initialize state registry updater with cluster and client services.
-        stateRegistryUpdater.init(nodeEngine.getClusterService(), nodeEngine.getHazelcastInstance().getClientService());
+        stateRegistry.start(localMemberId);
+        stateRegistryUpdater.start(nodeEngine.getClusterService(), nodeEngine.getHazelcastInstance().getClientService());
+        operationHandler.start(localMemberId);
     }
 
     public void reset() {

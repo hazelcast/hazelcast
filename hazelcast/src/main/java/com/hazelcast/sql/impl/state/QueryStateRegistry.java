@@ -42,7 +42,7 @@ public class QueryStateRegistry {
     /** Local member ID. */
     private UUID localMemberId;
 
-    public void init(UUID localMemberId) {
+    public void start(UUID localMemberId) {
         this.localMemberId = localMemberId;
     }
 

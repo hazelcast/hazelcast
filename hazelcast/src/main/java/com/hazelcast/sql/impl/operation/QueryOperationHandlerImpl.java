@@ -67,16 +67,25 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
 
         String instanceName = nodeEngine.getHazelcastInstance().getName();
 
-        fragmentPool = new QueryFragmentWorkerPool(instanceName, threadCount);
+        fragmentPool = new QueryFragmentWorkerPool(
+            instanceName,
+            threadCount,
+            nodeEngine.getLogger(QueryFragmentWorkerPool.class)
+        );
 
         operationPool = new QueryOperationWorkerPool(
             instanceName,
             operationThreadCount,
             this,
-            nodeEngine.getSerializationService()
+            nodeEngine.getSerializationService(),
+            nodeEngine.getLogger(QueryOperationWorkerPool.class)
         );
 
         localOperationChannel = new QueryOperationChannelImpl(this, null);
+    }
+
+    public void start(UUID localMemberId) {
+        operationPool.init(localMemberId);
     }
 
     public void stop() {

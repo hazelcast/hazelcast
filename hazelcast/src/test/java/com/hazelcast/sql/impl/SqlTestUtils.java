@@ -53,8 +53,8 @@ public final class SqlTestUtils {
         private static final NoOpScheduleCallback INSTANCE = new NoOpScheduleCallback();
 
         @Override
-        public void schedule() {
-            // No-op.
+        public boolean schedule() {
+            return true;
         }
     }
 }

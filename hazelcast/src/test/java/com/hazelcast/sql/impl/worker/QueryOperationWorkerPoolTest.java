@@ -28,6 +28,7 @@ import com.hazelcast.sql.impl.operation.QueryBatchExchangeOperation;
 import com.hazelcast.sql.impl.operation.QueryCancelOperation;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
 import com.hazelcast.sql.impl.operation.QueryOperation;
+import com.hazelcast.sql.impl.operation.QueryOperationChannel;
 import com.hazelcast.sql.impl.operation.QueryOperationHandler;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.ListRowBatch;
@@ -236,6 +237,11 @@ public class QueryOperationWorkerPoolTest extends HazelcastTestSupport {
         @Override
         public void execute(QueryOperation operation) {
             executeInfos.add(new ExecuteInfo(operation, Thread.currentThread().getName()));
+        }
+
+        @Override
+        public QueryOperationChannel createChannel(UUID memberId) {
+            return null;
         }
 
         public SubmitInfo tryPollSubmitInfo() {
