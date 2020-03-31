@@ -185,12 +185,8 @@ public class NodeIOService implements IOService {
 
     @Override
     public void removeEndpoint(final Address endPoint) {
-        nodeEngine.getExecutionService().execute(ExecutionService.IO_EXECUTOR, new Runnable() {
-            @Override
-            public void run() {
-                node.clusterService.suspectAddressIfNotConnected(endPoint);
-            }
-        });
+        nodeEngine.getExecutionService().execute(ExecutionService.IO_EXECUTOR,
+                () -> node.clusterService.suspectAddressIfNotConnected(endPoint));
     }
 
     @Override
