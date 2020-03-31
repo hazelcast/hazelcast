@@ -54,7 +54,7 @@ public class PacketDecoder extends InboundHandlerWithCounters<ByteBuffer, Consum
     }
 
     @Override
-    public HandlerStatus onRead() {
+    public HandlerStatus onRead() throws Exception {
         src.flip();
         try {
             while (src.hasRemaining()) {
