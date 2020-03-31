@@ -22,6 +22,7 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.IOService;
 import com.hazelcast.internal.util.AddressUtil;
+import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.io.IOException;
 import java.net.Inet6Address;
@@ -34,6 +35,9 @@ import java.nio.channels.SocketChannel;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.logging.Level;
+
+import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_CLIENT_BIND;
+import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_CLIENT_BIND_ANY;
 
 /**
  * The TcpIpConnector is responsible to make connections by connecting to a remote serverport. Once completed,
@@ -51,7 +55,9 @@ class TcpIpConnector {
     private final int outboundPortCount;
 
     // accessed only in synchronized block
-    private final LinkedList<Integer> outboundPorts = new LinkedList<Integer>();
+    private final LinkedList<Integer> outboundPorts = new LinkedList<>();
+    private final boolean socketClientBind;
+    private final boolean socketClientBindAny;
 
     TcpIpConnector(TcpIpEndpointManager endpointManager) {
         this.endpointManager = endpointManager;
@@ -60,6 +66,9 @@ class TcpIpConnector {
         Collection<Integer> ports = ioService.getOutboundPorts(endpointManager.getEndpointQualifier());
         this.outboundPortCount = ports.size();
         this.outboundPorts.addAll(ports);
+        HazelcastProperties properties = ioService.properties();
+        this.socketClientBind = properties.getBoolean(SOCKET_CLIENT_BIND);
+        this.socketClientBindAny = properties.getBoolean(SOCKET_CLIENT_BIND_ANY);
     }
 
     void asyncConnect(Address address, boolean silent) {
@@ -171,14 +180,14 @@ class TcpIpConnector {
             Channel channel = endpointManager.newChannel(socketChannel, true);
             channel.attributeMap().put(Address.class, address);
             try {
-                if (ioService.isSocketBind()) {
+                if (socketClientBind) {
                     bindSocket(socketChannel);
                 }
 
                 Level level = silent ? Level.FINEST : Level.INFO;
                 if (logger.isLoggable(level)) {
                     logger.log(level, "Connecting to " + socketAddress + ", timeout: " + timeout
-                            + ", bind-any: " + ioService.isSocketBindAny());
+                            + ", bind-any: " + socketClientBindAny);
                 }
 
                 try {
@@ -226,7 +235,7 @@ class TcpIpConnector {
         }
 
         private InetAddress getInetAddress() throws UnknownHostException {
-            return ioService.isSocketBindAny() ? null : ioService.getThisAddress().getInetAddress();
+            return socketClientBindAny ? null : ioService.getThisAddress().getInetAddress();
         }
 
         private void closeConnection(final Connection connection, Throwable t) {

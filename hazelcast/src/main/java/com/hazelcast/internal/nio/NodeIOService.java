@@ -233,16 +233,6 @@ public class NodeIOService implements IOService {
     }
 
     @Override
-    public boolean isSocketBind() {
-        return node.getProperties().getBoolean(ClusterProperty.SOCKET_CLIENT_BIND);
-    }
-
-    @Override
-    public boolean isSocketBindAny() {
-        return node.getProperties().getBoolean(ClusterProperty.SOCKET_CLIENT_BIND_ANY);
-    }
-
-    @Override
     public void interceptSocket(EndpointQualifier endpointQualifier, Socket socket, boolean onAccept) throws IOException {
         socket.getChannel().configureBlocking(true);
 

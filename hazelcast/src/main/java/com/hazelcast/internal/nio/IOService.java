@@ -90,10 +90,6 @@ public interface IOService {
 
     void shouldConnectTo(Address address);
 
-    boolean isSocketBind();
-
-    boolean isSocketBindAny();
-
     void interceptSocket(EndpointQualifier endpointQualifier, Socket socket, boolean onAccept) throws IOException;
 
     boolean isSocketInterceptorEnabled(EndpointQualifier endpointQualifier);
