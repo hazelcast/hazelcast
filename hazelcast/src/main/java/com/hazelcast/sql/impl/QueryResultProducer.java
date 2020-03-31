@@ -34,7 +34,12 @@ public interface QueryResultProducer {
     Iterator<Row> iterator();
 
     /**
-     * Notify row source about an error. Implementation of the interface should stop query execution ASAP.
+     * Notify the producer about end of the result stream.
+     */
+    void onDone();
+
+    /**
+     * Notify the producer about an error.
      *
      * @param error Error.
      */

@@ -17,7 +17,8 @@
 package com.hazelcast.sql.impl.exec.root;
 
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.impl.fragment.QueryFragmentContext;
+import com.hazelcast.sql.impl.QueryResultProducer;
+import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 import com.hazelcast.sql.impl.row.Row;
 
 import java.util.ArrayDeque;
@@ -25,7 +26,9 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
- * Blocking array-based result consumer.
+ * Blocking array-based result consumer which delivers the results to API caller.
+ * <p>
+ * Since results are then exposed to end users, it also implements {@link QueryResultProducer}.
  */
 public class BlockingRootResultConsumer implements RootResultConsumer {
     /** Maximum size. */
@@ -100,7 +103,7 @@ public class BlockingRootResultConsumer implements RootResultConsumer {
     }
 
     @Override
-    public void done() {
+    public void onDone() {
         onDone(null);
     }
 

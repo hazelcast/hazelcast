@@ -18,7 +18,7 @@ package com.hazelcast.sql;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.replicatedmap.ReplicatedMap;
-import com.hazelcast.sql.impl.QueryPlan;
+import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.SqlCursorImpl;
 import com.hazelcast.sql.support.ModelGenerator;
 import com.hazelcast.sql.support.SqlTestSupport;
@@ -79,7 +79,7 @@ public class ReplicatedMapSqlTest extends SqlTestSupport {
         }
 
         try (SqlCursorImpl cursor = executeQueryEx(member, "SELECT name FROM city")) {
-            QueryPlan plan = cursor.getPlan();
+            Plan plan = cursor.getPlan();
 
             assertEquals(1, plan.getFragments().size());
 
@@ -108,7 +108,7 @@ public class ReplicatedMapSqlTest extends SqlTestSupport {
         }
 
         try (SqlCursorImpl cursor = executeQueryEx(member, "SELECT name FROM (SELECT name FROM city)")) {
-            QueryPlan plan = cursor.getPlan();
+            Plan plan = cursor.getPlan();
 
             assertEquals(1, plan.getFragments().size());
 
@@ -133,7 +133,7 @@ public class ReplicatedMapSqlTest extends SqlTestSupport {
         String name = city.getValue().getName();
 
         try (SqlCursorImpl cursor = executeQueryEx(member, "SELECT name FROM city WHERE name='" + name + "'")) {
-            QueryPlan plan = cursor.getPlan();
+            Plan plan = cursor.getPlan();
 
             assertEquals(1, plan.getFragments().size());
 

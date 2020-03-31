@@ -18,9 +18,9 @@ package com.hazelcast.sql.impl.state;
 
 import com.hazelcast.sql.impl.QueryMetadata;
 import com.hazelcast.sql.impl.QueryResultProducer;
-import com.hazelcast.sql.impl.fragment.QueryFragment;
+import com.hazelcast.sql.impl.plan.PlanFragment;
 import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.sql.impl.QueryPlan;
+import com.hazelcast.sql.impl.plan.Plan;
 
 import java.util.Collection;
 import java.util.IdentityHashMap;
@@ -32,25 +32,25 @@ import java.util.UUID;
 public class QueryInitiatorState {
 
     private final QueryId queryId;
-    private final QueryPlan plan;
+    private final Plan plan;
     private final QueryMetadata metadata;
-    private final IdentityHashMap<QueryFragment, Collection<UUID>> fragmentMappings;
-    private final QueryResultProducer rowSource;
+    private final IdentityHashMap<PlanFragment, Collection<UUID>> fragmentMappings;
+    private final QueryResultProducer resultProducer;
     private final long timeout;
 
     public QueryInitiatorState(
         QueryId queryId,
-        QueryPlan plan,
+        Plan plan,
         QueryMetadata metadata,
-        IdentityHashMap<QueryFragment, Collection<UUID>> fragmentMappings,
-        QueryResultProducer rowSource,
+        IdentityHashMap<PlanFragment, Collection<UUID>> fragmentMappings,
+        QueryResultProducer resultProducer,
         long timeout
     ) {
         this.queryId = queryId;
         this.plan = plan;
         this.metadata = metadata;
         this.fragmentMappings = fragmentMappings;
-        this.rowSource = rowSource;
+        this.resultProducer = resultProducer;
         this.timeout = timeout;
     }
 
@@ -58,7 +58,7 @@ public class QueryInitiatorState {
         return queryId;
     }
 
-    public QueryPlan getPlan() {
+    public Plan getPlan() {
         return plan;
     }
 
@@ -66,12 +66,12 @@ public class QueryInitiatorState {
         return metadata;
     }
 
-    public IdentityHashMap<QueryFragment, Collection<UUID>> getFragmentMappings() {
+    public IdentityHashMap<PlanFragment, Collection<UUID>> getFragmentMappings() {
         return fragmentMappings;
     }
 
-    public QueryResultProducer getRowSource() {
-        return rowSource;
+    public QueryResultProducer getResultProducer() {
+        return resultProducer;
     }
 
     public long getTimeout() {

@@ -17,13 +17,11 @@
 package com.hazelcast.sql.impl.exec.root;
 
 import com.hazelcast.sql.impl.QueryResultProducer;
-import com.hazelcast.sql.impl.fragment.QueryFragmentContext;
+import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 import com.hazelcast.sql.impl.row.Row;
 
 /**
- * Consumer of results from {@link RootExec}.
- * <p>
- * Consumed results are then exposed to end users, hence the interface extends {@link QueryResultProducer}.
+ * Consumes results from the root and exposes them to the user.
  */
 public interface RootResultConsumer extends QueryResultProducer {
     /**
@@ -40,9 +38,4 @@ public interface RootResultConsumer extends QueryResultProducer {
      * @return {@code True} if consumed.
      */
     boolean consume(Iterable<Row> source);
-
-    /**
-     * Mark results as finished.
-     */
-    void done();
 }

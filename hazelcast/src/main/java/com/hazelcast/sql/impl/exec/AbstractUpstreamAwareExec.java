@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.exec;
 
-import com.hazelcast.sql.impl.fragment.QueryFragmentContext;
+import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 
 /**
  * Executor which has an upstream executor and hence delegate to it at some stages.

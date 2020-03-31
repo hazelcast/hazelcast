@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.exec;
 
 import com.hazelcast.sql.impl.SqlTestUtils;
-import com.hazelcast.sql.impl.fragment.QueryFragmentContext;
+import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 import com.hazelcast.sql.impl.row.RowBatch;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;

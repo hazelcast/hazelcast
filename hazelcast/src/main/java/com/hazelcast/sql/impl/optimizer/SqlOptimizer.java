@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.optimizer;
 
-import com.hazelcast.sql.impl.QueryPlan;
+import com.hazelcast.sql.impl.plan.Plan;
 
 /**
  * Optimizer responsible for conversion of SQL string to executable plan.
@@ -29,5 +29,5 @@ public interface SqlOptimizer {
      * @param paramsCount Number of parameters.
      * @return Executable plan.
      */
-    QueryPlan prepare(String sql, int paramsCount);
+    Plan prepare(String sql, int paramsCount);
 }

@@ -20,7 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.util.Eval;
-import com.hazelcast.sql.impl.fragment.QueryFragmentContext;
+import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 import com.hazelcast.sql.impl.exec.agg.AggregateCollector;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.Row;

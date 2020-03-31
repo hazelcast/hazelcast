@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.expression.aggregate;
 
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.impl.fragment.QueryFragmentContext;
+import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 import com.hazelcast.sql.impl.exec.agg.AggregateCollector;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.type.QueryDataType;

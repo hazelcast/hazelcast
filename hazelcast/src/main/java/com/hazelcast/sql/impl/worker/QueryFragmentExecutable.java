@@ -18,7 +18,6 @@ package com.hazelcast.sql.impl.worker;
 
 import com.hazelcast.sql.impl.exec.Exec;
 import com.hazelcast.sql.impl.exec.IterationResult;
-import com.hazelcast.sql.impl.fragment.QueryFragmentContext;
 import com.hazelcast.sql.impl.mailbox.InboundHandler;
 import com.hazelcast.sql.impl.mailbox.InboundBatch;
 import com.hazelcast.sql.impl.mailbox.OutboundHandler;
@@ -26,7 +25,6 @@ import com.hazelcast.sql.impl.operation.QueryBatchExchangeOperation;
 import com.hazelcast.sql.impl.operation.QueryAbstractExchangeOperation;
 import com.hazelcast.sql.impl.operation.QueryFlowControlExchangeOperation;
 import com.hazelcast.sql.impl.operation.QueryOperation;
-import com.hazelcast.sql.impl.state.QueryState;
 import com.hazelcast.sql.impl.state.QueryStateCallback;
 
 import java.util.Collection;

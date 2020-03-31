@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.exec.io;
 import com.hazelcast.sql.impl.exec.AbstractUpstreamAwareExec;
 import com.hazelcast.sql.impl.exec.Exec;
 import com.hazelcast.sql.impl.exec.IterationResult;
-import com.hazelcast.sql.impl.fragment.QueryFragmentContext;
+import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 import com.hazelcast.sql.impl.mailbox.Outbox;
 import com.hazelcast.sql.impl.row.RowBatch;
 

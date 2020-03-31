@@ -16,12 +16,12 @@
 
 package com.hazelcast.sql.impl.operation;
 
-import com.hazelcast.sql.impl.fragment.QueryFragment;
-import com.hazelcast.sql.impl.fragment.QueryFragmentMapping;
+import com.hazelcast.sql.impl.plan.PlanFragment;
+import com.hazelcast.sql.impl.plan.PlanFragmentMapping;
 import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.sql.impl.QueryPlan;
+import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.memory.MemoryPressure;
-import com.hazelcast.sql.impl.physical.PhysicalNode;
+import com.hazelcast.sql.impl.plan.node.PlanNode;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -45,13 +45,13 @@ public class QueryExecuteOperationFactory {
     private static final int MEDIUM_PRESSURE_CREDIT = 512 * 1024;
     private static final int HIGH_PRESSURE_CREDIT = 256 * 1024;
 
-    private final QueryPlan plan;
+    private final Plan plan;
     private final List<Object> args;
     private final long timeout;
     private final Map<Integer, Long> creditMap;
 
     public QueryExecuteOperationFactory(
-        QueryPlan plan,
+        Plan plan,
         List<Object> args,
         long timeout,
         MemoryPressure memoryPressure
@@ -63,11 +63,11 @@ public class QueryExecuteOperationFactory {
         creditMap = createCreditMap(memoryPressure);
     }
 
-    public IdentityHashMap<QueryFragment, Collection<UUID>> prepareFragmentMappings() {
-        IdentityHashMap<QueryFragment, Collection<UUID>> mappings = new IdentityHashMap<>();
+    public IdentityHashMap<PlanFragment, Collection<UUID>> prepareFragmentMappings() {
+        IdentityHashMap<PlanFragment, Collection<UUID>> mappings = new IdentityHashMap<>();
 
-        for (QueryFragment fragment : plan.getFragments()) {
-            QueryFragmentMapping mapping = fragment.getMapping();
+        for (PlanFragment fragment : plan.getFragments()) {
+            PlanFragmentMapping mapping = fragment.getMapping();
 
             if (mapping.isStatic()) {
                 mappings.put(fragment, mapping.getStaticMemberIds());
@@ -93,19 +93,19 @@ public class QueryExecuteOperationFactory {
 
     public QueryExecuteOperation create(
         QueryId queryId,
-        IdentityHashMap<QueryFragment, Collection<UUID>> fragmentMappings,
+        IdentityHashMap<PlanFragment, Collection<UUID>> fragmentMappings,
         UUID targetMemberId
     ) {
-        List<QueryFragment> fragments = plan.getFragments();
+        List<PlanFragment> fragments = plan.getFragments();
 
         // Prepare descriptors.
         List<QueryExecuteOperationFragment> descriptors = new ArrayList<>(fragments.size());
 
-        for (QueryFragment fragment : fragments) {
+        for (PlanFragment fragment : fragments) {
             Collection<UUID> fragmentMemberIds = fragmentMappings.get(fragment);
 
             // Do not send node to a member which will not execute it.
-            PhysicalNode node = fragmentMemberIds.contains(targetMemberId) ? fragment.getNode() : null;
+            PlanNode node = fragmentMemberIds.contains(targetMemberId) ? fragment.getNode() : null;
 
             descriptors.add(new QueryExecuteOperationFragment(node, fragmentMemberIds));
         }

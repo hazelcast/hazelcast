@@ -20,8 +20,8 @@ import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryMetadata;
 import com.hazelcast.sql.impl.QueryResultProducer;
 import com.hazelcast.sql.impl.operation.QueryOperationHandler;
-import com.hazelcast.sql.impl.QueryPlan;
-import com.hazelcast.sql.impl.fragment.QueryFragment;
+import com.hazelcast.sql.impl.plan.Plan;
+import com.hazelcast.sql.impl.plan.PlanFragment;
 import com.hazelcast.sql.impl.operation.QueryCheckOperation;
 
 import java.util.ArrayList;
@@ -48,9 +48,9 @@ public class QueryStateRegistry {
 
     public QueryState onInitiatorQueryStarted(
         long initiatorTimeout,
-        QueryPlan initiatorPlan,
+        Plan initiatorPlan,
         QueryMetadata initiatorMetadata,
-        IdentityHashMap<QueryFragment, Collection<UUID>> initiatorFragmentMappings,
+        IdentityHashMap<PlanFragment, Collection<UUID>> initiatorFragmentMappings,
         QueryResultProducer initiatorResultProducer,
         QueryStateCompletionCallback completionCallback,
         boolean register

@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.exec;
 
 import com.hazelcast.internal.util.HashUtil;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
-import com.hazelcast.sql.impl.physical.hash.RowHashFunction;
+import com.hazelcast.sql.impl.row.hash.RowHashFunction;
 import com.hazelcast.sql.impl.row.Row;
 
 /**

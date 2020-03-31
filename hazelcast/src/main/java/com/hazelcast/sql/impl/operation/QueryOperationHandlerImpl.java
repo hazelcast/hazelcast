@@ -26,7 +26,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.sql.impl.exec.CreateExecVisitor;
+import com.hazelcast.sql.impl.exec.CreateExecPlanNodeVisitor;
 import com.hazelcast.sql.impl.exec.Exec;
 import com.hazelcast.sql.impl.mailbox.InboundHandler;
 import com.hazelcast.sql.impl.mailbox.OutboundHandler;
@@ -181,7 +181,7 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
             }
 
             // Create executors and inboxes.
-            CreateExecVisitor visitor = new CreateExecVisitor(
+            CreateExecPlanNodeVisitor visitor = new CreateExecPlanNodeVisitor(
                 nodeEngine,
                 operation,
                 operation.getPartitionMapping().get(getLocalMemberId()),

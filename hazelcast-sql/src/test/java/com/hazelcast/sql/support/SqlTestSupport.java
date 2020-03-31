@@ -19,7 +19,7 @@ package com.hazelcast.sql.support;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.sql.SqlCursor;
 import com.hazelcast.sql.SqlRow;
-import com.hazelcast.sql.impl.QueryPlan;
+import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.SqlCursorImpl;
 import com.hazelcast.sql.impl.SqlServiceProxy;
 
@@ -30,7 +30,7 @@ import java.util.List;
  * Common infrastructure for SQL tests.
  */
 public class SqlTestSupport {
-    protected QueryPlan getPlan(HazelcastInstance target, String sql) {
+    protected Plan getPlan(HazelcastInstance target, String sql) {
         SqlServiceProxy sqlService = (SqlServiceProxy) target.getSqlService();
 
         return sqlService.getOptimizer().prepare(sql, 0);

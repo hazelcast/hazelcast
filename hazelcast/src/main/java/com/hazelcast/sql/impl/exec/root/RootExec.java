@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.exec.root;
 import com.hazelcast.sql.impl.exec.AbstractUpstreamAwareExec;
 import com.hazelcast.sql.impl.exec.Exec;
 import com.hazelcast.sql.impl.exec.IterationResult;
-import com.hazelcast.sql.impl.fragment.QueryFragmentContext;
+import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 import com.hazelcast.sql.impl.row.RowBatch;
 
 /**
@@ -55,7 +55,7 @@ public class RootExec extends AbstractUpstreamAwareExec {
 
             // Close the consumer if we reached the end.
             if (state.isDone()) {
-                consumer.done();
+                consumer.onDone();
 
                 return IterationResult.FETCHED_DONE;
             }
@@ -65,13 +65,6 @@ public class RootExec extends AbstractUpstreamAwareExec {
     @Override
     public RowBatch currentBatch0() {
         throw new UnsupportedOperationException("Should not be called.");
-    }
-
-    /**
-     * Reschedule execution of this root node to fetch more data for the user.
-     */
-    public void reschedule() {
-        ctx.schedule();
     }
 
     @Override

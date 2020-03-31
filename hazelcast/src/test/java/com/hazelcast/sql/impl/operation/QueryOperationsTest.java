@@ -22,7 +22,7 @@ import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlCustomClass;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
-import com.hazelcast.sql.impl.physical.MockPhysicalNode;
+import com.hazelcast.sql.impl.physical.MockPlanNode;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.ListRowBatch;
 import com.hazelcast.sql.impl.row.Row;
@@ -200,9 +200,9 @@ public class QueryOperationsTest {
         partitionMapping.put(randomUUID(), new PartitionIdSet(10));
 
         List<QueryExecuteOperationFragment> fragments = new ArrayList<>();
-        fragments.add(new QueryExecuteOperationFragment(MockPhysicalNode.create(1, QueryDataType.INT),
+        fragments.add(new QueryExecuteOperationFragment(MockPlanNode.create(1, QueryDataType.INT),
             Arrays.asList(randomUUID(), randomUUID())));
-        fragments.add(new QueryExecuteOperationFragment(MockPhysicalNode.create(2, QueryDataType.INT),
+        fragments.add(new QueryExecuteOperationFragment(MockPlanNode.create(2, QueryDataType.INT),
             Arrays.asList(randomUUID(), randomUUID())));
 
         Map<Integer, Integer> outboundEdgeMap = new HashMap<>();

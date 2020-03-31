@@ -23,11 +23,12 @@ import com.hazelcast.sql.impl.client.QueryClientStateRegistry;
 import com.hazelcast.sql.impl.exec.root.BlockingRootResultConsumer;
 import com.hazelcast.sql.impl.explain.QueryExplain;
 import com.hazelcast.sql.impl.explain.QueryExplainResultProducer;
-import com.hazelcast.sql.impl.fragment.QueryFragment;
+import com.hazelcast.sql.impl.plan.PlanFragment;
 import com.hazelcast.sql.impl.memory.GlobalMemoryReservationManager;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperationFactory;
 import com.hazelcast.sql.impl.operation.QueryOperationHandlerImpl;
+import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.state.QueryState;
 import com.hazelcast.sql.impl.state.QueryStateRegistry;
 import com.hazelcast.sql.impl.state.QueryStateRegistryUpdater;
@@ -116,7 +117,7 @@ public class SqlInternalService {
      *
      * @return Query state.
      */
-    public QueryState execute(QueryPlan plan, List<Object> params, long timeout, int pageSize) {
+    public QueryState execute(Plan plan, List<Object> params, long timeout, int pageSize) {
         assert params != null;
 
         if (plan.getParameterCount() > params.size()) {
@@ -132,7 +133,7 @@ public class SqlInternalService {
             memoryManager.getMemoryPressure()
         );
 
-        IdentityHashMap<QueryFragment, Collection<UUID>> fragmentMappings = operationFactory.prepareFragmentMappings();
+        IdentityHashMap<PlanFragment, Collection<UUID>> fragmentMappings = operationFactory.prepareFragmentMappings();
 
         // Register the state.
         BlockingRootResultConsumer consumer = new BlockingRootResultConsumer(pageSize);
@@ -180,7 +181,7 @@ public class SqlInternalService {
         }
     }
 
-    public QueryState executeExplain(QueryPlan plan) {
+    public QueryState executeExplain(Plan plan) {
         QueryExplain explain = plan.getExplain();
 
         QueryExplainResultProducer rowSource = new QueryExplainResultProducer(explain);

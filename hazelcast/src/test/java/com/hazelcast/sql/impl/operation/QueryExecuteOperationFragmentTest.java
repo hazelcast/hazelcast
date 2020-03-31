@@ -19,8 +19,8 @@ package com.hazelcast.sql.impl.operation;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
-import com.hazelcast.sql.impl.physical.MockPhysicalNode;
-import com.hazelcast.sql.impl.physical.PhysicalNode;
+import com.hazelcast.sql.impl.physical.MockPlanNode;
+import com.hazelcast.sql.impl.plan.node.PlanNode;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -40,7 +40,7 @@ import static org.junit.Assert.assertEquals;
 public class QueryExecuteOperationFragmentTest {
     @Test
     public void testFragment() {
-        PhysicalNode node = MockPhysicalNode.create(1, QueryDataType.INT);
+        PlanNode node = MockPlanNode.create(1, QueryDataType.INT);
         List<UUID> memberIds = Arrays.asList(UUID.randomUUID(), UUID.randomUUID());
 
         QueryExecuteOperationFragment fragment = new QueryExecuteOperationFragment(node, memberIds);
@@ -52,7 +52,7 @@ public class QueryExecuteOperationFragmentTest {
     @Test
     public void testSerialization() {
         QueryExecuteOperationFragment original = new QueryExecuteOperationFragment(
-            MockPhysicalNode.create(1, QueryDataType.INT),
+            MockPlanNode.create(1, QueryDataType.INT),
             Arrays.asList(UUID.randomUUID(), UUID.randomUUID())
         );
 

@@ -26,6 +26,7 @@ import com.hazelcast.sql.SqlQuery;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.optimizer.NoOpSqlOptimizer;
 import com.hazelcast.sql.impl.optimizer.SqlOptimizer;
+import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.state.QueryState;
 
 import java.lang.reflect.Constructor;
@@ -128,11 +129,11 @@ public class SqlServiceProxy implements SqlService {
                 throw HazelcastSqlException.error("SQL statement to be explained cannot be empty");
             }
 
-            QueryPlan plan = optimizer.prepare(unwrappedSql, params0.size());
+            Plan plan = optimizer.prepare(unwrappedSql, params0.size());
 
             state = internalService.executeExplain(plan);
         } else {
-            QueryPlan plan = optimizer.prepare(sql, params0.size());
+            Plan plan = optimizer.prepare(sql, params0.size());
 
             state = internalService.execute(
                 plan,

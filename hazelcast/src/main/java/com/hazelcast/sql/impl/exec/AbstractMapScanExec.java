@@ -20,7 +20,7 @@ import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.query.impl.getters.Extractors;
-import com.hazelcast.sql.impl.fragment.QueryFragmentContext;
+import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.HeapRow;

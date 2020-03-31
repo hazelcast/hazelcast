@@ -22,7 +22,7 @@ import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.impl.QueryPlan;
+import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.NodeIdVisitor;
@@ -72,7 +72,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     }
 
     @Override
-    public QueryPlan prepare(String sql, int paramsCount) {
+    public Plan prepare(String sql, int paramsCount) {
         // 1. Prepare context.
         OptimizerContext context = OptimizerContext.create(nodeEngine, statisticProvider, schemaResolver);
 
@@ -107,7 +107,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
      * @param rel Rel.
      * @return Plan.
      */
-    private QueryPlan doCreatePlan(
+    private Plan doCreatePlan(
         String sql,
         int paramsCount,
         OptimizerContext context,

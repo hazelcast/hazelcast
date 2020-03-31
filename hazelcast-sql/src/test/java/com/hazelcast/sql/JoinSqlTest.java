@@ -17,8 +17,8 @@
 package com.hazelcast.sql;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.sql.impl.fragment.QueryFragment;
-import com.hazelcast.sql.impl.QueryPlan;
+import com.hazelcast.sql.impl.plan.PlanFragment;
+import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.support.ModelGenerator;
 import com.hazelcast.sql.support.SqlTestSupport;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -83,18 +83,18 @@ public class JoinSqlTest extends SqlTestSupport {
 
     @Test
     public void testJoinConditionWhere() {
-        QueryPlan planWhere = getPlan(
+        Plan planWhere = getPlan(
             member,
             "SELECT p.name, d.title FROM person p, department d WHERE p.deptId = d.__key"
         );
 
-        QueryPlan planOn = getPlan(
+        Plan planOn = getPlan(
             member,
             "SELECT p.name, d.title FROM person p INNER JOIN department d ON p.deptId = d.__key"
         );
 
-        QueryFragment fragmentOn = planOn.getFragments().get(0);
-        QueryFragment fragmentWhere = planWhere.getFragments().get(0);
+        PlanFragment fragmentOn = planOn.getFragments().get(0);
+        PlanFragment fragmentWhere = planWhere.getFragments().get(0);
 
         Assert.assertEquals(fragmentOn.getNode(), fragmentWhere.getNode());
     }

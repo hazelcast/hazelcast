@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.exec.io;
 
-import com.hazelcast.sql.impl.fragment.QueryFragmentContext;
+import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 import com.hazelcast.sql.impl.exec.AbstractExec;
 import com.hazelcast.sql.impl.exec.IterationResult;
 import com.hazelcast.sql.impl.exec.fetch.Fetch;

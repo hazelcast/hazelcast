@@ -27,7 +27,7 @@ import com.hazelcast.sql.impl.calcite.opt.physical.visitor.PlanCreateVisitor;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.aggregate.AggregateExpression;
-import com.hazelcast.sql.support.TestPhysicalNodeSchema;
+import com.hazelcast.sql.support.TestPlanNodeSchema;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.AggregateCall;
 import org.apache.calcite.rel.core.JoinRelType;
@@ -100,7 +100,7 @@ public abstract class LogicalOptimizerTestSupport extends OptimizerTestSupport {
 
         List<AggregateExpression<?>> aggExps = new ArrayList<>(agg.getAggCallList().size());
         for (AggregateCall aggCall : agg.getAggCallList()) {
-            aggExps.add(PlanCreateVisitor.convertAggregateCall(aggCall, TestPhysicalNodeSchema.INSTANCE));
+            aggExps.add(PlanCreateVisitor.convertAggregateCall(aggCall, TestPlanNodeSchema.INSTANCE));
         }
         assertEquals(expAggExps, aggExps);
 
@@ -145,6 +145,6 @@ public abstract class LogicalOptimizerTestSupport extends OptimizerTestSupport {
     }
 
     private static RexToExpressionVisitor expressionConverter() {
-        return new RexToExpressionVisitor(TestPhysicalNodeSchema.INSTANCE, 0);
+        return new RexToExpressionVisitor(TestPlanNodeSchema.INSTANCE, 0);
     }
 }
