@@ -144,21 +144,19 @@ Code samples:
 
 ### Execution Mode Overview
 
-
 | Execution Mode | Java Model | Python Model | Remote Model |
 | -------------- | ---------- | ------------ | ------------ |
 | Model managed by Jet | ✅ | ✅ | ✅ |
-| Model shared between Jobs	 | ❌ | ❌ | ✅ |
+| Model shared between Jobs | ❌ | ❌ | ✅ |
 | Jet ↔ Model Communication | Shared memory | gRPC<br>(processes collocated) | RPC<br>(processes usually on different machines) |
 | Throughput (single node) | 1M / sec | 50k / sec | Depends on underlying architecture |
-| Prerequisites |  Model runs in JVM | Python runtime installed on all cluster machines	| Model available as a RPC service |
-
+| Prerequisites | Model runs in JVM | Python runtime installed on all cluster machines | Model available as a RPC service |
 
 ### Framework Integration Overview
 
 | Framework | Execution Mode | Code Sample |
 | --------- | -------------- | ----------- |
-| H2O |	Java | [Code Sample](https://github.com/hazelcast/hazelcast-jet-demos/tree/master/h2o-breast-cancer-classification) |
+| H2O | Java | [Code Sample](https://github.com/hazelcast/hazelcast-jet-demos/tree/master/h2o-breast-cancer-classification) |
 | TensorFlow for Java | Java | [Code Sample](https://github.com/hazelcast/hazelcast-jet-demos/blob/master/tensorflow/src/main/java/InProcessClassification.java) |
 | Custom Java Model | Java | [Code Sample](https://github.com/hazelcast/hazelcast-jet-demos/tree/master/realtime-image-recognition) |
 | PMML | Java | N/A, use [JPMML Evaluator](https://github.com/jpmml/jpmml-evaluator) as a Custom Java Model |
