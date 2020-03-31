@@ -17,6 +17,7 @@
 package com.hazelcast.internal.nio;
 
 import com.hazelcast.client.impl.ClientEngine;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.MemcacheProtocolConfig;
 import com.hazelcast.config.RestApiConfig;
 import com.hazelcast.config.SSLConfig;
@@ -29,13 +30,10 @@ import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.nio.tcp.TcpIpConnection;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
-import java.io.IOException;
-import java.net.Socket;
 import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
@@ -93,10 +91,6 @@ public interface IOService {
     boolean isSocketBind();
 
     boolean isSocketBindAny();
-
-    void interceptSocket(EndpointQualifier endpointQualifier, Socket socket, boolean onAccept) throws IOException;
-
-    boolean isSocketInterceptorEnabled(EndpointQualifier endpointQualifier);
 
     int getSocketConnectTimeoutSeconds(EndpointQualifier endpointQualifier);
 

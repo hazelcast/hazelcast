@@ -16,6 +16,10 @@
 
 package com.hazelcast.internal.nio.tcp;
 
+import com.hazelcast.config.AdvancedNetworkConfig;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.EndpointConfig;
+import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
@@ -28,8 +32,10 @@ import com.hazelcast.internal.networking.nio.SelectorMode;
 import com.hazelcast.internal.nio.IOService;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.MemberSocketInterceptor;
 
 import java.io.IOException;
+import java.net.Socket;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -81,6 +87,7 @@ public class TcpIpAcceptor implements DynamicMetricsProvider {
     @Probe(name = TCP_METRIC_ACCEPTOR_SELECTOR_RECREATE_COUNT)
     private final SwCounter selectorRecreateCount = newSwCounter();
     private final AcceptorIOThread acceptorThread;
+    private final Config config;
     // last time select returned
     private volatile long lastSelectTimeMs;
 
@@ -94,9 +101,10 @@ public class TcpIpAcceptor implements DynamicMetricsProvider {
 
     private final Set<SelectionKey> selectionKeys = newSetFromMap(new ConcurrentHashMap<>());
 
-    TcpIpAcceptor(ServerSocketRegistry registry, TcpIpNetworkingService networkingService, IOService ioService) {
+    TcpIpAcceptor(ServerSocketRegistry registry, TcpIpNetworkingService networkingService, IOService ioService, Config config) {
+        this.config = config;
         this.registry = registry;
-            this.networkingService = networkingService;
+        this.networkingService = networkingService;
         this.ioService = networkingService.getIoService();
         this.logger = ioService.getLoggingService().getLogger(getClass());
         this.acceptorThread = new AcceptorIOThread();
@@ -140,7 +148,7 @@ public class TcpIpAcceptor implements DynamicMetricsProvider {
     @Override
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
         context.collect(descriptor.withPrefix(TCP_PREFIX_ACCEPTOR)
-                                  .withDiscriminator(TCP_DISCRIMINATOR_THREAD, acceptorThread.getName()), this);
+                .withDiscriminator(TCP_DISCRIMINATOR_THREAD, acceptorThread.getName()), this);
     }
 
     private final class AcceptorIOThread extends Thread {
@@ -215,8 +223,7 @@ public class TcpIpAcceptor implements DynamicMetricsProvider {
                     continue;
                 }
                 idleCount = 0;
-                Iterator<SelectionKey> it = selector.selectedKeys().iterator();
-                handleSelectionKeys(it);
+                handleSelectionKeys(selector.selectedKeys().iterator());
             }
         }
 
@@ -305,7 +312,7 @@ public class TcpIpAcceptor implements DynamicMetricsProvider {
                 if (logger.isFineEnabled()) {
                     logger.fine("Accepting socket connection from " + theChannel.socket().getRemoteSocketAddress());
                 }
-                if (ioService.isSocketInterceptorEnabled(qualifier)) {
+                if (isSocketInterceptorEnabled(qualifier)) {
                     final TcpIpEndpointManager finalEndpointManager = endpointManager;
                     ioService.executeAsync(() -> configureAndAssignSocket(finalEndpointManager, theChannel));
                 } else {
@@ -316,13 +323,47 @@ public class TcpIpAcceptor implements DynamicMetricsProvider {
 
         private void configureAndAssignSocket(TcpIpEndpointManager endpointManager, Channel channel) {
             try {
-                ioService.interceptSocket(endpointManager.getEndpointQualifier(), channel.socket(), true);
+                interceptSocket(endpointManager.getEndpointQualifier(), channel.socket(), true);
                 endpointManager.newConnection(channel, null);
             } catch (Exception e) {
                 exceptionCount.inc();
                 logger.warning(e.getClass().getName() + ": " + e.getMessage(), e);
                 closeResource(channel);
             }
+        }
+
+        public void interceptSocket(EndpointQualifier endpointQualifier, Socket socket, boolean onAccept) throws IOException {
+            socket.getChannel().configureBlocking(true);
+
+            if (!isSocketInterceptorEnabled(endpointQualifier)) {
+                return;
+            }
+
+            MemberSocketInterceptor memberSocketInterceptor = ioService.getSocketInterceptor(endpointQualifier);
+            if (memberSocketInterceptor == null) {
+                return;
+            }
+
+            if (onAccept) {
+                memberSocketInterceptor.onAccept(socket);
+            } else {
+                memberSocketInterceptor.onConnect(socket);
+            }
+        }
+
+        private boolean isSocketInterceptorEnabled(EndpointQualifier endpointQualifier) {
+            SocketInterceptorConfig socketInterceptorConfig = getSocketInterceptorConfig(endpointQualifier);
+            return socketInterceptorConfig != null && socketInterceptorConfig.isEnabled();
+        }
+
+        private SocketInterceptorConfig getSocketInterceptorConfig(EndpointQualifier endpointQualifier) {
+            AdvancedNetworkConfig advancedNetworkConfig = config.getAdvancedNetworkConfig();
+            if (advancedNetworkConfig.isEnabled()) {
+                EndpointConfig endpointConfig = advancedNetworkConfig.getEndpointConfigs().get(endpointQualifier);
+                return endpointConfig != null ? endpointConfig.getSocketInterceptorConfig() : null;
+            }
+
+            return config.getNetworkConfig().getSocketInterceptorConfig();
         }
     }
 }

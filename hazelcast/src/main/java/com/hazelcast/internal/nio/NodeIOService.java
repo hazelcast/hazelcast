@@ -17,6 +17,7 @@
 package com.hazelcast.internal.nio;
 
 import com.hazelcast.client.impl.ClientEngine;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.AdvancedNetworkConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EndpointConfig;
@@ -25,7 +26,6 @@ import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.RestApiConfig;
 import com.hazelcast.config.RestServerEndpointConfig;
 import com.hazelcast.config.SSLConfig;
-import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.impl.Node;
@@ -40,7 +40,6 @@ import com.hazelcast.internal.nio.tcp.TcpIpConnection;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.AddressUtil;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.EventService;
@@ -48,8 +47,6 @@ import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
-import java.io.IOException;
-import java.net.Socket;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -141,14 +138,9 @@ public class NodeIOService implements IOService {
         thread.start();
     }
 
-    public SocketInterceptorConfig getSocketInterceptorConfig(EndpointQualifier endpointQualifier) {
-        final AdvancedNetworkConfig advancedNetworkConfig = node.getConfig().getAdvancedNetworkConfig();
-        if (advancedNetworkConfig.isEnabled()) {
-            EndpointConfig config = advancedNetworkConfig.getEndpointConfigs().get(endpointQualifier);
-            return config != null ? config.getSocketInterceptorConfig() : null;
-        }
-
-        return node.getConfig().getNetworkConfig().getSocketInterceptorConfig();
+    @Override
+    public MemberSocketInterceptor getSocketInterceptor(EndpointQualifier endpointQualifier) {
+        return node.getNodeExtension().getSocketInterceptor(endpointQualifier);
     }
 
     @Override
@@ -243,32 +235,6 @@ public class NodeIOService implements IOService {
     }
 
     @Override
-    public void interceptSocket(EndpointQualifier endpointQualifier, Socket socket, boolean onAccept) throws IOException {
-        socket.getChannel().configureBlocking(true);
-
-        if (!isSocketInterceptorEnabled(endpointQualifier)) {
-            return;
-        }
-
-        MemberSocketInterceptor memberSocketInterceptor = getSocketInterceptor(endpointQualifier);
-        if (memberSocketInterceptor == null) {
-            return;
-        }
-
-        if (onAccept) {
-            memberSocketInterceptor.onAccept(socket);
-        } else {
-            memberSocketInterceptor.onConnect(socket);
-        }
-    }
-
-    @Override
-    public boolean isSocketInterceptorEnabled(EndpointQualifier endpointQualifier) {
-        final SocketInterceptorConfig socketInterceptorConfig = getSocketInterceptorConfig(endpointQualifier);
-        return socketInterceptorConfig != null && socketInterceptorConfig.isEnabled();
-    }
-
-    @Override
     public int getSocketConnectTimeoutSeconds(EndpointQualifier endpointQualifier) {
         final AdvancedNetworkConfig advancedNetworkConfig = node.getConfig().getAdvancedNetworkConfig();
         if (advancedNetworkConfig.isEnabled()) {
@@ -304,10 +270,6 @@ public class NodeIOService implements IOService {
         return node.getSerializationService();
     }
 
-    @Override
-    public MemberSocketInterceptor getSocketInterceptor(EndpointQualifier endpointQualifier) {
-        return node.getNodeExtension().getSocketInterceptor(endpointQualifier);
-    }
 
     @Override
     public InboundHandler[] createInboundHandlers(EndpointQualifier qualifier, TcpIpConnection connection) {

@@ -71,6 +71,7 @@ public final class TcpIpNetworkingService implements NetworkingService<TcpIpConn
 
     private final Networking networking;
     private final MetricsRegistry metricsRegistry;
+    private final Config config;
     // accessed only in synchronized methods
     private ScheduledFuture refreshStatsFuture;
     private final RefreshNetworkStatsTask refreshStatsTask;
@@ -105,6 +106,7 @@ public final class TcpIpNetworkingService implements NetworkingService<TcpIpConn
                                   HazelcastProperties properties) {
 
         this.ioService = ioService;
+        this.config = config;
         this.networking = networking;
         this.metricsRegistry = metricsRegistry;
         this.refreshStatsTask = new RefreshNetworkStatsTask(endpointManagers);
@@ -286,7 +288,7 @@ public final class TcpIpNetworkingService implements NetworkingService<TcpIpConn
             shutdownAcceptor();
         }
 
-        acceptorRef.set(new TcpIpAcceptor(registry, this, ioService).start());
+        acceptorRef.set(new TcpIpAcceptor(registry, this, ioService, config).start());
     }
 
     private void shutdownAcceptor() {
