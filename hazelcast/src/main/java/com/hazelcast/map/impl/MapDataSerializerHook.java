@@ -310,9 +310,10 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int PUT_TRANSIENT_WITH_EXPIRY = 145;
     public static final int PUT_IF_ABSENT_WITH_EXPIRY = 146;
     public static final int PUT_TRANSIENT_BACKUP = 147;
-    public static final int BIFUNCTION_EXECUTING_PROCESSOR = 148;
+    public static final int COMPUTE_IF_PRESENT_PROCESSOR = 148;
+    public static final int COMPUTE_IF_ABSENT_PROCESSOR = 149;
 
-    private static final int LEN = BIFUNCTION_EXECUTING_PROCESSOR + 1;
+    private static final int LEN = COMPUTE_IF_ABSENT_PROCESSOR + 1;
 
     @Override
     public int getFactoryId() {
@@ -468,7 +469,8 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[PUT_TRANSIENT_WITH_EXPIRY] = arg -> new PutTransientWithExpiryOperation();
         constructors[PUT_IF_ABSENT_WITH_EXPIRY] = arg -> new PutIfAbsentWithExpiryOperation();
         constructors[PUT_TRANSIENT_BACKUP] = arg -> new PutTransientBackupOperation();
-        constructors[BIFUNCTION_EXECUTING_PROCESSOR] = arg -> new BiFunctionExecutingEntryProcessor<>();
+        constructors[COMPUTE_IF_PRESENT_PROCESSOR] = arg -> new ComputeIfPresentEntryProcessor<>();
+        constructors[COMPUTE_IF_ABSENT_PROCESSOR] = arg -> new ComputeIfAbsentEntryProcessor<>();
 
         return new ArrayDataSerializableFactory(constructors);
     }

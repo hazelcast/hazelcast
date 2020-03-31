@@ -16,19 +16,18 @@
 
 package testsubjects;
 
-import java.io.Serializable;
-import java.util.function.BiFunction;
+import java.util.function.Function;
 
-public class ClientOnlyStaticSerializableBiFunction implements BiFunction<String, String, String>, Serializable  {
+public class StaticNonSerializableFunction implements Function<String, String> {
 
     private String returnValue;
 
-    public ClientOnlyStaticSerializableBiFunction(String returnValue) {
+    public StaticNonSerializableFunction(String returnValue) {
         this.returnValue = returnValue;
     }
 
     @Override
-    public String apply(String key, String oldValue) {
+    public String apply(String key) {
         return returnValue;
     }
 
