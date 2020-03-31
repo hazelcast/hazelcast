@@ -96,7 +96,7 @@ job and hooking it up (at least) in:
 ## Implemented Solution
 
 Each job execution gets its own `SerializationService` which encapsulates
-job-level serializers and fallbacks to cluster `SerializationService`.
+job-level serializers and falls backs to cluster `SerializationService`.
 
 Job-level serializers can be used to read/write data from/to local IMDG
 `Observable`s, `List`s, `Map`s & `Cache`s.

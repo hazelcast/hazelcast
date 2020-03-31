@@ -24,7 +24,7 @@ Additionally, Hazelcast includes a full [Raft](https://en.wikipedia.org/wiki/Raf
 implementation which allows implementation of _linearizable_ constructs
 such as:
 
-* A distributed and reentrant lock implementation, called `FencedLock`
+* A distributed and re-entrant lock implementation, called `FencedLock`
 * Distributed implementations of `AtomicLong`, `AtomicReference` `CountDownLatch`
 
 Hazelcast data-structures are in-memory, highly optimized and offer very
@@ -264,7 +264,7 @@ mode).
 
 The currently supported primitives are:
 
-* `FencedLock` is a distributed and re-enrant lock implementation of
+* `FencedLock` is a distributed and re-entrant lock implementation of
   `java.util.concurrent.Lock`
 * `ISemaphore` is the distributed implementation of Java `Semaphore`
 * `CountdownLatch` implements the Java equivalent in a distributed

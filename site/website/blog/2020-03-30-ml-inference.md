@@ -147,10 +147,10 @@ Code samples:
 | Execution Mode | Java Model | Python Model | Remote Model |
 | -------------- | ---------- | ------------ | ------------ |
 | Model managed by Jet | ✅ | ✅ | ✅ |
-| Model shared between Jobs | ❌ | ❌ | ✅ |
+| Model shared between Jobs  | ❌ | ❌ | ✅ |
 | Jet ↔ Model Communication | Shared memory | gRPC<br>(processes collocated) | RPC<br>(processes usually on different machines) |
 | Throughput (single node) | 1M / sec | 50k / sec | Depends on underlying architecture |
-| Prerequisites | Model runs in JVM | Python runtime installed on all cluster machines | Model available as a RPC service |
+| Prerequisites |  Model runs in JVM | Python runtime installed on all cluster machines | Model available as a RPC service |
 
 ### Framework Integration Overview
 

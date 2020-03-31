@@ -25,7 +25,7 @@ For a full guide on submitting jobs, see the relevant section in
 
 ## Listing Jobs
 
-You can use the Jet command line to get a list of all runnings jobs
+You can use the Jet command line to get a list of all running jobs
 in the cluster:
 
 ```bash

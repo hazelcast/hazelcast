@@ -155,7 +155,7 @@ We can then perform a lookup on this service for each incoming order:
 ```java
 StreamStage<OrderDetails> details = orders.mapUsingService(productService,
   (service, order) -> {
-      ProductDetails details = ProductDetailService.getDetails(order.getProductId);
+      ProductDetails details = service.getDetails(order.getProductId());
       return new OrderDetails(order, details);
   }
 );
@@ -197,14 +197,14 @@ you to return
 ```java
 StreamStage<OrderDetails> details = orders.mapUsingServiceAsync(productService,
   (service, order) -> {
-      CompletableFuture<ProductDetails> f = ProductDetailService
+      CompletableFuture<ProductDetails> f = service
           .getDetailsAsync(order.getProductId);
       return f.thenApply(details -> new OrderDetails(order, details));
   }
 );
 ```
 
-The main advantage of using asnyc communication is that we can have
+The main advantage of using async communication is that we can have
 many invocations to the service in-flight at the same time which will
 result in better throughput.
 
@@ -237,8 +237,7 @@ StreamStage<OrderDetails> details = orders.mapUsingServiceAsyncBatched(productSe
             .stream()
             .map(o -> o.getProductId())
             .collect(Collectors.toList())
-        CompletableFuture<List<ProductDetails>> f = ProductDetailService
-            .getDetailsAsync(order.getProductId);
+        CompletableFuture<List<ProductDetails>> f = service.getDetailsAsync(order.getProductId);
         return f.thenApply(productDetailsList -> {
             List<OrderDetails> orderDetailsList = new ArrayList<>();
             for (int i = 0; i < orderList; i++) {

@@ -22,7 +22,7 @@ Additionally, Hazelcast includes a full [Raft](https://en.wikipedia.org/wiki/Raf
 implementation which allows implementation of _linearizable_ constructs
 such as:
 
-* A distributed and reentrant lock implementation, called `FencedLock`
+* A distributed and re-entrant lock implementation, called `FencedLock`
 * Distributed implementations of `AtomicLong`, `AtomicReference` `CountDownLatch`
 
 Hazelcast data-structures are in-memory, highly optimized and offer very

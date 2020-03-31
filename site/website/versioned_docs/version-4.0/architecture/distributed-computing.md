@@ -86,7 +86,7 @@ tasklets and connecting them with high-performance concurrent queues:
 In this picture the source and sink vertices have a local parallelism of
 one and the inner vertices have local a parallelism of two. Jet has
 reasonable default for the local parallelism depending on the work a
-given vertex is doing. For computational vectices it matches the number
+given vertex is doing. For computational vertices it matches the number
 of available CPU cores and for IO-bound vertices it uses one or two.
 
 Jet replicates this layout on every cluster node, connecting the
