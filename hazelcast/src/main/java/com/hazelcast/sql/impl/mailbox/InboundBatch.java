@@ -23,7 +23,7 @@ import java.util.UUID;
 /**
  * Mailbox batch received from the remote member.
  */
-public class InboundBatch {
+public final class InboundBatch {
 
     private final RowBatch batch;
     private final boolean last;

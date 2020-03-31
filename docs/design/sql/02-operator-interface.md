@@ -7,7 +7,7 @@ introduced in Goetz Graefe seminal paper [[1]].
 In this document, we describe the design of the Hazelcast Mustang operator interface, which is based
 on the Volcano Model.
 
-## Relational Operators
+## 1 Relational Operators
 An SQL query is first parsed into a **parse tree**, which is used for syntactic and semantic checking.
 
 The parse tree is then converted into **relational operator tree**, or simply **relational tree**,
@@ -55,7 +55,7 @@ HAVING SUM(b) > 50
 -------- Scan [table]
 ```
 
-## Volcano Model
+## 2 Volcano Model
 
 Volcano Model defines the common data exchange interface between operators in the relational tree. This allows
 for extensibility, as new operators could be implemented with minimal changes to the engine.
@@ -71,7 +71,7 @@ interface Operator {
 }
 ```
 
-## Volcano Model in Hazelcast Mustang
+## 3 Volcano Model in Hazelcast Mustang
 
 The original Volcano Model has two drawbacks:
 1. Operators exchange one row at a time, which leads to performance overhead
@@ -81,7 +81,7 @@ operators often wait for remote data or free space in the send buffer.
 To achieve high performance, we introduce several changes to the original Volcano Model: batching and
 non-blocking execution.
 
-### Row and RowBatch
+### 3.1 Row and RowBatch
 We define the `RowBatch` interface which is a collection of rows (tuples).
 
 *Snippet 5: RowBatch interface*
@@ -111,7 +111,7 @@ interface Row extends RowBatch {
 }
 ```
 
-### Operator
+### 3.2 Operator
 The operator is defined by `Exec` interface:
 1. Operators exchange `RowBatch` instead of `Row`
 1. The blocking `next()` method is replaced with the non-blocking `advance()` method, which returns the iteration
@@ -150,7 +150,7 @@ If the engine has received `WAIT`, then query execution is halted, and the contr
 execution queue. The query execution is resumed upon an external signal (e.g. when the batch arrives from the remote node,
 or free space in the send buffer appears).
 
-## Implementation Guidelines
+## 4 Implementation Guidelines
 Operator implementations must adhere to the following rules:
 1. `Row` instances should be immutable to facilitate their transfer between batches
 1. The row batch returned by the `Exec.currentBatch()` call is valid before the next call to the `Exec.advance()` interface.

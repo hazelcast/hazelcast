@@ -188,6 +188,13 @@ public final class MetricDescriptorConstants {
     public static final String HOTRESTART_METRIC_GC_LIVE_TOMBSTONES = "liveTombstones";
     // ===[/HOT-RESTART]================================================
 
+    // ===[LIST]=======================================================
+    public static final String LIST_PREFIX = "list";
+    public static final String LIST_METRIC_LAST_ACCESS_TIME = "lastAccessTime";
+    public static final String LIST_METRIC_LAST_UPDATE_TIME = "lastUpdateTime";
+    public static final String LIST_METRIC_CREATION_TIME = "creationTime";
+    // ===[/LIST]======================================================
+
     // ===[MAP]=========================================================
     public static final String MAP_PREFIX = "map";
     public static final String MAP_PREFIX_INDEX = "map.index";
@@ -487,6 +494,13 @@ public final class MetricDescriptorConstants {
     public static final String RUNTIME_FULL_METRIC_AVAILABLE_PROCESSORS = "runtime.availableProcessors";
     public static final String RUNTIME_FULL_METRIC_UPTIME = "runtime.uptime";
     // ===[/RUNTIME]====================================================
+
+    // ===[SET]=======================================================
+    public static final String SET_PREFIX = "set";
+    public static final String SET_METRIC_LAST_ACCESS_TIME = "lastAccessTime";
+    public static final String SET_METRIC_LAST_UPDATE_TIME = "lastUpdateTime";
+    public static final String SET_METRIC_CREATION_TIME = "creationTime";
+    // ===[/SET]======================================================
 
     // ===[TCP]=========================================================
     public static final String TCP_PREFIX = "tcp";

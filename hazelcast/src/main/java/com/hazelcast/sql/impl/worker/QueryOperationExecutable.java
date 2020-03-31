@@ -20,7 +20,7 @@ import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.sql.impl.operation.QueryOperation;
 
 /**
- * Operation descriptor.
+ * Query operation to be executed. Could be either local (i.e. requested on the local member), or remote.
  */
 public final class QueryOperationExecutable {
     private final QueryOperation localOperation;
@@ -37,6 +37,10 @@ public final class QueryOperationExecutable {
 
     public static QueryOperationExecutable remote(Packet packet) {
         return new QueryOperationExecutable(null, packet);
+    }
+
+    public boolean isLocal() {
+        return localOperation != null;
     }
 
     public QueryOperation getLocalOperation() {

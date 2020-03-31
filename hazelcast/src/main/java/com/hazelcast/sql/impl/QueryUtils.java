@@ -36,6 +36,10 @@ public final class QueryUtils {
         // No-op.
     }
 
+    public static String workerName(String instanceName, String workerType, long index) {
+        return instanceName + "-" + workerType + "-worker-" + index;
+    }
+
     /**
      * Extract child path from the complex key-based path. E.g. "__key.field" => "field".
      *
@@ -58,10 +62,6 @@ public final class QueryUtils {
         assert isExplain(sql);
 
         return sql.substring(EXPLAIN.length()).trim();
-    }
-
-    public static String workerName(String instanceName, String workerType, long index) {
-        return instanceName + "-" + workerType + "-worker-" + index;
     }
 
     /**

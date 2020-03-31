@@ -21,11 +21,11 @@ import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.impl.collection.CollectionItem;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
 
@@ -60,6 +60,7 @@ public class CollectionRemoveOperation extends CollectionBackupAwareOperation im
         if (itemId != INVALID_ITEM_ID) {
             publishEvent(ItemEventType.REMOVED, value);
         }
+        super.afterRun();
     }
 
     @Override

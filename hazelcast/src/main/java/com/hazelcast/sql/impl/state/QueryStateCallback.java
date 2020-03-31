@@ -34,7 +34,7 @@ public interface QueryStateCallback {
 
     /**
      * Check whether the query is cancelled. If the query is not cancelled, the method returns with no side effects.
-     * Otherwise and exception is thrown.
+     * Otherwise an exception is thrown.
      */
     void checkCancelled();
 }

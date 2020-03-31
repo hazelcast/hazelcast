@@ -24,7 +24,6 @@ import com.hazelcast.config.MemcacheProtocolConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.RestApiConfig;
 import com.hazelcast.config.RestServerEndpointConfig;
-import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.instance.EndpointQualifier;
@@ -163,17 +162,6 @@ public class NodeIOService implements IOService {
     }
 
     @Override
-    public SSLConfig getSSLConfig(EndpointQualifier endpointQualifier) {
-        final AdvancedNetworkConfig advancedNetworkConfig = node.getConfig().getAdvancedNetworkConfig();
-        if (advancedNetworkConfig.isEnabled()) {
-            EndpointConfig config = advancedNetworkConfig.getEndpointConfigs().get(endpointQualifier);
-            return config != null ? config.getSSLConfig() : null;
-        }
-
-        return node.getConfig().getNetworkConfig().getSSLConfig();
-    }
-
-    @Override
     public ClientEngine getClientEngine() {
         return node.clientEngine;
     }
@@ -185,12 +173,8 @@ public class NodeIOService implements IOService {
 
     @Override
     public void removeEndpoint(final Address endPoint) {
-        nodeEngine.getExecutionService().execute(ExecutionService.IO_EXECUTOR, new Runnable() {
-            @Override
-            public void run() {
-                node.clusterService.suspectAddressIfNotConnected(endPoint);
-            }
-        });
+        nodeEngine.getExecutionService().execute(ExecutionService.IO_EXECUTOR,
+                () -> node.clusterService.suspectAddressIfNotConnected(endPoint));
     }
 
     @Override
@@ -230,16 +214,6 @@ public class NodeIOService implements IOService {
         if (node.getThisAddress().equals(address)) {
             throw new RuntimeException("Connecting to self! " + address);
         }
-    }
-
-    @Override
-    public boolean isSocketBind() {
-        return node.getProperties().getBoolean(ClusterProperty.SOCKET_CLIENT_BIND);
-    }
-
-    @Override
-    public boolean isSocketBindAny() {
-        return node.getProperties().getBoolean(ClusterProperty.SOCKET_CLIENT_BIND_ANY);
     }
 
     @Override

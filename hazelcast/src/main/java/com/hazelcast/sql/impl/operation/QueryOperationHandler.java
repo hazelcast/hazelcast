@@ -27,7 +27,7 @@ public interface QueryOperationHandler {
      *
      * @param memberId ID of the member.
      * @param operation Operation to be executed.
-     * @return {@code True} if operation is triggered, {@code false} if target member is not available.
+     * @return {@code true} if operation is triggered, {@code false} if target member is not available.
      */
     boolean submit(UUID memberId, QueryOperation operation);
 

@@ -25,6 +25,7 @@ import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.nio.IOService;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.properties.ClusterProperty;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.ArrayList;
@@ -45,11 +46,11 @@ final class BindHandler {
     private final Set<ProtocolType> supportedProtocolTypes;
 
     BindHandler(TcpIpEndpointManager tcpIpEndpointManager, IOService ioService, ILogger logger,
-                boolean spoofingChecks, Set<ProtocolType> supportedProtocolTypes) {
+                Set<ProtocolType> supportedProtocolTypes) {
         this.tcpIpEndpointManager = tcpIpEndpointManager;
         this.ioService = ioService;
         this.logger = logger;
-        this.spoofingChecks = spoofingChecks;
+        this.spoofingChecks = ioService.properties().getBoolean(ClusterProperty.BIND_SPOOFING_CHECKS);
         this.supportedProtocolTypes = supportedProtocolTypes;
         this.unifiedEndpointManager = tcpIpEndpointManager.getEndpointQualifier() == null;
     }

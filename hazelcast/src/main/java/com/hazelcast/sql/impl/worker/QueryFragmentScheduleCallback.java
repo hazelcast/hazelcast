@@ -19,6 +19,8 @@ package com.hazelcast.sql.impl.worker;
 public interface QueryFragmentScheduleCallback {
     /**
      * Schedule the fragment for execution.
+     *
+     * @return {@code true} if the fragment was scheduled, {@code false} if already scheduled.
      */
-    void schedule();
+    boolean schedule();
 }

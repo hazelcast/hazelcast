@@ -16,27 +16,40 @@
 
 package com.hazelcast.collection.impl.set;
 
+import java.util.Map;
+import java.util.Properties;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
+import com.hazelcast.collection.LocalSetStats;
 import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.CollectionService;
 import com.hazelcast.collection.impl.set.operations.SetReplicationOperation;
 import com.hazelcast.collection.impl.txnset.TransactionalSetProxy;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.internal.metrics.DynamicMetricsProvider;
+import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricDescriptorConstants;
+import com.hazelcast.internal.metrics.MetricsCollectionContext;
+import com.hazelcast.internal.metrics.impl.ProviderHelper;
+import com.hazelcast.internal.monitor.impl.LocalSetStatsImpl;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
-import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.transaction.impl.Transaction;
+import com.hazelcast.internal.services.StatisticsAwareService;
+import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.ContextMutexFactory;
-
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import com.hazelcast.internal.util.MapUtil;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.transaction.impl.Transaction;
 
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
 
-public class SetService extends CollectionService {
+public class SetService extends CollectionService implements DynamicMetricsProvider , StatisticsAwareService<LocalSetStats> {
 
     public static final String SERVICE_NAME = "hz:impl:setService";
 
@@ -55,9 +68,21 @@ public class SetService extends CollectionService {
             return splitBrainProtectionName == null ? NULL_OBJECT : splitBrainProtectionName;
         }
     };
+    private final ConcurrentMap<String, LocalSetStatsImpl> statsMap = new ConcurrentHashMap<>();
+    private final ConstructorFunction<String, LocalSetStatsImpl> localCollectionStatsConstructorFunction =
+            key -> new LocalSetStatsImpl();
 
     public SetService(NodeEngine nodeEngine) {
         super(nodeEngine);
+    }
+
+    @Override
+    public void init(NodeEngine nodeEngine, Properties properties) {
+        boolean dsMetricsEnabled = nodeEngine.getProperties().getBoolean(ClusterProperty.METRICS_DATASTRUCTURES);
+        if (dsMetricsEnabled) {
+            ((NodeEngineImpl) nodeEngine).getMetricsRegistry().registerDynamicMetricsProvider(this);
+        }
+        super.init(nodeEngine, properties);
     }
 
     @Override
@@ -112,5 +137,29 @@ public class SetService extends CollectionService {
         Object splitBrainProtectionName = getOrPutSynchronized(splitBrainProtectionConfigCache, name,
                 splitBrainProtectionConfigCacheMutexFactory, splitBrainProtectionConfigConstructor);
         return splitBrainProtectionName == NULL_OBJECT ? null : (String) splitBrainProtectionName;
+    }
+
+    @Override
+    public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
+        ProviderHelper.provide(descriptor, context, MetricDescriptorConstants.SET_PREFIX, getStats());
+    }
+
+    @Override
+    public Map<String, LocalSetStats> getStats() {
+        Map<String, LocalSetStats> setStats = MapUtil.createHashMap(containerMap.size());
+        for (Map.Entry<String, SetContainer> entry : containerMap.entrySet()) {
+            String name = entry.getKey();
+            SetContainer setContainer = entry.getValue();
+            if (setContainer.getConfig().isStatisticsEnabled()) {
+                LocalSetStats setStat = getLocalCollectionStats(name);
+                setStats.put(name, setStat);
+            }
+        }
+        return setStats;
+    }
+
+    @Override
+    public LocalSetStatsImpl getLocalCollectionStats(String name) {
+        return ConcurrencyUtil.getOrPutIfAbsent(statsMap, name, localCollectionStatsConstructorFunction);
     }
 }

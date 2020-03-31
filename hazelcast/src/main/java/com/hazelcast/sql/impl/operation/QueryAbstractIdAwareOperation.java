@@ -27,8 +27,6 @@ import java.io.IOException;
  */
 public abstract class QueryAbstractIdAwareOperation extends QueryOperation {
 
-    private static final ThreadLocal<QueryAbstractIdAwareOperation> ERROR_OPERATION = new ThreadLocal<>();
-
     protected QueryId queryId;
 
     protected QueryAbstractIdAwareOperation() {
@@ -65,22 +63,10 @@ public abstract class QueryAbstractIdAwareOperation extends QueryOperation {
         try {
             readInternal1(in);
         } catch (Exception e) {
-            ERROR_OPERATION.set(this);
-
-            throw e;
+            throw new QueryOperationDeserializationException(queryId, getCallerId(), getClass().getSimpleName(), e);
         }
     }
 
     protected abstract void writeInternal1(ObjectDataOutput out) throws IOException;
     protected abstract void readInternal1(ObjectDataInput in) throws IOException;
-
-    public static QueryAbstractIdAwareOperation getErrorOperation() {
-        QueryAbstractIdAwareOperation operation = ERROR_OPERATION.get();
-
-        if (operation != null) {
-            ERROR_OPERATION.set(null);
-        }
-
-        return operation;
-    }
 }

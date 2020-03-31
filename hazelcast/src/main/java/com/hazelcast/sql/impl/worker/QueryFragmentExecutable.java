@@ -38,7 +38,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Query fragment executable which tracks whether it is scheduled for execution or not.
+ * Query fragment executable that advances the top-level operator, consumes data operations, and manages scheduling.
  */
 public class QueryFragmentExecutable implements QueryFragmentScheduleCallback {
 
@@ -65,7 +65,7 @@ public class QueryFragmentExecutable implements QueryFragmentScheduleCallback {
     private volatile boolean completed;
 
     public QueryFragmentExecutable(
-        QueryState stateCallback,
+        QueryStateCallback stateCallback,
         List<Object> arguments,
         Exec exec,
         Map<Integer, InboundHandler> inboxes,
@@ -151,7 +151,6 @@ public class QueryFragmentExecutable implements QueryFragmentScheduleCallback {
 
             // Send flow control messages if needed.
             if (res != IterationResult.FETCHED_DONE) {
-                // TODO: This is unfortunate - we may havemultiple inboxes, and only some of the may require flow control.
                 for (InboundHandler inbox : inboxes.values()) {
                     inbox.sendFlowControl();
                 }
@@ -169,37 +168,50 @@ public class QueryFragmentExecutable implements QueryFragmentScheduleCallback {
 
             // Notify state about the exception to trigger cancel operation.
             stateCallback.cancel(e);
+        } finally {
+            unscheduleOrReschedule();
         }
-
-        // Unschedule the fragment with double-check for new batches.
-        unschedule();
     }
 
     @Override
-    public void schedule() {
-        // If the fragment is already scheduled, we do not need to do anything else, because executor will re-check queue state
-        // before exiting.
-        if (scheduled.get()) {
-            return;
+    public boolean schedule() {
+        boolean res = !scheduled.get() && scheduled.compareAndSet(false, true);
+
+        if (res) {
+            submit();
         }
 
-        // Otherwise we schedule the fragment into the worker pool.
-        if (scheduled.compareAndSet(false, true)) {
-            fragmentPool.submit(this);
-        }
+        return res;
     }
 
     /**
      * Unschedule the fragment.
      */
-    private void unschedule() {
-        // Unset the scheduled flag.
-        scheduled.lazySet(false);
+    private void unscheduleOrReschedule() {
+        boolean completed0 = completed;
 
-        // If new tasks arrived concurrently, reschedule the fragment again.
-        if (!operations.isEmpty() && !completed) {
+        // Check for new operations. If there are some, re-submit the fragment for execution immediately.
+        if (!completed0 && !operations.isEmpty()) {
+            // New operations arrived. Submit the fragment for execution again.
+            submit();
+
+            return;
+        }
+
+        // Otherwise, reset the "scheduled" flag to let other threads re-submit the fragment when needed.
+        // Normal volatile write (seq-cst) is required here. Release semantics alone is not enough, because it will allow
+        // the further check for pending operations to be reordered before the write.
+        scheduled.set(false);
+
+        // Double-check for new operations to prevent the race condition when another thread added the batch after we checked
+        // for pending operations, but before we reset the "scheduled" flag.
+        if (!completed0 && !operations.isEmpty()) {
             schedule();
         }
+    }
+
+    private void submit() {
+        fragmentPool.submit(this);
     }
 
     private void setupExecutor() {

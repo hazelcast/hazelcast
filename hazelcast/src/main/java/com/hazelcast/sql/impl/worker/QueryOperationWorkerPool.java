@@ -17,13 +17,15 @@
 package com.hazelcast.sql.impl.worker;
 
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.sql.impl.operation.QueryOperationHandler;
 import com.hazelcast.sql.impl.operation.QueryOperation;
 
+import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Pool responsible for query operation processing.
+ * Thread pool that executes query operations.
  */
 public class QueryOperationWorkerPool {
 
@@ -34,23 +36,31 @@ public class QueryOperationWorkerPool {
         String instanceName,
         int threadCount,
         QueryOperationHandler operationHandler,
-        SerializationService serializationService
+        SerializationService serializationService,
+        ILogger logger
     ) {
         this.threadCount = threadCount;
 
         workers = new QueryOperationWorker[threadCount];
 
         for (int i = 0; i < threadCount; i++) {
-            QueryOperationWorker worker = new QueryOperationWorker(operationHandler, serializationService, instanceName, i);
+            QueryOperationWorker worker =
+                new QueryOperationWorker(operationHandler, serializationService, instanceName, i, logger);
 
             workers[i] = worker;
+        }
+    }
+
+    public void init(UUID localMemberId) {
+        for (QueryOperationWorker worker : workers) {
+            worker.init(localMemberId);
         }
     }
 
     public void submit(int partition, QueryOperationExecutable task) {
         int index = getWorkerIndex(partition);
 
-        QueryOperationWorker worker = workers[index];
+        QueryOperationWorker worker = getWorker(index);
 
         worker.submit(task);
     }
@@ -59,6 +69,10 @@ public class QueryOperationWorkerPool {
         for (QueryOperationWorker worker : workers) {
             worker.stop();
         }
+    }
+
+    QueryOperationWorker getWorker(int index) {
+        return workers[index];
     }
 
     private int getWorkerIndex(int partition) {

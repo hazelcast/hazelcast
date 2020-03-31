@@ -47,7 +47,7 @@ public final class ListIntegerCodec {
     }
 
     public static List<Integer> decode(ClientMessage.Frame frame) {
-        int itemCount = frame.content == null ? 0 : frame.content.length / INT_SIZE_IN_BYTES;
+        int itemCount = frame.content.length / INT_SIZE_IN_BYTES;
         List<Integer> result = new ArrayList<>(itemCount);
         for (int i = 0; i < itemCount; i++) {
             result.add(decodeInteger(frame.content, i * INT_SIZE_IN_BYTES));

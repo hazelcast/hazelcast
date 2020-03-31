@@ -16,7 +16,17 @@
 
 package com.hazelcast.collection.impl.list;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
+
+import javax.annotation.Nonnull;
+
 import com.hazelcast.collection.IList;
+import com.hazelcast.collection.LocalListStats;
 import com.hazelcast.collection.impl.collection.AbstractCollectionProxyImpl;
 import com.hazelcast.collection.impl.list.operations.ListAddAllOperation;
 import com.hazelcast.collection.impl.list.operations.ListAddOperation;
@@ -31,14 +41,6 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.SerializableList;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
-
-import javax.annotation.Nonnull;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
@@ -163,6 +165,11 @@ public class ListProxyImpl<E> extends AbstractCollectionProxyImpl<ListService, E
     @Override
     public String getServiceName() {
         return ListService.SERVICE_NAME;
+    }
+
+    @Override
+    public LocalListStats getLocalListStats() {
+        return getService().getLocalCollectionStats(name);
     }
 
     // used by jet

@@ -19,17 +19,18 @@ package com.hazelcast.sql.impl.worker;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.sql.impl.operation.QueryOperationHandler;
 import com.hazelcast.sql.impl.QueryUtils;
-import com.hazelcast.sql.impl.operation.QueryAbstractIdAwareOperation;
 import com.hazelcast.sql.impl.operation.QueryCancelOperation;
 import com.hazelcast.sql.impl.operation.QueryOperation;
+import com.hazelcast.sql.impl.operation.QueryOperationDeserializationException;
+import com.hazelcast.sql.impl.operation.QueryOperationHandler;
 
 import java.util.UUID;
-import java.util.concurrent.BlockingQueue;
 
+import static com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
 import static com.hazelcast.sql.impl.QueryUtils.WORKER_TYPE_OPERATION;
 
 /**
@@ -42,16 +43,30 @@ public class QueryOperationWorker implements Runnable {
     private final QueryOperationHandler operationHandler;
     private final SerializationService ss;
     private final Thread thread;
-    private final BlockingQueue<Object> queue;
+    private final MPSCQueue<Object> queue;
+    private final ILogger logger;
 
-    public QueryOperationWorker(QueryOperationHandler operationHandler, SerializationService ss, String instanceName, int index) {
+    private UUID localMemberId;
+
+    public QueryOperationWorker(
+        QueryOperationHandler operationHandler,
+        SerializationService ss,
+        String instanceName,
+        int index,
+        ILogger logger
+    ) {
         this.operationHandler = operationHandler;
         this.ss = ss;
+        this.logger = logger;
 
         thread = new Thread(this,  QueryUtils.workerName(instanceName, WORKER_TYPE_OPERATION, index));
         queue = new MPSCQueue<>(thread, null);
 
         thread.start();
+    }
+
+    public void init(UUID localMemberId) {
+        this.localMemberId = localMemberId;
     }
 
     public void submit(QueryOperationExecutable task) {
@@ -67,6 +82,15 @@ public class QueryOperationWorker implements Runnable {
 
     @Override
     public void run() {
+        try {
+            run0();
+        } catch (Throwable t) {
+            inspectOutOfMemoryError(t);
+            logger.severe(t);
+        }
+    }
+
+    private void run0() {
         try {
             while (true) {
                 Object task = queue.take();
@@ -85,17 +109,19 @@ public class QueryOperationWorker implements Runnable {
     }
 
     private void execute(QueryOperationExecutable task) {
-        QueryOperation operation = task.getLocalOperation();
+        QueryOperation operation;
 
-        if (operation == null) {
+        if (task.isLocal()) {
+            operation = task.getLocalOperation();
+        } else {
             operation = deserialize(task.getRemoteOperation());
 
             if (operation == null) {
-                System.out.println(">>> SKIPPED: " + Thread.currentThread().getName() + " " + task);
-
                 return;
             }
         }
+
+        assert operation != null;
 
         operationHandler.execute(operation);
     }
@@ -110,35 +136,45 @@ public class QueryOperationWorker implements Runnable {
         try {
             return ss.toObject(packet);
         } catch (Exception e) {
-            // We assume that only ID aware operations may hold user data. Other operations contain only HZ classes.
-            QueryAbstractIdAwareOperation operation = QueryAbstractIdAwareOperation.getErrorOperation();
+            if (e.getCause() instanceof QueryOperationDeserializationException) {
+                QueryOperationDeserializationException error = (QueryOperationDeserializationException) e.getCause();
 
-            if (operation != null) {
-                sendDeserializationError(operation, e);
+                // We assume that only ID aware operations may hold user data. Other operations contain only HZ classes and
+                // we should never see deserialization errors for them.
+                sendDeserializationError(error);
+            } else {
+                // It is not easy to decide how to handle an arbitrary exception. We do not have caller coordinates, so
+                // we do not know how to notify it. We also cannot panic (i.e. kill local member), because it would be a
+                // security threat. So the only sensible solution is to log the error.
+                logger.severe("Failed to deserialize query operation received from " + packet.getConn().getEndPoint()
+                    + " (will be ignored)", e);
             }
-
-            return null;
         }
+
+        return null;
     }
 
-    private void sendDeserializationError(QueryAbstractIdAwareOperation operation, Exception e) {
-        QueryId queryId = operation.getQueryId();
-        UUID callerId = operation.getCallerId();
+    private void sendDeserializationError(QueryOperationDeserializationException e) {
+        QueryId queryId = e.getQueryId();
+        UUID callerId = e.getCallerId();
 
-        HazelcastSqlException error = HazelcastSqlException.error("Failed to deserialize "
-            + operation.getClass().getSimpleName() + " received from " + callerId + ": " + e.getMessage(), e);
+        HazelcastSqlException error = HazelcastSqlException.error("Failed to deserialize " + e.getOperationClassName()
+            + " received from " + callerId + ": " + e.getMessage(), e);
 
-        QueryCancelOperation cancelOperation = new QueryCancelOperation(
-            queryId,
-            error.getCode(),
-            error.getMessage(),
-            null
-        );
+        QueryCancelOperation cancelOperation =
+            new QueryCancelOperation(queryId, error.getCode(), error.getMessage(), localMemberId);
 
         try {
             operationHandler.submit(queryId.getMemberId(), cancelOperation);
         } catch (Exception ignore) {
             // This should never happen, since we do not transmit user objects.
         }
+    }
+
+    /**
+     * For testing only.
+     */
+    boolean isThreadTerminated() {
+        return thread.getState() == Thread.State.TERMINATED;
     }
 }
