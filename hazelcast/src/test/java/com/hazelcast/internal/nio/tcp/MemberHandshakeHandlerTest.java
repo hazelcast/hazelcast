@@ -22,7 +22,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.internal.cluster.impl.BindMessage;
+import com.hazelcast.internal.cluster.impl.MemberHandshake;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.cluster.Address;
@@ -68,7 +68,7 @@ import static org.mockito.Mockito.when;
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category(QuickTest.class)
-public class BindHandlerTest {
+public class MemberHandshakeHandlerTest {
 
     // client side socket address of the new connection
     private static final InetSocketAddress CLIENT_SOCKET_ADDRESS = new InetSocketAddress("127.0.0.1", 49152);
@@ -101,15 +101,15 @@ public class BindHandlerTest {
     @Parameter
     public ProtocolType protocolType;
 
-    // connection type of TcpIpConnection for which BindMessage is processed
+    // connection type of TcpIpConnection for which MemberHandshake is processed
     @Parameter(1)
     public String connectionType;
 
-    // this map populates BindMessage.localAddresses map
+    // this map populates MemberHandshake.localAddresses map
     @Parameter(2)
     public Map<ProtocolType, Collection<Address>> localAddresses;
 
-    // BindMessage.reply (true to test BindMessage from connection initiator to server,
+    // MemberHandshake.reply (true to test MemberHandshake from connection initiator to server,
     // false when the other way around)
     @Parameter(3)
     public boolean reply;
@@ -121,7 +121,7 @@ public class BindHandlerTest {
     private final TestAwareInstanceFactory factory = new TestAwareInstanceFactory();
 
     private InternalSerializationService serializationService;
-    private BindHandler bindHandler;
+    private MemberHandshakeHandler handshakeHandler;
     private UUID uuid = UUID.randomUUID();
 
     // mocks
@@ -161,7 +161,7 @@ public class BindHandlerTest {
         Node node = getNode(hz);
         endpointManager = TcpIpEndpointManager.class.cast(
                 node.getEndpointManager(EndpointQualifier.resolve(protocolType, "wan")));
-        bindHandler = getFieldValueReflectively(endpointManager, "bindHandler");
+        handshakeHandler = getFieldValueReflectively(endpointManager, "memberHandshakeHandler");
 
         // setup mock channel & socket
         Socket socket = mock(Socket.class);
@@ -181,7 +181,7 @@ public class BindHandlerTest {
 
     @Test
     public void process() throws IllegalAccessException {
-        bindHandler.process(bindMessage());
+        handshakeHandler.process(bindMessage());
         assertExpectedAddressesRegistered();
     }
 
@@ -201,8 +201,8 @@ public class BindHandlerTest {
     }
 
     private Packet bindMessage() {
-        BindMessage bindMessage =
-                new BindMessage((byte) 1, localAddresses, new Address(CLIENT_SOCKET_ADDRESS), reply, uuid);
+        MemberHandshake bindMessage =
+                new MemberHandshake((byte) 1, localAddresses, new Address(CLIENT_SOCKET_ADDRESS), reply, uuid);
 
         Packet packet = new Packet(serializationService.toBytes(bindMessage));
         TcpIpConnection connection = new TcpIpConnection(endpointManager, null, 1, channel);

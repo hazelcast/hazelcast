@@ -35,18 +35,18 @@ import static com.hazelcast.internal.util.UUIDSerializationUtil.readUUID;
 import static com.hazelcast.internal.util.UUIDSerializationUtil.writeUUID;
 
 /**
- * Bind message, conveying information about all kinds of public
+ * MemberHandshake message, conveying information about all kinds of public
  * addresses per protocol type.
  * It is the first message exchanged on a new connection
  * so {@link com.hazelcast.nio.serialization.impl.Versioned Versioned}
  * serialization cannot be used as there may be no cluster version
- * established yet. The {@code BindMessage} itself includes a
+ * established yet. The {@code MemberHandshake} itself includes a
  * schema version so it can be extended in future versions without having
  * to use another packet type.
  *
  * @since 3.12
  */
-public class BindMessage
+public class MemberHandshake
         implements IdentifiedDataSerializable {
 
     private byte schemaVersion;
@@ -55,11 +55,11 @@ public class BindMessage
     private boolean reply;
     private UUID uuid;
 
-    public BindMessage() {
+    public MemberHandshake() {
     }
 
-    public BindMessage(byte schemaVersion, Map<ProtocolType, Collection<Address>> localAddresses,
-                       Address targetAddress, boolean reply, UUID uuid) {
+    public MemberHandshake(byte schemaVersion, Map<ProtocolType, Collection<Address>> localAddresses,
+                           Address targetAddress, boolean reply, UUID uuid) {
         this.schemaVersion = schemaVersion;
         this.localAddresses = new EnumMap<>(localAddresses);
         this.targetAddress = targetAddress;
@@ -94,7 +94,7 @@ public class BindMessage
 
     @Override
     public int getClassId() {
-        return ClusterDataSerializerHook.BIND_MESSAGE;
+        return ClusterDataSerializerHook.MEMBER_HANDSHAKE;
     }
 
     @Override
@@ -136,7 +136,7 @@ public class BindMessage
 
     @Override
     public String toString() {
-        return "BindMessage{" + "schemaVersion=" + schemaVersion + ", localAddresses=" + localAddresses
+        return "MemberHandshake{" + "schemaVersion=" + schemaVersion + ", localAddresses=" + localAddresses
                 + ", targetAddress=" + targetAddress + ", reply=" + reply + ", uuid=" + uuid + '}';
     }
 }

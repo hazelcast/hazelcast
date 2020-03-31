@@ -104,7 +104,7 @@ public class TcpIpEndpointManager
     private final ChannelInitializerProvider channelInitializerProvider;
     private final NetworkingService networkingService;
     private final TcpIpConnector connector;
-    private final BindHandler bindHandler;
+    private final MemberHandshakeHandler memberHandshakeHandler;
     private final NetworkStatsImpl networkStats;
 
     @Probe(name = TCP_METRIC_ENDPOINT_MANAGER_CONNECTION_LISTENER_COUNT)
@@ -143,7 +143,7 @@ public class TcpIpEndpointManager
         this.ioService = ioService;
         this.logger = loggingService.getLogger(TcpIpEndpointManager.class);
         this.connector = new TcpIpConnector(this);
-        this.bindHandler = new BindHandler(this, ioService, logger, supportedProtocolTypes);
+        this.memberHandshakeHandler = new MemberHandshakeHandler(this, ioService, logger, supportedProtocolTypes);
         this.networkStats = endpointQualifier == null ? null : new NetworkStatsImpl();
     }
 
@@ -171,7 +171,7 @@ public class TcpIpEndpointManager
 
     @Override
     public synchronized void accept(Packet packet) {
-        bindHandler.process(packet);
+        memberHandshakeHandler.process(packet);
     }
 
     @Override

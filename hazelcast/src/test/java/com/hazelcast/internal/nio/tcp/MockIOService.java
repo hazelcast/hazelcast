@@ -57,7 +57,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
-import static com.hazelcast.internal.nio.Packet.Type.BIND;
+import static com.hazelcast.internal.nio.Packet.Type.MEMBER_HANDSHAKE;
 import static com.hazelcast.spi.properties.ClusterProperty.IO_INPUT_THREAD_COUNT;
 import static com.hazelcast.spi.properties.ClusterProperty.IO_OUTPUT_THREAD_COUNT;
 
@@ -357,7 +357,7 @@ public class MockIOService implements IOService {
             @Override
             public void accept(Packet packet) {
                 try {
-                    if (packet.getPacketType() == BIND) {
+                    if (packet.getPacketType() == MEMBER_HANDSHAKE) {
                         connection.getEndpointManager().accept(packet);
                     } else {
                         Consumer<Packet> consumer = packetConsumer;
