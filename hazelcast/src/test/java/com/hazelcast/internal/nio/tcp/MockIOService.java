@@ -172,16 +172,6 @@ public class MockIOService implements IOService {
     }
 
     @Override
-    public boolean isSocketBind() {
-        return true;
-    }
-
-    @Override
-    public boolean isSocketBindAny() {
-        return true;
-    }
-
-    @Override
     public void interceptSocket(EndpointQualifier endpointQualifier, Socket socket, boolean onAccept) {
     }
 
