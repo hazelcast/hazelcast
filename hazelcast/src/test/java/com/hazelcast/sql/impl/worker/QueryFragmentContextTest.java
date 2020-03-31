@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.fragment;
+package com.hazelcast.sql.impl.worker;
 
 import com.hazelcast.sql.impl.state.QueryStateCallback;
-import com.hazelcast.sql.impl.worker.QueryFragmentScheduleCallback;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

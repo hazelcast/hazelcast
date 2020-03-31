@@ -16,13 +16,13 @@
 
 package com.hazelcast.sql.impl.exec;
 
-import com.hazelcast.sql.impl.fragment.QueryFragmentContext;
+import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 
 /**
  * Executor which has an upstream executor and hence delegate to it at some stages.
  */
 public abstract class AbstractUpstreamAwareExec extends AbstractExec {
-    /** Upstream state. */
+
     protected final UpstreamState state;
 
     /**
@@ -34,6 +34,13 @@ public abstract class AbstractUpstreamAwareExec extends AbstractExec {
         super(id);
 
         state = new UpstreamState(upstream);
+    }
+
+    /**
+     * For testing only.
+     */
+    public Exec getUpstream() {
+        return state.getUpstream();
     }
 
     @Override

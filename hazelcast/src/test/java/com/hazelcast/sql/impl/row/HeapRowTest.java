@@ -16,10 +16,9 @@
 
 package com.hazelcast.sql.impl.row;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlCustomClass;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
+import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -28,12 +27,11 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertSame;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class HeapRowTest {
+public class HeapRowTest extends SqlTestSupport {
     @Test
     public void testHeapRow() {
         Object[] values = new Object[2];
@@ -88,22 +86,8 @@ public class HeapRowTest {
         original.set(0, 1);
         original.set(1, new SqlCustomClass(1));
 
-        assertEquals(SqlDataSerializerHook.F_ID, original.getFactoryId());
-        assertEquals(SqlDataSerializerHook.ROW_HEAP, original.getClassId());
-
-        InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
-
-        HeapRow restored = ss.toObject(ss.toData(original));
+        HeapRow restored = serializeAndCheck(original, SqlDataSerializerHook.ROW_HEAP);
 
         checkEquals(original, restored, true);
-    }
-
-    private void checkEquals(HeapRow row1, HeapRow row2, boolean expected) {
-        if (expected) {
-            assertEquals(row1, row2);
-            assertEquals(row1.hashCode(), row2.hashCode());
-        } else {
-            assertNotEquals(row1, row2);
-        }
     }
 }

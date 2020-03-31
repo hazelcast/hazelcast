@@ -14,16 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.mailbox;
+package com.hazelcast.sql.impl.plan.node;
 
 /**
- * Core interface for outbound message processing.
+ * A node without inputs.
  */
-public interface OutboundHandler {
-    /**
-     * Handle flow control response from the remote inbound handler.
-     *
-     * @param remainingMemory Amount of memory which available on the remote end.
-     */
-    void onFlowControl(long remainingMemory);
+public abstract class ZeroInputPlanNode extends AbstractPlanNode {
+    protected ZeroInputPlanNode() {
+        // No-op.
+    }
+
+    protected ZeroInputPlanNode(int id) {
+        super(id);
+    }
 }

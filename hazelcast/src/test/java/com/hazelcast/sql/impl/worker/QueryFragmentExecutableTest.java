@@ -20,7 +20,6 @@ import com.hazelcast.logging.NoLogFactory;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.exec.AbstractExec;
 import com.hazelcast.sql.impl.exec.IterationResult;
-import com.hazelcast.sql.impl.fragment.QueryFragmentContext;
 import com.hazelcast.sql.impl.mailbox.InboundBatch;
 import com.hazelcast.sql.impl.mailbox.InboundHandler;
 import com.hazelcast.sql.impl.mailbox.OutboundHandler;
@@ -208,7 +207,7 @@ public class QueryFragmentExecutableTest extends HazelcastTestSupport {
      */
     @Test
     public void testMessages() throws Exception {
-        int repeatCount = 50;
+        int repeatCount = 10;
 
         for (int i = 0; i < repeatCount; i++) {
             // Prepare data structures for messages.
