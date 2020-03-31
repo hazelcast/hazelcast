@@ -58,19 +58,15 @@ with the URL of the database, username, password and database name:
 
 ```java
 ...
-public static void main(String[] args) throws Exception {
+private static XADataSource getXADataSource() {
     PGXADataSource factory = new PGXADataSource();
-    factory.setURL("jdbc:postgresql://localhost:32773/test-database");
+    factory.setUrl("jdbc:postgresql://localhost:32773/test-database");
     factory.setUser("the-user");
     factory.setPassword("the-pass");
     factory.setDatabaseName("test-database");
-
-    // create an xa-connection, connection and XA transaction
-    XAConnection xaConn = factory.getXAConnection();
-    Connection conn = xaConn.getConnection();
-    XAResource xaRes = xaConn.getXAResource();
-    Xid xid = new MyXid(1);
-    ...
+    return factory;
+}
+...
 ```
 
 3. Run the class, you should see `"Success!"` in the output.
@@ -92,15 +88,11 @@ connection factory.
 
 ```java
 ...
-public static void main(String[] args) throws Exception {
+private static XAConnectionFactory getXAConnectionFactory() {
     ActiveMQXAConnectionFactory factory = new ActiveMQXAConnectionFactory("broker:(tcp://localhost:61616)");
-
-    // create a connection, session and XA transaction
-    XAConnection conn = factory.createXAConnection();
-    XASession sess = conn.createXASession();
-    XAResource xaRes = sess.getXAResource();
-    Xid xid = new MyXid(1);
-    ...
+    return factory;
+}
+...
 ```
 
 3. Run the class, you should see `"Success!"` in the output.
