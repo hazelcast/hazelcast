@@ -18,9 +18,6 @@ package com.hazelcast.sql.impl.schema;
 
 import java.util.List;
 
-// TODO: Make sure that this schema is integrated into Calcite SQL validation to give user exceptions with proper SQL positions.
-//  Calcite may mess with some types, so we need to ensure that our functions follow our own inference and validation strategy.
-//  Currently this schema is used only later when we produce executable plan.
 public class SqlTableSchema {
     private final String schema;
     private final String name;
