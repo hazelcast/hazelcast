@@ -156,11 +156,17 @@ public class BlockingRootResultConsumer implements RootResultConsumer {
 
         @Override
         public boolean hasNext() {
-            setNextBatchIfNeeded();
+            if (batch == null) {
+                batch = awaitNextBatch();
 
-            assert batch != null || done;
+                if (batch == null) {
+                    assert done;
 
-            return batch != null;
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         @Override
@@ -181,14 +187,6 @@ public class BlockingRootResultConsumer implements RootResultConsumer {
             }
 
             return res;
-        }
-
-        private void setNextBatchIfNeeded() {
-            if (batch != null) {
-                return;
-            }
-
-            batch = awaitNextBatch();
         }
     }
 }
