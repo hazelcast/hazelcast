@@ -68,10 +68,16 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
         return exec;
     }
 
+     /**
+      * Public for testing purposes only.
+      */
     public Exec pop() {
         return stack.remove(stack.size() - 1);
     }
 
+     /**
+      * Public for testing purposes only.
+      */
     public void push(Exec exec) {
         stack.add(exec);
     }
