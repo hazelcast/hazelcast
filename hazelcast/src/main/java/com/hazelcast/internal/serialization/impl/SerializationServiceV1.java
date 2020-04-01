@@ -195,11 +195,12 @@ public class SerializationServiceV1 extends AbstractSerializationService {
                 classDefMap = new HashMap<Integer, ClassDefinition>();
                 factoryMap.put(factoryId, classDefMap);
             }
-            if (classDefMap.containsKey(cd.getClassId())) {
+            int classId = cd.getClassId();
+            if (classDefMap.containsKey(classId)) {
                 throw new HazelcastSerializationException("Duplicate registration found for factory-id : "
-                        + factoryId + ", class-id " + cd.getClassId());
+                        + factoryId + ", class-id " + classId);
             }
-            classDefMap.put(factoryId, cd);
+            classDefMap.put(classId, cd);
         }
         for (ClassDefinition classDefinition : classDefinitions) {
             registerClassDefinition(classDefinition, factoryMap, checkClassDefErrors);
@@ -207,7 +208,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
     }
 
     private void registerClassDefinition(ClassDefinition cd, Map<Integer, Map<Integer, ClassDefinition>> factoryMap,
-                                           boolean checkClassDefErrors) {
+                                         boolean checkClassDefErrors) {
         Set<String> fieldNames = cd.getFieldNames();
         for (String fieldName : fieldNames) {
             FieldDefinition fd = cd.getField(fieldName);
