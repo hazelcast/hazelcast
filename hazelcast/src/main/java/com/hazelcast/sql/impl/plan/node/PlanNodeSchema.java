@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.physical;
+package com.hazelcast.sql.impl.plan.node;
 
 import com.hazelcast.sql.impl.type.QueryDataType;
 
@@ -25,25 +25,25 @@ import java.util.List;
 /**
  * Schema of a node.
  */
-public class PhysicalNodeSchema implements FieldTypeProvider {
+public class PlanNodeSchema implements PlanNodeFieldTypeProvider {
 
     private final List<QueryDataType> types;
     private final int rowWidth;
 
-    public PhysicalNodeSchema(List<QueryDataType> types) {
+    public PlanNodeSchema(List<QueryDataType> types) {
         assert types != null;
 
         this.types = Collections.unmodifiableList(types);
 
-        rowWidth = calculateRowWidth(types);
+        rowWidth = calculateEstimatedRowSize(types);
     }
 
-    public static PhysicalNodeSchema combine(PhysicalNodeSchema schema1, PhysicalNodeSchema schema2) {
+    public static PlanNodeSchema combine(PlanNodeSchema schema1, PlanNodeSchema schema2) {
         ArrayList<QueryDataType> types = new ArrayList<>(schema1.types);
 
         types.addAll(schema2.types);
 
-        return new PhysicalNodeSchema(types);
+        return new PlanNodeSchema(types);
     }
 
     @Override
@@ -57,11 +57,14 @@ public class PhysicalNodeSchema implements FieldTypeProvider {
         return types;
     }
 
-    public int getRowWidth() {
+    /**
+     * @return Estimated size of the row in bytes.
+     */
+    public int getEstimatedRowSize() {
         return rowWidth;
     }
 
-    private static int calculateRowWidth(List<QueryDataType> types) {
+    private static int calculateEstimatedRowSize(List<QueryDataType> types) {
         int res = 0;
 
         for (QueryDataType type : types) {

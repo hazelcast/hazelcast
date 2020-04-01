@@ -14,16 +14,19 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.mailbox;
+package com.hazelcast.sql.impl.plan.node;
+
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 /**
- * Core interface for outbound message processing.
+ * Interface to resolve field types of a single node.
  */
-public interface OutboundHandler {
+public interface PlanNodeFieldTypeProvider {
     /**
-     * Handle flow control response from the remote inbound handler.
+     * Gets the type of the operator's column at the given index (zero-based).
      *
-     * @param remainingMemory The amount of memory that is available on the remote end.
+     * @param index Index.
+     * @return Type of the column.
      */
-    void onFlowControl(long remainingMemory);
+    QueryDataType getType(int index);
 }

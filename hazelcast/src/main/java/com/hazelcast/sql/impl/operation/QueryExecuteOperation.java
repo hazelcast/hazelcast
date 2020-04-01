@@ -21,8 +21,9 @@ import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
+import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.sql.impl.exec.root.RootResultConsumer;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -53,6 +54,10 @@ public class QueryExecuteOperation extends QueryAbstractIdAwareOperation {
 
     private List<Object> arguments;
     private long timeout;
+
+    /** Root fragment result consumer. Applicable only to root fragment being executed on initiator. */
+    private transient RootResultConsumer rootConsumer;
+    private transient int rootBatchSize;
 
     public QueryExecuteOperation() {
         // No-op.
@@ -114,6 +119,21 @@ public class QueryExecuteOperation extends QueryAbstractIdAwareOperation {
 
     public long getTimeout() {
         return timeout;
+    }
+
+    public RootResultConsumer getRootConsumer() {
+        return rootConsumer;
+    }
+
+    public int getRootBatchSize() {
+        return rootBatchSize;
+    }
+
+    public QueryExecuteOperation setRootConsumer(RootResultConsumer rootConsumer, int rootBatchSize) {
+        this.rootConsumer = rootConsumer;
+        this.rootBatchSize = rootBatchSize;
+
+        return this;
     }
 
     @Override

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.physical;
+package com.hazelcast.sql.impl.plan.node;
 
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
@@ -26,22 +26,22 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-public class MockPhysicalNode implements PhysicalNode {
+public class MockPlanNode implements PlanNode {
 
     private int id;
     private List<QueryDataType> schema;
 
-    public static MockPhysicalNode create(int id, QueryDataType... types) {
+    public static MockPlanNode create(int id, QueryDataType... types) {
         List<QueryDataType> types0 = types == null || types.length == 0 ? Collections.emptyList() : Arrays.asList(types);
 
-        return new MockPhysicalNode(id, types0);
+        return new MockPlanNode(id, types0);
     }
 
-    public MockPhysicalNode() {
+    public MockPlanNode() {
         // No-op.
     }
 
-    public MockPhysicalNode(int id, List<QueryDataType> schema) {
+    public MockPlanNode(int id, List<QueryDataType> schema) {
         this.id = id;
         this.schema = schema;
     }
@@ -52,8 +52,13 @@ public class MockPhysicalNode implements PhysicalNode {
     }
 
     @Override
-    public PhysicalNodeSchema getSchema() {
-        return new PhysicalNodeSchema(schema);
+    public PlanNodeSchema getSchema() {
+        return new PlanNodeSchema(schema);
+    }
+
+    @Override
+    public void visit(PlanNodeVisitor visitor) {
+        // No-op.
     }
 
     @Override
@@ -89,7 +94,7 @@ public class MockPhysicalNode implements PhysicalNode {
             return false;
         }
 
-        MockPhysicalNode that = (MockPhysicalNode) o;
+        MockPlanNode that = (MockPlanNode) o;
 
         return id == that.id && schema.equals(that.schema);
     }

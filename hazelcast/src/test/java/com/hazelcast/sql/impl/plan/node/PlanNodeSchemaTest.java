@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.physical;
+package com.hazelcast.sql.impl.plan.node;
 
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -32,7 +32,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class PhysicalNodeSchemaTest {
+public class PlanNodeSchemaTest {
     @Test
     public void testSingleSchema() {
         QueryDataType type0 = QueryDataType.VARCHAR;
@@ -43,13 +43,13 @@ public class PhysicalNodeSchemaTest {
         types.add(type0);
         types.add(type1);
 
-        PhysicalNodeSchema schema = new PhysicalNodeSchema(types);
+        PlanNodeSchema schema = new PlanNodeSchema(types);
 
         assertEquals(types, schema.getTypes());
         assertEquals(type0, schema.getType(0));
         assertEquals(type1, schema.getType(1));
 
-        assertEquals(type0.getTypeFamily().getEstimatedSize() + type1.getTypeFamily().getEstimatedSize(), schema.getRowWidth());
+        assertEquals(type0.getTypeFamily().getEstimatedSize() + type1.getTypeFamily().getEstimatedSize(), schema.getEstimatedRowSize());
     }
 
     @Test
@@ -57,10 +57,10 @@ public class PhysicalNodeSchemaTest {
         QueryDataType type0 = QueryDataType.VARCHAR;
         QueryDataType type1 = QueryDataType.DOUBLE;
 
-        PhysicalNodeSchema schema0 = new PhysicalNodeSchema(Collections.singletonList(type0));
-        PhysicalNodeSchema schema1 = new PhysicalNodeSchema(Collections.singletonList(type1));
+        PlanNodeSchema schema0 = new PlanNodeSchema(Collections.singletonList(type0));
+        PlanNodeSchema schema1 = new PlanNodeSchema(Collections.singletonList(type1));
 
-        PhysicalNodeSchema combinedSchema = PhysicalNodeSchema.combine(schema0, schema1);
+        PlanNodeSchema combinedSchema = PlanNodeSchema.combine(schema0, schema1);
 
         assertEquals(2, combinedSchema.getTypes().size());
         assertEquals(type0, combinedSchema.getType(0));

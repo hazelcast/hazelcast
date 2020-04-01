@@ -14,23 +14,29 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.physical;
+package com.hazelcast.sql.impl;
 
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.row.Row;
+
+import java.util.Iterator;
 
 /**
- * Physical node.
+ * Generic interface which produces iterator over results which are then delivered to users.
+ * Returned iterator must provide rows which were not returned yet.
  */
-public interface PhysicalNode extends DataSerializable {
+public interface QueryResultProducer {
     /**
-     * @return ID of the node.
+     * Get iterator over results. Subsequent calls must return the same instance.
+     *
+     * @return Iterator.
      */
-    int getId();
+    Iterator<Row> iterator();
 
     /**
-     * Get schema associated with the node.
+     * Notify the producer about an error.
      *
-     * @return Schema.
+     * @param error Error.
      */
-    PhysicalNodeSchema getSchema();
+    void onError(HazelcastSqlException error);
 }
