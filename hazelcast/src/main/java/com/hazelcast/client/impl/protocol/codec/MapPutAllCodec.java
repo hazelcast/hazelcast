@@ -42,7 +42,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * matching to a different partition id shall be ignored. The API implementation using this request may need to send multiple
  * of these request messages for filling a request for a key set if the keys belong to different partitions.
  */
-@Generated("8feda76508533521940468ba53b01d40")
+@Generated("31e34c6c5d6f83e937902f4c7ce4c81f")
 public final class MapPutAllCodec {
     //hex: 0x012C00
     public static final int REQUEST_MESSAGE_TYPE = 76800;
@@ -72,6 +72,12 @@ public final class MapPutAllCodec {
          * should trigger MapLoader for elements not in this map
          */
         public boolean triggerMapLoader;
+
+        /**
+         * True if the triggerMapLoader is received from the client, false otherwise.
+         * If this is false, triggerMapLoader has the default value for its type.
+        */
+        public boolean isTriggerMapLoaderExists;
     }
 
     public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<java.util.Map.Entry<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data>> entries, boolean triggerMapLoader) {
@@ -92,7 +98,12 @@ public final class MapPutAllCodec {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        request.triggerMapLoader = decodeBoolean(initialFrame.content, REQUEST_TRIGGER_MAP_LOADER_FIELD_OFFSET);
+        if (initialFrame.content.length >= REQUEST_TRIGGER_MAP_LOADER_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES) {
+            request.triggerMapLoader = decodeBoolean(initialFrame.content, REQUEST_TRIGGER_MAP_LOADER_FIELD_OFFSET);
+            request.isTriggerMapLoaderExists = true;
+        } else {
+            request.isTriggerMapLoaderExists = false;
+        }
         request.name = StringCodec.decode(iterator);
         request.entries = EntryListCodec.decode(iterator, DataCodec::decode, DataCodec::decode);
         return request;

@@ -47,12 +47,12 @@ import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class MemberCompatibilityTest_2_0 {
+public class MemberCompatibilityTest_2_1 {
     private List<ClientMessage> clientMessages = new ArrayList<>();
 
     @Before
     public void setUp() throws IOException {
-        File file = new File(getClass().getResource("/2.0.protocol.compatibility.binary").getFile());
+        File file = new File(getClass().getResource("/2.1.protocol.compatibility.binary").getFile());
         InputStream inputStream = new FileInputStream(file);
         byte[] data = new byte[(int) file.length()];
         inputStream.read(data);
@@ -1197,7 +1197,8 @@ public class MemberCompatibilityTest_2_0 {
         MapPutAllCodec.RequestParameters parameters = MapPutAllCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.name));
         assertTrue(isEqual(aListOfDataToData, parameters.entries));
-        assertFalse(parameters.isTriggerMapLoaderExists);
+        assertTrue(parameters.isTriggerMapLoaderExists);
+        assertTrue(isEqual(aBoolean, parameters.triggerMapLoader));
     }
 
     @Test
