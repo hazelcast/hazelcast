@@ -131,6 +131,7 @@
             <artifactId>apache-artemis</artifactId>
             <version>${activemq-artemis.version}</version>
             <type>pom</type>
+            <scope>test</scope>
 
             <exclusions>
                 <exclusion>
