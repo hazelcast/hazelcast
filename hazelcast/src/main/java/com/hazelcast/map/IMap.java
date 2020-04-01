@@ -868,7 +868,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
 
     /**
      * Asynchronously copies all of the mappings from the specified map to this map.
-     * This version doesn't support batching. Don't mutate the given map until the future completes.
+     * This version doesn't support batching.
      * <pre>{@code
      *     CompletionStage<Void> future = map.putAllAsync(map);
      *     // do some other stuff, when ready wait for completion
@@ -1767,7 +1767,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
     /**
      * Copies all of the mappings from the specified map to this map without loading
      * non-existing elements from map store (which is more efficient than {@code putAll()}).
-     * Do not concurrently mutate the given map.
      * <p>
      * This method breaks the contract of EntryListener.
      * EntryEvent of all the updated entries will have null oldValue even if they exist previously.
@@ -1796,7 +1795,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
     /**
      * Asynchronously copies all of the mappings from the specified map to this map
      * without loading non-existing elements from map store. This version doesn't
-     * support batching. Don't mutate the given map until the future completes.
+     * support batching.
      * <pre>{@code
      *     CompletionStage<Void> future = map.setAllAsync(map);
      *     // do some other stuff, when ready wait for completion
