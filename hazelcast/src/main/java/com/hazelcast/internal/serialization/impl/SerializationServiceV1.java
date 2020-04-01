@@ -237,11 +237,12 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         for (ClassDefinition cd : classDefinitions) {
             int factoryId = cd.getFactoryId();
             Map<Integer, ClassDefinition> classDefMap = factoryMap.computeIfAbsent(factoryId, k -> new HashMap<>());
-            if (classDefMap.containsKey(cd.getClassId())) {
+            int classId = cd.getClassId();
+            if (classDefMap.containsKey(classId)) {
                 throw new HazelcastSerializationException("Duplicate registration found for factory-id : "
-                        + factoryId + ", class-id " + cd.getClassId());
+                        + factoryId + ", class-id " + classId);
             }
-            classDefMap.put(factoryId, cd);
+            classDefMap.put(classId, cd);
         }
         for (ClassDefinition classDefinition : classDefinitions) {
             registerClassDefinition(classDefinition, factoryMap, checkClassDefErrors);
