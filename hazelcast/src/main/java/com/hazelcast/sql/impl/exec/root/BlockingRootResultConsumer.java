@@ -165,11 +165,11 @@ public class BlockingRootResultConsumer implements RootResultConsumer {
 
         @Override
         public Row next() {
-            setNextBatchIfNeeded();
-
-            if (batch == null) {
+            if (!hasNext()) {
                 throw new NoSuchElementException();
             }
+
+            assert batch != null;
 
             Row res = batch.get(position++);
 
