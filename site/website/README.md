@@ -33,7 +33,7 @@ npm run lint:markdown
 1. Run Link Checker
 
 ```sh
-npm run link-checker
+npm run link-check
 ```
 
 ## Directory Structure
