@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.calcite.opt.physical;
 
 import com.hazelcast.sql.impl.calcite.HazelcastConventions;
-import com.hazelcast.sql.impl.calcite.distribution.DistributionTrait;
 import com.hazelcast.sql.impl.calcite.opt.OptUtils;
 import com.hazelcast.sql.impl.calcite.opt.logical.RootLogicalRel;
 import org.apache.calcite.plan.RelOptRule;
@@ -48,7 +47,7 @@ public final class RootPhysicalRule extends AbstractPhysicalRule {
 
         RootPhysicalRel transformedRoot = new RootPhysicalRel(
             logicalRoot.getCluster(),
-            convertedInput.getTraitSet().plus(DistributionTrait.ROOT_DIST),
+            convertedInput.getTraitSet(),
             convertedInput
         );
 

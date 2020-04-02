@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.calcite.opt.physical.visitor;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.QueryMetadata;
+import com.hazelcast.sql.impl.calcite.opt.physical.exchange.RootExchangePhysicalRel;
 import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.calcite.EdgeCollectorPlanNodeVisitor;
 import com.hazelcast.sql.impl.calcite.expression.RexToExpressionVisitor;
@@ -73,6 +74,7 @@ import com.hazelcast.sql.impl.plan.node.ReplicatedMapScanPlanNode;
 import com.hazelcast.sql.impl.plan.node.ReplicatedToPartitionedPlanNode;
 import com.hazelcast.sql.impl.plan.node.RootPlanNode;
 import com.hazelcast.sql.impl.plan.node.SortPlanNode;
+import com.hazelcast.sql.impl.plan.node.io.RootSendPlanNode;
 import com.hazelcast.sql.impl.row.partitioner.AllFieldsRowPartitioner;
 import com.hazelcast.sql.impl.row.partitioner.FieldsRowPartitioner;
 import com.hazelcast.sql.impl.plan.node.io.BroadcastSendPlanNode;
@@ -307,6 +309,34 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         );
 
         pushUpstream(sortNode);
+    }
+
+    @Override
+    public void onRootExchange(RootExchangePhysicalRel rel) {
+        // Get upstream node.
+        PlanNode upstreamNode = pollSingleUpstream();
+
+        // Create sender and push it as a fragment.
+        int edge = nextEdge();
+
+        int id = pollId(rel);
+
+        RootSendPlanNode sendNode = new RootSendPlanNode(
+            id,
+            upstreamNode,
+            edge
+        );
+
+        addFragment(sendNode, dataMemberMapping());
+
+        // Create receiver.
+        ReceivePlanNode receiveNode = new ReceivePlanNode(
+            id,
+            edge,
+            sendNode.getSchema().getTypes()
+        );
+
+        pushUpstream(receiveNode);
     }
 
     @Override

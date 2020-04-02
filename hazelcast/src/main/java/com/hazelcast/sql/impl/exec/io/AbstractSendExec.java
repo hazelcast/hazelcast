@@ -19,21 +19,13 @@ package com.hazelcast.sql.impl.exec.io;
 import com.hazelcast.sql.impl.exec.AbstractUpstreamAwareExec;
 import com.hazelcast.sql.impl.exec.Exec;
 import com.hazelcast.sql.impl.exec.IterationResult;
-import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 import com.hazelcast.sql.impl.mailbox.Outbox;
 import com.hazelcast.sql.impl.row.RowBatch;
-
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
 
 /**
  * Abstract sender
  */
 public abstract class AbstractSendExec extends AbstractUpstreamAwareExec {
-    /** Registered outboxes. */
-    protected final Outbox[] outboxes;
-
     /** Done flag. */
     private boolean done;
 
@@ -43,20 +35,8 @@ public abstract class AbstractSendExec extends AbstractUpstreamAwareExec {
     /** Whether pending batch is the last one. */
     private boolean pendingLast;
 
-    /** Per-outbox positions for the pending batch. */
-    private Map<Integer, Position> pendingPositions;
-
-    public AbstractSendExec(int id, Exec upstream, Outbox[] outboxes) {
+    public AbstractSendExec(int id, Exec upstream) {
         super(id, upstream);
-
-        this.outboxes = outboxes;
-    }
-
-    @Override
-    protected void setup1(QueryFragmentContext ctx) {
-        for (Outbox outbox : outboxes) {
-            outbox.setup();
-        }
     }
 
     @Override
@@ -118,36 +98,10 @@ public abstract class AbstractSendExec extends AbstractUpstreamAwareExec {
             return true;
         }
 
-        assert pendingPositions != null;
-
-        boolean res = true;
-
-        Iterator<Map.Entry<Integer, Position>> iterator = pendingPositions.entrySet().iterator();
-
-        while (iterator.hasNext()) {
-            Map.Entry<Integer, Position> entry = iterator.next();
-
-            int outboxIndex = entry.getKey();
-            Position position = entry.getValue();
-
-            SendQualifier qualifier = getOutboxQualifier(outboxIndex);
-
-            int newPosition = outboxes[outboxIndex].onRowBatch(pendingBatch, pendingLast, position.get(), qualifier);
-
-            if (newPosition == pendingBatch.getRowCount()) {
-                iterator.remove();
-            } else {
-                position.set(newPosition);
-
-                res = false;
-            }
-        }
+        boolean res = pushPendingBatch(pendingBatch, pendingLast);
 
         if (res) {
-            assert pendingPositions.isEmpty();
-
             pendingBatch = null;
-            pendingPositions = null;
 
             return true;
         } else {
@@ -165,26 +119,25 @@ public abstract class AbstractSendExec extends AbstractUpstreamAwareExec {
     private boolean pushBatch(RowBatch batch, boolean last) {
         // Pending state must be cleared at this point.
         assert pendingBatch == null;
-        assert pendingPositions == null;
 
         // Let the sender know that the new batch is being processed.
-        beforePushBatch(batch);
+        setCurrentBatch(batch);
 
+        // Try pushing the batch to as many outboxes as possible, logging the pending state along the way.
         boolean res = true;
 
-        for (int outboxIndex = 0; outboxIndex < outboxes.length; outboxIndex++) {
+        for (int outboxIndex = 0; outboxIndex < getOutboxCount(); outboxIndex++) {
             SendQualifier qualifier = getOutboxQualifier(outboxIndex);
 
-            int position = outboxes[outboxIndex].onRowBatch(batch, last, 0, qualifier);
+            int position = getOutbox(outboxIndex).onRowBatch(batch, last, 0, qualifier);
 
             if (position < batch.getRowCount()) {
                 if (pendingBatch == null) {
                     pendingBatch = batch;
                     pendingLast = last;
-                    pendingPositions = new HashMap<>();
                 }
 
-                pendingPositions.put(outboxIndex, new Position(position));
+                addPendingPosition(outboxIndex, position);
 
                 res = false;
             }
@@ -192,9 +145,6 @@ public abstract class AbstractSendExec extends AbstractUpstreamAwareExec {
 
         return res;
     }
-
-    protected abstract SendQualifier getOutboxQualifier(int outboxIndex);
-    protected abstract void beforePushBatch(RowBatch batch);
 
     @Override
     public RowBatch currentBatch0() {
@@ -206,19 +156,15 @@ public abstract class AbstractSendExec extends AbstractUpstreamAwareExec {
         return false;
     }
 
-    private static final class Position {
-        private int value;
+    protected abstract int getOutboxCount();
 
-        private Position(int value) {
-            this.value = value;
-        }
+    protected abstract Outbox getOutbox(int outboxIndex);
 
-        private int get() {
-            return value;
-        }
+    protected abstract void setCurrentBatch(RowBatch batch);
 
-        private void set(int value) {
-            this.value = value;
-        }
-    }
+    protected abstract SendQualifier getOutboxQualifier(int outboxIndex);
+
+    protected abstract void addPendingPosition(int outboxIndex, int position);
+
+    protected abstract  boolean pushPendingBatch(RowBatch pendingBatch, boolean pendingLast);
 }

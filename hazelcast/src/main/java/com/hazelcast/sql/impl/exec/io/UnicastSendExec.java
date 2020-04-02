@@ -24,7 +24,7 @@ import com.hazelcast.sql.impl.row.partitioner.RowPartitioner;
 /**
  * Unicast sender.
  */
-public class UnicastSendExec extends AbstractSendExec {
+public class UnicastSendExec extends AbstractMultiwaySendExec {
 
     private UnicastSendQualifier qualifier;
 
@@ -41,7 +41,7 @@ public class UnicastSendExec extends AbstractSendExec {
     }
 
     @Override
-    protected void beforePushBatch(RowBatch batch) {
+    protected void setCurrentBatch(RowBatch batch) {
         qualifier.setBatch(batch);
     }
 

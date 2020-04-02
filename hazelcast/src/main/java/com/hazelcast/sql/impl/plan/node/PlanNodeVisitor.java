@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.plan.node;
 import com.hazelcast.sql.impl.plan.node.io.BroadcastSendPlanNode;
 import com.hazelcast.sql.impl.plan.node.io.ReceivePlanNode;
 import com.hazelcast.sql.impl.plan.node.io.ReceiveSortMergePlanNode;
+import com.hazelcast.sql.impl.plan.node.io.RootSendPlanNode;
 import com.hazelcast.sql.impl.plan.node.io.UnicastSendPlanNode;
 import com.hazelcast.sql.impl.plan.node.join.HashJoinPlanNode;
 import com.hazelcast.sql.impl.plan.node.join.NestedLoopJoinPlanNode;
@@ -37,6 +38,7 @@ import com.hazelcast.sql.impl.plan.node.join.NestedLoopJoinPlanNode;
 public interface PlanNodeVisitor {
     void onRootNode(RootPlanNode node);
     void onReceiveNode(ReceivePlanNode node);
+    void onRootSendNode(RootSendPlanNode node);
     void onUnicastSendNode(UnicastSendPlanNode node);
     void onBroadcastSendNode(BroadcastSendPlanNode node);
     void onMapScanNode(MapScanPlanNode node);

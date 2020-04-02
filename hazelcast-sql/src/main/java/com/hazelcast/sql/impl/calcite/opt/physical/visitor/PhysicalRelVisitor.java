@@ -28,6 +28,7 @@ import com.hazelcast.sql.impl.calcite.opt.physical.ReplicatedToDistributedPhysic
 import com.hazelcast.sql.impl.calcite.opt.physical.RootPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.SortPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.BroadcastExchangePhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.exchange.RootExchangePhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.SortMergeExchangePhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.UnicastExchangePhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.join.HashJoinPhysicalRel;
@@ -41,6 +42,7 @@ public interface PhysicalRelVisitor {
     void onMapScan(MapScanPhysicalRel rel);
     void onMapIndexScan(MapIndexScanPhysicalRel rel);
     void onReplicatedMapScan(ReplicatedMapScanPhysicalRel rel);
+    void onRootExchange(RootExchangePhysicalRel rel);
     void onUnicastExchange(UnicastExchangePhysicalRel rel);
     void onBroadcastExchange(BroadcastExchangePhysicalRel rel);
     void onSortMergeExchange(SortMergeExchangePhysicalRel rel);

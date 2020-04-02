@@ -20,6 +20,7 @@ import com.hazelcast.sql.impl.calcite.HazelcastConventions;
 import com.hazelcast.sql.impl.calcite.opt.OptUtils;
 import com.hazelcast.sql.impl.calcite.opt.physical.ReplicatedToDistributedPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.BroadcastExchangePhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.exchange.RootExchangePhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.UnicastExchangePhysicalRel;
 import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelTraitDef;
@@ -29,7 +30,6 @@ import org.apache.calcite.rel.RelNode;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.IntStream;
 
 import static com.hazelcast.sql.impl.calcite.distribution.DistributionType.ANY;
 import static com.hazelcast.sql.impl.calcite.distribution.DistributionType.PARTITIONED;
@@ -89,7 +89,7 @@ public class DistributionTraitDef extends RelTraitDef<DistributionTrait> {
                 return convertToReplicated(planner, rel, currentTrait);
 
             case ROOT:
-                return convertToSingleton(planner, rel, currentTrait);
+                return convertToRoot(planner, rel, currentTrait);
 
             default:
                 return null;
@@ -198,23 +198,16 @@ public class DistributionTraitDef extends RelTraitDef<DistributionTrait> {
      * @param currentTrait Current distribution trait.
      * @return Converted node.
      */
-    private static RelNode convertToSingleton(RelOptPlanner planner, RelNode rel, DistributionTrait currentTrait) {
+    private static RelNode convertToRoot(RelOptPlanner planner, RelNode rel, DistributionTrait currentTrait) {
         // ANY already handler before, ROOT and REPLICATED do not require further conversions.
         assert currentTrait.getType() == PARTITIONED;
 
         RelTraitSet traitSet = OptUtils.traitPlus(planner.emptyTraitSet(), DistributionTrait.ROOT_DIST);
 
-        int fieldCount = rel.getRowType().getFieldCount();
-
-        List<Integer> hashFields = new ArrayList<>(fieldCount);
-
-        IntStream.range(0, fieldCount).forEach(hashFields::add);
-
-        return new UnicastExchangePhysicalRel(
+        return new RootExchangePhysicalRel(
             rel.getCluster(),
             OptUtils.toPhysicalConvention(traitSet),
-            rel,
-            hashFields
+            rel
         );
     }
 

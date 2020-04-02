@@ -23,7 +23,7 @@ import com.hazelcast.sql.impl.row.RowBatch;
 /**
  * Broadcast sender.
  */
-public class BroadcastSendExec extends AbstractSendExec {
+public class BroadcastSendExec extends AbstractMultiwaySendExec {
     public BroadcastSendExec(int id, Exec upstream, Outbox[] outboxes) {
         super(id, upstream, outboxes);
     }
@@ -34,7 +34,7 @@ public class BroadcastSendExec extends AbstractSendExec {
     }
 
     @Override
-    protected void beforePushBatch(RowBatch batch) {
+    protected void setCurrentBatch(RowBatch batch) {
         // No-op.
     }
 }

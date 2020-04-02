@@ -27,6 +27,7 @@ import com.hazelcast.sql.impl.exec.index.MapIndexScanExec;
 import com.hazelcast.sql.impl.exec.io.BroadcastSendExec;
 import com.hazelcast.sql.impl.exec.io.ReceiveExec;
 import com.hazelcast.sql.impl.exec.io.ReceiveSortMergeExec;
+import com.hazelcast.sql.impl.exec.io.SingleSendExec;
 import com.hazelcast.sql.impl.exec.io.UnicastSendExec;
 import com.hazelcast.sql.impl.exec.join.HashJoinExec;
 import com.hazelcast.sql.impl.exec.join.NestedLoopJoinExec;
@@ -59,6 +60,7 @@ import com.hazelcast.sql.impl.plan.node.io.BroadcastSendPlanNode;
 import com.hazelcast.sql.impl.plan.node.io.EdgeAwarePlanNode;
 import com.hazelcast.sql.impl.plan.node.io.ReceivePlanNode;
 import com.hazelcast.sql.impl.plan.node.io.ReceiveSortMergePlanNode;
+import com.hazelcast.sql.impl.plan.node.io.RootSendPlanNode;
 import com.hazelcast.sql.impl.plan.node.io.UnicastSendPlanNode;
 import com.hazelcast.sql.impl.plan.node.join.HashJoinPlanNode;
 import com.hazelcast.sql.impl.plan.node.join.NestedLoopJoinPlanNode;
@@ -187,16 +189,20 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
     }
 
     @Override
+    public void onRootSendNode(RootSendPlanNode node) {
+        Outbox[] outboxes = prepareOutboxes(node);
+
+        assert outboxes.length == 1;
+
+        exec = new SingleSendExec(node.getId(), pop(), outboxes[0]);
+    }
+
+    @Override
     public void onUnicastSendNode(UnicastSendPlanNode node) {
         Outbox[] outboxes = prepareOutboxes(node);
 
         if (outboxes.length == 1) {
-            // Special case for unicast with a single destination: replace with broadcast as it is simpler.
-            exec = new BroadcastSendExec(
-                node.getId(),
-                pop(),
-                outboxes
-            );
+            exec = new SingleSendExec(node.getId(), pop(), outboxes[0]);
         } else {
             int[] partitionOutboxIndexes = new int[localParts.getPartitionCount()];
 
@@ -222,11 +228,11 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
     public void onBroadcastSendNode(BroadcastSendPlanNode node) {
         Outbox[] outboxes = prepareOutboxes(node);
 
-        exec = new BroadcastSendExec(
-            node.getId(),
-            pop(),
-            outboxes
-        );
+        if (outboxes.length == 1) {
+            exec = new SingleSendExec(node.getId(), pop(), outboxes[0]);
+        } else {
+            exec = new BroadcastSendExec(node.getId(), pop(), outboxes);
+        }
     }
 
     /**
