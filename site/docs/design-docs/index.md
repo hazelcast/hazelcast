@@ -3,10 +3,11 @@ title: Introduction
 description: Various Design Documents for Hazelcast Jet features
 ---
 
-In this section we'll reference technical design of upcoming Jet
-features. These documents are evolving over time, and once the
-feature is released the documentation will be added as part of the
-main docs structure.
+This section contains documents detailing technical design of Jet
+features, created during the development process. Design docs for
+features appears under that version's docs. Features developed for the
+upcoming version appears under the [pre-release version
+docs](../next/design-docs).
 
 Each document is numbered, though since we're just starting this process
 we'll only include features for Jet starting from Jet 4.1.
