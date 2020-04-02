@@ -125,6 +125,7 @@ public class SqlBackpressureTest extends SqlTestSupport {
         assertEquals(200, rows.size());
     }
 
+    @SuppressWarnings("unused")
     private static class LongValue implements Serializable {
         public long l01;
         public long l02;

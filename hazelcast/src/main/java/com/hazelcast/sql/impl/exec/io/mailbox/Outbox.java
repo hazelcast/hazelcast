@@ -118,11 +118,23 @@ public class Outbox extends AbstractMailbox implements OutboundHandler {
         // Adjust the remaining memory.
         remainingMemory = remainingMemory - acceptedRows * rowWidth;
 
-        // Send the batch if needed.
-        boolean batchIsFull = (rows != null && rows.size() * rowWidth >= batchSize) || remainingMemory < rowWidth;
+        // This is the very last transmission iff the whole last batch is consumed.
         boolean lastTransmit = last && currentPosition == batch.getRowCount();
 
-        if (batchIsFull || lastTransmit) {
+        // The batch should be sent in the following cases:
+        // 1) If this is the very last batch, even if it is empty - to signal the end of the stream
+        // 2) If there are some data in the batch, and:
+        //     2.1) There are more data than the recommended batch size
+        //     2.2) Or we run out of memory, so that the remote end knows that we are low on memory, and the flow control is sent
+        int batchRowCount = rows != null ? rows.size() : 0;
+
+        boolean batchIsNotEmpty = batchRowCount > 0;
+        boolean batchThresholdIsReached = batchRowCount * rowWidth >= batchSize;
+        boolean cannotAcceptMoreRows = remainingMemory < rowWidth;
+
+        boolean send = lastTransmit || (batchIsNotEmpty && (batchThresholdIsReached || cannotAcceptMoreRows));
+
+        if (send) {
             send(lastTransmit);
         }
 
@@ -141,6 +153,8 @@ public class Outbox extends AbstractMailbox implements OutboundHandler {
      */
     private void send(boolean last) {
         RowBatch batch = new ListRowBatch(rows != null ? rows : Collections.emptyList());
+
+        assert batch.getRowCount() > 0 || last;
 
         QueryBatchExchangeOperation op = new QueryBatchExchangeOperation(queryId, edgeId, batch, last, remainingMemory);
 
