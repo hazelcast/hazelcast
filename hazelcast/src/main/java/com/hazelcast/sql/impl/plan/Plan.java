@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.plan;
 
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.sql.impl.QueryMetadata;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.explain.QueryExplain;
 import com.hazelcast.sql.impl.optimizer.OptimizerStatistics;
 
@@ -47,8 +48,7 @@ public class Plan {
     /** Map from inbound edge ID to number of members which will write into it. */
     private final Map<Integer, Integer> inboundEdgeMemberCountMap;
 
-    /** Number of parameters. */
-    private final int parameterCount;
+    private final QueryParameterMetadata parameterMetadata;
 
     /** Query metadata. */
     private final QueryMetadata metadata;
@@ -66,7 +66,7 @@ public class Plan {
         Map<Integer, Integer> outboundEdgeMap,
         Map<Integer, Integer> inboundEdgeMap,
         Map<Integer, Integer> inboundEdgeMemberCountMap,
-        int parameterCount,
+        QueryParameterMetadata parameterMetadata,
         QueryMetadata metadata,
         QueryExplain explain,
         OptimizerStatistics stats
@@ -77,7 +77,7 @@ public class Plan {
         this.outboundEdgeMap = outboundEdgeMap;
         this.inboundEdgeMap = inboundEdgeMap;
         this.inboundEdgeMemberCountMap = inboundEdgeMemberCountMap;
-        this.parameterCount = parameterCount;
+        this.parameterMetadata = parameterMetadata;
         this.metadata = metadata;
         this.explain = explain;
         this.stats = stats;
@@ -107,8 +107,8 @@ public class Plan {
         return inboundEdgeMemberCountMap;
     }
 
-    public int getParameterCount() {
-        return parameterCount;
+    public QueryParameterMetadata getParameterMetadata() {
+        return parameterMetadata;
     }
 
     public QueryMetadata getMetadata() {

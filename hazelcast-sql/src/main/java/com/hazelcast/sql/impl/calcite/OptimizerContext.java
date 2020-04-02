@@ -66,6 +66,7 @@ import org.apache.calcite.rel.core.RelFactories;
 import org.apache.calcite.rel.metadata.JaninoRelMetadataProvider;
 import org.apache.calcite.rel.metadata.RelMetadataProvider;
 import org.apache.calcite.rel.rules.SubQueryRemoveRule;
+import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperatorTable;
@@ -314,6 +315,10 @@ public final class OptimizerContext {
         } finally {
             cluster.finishPhysicalOptimization();
         }
+    }
+
+    public RelDataType getParameterRowType(SqlNode sqlNode) {
+        return validator.getParameterRowType(sqlNode);
     }
 
     public OptimizerConfig getConfig() {

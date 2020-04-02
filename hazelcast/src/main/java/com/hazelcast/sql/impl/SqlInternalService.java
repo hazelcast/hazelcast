@@ -31,6 +31,8 @@ import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.state.QueryState;
 import com.hazelcast.sql.impl.state.QueryStateRegistry;
 import com.hazelcast.sql.impl.state.QueryStateRegistryUpdater;
+import com.hazelcast.sql.impl.type.converter.Converter;
+import com.hazelcast.sql.impl.type.converter.Converters;
 
 import java.util.List;
 import java.util.UUID;
@@ -115,11 +117,26 @@ public class SqlInternalService {
      * @return Query state.
      */
     public QueryState execute(Plan plan, List<Object> params, long timeout, int pageSize) {
-        assert params != null;
 
-        if (plan.getParameterCount() > params.size()) {
-            throw HazelcastSqlException.error("Not enough parameters [expected=" + plan.getParameterCount()
-                + ", actual=" + params.size() + ']');
+        // Prepare parameters.
+
+        assert params != null;
+        QueryParameterMetadata parameterMetadata = plan.getParameterMetadata();
+        int parameterCount = parameterMetadata.getParameterCount();
+        if (parameterCount != params.size()) {
+            throw HazelcastSqlException.error(
+                    "Unexpected parameter count: expected " + parameterCount + ", got " + params.size());
+        }
+        for (int i = 0; i < params.size(); ++i) {
+            Object value = params.get(i);
+            if (value == null) {
+                continue;
+            }
+
+            Converter valueConverter = Converters.getConverter(value.getClass());
+            Converter typeConverter = parameterMetadata.getParameterType(i).getConverter();
+            value = typeConverter.convertToSelf(valueConverter, value);
+            params.set(i, value);
         }
 
         // Prepare mappings.

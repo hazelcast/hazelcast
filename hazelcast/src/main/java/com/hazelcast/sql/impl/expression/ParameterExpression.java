@@ -20,8 +20,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.sql.impl.type.converter.Converter;
-import com.hazelcast.sql.impl.type.converter.Converters;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -30,56 +28,42 @@ import java.util.Objects;
  * Dynamic parameter expression.
  */
 public class ParameterExpression<T> implements Expression<T> {
-    /** Index. */
+
     private int index;
+    // TODO: remove type?
+    private QueryDataType type;
 
-    /** Cached value. */
-    private transient volatile T cachedValue;
-
+    @SuppressWarnings("unused")
     public ParameterExpression() {
         // No-op.
     }
 
-    public ParameterExpression(int index) {
+    public ParameterExpression(int index, QueryDataType type) {
         this.index = index;
+        this.type = type;
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public T eval(Row row, ExpressionEvalContext context) {
-        if (cachedValue != null) {
-            return cachedValue;
-        }
-
-        T value = (T) context.getArguments().get(index);
-
-        if (value == null) {
-            return null;
-        } else {
-            // Normalize and save to cache.
-            Converter converter = Converters.getConverter(value.getClass());
-
-            value = (T) converter.convertToSelf(converter, value);
-
-            cachedValue = value;
-
-            return value;
-        }
+        return (T) context.getArguments().get(index);
     }
 
     @Override
     public QueryDataType getType() {
-        return QueryDataType.LATE;
+        return type;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(index);
+        out.writeObject(type);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         index = in.readInt();
+        type = in.readObject();
     }
 
     @Override
@@ -106,4 +90,5 @@ public class ParameterExpression<T> implements Expression<T> {
     public String toString() {
         return getClass().getSimpleName() + "{index=" + index + '}';
     }
+
 }
