@@ -348,7 +348,7 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
 
         if (uuid != null && t instanceof TargetNotMemberException) {
             //when invocation send to a specific member
-            //if target is not longer a member, we should not retry
+            //if target is no longer a member, we should not retry
             //note that this exception could come from the server
             return false;
         }
