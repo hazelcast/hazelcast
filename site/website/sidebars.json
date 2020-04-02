@@ -59,6 +59,7 @@
     ],
     "Design Documents": [
       "design-docs/index",
+      "design-docs/005-cdc-sources",
       "design-docs/004-spring-boot-starter",
       "design-docs/003-elasticsearch-connector",
       "design-docs/002-job-level-serialization",
