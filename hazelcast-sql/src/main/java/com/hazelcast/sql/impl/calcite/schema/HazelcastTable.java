@@ -36,11 +36,13 @@ import java.util.Map;
 /**
  * Hazelcast table which provides information about its fields.
  */
+@SuppressWarnings("checkstyle:ExecutableStatementCount")
 public final class HazelcastTable extends AbstractTable {
 
     private static final Map<QueryDataType, SqlTypeName> QUERY_TO_SQL_TYPE = new HashMap<>();
 
     static {
+        // TODO: VO: Mapping should be done from type family.
         QUERY_TO_SQL_TYPE.put(QueryDataType.VARCHAR, SqlTypeName.VARCHAR);
         QUERY_TO_SQL_TYPE.put(QueryDataType.VARCHAR_CHARACTER, SqlTypeName.CHAR);
 
@@ -67,6 +69,7 @@ public final class HazelcastTable extends AbstractTable {
         QUERY_TO_SQL_TYPE.put(QueryDataType.INTERVAL_YEAR_MONTH, SqlTypeName.INTERVAL_YEAR_MONTH);
         QUERY_TO_SQL_TYPE.put(QueryDataType.INTERVAL_DAY_SECOND, SqlTypeName.INTERVAL_DAY_SECOND);
 
+        // TODO: Object type should be very restrictive, but currently all check for it are skipped. Use "STRUCTURED"?
         QUERY_TO_SQL_TYPE.put(QueryDataType.OBJECT, SqlTypeName.ANY);
     }
 
@@ -166,7 +169,7 @@ public final class HazelcastTable extends AbstractTable {
     }
 
     @Override
-    public final Statistic getStatistic() {
+    public Statistic getStatistic() {
         return statistic;
     }
 
