@@ -21,17 +21,43 @@ import java.util.concurrent.TimeUnit;
 /**
  * Utility class to measure elapsed time in milliseconds. Backed by {@link System#nanoTime()}
  * Example usage {@code
- * long start = Timer.millis();
+ * Timer timer = Timer.getSystemTimer();
+ * long start = timer.nanos();
  * ... // do some work
- * long elapsedMs = Timer.elapsedSince(start);
+ * long elapsedNs = timer.nanosElapsedSince(start);
+ * long elapsedMs = timer.millisElapsedSince(start);
  * }
  */
 public class Timer {
-    public static long millis() {
-        return TimeUnit.NANOSECONDS.toMillis(System.nanoTime());
+    private static Timer SYSTEM_TIMER = create(System::nanoTime);
+
+    public static Timer getSystemTimer() {
+        return SYSTEM_TIMER;
     }
 
-    public static long elapsedSince(long millis) {
-        return TimeUnit.NANOSECONDS.toMillis(System.nanoTime()) - millis;
+    static Timer create(NanoClock nanoClock) {
+        return new Timer(nanoClock);
+    }
+
+    private NanoClock nanoClock;
+
+    public Timer(NanoClock nanoClock) {
+        this.nanoClock = nanoClock;
+    }
+
+    public long nanosElapsedSince(long startNanos) {
+        return nanos() - startNanos;
+    }
+
+    public long nanos() {
+        return nanoClock.nanoTime();
+    }
+
+    public long millisElapsedSince(long startNano) {
+        return TimeUnit.NANOSECONDS.toMillis(nanosElapsedSince(startNano));
+    }
+
+    public interface NanoClock {
+        long nanoTime();
     }
 }

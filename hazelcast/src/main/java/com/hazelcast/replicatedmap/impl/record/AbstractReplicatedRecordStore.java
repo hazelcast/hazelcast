@@ -76,7 +76,8 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
     @SuppressWarnings("unchecked")
     private Object remove(InternalReplicatedMapStorage<K, V> storage, Object key) {
         isNotNull(key, "key");
-        long time = System.nanoTime();
+        Timer timer = Timer.getSystemTimer();
+        long time = timer.nanos();
         V oldValue;
         K marshalledKey = (K) marshall(key);
         ReplicatedRecord<K, V> current = storage.get(marshalledKey);
@@ -87,7 +88,7 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
             storage.remove(marshalledKey, current);
         }
         if (replicatedMapConfig.isStatisticsEnabled()) {
-            getStats().incrementRemovesNanos(System.nanoTime() - time);
+            getStats().incrementRemovesNanos(timer.nanosElapsedSince(time));
         }
         cancelTtlEntry(marshalledKey);
         return oldValue;
@@ -97,7 +98,8 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
     @SuppressWarnings("unchecked")
     public void evict(Object key) {
         isNotNull(key, "key");
-        long time = System.nanoTime();
+        Timer timer = Timer.getSystemTimer();
+        long time = timer.nanos();
         V oldValue;
         K marshalledKey = (K) marshall(key);
         InternalReplicatedMapStorage<K, V> storage = getStorage();
@@ -113,14 +115,15 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
         ReplicatedMapEventPublishingService eventPublishingService = replicatedMapService.getEventPublishingService();
         eventPublishingService.fireEntryListenerEvent(dataKey, dataOldValue, null, EVICTED, name, nodeEngine.getThisAddress());
         if (replicatedMapConfig.isStatisticsEnabled()) {
-            getStats().incrementRemovesNanos(System.nanoTime() - time);
+            getStats().incrementRemovesNanos(timer.nanosElapsedSince(time));
         }
     }
 
     @Override
     public Object get(Object key) {
         isNotNull(key, "key");
-        long time = System.nanoTime();
+        Timer timer = Timer.getSystemTimer();
+        long time = timer.nanos();
         ReplicatedRecord<K, V> replicatedRecord = getStorage().get(marshall(key));
 
         // Force return null on ttl expiration (but before cleanup thread run)
@@ -131,7 +134,7 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
 
         Object value = replicatedRecord == null ? null : unmarshall(replicatedRecord.getValue());
         if (replicatedMapConfig.isStatisticsEnabled()) {
-            getStats().incrementGetsNanos(System.nanoTime() - time);
+            getStats().incrementGetsNanos(timer.nanosElapsedSince(time));
         }
         return value;
     }
@@ -168,7 +171,8 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
         if (ttl < 0) {
             throw new IllegalArgumentException("ttl must be a positive integer");
         }
-        long time = System.nanoTime();
+        Timer timer = Timer.getSystemTimer();
+        long time = timer.nanos();
         V oldValue = null;
         K marshalledKey = (K) marshall(key);
         V marshalledValue = (V) marshall(value);
@@ -193,7 +197,7 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
             cancelTtlEntry(marshalledKey);
         }
         if (replicatedMapConfig.isStatisticsEnabled()) {
-            getStats().incrementPutsNanos(System.nanoTime() - time);
+            getStats().incrementPutsNanos(timer.nanosElapsedSince(time));
         }
         return oldValue;
     }
