@@ -34,14 +34,18 @@ import org.junit.Test;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.hazelcast.sql.impl.type.QueryDataType.INT;
+
 // TODO: Tests with SINGLE_VALUE decorrelations (i.e. when the subquery is in the SELECT or WHERE, etc)
 public class LogicalOptimizerSubQueriesTest extends LogicalOptimizerTestSupport {
     @Override
     protected HazelcastSchema createDefaultSchema() {
         Map<String, Table> tableMap = new HashMap<>();
 
-        tableMap.put("r", new HazelcastTable(null, "r", true, null, null, null, null, new TableStatistics(100)));
-        tableMap.put("s", new HazelcastTable(null, "s", true, null, null, null, null, new TableStatistics(100)));
+        tableMap.put("r", new HazelcastTable(null, "r", true, null, null,
+                fieldTypes("r", INT, "r1", INT, "r2", INT, "r3", INT), null, new TableStatistics(100)));
+        tableMap.put("s", new HazelcastTable(null, "s", true, null, null,
+                fieldTypes("s", INT, "s1", INT, "s2", INT, "s3", INT), null, new TableStatistics(100)));
 
         return new HazelcastSchema(tableMap);
     }
@@ -74,8 +78,7 @@ public class LogicalOptimizerSubQueriesTest extends LogicalOptimizerTestSupport 
         assertScan(
             join.getLeft(),
             "r",
-            list("r1", "r2", "r3"),
-            list(0, 1, 2),
+            list(1, 2, 3),
             null
         );
 
@@ -88,9 +91,8 @@ public class LogicalOptimizerSubQueriesTest extends LogicalOptimizerTestSupport 
         assertScan(
             rightAgg.getInput(),
             "s",
-            list("s2", "s1"),
-            list(1, 0),
-            IsNotNullPredicate.create(column(0))
+            list(1, 2),
+            IsNotNullPredicate.create(column(2))
         );
     }
 
@@ -117,17 +119,15 @@ public class LogicalOptimizerSubQueriesTest extends LogicalOptimizerTestSupport 
         assertScan(
             join.getLeft(),
             "r",
-            list("r1", "r2"),
-            list(0, 1),
+            list(1, 2),
             null
         );
 
         assertScan(
             join.getRight(),
             "s",
-            list("s2", "s1"),
             list(1),
-            compare(column(0), constant(50), ComparisonMode.LESS_THAN)
+            compare(column(2), constant(50), ComparisonMode.LESS_THAN)
         );
 
         System.out.println(RelOptUtil.toString(rootNode));

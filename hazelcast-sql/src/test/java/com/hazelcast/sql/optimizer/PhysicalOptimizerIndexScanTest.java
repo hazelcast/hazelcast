@@ -30,6 +30,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.hazelcast.sql.impl.type.QueryDataType.INT;
+
 /**
  * Tests for physical index path selection.
  */
@@ -44,7 +46,7 @@ public class PhysicalOptimizerIndexScanTest extends PhysicalOptimizerTestSupport
             true,
             null,
             Collections.singletonList(new HazelcastTableIndex("idx1", IndexType.SORTED, list("f1"))),
-            null,
+            fieldTypes("f1", INT, "f2", INT, "f3", INT),
             null,
             new TableStatistics(100)
         );

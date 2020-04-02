@@ -36,6 +36,8 @@ import org.junit.runner.RunWith;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.hazelcast.sql.impl.type.QueryDataType.INT;
+
 /**
  * Tests for join filter pushdown.
  */
@@ -46,8 +48,10 @@ public class LogicalOptimizerJoinFilterTest extends LogicalOptimizerTestSupport 
     @Override
     protected HazelcastSchema createDefaultSchema() {
         Map<String, Table> tableMap = new HashMap<>();
-        tableMap.put("r", new HazelcastTable(null, "r", true, null, null, null, null, new TableStatistics(100)));
-        tableMap.put("s", new HazelcastTable(null, "s", true, null, null, null, null, new TableStatistics(100)));
+        tableMap.put("r", new HazelcastTable(null, "r", true, null, null,
+                fieldTypes("r_f1", INT, "r_f2", INT, "r_f3", INT), null, new TableStatistics(100)));
+        tableMap.put("s", new HazelcastTable(null, "s", true, null, null,
+                fieldTypes("s_f1", INT, "s_f2", INT, "s_f3", INT), null, new TableStatistics(100)));
 
         return new HazelcastSchema(tableMap);
     }
@@ -86,31 +90,29 @@ public class LogicalOptimizerJoinFilterTest extends LogicalOptimizerTestSupport 
         ProjectLogicalRel project = assertProject(
             rootInput,
             list(
-                column(1),
-                column(3)
+                column(0),
+                column(2)
             )
         );
 
         JoinLogicalRel join = assertJoin(
             project.getInput(),
             JoinRelType.INNER,
-            compare(column(0), column(2), ComparisonMode.EQUALS)
+            compare(column(1), column(3), ComparisonMode.EQUALS)
         );
 
         assertScan(
             join.getLeft(),
             "r",
-            list("r_f2", "r_f3", "r_f1"),
-            list(0, 2),
-            compare(column(1), constant(1), ComparisonMode.EQUALS)
+            list(0, 1),
+            compare(column(2), constant(1), ComparisonMode.EQUALS)
         );
 
         assertScan(
             join.getRight(),
             "s",
-            list("s_f2", "s_f3", "s_f1"),
-            list(0, 2),
-            compare(column(1), constant(2), ComparisonMode.EQUALS)
+            list(0, 1),
+            compare(column(2), constant(2), ComparisonMode.EQUALS)
         );
     }
 }

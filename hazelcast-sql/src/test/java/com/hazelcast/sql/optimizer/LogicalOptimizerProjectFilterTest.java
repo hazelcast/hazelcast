@@ -43,7 +43,7 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
     public void testProjectIntoScan() {
         RelNode rootInput = optimizeLogical("SELECT f1, f2 FROM p");
 
-        assertScan(rootInput, list("f1", "f2"), list(0, 1), null);
+        assertScan(rootInput, list(0, 1), null);
     }
 
     /**
@@ -62,7 +62,7 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
             )
         );
 
-        assertScan(project.getInput(), list("f1", "f2", "f3"), list(0, 1, 2), null);
+        assertScan(project.getInput(), list(0, 1, 2), null);
     }
 
     /**
@@ -75,10 +75,9 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
 
         assertScan(
             rootInput,
-            list("f3", "f1", "f2"),
-            list(1, 2),
+            list(0, 1),
             compare(
-                column(0),
+                column(2),
                 constant(1),
                 ComparisonMode.GREATER_THAN
             )
@@ -103,9 +102,8 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
 
         assertScan(
             project.getInput(),
-            list("f4", "f1", "f2", "f3"),
-            list(1, 2, 3),
-            compare(column(0), constant(1), ComparisonMode.GREATER_THAN)
+            list(0, 1, 2),
+            compare(column(3), constant(1), ComparisonMode.GREATER_THAN)
         );
     }
 
@@ -117,7 +115,7 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
     public void testProjectProjectIntoScan() {
         RelNode rootInput = optimizeLogical("SELECT f1 FROM (SELECT f1, f2 FROM p)");
 
-        assertScan(rootInput, list("f1", "f2"), list(0), null);
+        assertScan(rootInput, list(0), null);
     }
 
     /**
@@ -136,7 +134,7 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
             )
         );
 
-        assertScan(project.getInput(), list("f1", "f2", "f3", "f4"), list(0, 1, 2), null);
+        assertScan(project.getInput(), list(0, 1, 2), null);
     }
 
     /**
@@ -155,7 +153,7 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
             )
         );
 
-        assertScan(project.getInput(), list("f1", "f2", "f3", "f4"), list(0, 1, 2), null);
+        assertScan(project.getInput(), list(0, 1, 2), null);
     }
 
     /**
@@ -176,7 +174,7 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
             )
         );
 
-        assertScan(project.getInput(), list("f1", "f2", "f3", "f4"), list(0, 1, 2), null);
+        assertScan(project.getInput(), list(0, 1, 2), null);
     }
 
     /**
@@ -189,9 +187,8 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
 
         assertScan(
             rootInput,
-            list("f3", "f1", "f2"),
-            list(1),
-            compare(column(0), constant(1), ComparisonMode.GREATER_THAN)
+            list(0),
+            compare(column(2), constant(1), ComparisonMode.GREATER_THAN)
         );
     }
 
@@ -213,9 +210,8 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
 
         assertScan(
             project.getInput(),
-            list("f5", "f1", "f2", "f3", "f4"),
-            list(1, 2, 3),
-            compare(column(0), constant(1), ComparisonMode.GREATER_THAN)
+            list(0, 1, 2),
+            compare(column(4), constant(1), ComparisonMode.GREATER_THAN)
         );
     }
 
@@ -236,9 +232,8 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
 
         assertScan(
             project.getInput(),
-            list("f3", "f1", "f2", "f4"),
-            list(1, 2),
-            compare(column(0), constant(1), ComparisonMode.GREATER_THAN)
+            list(0, 1),
+            compare(column(2), constant(1), ComparisonMode.GREATER_THAN)
         );
     }
 
@@ -262,9 +257,8 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
 
         assertScan(
             project.getInput(),
-            list("f5", "f1", "f2", "f3", "f4"),
-            list(1, 2, 3),
-            compare(column(0), constant(1), ComparisonMode.GREATER_THAN)
+            list(0, 1, 2),
+            compare(column(4), constant(1), ComparisonMode.GREATER_THAN)
         );
     }
 
@@ -278,7 +272,7 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
 
         assertScan(
             rootInput,
-            list("f1", "f2", "f3"), list(0),
+            list(0),
             compare(column(1), constant(1), ComparisonMode.GREATER_THAN)
         );
     }
@@ -312,7 +306,7 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
 
         assertScan(
             bottomProject.getInput(),
-            list("f1", "f2", "f3", "f4", "f5"), list(0, 1, 2, 3),
+            list(0, 1, 2, 3),
             compare(column(3), constant(1), ComparisonMode.GREATER_THAN)
         );
     }
@@ -335,7 +329,7 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
 
         assertScan(
             project.getInput(),
-            list("f1", "f2", "f3", "f4"), list(0, 1),
+            list(0, 1),
             compare(column(2), constant(1), ComparisonMode.GREATER_THAN)
         );
     }
@@ -368,7 +362,6 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
 
         assertScan(
             bottomProject.getInput(),
-            list("f1", "f2", "f3", "f4", "f5"),
             list(0, 1, 2, 3),
             compare(column(3), constant(1), ComparisonMode.GREATER_THAN)
         );
@@ -384,11 +377,10 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
 
         assertScan(
             rootInput,
-            list("f4", "f1", "f2", "f3"),
-            list(1),
+            list(0),
             AndPredicate.create(
-                compare(column(0), constant(1), ComparisonMode.GREATER_THAN),
-                compare(column(2), constant(1), ComparisonMode.GREATER_THAN)
+                compare(column(3), constant(1), ComparisonMode.GREATER_THAN),
+                compare(column(1), constant(1), ComparisonMode.GREATER_THAN)
             )
         );
     }
@@ -411,11 +403,10 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
 
         assertScan(
             project.getInput(),
-            list("f4", "f1", "f2", "f3", "f5"),
-            list(1, 2, 3),
+            list(0, 1, 2),
             AndPredicate.create(
-                compare(column(0), constant(1), ComparisonMode.GREATER_THAN),
-                compare(column(3), constant(2), ComparisonMode.GREATER_THAN)
+                compare(column(3), constant(1), ComparisonMode.GREATER_THAN),
+                compare(column(2), constant(2), ComparisonMode.GREATER_THAN)
             )
         );
     }
@@ -437,11 +428,10 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
 
         assertScan(
             project.getInput(),
-            list("f4", "f1", "f2", "f3"),
-            list(1, 2),
+            list(0, 1),
             AndPredicate.create(
-                compare(column(0), constant(1), ComparisonMode.GREATER_THAN),
-                compare(column(3), constant(1), ComparisonMode.GREATER_THAN)
+                compare(column(3), constant(1), ComparisonMode.GREATER_THAN),
+                compare(column(2), constant(1), ComparisonMode.GREATER_THAN)
             )
         );
     }
@@ -472,11 +462,10 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
 
         assertScan(
             bottomProject.getInput(),
-            list("f4", "f1", "f2", "f3", "f5"),
-            list(1, 2, 3),
+            list(0, 1, 2),
             AndPredicate.create(
-                compare(column(0), constant(1), ComparisonMode.GREATER_THAN),
-                compare(column(3), constant(2), ComparisonMode.GREATER_THAN)
+                compare(column(3), constant(1), ComparisonMode.GREATER_THAN),
+                compare(column(2), constant(2), ComparisonMode.GREATER_THAN)
             )
         );
     }

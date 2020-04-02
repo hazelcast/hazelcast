@@ -27,8 +27,8 @@ import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.predicate.AndPredicate;
-import com.hazelcast.sql.impl.expression.predicate.ComparisonPredicate;
 import com.hazelcast.sql.impl.expression.predicate.ComparisonMode;
+import com.hazelcast.sql.impl.expression.predicate.ComparisonPredicate;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.schema.Table;
@@ -38,9 +38,11 @@ import org.junit.After;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static junit.framework.TestCase.assertEquals;
 
 /**
@@ -120,7 +122,7 @@ public abstract class OptimizerTestSupport {
             true,
             null,
             null,
-            null,
+            fieldTypes("f1", INT, "f2", INT, "f3", INT, "f4", INT, "f5", INT),
             null,
             new TableStatistics(100))
         );
@@ -135,16 +137,6 @@ public abstract class OptimizerTestSupport {
         } else {
             return new ArrayList<>(Arrays.asList(vals));
         }
-    }
-
-    protected static void assertFieldNames(List<String> expFields, List<String> fields) {
-        if (fields == null) {
-            fields = new ArrayList<>();
-        } else {
-            fields = new ArrayList<>(fields);
-        }
-
-        assertEquals(expFields, fields);
     }
 
     protected static void assertFieldIndexes(List<Integer> expProjects, List<Integer> projects) {
@@ -175,6 +167,15 @@ public abstract class OptimizerTestSupport {
 
     protected static Expression<?> column(int col) {
         return ColumnExpression.create(col, QueryDataType.VARCHAR);
+    }
+
+    protected static Map<String, QueryDataType> fieldTypes(Object ... namesAndTypes) {
+        Map<String, QueryDataType> fieldTypes = new LinkedHashMap<>();
+        assert namesAndTypes.length % 2 == 0;
+        for (int i = 0; i < namesAndTypes.length / 2; ++i) {
+            fieldTypes.put((String) namesAndTypes[i * 2], (QueryDataType) namesAndTypes[i * 2 + 1]);
+        }
+        return fieldTypes;
     }
 
     /**

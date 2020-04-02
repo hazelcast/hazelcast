@@ -109,17 +109,15 @@ public abstract class LogicalOptimizerTestSupport extends OptimizerTestSupport {
 
     protected static void assertScan(
         RelNode node,
-        List<String> expFields,
         List<Integer> expProjects,
         Expression<?> expFilter
     ) {
-        assertScan(node, null, expFields, expProjects, expFilter);
+        assertScan(node, null, expProjects, expFilter);
     }
 
     protected static void assertScan(
         RelNode node,
         String expMapName,
-        List<String> expFields,
         List<Integer> expProjects,
         Expression<?> expFilter
     ) {
@@ -129,7 +127,6 @@ public abstract class LogicalOptimizerTestSupport extends OptimizerTestSupport {
             assertEquals(expMapName, scan.getTable().unwrap(HazelcastTable.class).getName());
         }
 
-        assertFieldNames(expFields, scan.getTable().getRowType().getFieldNames());
         assertFieldIndexes(expProjects, scan.getProjects());
 
         Expression<?> filter = scan.getFilter() != null ? scan.getFilter().accept(expressionConverter()) : null;
