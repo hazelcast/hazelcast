@@ -90,9 +90,6 @@ public final class Converters {
     private static List<Converter> prepareConverters() {
         List<Converter> converters = new ArrayList<>();
 
-        // Late binding support.
-        converters.add(LateConverter.INSTANCE);
-
         // Boolean converter.
         converters.add(BooleanConverter.INSTANCE);
 

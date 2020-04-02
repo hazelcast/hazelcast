@@ -16,12 +16,10 @@
 
 package com.hazelcast.sql.impl.expression.aggregate;
 
-import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 import com.hazelcast.sql.impl.exec.agg.AggregateCollector;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 /**
  * Special aggregate expression with expects only a single value for a group. If more than one value appears, an exception is
@@ -38,11 +36,6 @@ public class SingleValueAggregateExpression<T> extends AbstractSingleOperandAggr
 
     public static SingleValueAggregateExpression<?> create(Expression<?> operand, boolean distinct) {
         QueryDataType operandType = operand.getType();
-
-        if (operandType.getTypeFamily() == QueryDataTypeFamily.LATE) {
-            throw HazelcastSqlException.error("Operand type cannot be resolved: " + operandType);
-        }
-
         return new SingleValueAggregateExpression<>(operand, operandType, distinct);
     }
 

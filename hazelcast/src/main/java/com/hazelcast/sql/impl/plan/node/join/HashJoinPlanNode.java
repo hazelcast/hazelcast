@@ -19,11 +19,9 @@ package com.hazelcast.sql.impl.plan.node.join;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNode;
 import com.hazelcast.sql.impl.plan.node.PlanNodeVisitor;
-import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.io.IOException;
 import java.util.List;
@@ -55,19 +53,6 @@ public class HashJoinPlanNode extends AbstractJoinPlanNode {
         int rightRowColumnCount
     ) {
         super(id, left, right, condition, outer, semi, rightRowColumnCount);
-
-        // TODO: Fail only if both sides have unresolved types. Otherwise perform coercion during join.
-        for (Integer leftHashKey : leftHashKeys) {
-            if (left.getSchema().getType(leftHashKey).getTypeFamily() == QueryDataTypeFamily.LATE) {
-                throw HazelcastSqlException.error("Column type cannot be resolved: " + leftHashKey);
-            }
-        }
-
-        for (Integer rightHashKey : rightHashKeys) {
-            if (right.getSchema().getType(rightHashKey).getTypeFamily() == QueryDataTypeFamily.LATE) {
-                throw HazelcastSqlException.error("Column type cannot be resolved: " + (leftHashKeys.size() + rightHashKey));
-            }
-        }
 
         this.leftHashKeys = leftHashKeys;
         this.rightHashKeys = rightHashKeys;

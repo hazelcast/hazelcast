@@ -101,10 +101,7 @@ public final class HazelcastTable extends AbstractTable {
     public QueryDataType getFieldType(String fieldName) {
         QueryDataType fieldType = fieldTypes.get(fieldName);
 
-        if (fieldType == null) {
-            fieldType = QueryDataType.LATE;
-        }
-
+        assert fieldType != null;
         return fieldType;
     }
 

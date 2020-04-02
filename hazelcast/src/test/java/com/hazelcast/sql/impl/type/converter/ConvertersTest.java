@@ -54,7 +54,6 @@ import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DOUBLE;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTERVAL_DAY_SECOND;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTERVAL_YEAR_MONTH;
-import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.LATE;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.OBJECT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.REAL;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.SMALLINT;
@@ -66,7 +65,6 @@ import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.VARCHAR;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.values;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @SuppressWarnings("SimplifiableJUnitAssertion")
@@ -75,8 +73,6 @@ import static org.junit.Assert.fail;
 public class ConvertersTest {
     @Test
     public void testGetById() {
-        checkGetById(LateConverter.INSTANCE);
-
         checkGetById(StringConverter.INSTANCE);
         checkGetById(CharacterConverter.INSTANCE);
 
@@ -622,21 +618,6 @@ public class ConvertersTest {
         checkObjectConverter(c);
 
         checkConverterSelf(c);
-    }
-
-    @Test
-    public void testLateConverter() {
-        LateConverter c = LateConverter.INSTANCE;
-
-        checkConverter(c, Converter.ID_LATE, LATE, null);
-        checkConverterConversions(c, BIT, TINYINT, SMALLINT, INT, BIGINT, DECIMAL, REAL, DOUBLE, TIME, DATE, TIMESTAMP,
-            TIMESTAMP_WITH_TIME_ZONE, VARCHAR, OBJECT);
-
-        checkObjectConverter(c);
-
-        MockConverter mockConverter = new MockConverter();
-        c.convertToSelf(mockConverter, new Object());
-        assertTrue(mockConverter.isInvokedSelf());
     }
 
     private void checkDataException(Runnable runnable) {

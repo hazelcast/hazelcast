@@ -27,7 +27,6 @@ import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_TIMESTAMP_
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_VARCHAR;
 
 public enum QueryDataTypeFamily {
-    LATE(false, 0, TYPE_LEN_OBJECT),
     VARCHAR(false, 100, TYPE_LEN_VARCHAR),
     BIT(false, 200, 1),
     TINYINT(false, 300, 1),

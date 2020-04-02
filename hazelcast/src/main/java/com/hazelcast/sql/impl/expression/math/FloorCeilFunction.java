@@ -25,7 +25,6 @@ import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.UniExpressionWithType;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.sql.impl.type.converter.Converter;
 
@@ -37,7 +36,7 @@ import java.math.RoundingMode;
  * Implementation of FLOOR/CEIL functions.
  */
 public abstract class FloorCeilFunction<T> extends UniExpressionWithType<T> {
-    /** If this is the CEIL call. */
+
     private boolean ceil;
 
     protected FloorCeilFunction() {
@@ -88,29 +87,6 @@ public abstract class FloorCeilFunction<T> extends UniExpressionWithType<T> {
 
     @SuppressWarnings("checkstyle:AvoidNestedBlocks")
     private static Object floorCeil(Object operandValue, QueryDataType operandType, QueryDataType resultType, boolean ceil) {
-        if (resultType.getTypeFamily() == QueryDataTypeFamily.LATE) {
-            // Special handling for late binding.
-            operandType = QueryDataTypeUtils.resolveType(operandValue);
-
-            switch (operandType.getTypeFamily()) {
-                case BIT:
-                    // Bit alway remain the same, just coerce it.
-                    return CastExpression.coerceValue(operandValue, operandType, QueryDataType.TINYINT);
-
-                case TINYINT:
-                case SMALLINT:
-                case INT:
-                case BIGINT:
-                    // Integer types are always unchanged.
-                    return operandValue;
-
-                default:
-                    break;
-            }
-
-            resultType = inferResultType(operandType);
-        }
-
         Converter operandConverter = operandType.getConverter();
 
         switch (resultType.getTypeFamily()) {
@@ -152,12 +128,6 @@ public abstract class FloorCeilFunction<T> extends UniExpressionWithType<T> {
         return getClass().getSimpleName() + "{operand=" + operand + ", resultType=" + resultType + '}';
     }
 
-    /**
-     * Infer result type.
-     *
-     * @param operandType Operand type.
-     * @return Result type.
-     */
     private static QueryDataType inferResultType(QueryDataType operandType) {
         if (!MathFunctionUtils.canConvertToNumber(operandType)) {
             throw HazelcastSqlException.error("Operand is not numeric: " + operandType);
@@ -176,4 +146,5 @@ public abstract class FloorCeilFunction<T> extends UniExpressionWithType<T> {
 
         return operandType;
     }
+
 }

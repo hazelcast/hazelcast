@@ -31,7 +31,6 @@ import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DOUBLE;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTERVAL_DAY_SECOND;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTERVAL_YEAR_MONTH;
-import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.LATE;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.OBJECT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.REAL;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.SMALLINT;
@@ -77,7 +76,6 @@ public class QueryDataTypeFamilyTest {
 
     @Test
     public void testPrecedence() {
-        assertTrue(LATE.getPrecedence() < VARCHAR.getPrecedence());
         assertTrue(VARCHAR.getPrecedence() < BIT.getPrecedence());
         assertTrue(BIT.getPrecedence() < TINYINT.getPrecedence());
         assertTrue(TINYINT.getPrecedence() < SMALLINT.getPrecedence());

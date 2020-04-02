@@ -33,7 +33,6 @@ import com.hazelcast.sql.impl.type.converter.DoubleConverter;
 import com.hazelcast.sql.impl.type.converter.FloatConverter;
 import com.hazelcast.sql.impl.type.converter.InstantConverter;
 import com.hazelcast.sql.impl.type.converter.IntegerConverter;
-import com.hazelcast.sql.impl.type.converter.LateConverter;
 import com.hazelcast.sql.impl.type.converter.LocalDateConverter;
 import com.hazelcast.sql.impl.type.converter.LocalDateTimeConverter;
 import com.hazelcast.sql.impl.type.converter.LocalTimeConverter;
@@ -61,8 +60,6 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
     public static final int PRECISION_INT = 11;
     public static final int PRECISION_BIGINT = 20;
     public static final int PRECISION_UNLIMITED = -1;
-
-    public static final QueryDataType LATE = new QueryDataType(LateConverter.INSTANCE);
 
     public static final QueryDataType VARCHAR = new QueryDataType(StringConverter.INSTANCE);
     public static final QueryDataType VARCHAR_CHARACTER = new QueryDataType(CharacterConverter.INSTANCE);

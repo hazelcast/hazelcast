@@ -32,7 +32,6 @@ import com.hazelcast.sql.impl.type.converter.DoubleConverter;
 import com.hazelcast.sql.impl.type.converter.FloatConverter;
 import com.hazelcast.sql.impl.type.converter.InstantConverter;
 import com.hazelcast.sql.impl.type.converter.IntegerConverter;
-import com.hazelcast.sql.impl.type.converter.LateConverter;
 import com.hazelcast.sql.impl.type.converter.LocalDateConverter;
 import com.hazelcast.sql.impl.type.converter.LocalDateTimeConverter;
 import com.hazelcast.sql.impl.type.converter.LocalTimeConverter;
@@ -69,8 +68,6 @@ import static org.junit.Assert.assertSame;
 public class QueryDataTypeTest extends SqlTestSupport {
     @Test
     public void testDefaultTypes() {
-        checkType(QueryDataType.LATE, LateConverter.INSTANCE);
-
         checkType(QueryDataType.VARCHAR, StringConverter.INSTANCE);
         checkType(QueryDataType.VARCHAR_CHARACTER, CharacterConverter.INSTANCE);
 
@@ -127,7 +124,6 @@ public class QueryDataTypeTest extends SqlTestSupport {
 
     @Test
     public void testTypeResolutionByValue() {
-        assertEquals(QueryDataType.LATE, QueryDataTypeUtils.resolveType(null));
         assertEquals(QueryDataType.INT, QueryDataTypeUtils.resolveType(1));
     }
 
@@ -188,8 +184,6 @@ public class QueryDataTypeTest extends SqlTestSupport {
 
     @Test
     public void testBigger() {
-        checkPrecedence(QueryDataType.VARCHAR, QueryDataType.LATE);
-
         checkPrecedence(QueryDataType.BIT, QueryDataType.VARCHAR);
         checkPrecedence(QueryDataType.TINYINT, QueryDataType.BIT);
         checkPrecedence(QueryDataType.SMALLINT, QueryDataType.TINYINT);

@@ -22,7 +22,6 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
 import com.hazelcast.sql.impl.type.SqlYearMonthInterval;
 import com.hazelcast.sql.impl.type.converter.Converter;
@@ -33,15 +32,18 @@ import java.math.RoundingMode;
 import static com.hazelcast.sql.impl.expression.datetime.DateTimeExpressionUtils.NANO_IN_SECONDS;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTERVAL_DAY_SECOND;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTERVAL_YEAR_MONTH;
-import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.LATE;
 
 /**
  * Division.
  */
 public class DivideFunction<T> extends BiExpressionWithType<T> {
-    /** Scale for division operation. */
+
+    /**
+     * Scale for division operation.
+     */
     public static final int SCALE = 38;
 
+    @SuppressWarnings("unused")
     public DivideFunction() {
         // No-op.
     }
@@ -74,21 +76,8 @@ public class DivideFunction<T> extends BiExpressionWithType<T> {
         return (T) doDivide(operand1Value, operand1.getType(), operand2Value, operand2.getType(), resultType);
     }
 
-    private static Object doDivide(
-        Object operand1,
-        QueryDataType operand1Type,
-        Object operand2,
-        QueryDataType operand2Type,
-        QueryDataType resultType
-    ) {
-        // Handle lat binding.
-        if (resultType.getTypeFamily() == LATE) {
-            operand1Type = QueryDataTypeUtils.resolveType(operand1);
-            operand2Type = QueryDataTypeUtils.resolveType(operand2);
-
-            resultType = MathFunctionUtils.inferDivideResultType(operand1Type, operand2Type);
-        }
-
+    private static Object doDivide(Object operand1, QueryDataType operand1Type, Object operand2, QueryDataType operand2Type,
+                                   QueryDataType resultType) {
         // Handle intervals.
         if (resultType.getTypeFamily() == INTERVAL_YEAR_MONTH || resultType.getTypeFamily() == INTERVAL_DAY_SECOND) {
             return doDivideInterval(operand1, operand2, operand2Type, resultType);
@@ -99,12 +88,8 @@ public class DivideFunction<T> extends BiExpressionWithType<T> {
     }
 
     @SuppressWarnings("checkstyle:AvoidNestedBlocks")
-    private static Object doDivideInterval(
-        Object operand1,
-        Object operand2,
-        QueryDataType operand2Type,
-        QueryDataType resultType
-    ) {
+    private static Object doDivideInterval(Object operand1, Object operand2, QueryDataType operand2Type,
+                                           QueryDataType resultType) {
         switch (resultType.getTypeFamily()) {
             case INTERVAL_YEAR_MONTH: {
                 SqlYearMonthInterval interval = (SqlYearMonthInterval) operand1;
@@ -131,13 +116,8 @@ public class DivideFunction<T> extends BiExpressionWithType<T> {
     }
 
     @SuppressWarnings("checkstyle:AvoidNestedBlocks")
-    private static Object doDivideNumeric(
-        Object operand1,
-        QueryDataType operand1Type,
-        Object operand2,
-        QueryDataType operand2Type,
-        QueryDataType resultType
-    ) {
+    private static Object doDivideNumeric(Object operand1, QueryDataType operand1Type, Object operand2,
+                                          QueryDataType operand2Type, QueryDataType resultType) {
         Converter operand1Converter = operand1Type.getConverter();
         Converter operand2Converter = operand2Type.getConverter();
 
@@ -188,4 +168,5 @@ public class DivideFunction<T> extends BiExpressionWithType<T> {
             throw HazelcastSqlException.error("Division by zero.");
         }
     }
+
 }

@@ -22,11 +22,11 @@ import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.UniExpressionWithType;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
-import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.sql.impl.type.converter.Converter;
 
 public class SignFunction extends UniExpressionWithType<Number> {
+
+    @SuppressWarnings("unused")
     public SignFunction() {
         // No-op.
     }
@@ -50,22 +50,7 @@ public class SignFunction extends UniExpressionWithType<Number> {
         return doSign(operandValue, operand.getType(), resultType);
     }
 
-    /**
-     * Get absolute value.
-     *
-     * @param operandValue Value.
-     * @param operandType Operand type.
-     * @param resultType Type.
-     * @return Absolute value of the target.
-     */
     private static Number doSign(Object operandValue, QueryDataType operandType, QueryDataType resultType) {
-        if (resultType.getTypeFamily() == QueryDataTypeFamily.LATE) {
-            // Special handling for late binding.
-            operandType = QueryDataTypeUtils.resolveType(operandValue);
-
-            resultType = inferResultType(operandType);
-        }
-
         Converter operandConverter = operandType.getConverter();
 
         switch (resultType.getTypeFamily()) {
@@ -116,4 +101,5 @@ public class SignFunction extends UniExpressionWithType<Number> {
 
         return operandType;
     }
+
 }

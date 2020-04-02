@@ -23,11 +23,12 @@ import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.UniExpressionWithType;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.sql.impl.type.converter.Converter;
 
 public class AbsFunction<T> extends UniExpressionWithType<T> {
+
+    @SuppressWarnings("unused")
     public AbsFunction() {
         // No-op.
     }
@@ -59,27 +60,7 @@ public class AbsFunction<T> extends UniExpressionWithType<T> {
         return (T) abs(operandValue, operand.getType(), resultType);
     }
 
-    /**
-     * Get absolute value.
-     *
-     * @param operand Value.
-     * @param operandType Type of the operand.
-     * @param resultType Result type.
-     * @return Absolute value of the target.
-     */
     private static Object abs(Object operand, QueryDataType operandType, QueryDataType resultType) {
-        if (operandType.getTypeFamily() == QueryDataTypeFamily.LATE) {
-            // Special handling for late binding.
-            operandType = QueryDataTypeUtils.resolveType(operand);
-
-            if (operandType.getTypeFamily() == QueryDataTypeFamily.BIT) {
-                // Bit alway remain the same, just coerce it.
-                return CastExpression.coerceValue(operand, operandType, QueryDataType.TINYINT);
-            }
-
-            resultType = inferResultType(operandType);
-        }
-
         Converter operandConverter = operandType.getConverter();
 
         switch (resultType.getTypeFamily()) {
@@ -126,4 +107,5 @@ public class AbsFunction<T> extends UniExpressionWithType<T> {
 
         return operandType;
     }
+
 }

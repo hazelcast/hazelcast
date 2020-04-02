@@ -19,16 +19,15 @@ package com.hazelcast.sql.impl.expression.predicate;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
-import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
-import com.hazelcast.sql.impl.type.SqlYearMonthInterval;
 import com.hazelcast.sql.impl.expression.BiExpression;
 import com.hazelcast.sql.impl.expression.CastExpression;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
-import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
+import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
+import com.hazelcast.sql.impl.type.SqlYearMonthInterval;
 import com.hazelcast.sql.impl.type.converter.Converter;
 
 import java.io.IOException;
@@ -43,12 +42,15 @@ import java.util.Objects;
  * Comparison predicates: {@code =}, {@code <>}, {@code <}, {@code <=}, {@code >}, {@code >=}.
  */
 public class ComparisonPredicate extends BiExpression<Boolean> {
-    /** Data type which is used for comparison. */
+
+    /**
+     * Data type which is used for comparison.
+     */
     private QueryDataType type;
 
-    /** Operator. */
     private ComparisonMode comparisonMode;
 
+    @SuppressWarnings("unused")
     public ComparisonPredicate() {
         // No-op.
     }
@@ -85,29 +87,11 @@ public class ComparisonPredicate extends BiExpression<Boolean> {
         return doCompare(comparisonMode, operand1Value, operand1.getType(), operand2Value, operand2.getType(), type);
     }
 
-    @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:CyclomaticComplexity", "checkstyle:ReturnCount",
-        "checkstyle:AvoidNestedBlocks"})
-    private static boolean doCompare(
-        ComparisonMode comparisonMode,
-        Object operand1,
-        QueryDataType operand1Type,
-        Object operand2,
-        QueryDataType operand2Type,
-        QueryDataType type
-    ) {
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:ReturnCount", "checkstyle:AvoidNestedBlocks"})
+    private static boolean doCompare(ComparisonMode comparisonMode, Object operand1, QueryDataType operand1Type, Object operand2,
+                                     QueryDataType operand2Type, QueryDataType type) {
         Converter converter1 = operand1Type.getConverter();
         Converter converter2 = operand2Type.getConverter();
-
-        if (type.getTypeFamily() == QueryDataTypeFamily.LATE) {
-            // Handle special case when we couldn't resolve the type in advance.
-            operand1Type = QueryDataTypeUtils.resolveType(operand1);
-            operand2Type = QueryDataTypeUtils.resolveType(operand2);
-
-            type = QueryDataTypeUtils.withHigherPrecedence(operand1Type, operand2Type);
-
-            operand1 = CastExpression.coerceValue(operand1, operand1Type, type);
-            operand2 = CastExpression.coerceValue(operand2, operand2Type, type);
-        }
 
         switch (type.getTypeFamily()) {
             case BIT:
@@ -264,12 +248,13 @@ public class ComparisonPredicate extends BiExpression<Boolean> {
 
         ComparisonPredicate that = (ComparisonPredicate) o;
 
-        return Objects.equals(operand1, that.operand1) && Objects.equals(operand2, that.operand2)
-                   && Objects.equals(type, that.type) && comparisonMode == that.comparisonMode;
+        return Objects.equals(operand1, that.operand1) && Objects.equals(operand2, that.operand2) && Objects.equals(type,
+                that.type) && comparisonMode == that.comparisonMode;
     }
 
     @Override
     public String toString() {
         return getClass().getSimpleName() + "{mode=" + comparisonMode + ", operand1=" + operand1 + ", operand2=" + operand2 + '}';
     }
+
 }

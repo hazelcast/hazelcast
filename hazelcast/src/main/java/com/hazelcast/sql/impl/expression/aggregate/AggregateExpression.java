@@ -25,7 +25,6 @@ import com.hazelcast.sql.impl.exec.agg.AggregateCollector;
 import com.hazelcast.sql.impl.exec.agg.AggregateExec;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.io.IOException;
 
@@ -47,8 +46,6 @@ public abstract class AggregateExpression<T> implements DataSerializable {
     }
 
     protected AggregateExpression(QueryDataType resType, boolean distinct) {
-        assert resType.getTypeFamily() != QueryDataTypeFamily.LATE;
-
         this.resType = resType;
         this.distinct = distinct;
     }

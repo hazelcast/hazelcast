@@ -16,12 +16,10 @@
 
 package com.hazelcast.sql.impl.expression.aggregate;
 
-import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 import com.hazelcast.sql.impl.exec.agg.AggregateCollector;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 /**
  * Counting accumulator.
@@ -36,12 +34,6 @@ public class CountAggregateExpression extends AbstractSingleOperandAggregateExpr
     }
 
     public static CountAggregateExpression create(Expression<?> operand, boolean distinct) {
-        QueryDataType operandType = operand.getType();
-
-        if (operandType.getTypeFamily() == QueryDataTypeFamily.LATE) {
-            throw HazelcastSqlException.error("Operand type cannot be resolved: " + operandType);
-        }
-
         return new CountAggregateExpression(operand, QueryDataType.BIGINT, distinct);
     }
 

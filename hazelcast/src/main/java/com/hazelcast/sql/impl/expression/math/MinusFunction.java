@@ -17,15 +17,14 @@
 package com.hazelcast.sql.impl.expression.math;
 
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
-import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
-import com.hazelcast.sql.impl.type.SqlYearMonthInterval;
 import com.hazelcast.sql.impl.expression.BiExpressionWithType;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
+import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
+import com.hazelcast.sql.impl.type.SqlYearMonthInterval;
 import com.hazelcast.sql.impl.type.converter.Converter;
 
 import java.math.BigDecimal;
@@ -35,6 +34,8 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 
 public class MinusFunction<T> extends BiExpressionWithType<T> {
+
+    @SuppressWarnings("unused")
     public MinusFunction() {
         // No-op.
     }
@@ -68,21 +69,8 @@ public class MinusFunction<T> extends BiExpressionWithType<T> {
         return (T) doMinus(operand1Value, operand1.getType(), operand2Value, operand2.getType(), resultType);
     }
 
-    private static Object doMinus(
-        Object operand1,
-        QueryDataType operand1Type,
-        Object operand2,
-        QueryDataType operand2Type,
-        QueryDataType resultType
-    ) {
-        // Handle late binding.
-        if (resultType.getTypeFamily() == QueryDataTypeFamily.LATE) {
-            operand1Type = QueryDataTypeUtils.resolveType(operand1);
-            operand2Type = QueryDataTypeUtils.resolveType(operand2);
-
-            resultType = MathFunctionUtils.inferPlusMinusResultType(operand1Type, operand2Type, false);
-        }
-
+    private static Object doMinus(Object operand1, QueryDataType operand1Type, Object operand2, QueryDataType operand2Type,
+                                  QueryDataType resultType) {
         if (resultType.getTypeFamily().isTemporal()) {
             return doMinusTemporal(operand1, operand1Type, operand2, operand2Type, resultType);
         }
@@ -121,13 +109,8 @@ public class MinusFunction<T> extends BiExpressionWithType<T> {
     }
 
     @SuppressWarnings("checkstyle:AvoidNestedBlocks")
-    private static Object doMinusTemporal(
-        Object temporalOperand,
-        QueryDataType temporalOperandType,
-        Object intervalOperand,
-        QueryDataType intervalOperandType,
-        QueryDataType resType
-    ) {
+    private static Object doMinusTemporal(Object temporalOperand, QueryDataType temporalOperandType, Object intervalOperand,
+                                          QueryDataType intervalOperandType, QueryDataType resType) {
         switch (resType.getTypeFamily()) {
             case DATE: {
                 LocalDate date = temporalOperandType.getConverter().asDate(temporalOperand);
@@ -181,4 +164,5 @@ public class MinusFunction<T> extends BiExpressionWithType<T> {
                 throw HazelcastSqlException.error("Unsupported result type: " + resType);
         }
     }
+
 }

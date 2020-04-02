@@ -22,8 +22,6 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
-import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.sql.impl.type.converter.Converter;
 
 import java.math.BigDecimal;
@@ -32,6 +30,8 @@ import java.math.BigDecimal;
  * Division.
  */
 public class RemainderFunction<T> extends BiExpressionWithType<T> {
+
+    @SuppressWarnings("unused")
     public RemainderFunction() {
         // No-op.
     }
@@ -64,33 +64,15 @@ public class RemainderFunction<T> extends BiExpressionWithType<T> {
         return (T) doRemainder(operand1Value, operand1.getType(), operand2Value, operand2.getType(), resultType);
     }
 
-    private static Object doRemainder(
-        Object operand1,
-        QueryDataType operand1Type,
-        Object operand2,
-        QueryDataType operand2Type,
-        QueryDataType resultType
-    ) {
-        // Handle lat binding.
-        if (resultType.getTypeFamily() == QueryDataTypeFamily.LATE) {
-            operand1Type = QueryDataTypeUtils.resolveType(operand1);
-            operand2Type = QueryDataTypeUtils.resolveType(operand2);
-
-            resultType = MathFunctionUtils.inferRemainderResultType(operand1Type, operand2Type);
-        }
-
+    private static Object doRemainder(Object operand1, QueryDataType operand1Type, Object operand2, QueryDataType operand2Type,
+                                      QueryDataType resultType) {
         // Handle numeric.
         return doRemainderNumeric(operand1, operand1Type, operand2, operand2Type, resultType);
     }
 
     @SuppressWarnings("checkstyle:AvoidNestedBlocks")
-    private static Object doRemainderNumeric(
-        Object operand1,
-        QueryDataType operand1Type,
-        Object operand2,
-        QueryDataType operand2Type,
-        QueryDataType resultType
-    ) {
+    private static Object doRemainderNumeric(Object operand1, QueryDataType operand1Type, Object operand2,
+                                             QueryDataType operand2Type, QueryDataType resultType) {
         Converter operand1Converter = operand1Type.getConverter();
         Converter operand2Converter = operand2Type.getConverter();
 
@@ -141,4 +123,5 @@ public class RemainderFunction<T> extends BiExpressionWithType<T> {
             throw HazelcastSqlException.error("Division by zero.");
         }
     }
+
 }

@@ -23,7 +23,6 @@ import com.hazelcast.sql.impl.expression.UniExpressionWithType;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
-import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 import com.hazelcast.sql.impl.type.converter.Converter;
 
 import java.math.BigDecimal;
@@ -32,6 +31,8 @@ import java.math.BigDecimal;
  * Unary minus operation.
  */
 public class UnaryMinusFunction<T> extends UniExpressionWithType<T> {
+
+    @SuppressWarnings("unused")
     public UnaryMinusFunction() {
         // No-op.
     }
@@ -61,22 +62,7 @@ public class UnaryMinusFunction<T> extends UniExpressionWithType<T> {
         return operand.getType();
     }
 
-    /**
-     * Execute unary minus operation.
-     *
-     * @param operandValue Operand value.
-     * @param operandType Operand type.
-     * @param resultType Result type.
-     * @return Result.
-     */
     private static Object doMinus(Object operandValue, QueryDataType operandType, QueryDataType resultType) {
-        if (resultType.getTypeFamily() == QueryDataTypeFamily.LATE) {
-            // Special handling for late binding.
-            operandType = QueryDataTypeUtils.resolveType(operandValue);
-
-            resultType = inferResultType(operandType);
-        }
-
         Converter operandConverter = operandType.getConverter();
 
         switch (resultType.getTypeFamily()) {
@@ -108,26 +94,16 @@ public class UnaryMinusFunction<T> extends UniExpressionWithType<T> {
         }
     }
 
-    /**
-     * Infer result type.
-     *
-     * @param operandType Operand type.
-     * @return Result type.
-     */
     private static QueryDataType inferResultType(QueryDataType operandType) {
         if (!MathFunctionUtils.canConvertToNumber(operandType)) {
             throw HazelcastSqlException.error("Operand is not numeric: " + operandType);
         }
 
-        switch (operandType.getTypeFamily()) {
-            case LATE:
-                return QueryDataType.LATE;
-
-            case VARCHAR:
-                return QueryDataType.DECIMAL;
-
-            default:
-                return MathFunctionUtils.expandPrecision(operandType);
+        if (operandType.getTypeFamily() == QueryDataTypeFamily.VARCHAR) {
+            return QueryDataType.DECIMAL;
         }
+
+        return MathFunctionUtils.expandPrecision(operandType);
     }
+
 }

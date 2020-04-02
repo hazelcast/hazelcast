@@ -18,9 +18,9 @@ package com.hazelcast.sql.impl.expression.math;
 
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.expression.BiExpressionWithType;
+import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.util.Eval;
-import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
@@ -31,6 +31,7 @@ import java.math.RoundingMode;
  * Implementation of ROUND/TRUNCATE functions.
  */
 public abstract class RoundTruncateFunction<T> extends BiExpressionWithType<T> {
+
     public RoundTruncateFunction() {
         // No-op.
     }
@@ -110,7 +111,6 @@ public abstract class RoundTruncateFunction<T> extends BiExpressionWithType<T> {
                 return QueryDataType.INT;
 
             case VARCHAR:
-            case LATE:
                 return QueryDataType.DECIMAL;
 
             case REAL:
@@ -122,4 +122,5 @@ public abstract class RoundTruncateFunction<T> extends BiExpressionWithType<T> {
 
         return operand1Type;
     }
+
 }

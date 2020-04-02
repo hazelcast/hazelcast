@@ -17,15 +17,15 @@
 package com.hazelcast.sql.impl.expression.math;
 
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
-import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
-import com.hazelcast.sql.impl.type.SqlYearMonthInterval;
 import com.hazelcast.sql.impl.expression.BiExpressionWithType;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
+import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
+import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
+import com.hazelcast.sql.impl.type.SqlYearMonthInterval;
 import com.hazelcast.sql.impl.type.converter.Converter;
 
 import java.math.BigDecimal;
@@ -35,6 +35,8 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 
 public class PlusFunction<T> extends BiExpressionWithType<T> {
+
+    @SuppressWarnings("unused")
     public PlusFunction() {
         // No-op.
     }
@@ -74,43 +76,19 @@ public class PlusFunction<T> extends BiExpressionWithType<T> {
         return (T) doPlus(operand1Value, operand1.getType(), operand2Value, operand2.getType(), resultType);
     }
 
-    private static Object doPlus(
-        Object operand1,
-        QueryDataType operand1Type,
-        Object operand2,
-        QueryDataType operand2Type,
-        QueryDataType resultType
-    ) {
-        // Handle late binding.
-        boolean wasLate = resultType.getTypeFamily() == QueryDataTypeFamily.LATE;
-
-        if (wasLate) {
-            operand1Type = QueryDataTypeUtils.resolveType(operand1);
-            operand2Type = QueryDataTypeUtils.resolveType(operand2);
-
-            resultType = MathFunctionUtils.inferPlusMinusResultType(operand1Type, operand2Type, true);
-        }
-
+    private static Object doPlus(Object operand1, QueryDataType operand1Type, Object operand2, QueryDataType operand2Type,
+                                 QueryDataType resultType) {
         // Handle temporal.
         if (resultType.getTypeFamily().isTemporal()) {
-            if (wasLate && QueryDataTypeUtils.withHigherPrecedence(operand1Type, operand2Type) == operand2Type) {
-                return doPlusTemporal(operand1, operand1Type, operand2, operand2Type, resultType);
-            } else {
-                return doPlusTemporal(operand2, operand2Type, operand1, operand1Type, resultType);
-            }
+            return doPlusTemporal(operand2, operand2Type, operand1, operand1Type, resultType);
         }
 
         // Handle numeric.
         return doPlusNumeric(operand1, operand1Type, operand2, operand2Type, resultType);
     }
 
-    private static Object doPlusNumeric(
-        Object operand1,
-        QueryDataType operand1Type,
-        Object operand2,
-        QueryDataType operand2Type,
-        QueryDataType resultType
-    ) {
+    private static Object doPlusNumeric(Object operand1, QueryDataType operand1Type, Object operand2, QueryDataType operand2Type,
+                                        QueryDataType resultType) {
         Converter operand1Converter = operand1Type.getConverter();
         Converter operand2Converter = operand2Type.getConverter();
 
@@ -145,13 +123,8 @@ public class PlusFunction<T> extends BiExpressionWithType<T> {
     }
 
     @SuppressWarnings("checkstyle:AvoidNestedBlocks")
-    private static Object doPlusTemporal(
-        Object temporalOperand,
-        QueryDataType temporalOperandType,
-        Object intervalOperand,
-        QueryDataType intervalOperandType,
-        QueryDataType resType
-    ) {
+    private static Object doPlusTemporal(Object temporalOperand, QueryDataType temporalOperandType, Object intervalOperand,
+                                         QueryDataType intervalOperandType, QueryDataType resType) {
         switch (resType.getTypeFamily()) {
             case DATE: {
                 LocalDate date = temporalOperandType.getConverter().asDate(temporalOperand);
@@ -204,4 +177,5 @@ public class PlusFunction<T> extends BiExpressionWithType<T> {
                 throw HazelcastSqlException.error("Unsupported result type: " + resType);
         }
     }
+
 }

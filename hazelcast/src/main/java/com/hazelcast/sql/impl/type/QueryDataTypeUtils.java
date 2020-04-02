@@ -37,7 +37,6 @@ import static com.hazelcast.sql.impl.type.QueryDataType.DOUBLE;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static com.hazelcast.sql.impl.type.QueryDataType.INTERVAL_DAY_SECOND;
 import static com.hazelcast.sql.impl.type.QueryDataType.INTERVAL_YEAR_MONTH;
-import static com.hazelcast.sql.impl.type.QueryDataType.LATE;
 import static com.hazelcast.sql.impl.type.QueryDataType.OBJECT;
 import static com.hazelcast.sql.impl.type.QueryDataType.PRECISION_BIGINT;
 import static com.hazelcast.sql.impl.type.QueryDataType.PRECISION_BIT;
@@ -124,13 +123,8 @@ public final class QueryDataTypeUtils {
     }
 
     public static QueryDataType resolveType(Object obj) {
-        if (obj == null) {
-            return LATE;
-        }
-
-        Class<?> clazz = obj.getClass();
-
-        return resolveTypeForClass(clazz);
+        assert obj != null;
+        return resolveTypeForClass(obj.getClass());
     }
 
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:ReturnCount", "checkstyle:MethodLength"})
@@ -213,8 +207,6 @@ public final class QueryDataTypeUtils {
                 return OBJECT;
 
             default:
-                assert typeFamily == QueryDataTypeFamily.LATE;
-
                 throw new IllegalArgumentException("Unexpected class: " + clazz);
         }
     }
@@ -271,8 +263,6 @@ public final class QueryDataTypeUtils {
                 return OBJECT;
 
             default:
-                assert typeFamily == QueryDataTypeFamily.LATE;
-
                 throw new IllegalArgumentException("Unexpected type family: " + typeFamily);
         }
     }

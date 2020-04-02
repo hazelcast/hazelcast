@@ -18,9 +18,7 @@ package com.hazelcast.sql.impl.plan.node;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.io.IOException;
 import java.util.List;
@@ -53,12 +51,6 @@ public class SortPlanNode extends UniInputPlanNode {
         Expression offset
     ) {
         super(id, upstream);
-
-        for (Expression<?> expression : expressions) {
-            if (expression.getType().getTypeFamily() == QueryDataTypeFamily.LATE) {
-                throw HazelcastSqlException.error("Expression type cannot be resolved: " + expression);
-            }
-        }
 
         this.expressions = expressions;
         this.ascs = ascs;
