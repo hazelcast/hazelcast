@@ -18,6 +18,7 @@ package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.DataType;
 import com.hazelcast.internal.serialization.PortableContext;
 import com.hazelcast.internal.serialization.impl.ConstantSerializers.BooleanSerializer;
@@ -26,7 +27,6 @@ import com.hazelcast.internal.serialization.impl.ConstantSerializers.StringArray
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassNameFilter;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.FieldDefinition;
@@ -84,10 +84,10 @@ import static com.hazelcast.internal.serialization.impl.ConstantSerializers.Long
 import static com.hazelcast.internal.serialization.impl.ConstantSerializers.LongSerializer;
 import static com.hazelcast.internal.serialization.impl.ConstantSerializers.ShortArraySerializer;
 import static com.hazelcast.internal.serialization.impl.ConstantSerializers.ShortSerializer;
+import static com.hazelcast.internal.serialization.impl.ConstantSerializers.SimpleEntrySerializer;
 import static com.hazelcast.internal.serialization.impl.ConstantSerializers.StringSerializer;
 import static com.hazelcast.internal.serialization.impl.ConstantSerializers.TheByteArraySerializer;
 import static com.hazelcast.internal.serialization.impl.ConstantSerializers.UuidSerializer;
-import static com.hazelcast.internal.serialization.impl.ConstantSerializers.SimpleEntrySerializer;
 import static com.hazelcast.internal.serialization.impl.DataSerializableSerializer.EE_FLAG;
 import static com.hazelcast.internal.serialization.impl.DataSerializableSerializer.IDS_FLAG;
 import static com.hazelcast.internal.serialization.impl.DataSerializableSerializer.isFlagSet;
@@ -233,33 +233,44 @@ public class SerializationServiceV1 extends AbstractSerializationService {
     }
 
     public void registerClassDefinitions(Collection<ClassDefinition> classDefinitions, boolean checkClassDefErrors) {
-        final Map<Integer, ClassDefinition> classDefMap = createHashMap(classDefinitions.size());
+        Map<Integer, Map<Integer, ClassDefinition>> factoryMap = createHashMap(classDefinitions.size());
         for (ClassDefinition cd : classDefinitions) {
-            if (classDefMap.containsKey(cd.getClassId())) {
-                throw new HazelcastSerializationException("Duplicate registration found for class-id[" + cd.getClassId() + "]!");
+            int factoryId = cd.getFactoryId();
+            Map<Integer, ClassDefinition> classDefMap = factoryMap.computeIfAbsent(factoryId, k -> new HashMap<>());
+            int classId = cd.getClassId();
+            if (classDefMap.containsKey(classId)) {
+                throw new HazelcastSerializationException("Duplicate registration found for factory-id : "
+                        + factoryId + ", class-id " + classId);
             }
-            classDefMap.put(cd.getClassId(), cd);
+            classDefMap.put(classId, cd);
         }
         for (ClassDefinition classDefinition : classDefinitions) {
-            registerClassDefinition(classDefinition, classDefMap, checkClassDefErrors);
+            registerClassDefinition(classDefinition, factoryMap, checkClassDefErrors);
         }
     }
 
-    protected void registerClassDefinition(ClassDefinition cd, Map<Integer, ClassDefinition> classDefMap,
-                                           boolean checkClassDefErrors) {
-        final Set<String> fieldNames = cd.getFieldNames();
+    private void registerClassDefinition(ClassDefinition cd, Map<Integer, Map<Integer, ClassDefinition>> factoryMap,
+                                         boolean checkClassDefErrors) {
+        Set<String> fieldNames = cd.getFieldNames();
         for (String fieldName : fieldNames) {
             FieldDefinition fd = cd.getField(fieldName);
             if (fd.getType() == FieldType.PORTABLE || fd.getType() == FieldType.PORTABLE_ARRAY) {
+                int factoryId = fd.getFactoryId();
                 int classId = fd.getClassId();
-                ClassDefinition nestedCd = classDefMap.get(classId);
-                if (nestedCd != null) {
-                    registerClassDefinition(nestedCd, classDefMap, checkClassDefErrors);
-                    portableContext.registerClassDefinition(nestedCd);
-                } else if (checkClassDefErrors) {
-                    throw new HazelcastSerializationException(
-                            "Could not find registered ClassDefinition for class-id: " + classId);
+                Map<Integer, ClassDefinition> classDefinitionMap = factoryMap.get(factoryId);
+                if (classDefinitionMap != null) {
+                    ClassDefinition nestedCd = classDefinitionMap.get(classId);
+                    if (nestedCd != null) {
+                        registerClassDefinition(nestedCd, factoryMap, checkClassDefErrors);
+                        portableContext.registerClassDefinition(nestedCd);
+                        continue;
+                    }
                 }
+                if (checkClassDefErrors) {
+                    throw new HazelcastSerializationException("Could not find registered ClassDefinition for factory-id : "
+                            + factoryId + ", class-id " + classId);
+                }
+
             }
         }
         portableContext.registerClassDefinition(cd);
