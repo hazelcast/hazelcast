@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.mailbox.flowcontrol;
+package com.hazelcast.sql.impl.exec.io.flowcontrol;
 
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.operation.QueryOperationHandler;

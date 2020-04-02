@@ -14,23 +14,31 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.row.partitioner;
+package com.hazelcast.sql.impl.partitioner;
 
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.row.Row;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Objects;
 
 /**
- * Hash function which uses all row columns to calculate the hash.
+ * Hash function which uses fields to get the hash.
  */
-public class AllFieldsRowPartitioner extends AbstractFieldsRowPartitioner {
-    /** Singleton instance. */
-    public static final AllFieldsRowPartitioner INSTANCE = new AllFieldsRowPartitioner();
+// TODO: Add partitioner for collocated joins that relies on DeclarativePartitioningStrategy.
+public class FieldsRowPartitioner extends AbstractFieldsRowPartitioner {
+    /** Fields. */
+    private List<Integer> fields;
 
-    public AllFieldsRowPartitioner() {
+    public FieldsRowPartitioner() {
         // No-op.
+    }
+
+    public FieldsRowPartitioner(List<Integer> fields) {
+        this.fields = fields;
     }
 
     @SuppressWarnings("checkstyle:MagicNumber")
@@ -38,8 +46,8 @@ public class AllFieldsRowPartitioner extends AbstractFieldsRowPartitioner {
     protected int getHash(Row row) {
         int res = 0;
 
-        for (int idx = 0; idx < row.getColumnCount(); idx++) {
-            Object val = row.get(idx);
+        for (Integer field : fields) {
+            Object val = row.get(field);
             int hash = val != null ? val.hashCode() : 0;
 
             res = 31 * res + hash;
@@ -50,26 +58,36 @@ public class AllFieldsRowPartitioner extends AbstractFieldsRowPartitioner {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        // No-op.
+        SerializationUtil.writeList(fields, out);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        // No-op.
+        fields = SerializationUtil.readList(in);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        FieldsRowPartitioner that = (FieldsRowPartitioner) o;
+
+        return Objects.equals(fields, that.fields);
     }
 
     @Override
     public int hashCode() {
-        return getClass().hashCode();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        return obj instanceof AllFieldsRowPartitioner;
+        return Objects.hash(fields);
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{}";
+        return getClass().getSimpleName() + "{fields=" + fields + '}';
     }
 }

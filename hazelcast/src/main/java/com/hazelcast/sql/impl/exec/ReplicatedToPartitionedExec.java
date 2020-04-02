@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.exec;
 
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.row.partitioner.RowPartitioner;
+import com.hazelcast.sql.impl.partitioner.RowPartitioner;
 
 /**
  * Executor which converts replicated input to partitioned based on the given fields.

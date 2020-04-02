@@ -14,36 +14,26 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.mailbox;
+package com.hazelcast.sql.impl.exec.io.mailbox;
 
-import com.hazelcast.sql.impl.row.RowBatch;
-
-import java.util.UUID;
+import com.hazelcast.sql.impl.QueryId;
 
 /**
- * Mailbox batch received from the remote member.
+ * Base class for inboxes and outboxes.
  */
-public final class InboundBatch {
+public abstract class AbstractMailbox {
+    /** Query ID. */
+    protected final QueryId queryId;
 
-    private final RowBatch batch;
-    private final boolean last;
-    private final UUID senderId;
+    /** Edge ID. */
+    protected final int edgeId;
 
-    public InboundBatch(RowBatch batch, boolean last, UUID senderId) {
-        this.batch = batch;
-        this.last = last;
-        this.senderId = senderId;
-    }
+    /** Width of a single row in bytes. */
+    protected final int rowWidth;
 
-    public RowBatch getBatch() {
-        return batch;
-    }
-
-    public boolean isLast() {
-        return last;
-    }
-
-    public UUID getSenderId() {
-        return senderId;
+    public AbstractMailbox(QueryId queryId, int edgeId, int rowWidth) {
+        this.queryId = queryId;
+        this.edgeId = edgeId;
+        this.rowWidth = rowWidth;
     }
 }

@@ -20,7 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.plan.node.PlanNode;
 import com.hazelcast.sql.impl.plan.node.UniInputPlanNode;
-import com.hazelcast.sql.impl.row.partitioner.RowPartitioner;
+import com.hazelcast.sql.impl.partitioner.RowPartitioner;
 import com.hazelcast.sql.impl.plan.node.PlanNodeVisitor;
 
 import java.io.IOException;

@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.mailbox.flowcontrol.simple;
+package com.hazelcast.sql.impl.exec.io.flowcontrol.simple;
 
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.sql.impl.mailbox.flowcontrol.FlowControl;
+import com.hazelcast.sql.impl.exec.io.flowcontrol.FlowControl;
 import com.hazelcast.sql.impl.operation.QueryFlowControlExchangeOperation;
 import com.hazelcast.sql.impl.operation.QueryOperationHandler;
 

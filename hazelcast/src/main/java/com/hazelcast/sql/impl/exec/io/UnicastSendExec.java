@@ -17,9 +17,9 @@
 package com.hazelcast.sql.impl.exec.io;
 
 import com.hazelcast.sql.impl.exec.Exec;
-import com.hazelcast.sql.impl.mailbox.Outbox;
+import com.hazelcast.sql.impl.exec.io.mailbox.Outbox;
 import com.hazelcast.sql.impl.row.RowBatch;
-import com.hazelcast.sql.impl.row.partitioner.RowPartitioner;
+import com.hazelcast.sql.impl.partitioner.RowPartitioner;
 
 /**
  * Unicast sender.

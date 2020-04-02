@@ -14,26 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.mailbox;
+package com.hazelcast.sql.impl.partitioner;
 
-import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.sql.impl.row.Row;
 
 /**
- * Base class for inboxes and outboxes.
+ * Function which maps rows to partitions.
  */
-public abstract class AbstractMailbox {
-    /** Query ID. */
-    protected final QueryId queryId;
-
-    /** Edge ID. */
-    protected final int edgeId;
-
-    /** Width of a single row in bytes. */
-    protected final int rowWidth;
-
-    public AbstractMailbox(QueryId queryId, int edgeId, int rowWidth) {
-        this.queryId = queryId;
-        this.edgeId = edgeId;
-        this.rowWidth = rowWidth;
-    }
+public interface RowPartitioner extends DataSerializable {
+    /**
+     * Get partition for the row.
+     *
+     * @param row Row.
+     * @param partitionCount Number of partitions.
+     * @return Partition, between 0 (inclusive) and .
+     */
+    int getPartition(Row row, int partitionCount);
 }

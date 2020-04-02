@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.mailbox;
+package com.hazelcast.sql.impl.exec.io.mailbox;
 
 import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.sql.impl.mailbox.flowcontrol.FlowControl;
+import com.hazelcast.sql.impl.exec.io.flowcontrol.FlowControl;
 import com.hazelcast.sql.impl.operation.QueryOperationHandler;
 
 import java.util.ArrayDeque;

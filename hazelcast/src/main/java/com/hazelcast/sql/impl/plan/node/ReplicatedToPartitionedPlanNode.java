@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.plan.node;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.sql.impl.row.partitioner.RowPartitioner;
+import com.hazelcast.sql.impl.partitioner.RowPartitioner;
 
 import java.io.IOException;
 import java.util.Objects;

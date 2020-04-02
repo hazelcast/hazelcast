@@ -18,8 +18,8 @@ package com.hazelcast.sql.impl.exec.io;
 
 import com.hazelcast.sql.impl.exec.AbstractExec;
 import com.hazelcast.sql.impl.exec.IterationResult;
-import com.hazelcast.sql.impl.mailbox.Inbox;
-import com.hazelcast.sql.impl.mailbox.InboundBatch;
+import com.hazelcast.sql.impl.exec.io.mailbox.Inbox;
+import com.hazelcast.sql.impl.exec.io.mailbox.InboundBatch;
 import com.hazelcast.sql.impl.row.RowBatch;
 import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 

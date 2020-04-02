@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.exec.io;
 
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
-import com.hazelcast.sql.impl.row.partitioner.RowPartitioner;
+import com.hazelcast.sql.impl.partitioner.RowPartitioner;
 
 /**
  * Send qualifier for unicast sender.

@@ -14,21 +14,36 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.row.partitioner;
+package com.hazelcast.sql.impl.exec.io.mailbox;
 
-import com.hazelcast.internal.util.HashUtil;
-import com.hazelcast.sql.impl.row.Row;
+import com.hazelcast.sql.impl.row.RowBatch;
+
+import java.util.UUID;
 
 /**
- * Partitioner that calculates row partition based on row field values.
+ * Mailbox batch received from the remote member.
  */
-public abstract class AbstractFieldsRowPartitioner implements RowPartitioner {
-    @Override
-    public final int getPartition(Row row, int partitionCount) {
-        int hash = getHash(row);
+public final class InboundBatch {
 
-        return HashUtil.hashToIndex(hash, partitionCount);
+    private final RowBatch batch;
+    private final boolean last;
+    private final UUID senderId;
+
+    public InboundBatch(RowBatch batch, boolean last, UUID senderId) {
+        this.batch = batch;
+        this.last = last;
+        this.senderId = senderId;
     }
 
-    protected abstract int getHash(Row row);
+    public RowBatch getBatch() {
+        return batch;
+    }
+
+    public boolean isLast() {
+        return last;
+    }
+
+    public UUID getSenderId() {
+        return senderId;
+    }
 }

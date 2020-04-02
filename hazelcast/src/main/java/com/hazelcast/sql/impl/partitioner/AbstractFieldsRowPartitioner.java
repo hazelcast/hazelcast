@@ -14,16 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.mailbox;
+package com.hazelcast.sql.impl.partitioner;
+
+import com.hazelcast.internal.util.HashUtil;
+import com.hazelcast.sql.impl.row.Row;
 
 /**
- * Core interface for outbound message processing.
+ * Partitioner that calculates row partition based on row field values.
  */
-public interface OutboundHandler {
-    /**
-     * Handle flow control response from the remote inbound handler.
-     *
-     * @param remainingMemory The amount of memory that is available on the remote end.
-     */
-    void onFlowControl(long remainingMemory);
+public abstract class AbstractFieldsRowPartitioner implements RowPartitioner {
+    @Override
+    public final int getPartition(Row row, int partitionCount) {
+        int hash = getHash(row);
+
+        return HashUtil.hashToIndex(hash, partitionCount);
+    }
+
+    protected abstract int getHash(Row row);
 }

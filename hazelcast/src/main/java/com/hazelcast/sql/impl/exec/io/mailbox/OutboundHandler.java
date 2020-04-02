@@ -14,21 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.row.partitioner;
-
-import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.sql.impl.row.Row;
+package com.hazelcast.sql.impl.exec.io.mailbox;
 
 /**
- * Function which maps rows to partitions.
+ * Core interface for outbound message processing.
  */
-public interface RowPartitioner extends DataSerializable {
+public interface OutboundHandler {
     /**
-     * Get partition for the row.
+     * Handle flow control response from the remote inbound handler.
      *
-     * @param row Row.
-     * @param partitionCount Number of partitions.
-     * @return Partition, between 0 (inclusive) and .
+     * @param remainingMemory The amount of memory that is available on the remote end.
      */
-    int getPartition(Row row, int partitionCount);
+    void onFlowControl(long remainingMemory);
 }
