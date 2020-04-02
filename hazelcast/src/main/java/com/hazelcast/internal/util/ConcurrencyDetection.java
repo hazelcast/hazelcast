@@ -18,7 +18,6 @@ package com.hazelcast.internal.util;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-import static java.lang.System.nanoTime;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -95,8 +94,9 @@ public abstract class ConcurrencyDetection {
 
     private static final class EnabledConcurrencyDetection extends ConcurrencyDetection {
 
+        private final Timer timer = Timer.getSystemTimer();
         private final long windowNanos;
-        private final AtomicLong expirationNanosRef = new AtomicLong(System.nanoTime());
+        private final AtomicLong expirationNanosRef = new AtomicLong(timer.nanos());
         private final long halfWindowNanos;
 
         private EnabledConcurrencyDetection(long delayMs) {
@@ -107,15 +107,15 @@ public abstract class ConcurrencyDetection {
 
         @Override
         public boolean isDetected() {
-            return nanoTime() - expirationNanosRef.get() < 0;
+            return timer.nanosElapsedSince(expirationNanosRef.get()) < 0;
         }
 
         @Override
         public void onDetected() {
-            long nowNanos = nanoTime();
+            long nowNanos = timer.nanos();
             long expirationNanos = expirationNanosRef.get();
 
-            if (nowNanos - (expirationNanos - halfWindowNanos) > 0) {
+            if (timer.nanosElapsedSince(expirationNanos - halfWindowNanos) > 0) {
                 expirationNanosRef.lazySet(nowNanos + windowNanos);
             }
         }

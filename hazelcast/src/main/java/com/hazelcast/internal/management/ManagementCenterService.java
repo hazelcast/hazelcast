@@ -22,6 +22,7 @@ import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.dto.ClientBwListDTO;
 import com.hazelcast.internal.management.events.Event;
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.internal.util.executor.ExecutorType;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.RetryableException;
@@ -62,11 +63,12 @@ public class ManagementCenterService {
     private final BlockingQueue<Event> mcEvents;
     private final ConsoleCommandHandler commandHandler;
     private final ClientBwListConfigHandler bwListConfigHandler;
+    private final Timer timer = Timer.getSystemTimer();
 
     private volatile ManagementCenterEventListener eventListener;
     private volatile String lastMCConfigETag;
     private volatile long lastTMSUpdateNanos;
-    private volatile long lastMCEventsPollNanos = System.nanoTime();
+    private volatile long lastMCEventsPollNanos = timer.nanos();
 
     public ManagementCenterService(HazelcastInstanceImpl instance) {
         this.instance = instance;
@@ -100,7 +102,7 @@ public class ManagementCenterService {
             tmsFactory.init();
         }
 
-        if (System.nanoTime() - lastTMSUpdateNanos <= TMS_CACHE_TIMEOUT_NANOS) {
+        if (timer.nanosElapsedSince(lastTMSUpdateNanos) <= TMS_CACHE_TIMEOUT_NANOS) {
             return Optional.ofNullable(tmsJson.get());
         }
 
@@ -108,7 +110,7 @@ public class ManagementCenterService {
             TimedMemberState tms;
             synchronized (tmsFactory) {
                 tms = tmsFactory.createTimedMemberState();
-                lastTMSUpdateNanos = System.nanoTime();
+                lastTMSUpdateNanos = timer.nanos();
             }
             JsonObject json = new JsonObject();
             json.add("timedMemberState", tms.toJson());
@@ -132,7 +134,7 @@ public class ManagementCenterService {
      */
     @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
     public void log(Event event) {
-        if (System.nanoTime() - lastMCEventsPollNanos > MC_EVENTS_WINDOW_NANOS) {
+        if (timer.nanosElapsedSince(lastMCEventsPollNanos) > MC_EVENTS_WINDOW_NANOS) {
             // ignore event and clear the queue if the last poll happened a while ago
             onMCEventWindowExceeded();
         } else {
@@ -164,7 +166,7 @@ public class ManagementCenterService {
     public List<Event> pollMCEvents() {
         List<Event> polled = new ArrayList<>();
         mcEvents.drainTo(polled);
-        lastMCEventsPollNanos = System.nanoTime();
+        lastMCEventsPollNanos = timer.nanos();
         return polled;
     }
 

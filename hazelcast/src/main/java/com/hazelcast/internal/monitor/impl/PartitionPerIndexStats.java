@@ -17,6 +17,7 @@
 package com.hazelcast.internal.monitor.impl;
 
 import com.hazelcast.internal.memory.MemoryAllocator;
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.internal.util.Clock;
 
@@ -61,6 +62,7 @@ public class PartitionPerIndexStats implements PerIndexStats {
     // partitioned indexes since we know for sure only a single thread may
     // mutate the index.
     private final PartitionIndexOperationStats operationStats = new PartitionIndexOperationStats();
+    private final Timer timer = Timer.getSystemTimer();
 
     private final long creationTime;
 
@@ -93,7 +95,7 @@ public class PartitionPerIndexStats implements PerIndexStats {
 
     @Override
     public long makeTimestamp() {
-        return System.nanoTime();
+        return timer.nanos();
     }
 
     @Override
@@ -164,23 +166,23 @@ public class PartitionPerIndexStats implements PerIndexStats {
     }
 
     @Override
-    public void onInsert(long timestamp, IndexOperationStats operationStats, Index.OperationSource operationSource) {
+    public void onInsert(long timestampNanos, IndexOperationStats operationStats, Index.OperationSource operationSource) {
         if (operationStats.getEntryCountDelta() == 0) {
             // no entries were inserted
             return;
         }
 
         if (operationSource == Index.OperationSource.USER) {
-            TOTAL_INSERT_LATENCY.lazySet(this, totalInsertLatency + (System.nanoTime() - timestamp));
+            TOTAL_INSERT_LATENCY.lazySet(this, totalInsertLatency + (timer.nanosElapsedSince(timestampNanos)));
             INSERT_COUNT.lazySet(this, insertCount + 1);
         }
         ENTRY_COUNT.lazySet(this, entryCount + 1);
     }
 
     @Override
-    public void onUpdate(long timestamp, IndexOperationStats operationStats, Index.OperationSource operationSource) {
+    public void onUpdate(long timestampNanos, IndexOperationStats operationStats, Index.OperationSource operationSource) {
         if (operationSource == Index.OperationSource.USER) {
-            TOTAL_UPDATE_LATENCY.lazySet(this, totalUpdateLatency + (System.nanoTime() - timestamp));
+            TOTAL_UPDATE_LATENCY.lazySet(this, totalUpdateLatency + (timer.nanosElapsedSince(timestampNanos)));
             UPDATE_COUNT.lazySet(this, updateCount + 1);
         }
         ENTRY_COUNT.lazySet(this, entryCount + operationStats.getEntryCountDelta());
@@ -194,7 +196,7 @@ public class PartitionPerIndexStats implements PerIndexStats {
         }
 
         if (operationSource == Index.OperationSource.USER) {
-            TOTAL_REMOVE_LATENCY.lazySet(this, totalRemoveLatency + (System.nanoTime() - timestamp));
+            TOTAL_REMOVE_LATENCY.lazySet(this, totalRemoveLatency + (timer.nanosElapsedSince(timestamp)));
             REMOVE_COUNT.lazySet(this, removeCount + 1);
         }
         ENTRY_COUNT.lazySet(this, entryCount - 1);
@@ -223,7 +225,7 @@ public class PartitionPerIndexStats implements PerIndexStats {
             return;
         }
 
-        TOTAL_HIT_LATENCY.lazySet(this, totalHitLatency + (System.nanoTime() - timestamp));
+        TOTAL_HIT_LATENCY.lazySet(this, totalHitLatency + (timer.nanosElapsedSince(timestamp)));
         HIT_COUNT.lazySet(this, hitCount + 1);
 
         // limit the cardinality for "safety"

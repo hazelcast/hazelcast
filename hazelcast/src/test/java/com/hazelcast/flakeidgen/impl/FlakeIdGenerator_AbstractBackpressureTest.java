@@ -18,6 +18,7 @@ package com.hazelcast.flakeidgen.impl;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -44,14 +45,15 @@ public abstract class FlakeIdGenerator_AbstractBackpressureTest {
     public void backpressureTest() {
         final FlakeIdGenerator generator = instance.getFlakeIdGenerator("gen");
 
-        long testStart = System.nanoTime();
+        Timer timer = Timer.getSystemTimer();
+        long testStartNanos = timer.nanos();
         long allowedHiccupMillis = 2000;
         for (int i = 1; i <= 15; i++) {
             generator.newId();
-            long elapsedMs = NANOSECONDS.toMillis(System.nanoTime() - testStart);
+            long elapsedMs = timer.millisElapsedSince(testStartNanos);
             long minimumRequiredMs = Math.max(0, (i * BATCH_SIZE >> DEFAULT_BITS_SEQUENCE) - DEFAULT_ALLOWED_FUTURE_MILLIS - CTM_IMPRECISION);
             long maximumAllowedMs = minimumRequiredMs + allowedHiccupMillis;
-            String msg = "Iteration " + i + ", elapsed: " + NANOSECONDS.toMillis(System.nanoTime() - testStart) + "ms, "
+            String msg = "Iteration " + i + ", elapsed: " + timer.millisElapsedSince(testStartNanos) + "ms, "
                     + "minimum: " + minimumRequiredMs + ", maximum: " + maximumAllowedMs;
             LOGGER.info(msg);
             assertTrue(msg, elapsedMs >= minimumRequiredMs && elapsedMs <= maximumAllowedMs);

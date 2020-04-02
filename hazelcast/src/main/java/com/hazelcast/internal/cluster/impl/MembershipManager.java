@@ -31,6 +31,7 @@ import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.services.MembershipAwareService;
 import com.hazelcast.internal.services.MembershipServiceEvent;
 import com.hazelcast.internal.util.EmptyStatement;
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.internal.util.executor.ExecutorType;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -899,7 +900,8 @@ public class MembershipManager {
                 Address address = member.getAddress();
                 Future<MembersView> future = e.getValue();
 
-                long start = System.nanoTime();
+                Timer timer = Timer.getSystemTimer();
+                long startNanos = timer.nanos();
                 try {
                     long timeout = min(FETCH_MEMBER_LIST_MILLIS, Math.max(mastershipClaimTimeout, 1));
                     MembersView membersView = future.get(timeout, MILLISECONDS);
@@ -933,7 +935,7 @@ public class MembershipManager {
                     }
                 }
 
-                mastershipClaimTimeout -= TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+                mastershipClaimTimeout -= timer.nanosElapsedSince(startNanos);
             }
 
             if (done) {

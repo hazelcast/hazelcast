@@ -21,6 +21,7 @@ import com.hazelcast.internal.nearcache.impl.DefaultNearCache;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.ContextMutexFactory;
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.executionservice.TaskScheduler;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -36,7 +37,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static java.lang.String.format;
-import static java.lang.System.nanoTime;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -83,6 +83,7 @@ public final class RepairingTask implements Runnable {
     private final AtomicBoolean running = new AtomicBoolean(false);
     private final ConcurrentMap<String, RepairingHandler> handlers = new ConcurrentHashMap<String, RepairingHandler>();
     private final ContextMutexFactory contextMutexFactory = new ContextMutexFactory();
+    private final Timer timer = Timer.getSystemTimer();
 
     private volatile long lastAntiEntropyRunNanos;
 
@@ -151,7 +152,7 @@ public final class RepairingTask implements Runnable {
      */
     private void runAntiEntropy() {
         invalidationMetaDataFetcher.fetchMetadata(handlers);
-        lastAntiEntropyRunNanos = nanoTime();
+        lastAntiEntropyRunNanos = timer.nanos();
     }
 
     private boolean isAntiEntropyNeeded() {
@@ -159,7 +160,7 @@ public final class RepairingTask implements Runnable {
             return false;
         }
 
-        long sinceLastRunNanos = nanoTime() - lastAntiEntropyRunNanos;
+        long sinceLastRunNanos = timer.nanosElapsedSince(lastAntiEntropyRunNanos);
         return sinceLastRunNanos >= reconciliationIntervalNanos;
     }
 
@@ -200,7 +201,7 @@ public final class RepairingTask implements Runnable {
 
         if (running.compareAndSet(false, true)) {
             scheduleNextRun();
-            lastAntiEntropyRunNanos = nanoTime();
+            lastAntiEntropyRunNanos = timer.nanos();
         }
 
         return handler;

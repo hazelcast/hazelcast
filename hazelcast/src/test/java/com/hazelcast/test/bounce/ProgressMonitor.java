@@ -16,6 +16,7 @@
 
 package com.hazelcast.test.bounce;
 
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
@@ -52,7 +53,7 @@ public class ProgressMonitor {
     }
 
     public void checkProgress() {
-        long now = System.nanoTime();
+        long now = Timer.getSystemTimer().nanos();
         long aggregatedProgress = 0;
         long maxLatencyNanos = 0;
         for (BounceMemberRule.TestTaskRunnable task : tasks) {

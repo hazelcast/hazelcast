@@ -16,6 +16,7 @@
 
 package com.hazelcast.scheduledexecutor.impl;
 
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.scheduledexecutor.ScheduledTaskStatistics;
@@ -128,14 +129,14 @@ public class ScheduledTaskStatisticsImpl
 
     @Override
     public void onInit() {
-        this.createdAt = System.nanoTime();
+        this.createdAt = Timer.getSystemTimer().nanos();
     }
 
     @Override
     public void onBeforeRun() {
-        long now = System.nanoTime();
-        this.lastRunStart = now;
-        this.lastIdleDuration = now - (lastRunEnd != 0L ? lastRunEnd : createdAt);
+        Timer timer = Timer.getSystemTimer();
+        this.lastRunStart = timer.nanos();
+        this.lastIdleDuration = timer.nanosElapsedSince(lastRunEnd != 0L ? lastRunEnd : createdAt);
         this.totalIdleDuration += lastIdleDuration;
 
         if (this.firstRunStart == 0L) {
@@ -145,9 +146,7 @@ public class ScheduledTaskStatisticsImpl
 
     @Override
     public void onAfterRun() {
-        long now = System.nanoTime();
-
-        this.lastRunEnd = now;
+        this.lastRunEnd = Timer.getSystemTimer().nanos();
         this.lastRunDuration = lastRunEnd - lastRunStart;
         this.runs++;
         this.totalRunDuration += lastRunDuration;

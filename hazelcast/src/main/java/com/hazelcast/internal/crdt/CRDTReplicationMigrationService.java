@@ -23,6 +23,7 @@ import com.hazelcast.internal.services.GracefulShutdownAwareService;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.internal.services.MembershipAwareService;
 import com.hazelcast.internal.services.MembershipServiceEvent;
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -131,6 +132,7 @@ public class CRDTReplicationMigrationService implements ManagedService, Membersh
         if (nodeEngine.getLocalMember().isLiteMember()) {
             return true;
         }
+        Timer timer = Timer.getSystemTimer();
         long timeoutNanos = unit.toNanos(timeout);
         for (CRDTReplicationAwareService service : getReplicationServices()) {
             service.prepareToSafeShutdown();
@@ -140,11 +142,11 @@ public class CRDTReplicationMigrationService implements ManagedService, Membersh
                 logger.fine("Skipping replication since all CRDTs are replicated");
                 continue;
             }
-            long start = System.nanoTime();
+            long startNanos = timer.nanos();
             if (!tryProcessOnOtherMembers(replicationOperation.getOperation(), service.getName(), timeoutNanos)) {
                 logger.warning("Failed replication of CRDTs for " + service.getName() + ". CRDT state may be lost.");
             }
-            timeoutNanos -= (System.nanoTime() - start);
+            timeoutNanos -= timer.nanosElapsedSince(startNanos);
             if (timeoutNanos < 0) {
                 return false;
             }
@@ -168,11 +170,12 @@ public class CRDTReplicationMigrationService implements ManagedService, Membersh
         final Collection<Member> targets = nodeEngine.getClusterService().getMembers(DATA_MEMBER_SELECTOR);
         final Member localMember = nodeEngine.getLocalMember();
 
+        Timer timer = Timer.getSystemTimer();
         for (Member target : targets) {
             if (target.equals(localMember)) {
                 continue;
             }
-            long start = System.nanoTime();
+            long startNanos = timer.nanos();
             try {
                 logger.fine("Replicating " + serviceName + " to " + target);
                 InternalCompletableFuture<Object> future =
@@ -185,7 +188,7 @@ public class CRDTReplicationMigrationService implements ManagedService, Membersh
                 logger.fine("Failed replication of " + serviceName + " for target " + target, e);
             }
 
-            timeoutNanos -= (System.nanoTime() - start);
+            timeoutNanos -= timer.nanosElapsedSince(startNanos);
             if (timeoutNanos < 0) {
                 break;
             }

@@ -17,6 +17,7 @@
 package com.hazelcast.test.bounce;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -48,7 +49,8 @@ public class BounceMemberRuleStalenessTest extends HazelcastTestSupport {
 
     @Test
     public void stalenessIsDetected() {
-        long startTime = System.nanoTime();
+        Timer timer = Timer.getSystemTimer();
+        long startTime = timer.nanos();
         try {
             bounceMemberRule.testRepeatedly(1, new Runnable() {
                 @Override
@@ -59,7 +61,7 @@ public class BounceMemberRuleStalenessTest extends HazelcastTestSupport {
 
             fail("The Bouncing Rule should detect a staleness!");
         } catch (AssertionError ae) {
-            long detectionDurationSeconds = NANOSECONDS.toSeconds(System.nanoTime() - startTime);
+            long detectionDurationSeconds = timer.secondsElapsedSince(startTime);
             assertTrue("Staleness detector was too slow to detect stale. "
                             + "Maximum configured staleness in seconds: " + MAXIMUM_STALENESS_SECONDS
                             + " and it took " + detectionDurationSeconds + " seconds to detect staleness",

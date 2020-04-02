@@ -26,6 +26,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.services.DistributedObjectNamespace;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.ThreadUtil;
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.multimap.impl.operations.CountOperation;
 import com.hazelcast.multimap.impl.operations.DeleteOperation;
@@ -410,18 +411,19 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
             Future future;
             Object result;
             if (config.isStatisticsEnabled()) {
-                long startTimeNanos = System.nanoTime();
+                Timer timer = Timer.getSystemTimer();
+                long startTimeNanos = timer.nanos();
                 future = nodeEngine.getOperationService()
                         .invokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId);
                 result = future.get();
                 if (operation instanceof PutOperation) {
                     // TODO: @ali should we remove statics from operations?
-                    getService().getLocalMultiMapStatsImpl(name).incrementPutLatencyNanos(System.nanoTime() - startTimeNanos);
+                    getService().getLocalMultiMapStatsImpl(name).incrementPutLatencyNanos(timer.nanosElapsedSince(startTimeNanos));
                 } else if (operation instanceof RemoveOperation || operation instanceof RemoveAllOperation
                         || operation instanceof DeleteOperation) {
-                    getService().getLocalMultiMapStatsImpl(name).incrementRemoveLatencyNanos(System.nanoTime() - startTimeNanos);
+                    getService().getLocalMultiMapStatsImpl(name).incrementRemoveLatencyNanos(timer.nanosElapsedSince(startTimeNanos));
                 } else if (operation instanceof GetAllOperation) {
-                    getService().getLocalMultiMapStatsImpl(name).incrementGetLatencyNanos(System.nanoTime() - startTimeNanos);
+                    getService().getLocalMultiMapStatsImpl(name).incrementGetLatencyNanos(timer.nanosElapsedSince(startTimeNanos));
                 }
             } else {
                 future = nodeEngine.getOperationService()

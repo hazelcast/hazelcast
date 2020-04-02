@@ -16,6 +16,7 @@
 
 package com.hazelcast.test;
 
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Log4j2Factory;
 import com.hazelcast.logging.LogEvent;
@@ -109,6 +110,7 @@ public class TestLoggerFactory extends LoggerFactorySupport {
 
         private static final long WARNING_THRESHOLD_NANOS = MILLISECONDS.toNanos(500);
 
+        private final Timer timer = Timer.getSystemTimer();
         private ILogger delegate;
 
         private DelegatingTestLogger(ILogger delegate) {
@@ -117,23 +119,23 @@ public class TestLoggerFactory extends LoggerFactorySupport {
 
         @Override
         public void finest(String message) {
-            long startTime = System.nanoTime();
+            long startTimeNanos = timer.nanos();
             delegate.finest(message);
-            logOnSlowLogging(startTime);
+            logOnSlowLogging(startTimeNanos);
         }
 
         @Override
         public void finest(Throwable thrown) {
-            long startTime = System.nanoTime();
+            long startTimeNanos = timer.nanos();
             delegate.finest(thrown);
-            logOnSlowLogging(startTime);
+            logOnSlowLogging(startTimeNanos);
         }
 
         @Override
         public void finest(String message, Throwable thrown) {
-            long startTime = System.nanoTime();
+            long startTimeNanos = timer.nanos();
             delegate.finest(message, thrown);
-            logOnSlowLogging(startTime);
+            logOnSlowLogging(startTimeNanos);
         }
 
         @Override
@@ -143,23 +145,23 @@ public class TestLoggerFactory extends LoggerFactorySupport {
 
         @Override
         public void fine(String message) {
-            long startTime = System.nanoTime();
+            long startTimeNanos = timer.nanos();
             delegate.fine(message);
-            logOnSlowLogging(startTime);
+            logOnSlowLogging(startTimeNanos);
         }
 
         @Override
         public void fine(Throwable thrown) {
-            long startTime = System.nanoTime();
+            long startTimeNanos = timer.nanos();
             delegate.fine(thrown);
-            logOnSlowLogging(startTime);
+            logOnSlowLogging(startTimeNanos);
         }
 
         @Override
         public void fine(String message, Throwable thrown) {
-            long startTime = System.nanoTime();
+            long startTimeNanos = timer.nanos();
             delegate.fine(message, thrown);
-            logOnSlowLogging(startTime);
+            logOnSlowLogging(startTimeNanos);
         }
 
         @Override
@@ -169,23 +171,23 @@ public class TestLoggerFactory extends LoggerFactorySupport {
 
         @Override
         public void info(String message) {
-            long startTime = System.nanoTime();
+            long startTimeNanos = timer.nanos();
             delegate.info(message);
-            logOnSlowLogging(startTime);
+            logOnSlowLogging(startTimeNanos);
         }
 
         @Override
         public void info(String message, Throwable thrown) {
-            long startTime = System.nanoTime();
+            long startTimeNanos = timer.nanos();
             delegate.info(message, thrown);
-            logOnSlowLogging(startTime);
+            logOnSlowLogging(startTimeNanos);
         }
 
         @Override
         public void info(Throwable thrown) {
-            long startTime = System.nanoTime();
+            long startTimeNanos = timer.nanos();
             delegate.info(thrown);
-            logOnSlowLogging(startTime);
+            logOnSlowLogging(startTimeNanos);
         }
 
         @Override
@@ -195,23 +197,23 @@ public class TestLoggerFactory extends LoggerFactorySupport {
 
         @Override
         public void warning(String message) {
-            long startTime = System.nanoTime();
+            long startTimeNanos = timer.nanos();
             delegate.warning(message);
-            logOnSlowLogging(startTime);
+            logOnSlowLogging(startTimeNanos);
         }
 
         @Override
         public void warning(Throwable thrown) {
-            long startTime = System.nanoTime();
+            long startTimeNanos = timer.nanos();
             delegate.warning(thrown);
-            logOnSlowLogging(startTime);
+            logOnSlowLogging(startTimeNanos);
         }
 
         @Override
         public void warning(String message, Throwable thrown) {
-            long startTime = System.nanoTime();
+            long startTimeNanos = timer.nanos();
             delegate.warning(message, thrown);
-            logOnSlowLogging(startTime);
+            logOnSlowLogging(startTimeNanos);
         }
 
         @Override
@@ -221,23 +223,23 @@ public class TestLoggerFactory extends LoggerFactorySupport {
 
         @Override
         public void severe(String message) {
-            long startTime = System.nanoTime();
+            long startTimeNanos = timer.nanos();
             delegate.severe(message);
-            logOnSlowLogging(startTime);
+            logOnSlowLogging(startTimeNanos);
         }
 
         @Override
         public void severe(Throwable thrown) {
-            long startTime = System.nanoTime();
+            long startTimeNanos = timer.nanos();
             delegate.severe(thrown);
-            logOnSlowLogging(startTime);
+            logOnSlowLogging(startTimeNanos);
         }
 
         @Override
         public void severe(String message, Throwable thrown) {
-            long startTime = System.nanoTime();
+            long startTimeNanos = timer.nanos();
             delegate.severe(message, thrown);
-            logOnSlowLogging(startTime);
+            logOnSlowLogging(startTimeNanos);
         }
 
         @Override
@@ -247,23 +249,23 @@ public class TestLoggerFactory extends LoggerFactorySupport {
 
         @Override
         public void log(Level level, String message) {
-            long startTime = System.nanoTime();
+            long startTimeNanos = timer.nanos();
             delegate.log(level, message);
-            logOnSlowLogging(startTime);
+            logOnSlowLogging(startTimeNanos);
         }
 
         @Override
         public void log(Level level, String message, Throwable thrown) {
-            long startTime = System.nanoTime();
+            long startTimeNanos = timer.nanos();
             delegate.log(level, message, thrown);
-            logOnSlowLogging(startTime);
+            logOnSlowLogging(startTimeNanos);
         }
 
         @Override
         public void log(LogEvent logEvent) {
-            long startTime = System.nanoTime();
+            long startTimeNanos = timer.nanos();
             delegate.log(logEvent);
-            logOnSlowLogging(startTime);
+            logOnSlowLogging(startTimeNanos);
         }
 
         @Override
@@ -276,8 +278,8 @@ public class TestLoggerFactory extends LoggerFactorySupport {
             return true;
         }
 
-        private void logOnSlowLogging(long startTime) {
-            long durationNanos = System.nanoTime() - startTime;
+        private void logOnSlowLogging(long startTimeNanos) {
+            long durationNanos = timer.nanosElapsedSince(startTimeNanos);
             if (durationNanos > WARNING_THRESHOLD_NANOS) {
                 long durationMillis = NANOSECONDS.toMillis(durationNanos);
                 delegate.warning("Logging took " + durationMillis + " ms.");

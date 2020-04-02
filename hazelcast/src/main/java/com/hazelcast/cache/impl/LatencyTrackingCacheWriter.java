@@ -18,6 +18,7 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin.LatencyProbe;
+import com.hazelcast.internal.util.Timer;
 
 import javax.cache.Cache;
 import javax.cache.integration.CacheWriter;
@@ -44,41 +45,45 @@ public class LatencyTrackingCacheWriter<K, V> implements CacheWriter<K, V> {
 
     @Override
     public void write(Cache.Entry<? extends K, ? extends V> entry) throws CacheWriterException {
-        long startNanos = System.nanoTime();
+        Timer timer = Timer.getSystemTimer();
+        long startNanos = timer.nanos();
         try {
             delegate.write(entry);
         } finally {
-            writeProbe.recordValue(System.nanoTime() - startNanos);
+            writeProbe.recordValue(timer.nanosElapsedSince(startNanos));
         }
     }
 
     @Override
     public void writeAll(Collection<Cache.Entry<? extends K, ? extends V>> collection) throws CacheWriterException {
-        long startNanos = System.nanoTime();
+        Timer timer = Timer.getSystemTimer();
+        long startNanos = timer.nanos();
         try {
             delegate.writeAll(collection);
         } finally {
-            writeAllProbe.recordValue(System.nanoTime() - startNanos);
+            writeAllProbe.recordValue(timer.nanosElapsedSince(startNanos));
         }
     }
 
     @Override
     public void delete(Object o) throws CacheWriterException {
-        long startNanos = System.nanoTime();
+        Timer timer = Timer.getSystemTimer();
+        long startNanos = timer.nanos();
         try {
             delegate.delete(o);
         } finally {
-            deleteProbe.recordValue(System.nanoTime() - startNanos);
+            deleteProbe.recordValue(timer.nanosElapsedSince(startNanos));
         }
     }
 
     @Override
     public void deleteAll(Collection<?> collection) throws CacheWriterException {
-        long startNanos = System.nanoTime();
+        Timer timer = Timer.getSystemTimer();
+        long startNanos = timer.nanos();
         try {
             delegate.deleteAll(collection);
         } finally {
-            deleteAllProbe.recordValue(System.nanoTime() - startNanos);
+            deleteAllProbe.recordValue(timer.nanosElapsedSince(startNanos));
         }
     }
 }

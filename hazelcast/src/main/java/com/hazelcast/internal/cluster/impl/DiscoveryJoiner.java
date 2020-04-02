@@ -19,6 +19,7 @@ package com.hazelcast.internal.cluster.impl;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
 import com.hazelcast.internal.util.concurrent.BackoffIdleStrategy;
@@ -54,7 +55,7 @@ public class DiscoveryJoiner
     @Override
     protected Collection<Address> getPossibleAddressesForInitialJoin() {
         long deadLine = System.nanoTime() + SECONDS.toNanos(maximumWaitingTimeBeforeJoinSeconds);
-        for (int i = 0; System.nanoTime() < deadLine; i++) {
+        for (int i = 0; System.nanoTime() - deadLine < 0; i++) {
             Collection<Address> possibleAddresses = getPossibleAddresses();
             if (!possibleAddresses.isEmpty()) {
                 return possibleAddresses;

@@ -18,6 +18,8 @@ package com.hazelcast.internal.util;
 
 import java.util.concurrent.TimeUnit;
 
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
+
 /**
  * Utility class to measure elapsed time in milliseconds. Backed by {@link System#nanoTime()}
  * Example usage {@code
@@ -45,16 +47,24 @@ public class Timer {
         this.nanoClock = nanoClock;
     }
 
-    public long nanosElapsedSince(long startNanos) {
-        return nanos() - startNanos;
-    }
-
     public long nanos() {
         return nanoClock.nanoTime();
     }
 
+    public long nanosElapsedSince(long startNanos) {
+        return nanos() - startNanos;
+    }
+
+    public long microsElapsedSince(long startNanos) {
+        return NANOSECONDS.toMicros(nanosElapsedSince(startNanos));
+    }
+
     public long millisElapsedSince(long startNano) {
-        return TimeUnit.NANOSECONDS.toMillis(nanosElapsedSince(startNano));
+        return NANOSECONDS.toMillis(nanosElapsedSince(startNano));
+    }
+
+    public long secondsElapsedSince(long startNano) {
+        return NANOSECONDS.toSeconds(nanosElapsedSince(startNano));
     }
 
     public interface NanoClock {

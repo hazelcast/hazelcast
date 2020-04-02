@@ -16,6 +16,7 @@
 
 package com.hazelcast.ringbuffer.impl;
 
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.ringbuffer.RingbufferStore;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin.LatencyProbe;
@@ -29,6 +30,7 @@ import com.hazelcast.internal.services.ObjectNamespace;
 class LatencyTrackingRingbufferStore<T> implements RingbufferStore<T> {
     static final String KEY = "RingbufferStoreLatency";
 
+    private final Timer timer = Timer.getSystemTimer();
     private final LatencyProbe loadProbe;
     private final LatencyProbe getLargestSequenceProbe;
     private final LatencyProbe storeProbe;
@@ -46,41 +48,41 @@ class LatencyTrackingRingbufferStore<T> implements RingbufferStore<T> {
 
     @Override
     public void store(long sequence, T data) {
-        long startNanos = System.nanoTime();
+        long startNanos = timer.nanos();
         try {
             delegate.store(sequence, data);
         } finally {
-            storeProbe.recordValue(System.nanoTime() - startNanos);
+            storeProbe.recordValue(timer.nanosElapsedSince(startNanos));
         }
     }
 
     @Override
     public void storeAll(long firstItemSequence, T[] items) {
-        long startNanos = System.nanoTime();
+        long startNanos = timer.nanos();
         try {
             delegate.storeAll(firstItemSequence, items);
         } finally {
-            storeAllProbe.recordValue(System.nanoTime() - startNanos);
+            storeAllProbe.recordValue(timer.nanosElapsedSince(startNanos));
         }
     }
 
     @Override
     public T load(long sequence) {
-        long startNanos = System.nanoTime();
+        long startNanos = timer.nanos();
         try {
             return delegate.load(sequence);
         } finally {
-            loadProbe.recordValue(System.nanoTime() - startNanos);
+            loadProbe.recordValue(timer.nanosElapsedSince(startNanos));
         }
     }
 
     @Override
     public long getLargestSequence() {
-        long startNanos = System.nanoTime();
+        long startNanos = timer.nanos();
         try {
             return delegate.getLargestSequence();
         } finally {
-            getLargestSequenceProbe.recordValue(System.nanoTime() - startNanos);
+            getLargestSequenceProbe.recordValue(timer.nanosElapsedSince(startNanos));
         }
     }
 }
