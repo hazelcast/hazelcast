@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.optimizer.support;
 
+import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.calcite.expression.RexToExpressionVisitor;
 import com.hazelcast.sql.impl.calcite.opt.logical.AggregateLogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.logical.JoinLogicalRel;
@@ -142,6 +143,6 @@ public abstract class LogicalOptimizerTestSupport extends OptimizerTestSupport {
     }
 
     private static RexToExpressionVisitor expressionConverter() {
-        return new RexToExpressionVisitor(TestPlanNodeSchema.INSTANCE, 0);
+        return new RexToExpressionVisitor(TestPlanNodeSchema.INSTANCE, QueryParameterMetadata.EMPTY);
     }
 }

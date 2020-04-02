@@ -19,8 +19,7 @@ package com.hazelcast.sql.impl.calcite.opt.physical.visitor;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.QueryMetadata;
-import com.hazelcast.sql.impl.calcite.opt.physical.exchange.RootExchangePhysicalRel;
-import com.hazelcast.sql.impl.plan.Plan;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.calcite.EdgeCollectorPlanNodeVisitor;
 import com.hazelcast.sql.impl.calcite.expression.RexToExpressionVisitor;
 import com.hazelcast.sql.impl.calcite.operators.HazelcastSqlOperatorTable;
@@ -39,6 +38,7 @@ import com.hazelcast.sql.impl.calcite.opt.physical.RootPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.SortPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.agg.AggregatePhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.BroadcastExchangePhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.exchange.RootExchangePhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.SortMergeExchangePhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.UnicastExchangePhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.join.HashJoinPhysicalRel;
@@ -46,40 +46,41 @@ import com.hazelcast.sql.impl.calcite.opt.physical.join.NestedLoopJoinPhysicalRe
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.explain.QueryExplain;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
-import com.hazelcast.sql.impl.expression.aggregate.CountRowExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.aggregate.AggregateExpression;
 import com.hazelcast.sql.impl.expression.aggregate.AverageAggregateExpression;
 import com.hazelcast.sql.impl.expression.aggregate.CountAggregateExpression;
+import com.hazelcast.sql.impl.expression.aggregate.CountRowExpression;
 import com.hazelcast.sql.impl.expression.aggregate.DistributedAverageAggregateExpression;
 import com.hazelcast.sql.impl.expression.aggregate.MaxAggregateExpression;
 import com.hazelcast.sql.impl.expression.aggregate.MinAggregateExpression;
 import com.hazelcast.sql.impl.expression.aggregate.SingleValueAggregateExpression;
 import com.hazelcast.sql.impl.expression.aggregate.SumAggregateExpression;
+import com.hazelcast.sql.impl.optimizer.OptimizerStatistics;
+import com.hazelcast.sql.impl.partitioner.AllFieldsRowPartitioner;
+import com.hazelcast.sql.impl.partitioner.FieldsRowPartitioner;
+import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.plan.PlanFragment;
 import com.hazelcast.sql.impl.plan.PlanFragmentMapping;
-import com.hazelcast.sql.impl.optimizer.OptimizerStatistics;
 import com.hazelcast.sql.impl.plan.node.AggregatePlanNode;
 import com.hazelcast.sql.impl.plan.node.FetchOffsetPlanNodeFieldTypeProvider;
 import com.hazelcast.sql.impl.plan.node.FetchPlanNode;
-import com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider;
 import com.hazelcast.sql.impl.plan.node.FilterPlanNode;
 import com.hazelcast.sql.impl.plan.node.MapIndexScanPlanNode;
 import com.hazelcast.sql.impl.plan.node.MapScanPlanNode;
 import com.hazelcast.sql.impl.plan.node.MaterializedInputPlanNode;
 import com.hazelcast.sql.impl.plan.node.PlanNode;
+import com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import com.hazelcast.sql.impl.plan.node.ProjectPlanNode;
 import com.hazelcast.sql.impl.plan.node.ReplicatedMapScanPlanNode;
 import com.hazelcast.sql.impl.plan.node.ReplicatedToPartitionedPlanNode;
 import com.hazelcast.sql.impl.plan.node.RootPlanNode;
 import com.hazelcast.sql.impl.plan.node.SortPlanNode;
-import com.hazelcast.sql.impl.plan.node.io.RootSendPlanNode;
-import com.hazelcast.sql.impl.partitioner.AllFieldsRowPartitioner;
-import com.hazelcast.sql.impl.partitioner.FieldsRowPartitioner;
 import com.hazelcast.sql.impl.plan.node.io.BroadcastSendPlanNode;
 import com.hazelcast.sql.impl.plan.node.io.ReceivePlanNode;
 import com.hazelcast.sql.impl.plan.node.io.ReceiveSortMergePlanNode;
+import com.hazelcast.sql.impl.plan.node.io.RootSendPlanNode;
 import com.hazelcast.sql.impl.plan.node.io.UnicastSendPlanNode;
 import com.hazelcast.sql.impl.plan.node.join.HashJoinPlanNode;
 import com.hazelcast.sql.impl.plan.node.join.NestedLoopJoinPlanNode;
@@ -100,7 +101,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
- /**
+/**
  * Visitor which produces executable query plan.
  */
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:classfanoutcomplexity", "rawtypes"})
@@ -123,8 +124,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     /** Original SQL. */
     private final String sql;
 
-    /** Number of parameters. */
-    private final int paramsCount;
+    private final QueryParameterMetadata parameterMetadata;
 
     /** Optimizer statistics. */
     private final OptimizerStatistics stats;
@@ -150,7 +150,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         List<UUID> dataMemberIds,
         Map<PhysicalRel, List<Integer>> relIdMap,
         String sql,
-        int paramsCount,
+        QueryParameterMetadata parameterMetadata,
         OptimizerStatistics stats
     ) {
         this.localMemberId = localMemberId;
@@ -158,7 +158,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         this.dataMemberIds = dataMemberIds;
         this.relIdMap = relIdMap;
         this.sql = sql;
-        this.paramsCount = paramsCount;
+        this.parameterMetadata = parameterMetadata;
         this.stats = stats;
 
         dataMemberIdsSet = new HashSet<>(dataMemberIds);
@@ -199,7 +199,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             outboundEdgeMap,
             inboundEdgeMap,
             inboundEdgeMemberCountMap,
-            paramsCount,
+            parameterMetadata,
             rootMetadata,
             explain,
             stats
@@ -720,7 +720,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             return null;
         }
 
-        RexToExpressionVisitor converter = new RexToExpressionVisitor(fieldTypeProvider, paramsCount);
+        RexToExpressionVisitor converter = new RexToExpressionVisitor(fieldTypeProvider, parameterMetadata);
 
         return expression.accept(converter);
     }

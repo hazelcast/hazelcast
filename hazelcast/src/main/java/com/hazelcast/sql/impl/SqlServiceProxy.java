@@ -129,11 +129,11 @@ public class SqlServiceProxy implements SqlService {
                 throw HazelcastSqlException.error("SQL statement to be explained cannot be empty");
             }
 
-            Plan plan = optimizer.prepare(unwrappedSql, params0.size());
+            Plan plan = optimizer.prepare(unwrappedSql);
 
             state = internalService.executeExplain(plan);
         } else {
-            Plan plan = optimizer.prepare(sql, params0.size());
+            Plan plan = optimizer.prepare(sql);
 
             state = internalService.execute(
                 plan,

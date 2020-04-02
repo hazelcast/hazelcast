@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.expression;
 
-import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ParameterExpression;
@@ -46,11 +46,11 @@ public final class RexToExpressionVisitor implements RexVisitor<Expression<?>> {
     private static final Expression<?>[] EMPTY_EXPRESSION_OPERANDS = new Expression[0];
 
     private final PlanNodeFieldTypeProvider fieldTypeProvider;
-    private final int parameterCount;
+    private final QueryParameterMetadata parameterMetadata;
 
-    public RexToExpressionVisitor(PlanNodeFieldTypeProvider fieldTypeProvider, int parameterCount) {
+    public RexToExpressionVisitor(PlanNodeFieldTypeProvider fieldTypeProvider, QueryParameterMetadata parameterMetadata) {
         this.fieldTypeProvider = fieldTypeProvider;
-        this.parameterCount = parameterCount;
+        this.parameterMetadata = parameterMetadata;
     }
 
     @Override
@@ -104,13 +104,7 @@ public final class RexToExpressionVisitor implements RexVisitor<Expression<?>> {
     @Override
     public Expression<?> visitDynamicParam(RexDynamicParam dynamicParam) {
         int index = dynamicParam.getIndex();
-
-        if (index >= parameterCount) {
-            throw HazelcastSqlException.error(
-                    "Insufficient query parameter arguments: expected at least " + (index + 1) + ", got " + parameterCount);
-        }
-
-        return new ParameterExpression<>(index);
+        return new ParameterExpression<>(index, parameterMetadata.getParameterType(index));
     }
 
     @Override

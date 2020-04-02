@@ -33,7 +33,7 @@ public class SqlTestSupport {
     protected Plan getPlan(HazelcastInstance target, String sql) {
         SqlServiceProxy sqlService = (SqlServiceProxy) target.getSqlService();
 
-        return sqlService.getOptimizer().prepare(sql, 0);
+        return sqlService.getOptimizer().prepare(sql);
     }
 
     protected SqlCursor executeQuery(HazelcastInstance target, String sql) {
