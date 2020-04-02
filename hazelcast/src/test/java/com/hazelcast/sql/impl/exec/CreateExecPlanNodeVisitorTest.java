@@ -60,6 +60,7 @@ public class CreateExecPlanNodeVisitorTest {
 
         CreateExecPlanNodeVisitor visitor = new CreateExecPlanNodeVisitor(
             null,
+            null,
             new QueryExecuteOperation().setRootConsumer(consumer, 1000),
             null,
             null,

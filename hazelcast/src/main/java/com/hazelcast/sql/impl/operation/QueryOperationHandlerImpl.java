@@ -185,6 +185,7 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
 
             // Create executors and inboxes.
             CreateExecPlanNodeVisitor visitor = new CreateExecPlanNodeVisitor(
+                this,
                 nodeEngine,
                 operation,
                 operation.getPartitionMapping().get(getLocalMemberId()),
