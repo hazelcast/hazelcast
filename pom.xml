@@ -189,7 +189,6 @@
                     </argLine>
                 </configuration>
             </plugin>
-
         </plugins>
     </build>
 
@@ -432,6 +431,7 @@
                         <artifactId>maven-javadoc-plugin</artifactId>
                         <version>${maven.javadoc.plugin.version}</version>
                         <configuration>
+                            <doclint>none</doclint>
                             <javaApiLinks>
                                 <property>
                                     <name>api_1.6</name>
@@ -481,6 +481,7 @@
                         <artifactId>maven-javadoc-plugin</artifactId>
                         <version>${maven.javadoc.plugin.version}</version>
                         <configuration>
+                            <doclint>none</doclint>
                             <javaApiLinks>
                                 <property>
                                     <name>api_1.6</name>
