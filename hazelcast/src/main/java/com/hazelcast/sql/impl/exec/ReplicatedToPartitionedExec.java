@@ -16,39 +16,35 @@
 
 package com.hazelcast.sql.impl.exec;
 
-import com.hazelcast.internal.util.HashUtil;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
-import com.hazelcast.sql.impl.row.hash.RowHashFunction;
 import com.hazelcast.sql.impl.row.Row;
+import com.hazelcast.sql.impl.row.partitioner.RowPartitioner;
 
 /**
  * Executor which converts replicated input to partitioned based on the given fields.
  */
 public class ReplicatedToPartitionedExec extends AbstractFilterExec {
-    /** Hash function. */
-    private final RowHashFunction hashFunction;
 
-    /** Owning partitions. */
+    private final RowPartitioner partitioner;
     private final PartitionIdSet parts;
 
-    public ReplicatedToPartitionedExec(int id, Exec upstream, RowHashFunction hashFunction, PartitionIdSet parts) {
+    public ReplicatedToPartitionedExec(int id, Exec upstream, RowPartitioner partitioner, PartitionIdSet parts) {
         super(id, upstream);
 
-        this.hashFunction = hashFunction;
+        this.partitioner = partitioner;
         this.parts = parts;
     }
 
     @Override
     protected boolean eval(Row row) {
-        int hash = hashFunction.getHash(row);
-        int part = HashUtil.hashToIndex(hash, parts.getPartitionCount());
+        int part = partitioner.getPartition(row, parts.getPartitionCount());
 
         return parts.contains(part);
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{hashFunction=" + hashFunction + ", parts=" + parts
+        return getClass().getSimpleName() + "{partitioner=" + partitioner + ", parts=" + parts
             + ", upstreamState=" + state + '}';
     }
 }

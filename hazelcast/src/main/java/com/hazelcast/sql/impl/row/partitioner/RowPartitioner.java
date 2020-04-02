@@ -14,19 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.row.hash;
+package com.hazelcast.sql.impl.row.partitioner;
 
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.sql.impl.row.Row;
 
 /**
- * Function which maps rows to integer values.
+ * Function which maps rows to partitions.
  */
-public interface RowHashFunction {
+public interface RowPartitioner extends DataSerializable {
     /**
-     * Get hash of the row.
+     * Get partition for the row.
      *
      * @param row Row.
-     * @return Hash.
+     * @param partitionCount Number of partitions.
+     * @return Partition, between 0 (inclusive) and .
      */
-    int getHash(Row row);
+    int getPartition(Row row, int partitionCount);
 }

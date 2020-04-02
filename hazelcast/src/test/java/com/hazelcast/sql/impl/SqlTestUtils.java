@@ -41,7 +41,6 @@ public final class SqlTestUtils {
             0L,
             null,
             null,
-            null,
             null
         );
 

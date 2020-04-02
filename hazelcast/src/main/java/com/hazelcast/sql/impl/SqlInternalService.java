@@ -23,7 +23,6 @@ import com.hazelcast.sql.impl.client.QueryClientStateRegistry;
 import com.hazelcast.sql.impl.exec.root.BlockingRootResultConsumer;
 import com.hazelcast.sql.impl.explain.QueryExplain;
 import com.hazelcast.sql.impl.explain.QueryExplainResultProducer;
-import com.hazelcast.sql.impl.plan.PlanFragment;
 import com.hazelcast.sql.impl.memory.GlobalMemoryReservationManager;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperationFactory;
@@ -33,8 +32,6 @@ import com.hazelcast.sql.impl.state.QueryState;
 import com.hazelcast.sql.impl.state.QueryStateRegistry;
 import com.hazelcast.sql.impl.state.QueryStateRegistryUpdater;
 
-import java.util.Collection;
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.UUID;
 
@@ -133,8 +130,6 @@ public class SqlInternalService {
             memoryManager.getMemoryPressure()
         );
 
-        IdentityHashMap<PlanFragment, Collection<UUID>> fragmentMappings = operationFactory.prepareFragmentMappings();
-
         // Register the state.
         BlockingRootResultConsumer consumer = new BlockingRootResultConsumer();
 
@@ -142,7 +137,6 @@ public class SqlInternalService {
             timeout,
             plan,
             plan.getMetadata(),
-            fragmentMappings,
             consumer,
             operationHandler,
             true
@@ -152,7 +146,7 @@ public class SqlInternalService {
             // Start execution on local member.
             UUID localMemberId = nodeEngine.getLocalMember().getUuid();
 
-            QueryExecuteOperation localOp = operationFactory.create(state.getQueryId(), fragmentMappings, localMemberId);
+            QueryExecuteOperation localOp = operationFactory.create(state.getQueryId(), localMemberId);
 
             localOp.setRootConsumer(consumer, pageSize);
 
@@ -166,7 +160,7 @@ public class SqlInternalService {
                     continue;
                 }
 
-                QueryExecuteOperation remoteOp = operationFactory.create(state.getQueryId(), fragmentMappings, memberId);
+                QueryExecuteOperation remoteOp = operationFactory.create(state.getQueryId(), memberId);
 
                 if (!operationHandler.submit(memberId, remoteOp)) {
                     throw HazelcastSqlException.memberLeave(memberId);
@@ -190,7 +184,6 @@ public class SqlInternalService {
             0,
             plan,
             QueryExplain.EXPLAIN_METADATA,
-            null,
             rowSource,
             operationHandler,
             false

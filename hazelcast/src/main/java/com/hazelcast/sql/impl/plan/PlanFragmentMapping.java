@@ -23,39 +23,26 @@ import java.util.UUID;
  * Fragment mapping: static or dynamic.
  */
 public final class PlanFragmentMapping {
-    /** Static mapping: member IDs. */
-    private final Collection<UUID> staticMemberIds;
+    /** Explicit member IDs. */
+    private final Collection<UUID> memberIds;
 
-    /** Dynamic mapping: member count. */
-    private final int dynamicMemberCount;
+    /** Flag indicating that the fragment should be deployed to data members. */
+    private final boolean dataMembers;
 
-    private PlanFragmentMapping(Collection<UUID> staticMemberIds, int dynamicMemberCount) {
-        this.staticMemberIds = staticMemberIds;
-        this.dynamicMemberCount = dynamicMemberCount;
+    public PlanFragmentMapping(Collection<UUID> memberIds, boolean dataMembers) {
+        this.memberIds = memberIds;
+        this.dataMembers = dataMembers;
     }
 
-    public static PlanFragmentMapping staticMapping(Collection<UUID> staticMemberIds) {
-        return new PlanFragmentMapping(staticMemberIds, 0);
+    public boolean isDataMembers() {
+        return dataMembers;
     }
 
-    // TODO: Make sure to fallback to dynamic approach when there are too many members
-    public static PlanFragmentMapping dynamicMapping(int dynamicMemberCount) {
-        return new PlanFragmentMapping(null, dynamicMemberCount);
-    }
-
-    public boolean isStatic() {
-        return staticMemberIds != null;
-    }
-
-    public Collection<UUID> getStaticMemberIds() {
-        return staticMemberIds;
-    }
-
-    public int getDynamicMemberCount() {
-        return dynamicMemberCount;
+    public Collection<UUID> getMemberIds() {
+        return memberIds;
     }
 
     public int getMemberCount() {
-        return isStatic() ? staticMemberIds.size() : dynamicMemberCount;
+        return memberIds.size();
     }
 }

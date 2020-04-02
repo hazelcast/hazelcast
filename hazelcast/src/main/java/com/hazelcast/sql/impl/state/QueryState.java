@@ -20,14 +20,12 @@ import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryMetadata;
 import com.hazelcast.sql.impl.QueryResultProducer;
-import com.hazelcast.sql.impl.plan.PlanFragment;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.plan.Plan;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.IdentityHashMap;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -71,7 +69,6 @@ public final class QueryState implements QueryStateCallback {
         long initiatorTimeout,
         Plan initiatorPlan,
         QueryMetadata initiatorMetadata,
-        IdentityHashMap<PlanFragment, Collection<UUID>> initiatorFragmentMappings,
         QueryResultProducer initiatorRowSource
     ) {
         // Set common state.
@@ -85,7 +82,6 @@ public final class QueryState implements QueryStateCallback {
                 queryId,
                 initiatorPlan,
                 initiatorMetadata,
-                initiatorFragmentMappings,
                 initiatorRowSource,
                 initiatorTimeout
             );
@@ -101,7 +97,6 @@ public final class QueryState implements QueryStateCallback {
         long initiatorTimeout,
         Plan initiatorPlan,
         QueryMetadata initiatorMetadata,
-        IdentityHashMap<PlanFragment, Collection<UUID>> initiatorFragmentMappings,
         QueryResultProducer initiatorResultProducer
     ) {
         return new QueryState(
@@ -113,7 +108,6 @@ public final class QueryState implements QueryStateCallback {
             initiatorTimeout,
             initiatorPlan,
             initiatorMetadata,
-            initiatorFragmentMappings,
             initiatorResultProducer
         );
     }
@@ -136,7 +130,6 @@ public final class QueryState implements QueryStateCallback {
             completionCallback,
             false,
             -1,
-            null,
             null,
             null,
             null
@@ -320,13 +313,8 @@ public final class QueryState implements QueryStateCallback {
         assert isInitiator();
         assert queryId.getMemberId().equals(localMemberId);
 
-        Set<UUID> res = new HashSet<>();
+        Set<UUID> res = new HashSet<>(initiatorState.getPlan().getDataMemberIds());
 
-        for (Collection<UUID> fragmentMembersIds : initiatorState.getFragmentMappings().values()) {
-            res.addAll(fragmentMembersIds);
-        }
-
-        // Remove initiator.
         res.remove(localMemberId);
 
         return res;

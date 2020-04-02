@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.plan.node;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.sql.impl.row.hash.RowHashFunction;
+import com.hazelcast.sql.impl.row.partitioner.RowPartitioner;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -28,20 +28,20 @@ import java.util.Objects;
  */
 public class ReplicatedToPartitionedPlanNode extends UniInputPlanNode {
     /** Function which should be used for hashing. */
-    private RowHashFunction hashFunction;
+    private RowPartitioner partitioner;
 
     public ReplicatedToPartitionedPlanNode() {
         // No-op.
     }
 
-    public ReplicatedToPartitionedPlanNode(int id, PlanNode upstream, RowHashFunction hashFunction) {
+    public ReplicatedToPartitionedPlanNode(int id, PlanNode upstream, RowPartitioner partitioner) {
         super(id, upstream);
 
-        this.hashFunction = hashFunction;
+        this.partitioner = partitioner;
     }
 
-    public RowHashFunction getHashFunction() {
-        return hashFunction;
+    public RowPartitioner getPartitioner() {
+        return partitioner;
     }
 
     @Override
@@ -51,17 +51,17 @@ public class ReplicatedToPartitionedPlanNode extends UniInputPlanNode {
 
     @Override
     public void writeData1(ObjectDataOutput out) throws IOException {
-        out.writeObject(hashFunction);
+        out.writeObject(partitioner);
     }
 
     @Override
     public void readData1(ObjectDataInput in) throws IOException {
-        hashFunction = in.readObject();
+        partitioner = in.readObject();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, upstream, hashFunction);
+        return Objects.hash(id, upstream, partitioner);
     }
 
     @Override
@@ -76,11 +76,11 @@ public class ReplicatedToPartitionedPlanNode extends UniInputPlanNode {
 
         ReplicatedToPartitionedPlanNode that = (ReplicatedToPartitionedPlanNode) o;
 
-        return id == that.id && upstream.equals(that.upstream) && hashFunction.equals(that.hashFunction);
+        return id == that.id && upstream.equals(that.upstream) && partitioner.equals(that.partitioner);
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{id=" + id + ", hashFunction=" + hashFunction + ", upstream=" + upstream + '}';
+        return getClass().getSimpleName() + "{id=" + id + ", partitioner=" + partitioner + ", upstream=" + upstream + '}';
     }
 }

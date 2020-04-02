@@ -19,15 +19,13 @@ package com.hazelcast.sql.impl.state;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryMetadata;
 import com.hazelcast.sql.impl.QueryResultProducer;
+import com.hazelcast.sql.impl.operation.QueryCheckOperation;
 import com.hazelcast.sql.impl.operation.QueryOperationHandler;
 import com.hazelcast.sql.impl.plan.Plan;
-import com.hazelcast.sql.impl.plan.PlanFragment;
-import com.hazelcast.sql.impl.operation.QueryCheckOperation;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -50,7 +48,6 @@ public class QueryStateRegistry {
         long initiatorTimeout,
         Plan initiatorPlan,
         QueryMetadata initiatorMetadata,
-        IdentityHashMap<PlanFragment, Collection<UUID>> initiatorFragmentMappings,
         QueryResultProducer initiatorResultProducer,
         QueryStateCompletionCallback completionCallback,
         boolean register
@@ -64,7 +61,6 @@ public class QueryStateRegistry {
             initiatorTimeout,
             initiatorPlan,
             initiatorMetadata,
-            initiatorFragmentMappings,
             initiatorResultProducer
         );
 

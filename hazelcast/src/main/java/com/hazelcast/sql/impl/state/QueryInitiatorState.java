@@ -16,15 +16,10 @@
 
 package com.hazelcast.sql.impl.state;
 
+import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryMetadata;
 import com.hazelcast.sql.impl.QueryResultProducer;
-import com.hazelcast.sql.impl.plan.PlanFragment;
-import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.plan.Plan;
-
-import java.util.Collection;
-import java.util.IdentityHashMap;
-import java.util.UUID;
 
 /**
  * Query state which is specific to the initiator node only.
@@ -34,7 +29,6 @@ public class QueryInitiatorState {
     private final QueryId queryId;
     private final Plan plan;
     private final QueryMetadata metadata;
-    private final IdentityHashMap<PlanFragment, Collection<UUID>> fragmentMappings;
     private final QueryResultProducer resultProducer;
     private final long timeout;
 
@@ -42,14 +36,12 @@ public class QueryInitiatorState {
         QueryId queryId,
         Plan plan,
         QueryMetadata metadata,
-        IdentityHashMap<PlanFragment, Collection<UUID>> fragmentMappings,
         QueryResultProducer resultProducer,
         long timeout
     ) {
         this.queryId = queryId;
         this.plan = plan;
         this.metadata = metadata;
-        this.fragmentMappings = fragmentMappings;
         this.resultProducer = resultProducer;
         this.timeout = timeout;
     }
@@ -64,10 +56,6 @@ public class QueryInitiatorState {
 
     public QueryMetadata getMetadata() {
         return metadata;
-    }
-
-    public IdentityHashMap<PlanFragment, Collection<UUID>> getFragmentMappings() {
-        return fragmentMappings;
     }
 
     public QueryResultProducer getResultProducer() {

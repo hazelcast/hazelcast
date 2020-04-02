@@ -16,23 +16,21 @@
 
 package com.hazelcast.sql.impl.operation;
 
-import com.hazelcast.sql.impl.plan.PlanFragment;
-import com.hazelcast.sql.impl.plan.PlanFragmentMapping;
 import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.memory.MemoryPressure;
+import com.hazelcast.sql.impl.plan.Plan;
+import com.hazelcast.sql.impl.plan.PlanFragment;
 import com.hazelcast.sql.impl.plan.node.PlanNode;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
+
+import static com.hazelcast.sql.impl.operation.QueryExecuteOperationFragmentMapping.DATA_MEMBERS;
+import static com.hazelcast.sql.impl.operation.QueryExecuteOperationFragmentMapping.EXPLICIT;
 
 /**
  * Factory to create query execute operations.
@@ -63,51 +61,28 @@ public class QueryExecuteOperationFactory {
         creditMap = createCreditMap(memoryPressure);
     }
 
-    public IdentityHashMap<PlanFragment, Collection<UUID>> prepareFragmentMappings() {
-        IdentityHashMap<PlanFragment, Collection<UUID>> mappings = new IdentityHashMap<>();
-
-        for (PlanFragment fragment : plan.getFragments()) {
-            PlanFragmentMapping mapping = fragment.getMapping();
-
-            if (mapping.isStatic()) {
-                mappings.put(fragment, mapping.getStaticMemberIds());
-            } else {
-                List<UUID> dataMemberIds = plan.getDataMemberIds();
-                Set<UUID> memberIds = new HashSet<>(mapping.getDynamicMemberCount());
-
-                int start = ThreadLocalRandom.current().nextInt(dataMemberIds.size());
-
-                for (int i = 0; i < mapping.getDynamicMemberCount(); i++) {
-                    int index = (start + i) % dataMemberIds.size();
-
-                    memberIds.add(dataMemberIds.get(index));
-                }
-
-                mappings.put(fragment, memberIds);
-            }
-
-        }
-
-        return mappings;
-    }
-
-    public QueryExecuteOperation create(
-        QueryId queryId,
-        IdentityHashMap<PlanFragment, Collection<UUID>> fragmentMappings,
-        UUID targetMemberId
-    ) {
+    public QueryExecuteOperation create(QueryId queryId, UUID targetMemberId) {
         List<PlanFragment> fragments = plan.getFragments();
 
         // Prepare descriptors.
         List<QueryExecuteOperationFragment> descriptors = new ArrayList<>(fragments.size());
 
         for (PlanFragment fragment : fragments) {
-            Collection<UUID> fragmentMemberIds = fragmentMappings.get(fragment);
+            QueryExecuteOperationFragmentMapping mapping;
+            Collection<UUID> memberIds;
+            PlanNode node;
 
-            // Do not send node to a member which will not execute it.
-            PlanNode node = fragmentMemberIds.contains(targetMemberId) ? fragment.getNode() : null;
+            if (fragment.getMapping().isDataMembers()) {
+                mapping = DATA_MEMBERS;
+                memberIds = null;
+                node = fragment.getNode();
+            } else {
+                mapping = EXPLICIT;
+                memberIds = fragment.getMapping().getMemberIds();
+                node = memberIds.contains(targetMemberId) ? fragment.getNode() : null;
+            }
 
-            descriptors.add(new QueryExecuteOperationFragment(node, fragmentMemberIds));
+            descriptors.add(new QueryExecuteOperationFragment(node, mapping, memberIds));
         }
 
         return new QueryExecuteOperation(

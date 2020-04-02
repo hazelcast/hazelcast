@@ -16,10 +16,9 @@
 
 package com.hazelcast.sql.impl.exec.io;
 
-import com.hazelcast.internal.util.HashUtil;
 import com.hazelcast.sql.impl.exec.Exec;
 import com.hazelcast.sql.impl.mailbox.Outbox;
-import com.hazelcast.sql.impl.row.hash.RowHashFunction;
+import com.hazelcast.sql.impl.row.partitioner.RowPartitioner;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
 
@@ -34,7 +33,7 @@ import java.util.Map;
  */
 public class UnicastSendExec extends AbstractSendExec {
     /** Hash function. */
-    private final RowHashFunction hashFunction;
+    private final RowPartitioner partitioner;
 
     /** Contains index of partition outboxes. */
     private final int[] partitionOutboxIndexes;
@@ -49,12 +48,12 @@ public class UnicastSendExec extends AbstractSendExec {
         int id,
         Exec upstream,
         Outbox[] outboxes,
-        RowHashFunction hashFunction,
+        RowPartitioner partitioner,
         int[] partitionOutboxIndexes
     ) {
         super(id, upstream, outboxes);
 
-        this.hashFunction = hashFunction;
+        this.partitioner = partitioner;
         this.partitionOutboxIndexes = partitionOutboxIndexes;
     }
 
@@ -136,8 +135,7 @@ public class UnicastSendExec extends AbstractSendExec {
         if (outboxes.length == 1) {
             return 0;
         } else {
-            int hash = hashFunction.getHash(row);
-            int part = HashUtil.hashToIndex(hash, partitionOutboxIndexes.length);
+            int part = partitioner.getPartition(row, partitionOutboxIndexes.length);
             int outboxIndex = partitionOutboxIndexes[part];
 
             return outboxIndex;

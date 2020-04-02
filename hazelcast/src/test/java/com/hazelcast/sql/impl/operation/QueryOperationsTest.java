@@ -42,6 +42,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
+import static com.hazelcast.sql.impl.operation.QueryExecuteOperationFragmentMapping.EXPLICIT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -196,9 +197,9 @@ public class QueryOperationsTest extends SqlTestSupport {
         partitionMapping.put(randomUUID(), new PartitionIdSet(10));
 
         List<QueryExecuteOperationFragment> fragments = new ArrayList<>();
-        fragments.add(new QueryExecuteOperationFragment(MockPlanNode.create(1, QueryDataType.INT),
+        fragments.add(new QueryExecuteOperationFragment(MockPlanNode.create(1, QueryDataType.INT), EXPLICIT,
             Arrays.asList(randomUUID(), randomUUID())));
-        fragments.add(new QueryExecuteOperationFragment(MockPlanNode.create(2, QueryDataType.INT),
+        fragments.add(new QueryExecuteOperationFragment(MockPlanNode.create(2, QueryDataType.INT), EXPLICIT,
             Arrays.asList(randomUUID(), randomUUID())));
 
         Map<Integer, Integer> outboundEdgeMap = new HashMap<>();

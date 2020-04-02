@@ -20,7 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.plan.node.PlanNode;
 import com.hazelcast.sql.impl.plan.node.UniInputPlanNode;
-import com.hazelcast.sql.impl.row.hash.RowHashFunction;
+import com.hazelcast.sql.impl.row.partitioner.RowPartitioner;
 import com.hazelcast.sql.impl.plan.node.PlanNodeVisitor;
 
 import java.io.IOException;
@@ -34,21 +34,21 @@ public class UnicastSendPlanNode extends UniInputPlanNode implements EdgeAwarePl
     private int edgeId;
 
     /** Partition hasher (get partition hash from row). */
-    private RowHashFunction hashFunction;
+    private RowPartitioner partitioner;
 
     public UnicastSendPlanNode() {
         // No-op.
     }
 
-    public UnicastSendPlanNode(int id, PlanNode upstream, int edgeId, RowHashFunction hashFunction) {
+    public UnicastSendPlanNode(int id, PlanNode upstream, int edgeId, RowPartitioner partitioner) {
         super(id, upstream);
 
         this.edgeId = edgeId;
-        this.hashFunction = hashFunction;
+        this.partitioner = partitioner;
     }
 
-    public RowHashFunction getHashFunction() {
-        return hashFunction;
+    public RowPartitioner getPartitioner() {
+        return partitioner;
     }
 
     @Override
@@ -69,18 +69,18 @@ public class UnicastSendPlanNode extends UniInputPlanNode implements EdgeAwarePl
     @Override
     public void writeData1(ObjectDataOutput out) throws IOException {
         out.writeInt(edgeId);
-        out.writeObject(hashFunction);
+        out.writeObject(partitioner);
     }
 
     @Override
     public void readData1(ObjectDataInput in) throws IOException {
         edgeId = in.readInt();
-        hashFunction = in.readObject();
+        partitioner = in.readObject();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, edgeId, upstream, hashFunction);
+        return Objects.hash(id, edgeId, upstream, partitioner);
     }
 
     @Override
@@ -95,12 +95,12 @@ public class UnicastSendPlanNode extends UniInputPlanNode implements EdgeAwarePl
 
         UnicastSendPlanNode that = (UnicastSendPlanNode) o;
 
-        return id == that.id && edgeId == that.edgeId && upstream.equals(that.upstream) && hashFunction.equals(that.hashFunction);
+        return id == that.id && edgeId == that.edgeId && upstream.equals(that.upstream) && partitioner.equals(that.partitioner);
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{id=" + id + ", edgeId=" + edgeId + ", hashFunction=" + hashFunction
+        return getClass().getSimpleName() + "{id=" + id + ", edgeId=" + edgeId + ", partitioner=" + partitioner
             + ", upstream=" + upstream + '}';
     }
 }
