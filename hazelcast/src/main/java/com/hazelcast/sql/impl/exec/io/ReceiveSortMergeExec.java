@@ -85,6 +85,8 @@ public class ReceiveSortMergeExec extends AbstractExec {
 
     @Override
     protected void setup0(QueryFragmentContext ctx) {
+        inbox.setup();
+
         if (fetch != null) {
             fetch.setup(ctx);
         }

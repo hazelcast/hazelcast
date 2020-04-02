@@ -150,7 +150,7 @@ public class QueryFragmentExecutable implements QueryFragmentScheduleCallback {
             // Send flow control messages if needed.
             if (res != IterationResult.FETCHED_DONE) {
                 for (InboundHandler inbox : inboxes.values()) {
-                    inbox.sendFlowControl();
+                    inbox.onFragmentExecutionCompleted();
                 }
             }
 

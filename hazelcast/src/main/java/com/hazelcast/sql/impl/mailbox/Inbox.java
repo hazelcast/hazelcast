@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.mailbox;
 
 import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.sql.impl.mailbox.flowcontrol.FlowControl;
 import com.hazelcast.sql.impl.operation.QueryOperationHandler;
 
 import java.util.ArrayDeque;
@@ -34,9 +35,9 @@ public class Inbox extends AbstractInbox {
         int rowWidth,
         QueryOperationHandler operationHandler,
         int remainingSources,
-        long maxMemory
+        FlowControl flowControl
     ) {
-        super(queryId, edgeId, rowWidth, operationHandler, remainingSources, maxMemory);
+        super(queryId, edgeId, rowWidth, operationHandler, remainingSources, flowControl);
     }
 
     @Override

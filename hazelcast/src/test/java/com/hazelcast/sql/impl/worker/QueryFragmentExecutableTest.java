@@ -169,7 +169,7 @@ public class QueryFragmentExecutableTest extends HazelcastTestSupport {
             }
 
             @Override
-            public void sendFlowControl() {
+            public void onFragmentExecutionCompleted() {
                 flowControlNotified.set(true);
             }
         };
@@ -224,7 +224,7 @@ public class QueryFragmentExecutableTest extends HazelcastTestSupport {
                 }
 
                 @Override
-                public void sendFlowControl() {
+                public void onFragmentExecutionCompleted() {
                     // No-op.
                 }
             };

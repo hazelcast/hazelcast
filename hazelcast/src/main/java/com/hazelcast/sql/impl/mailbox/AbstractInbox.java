@@ -16,13 +16,9 @@
 
 package com.hazelcast.sql.impl.mailbox;
 
-import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.sql.impl.mailbox.flowcontrol.FlowControl;
 import com.hazelcast.sql.impl.operation.QueryOperationHandler;
-import com.hazelcast.sql.impl.operation.QueryFlowControlExchangeOperation;
-
-import java.util.Collection;
 
 /**
  * Abstract inbox implementation.
@@ -41,7 +37,7 @@ public abstract class AbstractInbox extends AbstractMailbox implements InboundHa
     private final QueryOperationHandler operationHandler;
 
     /** Backpressure control. */
-    private final FlowControlState backpressure;
+    private final FlowControl flowControl;
 
     protected AbstractInbox(
         QueryId queryId,
@@ -49,14 +45,17 @@ public abstract class AbstractInbox extends AbstractMailbox implements InboundHa
         int rowWidth,
         QueryOperationHandler operationHandler,
         int remainingSources,
-        long maxMemory
+        FlowControl flowControl
     ) {
         super(queryId, edgeId, rowWidth);
 
         this.operationHandler = operationHandler;
         this.remainingSources = remainingSources;
+        this.flowControl = flowControl;
+    }
 
-        backpressure = new FlowControlState(maxMemory);
+    public void setup() {
+        flowControl.setup(queryId, edgeId, operationHandler);
     }
 
     @Override
@@ -71,11 +70,11 @@ public abstract class AbstractInbox extends AbstractMailbox implements InboundHa
         }
 
         // Track backpressure.
-        backpressure.onBatchAdded(
+        flowControl.onBatchAdded(
             batch.getSenderId(),
+            getBatchSize(batch),
             batch.isLast(),
-            remainingMemory,
-            batch.getBatch().getRowCount() * rowWidth
+            remainingMemory
         );
     }
 
@@ -90,32 +89,16 @@ public abstract class AbstractInbox extends AbstractMailbox implements InboundHa
         enqueuedBatches--;
 
         // Track backpressure.
-        backpressure.onBatchRemoved(batch.getSenderId(), batch.isLast(), batch.getBatch().getRowCount() * rowWidth);
+        flowControl.onBatchRemoved(
+            batch.getSenderId(),
+            getBatchSize(batch),
+            batch.isLast()
+        );
     }
 
     @Override
-    public void sendFlowControl() {
-        Collection<FlowControlStreamState> states = backpressure.getPending();
-
-        if (states.isEmpty()) {
-            return;
-        }
-
-        for (FlowControlStreamState state : states) {
-            QueryFlowControlExchangeOperation operation =
-                new QueryFlowControlExchangeOperation(queryId, edgeId, state.getLocalMemory());
-
-            state.setShouldSend(false);
-
-            boolean success = operationHandler.submit(state.getMemberId(), operation);
-
-            if (!success) {
-                throw HazelcastSqlException.error(SqlErrorCode.MEMBER_LEAVE,
-                    "Failed to send control flow message to member: " + state.getMemberId());
-            }
-        }
-
-        backpressure.clearPending();
+    public void onFragmentExecutionCompleted() {
+        flowControl.onFragmentExecutionCompleted();
     }
 
     /**
@@ -123,5 +106,9 @@ public abstract class AbstractInbox extends AbstractMailbox implements InboundHa
      */
     public boolean closed() {
         return enqueuedBatches == 0 && remainingSources == 0;
+    }
+
+    private long getBatchSize(InboundBatch batch) {
+        return batch.getBatch().getRowCount() * rowWidth;
     }
 }

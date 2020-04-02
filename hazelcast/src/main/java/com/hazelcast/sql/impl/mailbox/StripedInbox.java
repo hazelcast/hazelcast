@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.mailbox;
 
 import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.sql.impl.mailbox.flowcontrol.FlowControl;
 import com.hazelcast.sql.impl.operation.QueryOperationHandler;
 
 import java.util.ArrayDeque;
@@ -41,9 +42,9 @@ public class StripedInbox extends AbstractInbox {
         int rowWidth,
         QueryOperationHandler operationHandler,
         Collection<UUID> senderMemberIds,
-        long maxMemory
+        FlowControl flowControl
     ) {
-        super(queryId, edgeId, rowWidth, operationHandler, senderMemberIds.size(), maxMemory);
+        super(queryId, edgeId, rowWidth, operationHandler, senderMemberIds.size(), flowControl);
 
         // Build inverse map from the member to its index.
         int memberIdx = 0;

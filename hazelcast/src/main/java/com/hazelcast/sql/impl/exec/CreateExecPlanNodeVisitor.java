@@ -36,6 +36,8 @@ import com.hazelcast.sql.impl.mailbox.Inbox;
 import com.hazelcast.sql.impl.mailbox.OutboundHandler;
 import com.hazelcast.sql.impl.mailbox.Outbox;
 import com.hazelcast.sql.impl.mailbox.StripedInbox;
+import com.hazelcast.sql.impl.mailbox.flowcontrol.FlowControl;
+import com.hazelcast.sql.impl.mailbox.flowcontrol.simple.SimpleFlowControl;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperationFragment;
 import com.hazelcast.sql.impl.operation.QueryOperationHandler;
@@ -139,7 +141,7 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
             sendFragment.getNode().getSchema().getEstimatedRowSize(),
             getOperationHandler(),
             fragmentMemberCount,
-            operation.getEdgeCreditMap().get(edgeId)
+            createFlowControl(edgeId)
         );
 
         inboxes.put(edgeId, inbox);
@@ -165,7 +167,7 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
             node.getSchema().getEstimatedRowSize(),
             getOperationHandler(),
             sendFragment.getMemberIds(),
-            operation.getEdgeCreditMap().get(edgeId)
+            createFlowControl(edgeId)
         );
 
         inboxes.put(edgeId, inbox);
@@ -493,5 +495,11 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
 
     private QueryOperationHandler getOperationHandler() {
          return nodeEngine.getSqlService().getInternalService().getOperationHandler();
+    }
+
+    private FlowControl createFlowControl(int edgeId) {
+        long maxMemory = operation.getEdgeCreditMap().get(edgeId);
+
+        return new SimpleFlowControl(maxMemory);
     }
 }

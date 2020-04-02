@@ -14,21 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.mailbox;
+package com.hazelcast.sql.impl.mailbox.flowcontrol.simple;
 
 import java.util.UUID;
 
 /**
- * Flow control state for a single stream.
+ * State of a single stream.
  */
-public final class FlowControlStreamState {
+public final class SimpleFlowControlStream {
 
     private final UUID memberId;
     private long remoteMemory;
     private long localMemory;
     private boolean shouldSend;
 
-    public FlowControlStreamState(UUID memberId, long remoteMemory, long localMemory) {
+    public SimpleFlowControlStream(UUID memberId, long remoteMemory, long localMemory) {
         this.memberId = memberId;
 
         updateMemory(remoteMemory, localMemory);
@@ -46,13 +46,13 @@ public final class FlowControlStreamState {
         return localMemory;
     }
 
-    public boolean isShouldSend() {
-        return shouldSend;
-    }
-
     public void updateMemory(long remoteMemory, long localMemory) {
         this.remoteMemory = remoteMemory;
         this.localMemory = localMemory;
+    }
+
+    public boolean isShouldSend() {
+        return shouldSend;
     }
 
     public void setShouldSend(boolean shouldSend) {

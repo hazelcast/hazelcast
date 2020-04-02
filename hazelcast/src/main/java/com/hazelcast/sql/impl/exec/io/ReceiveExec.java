@@ -21,6 +21,7 @@ import com.hazelcast.sql.impl.exec.IterationResult;
 import com.hazelcast.sql.impl.mailbox.Inbox;
 import com.hazelcast.sql.impl.mailbox.InboundBatch;
 import com.hazelcast.sql.impl.row.RowBatch;
+import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 
 /**
  * Executor which receives batches from a single inbox.
@@ -39,6 +40,11 @@ public class ReceiveExec extends AbstractExec {
         super(id);
 
         this.inbox = inbox;
+    }
+
+    @Override
+    protected void setup0(QueryFragmentContext ctx) {
+        inbox.setup();
     }
 
     @Override

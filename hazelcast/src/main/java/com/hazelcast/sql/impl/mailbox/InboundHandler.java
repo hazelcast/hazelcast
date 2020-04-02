@@ -29,7 +29,7 @@ public interface InboundHandler {
     void onBatch(InboundBatch batch, long remainingMemory);
 
     /**
-     * Send flow control message to the remote outbound handler.
+     * A callback invoked the fragment that owns this handler is finished.
      */
-    void sendFlowControl();
+    void onFragmentExecutionCompleted();
 }
