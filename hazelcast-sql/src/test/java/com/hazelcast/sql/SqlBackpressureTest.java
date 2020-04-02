@@ -37,7 +37,7 @@ public class SqlBackpressureTest extends SqlTestSupport {
         "SELECT l01, l02, l03, l04, l05, l06, l07, l08, l09, l10, l11, l12, l13, l14, l15, l16 FROM map ";
 
     // 128 - row width, 128 * 8 = 1Kb, 1Kb * 1024 = 1Mb, 1Mb * 5 - senders will need at least 2 control flow messages.
-    private static final int ROW_COUNT = 8 * 1024;
+    private static final int ROW_COUNT = 7 * 8 * 1024;
 
     private static TestHazelcastInstanceFactory factory;
     private static HazelcastInstance member;

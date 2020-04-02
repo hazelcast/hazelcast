@@ -23,6 +23,10 @@ import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 import com.hazelcast.sql.impl.mailbox.Outbox;
 import com.hazelcast.sql.impl.row.RowBatch;
 
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+
 /**
  * Abstract sender
  */
@@ -32,6 +36,15 @@ public abstract class AbstractSendExec extends AbstractUpstreamAwareExec {
 
     /** Done flag. */
     private boolean done;
+
+    /** Batch that is pending sending. */
+    private RowBatch pendingBatch;
+
+    /** Whether pending batch is the last one. */
+    private boolean pendingLast;
+
+    /** Per-outbox positions for the pending batch. */
+    private Map<Integer, Position> pendingPositions;
 
     public AbstractSendExec(int id, Exec upstream, Outbox[] outboxes) {
         super(id, upstream);
@@ -99,7 +112,48 @@ public abstract class AbstractSendExec extends AbstractUpstreamAwareExec {
      *
      * @return {@code True} if there are no more pending batches.
      */
-    protected abstract boolean pushPendingBatch();
+    private boolean pushPendingBatch() {
+        // If there are no pending rows, then all data has been flushed.
+        if (pendingBatch == null) {
+            return true;
+        }
+
+        assert pendingPositions != null;
+
+        boolean res = true;
+
+        Iterator<Map.Entry<Integer, Position>> iterator = pendingPositions.entrySet().iterator();
+
+        while (iterator.hasNext()) {
+            Map.Entry<Integer, Position> entry = iterator.next();
+
+            int outboxIndex = entry.getKey();
+            Position position = entry.getValue();
+
+            SendQualifier qualifier = getOutboxQualifier(outboxIndex);
+
+            int newPosition = outboxes[outboxIndex].onRowBatch(pendingBatch, pendingLast, position.get(), qualifier);
+
+            if (newPosition == pendingBatch.getRowCount()) {
+                iterator.remove();
+            } else {
+                position.set(newPosition);
+
+                res = false;
+            }
+        }
+
+        if (res) {
+            assert pendingPositions.isEmpty();
+
+            pendingBatch = null;
+            pendingPositions = null;
+
+            return true;
+        } else {
+            return false;
+        }
+    }
 
     /**
      * Push the current row batch to the outbox.
@@ -108,7 +162,39 @@ public abstract class AbstractSendExec extends AbstractUpstreamAwareExec {
      * @param last Whether this is the last batch.
      * @return {@code True} if the batch was accepted by all inboxes.
      */
-    protected abstract boolean pushBatch(RowBatch batch, boolean last);
+    private boolean pushBatch(RowBatch batch, boolean last) {
+        // Pending state must be cleared at this point.
+        assert pendingBatch == null;
+        assert pendingPositions == null;
+
+        // Let the sender know that the new batch is being processed.
+        beforePushBatch(batch);
+
+        boolean res = true;
+
+        for (int outboxIndex = 0; outboxIndex < outboxes.length; outboxIndex++) {
+            SendQualifier qualifier = getOutboxQualifier(outboxIndex);
+
+            int position = outboxes[outboxIndex].onRowBatch(batch, last, 0, qualifier);
+
+            if (position < batch.getRowCount()) {
+                if (pendingBatch == null) {
+                    pendingBatch = batch;
+                    pendingLast = last;
+                    pendingPositions = new HashMap<>();
+                }
+
+                pendingPositions.put(outboxIndex, new Position(position));
+
+                res = false;
+            }
+        }
+
+        return res;
+    }
+
+    protected abstract SendQualifier getOutboxQualifier(int outboxIndex);
+    protected abstract void beforePushBatch(RowBatch batch);
 
     @Override
     public RowBatch currentBatch0() {
@@ -118,5 +204,21 @@ public abstract class AbstractSendExec extends AbstractUpstreamAwareExec {
     @Override
     public boolean canReset() {
         return false;
+    }
+
+    private static final class Position {
+        private int value;
+
+        private Position(int value) {
+            this.value = value;
+        }
+
+        private int get() {
+            return value;
+        }
+
+        private void set(int value) {
+            this.value = value;
+        }
     }
 }
