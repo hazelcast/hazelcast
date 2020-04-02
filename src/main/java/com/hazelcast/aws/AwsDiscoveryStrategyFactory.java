@@ -44,7 +44,7 @@ public class AwsDiscoveryStrategyFactory
     @Override
     public Collection<PropertyDefinition> getConfigurationProperties() {
         final AwsProperties[] props = AwsProperties.values();
-        final ArrayList<PropertyDefinition> definitions = new ArrayList<PropertyDefinition>(props.length);
+        final ArrayList<PropertyDefinition> definitions = new ArrayList<>(props.length);
         for (AwsProperties prop : props) {
             definitions.add(prop.getDefinition());
         }

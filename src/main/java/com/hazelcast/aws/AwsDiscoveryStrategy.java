@@ -15,10 +15,8 @@
 
 package com.hazelcast.aws;
 
-import com.hazelcast.aws.utility.MetadataUtil;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.InvalidConfigurationException;
-import com.hazelcast.config.properties.PropertyDefinition;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -32,7 +30,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 import static com.hazelcast.aws.AwsProperties.ACCESS_KEY;
 import static com.hazelcast.aws.AwsProperties.CONNECTION_RETRIES;
@@ -50,93 +47,62 @@ import static com.hazelcast.aws.AwsProperties.TAG_VALUE;
 /**
  * AWS implementation of {@link DiscoveryStrategy}.
  *
- * @see AWSClient
+ * @see AwsClient
  */
 public class AwsDiscoveryStrategy
-        extends AbstractDiscoveryStrategy {
+    extends AbstractDiscoveryStrategy {
     private static final ILogger LOGGER = Logger.getLogger(AwsDiscoveryStrategy.class);
     private static final String DEFAULT_PORT_RANGE = "5701-5708";
     private static final Integer DEFAULT_CONNECTION_RETRIES = 3;
     private static final int DEFAULT_CONNECTION_TIMEOUT_SECONDS = 10;
     private static final int DEFAULT_READ_TIMEOUT_SECONDS = 10;
     private static final String DEFAULT_HOST_HEADER = "ec2.amazonaws.com";
-    private static final String AWS_REGION_REGEX
-            = "\\w{2}(-gov-|-)(north|northeast|east|southeast|south|southwest|west|northwest|central)-\\d(?!.+)";
-    private static final Pattern AWS_REGION_PATTERN = Pattern.compile(AWS_REGION_REGEX);
 
-    private final AwsConfig awsConfig;
-    private final AWSClient awsClient;
+    private final AwsClient awsClient;
+    private final PortRange portRange;
 
-    private final Map<String, String> memberMetadata = new HashMap<String, String>();
+    private final Map<String, String> memberMetadata = new HashMap<>();
 
-    public AwsDiscoveryStrategy(Map<String, Comparable> properties) {
+    AwsDiscoveryStrategy(Map<String, Comparable> properties) {
         super(LOGGER, properties);
-        this.awsConfig = getAwsConfig();
+
+        AwsConfig awsConfig = createAwsConfig();
+        logConfiguration(awsConfig);
+
+        AwsMetadataApi awsMetadataApi = new AwsMetadataApi(awsConfig);
+        AwsDescribeInstancesApi awsDescribeInstancesApi = new AwsDescribeInstancesApi(awsConfig);
+
+        this.awsClient = new AwsClient(awsMetadataApi, awsDescribeInstancesApi, awsConfig, new Environment());
+        this.portRange = awsConfig.getHzPort();
+    }
+
+    /**
+     * For test purposes only.
+     */
+    AwsDiscoveryStrategy(Map<String, Comparable> properties, AwsClient client) {
+        super(LOGGER, properties);
+        this.awsClient = client;
+        this.portRange = createAwsConfig().getHzPort();
+    }
+
+    private AwsConfig createAwsConfig() {
         try {
-            this.awsClient = new AWSClient(awsConfig);
-        } catch (IllegalArgumentException e) {
-            throw new InvalidConfigurationException("AWS configuration is not valid", e);
-        }
-    }
-
-    /**
-     * For test purposes only.
-     */
-    AwsDiscoveryStrategy(Map<String, Comparable> properties, AWSClient client) {
-        super(LOGGER, properties);
-        this.awsConfig = getAwsConfig();
-        this.awsClient = client;
-    }
-
-    /**
-     * For test purposes only.
-     */
-    AwsDiscoveryStrategy(Map<String, Comparable> properties, AwsConfig awsConfig, AWSClient client) {
-        super(LOGGER, properties);
-        this.awsConfig = awsConfig;
-        this.awsClient = client;
-    }
-
-    AwsConfig getAwsConfig()
-            throws IllegalArgumentException {
-        Integer connectionRetries = getOrDefault(CONNECTION_RETRIES.getDefinition(), DEFAULT_CONNECTION_RETRIES);
-        Integer connectionTimeoutSeconds = getOrDefault(CONNECTION_TIMEOUT_SECONDS.getDefinition(),
-                DEFAULT_CONNECTION_TIMEOUT_SECONDS);
-        Integer readTimeoutSeconds = getOrDefault(READ_TIMEOUT_SECONDS.getDefinition(), DEFAULT_READ_TIMEOUT_SECONDS);
-        String region = getOrDefault(REGION.getDefinition(), null);
-        //to prevent unnecessary metadata call when region is set
-        if (region == null) {
-            region = getCurrentRegion(connectionTimeoutSeconds, connectionRetries, readTimeoutSeconds);
-            getLogger().info("Region not set, using the current region: " + region);
-        }
-
-        validateRegion(region);
-
-        final AwsConfig config = AwsConfig.builder().setAccessKey(getOrNull(ACCESS_KEY)).setSecretKey(getOrNull(SECRET_KEY))
-                .setRegion(region)
+            return AwsConfig.builder()
+                .setAccessKey(getOrNull(ACCESS_KEY)).setSecretKey(getOrNull(SECRET_KEY))
+                .setRegion(getOrDefault(REGION.getDefinition(), null))
                 .setIamRole(getOrNull(IAM_ROLE))
                 .setHostHeader(getOrDefault(HOST_HEADER.getDefinition(), DEFAULT_HOST_HEADER))
                 .setSecurityGroupName(getOrNull(SECURITY_GROUP_NAME)).setTagKey(getOrNull(TAG_KEY))
                 .setTagValue(getOrNull(TAG_VALUE))
-                .setConnectionTimeoutSeconds(connectionTimeoutSeconds)
-                .setConnectionRetries(connectionRetries)
-                .setReadTimeoutSeconds(readTimeoutSeconds)
-                .setHzPort(new PortRange(getPortRange())).build();
+                .setConnectionTimeoutSeconds(getOrDefault(CONNECTION_TIMEOUT_SECONDS.getDefinition(),
+                    DEFAULT_CONNECTION_TIMEOUT_SECONDS))
+                .setConnectionRetries(getOrDefault(CONNECTION_RETRIES.getDefinition(), DEFAULT_CONNECTION_RETRIES))
+                .setReadTimeoutSeconds(getOrDefault(READ_TIMEOUT_SECONDS.getDefinition(), DEFAULT_READ_TIMEOUT_SECONDS))
+                .setHzPort(new PortRange(getPortRange()))
+                .build();
 
-        reviewConfiguration(config);
-        return config;
-    }
-
-    String getCurrentRegion(int connectionTimeoutSeconds, int connectionRetries, int readTimeoutSeconds) {
-        String availabilityZone =
-                MetadataUtil.getAvailabilityZone(connectionTimeoutSeconds, connectionRetries, readTimeoutSeconds);
-        return availabilityZone.substring(0, availabilityZone.length() - 1);
-    }
-
-    void validateRegion(String region) {
-        if (!AWS_REGION_PATTERN.matcher(region).matches()) {
-            String message = String.format("The provided region %s is not a valid AWS region.", region);
-            throw new InvalidConfigurationException(message);
+        } catch (IllegalArgumentException e) {
+            throw new InvalidConfigurationException("AWS configuration is not valid", e);
         }
     }
 
@@ -154,20 +120,20 @@ public class AwsDiscoveryStrategy
         return portRange.toString();
     }
 
-    private void reviewConfiguration(AwsConfig config) {
+    private void logConfiguration(AwsConfig config) {
         if (StringUtil.isNullOrEmptyAfterTrim(config.getSecretKey()) || StringUtil
-                .isNullOrEmptyAfterTrim(config.getAccessKey())) {
+            .isNullOrEmptyAfterTrim(config.getAccessKey())) {
 
             if (!StringUtil.isNullOrEmptyAfterTrim(config.getIamRole())) {
-                getLogger().info("Describe instances will be queried with iam-role, "
-                        + "please make sure given iam-role have ec2:DescribeInstances policy attached.");
+                LOGGER.info("Describe instances will be queried with iam-role, "
+                    + "please make sure given iam-role have ec2:AwsDescribeInstancesApi policy attached.");
             } else {
-                getLogger().warning("Describe instances will be queried with iam-role assigned to EC2 instance, "
-                        + "please make sure given iam-role have ec2:DescribeInstances policy attached.");
+                LOGGER.info("Describe instances will be queried with iam-role assigned to EC2 instance, "
+                    + "please make sure given iam-role have ec2:AwsDescribeInstancesApi policy attached.");
             }
         } else {
             if (!StringUtil.isNullOrEmptyAfterTrim(config.getIamRole())) {
-                getLogger().info("No need to define iam-role, when access and secret keys are configured!");
+                LOGGER.info("No need to define iam-role, when access and secret keys are configured!");
             }
         }
     }
@@ -185,21 +151,21 @@ public class AwsDiscoveryStrategy
         try {
             final Map<String, String> privatePublicIpAddressPairs = awsClient.getAddresses();
             if (privatePublicIpAddressPairs.isEmpty()) {
-                getLogger().warning("No EC2 instances found!");
+                LOGGER.warning("No IP addresses found!");
                 return Collections.emptyList();
             }
 
-            if (getLogger().isFinestEnabled()) {
-                final StringBuilder sb = new StringBuilder("Found the following EC2 instances:\n");
+            if (LOGGER.isFinestEnabled()) {
+                final StringBuilder sb = new StringBuilder("Found the following IP addresses:\n");
                 for (Map.Entry<String, String> entry : privatePublicIpAddressPairs.entrySet()) {
                     sb.append("    ").append(entry.getKey()).append(" : ").append(entry.getValue()).append("\n");
                 }
-                getLogger().finest(sb.toString());
+                LOGGER.finest(sb.toString());
             }
 
-            final ArrayList<DiscoveryNode> nodes = new ArrayList<DiscoveryNode>(privatePublicIpAddressPairs.size());
+            final ArrayList<DiscoveryNode> nodes = new ArrayList<>(privatePublicIpAddressPairs.size());
             for (Map.Entry<String, String> entry : privatePublicIpAddressPairs.entrySet()) {
-                for (int port = awsConfig.getHzPort().getFromPort(); port <= awsConfig.getHzPort().getToPort(); port++) {
+                for (int port = portRange.getFromPort(); port <= portRange.getToPort(); port++) {
                     nodes.add(new SimpleDiscoveryNode(new Address(entry.getKey(), port), new Address(entry.getValue(), port)));
                 }
             }

@@ -13,17 +13,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.hazelcast.aws.impl;
+package com.hazelcast.aws;
 
-import com.hazelcast.test.HazelcastTestSupport;
-import org.junit.Test;
+/**
+ * This class is used to lookup env vars, so that we can use mocks in our tests,
+ * when checking for the presence of an env var.
+ */
+class Environment {
 
-public class ConstantsTest
-        extends HazelcastTestSupport {
-
-    @Test
-    public void testConstructor()
-            throws Exception {
-        assertUtilityConstructor(Constants.class);
+    String getEnvVar(String name) {
+        return System.getenv(name);
     }
+
 }

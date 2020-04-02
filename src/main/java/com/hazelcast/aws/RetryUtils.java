@@ -13,7 +13,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.hazelcast.aws.utility;
+package com.hazelcast.aws;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
@@ -25,10 +25,10 @@ import java.util.concurrent.Callable;
 /**
  * Static utility class to retry operations related to connecting to AWS Services.
  */
-public final class RetryUtils {
-    static final long INITIAL_BACKOFF_MS = 1500L;
-    static final long MAX_BACKOFF_MS = 5 * 60 * 1000L;
-    static final double BACKOFF_MULTIPLIER = 1.5;
+final class RetryUtils {
+    private static final long INITIAL_BACKOFF_MS = 1500L;
+    private static final long MAX_BACKOFF_MS = 5 * 60 * 1000L;
+    private static final double BACKOFF_MULTIPLIER = 1.5;
 
     private static final ILogger LOGGER = Logger.getLogger(RetryUtils.class);
 
@@ -44,7 +44,7 @@ public final class RetryUtils {
      * <p>
      * If {@code callable} throws an unchecked exception, it is wrapped into {@link HazelcastException}.
      */
-    public static <T> T retry(Callable<T> callable, int retries) {
+    static <T> T retry(Callable<T> callable, int retries) {
         int retryCount = 0;
         while (true) {
             try {

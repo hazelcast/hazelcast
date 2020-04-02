@@ -13,9 +13,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.hazelcast.aws.utility;
+package com.hazelcast.aws;
 
-public final class StringUtil {
+final class StringUtil {
 
     private StringUtil() {
     }
@@ -26,7 +26,7 @@ public final class StringUtil {
      * @param s the string to check.
      * @return true if the string is null or empty, false otherwise
      */
-    public static boolean isEmpty(String s) {
+    private static boolean isEmpty(String s) {
         if (s == null) {
             return true;
         }
@@ -39,7 +39,7 @@ public final class StringUtil {
      * @param s the string to check.
      * @return true if the string is not null or not empty, false otherwise
      */
-    public static boolean isNotEmpty(String s) {
+    static boolean isNotEmpty(String s) {
         return !isEmpty(s);
     }
 

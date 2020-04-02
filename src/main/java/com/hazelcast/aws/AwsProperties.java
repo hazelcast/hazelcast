@@ -19,7 +19,6 @@ import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.properties.PropertyDefinition;
 import com.hazelcast.config.properties.PropertyTypeConverter;
 import com.hazelcast.config.properties.SimplePropertyDefinition;
-import com.hazelcast.config.properties.ValueValidator;
 
 import static com.hazelcast.config.properties.PropertyTypeConverter.INTEGER;
 import static com.hazelcast.config.properties.PropertyTypeConverter.STRING;
@@ -28,7 +27,7 @@ import static com.hazelcast.config.properties.PropertyTypeConverter.STRING;
  * Configuration properties for the Hazelcast Discovery Plugin for AWS. For more information
  * see {@link AwsConfig}.
  */
-public enum AwsProperties {
+enum AwsProperties {
 
     /**
      * Access key of your account on EC2
@@ -81,7 +80,7 @@ public enum AwsProperties {
     CONNECTION_TIMEOUT_SECONDS("connection-timeout-seconds", INTEGER, true),
 
     /**
-     * Number of retries while connecting to AWS Services. Its default value is 10.
+     * Number of retries while connecting to AWS Services. Its default value is 3.
      * <p>
      * Hazelcast AWS plugin uses two AWS services: Describe Instances and EC2 Instance Metadata.
      */
@@ -103,10 +102,6 @@ public enum AwsProperties {
     PORT("hz-port", STRING, true);
 
     private final PropertyDefinition propertyDefinition;
-
-    AwsProperties(String key, PropertyTypeConverter typeConverter, boolean optional, ValueValidator validator) {
-        this.propertyDefinition = new SimplePropertyDefinition(key, optional, typeConverter, validator);
-    }
 
     AwsProperties(String key, PropertyTypeConverter typeConverter, boolean optional) {
         this.propertyDefinition = new SimplePropertyDefinition(key, optional, typeConverter);

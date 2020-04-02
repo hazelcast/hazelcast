@@ -13,11 +13,8 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.hazelcast.aws.security;
+package com.hazelcast.aws;
 
-import com.hazelcast.aws.AwsConfig;
-import com.hazelcast.aws.impl.Constants;
-import com.hazelcast.aws.utility.AwsURLEncoder;
 import com.hazelcast.internal.util.QuickMath;
 
 import javax.crypto.Mac;
@@ -34,7 +31,7 @@ import java.util.Map;
 
 import static java.lang.String.format;
 
-public class EC2RequestSigner {
+class EC2RequestSigner {
 
     private static final String NEW_LINE = "\n";
     private static final String API_TERMINATOR = "aws4_request";
@@ -43,31 +40,32 @@ public class EC2RequestSigner {
     private static final int DATE_LENGTH = 8;
     private static final int LAST_INDEX = 8;
 
-    private final AwsConfig config;
     private final String timestamp;
 
     private String service;
     private Map<String, String> attributes;
-    private String endpoint;
+    private final String region;
+    private final String endpoint;
+    private final AwsCredentials credentials;
 
-    public EC2RequestSigner(AwsConfig config, String timeStamp, String endpoint) {
-        this.config = config;
-        this.timestamp = timeStamp;
-        this.service = null;
+    EC2RequestSigner(String timestamp, String region, String endpoint, AwsCredentials credentials) {
+        this.timestamp = timestamp;
+        this.region = region;
         this.endpoint = endpoint;
+        this.credentials = credentials;
     }
 
-    public String getCredentialScope() {
+    private String getCredentialScope() {
         // datestamp/region/service/API_TERMINATOR
         String dateStamp = timestamp.substring(0, DATE_LENGTH);
-        return format("%s/%s/%s/%s", dateStamp, config.getRegion(), this.service, API_TERMINATOR);
+        return format("%s/%s/%s/%s", dateStamp, region, this.service, API_TERMINATOR);
     }
 
-    public String getSignedHeaders() {
+    private String getSignedHeaders() {
         return "host";
     }
 
-    public String sign(String service, Map<String, String> attributes) {
+    String sign(String service, Map<String, String> attributes) {
         this.service = service;
         this.attributes = attributes;
 
@@ -81,18 +79,18 @@ public class EC2RequestSigner {
     /* Task 1 */
     private String getCanonicalizedRequest() {
         return Constants.GET + NEW_LINE + '/' + NEW_LINE + getCanonicalizedQueryString(this.attributes) + NEW_LINE
-                + getCanonicalHeaders() + NEW_LINE + getSignedHeaders() + NEW_LINE + sha256Hashhex("");
+            + getCanonicalHeaders() + NEW_LINE + getSignedHeaders() + NEW_LINE + sha256Hashhex("");
     }
 
     /* Task 2 */
     private String createStringToSign(String canonicalRequest) {
         return Constants.SIGNATURE_METHOD_V4 + NEW_LINE + timestamp + NEW_LINE + getCredentialScope() + NEW_LINE + sha256Hashhex(
-                canonicalRequest);
+            canonicalRequest);
     }
 
     /* Task 3 */
     private byte[] deriveSigningKey() {
-        String signKey = config.getSecretKey();
+        String signKey = credentials.getSecretKey();
         String dateStamp = timestamp.substring(0, DATE_LENGTH);
         // this is derived from
         // http://docs.aws.amazon.com/general/latest/gr/signature-v4-examples.html#signature-v4-examples-python
@@ -107,7 +105,7 @@ public class EC2RequestSigner {
             Mac mRegion = Mac.getInstance(HMAC_SHA256);
             SecretKeySpec skRegion = new SecretKeySpec(kDate, HMAC_SHA256);
             mRegion.init(skRegion);
-            byte[] kRegion = mRegion.doFinal(config.getRegion().getBytes(UTF_8));
+            byte[] kRegion = mRegion.doFinal(region.getBytes(UTF_8));
 
             Mac mService = Mac.getInstance(HMAC_SHA256);
             SecretKeySpec skService = new SecretKeySpec(kRegion, HMAC_SHA256);
@@ -145,17 +143,17 @@ public class EC2RequestSigner {
         return QuickMath.bytesToHex(signature);
     }
 
-    protected String getCanonicalHeaders() {
+    private String getCanonicalHeaders() {
         return format("host:%s%s", endpoint, NEW_LINE);
     }
 
-    public String getCanonicalizedQueryString(Map<String, String> attributes) {
+    String getCanonicalizedQueryString(Map<String, String> attributes) {
         List<String> components = getListOfEntries(attributes);
         Collections.sort(components);
         return getCanonicalizedQueryString(components);
     }
 
-    protected String getCanonicalizedQueryString(List<String> list) {
+    private String getCanonicalizedQueryString(List<String> list) {
         Iterator<String> it = list.iterator();
         StringBuilder result = new StringBuilder(it.next());
         while (it.hasNext()) {
@@ -164,11 +162,11 @@ public class EC2RequestSigner {
         return result.toString();
     }
 
-    protected void addComponents(List<String> components, Map<String, String> attributes, String key) {
+    private void addComponents(List<String> components, Map<String, String> attributes, String key) {
         components.add(AwsURLEncoder.urlEncode(key) + '=' + AwsURLEncoder.urlEncode(attributes.get(key)));
     }
 
-    protected List<String> getListOfEntries(Map<String, String> entries) {
+    private List<String> getListOfEntries(Map<String, String> entries) {
         List<String> components = new ArrayList<String>();
         for (String key : entries.keySet()) {
             addComponents(components, entries, key);
@@ -191,8 +189,8 @@ public class EC2RequestSigner {
         return payloadHash;
     }
 
-    public String createFormattedCredential() {
-        return config.getAccessKey() + '/' + timestamp.substring(0, LAST_INDEX) + '/' + config.getRegion() + '/'
-                + "ec2/aws4_request";
+    String createFormattedCredential() {
+        return credentials.getAccessKey() + '/' + timestamp.substring(0, LAST_INDEX) + '/' + region + '/'
+            + "ec2/aws4_request";
     }
 }

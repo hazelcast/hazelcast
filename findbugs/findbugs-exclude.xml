@@ -15,5 +15,9 @@
   -->
 
 <FindBugsFilter>
-
+    <Match>
+        <!-- We don't serialize AwsProperties anywhere -->
+        <Class name="com.hazelcast.aws.AwsProperties" />
+        <Bug pattern="SE_BAD_FIELD_STORE" />
+    </Match>
 </FindBugsFilter>

@@ -13,19 +13,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.hazelcast.aws.exception;
+package com.hazelcast.aws;
 
 /**
  * Thrown to indicate an error while connecting to AWS.
  * <p>
  * A list of error codes can be found at: {@see http://docs.aws.amazon.com/AWSEC2/latest/APIReference/errors-overview.html}.
  */
-public class AwsConnectionException
-        extends RuntimeException {
+class AwsConnectionException
+    extends RuntimeException {
     private final int httpReponseCode;
     private final String errorMessage;
 
-    public AwsConnectionException(int httpReponseCode, String errorMessage) {
+    AwsConnectionException(int httpReponseCode, String errorMessage) {
         super(messageFrom(httpReponseCode, errorMessage));
         this.httpReponseCode = httpReponseCode;
         this.errorMessage = errorMessage;
@@ -35,11 +35,11 @@ public class AwsConnectionException
         return String.format("Connection to AWS failed (HTTP Response Code: %s, Message: \"%s\")", httpReponseCode, errorMessage);
     }
 
-    public int getHttpReponseCode() {
+    int getHttpReponseCode() {
         return httpReponseCode;
     }
 
-    public String getErrorMessage() {
+    String getErrorMessage() {
         return errorMessage;
     }
 }

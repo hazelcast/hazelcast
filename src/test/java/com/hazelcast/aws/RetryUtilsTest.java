@@ -13,7 +13,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.hazelcast.aws.utility;
+package com.hazelcast.aws;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -25,10 +25,7 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.Callable;
 
-import static com.hazelcast.aws.utility.RetryUtils.BACKOFF_MULTIPLIER;
-import static com.hazelcast.aws.utility.RetryUtils.INITIAL_BACKOFF_MS;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -95,21 +92,4 @@ public class RetryUtilsTest {
         // then
         // throws exception
     }
-
-    @Test
-    public void retryRetriesWaitExponentialBackoff()
-            throws Exception {
-        // given
-        double twoBackoffIntervalsMs = INITIAL_BACKOFF_MS + (BACKOFF_MULTIPLIER * INITIAL_BACKOFF_MS);
-        given(callable.call()).willThrow(new RuntimeException()).willThrow(new RuntimeException()).willReturn(RESULT);
-
-        // when
-        long startTimeMs = System.currentTimeMillis();
-        RetryUtils.retry(callable, 5);
-        long endTimeMs = System.currentTimeMillis();
-
-        // then
-        assertTrue(twoBackoffIntervalsMs < (endTimeMs - startTimeMs));
-    }
-
 }

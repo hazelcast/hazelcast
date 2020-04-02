@@ -13,7 +13,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-/**
- * Provides implementation classes for Hazelcast AWS.
- */
-package com.hazelcast.aws.impl;
+package com.hazelcast.aws;
+
+import com.hazelcast.test.HazelcastTestSupport;
+import org.junit.Test;
+
+public class AwsURLEncoderTest
+        extends HazelcastTestSupport {
+
+    @Test
+    public void testConstructor() {
+        assertUtilityConstructor(AwsURLEncoder.class);
+    }
+}

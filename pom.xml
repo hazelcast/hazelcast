@@ -33,6 +33,8 @@
         <junit.version>4.13</junit.version>
         <mockito.version>1.10.19</mockito.version>
         <log4j.version>1.2.12</log4j.version>
+        <wiremock.version>2.18.0</wiremock.version>
+        <hamcrest.version>1.3</hamcrest.version>
 
         <maven.animal.sniffer.plugin.version>1.18</maven.animal.sniffer.plugin.version>
         <maven.compiler.plugin.version>3.8.1</maven.compiler.plugin.version>
@@ -263,6 +265,18 @@
             <groupId>net.bytebuddy</groupId>
             <artifactId>byte-buddy-agent</artifactId>
             <version>${bytebuddy.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.github.tomakehurst</groupId>
+            <artifactId>wiremock</artifactId>
+            <version>${wiremock.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-library</artifactId>
+            <version>${hamcrest.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
