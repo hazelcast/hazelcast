@@ -14,22 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.row;
+package com.hazelcast.sql.impl.exec.io;
 
 /**
- * Batch of rows.
+ * Qualified that sends all rows.
  */
-public interface RowBatch {
-    /**
-     * Get row at the given index.
-     *
-     * @param idx Index.
-     * @return Row.
-     */
-    Row getRow(int idx);
+public final class AlwaysTrueSendQualifier implements SendQualifier {
 
-    /**
-     * @return Number of rows.
-     */
-    int getRowCount();
+    public static final AlwaysTrueSendQualifier INSTANCE = new AlwaysTrueSendQualifier();
+
+    private AlwaysTrueSendQualifier() {
+        // No-op.
+    }
+
+    @Override
+    public boolean shouldSend(int rowIndex) {
+        return true;
+    }
 }

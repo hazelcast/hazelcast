@@ -48,11 +48,6 @@ public class ListRowBatch implements RowBatch, IdentifiedDataSerializable {
     }
 
     @Override
-    public List<Row> getRows() {
-        return rows;
-    }
-
-    @Override
     public int getRowCount() {
         return rows.size();
     }

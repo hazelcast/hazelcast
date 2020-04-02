@@ -16,9 +16,6 @@
 
 package com.hazelcast.sql.impl.row;
 
-import java.util.Collections;
-import java.util.List;
-
 /**
  * Single row.
  */
@@ -28,11 +25,6 @@ public interface Row extends RowBatch {
         assert index == 0;
 
         return this;
-    }
-
-    @Override
-    default List<Row> getRows() {
-        return Collections.singletonList(this);
     }
 
     @Override

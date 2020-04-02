@@ -14,22 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.row;
+package com.hazelcast.sql.impl.exec.io;
 
 /**
- * Batch of rows.
+ * The interface that defines whether the row at the given index qualifies to be sent through this outbox.
  */
-public interface RowBatch {
+public interface SendQualifier {
     /**
-     * Get row at the given index.
-     *
-     * @param idx Index.
-     * @return Row.
+     * @param rowIndex Index of the row in the batch.
+     * @return {@code true} if the row should be sent by this outbox, {@code false} if the row should be skipped.
      */
-    Row getRow(int idx);
-
-    /**
-     * @return Number of rows.
-     */
-    int getRowCount();
+    boolean shouldSend(int rowIndex);
 }

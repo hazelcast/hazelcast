@@ -21,9 +21,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 
-import java.util.Collections;
-import java.util.List;
-
 /**
  * Empty row batch.
  */
@@ -38,11 +35,6 @@ public final class EmptyRowBatch implements RowBatch, IdentifiedDataSerializable
     @Override
     public Row getRow(int idx) {
         throw new UnsupportedOperationException("Should not be called.");
-    }
-
-    @Override
-    public List<Row> getRows() {
-        return Collections.emptyList();
     }
 
     @Override
