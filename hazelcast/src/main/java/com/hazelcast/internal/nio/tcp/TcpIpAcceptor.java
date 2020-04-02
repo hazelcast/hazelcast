@@ -140,7 +140,7 @@ public class TcpIpAcceptor implements DynamicMetricsProvider {
     @Override
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
         context.collect(descriptor.withPrefix(TCP_PREFIX_ACCEPTOR)
-                                  .withDiscriminator(TCP_DISCRIMINATOR_THREAD, acceptorThread.getName()), this);
+                .withDiscriminator(TCP_DISCRIMINATOR_THREAD, acceptorThread.getName()), this);
     }
 
     private final class AcceptorIOThread extends Thread {
@@ -249,7 +249,15 @@ public class TcpIpAcceptor implements DynamicMetricsProvider {
                     eventCount.inc();
                     ServerSocketRegistry.Pair attachment = (ServerSocketRegistry.Pair) sk.attachment();
                     ServerSocketChannel serverSocketChannel = attachment.getChannel();
-                    acceptSocket(attachment.getQualifier(), serverSocketChannel);
+                    try {
+                        SocketChannel socketChannel = serverSocketChannel.accept();
+                        if (socketChannel == null) {
+                            continue;
+                        }
+                        newConnection(attachment.getQualifier(), socketChannel);
+                    } catch (Exception e) {
+                        handleAcceptException(serverSocketChannel, e);
+                    }
                 }
             }
         }
@@ -270,51 +278,43 @@ public class TcpIpAcceptor implements DynamicMetricsProvider {
             }
         }
 
-        private void acceptSocket(final EndpointQualifier qualifier, ServerSocketChannel serverSocketChannel) {
-            Channel channel = null;
-            TcpIpEndpointManager endpointManager = null;
-            try {
-                SocketChannel socketChannel = serverSocketChannel.accept();
-                endpointManager = (TcpIpEndpointManager) networkingService.getUnifiedOrDedicatedEndpointManager(qualifier);
+        private void handleAcceptException(ServerSocketChannel serverSocketChannel, Exception e) {
+            exceptionCount.inc();
 
-                if (socketChannel != null) {
-                    channel = endpointManager.newChannel(socketChannel, false);
+            if (e instanceof ClosedChannelException && !networkingService.isLive()) {
+                // ClosedChannelException
+                // or AsynchronousCloseException
+                // or ClosedByInterruptException
+                logger.finest("Terminating socket acceptor thread...", e);
+            } else {
+                logger.severe("Unexpected error while accepting connection! "
+                        + e.getClass().getName() + ": " + e.getMessage());
+                try {
+                    serverSocketChannel.close();
+                } catch (Exception ex) {
+                    logger.finest("Closing server socket failed", ex);
                 }
-            } catch (Exception e) {
-                exceptionCount.inc();
-
-                if (e instanceof ClosedChannelException && !networkingService.isLive()) {
-                    // ClosedChannelException
-                    // or AsynchronousCloseException
-                    // or ClosedByInterruptException
-                    logger.finest("Terminating socket acceptor thread...", e);
-                } else {
-                    logger.severe("Unexpected error while accepting connection! "
-                            + e.getClass().getName() + ": " + e.getMessage());
-                    try {
-                        serverSocketChannel.close();
-                    } catch (Exception ex) {
-                        logger.finest("Closing server socket failed", ex);
-                    }
-                    ioService.onFatalError(e);
-                }
-            }
-
-            if (channel != null) {
-                final Channel theChannel = channel;
-                if (logger.isFineEnabled()) {
-                    logger.fine("Accepting socket connection from " + theChannel.socket().getRemoteSocketAddress());
-                }
-                if (ioService.isSocketInterceptorEnabled(qualifier)) {
-                    final TcpIpEndpointManager finalEndpointManager = endpointManager;
-                    ioService.executeAsync(() -> configureAndAssignSocket(finalEndpointManager, theChannel));
-                } else {
-                    configureAndAssignSocket(endpointManager, theChannel);
-                }
+                ioService.onFatalError(e);
             }
         }
 
-        private void configureAndAssignSocket(TcpIpEndpointManager endpointManager, Channel channel) {
+        private void newConnection(final EndpointQualifier qualifier, SocketChannel socketChannel) throws IOException {
+            TcpIpEndpointManager endpointManager = (TcpIpEndpointManager)
+                    networkingService.getUnifiedOrDedicatedEndpointManager(qualifier);
+            Channel channel = endpointManager.newChannel(socketChannel, false);
+
+            if (logger.isFineEnabled()) {
+                logger.fine("Accepting socket connection from " + channel.socket().getRemoteSocketAddress());
+            }
+
+            if (ioService.isSocketInterceptorEnabled(qualifier)) {
+                ioService.executeAsync(() -> newConnection0(endpointManager, channel));
+            } else {
+                newConnection0(endpointManager, channel);
+            }
+        }
+
+        private void newConnection0(TcpIpEndpointManager endpointManager, Channel channel) {
             try {
                 ioService.interceptSocket(endpointManager.getEndpointQualifier(), channel.socket(), true);
                 endpointManager.newConnection(channel, null);
