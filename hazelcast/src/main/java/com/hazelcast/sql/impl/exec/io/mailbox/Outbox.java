@@ -18,12 +18,10 @@ package com.hazelcast.sql.impl.exec.io.mailbox;
 
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.sql.impl.exec.io.AlwaysTrueSendQualifier;
 import com.hazelcast.sql.impl.exec.io.SendQualifier;
+import com.hazelcast.sql.impl.operation.QueryBatchExchangeOperation;
 import com.hazelcast.sql.impl.operation.QueryOperationChannel;
 import com.hazelcast.sql.impl.operation.QueryOperationHandler;
-import com.hazelcast.sql.impl.operation.QueryBatchExchangeOperation;
-import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.ListRowBatch;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
@@ -37,17 +35,14 @@ import java.util.UUID;
  * Outbox which sends data to a single remote stripe.
  */
 public class Outbox extends AbstractMailbox implements OutboundHandler {
-    /** Minimum number of rows to be sent. */
-    private static final int MIN_BATCH_FLUSH_THRESHOLD = 4;
-
     /** Operation handler. */
     private final QueryOperationHandler operationHandler;
 
     /** Target member ID. */
     private final UUID targetMemberId;
 
-    /** Batch flush threshold. */
-    private final int batchFlushTreshold;
+    /** Recommended batch size in bytes. The batch is sent when there is more enqueued data than this value. */
+    private final int batchSize;
 
     /** Pending rows. */
     private List<Row> rows;
@@ -57,9 +52,6 @@ public class Outbox extends AbstractMailbox implements OutboundHandler {
 
     /** Amount of remote memory which is available at the moment. */
     private long remainingMemory;
-
-    /** Whether all data was flushed. */
-    private boolean flushedLast;
 
     public Outbox(
         QueryId queryId,
@@ -74,16 +66,8 @@ public class Outbox extends AbstractMailbox implements OutboundHandler {
 
         this.operationHandler = operationHandler;
         this.targetMemberId = targetMemberId;
+        this.batchSize = batchSize;
         this.remainingMemory = remainingMemory;
-
-        // TODO: Simplify!
-        int batchFlushTreshold0 = batchSize / rowWidth + 1;
-
-        if (batchFlushTreshold0 < MIN_BATCH_FLUSH_THRESHOLD) {
-            batchFlushTreshold0 = MIN_BATCH_FLUSH_THRESHOLD;
-        }
-
-        batchFlushTreshold = batchFlushTreshold0;
     }
 
     public void setup() {
@@ -124,7 +108,7 @@ public class Outbox extends AbstractMailbox implements OutboundHandler {
 
             // Add pending row.
             if (rows == null) {
-                rows = new ArrayList<>(batchFlushTreshold);
+                rows = new ArrayList<>();
             }
 
             rows.add(batch.getRow(currentPosition));
@@ -135,7 +119,7 @@ public class Outbox extends AbstractMailbox implements OutboundHandler {
         remainingMemory = remainingMemory - acceptedRows * rowWidth;
 
         // Send the batch if needed.
-        boolean batchIsFull = (rows != null && rows.size() >= batchFlushTreshold) || remainingMemory < rowWidth;
+        boolean batchIsFull = (rows != null && rows.size() * rowWidth >= batchSize) || remainingMemory < rowWidth;
         boolean lastTransmit = last && currentPosition == batch.getRowCount();
 
         if (batchIsFull || lastTransmit) {
@@ -143,23 +127,6 @@ public class Outbox extends AbstractMailbox implements OutboundHandler {
         }
 
         return currentPosition;
-    }
-
-    /**
-     * Flushes queued rows if needed.
-     *
-     * @return {@code True} if all rows have been sent, {@code false} otherwise.
-     */
-    public boolean flushLastIfNeeded() {
-        // No-op if already flushed.
-        if (flushedLast) {
-            return true;
-        }
-
-        // Otherwise we attempt to emulate empty batch sending and re-check whether last chunk has been flushed.
-        onRowBatch(EmptyRowBatch.INSTANCE, true, 0, AlwaysTrueSendQualifier.INSTANCE);
-
-        return flushedLast;
     }
 
     @Override
@@ -176,10 +143,6 @@ public class Outbox extends AbstractMailbox implements OutboundHandler {
         RowBatch batch = new ListRowBatch(rows != null ? rows : Collections.emptyList());
 
         QueryBatchExchangeOperation op = new QueryBatchExchangeOperation(queryId, edgeId, batch, last, remainingMemory);
-
-        if (last) {
-            flushedLast = true;
-        }
 
         boolean success = operationChannel.submit(op);
 

@@ -27,17 +27,17 @@ import java.util.ArrayDeque;
  */
 public class Inbox extends AbstractInbox {
     /** Queue of batches from all remote stripes. */
-    private final ArrayDeque<InboundBatch> batches = new ArrayDeque<>(INITIAL_QUEUE_SIZE);
+    private final ArrayDeque<InboundBatch> batches = new ArrayDeque<>();
 
     public Inbox(
         QueryId queryId,
         int edgeId,
         int rowWidth,
         QueryOperationHandler operationHandler,
-        int remainingSources,
+        int remainingStreams,
         FlowControl flowControl
     ) {
-        super(queryId, edgeId, rowWidth, operationHandler, remainingSources, flowControl);
+        super(queryId, edgeId, rowWidth, operationHandler, remainingStreams, flowControl);
     }
 
     @Override

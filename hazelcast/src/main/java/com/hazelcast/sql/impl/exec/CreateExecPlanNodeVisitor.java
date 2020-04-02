@@ -76,9 +76,6 @@ import java.util.UUID;
  */
  @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "ClassFanOutComplexity"})
 public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
-    // TODO: Understand how to calculate it properly. It should not be hardcoded.
-    private static final int OUTBOX_BATCH_SIZE = 512 * 1024;
-
     /** Node engine. */
     private final NodeEngine nodeEngine;
 
@@ -90,6 +87,9 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
 
     /** Partition map. */
     private final Map<UUID, PartitionIdSet> partitionMap;
+
+    /** Recommended outbox batch size in bytes. */
+    private final int outboxBatchSize;
 
     /** Stack of elements to be merged. */
     private final ArrayList<Exec> stack = new ArrayList<>(1);
@@ -107,12 +107,14 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
         NodeEngine nodeEngine,
         QueryExecuteOperation operation,
         PartitionIdSet localParts,
-        Map<UUID, PartitionIdSet> partitionMap
+        Map<UUID, PartitionIdSet> partitionMap,
+        int outboxBatchSize
     ) {
         this.nodeEngine = nodeEngine;
         this.operation = operation;
         this.localParts = localParts;
         this.partitionMap = partitionMap;
+        this.outboxBatchSize = outboxBatchSize;
     }
 
     @Override
@@ -263,7 +265,7 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
                 edgeId,
                 rowWidth,
                 receiveMemberId,
-                OUTBOX_BATCH_SIZE,
+                outboxBatchSize,
                 operation.getEdgeCreditMap().get(edgeId)
             );
 

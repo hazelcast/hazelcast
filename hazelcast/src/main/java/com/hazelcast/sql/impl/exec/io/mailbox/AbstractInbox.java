@@ -24,14 +24,11 @@ import com.hazelcast.sql.impl.operation.QueryOperationHandler;
  * Abstract inbox implementation.
  */
 public abstract class AbstractInbox extends AbstractMailbox implements InboundHandler {
-    /** Initial size of batch queues. */
-    protected static final int INITIAL_QUEUE_SIZE = 4;
-
     /** Number of enqueued batches. */
     protected int enqueuedBatches;
 
-    /** Remaining remote sources. */
-    private int remainingSources;
+    /** Remaining active sources. */
+    private int remainingStreams;
 
     /** Parent service. */
     private final QueryOperationHandler operationHandler;
@@ -44,13 +41,13 @@ public abstract class AbstractInbox extends AbstractMailbox implements InboundHa
         int edgeId,
         int rowWidth,
         QueryOperationHandler operationHandler,
-        int remainingSources,
+        int remainingStreams,
         FlowControl flowControl
     ) {
         super(queryId, edgeId, rowWidth);
 
         this.operationHandler = operationHandler;
-        this.remainingSources = remainingSources;
+        this.remainingStreams = remainingStreams;
         this.flowControl = flowControl;
     }
 
@@ -66,7 +63,7 @@ public abstract class AbstractInbox extends AbstractMailbox implements InboundHa
         enqueuedBatches++;
 
         if (batch.isLast()) {
-            remainingSources--;
+            remainingStreams--;
         }
 
         // Track backpressure.
@@ -105,7 +102,7 @@ public abstract class AbstractInbox extends AbstractMailbox implements InboundHa
      * @return {@code True} if no more incoming batches are expected.
      */
     public boolean closed() {
-        return enqueuedBatches == 0 && remainingSources == 0;
+        return enqueuedBatches == 0 && remainingStreams == 0;
     }
 
     private long getBatchSize(InboundBatch batch) {

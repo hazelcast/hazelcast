@@ -50,6 +50,9 @@ import java.util.function.Consumer;
  */
 public class QueryOperationHandlerImpl implements QueryOperationHandler, QueryStateCompletionCallback, Consumer<Packet> {
 
+    // TODO: Understand how to calculate it properly. It should not be hardcoded.
+    private static final int OUTBOX_BATCH_SIZE = 512 * 1024;
+
     private final NodeEngineImpl nodeEngine;
     private final QueryStateRegistry stateRegistry;
     private final QueryFragmentWorkerPool fragmentPool;
@@ -185,7 +188,8 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
                 nodeEngine,
                 operation,
                 operation.getPartitionMapping().get(getLocalMemberId()),
-                operation.getPartitionMapping()
+                operation.getPartitionMapping(),
+                OUTBOX_BATCH_SIZE
             );
 
             fragmentDescriptor.getNode().visit(visitor);

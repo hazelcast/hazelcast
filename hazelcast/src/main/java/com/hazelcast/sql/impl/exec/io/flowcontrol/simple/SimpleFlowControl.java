@@ -27,26 +27,25 @@ import java.util.HashMap;
 import java.util.UUID;
 
 /**
- * Simple implementation of a flow control that sends the flow control messages when certain memory threshold is reached.
+ * Simple implementation of a flow control. The flow control message is sent when the remote end thinks that local end is low
+ * on memory, while this is no longer the case for the local end.
  */
 public class SimpleFlowControl implements FlowControl {
     /** Low watermark: denotes low memory condition. */
-    // TODO: How we choose it? Should it be dynamic? Investigate exact flow control algorithms.
-    private static final double LWM_PERCENTAGE = 0.4f;
+    private static final double LWM_PERCENTAGE = 0.25f;
 
-    /** Maximum amount of memory allowed to be consumed by local stream. */
-    // TODO: Now it is static. We may change dynamically to speedup or slowdown queries. But what heuristics to use?
+    /** Maximum amount of memory allowed to be consumed by the local stream. */
     private final long maxMemory;
-
-    /** Remote sources. */
-    private HashMap<UUID, SimpleFlowControlStream> memberMap;
-
-    /** Remote sources which should be notified. */
-    private HashMap<UUID, SimpleFlowControlStream> pendingStreams;
 
     private QueryId queryId;
     private int edgeId;
     private QueryOperationHandler operationHandler;
+
+    /** Remote streams. */
+    private HashMap<UUID, SimpleFlowControlStream> streams;
+
+    /** Remote streams that should be notified. */
+    private HashMap<UUID, SimpleFlowControlStream> pendingStreams;
 
     public SimpleFlowControl(long maxMemory) {
         this.maxMemory = maxMemory;
@@ -63,8 +62,8 @@ public class SimpleFlowControl implements FlowControl {
     public void onBatchAdded(UUID memberId, long size, boolean last, long remoteMemory) {
         if (last) {
             // If this is the last batch, we do not care about backpressure.
-            if (memberMap != null) {
-                memberMap.remove(memberId);
+            if (streams != null) {
+                streams.remove(memberId);
             }
 
             if (pendingStreams != null) {
@@ -75,17 +74,17 @@ public class SimpleFlowControl implements FlowControl {
         }
 
         // Otherwise save the current state.
-        if (memberMap == null) {
-            memberMap = new HashMap<>();
+        if (streams == null) {
+            streams = new HashMap<>();
 
-            memberMap.put(memberId, new SimpleFlowControlStream(memberId, remoteMemory, maxMemory - size));
+            streams.put(memberId, new SimpleFlowControlStream(memberId, remoteMemory, maxMemory - size));
         } else {
-            SimpleFlowControlStream state = memberMap.get(memberId);
+            SimpleFlowControlStream state = streams.get(memberId);
 
             if (state != null) {
                 state.updateMemory(remoteMemory, state.getLocalMemory() - size);
             } else {
-                memberMap.put(memberId, new SimpleFlowControlStream(memberId, remoteMemory, maxMemory - size));
+                streams.put(memberId, new SimpleFlowControlStream(memberId, remoteMemory, maxMemory - size));
             }
         }
     }
@@ -97,9 +96,9 @@ public class SimpleFlowControl implements FlowControl {
             return;
         }
 
-        assert memberMap != null;
+        assert streams != null;
 
-        SimpleFlowControlStream state = memberMap.get(memberId);
+        SimpleFlowControlStream state = streams.get(memberId);
 
         if (state == null) {
             // Missing state means that last batch already arrived.
@@ -159,7 +158,13 @@ public class SimpleFlowControl implements FlowControl {
         }
     }
 
-    protected boolean isLowMemory(long availableMemory) {
+    /**
+     * Check whether the given amount of memory is below the watermark.
+     *
+     * @param availableMemory Available memory.
+     * @return {@code true} if below the watermark.
+     */
+    private boolean isLowMemory(long availableMemory) {
         double percentage = ((double) availableMemory) / maxMemory;
 
         return percentage <= LWM_PERCENTAGE;

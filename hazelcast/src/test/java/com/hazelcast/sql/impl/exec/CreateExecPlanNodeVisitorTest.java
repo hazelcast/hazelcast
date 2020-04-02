@@ -46,6 +46,8 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class CreateExecPlanNodeVisitorTest {
 
+    private static final int OUTBOX_BATCH_SIZE = 512 * 1024;
+
     @Test
     public void testRoot() {
         int upstreamId = 1;
@@ -56,8 +58,13 @@ public class CreateExecPlanNodeVisitorTest {
         TestUpstreamNode upstreamNode = new TestUpstreamNode(upstreamId);
         RootPlanNode rootNode = new RootPlanNode(rootId, upstreamNode);
 
-        CreateExecPlanNodeVisitor visitor =
-            new CreateExecPlanNodeVisitor(null, new QueryExecuteOperation().setRootConsumer(consumer, 1000), null, null);
+        CreateExecPlanNodeVisitor visitor = new CreateExecPlanNodeVisitor(
+            null,
+            new QueryExecuteOperation().setRootConsumer(consumer, 1000),
+            null,
+            null,
+            OUTBOX_BATCH_SIZE
+        );
 
         rootNode.visit(visitor);
 
