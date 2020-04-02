@@ -16,12 +16,15 @@
 
 package com.hazelcast.sql.impl.plan.node;
 
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
+
 import java.util.Objects;
 
 /**
- * Root physical node. Performs final collection of results.
+ * Root node. Collects the final results of a query and exposes them to the user.
  */
-public class RootPlanNode extends UniInputPlanNode {
+public class RootPlanNode extends UniInputPlanNode implements IdentifiedDataSerializable {
     public RootPlanNode() {
         // No-op.
     }
@@ -53,6 +56,16 @@ public class RootPlanNode extends UniInputPlanNode {
         RootPlanNode that = (RootPlanNode) o;
 
         return id == that.id && upstream.equals(that.upstream);
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SqlDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return SqlDataSerializerHook.NODE_ROOT;
     }
 
     @Override

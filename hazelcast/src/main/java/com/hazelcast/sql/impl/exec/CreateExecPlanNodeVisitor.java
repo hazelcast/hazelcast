@@ -117,7 +117,8 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
         exec = new RootExec(
             node.getId(),
             pop(),
-            operation.getRootConsumer()
+            operation.getRootConsumer(),
+            operation.getRootBatchSize()
         );
     }
 
@@ -135,7 +136,7 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
         Inbox inbox = new Inbox(
             operation.getQueryId(),
             edgeId,
-            sendFragment.getNode().getSchema().getRowWidth(),
+            sendFragment.getNode().getSchema().getEstimatedRowSize(),
             getOperationHandler(),
             fragmentMemberCount,
             operation.getEdgeCreditMap().get(edgeId)
@@ -161,7 +162,7 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
         StripedInbox inbox = new StripedInbox(
             operation.getQueryId(),
             edgeId,
-            node.getSchema().getRowWidth(),
+            node.getSchema().getEstimatedRowSize(),
             getOperationHandler(),
             sendFragment.getMemberIds(),
             operation.getEdgeCreditMap().get(edgeId)
@@ -228,7 +229,7 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
       */
      private Outbox[] prepareOutboxes(EdgeAwarePlanNode node) {
          int edgeId = node.getEdgeId();
-         int rowWidth = node.getSchema().getRowWidth();
+         int rowWidth = node.getSchema().getEstimatedRowSize();
 
          int receiveFragmentPos = operation.getInboundEdgeMap().get(edgeId);
          QueryExecuteOperationFragment receiveFragment = operation.getFragments().get(receiveFragmentPos);
@@ -476,11 +477,17 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
          return outboxes;
     }
 
-    private Exec pop() {
+    /**
+     * Public for testing purposes only.
+     */
+    public Exec pop() {
         return stack.remove(stack.size() - 1);
     }
 
-    private void push(Exec exec) {
+    /**
+     * Public for testing purposes only.
+     */
+    public void push(Exec exec) {
         stack.add(exec);
     }
 

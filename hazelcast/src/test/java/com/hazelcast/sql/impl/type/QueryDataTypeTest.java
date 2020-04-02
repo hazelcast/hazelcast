@@ -16,10 +16,9 @@
 
 package com.hazelcast.sql.impl.type;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlCustomClass;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
+import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.type.converter.BigDecimalConverter;
 import com.hazelcast.sql.impl.type.converter.BigIntegerConverter;
 import com.hazelcast.sql.impl.type.converter.BooleanConverter;
@@ -63,12 +62,11 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertSame;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class QueryDataTypeTest {
+public class QueryDataTypeTest extends SqlTestSupport {
     @Test
     public void testDefaultTypes() {
         checkType(QueryDataType.LATE, LateConverter.INSTANCE);
@@ -220,26 +218,11 @@ public class QueryDataTypeTest {
 
     @Test
     public void testSerialization() {
-        InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
-
         for (Converter converter : Converters.getConverters()) {
             QueryDataType original = new QueryDataType(converter, QueryDataType.PRECISION_BIGINT);
-
-            assertEquals(SqlDataSerializerHook.F_ID, original.getFactoryId());
-            assertEquals(SqlDataSerializerHook.QUERY_DATA_TYPE, original.getClassId());
-
-            QueryDataType restored = ss.toObject(ss.toData(original));
+            QueryDataType restored = serializeAndCheck(original, SqlDataSerializerHook.QUERY_DATA_TYPE);
 
             checkEquals(original, restored, true);
-        }
-    }
-
-    private void checkEquals(QueryDataType type1, QueryDataType type2, boolean expected) {
-        if (expected) {
-            assertEquals(type1, type2);
-            assertEquals(type1.hashCode(), type2.hashCode());
-        } else {
-            assertNotEquals(type1, type2);
         }
     }
 

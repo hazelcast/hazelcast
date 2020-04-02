@@ -150,6 +150,7 @@ abstract class MapProxySupport<K, V>
     protected static final String NULL_MAX_IDLE_UNIT_IS_NOT_ALLOWED = "Null maxIdleUnit is not allowed!";
     protected static final String NULL_TIMEUNIT_IS_NOT_ALLOWED = "Null timeunit is not allowed!";
     protected static final String NULL_BIFUNCTION_IS_NOT_ALLOWED = "Null BiFunction is not allowed!";
+    protected static final String NULL_FUNCTION_IS_NOT_ALLOWED = "Null Function is not allowed!";
 
     private static final int INITIAL_WAIT_LOAD_SLEEP_MILLIS = 10;
     private static final int MAXIMAL_WAIT_LOAD_SLEEP_MILLIS = 1000;

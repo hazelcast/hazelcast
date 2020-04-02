@@ -136,7 +136,7 @@ public class SqlInternalService {
         IdentityHashMap<PlanFragment, Collection<UUID>> fragmentMappings = operationFactory.prepareFragmentMappings();
 
         // Register the state.
-        BlockingRootResultConsumer consumer = new BlockingRootResultConsumer(pageSize);
+        BlockingRootResultConsumer consumer = new BlockingRootResultConsumer();
 
         QueryState state = stateRegistry.onInitiatorQueryStarted(
             timeout,
@@ -154,7 +154,7 @@ public class SqlInternalService {
 
             QueryExecuteOperation localOp = operationFactory.create(state.getQueryId(), fragmentMappings, localMemberId);
 
-            localOp.setRootConsumer(consumer);
+            localOp.setRootConsumer(consumer, pageSize);
 
             operationHandler.submit(localMemberId, localOp);
 

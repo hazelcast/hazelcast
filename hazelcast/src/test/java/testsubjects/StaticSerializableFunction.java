@@ -14,16 +14,22 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.mailbox;
+package testsubjects;
 
-/**
- * Core interface for outbound message processing.
- */
-public interface OutboundHandler {
-    /**
-     * Handle flow control response from the remote inbound handler.
-     *
-     * @param remainingMemory The amount of memory that is available on the remote end.
-     */
-    void onFlowControl(long remainingMemory);
+import java.io.Serializable;
+import java.util.function.Function;
+
+public class StaticSerializableFunction implements Function<String, String>, Serializable {
+
+    private String returnValue;
+
+    public StaticSerializableFunction(String returnValue) {
+        this.returnValue = returnValue;
+    }
+
+    @Override
+    public String apply(String key) {
+        return returnValue;
+    }
+
 }

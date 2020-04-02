@@ -16,10 +16,9 @@
 
 package com.hazelcast.sql.impl.operation;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
-import com.hazelcast.sql.impl.physical.MockPlanNode;
+import com.hazelcast.sql.impl.SqlTestSupport;
+import com.hazelcast.sql.impl.plan.node.MockPlanNode;
 import com.hazelcast.sql.impl.plan.node.PlanNode;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -37,7 +36,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class QueryExecuteOperationFragmentTest {
+public class QueryExecuteOperationFragmentTest extends SqlTestSupport {
     @Test
     public void testFragment() {
         PlanNode node = MockPlanNode.create(1, QueryDataType.INT);
@@ -56,12 +55,7 @@ public class QueryExecuteOperationFragmentTest {
             Arrays.asList(UUID.randomUUID(), UUID.randomUUID())
         );
 
-        assertEquals(SqlDataSerializerHook.F_ID, original.getFactoryId());
-        assertEquals(SqlDataSerializerHook.OPERATION_EXECUTE_FRAGMENT, original.getClassId());
-
-        InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
-
-        QueryExecuteOperationFragment restored = ss.toObject(ss.toData(original));
+        QueryExecuteOperationFragment restored = serializeAndCheck(original, SqlDataSerializerHook.OPERATION_EXECUTE_FRAGMENT);
 
         assertEquals(original.getNode(), restored.getNode());
         assertEquals(original.getMemberIds(), restored.getMemberIds());

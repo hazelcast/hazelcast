@@ -207,7 +207,7 @@ public class QueryFragmentExecutableTest extends HazelcastTestSupport {
      */
     @Test
     public void testMessages() throws Exception {
-        int repeatCount = 50;
+        int repeatCount = 10;
 
         for (int i = 0; i < repeatCount; i++) {
             // Prepare data structures for messages.

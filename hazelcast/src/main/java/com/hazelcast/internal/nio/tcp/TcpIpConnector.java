@@ -41,7 +41,7 @@ import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_CLIENT_BIND_AN
 
 /**
  * The TcpIpConnector is responsible to make connections by connecting to a remote serverport. Once completed,
- * it will send the protocol and a bind-message.
+ * it will send the protocol and a MemberHandshake-message.
  */
 class TcpIpConnector {
 
@@ -196,8 +196,7 @@ class TcpIpConnector {
                     ioService.interceptSocket(endpointManager.getEndpointQualifier(), socketChannel.socket(), false);
 
                     connection = endpointManager.newConnection(channel, address);
-                    BindRequest request = new BindRequest(logger, ioService, connection, address, true);
-                    request.send();
+                    new SendMemberHandshakeTask(logger, ioService, connection, address, true).run();
                 } catch (Exception e) {
                     closeConnection(connection, e);
                     closeSocket(socketChannel);

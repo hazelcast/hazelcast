@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.physical;
+package com.hazelcast.sql.impl.plan.node;
 
-import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -50,7 +49,7 @@ public class PlanNodeSchemaTest {
         assertEquals(type0, schema.getType(0));
         assertEquals(type1, schema.getType(1));
 
-        assertEquals(type0.getTypeFamily().getEstimatedSize() + type1.getTypeFamily().getEstimatedSize(), schema.getRowWidth());
+        assertEquals(type0.getTypeFamily().getEstimatedSize() + type1.getTypeFamily().getEstimatedSize(), schema.getEstimatedRowSize());
     }
 
     @Test

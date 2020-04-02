@@ -32,7 +32,8 @@ import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.QueryCache;
-import com.hazelcast.map.impl.BiFunctionExecutingEntryProcessor;
+import com.hazelcast.map.impl.ComputeIfPresentEntryProcessor;
+import com.hazelcast.map.impl.ComputeIfAbsentEntryProcessor;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.iterator.MapPartitionIterator;
@@ -73,6 +74,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
@@ -1026,21 +1028,20 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     @Override
-    public V computeIfPresent(K key,
-                              BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+    public V computeIfPresent(@Nonnull K key,
+                              @Nonnull BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(key, NULL_BIFUNCTION_IS_NOT_ALLOWED);
         Version clusterVersion = getNodeEngine().getClusterService().getClusterVersion();
 
         if (SerializationUtil.isClassStaticAndSerializable(remappingFunction)
                 && clusterVersion.isGreaterOrEqual(Versions.V4_1)) {
-            BiFunctionExecutingEntryProcessor<K, V> ep = new BiFunctionExecutingEntryProcessor<>(remappingFunction);
+            ComputeIfPresentEntryProcessor<K, V> ep = new ComputeIfPresentEntryProcessor<>(remappingFunction);
             return executeOnKey(key, ep);
         } else {
             return computeIfPresentLocally(key, remappingFunction);
         }
     }
-
 
     private V computeIfPresentLocally(K key,
                                       BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
@@ -1060,6 +1061,40 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
             } else if (removeInternal(key, oldValueAsData)) {
                 return null;
             }
+        }
+    }
+
+    @Override
+    public V computeIfAbsent(@Nonnull K key, @Nonnull Function<? super K, ? extends V> mappingFunction) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(mappingFunction, NULL_FUNCTION_IS_NOT_ALLOWED);
+        Version clusterVersion = getNodeEngine().getClusterService().getClusterVersion();
+
+        if (SerializationUtil.isClassStaticAndSerializable(mappingFunction)
+                && clusterVersion.isGreaterOrEqual(Versions.V4_1)) {
+            ComputeIfAbsentEntryProcessor<K, V> ep = new ComputeIfAbsentEntryProcessor<>(mappingFunction);
+            return executeOnKey(key, ep);
+        } else {
+            return computeIfAbsentLocally(key, mappingFunction);
+        }
+    }
+
+    private V computeIfAbsentLocally(K key, Function<? super K, ? extends V> mappingFunction) {
+        V oldValue = toObject(getInternal(key));
+        if (oldValue != null) {
+            return oldValue;
+        }
+
+        V newValue = mappingFunction.apply(key);
+        if (newValue == null) {
+            return null;
+        }
+
+        Data result = putIfAbsentInternal(key, toData(newValue), UNSET, TimeUnit.MILLISECONDS, UNSET, TimeUnit.MILLISECONDS);
+        if (result == null) {
+            return newValue;
+        } else {
+            return toObject(result);
         }
     }
 

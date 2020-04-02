@@ -17,9 +17,18 @@
 package com.hazelcast.sql.impl.plan.node;
 
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.exec.Exec;
 
 /**
- * Physical node.
+ * A single node from the query plan. Represents metadata about a single execution stage, that could be either relational
+ * operator (scan, filter, project, etc.), or maintenance operator (root, sender, receiver).
+ * <p>
+ * Node is converted to {@link Exec} during actual execution.
+ * <p>
+ * The class extends {@link DataSerializable}, instead of {@link IdentifiedDataSerializable} to simplify testing.
+ * <p>
+ * Implementations should define hashCode/equals methods.
  */
 public interface PlanNode extends DataSerializable {
     /**
@@ -29,6 +38,8 @@ public interface PlanNode extends DataSerializable {
 
     /**
      * Visit the node.
+     * <p>
+     * If there are inputs, they should be visited first.
      *
      * @param visitor Visitor.
      */

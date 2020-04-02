@@ -55,8 +55,9 @@ public class QueryExecuteOperation extends QueryAbstractIdAwareOperation {
     private List<Object> arguments;
     private long timeout;
 
-    /** Root fragment result consumer. Applicable only to root fragment being executed on local node. */
+    /** Root fragment result consumer. Applicable only to root fragment being executed on initiator. */
     private transient RootResultConsumer rootConsumer;
+    private transient int rootBatchSize;
 
     public QueryExecuteOperation() {
         // No-op.
@@ -124,8 +125,15 @@ public class QueryExecuteOperation extends QueryAbstractIdAwareOperation {
         return rootConsumer;
     }
 
-    public void setRootConsumer(RootResultConsumer rootConsumer) {
+    public int getRootBatchSize() {
+        return rootBatchSize;
+    }
+
+    public QueryExecuteOperation setRootConsumer(RootResultConsumer rootConsumer, int rootBatchSize) {
         this.rootConsumer = rootConsumer;
+        this.rootBatchSize = rootBatchSize;
+
+        return this;
     }
 
     @Override

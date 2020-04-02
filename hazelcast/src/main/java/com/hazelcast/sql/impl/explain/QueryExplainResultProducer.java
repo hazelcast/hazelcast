@@ -43,11 +43,6 @@ public class QueryExplainResultProducer implements QueryResultProducer {
     }
 
     @Override
-    public void onDone() {
-        // No-op.
-    }
-
-    @Override
     public void onError(HazelcastSqlException error) {
         // No-op.
     }

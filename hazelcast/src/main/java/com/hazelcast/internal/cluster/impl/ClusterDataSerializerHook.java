@@ -64,7 +64,7 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
     public static final int MEMBER = 2;
     public static final int HEARTBEAT = 3;
     public static final int CONFIG_CHECK = 4;
-    public static final int BIND_MESSAGE = 5;
+    public static final int MEMBER_HANDSHAKE = 5;
     public static final int MEMBER_INFO_UPDATE = 6;
     public static final int FINALIZE_JOIN = 7;
     public static final int BEFORE_JOIN_CHECK_FAILURE = 8;
@@ -117,7 +117,7 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
         constructors[MEMBER] = arg -> new MemberImpl();
         constructors[HEARTBEAT] = arg -> new HeartbeatOp();
         constructors[CONFIG_CHECK] = arg -> new ConfigCheck();
-        constructors[BIND_MESSAGE] = arg -> new BindMessage();
+        constructors[MEMBER_HANDSHAKE] = arg -> new MemberHandshake();
         constructors[MEMBER_INFO_UPDATE] = arg -> new MembersUpdateOp();
         constructors[FINALIZE_JOIN] = arg -> new FinalizeJoinOp();
         constructors[BEFORE_JOIN_CHECK_FAILURE] = arg -> new BeforeJoinCheckFailureOp();

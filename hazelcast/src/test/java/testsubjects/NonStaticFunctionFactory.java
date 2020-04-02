@@ -17,6 +17,7 @@
 package testsubjects;
 
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
 public class NonStaticFunctionFactory {
 
@@ -27,6 +28,15 @@ public class NonStaticFunctionFactory {
         return new BiFunction<String, String, String>() {
             @Override
             public String apply(String s, String s2) {
+                return returnValue;
+            }
+        };
+    }
+
+    public static Function<String, String> getAnonymousNonSerializableFunction(final String returnValue) {
+        return new Function<String, String>() {
+            @Override
+            public String apply(String s) {
                 return returnValue;
             }
         };

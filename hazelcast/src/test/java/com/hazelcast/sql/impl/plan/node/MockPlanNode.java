@@ -14,14 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.physical;
+package com.hazelcast.sql.impl.plan.node;
 
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.sql.impl.plan.node.PlanNode;
-import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
-import com.hazelcast.sql.impl.plan.node.PlanNodeVisitor;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.io.IOException;

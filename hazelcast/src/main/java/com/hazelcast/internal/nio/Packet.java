@@ -306,7 +306,7 @@ public final class Packet extends HeapData implements OutboundFrame {
          * <p>
          * {@code ordinal = 4}
          */
-        BIND,
+        MEMBER_HANDSHAKE,
         /**
          * Unused packet type. Available for future use.
          * <p>

@@ -19,7 +19,7 @@ package com.hazelcast.internal.nio.tcp;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
-import com.hazelcast.internal.cluster.impl.BindMessage;
+import com.hazelcast.internal.cluster.impl.MemberHandshake;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.nio.IOService;
@@ -35,7 +35,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 
-final class BindHandler {
+final class MemberHandshakeHandler {
 
     private final TcpIpEndpointManager tcpIpEndpointManager;
     private final IOService ioService;
@@ -45,8 +45,8 @@ final class BindHandler {
 
     private final Set<ProtocolType> supportedProtocolTypes;
 
-    BindHandler(TcpIpEndpointManager tcpIpEndpointManager, IOService ioService, ILogger logger,
-                Set<ProtocolType> supportedProtocolTypes) {
+    MemberHandshakeHandler(TcpIpEndpointManager tcpIpEndpointManager, IOService ioService, ILogger logger,
+                           Set<ProtocolType> supportedProtocolTypes) {
         this.tcpIpEndpointManager = tcpIpEndpointManager;
         this.ioService = ioService;
         this.logger = logger;
@@ -56,24 +56,24 @@ final class BindHandler {
     }
 
     public void process(Packet packet) {
-        Object bind = ioService.getSerializationService().toObject(packet);
+        Object o = ioService.getSerializationService().toObject(packet);
         TcpIpConnection connection = (TcpIpConnection) packet.getConn();
-        if (connection.setBinding()) {
-            BindMessage bindMessage = (BindMessage) bind;
-            bind(connection, bindMessage);
+        if (connection.setHandshake()) {
+            MemberHandshake handshake = (MemberHandshake) o;
+            process(connection, handshake);
         } else {
             if (logger.isFinestEnabled()) {
-                logger.finest("Connection " + connection + " is already bound, ignoring incoming " + bind);
+                logger.finest("Connection " + connection + " is already bound, ignoring incoming " + o);
             }
         }
     }
 
-    private synchronized boolean bind(TcpIpConnection connection, BindMessage bindMessage) {
+    private synchronized boolean process(TcpIpConnection connection, MemberHandshake handshake) {
         if (logger.isFinestEnabled()) {
-            logger.finest("Binding " + connection + ", complete message is " + bindMessage);
+            logger.finest("Handshake " + connection + ", complete message is " + handshake);
         }
 
-        Map<ProtocolType, Collection<Address>> remoteAddressesPerProtocolType = bindMessage.getLocalAddresses();
+        Map<ProtocolType, Collection<Address>> remoteAddressesPerProtocolType = handshake.getLocalAddresses();
         List<Address> allAliases = new ArrayList<Address>();
         for (Map.Entry<ProtocolType, Collection<Address>> remoteAddresses : remoteAddressesPerProtocolType.entrySet()) {
             if (supportedProtocolTypes.contains(remoteAddresses.getKey())) {
@@ -92,7 +92,7 @@ final class BindHandler {
         boolean isMemberConnection = (connection.getConnectionType().equals(ConnectionType.MEMBER)
                 && (tcpIpEndpointManager.getEndpointQualifier() == EndpointQualifier.MEMBER
                 || unifiedEndpointManager));
-        boolean mustRegisterRemoteSocketAddress = !bindMessage.isReply();
+        boolean mustRegisterRemoteSocketAddress = !handshake.isReply();
 
         Address remoteEndpoint = null;
         if (isMemberConnection) {
@@ -107,28 +107,25 @@ final class BindHandler {
             remoteEndpoint = new Address(connection.getRemoteSocketAddress());
         }
 
-        return bind0(connection,
-                remoteEndpoint,
-                allAliases,
-                bindMessage.isReply());
+        return process0(connection, remoteEndpoint, allAliases, handshake.isReply());
     }
 
     /**
-     * Performs the actual binding (sets the endpoint on the Connection, registers the connection)
+     * Performs the processing of the handshake (sets the endpoint on the Connection, registers the connection)
      * without any spoofing or other validation checks.
      * When executed on the connection initiator side, the connection is registered on the remote address
      * with which it was registered in {@link TcpIpEndpointManager#connectionsInProgress},
      * ignoring the {@code remoteEndpoint} argument.
      *
-     * @param connection           the connection to bind
+     * @param connection           the connection that send the handshake
      * @param remoteEndpoint       the address of the remote endpoint
      * @param remoteAddressAliases alias addresses as provided by the remote endpoint, under which the connection
      *                             will be registered. These are the public addresses configured on the remote.
      */
     @SuppressWarnings({"checkstyle:npathcomplexity"})
     @SuppressFBWarnings("RV_RETURN_VALUE_OF_PUTIFABSENT_IGNORED")
-    private synchronized boolean bind0(TcpIpConnection connection, Address remoteEndpoint,
-                                       Collection<Address> remoteAddressAliases, boolean reply) {
+    private synchronized boolean process0(TcpIpConnection connection, Address remoteEndpoint,
+                                          Collection<Address> remoteAddressAliases, boolean reply) {
         final Address remoteAddress = new Address(connection.getRemoteSocketAddress());
         if (tcpIpEndpointManager.connectionsInProgress.contains(remoteAddress)) {
             // this is the connection initiator side --> register the connection under the address that was requested
@@ -145,8 +142,7 @@ final class BindHandler {
         connection.setEndPoint(remoteEndpoint);
         ioService.onSuccessfulConnection(remoteEndpoint);
         if (reply) {
-            BindRequest bindRequest = new BindRequest(logger, ioService, connection, remoteEndpoint, false);
-            bindRequest.send();
+            new SendMemberHandshakeTask(logger, ioService, connection, remoteEndpoint, false).run();
         }
 
         if (checkAlreadyConnected(connection, remoteEndpoint)) {

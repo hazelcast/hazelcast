@@ -35,7 +35,7 @@ public class PlanNodeSchema implements PlanNodeFieldTypeProvider {
 
         this.types = Collections.unmodifiableList(types);
 
-        rowWidth = calculateRowWidth(types);
+        rowWidth = calculateEstimatedRowSize(types);
     }
 
     public static PlanNodeSchema combine(PlanNodeSchema schema1, PlanNodeSchema schema2) {
@@ -57,11 +57,14 @@ public class PlanNodeSchema implements PlanNodeFieldTypeProvider {
         return types;
     }
 
-    public int getRowWidth() {
+    /**
+     * @return Estimated size of the row in bytes.
+     */
+    public int getEstimatedRowSize() {
         return rowWidth;
     }
 
-    private static int calculateRowWidth(List<QueryDataType> types) {
+    private static int calculateEstimatedRowSize(List<QueryDataType> types) {
         int res = 0;
 
         for (QueryDataType type : types) {

@@ -16,8 +16,6 @@
 
 package com.hazelcast.sql.impl;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -32,7 +30,7 @@ import static org.junit.Assert.assertNotEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class QueryIdTest {
+public class QueryIdTest extends SqlTestSupport {
     @Test
     public void testIds() {
         UUID memberId = UUID.randomUUID();
@@ -72,13 +70,7 @@ public class QueryIdTest {
     @Test
     public void testSerialization() {
         QueryId original = QueryId.create(UUID.randomUUID());
-
-        assertEquals(SqlDataSerializerHook.F_ID, original.getFactoryId());
-        assertEquals(SqlDataSerializerHook.QUERY_ID, original.getClassId());
-
-        InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
-
-        QueryId restored = ss.toObject(ss.toData(original));
+        QueryId restored = serializeAndCheck(original, SqlDataSerializerHook.QUERY_ID);
 
         assertEquals(original, restored);
     }
@@ -86,14 +78,5 @@ public class QueryIdTest {
     private static QueryId create(UUID memberId, UUID localId) {
         return new QueryId(memberId.getMostSignificantBits(), memberId.getLeastSignificantBits(),
             localId.getMostSignificantBits(), localId.getLeastSignificantBits());
-    }
-
-    private void checkEquals(QueryId id1, QueryId id2, boolean expected) {
-        if (expected) {
-            assertEquals(id1, id2);
-            assertEquals(id1.hashCode(), id2.hashCode());
-        } else {
-            assertNotEquals(id1, id2);
-        }
     }
 }

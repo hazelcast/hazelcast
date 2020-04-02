@@ -24,7 +24,15 @@ import com.hazelcast.sql.impl.plan.node.join.HashJoinPlanNode;
 import com.hazelcast.sql.impl.plan.node.join.NestedLoopJoinPlanNode;
 
 /**
- * Physical node visitor.
+ * Plan node visitor. Typically used to convert the tree of plan nodes to another tree
+ * (e.g. {@link com.hazelcast.sql.impl.exec.Exec}).
+ * <p>
+ * Normally we add a separate method for a new operator, to spot missing implementations during compilation. The method
+ * {@link #onOtherNode(PlanNode)} allows for adding more operators without changes to the interface.
+ * It should be used for testing only.
+ * <p>
+ * Visiting is expected to happen in the depth-first manner. Thus, nodes with inputs should delegate visit to children first
+ * as explained in {@link PlanNode#visit(PlanNodeVisitor)}.
  */
 public interface PlanNodeVisitor {
     void onRootNode(RootPlanNode node);

@@ -48,6 +48,8 @@ import static com.hazelcast.internal.metrics.ProbeUnit.BYTES;
 import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.util.ConcurrencyUtil.setMax;
 import static com.hazelcast.internal.util.JsonUtil.getLong;
+import static com.hazelcast.internal.util.TimeUtil.convertMillisToNanos;
+import static com.hazelcast.internal.util.TimeUtil.convertNanosToMillis;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
 /**
@@ -74,17 +76,17 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats, Jso
     private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> REMOVE_COUNT =
             newUpdater(LocalReplicatedMapStatsImpl.class, "removeCount");
     private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> TOTAL_GET_LATENCIES =
-            newUpdater(LocalReplicatedMapStatsImpl.class, "totalGetLatencies");
+            newUpdater(LocalReplicatedMapStatsImpl.class, "totalGetLatenciesNanos");
     private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> TOTAL_PUT_LATENCIES =
-            newUpdater(LocalReplicatedMapStatsImpl.class, "totalPutLatencies");
+            newUpdater(LocalReplicatedMapStatsImpl.class, "totalPutLatenciesNanos");
     private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> TOTAL_REMOVE_LATENCIES =
-            newUpdater(LocalReplicatedMapStatsImpl.class, "totalRemoveLatencies");
+            newUpdater(LocalReplicatedMapStatsImpl.class, "totalRemoveLatenciesNanos");
     private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> MAX_GET_LATENCY =
-            newUpdater(LocalReplicatedMapStatsImpl.class, "maxGetLatency");
+            newUpdater(LocalReplicatedMapStatsImpl.class, "maxGetLatencyNanos");
     private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> MAX_PUT_LATENCY =
-            newUpdater(LocalReplicatedMapStatsImpl.class, "maxPutLatency");
+            newUpdater(LocalReplicatedMapStatsImpl.class, "maxPutLatencyNanos");
     private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> MAX_REMOVE_LATENCY =
-            newUpdater(LocalReplicatedMapStatsImpl.class, "maxRemoveLatency");
+            newUpdater(LocalReplicatedMapStatsImpl.class, "maxRemoveLatencyNanos");
     private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> OWNED_ENTRY_MEMORY_COST =
             newUpdater(LocalReplicatedMapStatsImpl.class, "ownedEntryMemoryCost");
 
@@ -105,18 +107,13 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats, Jso
     private volatile long putCount;
     @Probe(name = REPLICATED_MAP_METRIC_REMOVE_COUNT)
     private volatile long removeCount;
-    @Probe(name = REPLICATED_MAP_METRIC_TOTAL_GET_LATENCIES, unit = MS)
-    private volatile long totalGetLatencies;
-    @Probe(name = REPLICATED_MAP_METRIC_TOTAL_PUT_LATENCIES, unit = MS)
-    private volatile long totalPutLatencies;
-    @Probe(name = REPLICATED_MAP_METRIC_TOTAL_REMOVE_LATENCIES, unit = MS)
-    private volatile long totalRemoveLatencies;
-    @Probe(name = REPLICATED_MAP_MAX_GET_LATENCY, unit = MS)
-    private volatile long maxGetLatency;
-    @Probe(name = REPLICATED_MAP_MAX_PUT_LATENCY, unit = MS)
-    private volatile long maxPutLatency;
-    @Probe(name = REPLICATED_MAP_MAX_REMOVE_LATENCY, unit = MS)
-    private volatile long maxRemoveLatency;
+
+    private volatile long totalGetLatenciesNanos;
+    private volatile long totalPutLatenciesNanos;
+    private volatile long totalRemoveLatenciesNanos;
+    private volatile long maxGetLatencyNanos;
+    private volatile long maxPutLatencyNanos;
+    private volatile long maxRemoveLatencyNanos;
 
     @Probe(name = REPLICATED_MAP_CREATION_TIME, unit = MS)
     private volatile long creationTime;
@@ -235,10 +232,10 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats, Jso
         return putCount;
     }
 
-    public void incrementPuts(long latency) {
+    public void incrementPutsNanos(long latencyNanos) {
         PUT_COUNT.incrementAndGet(this);
-        TOTAL_PUT_LATENCIES.addAndGet(this, latency);
-        setMax(this, MAX_PUT_LATENCY, latency);
+        TOTAL_PUT_LATENCIES.addAndGet(this, latencyNanos);
+        setMax(this, MAX_PUT_LATENCY, latencyNanos);
     }
 
     @Override
@@ -246,10 +243,10 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats, Jso
         return getCount;
     }
 
-    public void incrementGets(long latency) {
+    public void incrementGetsNanos(long latencyNanos) {
         GET_COUNT.incrementAndGet(this);
-        TOTAL_GET_LATENCIES.addAndGet(this, latency);
-        setMax(this, MAX_GET_LATENCY, latency);
+        TOTAL_GET_LATENCIES.addAndGet(this, latencyNanos);
+        setMax(this, MAX_GET_LATENCY, latencyNanos);
     }
 
     @Override
@@ -257,40 +254,46 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats, Jso
         return removeCount;
     }
 
-    public void incrementRemoves(long latency) {
+    public void incrementRemovesNanos(long latencyNanos) {
         REMOVE_COUNT.incrementAndGet(this);
-        TOTAL_REMOVE_LATENCIES.addAndGet(this, latency);
-        setMax(this, MAX_REMOVE_LATENCY, latency);
+        TOTAL_REMOVE_LATENCIES.addAndGet(this, latencyNanos);
+        setMax(this, MAX_REMOVE_LATENCY, latencyNanos);
     }
 
+    @Probe(name = REPLICATED_MAP_METRIC_TOTAL_PUT_LATENCIES, unit = MS)
     @Override
     public long getTotalPutLatency() {
-        return totalPutLatencies;
+        return convertNanosToMillis(totalPutLatenciesNanos);
     }
 
+    @Probe(name = REPLICATED_MAP_METRIC_TOTAL_GET_LATENCIES, unit = MS)
     @Override
     public long getTotalGetLatency() {
-        return totalGetLatencies;
+        return convertNanosToMillis(totalGetLatenciesNanos);
     }
 
+    @Probe(name = REPLICATED_MAP_METRIC_TOTAL_REMOVE_LATENCIES, unit = MS)
     @Override
     public long getTotalRemoveLatency() {
-        return totalRemoveLatencies;
+        return convertNanosToMillis(totalRemoveLatenciesNanos);
     }
 
+    @Probe(name = REPLICATED_MAP_MAX_GET_LATENCY, unit = MS)
     @Override
     public long getMaxPutLatency() {
-        return maxPutLatency;
+        return convertNanosToMillis(maxPutLatencyNanos);
     }
 
+    @Probe(name = REPLICATED_MAP_MAX_PUT_LATENCY, unit = MS)
     @Override
     public long getMaxGetLatency() {
-        return maxGetLatency;
+        return convertNanosToMillis(maxGetLatencyNanos);
     }
 
+    @Probe(name = REPLICATED_MAP_MAX_REMOVE_LATENCY, unit = MS)
     @Override
     public long getMaxRemoveLatency() {
-        return maxRemoveLatency;
+        return convertNanosToMillis(maxRemoveLatencyNanos);
     }
 
     @Override
@@ -378,12 +381,12 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats, Jso
         root.add("ownedEntryCount", ownedEntryCount);
         root.add("ownedEntryMemoryCost", ownedEntryMemoryCost);
         root.add("creationTime", creationTime);
-        root.add("totalGetLatencies", totalGetLatencies);
-        root.add("totalPutLatencies", totalPutLatencies);
-        root.add("totalRemoveLatencies", totalRemoveLatencies);
-        root.add("maxGetLatency", maxGetLatency);
-        root.add("maxPutLatency", maxPutLatency);
-        root.add("maxRemoveLatency", maxRemoveLatency);
+        root.add("totalGetLatencies", convertNanosToMillis(totalGetLatenciesNanos));
+        root.add("totalPutLatencies", convertNanosToMillis(totalPutLatenciesNanos));
+        root.add("totalRemoveLatencies", convertNanosToMillis(totalRemoveLatenciesNanos));
+        root.add("maxGetLatency", convertNanosToMillis(maxGetLatencyNanos));
+        root.add("maxPutLatency", convertNanosToMillis(maxPutLatencyNanos));
+        root.add("maxRemoveLatency", convertNanosToMillis(maxRemoveLatencyNanos));
         return root;
     }
 
@@ -400,12 +403,12 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats, Jso
         ownedEntryCount = getLong(json, "ownedEntryCount", -1L);
         ownedEntryMemoryCost = getLong(json, "ownedEntryMemoryCost", -1L);
         creationTime = getLong(json, "creationTime", -1L);
-        totalGetLatencies = getLong(json, "totalGetLatencies", -1L);
-        totalPutLatencies = getLong(json, "totalPutLatencies", -1L);
-        totalRemoveLatencies = getLong(json, "totalRemoveLatencies", -1L);
-        maxGetLatency = getLong(json, "maxGetLatency", -1L);
-        maxPutLatency = getLong(json, "maxPutLatency", -1L);
-        maxRemoveLatency = getLong(json, "maxRemoveLatency", -1L);
+        totalGetLatenciesNanos = convertMillisToNanos(getLong(json, "totalGetLatencies", -1L));
+        totalPutLatenciesNanos = convertMillisToNanos(getLong(json, "totalPutLatencies", -1L));
+        totalRemoveLatenciesNanos = convertMillisToNanos(getLong(json, "totalRemoveLatencies", -1L));
+        maxGetLatencyNanos = convertMillisToNanos(getLong(json, "maxGetLatency", -1L));
+        maxPutLatencyNanos = convertMillisToNanos(getLong(json, "maxPutLatency", -1L));
+        maxRemoveLatencyNanos = convertMillisToNanos(getLong(json, "maxRemoveLatency", -1L));
     }
 
     @Override
@@ -419,9 +422,9 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats, Jso
                 + ", getCount=" + getCount
                 + ", putCount=" + putCount
                 + ", removeCount=" + removeCount
-                + ", totalGetLatencies=" + totalGetLatencies
-                + ", totalPutLatencies=" + totalPutLatencies
-                + ", totalRemoveLatencies=" + totalRemoveLatencies
+                + ", totalGetLatencies=" + convertNanosToMillis(totalGetLatenciesNanos)
+                + ", totalPutLatencies=" + convertNanosToMillis(totalPutLatenciesNanos)
+                + ", totalRemoveLatencies=" + convertNanosToMillis(totalRemoveLatenciesNanos)
                 + ", ownedEntryCount=" + ownedEntryCount
                 + ", ownedEntryMemoryCost=" + ownedEntryMemoryCost
                 + ", creationTime=" + creationTime

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.row;
+package com.hazelcast.sql.impl.plan.node;
 
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlTestSupport;
@@ -25,40 +25,24 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.junit.Assert.assertEquals;
-
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ListRowBatchTest extends SqlTestSupport {
+public class RootPlanNodeTest extends SqlTestSupport {
     @Test
-    public void testListRowBatch() {
-        List<Row> rows = new ArrayList<>(2);
+    public void testEquality() {
+        MockPlanNode upstream1 = MockPlanNode.create(1);
+        MockPlanNode upstream2 = MockPlanNode.create(2);
 
-        rows.add(new HeapRow(1));
-        rows.add(new HeapRow(2));
-
-        ListRowBatch batch = new ListRowBatch(rows);
-
-        assertEquals(2, batch.getRowCount());
-        assertEquals(rows.get(0), batch.getRow(0));
-        assertEquals(rows.get(1), batch.getRow(1));
+        checkEquals(new RootPlanNode(3, upstream1), new RootPlanNode(3, upstream1), true);
+        checkEquals(new RootPlanNode(3, upstream1), new RootPlanNode(4, upstream1), false);
+        checkEquals(new RootPlanNode(3, upstream1), new RootPlanNode(3, upstream2), false);
     }
 
     @Test
     public void testSerialization() {
-        List<Row> rows = new ArrayList<>(2);
+        RootPlanNode original = new RootPlanNode(1, MockPlanNode.create(2));
+        RootPlanNode restored = serializeAndCheck(original, SqlDataSerializerHook.NODE_ROOT);
 
-        rows.add(new HeapRow(1));
-        rows.add(new HeapRow(2));
-
-        ListRowBatch original = new ListRowBatch(rows);
-        ListRowBatch restored = serializeAndCheck(original, SqlDataSerializerHook.ROW_BATCH_LIST);
-
-        assertEquals(original.getRowCount(), restored.getRowCount());
-        assertEquals(original.getRow(0), restored.getRow(0));
-        assertEquals(original.getRow(1), restored.getRow(1));
+        checkEquals(original, restored, true);
     }
 }

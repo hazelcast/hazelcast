@@ -60,7 +60,7 @@ public class UpstreamState implements Iterable<Row> {
      */
     public boolean advance() {
         // If some data is available still, do not do anything, just return the previous result.
-        if (currentBatchPos < currentBatch.getRowCount()) {
+        if (isNextAvailable()) {
             return true;
         }
 
@@ -140,7 +140,18 @@ public class UpstreamState implements Iterable<Row> {
      * @return Next row or {@code null}.
      */
     public Row nextIfExists() {
-        return iter.hasNext() ? iter.next() : null;
+        return isNextAvailable() ? iter.next() : null;
+    }
+
+    /**
+     * @return {@code true} if the next row is available without the need to advance the upstream.
+     */
+    public boolean isNextAvailable() {
+        return currentBatchPos < currentBatch.getRowCount();
+    }
+
+    Exec getUpstream() {
+        return upstream;
     }
 
     /**
@@ -149,7 +160,7 @@ public class UpstreamState implements Iterable<Row> {
     private class UpstreamIterator implements Iterator<Row> {
         @Override
         public boolean hasNext() {
-            return currentBatchPos < currentBatch.getRowCount();
+            return isNextAvailable();
         }
 
         @Override

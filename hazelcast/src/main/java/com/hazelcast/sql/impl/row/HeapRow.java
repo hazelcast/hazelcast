@@ -42,7 +42,15 @@ public class HeapRow implements Row, IdentifiedDataSerializable {
 
     @SuppressFBWarnings("EI_EXPOSE_REP2")
     public HeapRow(Object[] values) {
+        assert values != null;
+
         this.values = values;
+    }
+
+    public static HeapRow of(Object... values) {
+        assert values != null;
+
+        return new HeapRow(values);
     }
 
     @SuppressWarnings("unchecked")

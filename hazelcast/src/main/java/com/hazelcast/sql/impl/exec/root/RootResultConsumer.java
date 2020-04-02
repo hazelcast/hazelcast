@@ -20,8 +20,10 @@ import com.hazelcast.sql.impl.QueryResultProducer;
 import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 import com.hazelcast.sql.impl.row.Row;
 
+import java.util.List;
+
 /**
- * Consumes results from the root and exposes them to the user.
+ * Consumer of results from {@link RootExec}.
  */
 public interface RootResultConsumer extends QueryResultProducer {
     /**
@@ -32,10 +34,12 @@ public interface RootResultConsumer extends QueryResultProducer {
     void setup(QueryFragmentContext context);
 
     /**
-     * Consume rows from the source.
+     * Consume rows from the root operator. The implementation should either consume all rows, or none. If the rows are consumed,
+     * the ownership is transferred to the consumer, i.e. no copy of the batch is required.
      *
-     * @param source Row source.
-     * @return {@code True} if consumed.
+     * @param batch Rows.
+     * @param last Whether this is the last batch.
+     * @return {@code true} if rows were consumed, {@code false} otherwise.
      */
-    boolean consume(Iterable<Row> source);
+    boolean consume(List<Row> batch, boolean last);
 }

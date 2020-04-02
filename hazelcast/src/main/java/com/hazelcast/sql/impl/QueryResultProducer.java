@@ -34,11 +34,6 @@ public interface QueryResultProducer {
     Iterator<Row> iterator();
 
     /**
-     * Notify the producer about end of the result stream.
-     */
-    void onDone();
-
-    /**
      * Notify the producer about an error.
      *
      * @param error Error.

@@ -19,20 +19,33 @@ package com.hazelcast.sql.impl.exec.root;
 import com.hazelcast.sql.impl.exec.AbstractUpstreamAwareExec;
 import com.hazelcast.sql.impl.exec.Exec;
 import com.hazelcast.sql.impl.exec.IterationResult;
-import com.hazelcast.sql.impl.worker.QueryFragmentContext;
+import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
+import com.hazelcast.sql.impl.worker.QueryFragmentContext;
+
+import java.util.ArrayList;
 
 /**
  * Root executor which consumes results from the upstream stages and pass them to target consumer.
  */
 public class RootExec extends AbstractUpstreamAwareExec {
-    /** Consumer (user iterator, client listener, etc). */
-    private final RootResultConsumer consumer;
 
-    public RootExec(int id, Exec upstream, RootResultConsumer consumer) {
+    private final RootResultConsumer consumer;
+    private final int batchSize;
+
+    /** Current rows that are prepared for the consumer. */
+    private ArrayList<Row> batch;
+
+    /** Whether the operator has finished execution. */
+    private boolean done;
+
+    public RootExec(int id, Exec upstream, RootResultConsumer consumer, int batchSize) {
         super(id, upstream);
 
         this.consumer = consumer;
+        this.batchSize = batchSize;
+
+        batch = new ArrayList<>(batchSize);
     }
 
     @Override
@@ -42,22 +55,49 @@ public class RootExec extends AbstractUpstreamAwareExec {
 
     @Override
     public IterationResult advance0() {
+        if (done) {
+            return IterationResult.FETCHED_DONE;
+        }
+
         while (true) {
-            // Advance if needed.
+            // Consume the previous batch if needed.
+            int remaining = batchSize - batch.size();
+
+            boolean upstreamDone = state.isDone();
+
+            if (remaining == 0 || upstreamDone) {
+                if (consumer.consume(batch, upstreamDone)) {
+                    // Batch has been consumed successfully.
+                    if (upstreamDone) {
+                        // Pushed the very last batch, done.
+                        done = true;
+
+                        return IterationResult.FETCHED_DONE;
+                    } else {
+                        // Pushed the batch, but there are more to come, allocate the new batch and continue.
+                        batch = new ArrayList<>(batchSize);
+
+                        remaining = batchSize;
+                    }
+                } else {
+                    // Cannot push to the consumer => WAIT.
+                    return IterationResult.WAIT;
+                }
+            }
+
+            assert remaining != 0;
+
+            // Get more rows from the upstream.
             if (!state.advance()) {
                 return IterationResult.WAIT;
             }
 
-            // Try consuming as much rows as possible.
-            if (!consumer.consume(state)) {
-                return IterationResult.WAIT;
-            }
+            for (Row row : state) {
+                batch.add(row);
 
-            // Close the consumer if we reached the end.
-            if (state.isDone()) {
-                consumer.onDone();
-
-                return IterationResult.FETCHED_DONE;
+                if (--remaining == 0) {
+                    break;
+                }
             }
         }
     }

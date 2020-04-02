@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.plan.node;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 /**
- * Interface to resolve field types.
+ * Interface to resolve field types of a single node.
  */
 public interface PlanNodeFieldTypeProvider {
     /**
