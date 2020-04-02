@@ -29,8 +29,8 @@ import com.hazelcast.internal.networking.nio.NioNetworking;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.nio.NetworkingService;
 import com.hazelcast.internal.nio.NodeIOService;
-import com.hazelcast.internal.nio.tcp.TcpIpConnectionChannelErrorHandler;
-import com.hazelcast.internal.nio.tcp.TcpIpNetworkingService;
+import com.hazelcast.internal.nio.server.ServerConnectionChannelErrorHandler;
+import com.hazelcast.internal.nio.server.ServerNetworkingService;
 import com.hazelcast.internal.util.InstantiationUtils;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.impl.LoggingServiceImpl;
@@ -148,7 +148,7 @@ public class DefaultNodeContext implements NodeContext {
         Config config = node.getConfig();
 
         MetricsRegistry metricsRegistry = node.nodeEngine.getMetricsRegistry();
-        TcpIpNetworkingService tcpIpNetworkingService = new TcpIpNetworkingService(config,
+        ServerNetworkingService tcpIpNetworkingService = new ServerNetworkingService(config,
                 ioService,
                 registry,
                 node.loggingService,
@@ -164,7 +164,7 @@ public class DefaultNodeContext implements NodeContext {
         LoggingServiceImpl loggingService = node.loggingService;
 
         ChannelErrorHandler errorHandler
-                = new TcpIpConnectionChannelErrorHandler(loggingService.getLogger(TcpIpConnectionChannelErrorHandler.class));
+                = new ServerConnectionChannelErrorHandler(loggingService.getLogger(ServerConnectionChannelErrorHandler.class));
 
         HazelcastProperties props = node.getProperties();
 

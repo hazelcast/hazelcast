@@ -18,6 +18,7 @@ package com.hazelcast.internal.nio;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.networking.OutboundFrame;
+import com.hazelcast.internal.nio.server.ServerConnection;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -25,7 +26,7 @@ import java.security.cert.Certificate;
 
 /**
  * Represents a 'connection' between two machines. The most important implementation is the
- * {@link com.hazelcast.internal.nio.tcp.TcpIpConnection}.
+ * {@link ServerConnection}.
  */
 public interface Connection {
 
