@@ -88,6 +88,7 @@
         <maven.shade.plugin.version>3.2.2</maven.shade.plugin.version>
         <maven.dependency.plugin.version>2.6</maven.dependency.plugin.version>
         <maven.git.commit.id.plugin.version>2.1.10</maven.git.commit.id.plugin.version>
+        <maven.antrun.plugin.version>1.8</maven.antrun.plugin.version>
 
         <maven.enforcer.plugin.version>3.0.0-M1</maven.enforcer.plugin.version>
         <maven.surefire.plugin.version>3.0.0-M3</maven.surefire.plugin.version>
@@ -96,6 +97,9 @@
         <checkstyle.headerLocation>${maven.multiModuleProjectDirectory}/checkstyle/ClassHeader.txt</checkstyle.headerLocation>
         <maven.sonar.plugin.version>3.6.0.1398</maven.sonar.plugin.version>
         <maven.jacoco.plugin.version>0.8.4</maven.jacoco.plugin.version>
+        <maven.builder.helper.version>3.1.0</maven.builder.helper.version>
+        <maven.os.plugin.version>1.6.2</maven.os.plugin.version>
+        <maven.protobuf.plugin.version>0.6.1</maven.protobuf.plugin.version>
 
         <!-- optional dependencies (required for building, but don't become module's transitive deps) -->
         <jms.api.version>2.0.1</jms.api.version>

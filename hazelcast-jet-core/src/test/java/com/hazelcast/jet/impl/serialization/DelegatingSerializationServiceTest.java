@@ -17,6 +17,8 @@
 package com.hazelcast.jet.impl.serialization;
 
 import com.google.common.collect.ImmutableMap;
+import com.hazelcast.config.SerializationConfig;
+import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.internal.serialization.impl.AbstractSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.jet.JetException;
@@ -26,25 +28,54 @@ import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.util.Map;
 
-import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_BYTE;
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class DelegatingSerializationServiceTest {
 
-    private static final AbstractSerializationService DELEGATE =
-            (AbstractSerializationService) new DefaultSerializationServiceBuilder().build();
+    private static final AbstractSerializationService DELEGATE = new DefaultSerializationServiceBuilder()
+            .setConfig(new SerializationConfig().addSerializerConfig(
+                    new SerializerConfig().setTypeClass(Value.class).setClass(ValueSerializer.class))
+            ).build();
+
+    private static final int TYPE_ID = 1;
+
+    @Test
+    public void when_triesToRegisterSerializerWithNegativeTypeId_then_Fails() {
+        // Given
+        Map<Class<?>, Serializer> serializers = ImmutableMap.of(
+                Object.class, new StreamSerializer<Object>() {
+                    @Override
+                    public int getTypeId() {
+                        return -1;
+                    }
+
+                    @Override
+                    public void write(ObjectDataOutput objectDataOutput, Object o) {
+                    }
+
+                    @Override
+                    public Value read(ObjectDataInput objectDataInput) {
+                        return null;
+                    }
+                }
+        );
+
+        // When
+        // Then
+        assertThatThrownBy(() -> new DelegatingSerializationService(serializers, DELEGATE))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
 
     @Test
     public void when_triesToRegisterTwoSerializersWithSameTypeId_then_Fails() {
         // Given
         Map<Class<?>, Serializer> serializers = ImmutableMap.of(
-                Boolean.class, new CustomByteSerializer(),
-                Byte.class, new CustomByteSerializer()
+                int.class, new ValueSerializer(),
+                long.class, new ValueSerializer()
         );
 
         // When
@@ -60,23 +91,35 @@ public class DelegatingSerializationServiceTest {
 
         // When
         // Then
-        assertThatThrownBy(() -> service.serializerFor(new Value()))
+        assertThatThrownBy(() -> service.serializerFor(new UnregisteredValue()))
                 .isInstanceOf(JetException.class);
         assertThatThrownBy(() -> service.serializerFor(Integer.MAX_VALUE))
                 .isInstanceOf(JetException.class);
     }
 
     @Test
+    public void when_doesNotFind_then_Delegates() {
+        // Given
+        DelegatingSerializationService service = new DelegatingSerializationService(emptyMap(), DELEGATE);
+
+        // When
+        // Then
+        assertThat(service.serializerFor(TYPE_ID).getImpl()).isInstanceOf(ValueSerializer.class);
+        assertThat(service.serializerFor(new Value()).getImpl()).isInstanceOf(ValueSerializer.class);
+    }
+
+    @Test
     public void when_multipleTypeSerializersRegistered_then_localHasPrecedence() {
         // Given
-        Map<Class<?>, Serializer> serializers = ImmutableMap.of(Byte.class, new CustomByteSerializer());
+        Serializer serializer = new ValueSerializer();
+        Map<Class<?>, Serializer> serializers = ImmutableMap.of(Byte.class, serializer);
 
         DelegatingSerializationService service = new DelegatingSerializationService(serializers, DELEGATE);
 
         // When
         // Then
-        assertThat(service.serializerFor(CONSTANT_TYPE_BYTE).getImpl()).isInstanceOf(CustomByteSerializer.class);
-        assertThat(service.serializerFor(Byte.valueOf((byte) 1)).getImpl()).isInstanceOf(CustomByteSerializer.class);
+        assertThat(service.serializerFor(TYPE_ID).getImpl()).isEqualTo(serializer);
+        assertThat(service.serializerFor(Byte.valueOf((byte) 1)).getImpl()).isEqualTo(serializer);
     }
 
     @Test
@@ -92,21 +135,23 @@ public class DelegatingSerializationServiceTest {
     private static class Value {
     }
 
-    private static class CustomByteSerializer implements StreamSerializer<Byte> {
+    private static class UnregisteredValue {
+    }
+
+    private static class ValueSerializer implements StreamSerializer<Value> {
 
         @Override
         public int getTypeId() {
-            return CONSTANT_TYPE_BYTE;
+            return TYPE_ID;
         }
 
         @Override
-        public void write(ObjectDataOutput output, Byte value) throws IOException {
-            output.writeByte(value);
+        public void write(ObjectDataOutput output, Value value) {
         }
 
         @Override
-        public Byte read(ObjectDataInput input) throws IOException {
-            return input.readByte();
+        public Value read(ObjectDataInput input) {
+            return new Value();
         }
     }
 }

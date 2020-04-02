@@ -54,29 +54,33 @@ public class DelegatingSerializationService extends AbstractSerializationService
                                           AbstractSerializationService delegate) {
         super(delegate);
 
-        Map<Class<?>, SerializerAdapter> serializersByClass;
-        Map<Integer, SerializerAdapter> serializersById;
         if (serializers.isEmpty()) {
-            serializersByClass = emptyMap();
-            serializersById = emptyMap();
+            this.serializersByClass = emptyMap();
+            this.serializersById = emptyMap();
         } else {
-            serializersByClass = new HashMap<>();
-            serializersById = new HashMap<>();
+            Map<Class<?>, SerializerAdapter> serializersByClass = new HashMap<>();
+            Map<Integer, SerializerAdapter> serializersById = new HashMap<>();
             serializers.forEach((clazz, serializer) -> {
-                if (serializersById.containsKey(serializer.getTypeId())) {
-                    Serializer registered = serializersById.get(serializer.getTypeId()).getImpl();
-                    throw new IllegalStateException("Cannot register Serializer[" + serializer.getClass().getName()
-                            + "] - " + registered.getClass().getName() + " has been already registered for type ID: " +
-                            serializer.getTypeId());
+                int typeId = serializer.getTypeId();
+                String serializerClassName = serializer.getClass().getName();
+
+                if (typeId <= 0) {
+                    throw new IllegalArgumentException("Cannot register Serializer[" + serializerClassName + "] - " +
+                            "typeId should be > 0");
+                }
+                if (serializersById.containsKey(typeId)) {
+                    Serializer registered = serializersById.get(typeId).getImpl();
+                    throw new IllegalStateException("Cannot register Serializer[" + serializerClassName + "] - " +
+                            registered.getClass().getName() + " has been already registered for type ID: " + typeId);
                 }
 
                 SerializerAdapter serializerAdapter = createSerializerAdapter(serializer);
                 serializersByClass.put(clazz, serializerAdapter);
-                serializersById.put(serializerAdapter.getImpl().getTypeId(), serializerAdapter);
+                serializersById.put(typeId, serializerAdapter);
             });
+            this.serializersByClass = serializersByClass;
+            this.serializersById = serializersById;
         }
-        this.serializersByClass = serializersByClass;
-        this.serializersById = serializersById;
 
         this.delegate = delegate;
 

@@ -181,7 +181,7 @@ public class JobSerializerTest extends SimpleTestInClusterSupport {
         client().newJob(pipeline, jobConfig()).join();
 
         IList<Value> list = client().getList(SINK_LIST_NAME);
-        assertThat(list).containsExactly(
+        assertThat(list).containsExactlyInAnyOrder(
                 new Value(1), new Value(2)
         );
     }

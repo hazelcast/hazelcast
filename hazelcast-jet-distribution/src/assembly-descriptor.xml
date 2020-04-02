@@ -38,6 +38,7 @@
             <useProjectArtifact>false</useProjectArtifact>
             <includes>
                 <include>com.hazelcast.jet:hazelcast-jet-avro</include>
+                <include>com.hazelcast.jet:hazelcast-jet-protobuf</include>
                 <include>com.hazelcast.jet:hazelcast-jet-spring</include>
                 <include>com.hazelcast.jet:hazelcast-jet-python</include>
                 <include>com.hazelcast.jet:hazelcast-jet-hadoop</include>

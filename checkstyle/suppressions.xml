@@ -65,4 +65,7 @@
     <!-- Suppress checks for auto-generated client protocol codecs -->
     <suppress checks="UnusedImports|LineLength|VisibilityModifier|AvoidStarImport|RegexpSingleline|ParameterNumber"
     files="src[\\/]main[\\/]java[\\/]com[\\/]hazelcast[\\/]jet[\\/]impl[\\/]client[\\/]protocol[\\/]codec[\\/]"/>
+
+    <!-- Suppress checks for auto-generated test classes -->
+    <suppress checks="" files="generated-test-sources"/>
 </suppressions>
