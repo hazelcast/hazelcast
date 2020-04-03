@@ -145,7 +145,7 @@ See the following architecture pages for more insight into the internals of Jet:
 
 ## Connectors
 
-You can see a full list of connectors at the (Sources and Sink)[https://jet-start.sh/docs/api/sources-sinks] section of the docs. A summary is below:
+You can see a full list of connectors at the [Sources and Sink](https://jet-start.sh/docs/api/sources-sinks) section of the docs. A summary is below:
 
 | Name                                                         | Description                                                  |
 | ------------------------------------------------------------ | ------------------------------------------------------------ |
