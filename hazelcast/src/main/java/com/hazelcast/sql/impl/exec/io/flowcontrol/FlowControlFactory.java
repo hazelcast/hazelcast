@@ -14,25 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql;
+package com.hazelcast.sql.impl.exec.io.flowcontrol;
 
 /**
- * Error codes used in Hazelcast SQL.
+ * Factory for flow control objects.
  */
-public final class SqlErrorCode {
-    /** Generic error. */
-    public static final int GENERIC = -1;
-
-    /** Query completed successfully. */
-    public static final int OK = 0;
-
-    /** Member cannot be reached. */
-    public static final int MEMBER_CONNECTION = 1001;
-
-    /** An error with data conversion or transformation. */
-    public static final int DATA_EXCEPTION = 2000;
-
-    private SqlErrorCode() {
-        // No-op.
-    }
+public interface FlowControlFactory {
+    /**
+     * Create the flow control with the given initial memory constraints.
+     *
+     * @param initialMemory Initial memory sender and receiver agreed upon query start.
+     * @return Flow control object.
+     */
+    FlowControl create(long initialMemory);
 }

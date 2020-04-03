@@ -14,25 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql;
+package com.hazelcast.sql.impl.exec.io;
 
 /**
- * Error codes used in Hazelcast SQL.
+ * Qualified that sends all rows.
  */
-public final class SqlErrorCode {
-    /** Generic error. */
-    public static final int GENERIC = -1;
+public final class AlwaysTrueOutboxSendQualifier implements OutboxSendQualifier {
 
-    /** Query completed successfully. */
-    public static final int OK = 0;
+    public static final AlwaysTrueOutboxSendQualifier INSTANCE = new AlwaysTrueOutboxSendQualifier();
 
-    /** Member cannot be reached. */
-    public static final int MEMBER_CONNECTION = 1001;
-
-    /** An error with data conversion or transformation. */
-    public static final int DATA_EXCEPTION = 2000;
-
-    private SqlErrorCode() {
+    private AlwaysTrueOutboxSendQualifier() {
         // No-op.
+    }
+
+    @Override
+    public boolean shouldSend(int rowIndex) {
+        return true;
     }
 }

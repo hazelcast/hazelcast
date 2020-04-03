@@ -16,33 +16,15 @@
 
 package com.hazelcast.sql.impl.operation;
 
-import java.util.UUID;
-
 /**
- * Query operation executor.
+ * A channel for ordered execution of multiple operations.
  */
-public interface QueryOperationHandler {
+public interface QueryOperationChannel {
     /**
-     * Submit operation for execution on a member.
-     *
-     * @param memberId ID of the member.
-     * @param operation Operation to be executed.
-     * @return {@code true} if operation is triggered, {@code false} if target member is not available.
-     */
-    boolean submit(UUID memberId, QueryOperation operation);
-
-    /**
-     * Execute the operation synchronously.
+     * Submit operation for execution. Order of execution is preserved across invocations.
      *
      * @param operation Operation.
+     * @return {@code True} if operation was submitted for execution successfully, {@code false} if the channel is broken.
      */
-    void execute(QueryOperation operation);
-
-    /**
-     * Create a channel for ordered operation scheduling.
-     *
-     * @param memberId Member ID.
-     * @return Channel.
-     */
-    QueryOperationChannel createChannel(UUID memberId);
+    boolean submit(QueryOperation operation);
 }

@@ -14,25 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql;
+package com.hazelcast.sql.impl.exec.io;
 
 /**
- * Error codes used in Hazelcast SQL.
+ * The interface that defines whether the row at the given index qualifies to be sent through this outbox.
  */
-public final class SqlErrorCode {
-    /** Generic error. */
-    public static final int GENERIC = -1;
-
-    /** Query completed successfully. */
-    public static final int OK = 0;
-
-    /** Member cannot be reached. */
-    public static final int MEMBER_CONNECTION = 1001;
-
-    /** An error with data conversion or transformation. */
-    public static final int DATA_EXCEPTION = 2000;
-
-    private SqlErrorCode() {
-        // No-op.
-    }
+public interface OutboxSendQualifier {
+    /**
+     * @param rowIndex Index of the row in the batch.
+     * @return {@code true} if the row should be sent by this outbox, {@code false} if the row should be skipped.
+     */
+    boolean shouldSend(int rowIndex);
 }

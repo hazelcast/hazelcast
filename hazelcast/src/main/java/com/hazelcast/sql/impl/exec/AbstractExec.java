@@ -29,6 +29,7 @@ public abstract class AbstractExec implements Exec {
 
     protected QueryFragmentContext ctx;
     private final int id;
+    private boolean done;
 
     protected AbstractExec(int id) {
         this.id = id;
@@ -48,7 +49,17 @@ public abstract class AbstractExec implements Exec {
 
     @Override
     public final IterationResult advance() {
-        return advance0();
+        if (done) {
+            throw new IllegalStateException("Iteration is finished.");
+        }
+
+        IterationResult res = advance0();
+
+        if (res == IterationResult.FETCHED_DONE) {
+            done = true;
+        }
+
+        return res;
     }
 
     @Override

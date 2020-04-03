@@ -42,6 +42,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
+import static com.hazelcast.sql.impl.operation.QueryExecuteOperationFragmentMapping.EXPLICIT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -69,7 +70,7 @@ public class QueryOperationsTest extends SqlTestSupport {
         assertEquals(original.getFragments(), restored.getFragments());
         assertEquals(original.getOutboundEdgeMap(), restored.getOutboundEdgeMap());
         assertEquals(original.getInboundEdgeMap(), restored.getInboundEdgeMap());
-        assertEquals(original.getEdgeCreditMap(), restored.getEdgeCreditMap());
+        assertEquals(original.getEdgeInitialMemoryMap(), restored.getEdgeInitialMemoryMap());
         assertEquals(original.getArguments(), restored.getArguments());
         assertEquals(original.getTimeout(), restored.getTimeout());
 
@@ -196,9 +197,9 @@ public class QueryOperationsTest extends SqlTestSupport {
         partitionMapping.put(randomUUID(), new PartitionIdSet(10));
 
         List<QueryExecuteOperationFragment> fragments = new ArrayList<>();
-        fragments.add(new QueryExecuteOperationFragment(MockPlanNode.create(1, QueryDataType.INT),
+        fragments.add(new QueryExecuteOperationFragment(MockPlanNode.create(1, QueryDataType.INT), EXPLICIT,
             Arrays.asList(randomUUID(), randomUUID())));
-        fragments.add(new QueryExecuteOperationFragment(MockPlanNode.create(2, QueryDataType.INT),
+        fragments.add(new QueryExecuteOperationFragment(MockPlanNode.create(2, QueryDataType.INT), EXPLICIT,
             Arrays.asList(randomUUID(), randomUUID())));
 
         Map<Integer, Integer> outboundEdgeMap = new HashMap<>();
@@ -225,7 +226,7 @@ public class QueryOperationsTest extends SqlTestSupport {
         assertEquals(fragments, res.getFragments());
         assertEquals(outboundEdgeMap, res.getOutboundEdgeMap());
         assertEquals(inboundEdgeMap, res.getInboundEdgeMap());
-        assertEquals(edgeCreditMap, res.getEdgeCreditMap());
+        assertEquals(edgeCreditMap, res.getEdgeInitialMemoryMap());
         assertEquals(arguments, res.getArguments());
         assertEquals(timeout, res.getTimeout());
 

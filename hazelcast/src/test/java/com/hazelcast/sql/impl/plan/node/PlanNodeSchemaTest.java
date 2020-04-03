@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.plan.node;
 
+import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -24,7 +25,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -32,16 +33,13 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class PlanNodeSchemaTest {
+public class PlanNodeSchemaTest extends SqlTestSupport {
     @Test
     public void testSingleSchema() {
         QueryDataType type0 = QueryDataType.VARCHAR;
         QueryDataType type1 = QueryDataType.DOUBLE;
 
-        List<QueryDataType> types = new ArrayList<>(2);
-
-        types.add(type0);
-        types.add(type1);
+        List<QueryDataType> types = Arrays.asList(type0, type1);
 
         PlanNodeSchema schema = new PlanNodeSchema(types);
 
@@ -65,5 +63,14 @@ public class PlanNodeSchemaTest {
         assertEquals(2, combinedSchema.getTypes().size());
         assertEquals(type0, combinedSchema.getType(0));
         assertEquals(type1, combinedSchema.getType(1));
+    }
+
+    @Test
+    public void testEquals() {
+        List<QueryDataType> types1 = Arrays.asList(QueryDataType.INT, QueryDataType.VARCHAR);
+        List<QueryDataType> types2 = Arrays.asList(QueryDataType.DECIMAL, QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME);
+
+        checkEquals(new PlanNodeSchema(types1), new PlanNodeSchema(types1), true);
+        checkEquals(new PlanNodeSchema(types1), new PlanNodeSchema(types2), false);
     }
 }

@@ -164,7 +164,7 @@ public class AbstractPlanNodesTest {
         }
     }
 
-    private static class TestPlanNodeVisitor implements PlanNodeVisitor {
+    private static class TestPlanNodeVisitor extends TestPlanNodeVisitorAdapter {
 
         private final ArrayList<PlanNode> nodes = new ArrayList<>();
 

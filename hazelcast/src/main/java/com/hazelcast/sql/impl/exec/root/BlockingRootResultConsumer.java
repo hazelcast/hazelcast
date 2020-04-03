@@ -53,13 +53,13 @@ public class BlockingRootResultConsumer implements RootResultConsumer {
 
     @Override
     public boolean consume(List<Row> batch, boolean last) {
-        assert !batch.isEmpty();
-
         synchronized (mux) {
             assert !done;
 
             if (currentBatch == null) {
-                currentBatch = batch;
+                if (!batch.isEmpty()) {
+                    currentBatch = batch;
+                }
 
                 if (last) {
                     done = true;

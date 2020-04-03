@@ -19,7 +19,14 @@ package com.hazelcast.sql.impl;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.row.HeapRow;
+import com.hazelcast.sql.impl.row.ListRowBatch;
+import com.hazelcast.sql.impl.row.Row;
+import com.hazelcast.sql.impl.row.RowBatch;
 import com.hazelcast.test.HazelcastTestSupport;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -55,5 +62,25 @@ public class SqlTestSupport extends HazelcastTestSupport {
         assertEquals(expectedClassId, original.getClassId());
 
         return serialize(original);
+    }
+
+    public static ListRowBatch createMonotonicBatch(int startValue, int size) {
+        List<Row> rows = new ArrayList<>(size);
+
+        for (int i = startValue; i < startValue + size; i++) {
+            rows.add(HeapRow.of(i));
+        }
+
+        return new ListRowBatch(rows);
+    }
+
+    public static void checkMonotonicBatch(RowBatch batch, int start, int size) {
+        assertEquals(size, batch.getRowCount());
+
+        for (int i = 0; i < size; i++) {
+            int value = batch.getRow(i).get(0);
+
+            assertEquals(start + i, value);
+        }
     }
 }

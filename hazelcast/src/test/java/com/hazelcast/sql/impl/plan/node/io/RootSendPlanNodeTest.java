@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.plan.node;
+package com.hazelcast.sql.impl.plan.node.io;
 
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlTestSupport;
+import com.hazelcast.sql.impl.plan.node.MockPlanNode;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -30,36 +31,42 @@ import static org.junit.Assert.assertSame;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class RootPlanNodeTest extends SqlTestSupport {
+public class RootSendPlanNodeTest extends SqlTestSupport {
     @Test
     public void testState() {
         int id = 1;
         MockPlanNode upstream = MockPlanNode.create(2);
+        int edgeId = 3;
 
-        RootPlanNode node = new RootPlanNode(id, upstream);
+        RootSendPlanNode node = new RootSendPlanNode(id, upstream, edgeId);
 
         assertEquals(id, node.getId());
         assertSame(upstream, node.getUpstream());
+        assertEquals(edgeId, node.getEdgeId());
         assertEquals(upstream.getSchema(), node.getSchema());
     }
 
     @Test
     public void testEquality() {
-        MockPlanNode upstream1 = MockPlanNode.create(1);
-        MockPlanNode upstream2 = MockPlanNode.create(2);
+        int id1 = 1;
+        int id2 = 2;
 
-        int id1 = 3;
-        int id2 = 4;
+        MockPlanNode upstream1 = MockPlanNode.create(3);
+        MockPlanNode upstream2 = MockPlanNode.create(4);
 
-        checkEquals(new RootPlanNode(id1, upstream1), new RootPlanNode(id1, upstream1), true);
-        checkEquals(new RootPlanNode(id1, upstream1), new RootPlanNode(id2, upstream1), false);
-        checkEquals(new RootPlanNode(id1, upstream1), new RootPlanNode(id1, upstream2), false);
+        int edgeId1 = 5;
+        int edgeId2 = 6;
+
+        checkEquals(new RootSendPlanNode(id1, upstream1, edgeId1), new RootSendPlanNode(id1, upstream1, edgeId1), true);
+        checkEquals(new RootSendPlanNode(id1, upstream1, edgeId1), new RootSendPlanNode(id2, upstream1, edgeId1), false);
+        checkEquals(new RootSendPlanNode(id1, upstream1, edgeId1), new RootSendPlanNode(id1, upstream2, edgeId1), false);
+        checkEquals(new RootSendPlanNode(id1, upstream1, edgeId1), new RootSendPlanNode(id1, upstream1, edgeId2), false);
     }
 
     @Test
     public void testSerialization() {
-        RootPlanNode original = new RootPlanNode(1, MockPlanNode.create(2));
-        RootPlanNode restored = serializeAndCheck(original, SqlDataSerializerHook.NODE_ROOT);
+        RootSendPlanNode original = new RootSendPlanNode(1, MockPlanNode.create(2), 3);
+        RootSendPlanNode restored = serializeAndCheck(original, SqlDataSerializerHook.NODE_ROOT_SEND);
 
         checkEquals(original, restored, true);
     }

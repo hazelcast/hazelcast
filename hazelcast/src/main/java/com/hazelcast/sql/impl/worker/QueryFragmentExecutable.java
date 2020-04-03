@@ -18,9 +18,9 @@ package com.hazelcast.sql.impl.worker;
 
 import com.hazelcast.sql.impl.exec.Exec;
 import com.hazelcast.sql.impl.exec.IterationResult;
-import com.hazelcast.sql.impl.mailbox.InboundHandler;
-import com.hazelcast.sql.impl.mailbox.InboundBatch;
-import com.hazelcast.sql.impl.mailbox.OutboundHandler;
+import com.hazelcast.sql.impl.exec.io.InboundHandler;
+import com.hazelcast.sql.impl.exec.io.InboundBatch;
+import com.hazelcast.sql.impl.exec.io.OutboundHandler;
 import com.hazelcast.sql.impl.operation.QueryBatchExchangeOperation;
 import com.hazelcast.sql.impl.operation.QueryAbstractExchangeOperation;
 import com.hazelcast.sql.impl.operation.QueryFlowControlExchangeOperation;
@@ -150,7 +150,7 @@ public class QueryFragmentExecutable implements QueryFragmentScheduleCallback {
             // Send flow control messages if needed.
             if (res != IterationResult.FETCHED_DONE) {
                 for (InboundHandler inbox : inboxes.values()) {
-                    inbox.sendFlowControl();
+                    inbox.onFragmentExecutionCompleted();
                 }
             }
 

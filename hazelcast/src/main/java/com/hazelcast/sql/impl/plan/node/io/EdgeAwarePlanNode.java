@@ -14,25 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql;
+package com.hazelcast.sql.impl.plan.node.io;
+
+import com.hazelcast.sql.impl.plan.node.PlanNode;
 
 /**
- * Error codes used in Hazelcast SQL.
+ * Common interface for all input-output nodes.
  */
-public final class SqlErrorCode {
-    /** Generic error. */
-    public static final int GENERIC = -1;
+public interface EdgeAwarePlanNode extends PlanNode {
+    /**
+     * @return {@code True} if this is an outbound node, {@code false} if this is an inbound node.
+     */
+    boolean isSender();
 
-    /** Query completed successfully. */
-    public static final int OK = 0;
-
-    /** Member cannot be reached. */
-    public static final int MEMBER_CONNECTION = 1001;
-
-    /** An error with data conversion or transformation. */
-    public static final int DATA_EXCEPTION = 2000;
-
-    private SqlErrorCode() {
-        // No-op.
-    }
+    /**
+     * @return Edge ID.
+     */
+    int getEdgeId();
 }
