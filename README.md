@@ -14,27 +14,26 @@ Hazelcast is an open-source distributed in-memory data store and
 computation platform. It provides a wide variety of distributed data
 structures and concurrency primitives, including:
 
-* A distributed, partitioned and queryable in-memory key-value store
+* a distributed, partitioned and queryable in-memory key-value store
   implementation, called `IMap`
-* Additional data structures and simple messaging constructs such as
+* additional data structures and simple messaging constructs such as
   `Set`, `MultiMap`, `Queue`, `Topic`
-* A cluster-wide unique ID generator, called `FlakeIdGenerator`
-* A distributed,
-  [CRDT](https://en.wikipedia.org/wiki/Conflict-free_replicated_data_type)
+* cluster-wide unique ID generator, called `FlakeIdGenerator`
+* a distributed, [CRDT](https://en.wikipedia.org/wiki/Conflict-free_replicated_data_type)
   based counter, called `PNCounter`
-* A cardinality estimator based on [`HyperLogLog`](https://en.wikipedia.org/wiki/HyperLogLog)
+* a cardinality estimator based on [`HyperLogLog`](https://en.wikipedia.org/wiki/HyperLogLog)
 
 Additionally, Hazelcast includes a production-ready
 [Raft](https://en.wikipedia.org/wiki/Raft_(computer_science))
 implementation which allows implementation of _linearizable_ constructs
 such as:
 
-* A distributed and reentrant lock implementation, called `FencedLock`
-* Primitives for distributed computing such as `AtomicLong`,
-`AtomicReference` `CountDownLatch`
+* a distributed and reentrant lock implementation, called `FencedLock`
+* primitives for distributed computing such as `AtomicLong`,
+`AtomicReference` and `CountDownLatch`
 
-Hazelcast data-structures are in-memory, highly optimized and offer very
-low latencies. For a single `get` or `put` operation on a `IMap`, you
+Hazelcast data structures are in-memory, highly optimized and offer very
+low latencies. For a single `get` or `put` operation on an `IMap`, you
 can typically expect a round-trip-time of under _100 microseconds_.
 
 It's very simple to form a cluster with Hazelcast, you can easily do it
@@ -56,7 +55,7 @@ Hazelcast comes with clients in the following programming languages:
 * [Go](https://github.com/hazelcast/hazelcast-go-client)
 
 Hazelcast also has first-class support for running on different
-cloud providers such as [AWS](https://github.com/hazelcast/hazelcast-aws), 
+cloud providers such as [AWS](https://github.com/hazelcast/hazelcast-aws),
 [GCP](https://github.com/hazelcast/hazelcast-gcp) 
 and [Azure](https://github.com/hazelcast/hazelcast-azure)
 as well as on [Kubernetes](https://github.com/hazelcast/hazelcast-kubernetes).
@@ -64,15 +63,15 @@ as well as on [Kubernetes](https://github.com/hazelcast/hazelcast-kubernetes).
 ## Download
 
 You can download Hazelcast from
-[www.hazelcast.org](http://hazelcast.org/download/). Once you have
+[hazelcast.org](http://hazelcast.org/download/). Once you have
 downloaded, you can start the Hazelcast instance using the script
-`bin/start.sh`. 
+`bin/start.sh`.
 
 ## Get Started
 
-Hazelcast allows you to interact with a cluster using a simple 
-API, for example you can use the Hazelcast Java Client to connect
-to a running cluster and perform operations on it:
+Hazelcast allows you to interact with a cluster using a simple API, for
+example you can use the Hazelcast Java Client to connect to a running
+cluster and perform operations on it:
 
 ```java
 HazelcastInstance hz = HazelcastClient.newHazelcastClient();
@@ -109,10 +108,19 @@ See [Hazelcast Code Samples](https://github.com/hazelcast/hazelcast-code-samples
 
 [Hazelcast Jet](https://jet-start.sh) is a distributed batch and stream
 processing framework based on Hazelcast. It can be used to import/export
-data to/from Hazelcast using a very wide variety of data sources
+data from/to Hazelcast using a very wide variety of data sources
 including Hadoop, S3, Apache Kafka, Elasticsearch, JDBC and JMS.
 
-## Contributing to Hazelcast
+## Get Help
+
+You can use the following channels for getting help with Hazelcast:
+
+* [Hazelcast mailing list](http://groups.google.com/group/hazelcast)
+* [Gitter](https://gitter.im/hazelcast/hazelcast) for chatting with the
+  development team and other Hazelcast users.
+* [Stack Overflow](https://stackoverflow.com/tags/hazelcast)
+
+## Contributing
 
 We encourage Pull Requests and process them promptly.
 
@@ -127,12 +135,8 @@ discuss.
 ### Using Snapshot Releases
 
 Maven snippet:
-````xml
-<dependency>
-    <groupId>com.hazelcast</groupId>
-    <artifactId>hazelcast</artifactId>
-    <version>${hazelcast.version}</version>
-</dependency>
+
+```xml
 <repository>
     <id>sonatype-snapshots</id>
     <name>Sonatype Snapshot Repository</name>
@@ -144,7 +148,12 @@ Maven snippet:
         <enabled>true</enabled>
     </snapshots>
 </repository>
-````
+<dependency>
+    <groupId>com.hazelcast</groupId>
+    <artifactId>hazelcast</artifactId>
+    <version>${hazelcast.version}</version>
+</dependency>
+```
 
 ### Building From Source
 
@@ -155,9 +164,12 @@ package) to build `mvn clean install`.
 
 Hazelcast has 3 testing profiles:
 
-* **Default**: Type `mvn test` to run quick/integration tests (those can be run in parallel without using network).
-* **Slow Tests**: Type `mvn test -P slow-test` to run tests that are either slow or cannot be run in parallel.
-* **All Tests**: Type `mvn test -P all-tests` to run all tests serially using network.
+* **Default**: Type `mvn test` to run quick/integration tests (those can
+  be run in parallel without using network).
+* **Slow Tests**: Type `mvn test -P slow-test` to run tests that are
+  either slow or cannot be run in parallel.
+* **All Tests**: Type `mvn test -P all-tests` to run all tests serially
+  using network.
 
 ### Checkstyle and SpotBugs
 
@@ -165,23 +177,19 @@ Hazelcast uses static code analysis tools to check if a Pull Request is
 ready for merge. Run the following commands locally to check if your
 contribution is Checkstyle and SpotBugs compatible.
 
-```
+```bash
 mvn clean validate -P checkstyle
 ```
 
-```
+```bash
 mvn clean compile -P spotbugs
 ```
 
-## Mail Group
-
-Please join the mail group if you are interested in using or developing Hazelcast.
-
-[http://groups.google.com/group/hazelcast](http://groups.google.com/group/hazelcast)
-
 ## License
 
-Hazelcast is available under the Apache 2 License. Please see the [Licensing section](http://docs.hazelcast.org/docs/latest-dev/manual/html-single/index.html#licensing) for more information.
+Hazelcast is available under the Apache 2 License. Please see the
+[Licensing section](http://docs.hazelcast.org/docs/latest-dev/manual/html-single/index.html#licensing)
+for more information.
 
 ## Copyright
 
