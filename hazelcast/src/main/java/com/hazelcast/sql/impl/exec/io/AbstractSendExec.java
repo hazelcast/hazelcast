@@ -19,7 +19,6 @@ package com.hazelcast.sql.impl.exec.io;
 import com.hazelcast.sql.impl.exec.AbstractUpstreamAwareExec;
 import com.hazelcast.sql.impl.exec.Exec;
 import com.hazelcast.sql.impl.exec.IterationResult;
-import com.hazelcast.sql.impl.exec.io.mailbox.Outbox;
 import com.hazelcast.sql.impl.row.RowBatch;
 
 /**
@@ -127,7 +126,7 @@ public abstract class AbstractSendExec extends AbstractUpstreamAwareExec {
         boolean res = true;
 
         for (int outboxIndex = 0; outboxIndex < getOutboxCount(); outboxIndex++) {
-            SendQualifier qualifier = getOutboxQualifier(outboxIndex);
+            OutboxSendQualifier qualifier = getOutboxQualifier(outboxIndex);
 
             int position = getOutbox(outboxIndex).onRowBatch(batch, last, 0, qualifier);
 
@@ -162,7 +161,7 @@ public abstract class AbstractSendExec extends AbstractUpstreamAwareExec {
 
     protected abstract void setCurrentBatch(RowBatch batch);
 
-    protected abstract SendQualifier getOutboxQualifier(int outboxIndex);
+    protected abstract OutboxSendQualifier getOutboxQualifier(int outboxIndex);
 
     protected abstract void addPendingPosition(int outboxIndex, int position);
 

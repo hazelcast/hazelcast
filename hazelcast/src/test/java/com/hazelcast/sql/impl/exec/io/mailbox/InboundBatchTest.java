@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.exec.io.mailbox;
 
+import com.hazelcast.sql.impl.exec.io.InboundBatch;
 import com.hazelcast.sql.impl.row.ListRowBatch;
 import com.hazelcast.sql.impl.row.RowBatch;
 import com.hazelcast.test.HazelcastParallelClassRunner;

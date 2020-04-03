@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.exec.io.mailbox;
+package com.hazelcast.sql.impl.exec.io;
 
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.sql.impl.exec.io.SendQualifier;
 import com.hazelcast.sql.impl.operation.QueryBatchExchangeOperation;
 import com.hazelcast.sql.impl.operation.QueryOperationChannel;
 import com.hazelcast.sql.impl.operation.QueryOperationHandler;
@@ -87,7 +86,7 @@ public class Outbox extends AbstractMailbox implements OutboundHandler {
      * @param qualifier Qualifier.
      * @return Sending position.
      */
-    public int onRowBatch(RowBatch batch, boolean last, int position, SendQualifier qualifier) {
+    public int onRowBatch(RowBatch batch, boolean last, int position, OutboxSendQualifier qualifier) {
         // Get maximum number of rows which could be sent given the current memory constraints.
         int maxAcceptedRows = (int) (remainingMemory / rowWidth);
         int acceptedRows = 0;

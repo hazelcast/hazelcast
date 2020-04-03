@@ -14,26 +14,22 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.exec.io.mailbox;
-
-import com.hazelcast.sql.impl.QueryId;
+package com.hazelcast.sql.impl.exec.io;
 
 /**
- * Base class for inboxes and outboxes.
+ * Core interface for inbound message processing.
  */
-public abstract class AbstractMailbox {
-    /** Query ID. */
-    protected final QueryId queryId;
+public interface InboundHandler {
+    /**
+     * Handle batch from the remote outbound handler.
+     *
+     * @param batch Data batch.
+     * @param remainingMemory Amount of available memory as seen by the remote outbound handler.
+     */
+    void onBatch(InboundBatch batch, long remainingMemory);
 
-    /** Edge ID. */
-    protected final int edgeId;
-
-    /** Width of a single row in bytes. */
-    protected final int rowWidth;
-
-    public AbstractMailbox(QueryId queryId, int edgeId, int rowWidth) {
-        this.queryId = queryId;
-        this.edgeId = edgeId;
-        this.rowWidth = rowWidth;
-    }
+    /**
+     * A callback invoked the fragment that owns this handler is finished.
+     */
+    void onFragmentExecutionCompleted();
 }

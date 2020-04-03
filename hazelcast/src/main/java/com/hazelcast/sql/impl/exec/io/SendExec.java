@@ -17,19 +17,18 @@
 package com.hazelcast.sql.impl.exec.io;
 
 import com.hazelcast.sql.impl.exec.Exec;
-import com.hazelcast.sql.impl.exec.io.mailbox.Outbox;
 import com.hazelcast.sql.impl.row.RowBatch;
 import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 
 /**
  * Sender which communicates with a single outbox.
  */
-public class SingleSendExec extends AbstractSendExec {
+public class SendExec extends AbstractSendExec {
 
     private final Outbox outbox;
     private int pendingPosition;
 
-    public SingleSendExec(int id, Exec upstream, Outbox outbox) {
+    public SendExec(int id, Exec upstream, Outbox outbox) {
         super(id, upstream);
 
         this.outbox = outbox;
@@ -56,7 +55,7 @@ public class SingleSendExec extends AbstractSendExec {
     }
 
     @Override
-    protected SendQualifier getOutboxQualifier(int outboxIndex) {
+    protected OutboxSendQualifier getOutboxQualifier(int outboxIndex) {
         return getOutboxQualifier();
     }
 
@@ -80,7 +79,7 @@ public class SingleSendExec extends AbstractSendExec {
         }
     }
 
-    private AlwaysTrueSendQualifier getOutboxQualifier() {
-        return AlwaysTrueSendQualifier.INSTANCE;
+    private AlwaysTrueOutboxSendQualifier getOutboxQualifier() {
+        return AlwaysTrueOutboxSendQualifier.INSTANCE;
     }
 }

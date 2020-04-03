@@ -27,16 +27,16 @@ import com.hazelcast.sql.impl.exec.index.MapIndexScanExec;
 import com.hazelcast.sql.impl.exec.io.BroadcastSendExec;
 import com.hazelcast.sql.impl.exec.io.ReceiveExec;
 import com.hazelcast.sql.impl.exec.io.ReceiveSortMergeExec;
-import com.hazelcast.sql.impl.exec.io.SingleSendExec;
+import com.hazelcast.sql.impl.exec.io.SendExec;
 import com.hazelcast.sql.impl.exec.io.UnicastSendExec;
 import com.hazelcast.sql.impl.exec.join.HashJoinExec;
 import com.hazelcast.sql.impl.exec.join.NestedLoopJoinExec;
 import com.hazelcast.sql.impl.exec.root.RootExec;
-import com.hazelcast.sql.impl.exec.io.mailbox.InboundHandler;
-import com.hazelcast.sql.impl.exec.io.mailbox.Inbox;
-import com.hazelcast.sql.impl.exec.io.mailbox.OutboundHandler;
-import com.hazelcast.sql.impl.exec.io.mailbox.Outbox;
-import com.hazelcast.sql.impl.exec.io.mailbox.StripedInbox;
+import com.hazelcast.sql.impl.exec.io.InboundHandler;
+import com.hazelcast.sql.impl.exec.io.Inbox;
+import com.hazelcast.sql.impl.exec.io.OutboundHandler;
+import com.hazelcast.sql.impl.exec.io.Outbox;
+import com.hazelcast.sql.impl.exec.io.StripedInbox;
 import com.hazelcast.sql.impl.exec.io.flowcontrol.FlowControl;
 import com.hazelcast.sql.impl.exec.io.flowcontrol.simple.SimpleFlowControl;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
@@ -202,7 +202,7 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
 
         assert outboxes.length == 1;
 
-        exec = new SingleSendExec(node.getId(), pop(), outboxes[0]);
+        exec = new SendExec(node.getId(), pop(), outboxes[0]);
     }
 
     @Override
@@ -210,7 +210,7 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
         Outbox[] outboxes = prepareOutboxes(node);
 
         if (outboxes.length == 1) {
-            exec = new SingleSendExec(node.getId(), pop(), outboxes[0]);
+            exec = new SendExec(node.getId(), pop(), outboxes[0]);
         } else {
             int[] partitionOutboxIndexes = new int[localParts.getPartitionCount()];
 
@@ -237,7 +237,7 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
         Outbox[] outboxes = prepareOutboxes(node);
 
         if (outboxes.length == 1) {
-            exec = new SingleSendExec(node.getId(), pop(), outboxes[0]);
+            exec = new SendExec(node.getId(), pop(), outboxes[0]);
         } else {
             exec = new BroadcastSendExec(node.getId(), pop(), outboxes);
         }

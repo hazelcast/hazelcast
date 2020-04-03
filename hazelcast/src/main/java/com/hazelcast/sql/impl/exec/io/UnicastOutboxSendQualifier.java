@@ -23,7 +23,7 @@ import com.hazelcast.sql.impl.partitioner.RowPartitioner;
 /**
  * Send qualifier for unicast sender.
  */
-public class UnicastSendQualifier implements SendQualifier {
+public class UnicastOutboxSendQualifier implements OutboxSendQualifier {
 
     private final RowPartitioner partitioner;
     private final int[] partitionOutboxIndexes;
@@ -34,7 +34,7 @@ public class UnicastSendQualifier implements SendQualifier {
 
     private int outboxIndex;
 
-    public UnicastSendQualifier(RowPartitioner partitioner, int[] partitionOutboxIndexes) {
+    public UnicastOutboxSendQualifier(RowPartitioner partitioner, int[] partitionOutboxIndexes) {
         this.partitioner = partitioner;
         this.partitionOutboxIndexes = partitionOutboxIndexes;
     }

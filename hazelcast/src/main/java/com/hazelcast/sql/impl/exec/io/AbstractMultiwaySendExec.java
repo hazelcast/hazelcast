@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.exec.io;
 
 import com.hazelcast.sql.impl.exec.Exec;
-import com.hazelcast.sql.impl.exec.io.mailbox.Outbox;
 import com.hazelcast.sql.impl.row.RowBatch;
 import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 
@@ -73,7 +72,7 @@ public abstract class AbstractMultiwaySendExec extends AbstractSendExec {
             int outboxIndex = entry.getKey();
             Position position = entry.getValue();
 
-            SendQualifier qualifier = getOutboxQualifier(outboxIndex);
+            OutboxSendQualifier qualifier = getOutboxQualifier(outboxIndex);
 
             int newPosition = getOutbox(outboxIndex).onRowBatch(pendingBatch, pendingLast, position.get(), qualifier);
 

@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.exec.io;
 
 import com.hazelcast.sql.impl.exec.Exec;
-import com.hazelcast.sql.impl.exec.io.mailbox.Outbox;
 import com.hazelcast.sql.impl.row.RowBatch;
 
 /**
@@ -29,8 +28,8 @@ public class BroadcastSendExec extends AbstractMultiwaySendExec {
     }
 
     @Override
-    protected SendQualifier getOutboxQualifier(int outboxIndex) {
-        return AlwaysTrueSendQualifier.INSTANCE;
+    protected OutboxSendQualifier getOutboxQualifier(int outboxIndex) {
+        return AlwaysTrueOutboxSendQualifier.INSTANCE;
     }
 
     @Override

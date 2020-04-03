@@ -16,19 +16,34 @@
 
 package com.hazelcast.sql.impl.exec.io;
 
+import com.hazelcast.sql.impl.row.RowBatch;
+
+import java.util.UUID;
+
 /**
- * Qualified that sends all rows.
+ * Mailbox batch received from the remote member.
  */
-public final class AlwaysTrueSendQualifier implements SendQualifier {
+public final class InboundBatch {
 
-    public static final AlwaysTrueSendQualifier INSTANCE = new AlwaysTrueSendQualifier();
+    private final RowBatch batch;
+    private final boolean last;
+    private final UUID senderId;
 
-    private AlwaysTrueSendQualifier() {
-        // No-op.
+    public InboundBatch(RowBatch batch, boolean last, UUID senderId) {
+        this.batch = batch;
+        this.last = last;
+        this.senderId = senderId;
     }
 
-    @Override
-    public boolean shouldSend(int rowIndex) {
-        return true;
+    public RowBatch getBatch() {
+        return batch;
+    }
+
+    public boolean isLast() {
+        return last;
+    }
+
+    public UUID getSenderId() {
+        return senderId;
     }
 }

@@ -14,16 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.exec.io.mailbox;
+package com.hazelcast.sql.impl.exec.io;
 
 /**
- * Core interface for outbound message processing.
+ * The interface that defines whether the row at the given index qualifies to be sent through this outbox.
  */
-public interface OutboundHandler {
+public interface OutboxSendQualifier {
     /**
-     * Handle flow control response from the remote inbound handler.
-     *
-     * @param remainingMemory The amount of memory that is available on the remote end.
+     * @param rowIndex Index of the row in the batch.
+     * @return {@code true} if the row should be sent by this outbox, {@code false} if the row should be skipped.
      */
-    void onFlowControl(long remainingMemory);
+    boolean shouldSend(int rowIndex);
 }

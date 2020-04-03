@@ -17,12 +17,18 @@
 package com.hazelcast.sql.impl.exec.io;
 
 /**
- * The interface that defines whether the row at the given index qualifies to be sent through this outbox.
+ * Qualified that sends all rows.
  */
-public interface SendQualifier {
-    /**
-     * @param rowIndex Index of the row in the batch.
-     * @return {@code true} if the row should be sent by this outbox, {@code false} if the row should be skipped.
-     */
-    boolean shouldSend(int rowIndex);
+public final class AlwaysTrueOutboxSendQualifier implements OutboxSendQualifier {
+
+    public static final AlwaysTrueOutboxSendQualifier INSTANCE = new AlwaysTrueOutboxSendQualifier();
+
+    private AlwaysTrueOutboxSendQualifier() {
+        // No-op.
+    }
+
+    @Override
+    public boolean shouldSend(int rowIndex) {
+        return true;
+    }
 }

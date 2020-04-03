@@ -14,22 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.exec.io.mailbox;
+package com.hazelcast.sql.impl.exec.io;
 
 /**
- * Core interface for inbound message processing.
+ * Core interface for outbound message processing.
  */
-public interface InboundHandler {
+public interface OutboundHandler {
     /**
-     * Handle batch from the remote outbound handler.
+     * Handle flow control response from the remote inbound handler.
      *
-     * @param batch Data batch.
-     * @param remainingMemory Amount of available memory as seen by the remote outbound handler.
+     * @param remainingMemory The amount of memory that is available on the remote end.
      */
-    void onBatch(InboundBatch batch, long remainingMemory);
-
-    /**
-     * A callback invoked the fragment that owns this handler is finished.
-     */
-    void onFragmentExecutionCompleted();
+    void onFlowControl(long remainingMemory);
 }
