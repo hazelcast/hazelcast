@@ -20,7 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.sql.impl.type.converter.Converter;
 import com.hazelcast.sql.impl.type.converter.Converters;
 
@@ -33,57 +33,67 @@ import java.util.Objects;
  * @param <T> Return type.
  */
 public class ConstantExpression<T> implements Expression<T> {
-    /** Value. */
-    private T val;
 
+    // TODO: remove type?
+    private QueryDataType type;
+    private T value;
+
+    @SuppressWarnings("unused")
     public ConstantExpression() {
         // No-op.
     }
 
-    private ConstantExpression(T val) {
-        this.val = val;
+    private ConstantExpression(QueryDataType type, T value) {
+        this.type = type;
+        this.value = value;
     }
 
-    public static ConstantExpression<?> create(Object val) {
-        // Normalize the constant to well-known type.
-        if (val != null) {
-            Converter converter = Converters.getConverter(val.getClass());
-
-            val = converter.convertToSelf(converter, val);
+    public static ConstantExpression<?> create(QueryDataType type, Object value) {
+        if (type.getTypeFamily() == QueryDataTypeFamily.NULL) {
+            assert value == null;
+            return new ConstantExpression<>(QueryDataType.NULL, null);
         }
 
-        return new ConstantExpression<>(val);
+        if (value == null) {
+            return new ConstantExpression<>(type, null);
+        }
+
+        Converter valueConverter = Converters.getConverter(value.getClass());
+        Converter typeConverter = type.getConverter();
+        value = typeConverter.convertToSelf(valueConverter, value);
+
+        return new ConstantExpression<>(type, value);
     }
 
     @Override
     public T eval(Row row, ExpressionEvalContext context) {
-        return val;
+        return value;
     }
 
     @Override
     public QueryDataType getType() {
-        // TODO: We may have a problem with NULL here, because it is resolved to LATE.
-        //  Probably we should introduce another type for NULL, which could be converted to any other type?
-        return QueryDataTypeUtils.resolveType(val);
+        return type;
     }
 
     public T getValue() {
-        return val;
+        return value;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeObject(val);
+        out.writeObject(value);
+        out.writeObject(type);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        val = in.readObject();
+        value = in.readObject();
+        type = in.readObject();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(val);
+        return Objects.hash(type, value);
     }
 
     @Override
@@ -98,11 +108,12 @@ public class ConstantExpression<T> implements Expression<T> {
 
         ConstantExpression<?> that = (ConstantExpression<?>) o;
 
-        return Objects.equals(val, that.val);
+        return Objects.equals(type, that.type) && Objects.equals(value, that.value);
     }
 
     @Override
     public String toString() {
-        return "ConstantExpression{val=" + val + '}';
+        return "ConstantExpression{type=" + type + ", value=" + value + '}';
     }
+
 }

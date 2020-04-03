@@ -36,6 +36,7 @@ import com.hazelcast.sql.impl.type.converter.LocalDateConverter;
 import com.hazelcast.sql.impl.type.converter.LocalDateTimeConverter;
 import com.hazelcast.sql.impl.type.converter.LocalTimeConverter;
 import com.hazelcast.sql.impl.type.converter.LongConverter;
+import com.hazelcast.sql.impl.type.converter.NullConverter;
 import com.hazelcast.sql.impl.type.converter.ObjectConverter;
 import com.hazelcast.sql.impl.type.converter.OffsetDateTimeConverter;
 import com.hazelcast.sql.impl.type.converter.ShortConverter;
@@ -91,6 +92,8 @@ public class QueryDataTypeTest extends SqlTestSupport {
         checkType(QueryDataType.TIMESTAMP_WITH_TZ_ZONED_DATE_TIME, ZonedDateTimeConverter.INSTANCE);
 
         checkType(QueryDataType.OBJECT, ObjectConverter.INSTANCE);
+
+        checkType(QueryDataType.NULL, NullConverter.INSTANCE);
     }
 
     @Test
@@ -123,11 +126,6 @@ public class QueryDataTypeTest extends SqlTestSupport {
     }
 
     @Test
-    public void testTypeResolutionByValue() {
-        assertEquals(QueryDataType.INT, QueryDataTypeUtils.resolveType(1));
-    }
-
-    @Test
     public void testTypeResolutionByClass() {
         checkResolvedTypeForClass(QueryDataType.VARCHAR, String.class);
         checkResolvedTypeForClass(QueryDataType.VARCHAR_CHARACTER, char.class, Character.class);
@@ -155,6 +153,8 @@ public class QueryDataTypeTest extends SqlTestSupport {
         checkResolvedTypeForClass(QueryDataType.INTERVAL_DAY_SECOND, SqlDaySecondInterval.class);
 
         checkResolvedTypeForClass(QueryDataType.OBJECT, Object.class, SqlCustomClass.class);
+
+        checkResolvedTypeForClass(QueryDataType.NULL, void.class, Void.class);
     }
 
     @Test
@@ -180,6 +180,8 @@ public class QueryDataTypeTest extends SqlTestSupport {
         checkResolvedTypeForTypeFamily(QueryDataType.INTERVAL_DAY_SECOND, QueryDataTypeFamily.INTERVAL_DAY_SECOND);
 
         checkResolvedTypeForTypeFamily(QueryDataType.OBJECT, QueryDataTypeFamily.OBJECT);
+
+        checkResolvedTypeForTypeFamily(QueryDataType.NULL, QueryDataTypeFamily.NULL);
     }
 
     @Test
@@ -201,6 +203,8 @@ public class QueryDataTypeTest extends SqlTestSupport {
         for (int i = 1; i < QueryDataType.PRECISION_BIGINT; i++) {
             checkPrecedence(QueryDataTypeUtils.integerType(i + 1), QueryDataTypeUtils.integerType(i));
         }
+
+        checkPrecedence(QueryDataType.VARCHAR, QueryDataType.NULL);
     }
 
     @Test

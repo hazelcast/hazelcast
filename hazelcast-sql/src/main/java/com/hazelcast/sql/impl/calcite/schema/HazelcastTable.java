@@ -65,6 +65,8 @@ public final class HazelcastTable extends AbstractTable {
 
         // TODO: Object type should be very restrictive, but currently all check for it are skipped. Use "STRUCTURED"?
         QUERY_TO_SQL_TYPE.put(QueryDataTypeFamily.OBJECT, SqlTypeName.ANY);
+
+        QUERY_TO_SQL_TYPE.put(QueryDataTypeFamily.NULL, SqlTypeName.NULL);
     }
 
     private final String schemaName;
@@ -147,8 +149,12 @@ public final class HazelcastTable extends AbstractTable {
 
         List<RelDataTypeField> fields = new ArrayList<>(fieldTypes.size());
         for (Map.Entry<String, QueryDataType> entry : fieldTypes.entrySet()) {
-            SqlTypeName sqlTypeName = QUERY_TO_SQL_TYPE.get(entry.getValue().getTypeFamily());
-            assert sqlTypeName != null;
+            QueryDataTypeFamily typeFamily = entry.getValue().getTypeFamily();
+
+            SqlTypeName sqlTypeName = QUERY_TO_SQL_TYPE.get(typeFamily);
+            if (sqlTypeName == null) {
+                throw new IllegalStateException("unexpected type family: " + typeFamily);
+            }
             RelDataType relDataType = typeFactory.createSqlType(sqlTypeName);
             RelDataType nullableRelDataType = typeFactory.createTypeWithNullability(relDataType, true);
             RelDataTypeField field = new RelDataTypeFieldImpl(entry.getKey(), fields.size(), nullableRelDataType);

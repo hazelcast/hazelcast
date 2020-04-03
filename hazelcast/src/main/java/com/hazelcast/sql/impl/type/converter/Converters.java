@@ -127,6 +127,8 @@ public final class Converters {
         converters.add(SqlYearMonthIntervalConverter.INSTANCE);
         converters.add(SqlDaySecondIntervalConverter.INSTANCE);
 
+        converters.add(NullConverter.INSTANCE);
+
         return converters;
     }
 
@@ -224,6 +226,10 @@ public final class Converters {
 
         if (targetClass == Double.class) {
             return double.class;
+        }
+
+        if (targetClass == Void.class) {
+            return void.class;
         }
 
         return null;

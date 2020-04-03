@@ -57,6 +57,8 @@ public final class SqlToQueryType {
         SQL_TO_QUERY_TYPE.put(SqlTypeName.INTERVAL_DAY_SECOND, QueryDataType.INTERVAL_DAY_SECOND);
 
         SQL_TO_QUERY_TYPE.put(SqlTypeName.ANY, QueryDataType.OBJECT);
+
+        SQL_TO_QUERY_TYPE.put(SqlTypeName.NULL, QueryDataType.NULL);
     }
 
     private SqlToQueryType() {
@@ -67,7 +69,9 @@ public final class SqlToQueryType {
      */
     public static QueryDataType map(SqlTypeName sqlTypeName) {
         QueryDataType queryDataType = SQL_TO_QUERY_TYPE.get(sqlTypeName);
-        assert queryDataType != null;
+        if (queryDataType == null) {
+            throw new IllegalArgumentException("unexpected SQL type: " + sqlTypeName);
+        }
         return queryDataType;
     }
 

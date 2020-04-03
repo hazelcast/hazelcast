@@ -23,6 +23,7 @@ import com.hazelcast.partition.Partition;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
+import com.hazelcast.sql.impl.calcite.opt.physical.visitor.SqlToQueryType;
 import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRel;
@@ -37,6 +38,7 @@ import com.hazelcast.sql.impl.schema.ChainedSqlSchemaResolver;
 import com.hazelcast.sql.impl.schema.PartitionedMapSqlSchemaResolver;
 import com.hazelcast.sql.impl.schema.ReplicatedMapSqlSchemaResolver;
 import com.hazelcast.sql.impl.schema.SqlSchemaResolver;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlNode;
@@ -47,8 +49,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-
-import static com.hazelcast.sql.impl.calcite.opt.physical.visitor.SqlToQueryType.mapRowType;
 
 /**
  * Calcite-based SQL optimizer.
@@ -151,7 +151,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         Map<PhysicalRel, List<Integer>> relIdMap = idVisitor.getIdMap();
 
         // Create the plan.
-        QueryParameterMetadata parameterMetadata = new QueryParameterMetadata(mapRowType(parameterRowType));
+        QueryDataType[] mappedParameterRowType = SqlToQueryType.mapRowType(parameterRowType);
+        QueryParameterMetadata parameterMetadata = new QueryParameterMetadata(mappedParameterRowType);
         PlanCreateVisitor visitor = new PlanCreateVisitor(
             nodeEngine.getLocalMember().getUuid(),
             partMap,

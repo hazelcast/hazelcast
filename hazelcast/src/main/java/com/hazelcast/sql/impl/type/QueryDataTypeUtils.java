@@ -37,6 +37,7 @@ import static com.hazelcast.sql.impl.type.QueryDataType.DOUBLE;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static com.hazelcast.sql.impl.type.QueryDataType.INTERVAL_DAY_SECOND;
 import static com.hazelcast.sql.impl.type.QueryDataType.INTERVAL_YEAR_MONTH;
+import static com.hazelcast.sql.impl.type.QueryDataType.NULL;
 import static com.hazelcast.sql.impl.type.QueryDataType.OBJECT;
 import static com.hazelcast.sql.impl.type.QueryDataType.PRECISION_BIGINT;
 import static com.hazelcast.sql.impl.type.QueryDataType.PRECISION_BIT;
@@ -88,6 +89,11 @@ public final class QueryDataTypeUtils {
     /** 12 (hdr) + 36 (arbitrary content). */
     public static final int TYPE_LEN_OBJECT = 12 + 36;
 
+    // With a non-zero value we avoid weird zero-cost columns. Technically, it
+    // still costs a single reference now, but reference cost is not taken into
+    // account as of now.
+    public static final int TYPE_LEN_NULL = 1;
+
     private static final QueryDataType[] INTEGER_TYPES = new QueryDataType[PRECISION_BIGINT + 1];
 
     static {
@@ -120,11 +126,6 @@ public final class QueryDataTypeUtils {
 
     private QueryDataTypeUtils() {
         // No-op.
-    }
-
-    public static QueryDataType resolveType(Object obj) {
-        assert obj != null;
-        return resolveTypeForClass(obj.getClass());
     }
 
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:ReturnCount", "checkstyle:MethodLength"})
@@ -206,6 +207,9 @@ public final class QueryDataTypeUtils {
             case OBJECT:
                 return OBJECT;
 
+            case NULL:
+                return NULL;
+
             default:
                 throw new IllegalArgumentException("Unexpected class: " + clazz);
         }
@@ -261,6 +265,9 @@ public final class QueryDataTypeUtils {
 
             case OBJECT:
                 return OBJECT;
+
+            case NULL:
+                return NULL;
 
             default:
                 throw new IllegalArgumentException("Unexpected type family: " + typeFamily);

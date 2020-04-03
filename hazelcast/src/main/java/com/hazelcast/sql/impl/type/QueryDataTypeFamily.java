@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.type;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_INTERVAL_DAY_SECOND;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_INTERVAL_YEAR_MONTH;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_DATE;
+import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_NULL;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_TIMESTAMP;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_DECIMAL;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_OBJECT;
@@ -27,6 +28,7 @@ import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_TIMESTAMP_
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_VARCHAR;
 
 public enum QueryDataTypeFamily {
+    NULL(false, 0, TYPE_LEN_NULL),
     VARCHAR(false, 100, TYPE_LEN_VARCHAR),
     BIT(false, 200, 1),
     TINYINT(false, 300, 1),

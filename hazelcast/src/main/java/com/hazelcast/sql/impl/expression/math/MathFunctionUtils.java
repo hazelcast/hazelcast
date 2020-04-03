@@ -23,6 +23,7 @@ import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTERVAL_DAY_SECOND;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTERVAL_YEAR_MONTH;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.NULL;
 
 /**
  * Utility methods for math functions.
@@ -41,6 +42,10 @@ public final class MathFunctionUtils {
      * @return Result type.
      */
     public static QueryDataType inferPlusMinusResultType(QueryDataType type1, QueryDataType type2, boolean commutative) {
+        if (type1.getTypeFamily() == NULL || type2.getTypeFamily() == NULL) {
+            return QueryDataType.NULL;
+        }
+
         // Convert strings to decimals.
         if (type1 == QueryDataType.VARCHAR) {
             type1 = QueryDataType.DECIMAL;
@@ -104,6 +109,10 @@ public final class MathFunctionUtils {
      * @return Result type.
      */
     public static QueryDataType inferMultiplyResultType(QueryDataType type1, QueryDataType type2) {
+        if (type1.getTypeFamily() == NULL || type2.getTypeFamily() == NULL) {
+            return QueryDataType.NULL;
+        }
+
         // Convert strings to decimals.
         if (type1 == QueryDataType.VARCHAR) {
             type1 = QueryDataType.DECIMAL;
@@ -147,7 +156,12 @@ public final class MathFunctionUtils {
         return expandPrecision(type1);
     }
 
+    @SuppressWarnings("checkstyle:NPathComplexity")
     public static QueryDataType inferDivideResultType(QueryDataType type1, QueryDataType type2) {
+        if (type1.getTypeFamily() == NULL || type2.getTypeFamily() == NULL) {
+            return QueryDataType.NULL;
+        }
+
         // Handle interval types.
         if (type1.getTypeFamily() == INTERVAL_YEAR_MONTH || type1.getTypeFamily() == INTERVAL_DAY_SECOND) {
             if (!canConvertToNumber(type2)) {
@@ -182,6 +196,10 @@ public final class MathFunctionUtils {
     }
 
     public static QueryDataType inferRemainderResultType(QueryDataType type1, QueryDataType type2) {
+        if (type1.getTypeFamily() == NULL || type2.getTypeFamily() == NULL) {
+            return QueryDataType.NULL;
+        }
+
         // Handle numeric types.
         if (type1 == QueryDataType.VARCHAR) {
             type1 = QueryDataType.DECIMAL;
@@ -223,6 +241,9 @@ public final class MathFunctionUtils {
             case REAL:
             case DOUBLE:
                 return QueryDataType.DOUBLE;
+
+            case NULL:
+                return QueryDataType.NULL;
 
             default:
                 throw new IllegalArgumentException("Type is not numeric: " + type);

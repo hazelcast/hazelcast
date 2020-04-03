@@ -54,6 +54,7 @@ import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DOUBLE;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTERVAL_DAY_SECOND;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTERVAL_YEAR_MONTH;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.NULL;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.OBJECT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.REAL;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.SMALLINT;
@@ -99,6 +100,8 @@ public class ConvertersTest {
         checkGetById(SqlDaySecondIntervalConverter.INSTANCE);
 
         checkGetById(ObjectConverter.INSTANCE);
+
+        checkGetById(NullConverter.INSTANCE);
     }
 
     @Test
@@ -129,6 +132,9 @@ public class ConvertersTest {
         checkGetByClass(SqlDaySecondIntervalConverter.INSTANCE, SqlDaySecondInterval.class);
 
         checkGetByClass(ObjectConverter.INSTANCE, Object.class, SqlCustomClass.class);
+
+        checkGetByClass(NullConverter.INSTANCE, void.class);
+        checkGetByClass(NullConverter.INSTANCE, Void.class);
     }
 
     @Test
@@ -620,6 +626,31 @@ public class ConvertersTest {
         checkConverterSelf(c);
     }
 
+    @Test
+    public void testNullConverter() {
+        NullConverter c = NullConverter.INSTANCE;
+        checkConverter(c, Converter.ID_NULL, NULL, Void.class);
+        checkConverterConversions(c, BIT, TINYINT, SMALLINT, INT, BIGINT, DECIMAL, REAL, DOUBLE, TIME, DATE, TIMESTAMP,
+                TIMESTAMP_WITH_TIME_ZONE, VARCHAR, OBJECT);
+
+        checkUnsupportedException(() -> c.asBit(null));
+        checkUnsupportedException(() -> c.asTinyint(null));
+        checkUnsupportedException(() -> c.asSmallint(null));
+        checkUnsupportedException(() -> c.asInt(null));
+        checkUnsupportedException(() -> c.asBigint(null));
+        checkUnsupportedException(() -> c.asDecimal(null));
+        checkUnsupportedException(() -> c.asReal(null));
+        checkUnsupportedException(() -> c.asDouble(null));
+        checkUnsupportedException(() -> c.asTime(null));
+        checkUnsupportedException(() -> c.asDate(null));
+        checkUnsupportedException(() -> c.asTimestamp(null));
+        checkUnsupportedException(() -> c.asTimestampWithTimezone(null));
+        checkUnsupportedException(() -> c.asVarchar(null));
+        checkUnsupportedException(() -> c.asObject(null));
+
+        checkUnsupportedException(() -> c.convertToSelf(c, null));
+    }
+
     private void checkDataException(Runnable runnable) {
         try {
             runnable.run();
@@ -627,6 +658,16 @@ public class ConvertersTest {
             fail("Must fail");
         } catch (HazelcastSqlException e) {
             assertEquals(SqlErrorCode.DATA_EXCEPTION, e.getCode());
+        }
+    }
+
+    private void checkUnsupportedException(Runnable runnable) {
+        try {
+            runnable.run();
+
+            fail("Must fail");
+        } catch (UnsupportedOperationException ignore) {
+            // do nothing
         }
     }
 

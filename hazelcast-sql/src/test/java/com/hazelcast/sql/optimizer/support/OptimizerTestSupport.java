@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
+import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.resolveTypeForClass;
 import static junit.framework.TestCase.assertEquals;
 
 /**
@@ -150,7 +151,8 @@ public abstract class OptimizerTestSupport {
     }
 
     protected static Expression<?> constant(Object val) {
-        return ConstantExpression.create(val);
+        QueryDataType type = resolveTypeForClass(val == null ? void.class : val.getClass());
+        return ConstantExpression.create(type, val);
     }
 
     protected static Expression<?> compare(Expression<?> first, Expression<?> second, ComparisonMode type) {
