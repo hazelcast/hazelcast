@@ -25,7 +25,6 @@ import com.hazelcast.sql.impl.operation.QueryBatchExchangeOperation;
 import com.hazelcast.sql.impl.row.ListRowBatch;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
-import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -34,7 +33,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -135,9 +133,7 @@ public class SendExecTest extends SqlTestSupport {
 
         SendExec sender = new SendExec(2, upstream, outbox);
 
-        QueryFragmentContext context = new QueryFragmentContext(Collections.emptyList(), null, null);
-
-        sender.setup(context);
+        sender.setup(emptyFragmentContext());
 
         return new Sender(sender, upstream, outbox, operationHandler);
     }

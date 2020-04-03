@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.exec.root;
 
 import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.UpstreamExec;
 import com.hazelcast.sql.impl.exec.IterationResult;
 import com.hazelcast.sql.impl.row.HeapRow;
@@ -35,7 +36,6 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
-import static com.hazelcast.test.HazelcastTestSupport.assertThrows;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
@@ -43,7 +43,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class RootExecTest {
+public class RootExecTest extends SqlTestSupport {
 
     private int rowCounter;
 
@@ -55,7 +55,7 @@ public class RootExecTest {
         RootExec exec = new RootExec(2, upstream, consumer, 8);
 
         // Make sure that the context is propagated.
-        QueryFragmentContext context = new QueryFragmentContext(Collections.emptyList(), null, null);
+        QueryFragmentContext context = emptyFragmentContext();
 
         exec.setup(context);
 

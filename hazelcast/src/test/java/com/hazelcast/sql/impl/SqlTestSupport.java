@@ -23,9 +23,12 @@ import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.ListRowBatch;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
+import com.hazelcast.sql.impl.state.QueryStateCallback;
+import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 import com.hazelcast.test.HazelcastTestSupport;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -82,5 +85,30 @@ public class SqlTestSupport extends HazelcastTestSupport {
 
             assertEquals(start + i, value);
         }
+    }
+
+    public static QueryFragmentContext emptyFragmentContext() {
+        return emptyFragmentContext(Collections.emptyList());
+    }
+
+    public static QueryFragmentContext emptyFragmentContext(List<Object> args) {
+        QueryStateCallback stateCallback = new QueryStateCallback() {
+            @Override
+            public void onFragmentFinished() {
+                // No-op.
+            }
+
+            @Override
+            public void cancel(Exception e) {
+                // No-op.
+            }
+
+            @Override
+            public void checkCancelled() {
+                // No-op.
+            }
+        };
+
+        return new QueryFragmentContext(args, new LoggingQueryFragmentScheduleCallback(), stateCallback);
     }
 }

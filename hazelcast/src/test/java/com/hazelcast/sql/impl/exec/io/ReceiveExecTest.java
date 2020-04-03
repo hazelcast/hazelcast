@@ -16,12 +16,11 @@
 
 package com.hazelcast.sql.impl.exec.io;
 
-import com.hazelcast.sql.impl.LoggingQueryOperationHandler;
 import com.hazelcast.sql.impl.LoggingFlowControl;
+import com.hazelcast.sql.impl.LoggingQueryOperationHandler;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.exec.IterationResult;
-import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -29,7 +28,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Collections;
 import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
@@ -58,7 +56,7 @@ public class ReceiveExecTest extends SqlTestSupport {
         ReceiveExec exec = new ReceiveExec(1, inbox);
 
         // Test setup.
-        exec.setup(new QueryFragmentContext(Collections.emptyList(), null, null));
+        exec.setup(emptyFragmentContext());
 
         assertTrue(flowControl.isSetupInvoked());
 
