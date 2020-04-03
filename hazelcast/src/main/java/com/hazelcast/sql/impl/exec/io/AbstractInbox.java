@@ -114,6 +114,6 @@ public abstract class AbstractInbox extends AbstractMailbox implements InboundHa
     }
 
     private long getBatchSize(InboundBatch batch) {
-        return batch.getBatch().getRowCount() * rowWidth;
+        return (long) batch.getBatch().getRowCount() * rowWidth;
     }
 }

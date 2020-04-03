@@ -123,7 +123,7 @@ public class Outbox extends AbstractMailbox implements OutboundHandler {
         }
 
         // Adjust the remaining memory.
-        remainingMemory = remainingMemory - acceptedRows * rowWidth;
+        remainingMemory = remainingMemory - (long) acceptedRows * rowWidth;
 
         // This is the very last transmission iff the whole last batch is consumed.
         boolean lastTransmit = last && currentPosition == batch.getRowCount();
