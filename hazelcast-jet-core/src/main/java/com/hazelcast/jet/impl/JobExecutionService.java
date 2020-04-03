@@ -104,6 +104,14 @@ public class JobExecutionService implements DynamicMetricsProvider {
         registry.registerStaticMetrics(descriptor, this);
     }
 
+    public Long getExecutionIdForJobId(long jobId) {
+        return executionContexts.values().stream()
+                                .filter(ec -> ec.jobId() == jobId)
+                                .findAny()
+                                .map(ExecutionContext::executionId)
+                                .orElse(null);
+    }
+
     public ClassLoader getClassLoader(JobConfig config, long jobId) {
         return classLoaders.computeIfAbsent(jobId,
                 k -> AccessController.doPrivileged(

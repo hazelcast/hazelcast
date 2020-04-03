@@ -110,7 +110,7 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
     }
 
     @Test(expected = CompletionException.class)
-    public void testFailJob_withNonTransientException() throws SQLException {
+    public void testFailJob_withNonTransientException() {
         Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items(IntStream.range(0, PERSON_COUNT).boxed().toArray(Integer[]::new)))
          .map(item -> entry(item, item.toString()))

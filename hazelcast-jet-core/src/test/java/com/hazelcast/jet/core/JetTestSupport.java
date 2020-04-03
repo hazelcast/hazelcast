@@ -29,6 +29,7 @@ import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.function.RunnableEx;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.JobExecutionRecord;
+import com.hazelcast.jet.impl.JobExecutionService;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -52,6 +53,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.jet.Util.idToString;
+import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -144,6 +146,44 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
 
     public static void assertJobStatusEventually(Job job, JobStatus expected) {
         assertJobStatusEventually(job, expected, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+    }
+
+    /**
+     * Asserts that a job status is eventually RUNNING. When it's running,
+     * checks that the execution ID is different from the given {@code
+     * ignoredExecutionId}, if not, tries again.
+     * <p>
+     * This is useful when checking that the job is running after a restart:
+     * <pre>{@code
+     *     job.restart();
+     *     // This is racy, we might see the previous execution running.
+     *     // Subsequent steps can fail because the job is restarting.
+     *     assertJobStatusEventually(job, RUNNING);
+     * }</pre>
+     *
+     * This method allows an equivalent code:
+     * <pre>{@code
+     *     long oldExecutionId = assertJobRunningEventually(instance, job, null);
+     *     // now we're sure the job is safe to restart - restart fails if the job isn't running
+     *     job.restart();
+     *     assertJobRunningEventually(instance, job, oldExecutionId);
+     *     // now we're sure that a new execution is running
+     * }</pre>
+     *
+     * @param ignoredExecutionId If job is running and has this execution ID,
+     *      wait longer. If null, no execution ID is ignored.
+     * @return the execution ID of the new execution
+     */
+    public static long assertJobRunningEventually(JetInstance instance, Job job, Long ignoredExecutionId) {
+        long executionId;
+        JobExecutionService service = getNodeEngineImpl(instance)
+                .<JetService>getService(JetService.SERVICE_NAME)
+                .getJobExecutionService();
+        do {
+            assertJobStatusEventually(job, RUNNING);
+            executionId = service.getExecutionIdForJobId(job.getId());
+        } while (ignoredExecutionId != null && executionId == ignoredExecutionId);
+        return executionId;
     }
 
     public static void assertJobStatusEventually(Job job, JobStatus expected, int timeoutSeconds) {
