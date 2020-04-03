@@ -31,9 +31,6 @@ public class ReceiveExec extends AbstractExec {
     /** Current batch. */
     private RowBatch curBatch;
 
-    /** Whether inbox is closed. */
-    private boolean inboxDone;
-
     public ReceiveExec(int id, Inbox inbox) {
         super(id);
 
@@ -47,10 +44,6 @@ public class ReceiveExec extends AbstractExec {
 
     @Override
     public IterationResult advance0() {
-        if (inboxDone) {
-            throw new IllegalStateException("Should not be called.");
-        }
-
         InboundBatch batch = inbox.poll();
 
         if (batch == null) {
@@ -59,13 +52,7 @@ public class ReceiveExec extends AbstractExec {
 
         curBatch = batch.getBatch();
 
-        if (inbox.closed()) {
-            inboxDone = true;
-
-            return IterationResult.FETCHED_DONE;
-        } else {
-            return IterationResult.FETCHED;
-        }
+        return inbox.closed() ? IterationResult.FETCHED_DONE : IterationResult.FETCHED;
     }
 
     @Override

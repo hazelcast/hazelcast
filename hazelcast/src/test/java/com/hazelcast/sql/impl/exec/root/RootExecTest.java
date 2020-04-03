@@ -85,8 +85,6 @@ public class RootExecTest {
         assertEquals(IterationResult.FETCHED_DONE, exec.advance());
         checkRows(consumer.pollRows(), 2, 24);
         assertTrue(consumer.isLast());
-
-        assertEquals(IterationResult.FETCHED_DONE, exec.advance());
     }
 
     @Test

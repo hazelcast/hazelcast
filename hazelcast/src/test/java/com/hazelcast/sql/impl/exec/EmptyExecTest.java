@@ -40,8 +40,6 @@ public class EmptyExecTest {
         assertEquals(1, exec.getId());
 
         assertEquals(IterationResult.FETCHED_DONE, exec.advance());
-        assertEquals(IterationResult.FETCHED_DONE, exec.advance());
-
         assertSame(EmptyRowBatch.INSTANCE, exec.currentBatch());
     }
 }

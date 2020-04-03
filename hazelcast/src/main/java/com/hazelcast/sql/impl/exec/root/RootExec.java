@@ -36,9 +36,6 @@ public class RootExec extends AbstractUpstreamAwareExec {
     /** Current rows that are prepared for the consumer. */
     private ArrayList<Row> batch;
 
-    /** Whether the operator has finished execution. */
-    private boolean done;
-
     public RootExec(int id, Exec upstream, RootResultConsumer consumer, int batchSize) {
         super(id, upstream);
 
@@ -55,10 +52,6 @@ public class RootExec extends AbstractUpstreamAwareExec {
 
     @Override
     public IterationResult advance0() {
-        if (done) {
-            return IterationResult.FETCHED_DONE;
-        }
-
         while (true) {
             // Consume the previous batch if needed.
             int remaining = batchSize - batch.size();
@@ -70,8 +63,6 @@ public class RootExec extends AbstractUpstreamAwareExec {
                     // Batch has been consumed successfully.
                     if (upstreamDone) {
                         // Pushed the very last batch, done.
-                        done = true;
-
                         return IterationResult.FETCHED_DONE;
                     } else {
                         // Pushed the batch, but there are more to come, allocate the new batch and continue.

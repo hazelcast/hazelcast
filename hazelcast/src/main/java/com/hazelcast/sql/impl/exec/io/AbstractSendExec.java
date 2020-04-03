@@ -25,9 +25,6 @@ import com.hazelcast.sql.impl.row.RowBatch;
  * Abstract sender
  */
 public abstract class AbstractSendExec extends AbstractUpstreamAwareExec {
-    /** Done flag. */
-    private boolean done;
-
     /** Batch that is pending sending. */
     private RowBatch pendingBatch;
 
@@ -40,10 +37,6 @@ public abstract class AbstractSendExec extends AbstractUpstreamAwareExec {
 
     @Override
     public IterationResult advance0() {
-        if (done) {
-            return IterationResult.FETCHED_DONE;
-        }
-
         // Try finalizing the previous batch.
         if (!pushPendingBatch()) {
             return IterationResult.WAIT;
@@ -51,8 +44,6 @@ public abstract class AbstractSendExec extends AbstractUpstreamAwareExec {
 
         // Stop if state is exhausted.
         if (state.isDone()) {
-            done = true;
-
             return IterationResult.FETCHED_DONE;
         }
 
@@ -72,8 +63,6 @@ public abstract class AbstractSendExec extends AbstractUpstreamAwareExec {
             if (pushed) {
                 if (last) {
                     // Pushed the very last batch, done.
-                    done = true;
-
                     return IterationResult.FETCHED_DONE;
                 } else {
                     // More batches to follow, repeat the loop.
