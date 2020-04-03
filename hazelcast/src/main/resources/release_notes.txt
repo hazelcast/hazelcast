@@ -11,6 +11,8 @@ from which the Management Center operations are allowed.
 See the Limiting Source Addresses section.
 * Added the `creationTime` field to the `Executor` JMX bean. [#16774]
 * Promoted the `IMap.putAllAsync()` and `IMap.submitToKeys()` methods to IMDG's public API. [#16771]
+* Upgraded the Spring, Hibernate 5 and Session Clusterin (hazelcast-wm) dependency
+versions for Hazelcast IMDG 4.x. [#16731]
 * Updated the related aspects of Hazelcast IMDG after the changes done on the client protocol
 side to add the ability to add new parameters, methods, services, events and custom types to codecs. [#16719]
 * Upgraded Log4J2 version to 2.13.0. [#16658]
@@ -26,10 +28,15 @@ code deployment feature. [#16584]
 
 * Fixed an issue where the `Metrics` beans were missing the standard `Type`
 information when monitoring with JMX. [#16729]
+* Fixed an issue when a Raft leader stops receiving heartbeats from the majority
+and it switches to the follower role in the same term: during this switch, it was also
+deleting its own vote in the term. [#16645]
 * Fixed an invalidation issue when using a transactional map
 from a cache with a Near Cache: the cache invalidation event occurs when
 the `transactionalMap.put` method is called. As a result, the entry was getting
 invalidated before the change is committed to the map. [#16638]
+* Fixed an issue where the wait key of a blocking call within a Raft
+invocation was still being reported as a live operation, when the key times out. [#16615]
 * Fixed an issue where the upload of classes using the client user
 code deployment were not successful when they are retrieved not in their
 created order.  [#16611]
