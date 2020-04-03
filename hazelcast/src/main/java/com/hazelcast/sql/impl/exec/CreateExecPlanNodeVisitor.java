@@ -88,9 +88,6 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
     /** Partitions owned by this data node. */
     private final PartitionIdSet localParts;
 
-    /** Partition map. */
-    private final Map<UUID, PartitionIdSet> partitionMap;
-
     /** Recommended outbox batch size in bytes. */
     private final int outboxBatchSize;
 
@@ -111,17 +108,14 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
         NodeEngine nodeEngine,
         QueryExecuteOperation operation,
         PartitionIdSet localParts,
-        Map<UUID, PartitionIdSet> partitionMap,
         int outboxBatchSize
     ) {
         this.operationHandler = operationHandler;
         this.nodeEngine = nodeEngine;
         this.operation = operation;
         this.localParts = localParts;
-        this.partitionMap = partitionMap;
         this.outboxBatchSize = outboxBatchSize;
     }
-
 
     @Override
     public void onRootNode(RootPlanNode node) {
@@ -217,7 +211,7 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
             for (int outboxIndex = 0; outboxIndex < outboxes.length; outboxIndex++) {
                 final int outboxIndex0 = outboxIndex;
 
-                PartitionIdSet partitions = partitionMap.get(outboxes[outboxIndex0].getTargetMemberId());
+                PartitionIdSet partitions = operation.getPartitionMapping().get(outboxes[outboxIndex0].getTargetMemberId());
 
                 partitions.forEach((part) -> partitionOutboxIndexes[part] = outboxIndex0);
             }
@@ -526,6 +520,6 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
 
         assert fragment.getMapping() == QueryExecuteOperationFragmentMapping.DATA_MEMBERS;
 
-        return partitionMap.keySet();
+        return operation.getPartitionMapping().keySet();
     }
 }

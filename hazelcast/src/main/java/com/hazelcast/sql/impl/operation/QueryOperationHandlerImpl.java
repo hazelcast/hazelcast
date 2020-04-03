@@ -189,7 +189,6 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
                 nodeEngine,
                 operation,
                 operation.getPartitionMapping().get(getLocalMemberId()),
-                operation.getPartitionMapping(),
                 OUTBOX_BATCH_SIZE
             );
 

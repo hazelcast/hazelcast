@@ -63,7 +63,6 @@ public class CreateExecPlanNodeVisitorTest {
             null,
             new QueryExecuteOperation().setRootConsumer(consumer, 1000),
             null,
-            null,
             OUTBOX_BATCH_SIZE
         );
 
