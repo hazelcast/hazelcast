@@ -50,7 +50,6 @@ import static com.hazelcast.internal.nio.IOUtil.toFileName;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static java.lang.String.format;
 import static java.nio.ByteBuffer.allocate;
-import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
  * Loads and stores the keys from a Near Cache into a file.

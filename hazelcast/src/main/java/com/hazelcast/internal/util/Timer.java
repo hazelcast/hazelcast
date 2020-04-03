@@ -16,8 +16,6 @@
 
 package com.hazelcast.internal.util;
 
-import java.util.concurrent.TimeUnit;
-
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
@@ -31,7 +29,13 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * }
  */
 public class Timer {
-    private static Timer SYSTEM_TIMER = create(System::nanoTime);
+    private static final Timer SYSTEM_TIMER = create(System::nanoTime);
+
+    private final NanoClock nanoClock;
+
+    public Timer(NanoClock nanoClock) {
+        this.nanoClock = nanoClock;
+    }
 
     public static Timer getSystemTimer() {
         return SYSTEM_TIMER;
@@ -39,12 +43,6 @@ public class Timer {
 
     static Timer create(NanoClock nanoClock) {
         return new Timer(nanoClock);
-    }
-
-    private NanoClock nanoClock;
-
-    public Timer(NanoClock nanoClock) {
-        this.nanoClock = nanoClock;
     }
 
     public long nanos() {
@@ -67,7 +65,7 @@ public class Timer {
         return NANOSECONDS.toSeconds(nanosElapsedSince(startNano));
     }
 
-    public interface NanoClock {
+    interface NanoClock {
         long nanoTime();
     }
 }

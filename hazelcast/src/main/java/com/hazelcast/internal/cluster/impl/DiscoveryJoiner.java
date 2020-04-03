@@ -19,7 +19,6 @@ package com.hazelcast.internal.cluster.impl;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.cluster.Address;
-import com.hazelcast.internal.util.Timer;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
 import com.hazelcast.internal.util.concurrent.BackoffIdleStrategy;

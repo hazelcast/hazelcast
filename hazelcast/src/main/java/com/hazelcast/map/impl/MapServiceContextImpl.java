@@ -773,7 +773,8 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public void incrementOperationStats(long startTimeNanos, LocalMapStatsImpl localMapStats, String mapName, Operation operation) {
+    public void incrementOperationStats(long startTimeNanos, LocalMapStatsImpl localMapStats, String mapName,
+                                        Operation operation) {
         final long durationNanos = Timer.getSystemTimer().nanosElapsedSince(startTimeNanos);
         if (operation instanceof SetOperation) {
             localMapStats.incrementSetLatencyNanos(durationNanos);

@@ -418,12 +418,15 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
                 result = future.get();
                 if (operation instanceof PutOperation) {
                     // TODO: @ali should we remove statics from operations?
-                    getService().getLocalMultiMapStatsImpl(name).incrementPutLatencyNanos(timer.nanosElapsedSince(startTimeNanos));
+                    getService().getLocalMultiMapStatsImpl(name)
+                                .incrementPutLatencyNanos(timer.nanosElapsedSince(startTimeNanos));
                 } else if (operation instanceof RemoveOperation || operation instanceof RemoveAllOperation
                         || operation instanceof DeleteOperation) {
-                    getService().getLocalMultiMapStatsImpl(name).incrementRemoveLatencyNanos(timer.nanosElapsedSince(startTimeNanos));
+                    getService().getLocalMultiMapStatsImpl(name)
+                                .incrementRemoveLatencyNanos(timer.nanosElapsedSince(startTimeNanos));
                 } else if (operation instanceof GetAllOperation) {
-                    getService().getLocalMultiMapStatsImpl(name).incrementGetLatencyNanos(timer.nanosElapsedSince(startTimeNanos));
+                    getService().getLocalMultiMapStatsImpl(name)
+                                .incrementGetLatencyNanos(timer.nanosElapsedSince(startTimeNanos));
                 }
             } else {
                 future = nodeEngine.getOperationService()
