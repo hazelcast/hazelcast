@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.worker;
 
+import com.hazelcast.sql.impl.LoggingQueryFragmentScheduleCallback;
 import com.hazelcast.sql.impl.state.QueryStateCallback;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -41,7 +42,7 @@ public class QueryFragmentContextTest {
         args.add(new Object());
         args.add(new Object());
 
-        TestFragmentScheduleCallback fragmentScheduleCallback = new TestFragmentScheduleCallback();
+        LoggingQueryFragmentScheduleCallback fragmentScheduleCallback = new LoggingQueryFragmentScheduleCallback();
         TestStateCallback stateCallback = new TestStateCallback();
 
         QueryFragmentContext context = new QueryFragmentContext(args, fragmentScheduleCallback, stateCallback);
@@ -50,26 +51,10 @@ public class QueryFragmentContextTest {
         assertSame(args.get(1), context.getArguments().get(1));
 
         context.schedule();
-        assertTrue(fragmentScheduleCallback.isInvoked());
+        assertTrue(fragmentScheduleCallback.getCount() > 0);
 
         context.checkCancelled();
         assertEquals(1, stateCallback.getCheckCancelledInvocationCount());
-    }
-
-    private static class TestFragmentScheduleCallback implements QueryFragmentScheduleCallback {
-
-        private boolean invoked;
-
-        @Override
-        public boolean schedule() {
-            invoked = true;
-
-            return true;
-        }
-
-        private boolean isInvoked() {
-            return invoked;
-        }
     }
 
     private static class TestStateCallback implements QueryStateCallback {

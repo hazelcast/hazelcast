@@ -16,9 +16,9 @@
 
 package com.hazelcast.sql.impl.exec;
 
-import com.hazelcast.sql.impl.SqlTestUtils;
-import com.hazelcast.sql.impl.worker.QueryFragmentContext;
+import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.row.RowBatch;
+import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -30,13 +30,13 @@ import static org.junit.Assert.assertSame;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class AbstractUpstreamAwareExecTest {
+public class AbstractUpstreamAwareExecTest extends SqlTestSupport {
     @Test
     public void testExec() {
         ChildExec childExec = new ChildExec();
         ParentExec parentExec = new ParentExec(childExec);
 
-        QueryFragmentContext context = SqlTestUtils.emptyFragmentContext();
+        QueryFragmentContext context = emptyFragmentContext();
 
         parentExec.setup(context);
 

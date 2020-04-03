@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.exec;
 
-import com.hazelcast.sql.impl.SqlTestUtils;
+import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -30,12 +30,12 @@ import static org.junit.Assert.assertSame;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class EmptyExecTest {
+public class EmptyExecTest extends SqlTestSupport {
     @Test
     public void testEmptyExec() {
         Exec exec = new EmptyExec(1);
 
-        exec.setup(SqlTestUtils.emptyFragmentContext());
+        exec.setup(emptyFragmentContext());
 
         assertEquals(1, exec.getId());
 

@@ -19,7 +19,13 @@ package com.hazelcast.sql.impl;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.state.QueryState;
+import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 import com.hazelcast.test.HazelcastTestSupport;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -55,5 +61,23 @@ public class SqlTestSupport extends HazelcastTestSupport {
         assertEquals(expectedClassId, original.getClassId());
 
         return serialize(original);
+    }
+
+    public static QueryFragmentContext emptyFragmentContext() {
+        return emptyFragmentContext(Collections.emptyList());
+    }
+
+    public static QueryFragmentContext emptyFragmentContext(List<Object> args) {
+        QueryState state = QueryState.createInitiatorState(
+            QueryId.create(UUID.randomUUID()),
+            UUID.randomUUID(),
+            null,
+            0L,
+            null,
+            null,
+            null
+        );
+
+        return new QueryFragmentContext(args, new LoggingQueryFragmentScheduleCallback(), state);
     }
 }

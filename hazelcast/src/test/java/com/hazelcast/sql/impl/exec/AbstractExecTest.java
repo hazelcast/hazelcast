@@ -17,11 +17,10 @@
 package com.hazelcast.sql.impl.exec;
 
 import com.hazelcast.sql.impl.SqlTestSupport;
-import com.hazelcast.sql.impl.SqlTestUtils;
-import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.ListRowBatch;
 import com.hazelcast.sql.impl.row.RowBatch;
+import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -43,7 +42,7 @@ public class AbstractExecTest extends SqlTestSupport {
         assertEquals(1, exec.getId());
 
         // Setup.
-        QueryFragmentContext context = SqlTestUtils.emptyFragmentContext();
+        QueryFragmentContext context = emptyFragmentContext();
 
         exec.setup(context);
 
