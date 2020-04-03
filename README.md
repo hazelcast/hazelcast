@@ -21,7 +21,7 @@ structures and concurrency primitives, including:
 * cluster-wide unique ID generator, called `FlakeIdGenerator`
 * a distributed, [CRDT](https://en.wikipedia.org/wiki/Conflict-free_replicated_data_type)
   based counter, called `PNCounter`
-* a cardinality estimator based on [`HyperLogLog`](https://en.wikipedia.org/wiki/HyperLogLog)
+* a cardinality estimator based on [`HyperLogLog`](https://en.wikipedia.org/wiki/HyperLogLog).
 
 Additionally, Hazelcast includes a production-ready
 [Raft](https://en.wikipedia.org/wiki/Raft_(computer_science))
@@ -30,7 +30,7 @@ such as:
 
 * a distributed and reentrant lock implementation, called `FencedLock`
 * primitives for distributed computing such as `AtomicLong`,
-`AtomicReference` and `CountDownLatch`
+`AtomicReference` and `CountDownLatch`.
 
 Hazelcast data structures are in-memory, highly optimized and offer very
 low latencies. For a single `get` or `put` operation on an `IMap`, you
