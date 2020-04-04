@@ -934,7 +934,7 @@ public class MembershipManager {
                     }
                 }
 
-                mastershipClaimTimeout -= timer.nanosElapsedSince(startNanos);
+                mastershipClaimTimeout -= timer.millisElapsedSince(startNanos);
             }
 
             if (done) {
