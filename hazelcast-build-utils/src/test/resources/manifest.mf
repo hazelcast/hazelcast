@@ -666,7 +666,7 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  ast.logging,com.hazelcast.core,com.hazelcast.nio.serialization.impl,c
  om.hazelcast.spi.annotation,com.hazelcast.nio,com.hazelcast.version,c
  om.hazelcast.internal.util,com.hazelcast.cluster.impl,com.hazelcast.spi.proper
- ties,com.hazelcast.config,com.hazelcast.internal.nio.server,com.hazelcast.interna
+ ties,com.hazelcast.config,com.hazelcast.internal.server,com.hazelcast.interna
  l.networking.spinning,com.hazelcast.internal.metrics,com.hazelcast.in
  ternal.networking,com.hazelcast.internal.networking.nio,com.h
  azelcast.spi.impl,com.hazelcast.hotrestart,com.hazelcast.wan.impl,com
@@ -1001,7 +1001,7 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  .function,com.hazelcast.map.impl.operation,com.hazelcast.nio.serializ
  ation,com.hazelcast.client.impl.operations,com.hazelcast.internal.ser
  ialization.impl,com.hazelcast.internal.serialization,com.hazelcast.ni
- o,com.hazelcast.logging,com.hazelcast.internal.nio.server,com.hazelcast.client.im
+ o,com.hazelcast.logging,com.hazelcast.internal.server,com.hazelcast.client.im
  pl.client,com.hazelcast.core,com.hazelcast.security,com.hazelcast.cli
  ent,com.hazelcast.transaction,com.hazelcast.internal.networking,com.h
  azelcast.transaction.impl.xa,javax.security.auth,javax.security.auth.
@@ -1491,7 +1491,7 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  erties,com.hazelcast.spi.partition,com.hazelcast.internal.cluster.imp
  l,com.hazelcast.transaction,com.hazelcast.internal.monitor,com.hazelcast.trans
  action.impl,com.hazelcast.mapreduce,com.hazelcast.mapreduce.aggregati
- on";version="3.8.0.SNAPSHOT",com.hazelcast.internal.nio.server;uses:="com.hazelca
+ on";version="3.8.0.SNAPSHOT",com.hazelcast.internal.server;uses:="com.hazelca
  st.internal.util.counters,com.hazelcast.internal.networking,com.hazel
  cast.client.impl.protocol,com.hazelcast.client.impl.protocol.util,com
  .hazelcast.nio,com.hazelcast.logging,com.hazelcast.internal.util,com.hazelcast

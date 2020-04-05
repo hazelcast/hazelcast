@@ -24,7 +24,7 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.nio.EndpointManager;
+import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -585,8 +585,8 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
             Packet packet = new Packet(serializationService.toBytes(eventEnvelope), orderKey)
                     .setPacketType(Packet.Type.EVENT);
 
-            EndpointManager em = nodeEngine.getNode().getNetworkingService().getEndpointManager(MEMBER);
-            if (!em.transmit(packet, subscriber)) {
+            ServerConnectionManager cm = nodeEngine.getNode().getServer().getConnectionManager(MEMBER);
+            if (!cm.transmit(packet, subscriber)) {
                 if (nodeEngine.isRunning()) {
                     logFailure("Failed to send event packet to: %s, connection might not be alive.", subscriber);
                 }
@@ -669,7 +669,7 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
 
             if (eventExecutor.isLive()) {
                 Connection conn = packet.getConn();
-                String endpoint = conn.getEndPoint() != null ? conn.getEndPoint().toString() : conn.toString();
+                String endpoint = conn.getRemoteAddress() != null ? conn.getRemoteAddress().toString() : conn.toString();
                 logFailure("EventQueue overloaded! Failed to process event packet sent from: %s", endpoint);
             }
         }

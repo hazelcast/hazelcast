@@ -32,9 +32,9 @@ import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.internal.nio.AggregateEndpointManager;
-import com.hazelcast.internal.nio.EndpointManager;
-import com.hazelcast.internal.nio.NetworkingService;
+import com.hazelcast.internal.server.AggregateServerConnectionManager;
+import com.hazelcast.internal.server.ServerConnectionManager;
+import com.hazelcast.internal.server.Server;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.util.StringUtil;
 
@@ -328,9 +328,9 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
      */
     private void handleCluster(HttpGetCommand command) {
         Node node = textCommandService.getNode();
-        NetworkingService ns = node.getNetworkingService();
-        EndpointManager cem = ns.getEndpointManager(CLIENT);
-        AggregateEndpointManager aem = ns.getAggregateEndpointManager();
+        Server server = node.getServer();
+        ServerConnectionManager cm = server.getConnectionManager(CLIENT);
+        AggregateServerConnectionManager aem = server.getAggregateConnectionManager();
         ClusterServiceImpl clusterService = node.getClusterService();
         JsonArray membersArray = new JsonArray();
         clusterService.getMembers()
@@ -344,7 +344,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
                       .forEach(membersArray::add);
         JsonObject response = new JsonObject()
                 .add("members", membersArray)
-                .add("connectionCount", cem == null ? 0 : cem.getActiveConnections().size())
+                .add("connectionCount", cm == null ? 0 : cm.getActiveConnections().size())
                 .add("allConnectionCount", aem.getActiveConnections().size());
         prepareResponse(command, response);
     }

@@ -17,7 +17,7 @@
 package com.hazelcast.spi.impl.operationservice;
 
 import com.hazelcast.cluster.Address;
-import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.spi.annotation.PrivateApi;
 
 /**
@@ -33,7 +33,7 @@ public final class OperationAccessor {
         op.setCallerAddress(caller);
     }
 
-    public static void setConnection(Operation op, Connection connection) {
+    public static void setConnection(Operation op, ServerConnection connection) {
         op.setConnection(connection);
     }
 

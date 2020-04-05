@@ -27,7 +27,7 @@ import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.nio.server.FirewallingNetworkingService;
+import com.hazelcast.internal.server.FirewallingServer;
 import com.hazelcast.spi.merge.MergingValue;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -236,9 +236,9 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
             if (isInstanceActive(hz)) {
                 addressesToBlock.add(Accessors.getAddress(hz));
                 // block communication from these instances to the new address
-                FirewallingNetworkingService networkingService = getFireWalledNetworkingService(hz);
-                FirewallingNetworkingService.FirewallingEndpointManager endpointManager =
-                        (FirewallingNetworkingService.FirewallingEndpointManager) networkingService.getEndpointManager(MEMBER);
+                FirewallingServer networkingService = getFireWalledNetworkingService(hz);
+                FirewallingServer.FirewallingEndpointManager endpointManager =
+                        (FirewallingServer.FirewallingEndpointManager) networkingService.getConnectionManager(MEMBER);
                 endpointManager.blockNewConnection(newMemberAddress);
                 endpointManager.closeActiveConnection(newMemberAddress);
             }
@@ -316,15 +316,15 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
         applyOnBrains(UNBLACKLIST_MEMBERS);
     }
 
-    private static FirewallingNetworkingService getFireWalledNetworkingService(HazelcastInstance hz) {
+    private static FirewallingServer getFireWalledNetworkingService(HazelcastInstance hz) {
         Node node = Accessors.getNode(hz);
-        return (FirewallingNetworkingService) node.getNetworkingService();
+        return (FirewallingServer) node.getServer();
     }
 
-    private static FirewallingNetworkingService.FirewallingEndpointManager getFireWalledEndpointManager(HazelcastInstance hz) {
+    private static FirewallingServer.FirewallingEndpointManager getFireWalledEndpointManager(HazelcastInstance hz) {
         Node node = Accessors.getNode(hz);
-        return (FirewallingNetworkingService.FirewallingEndpointManager)
-                node.getNetworkingService().getEndpointManager(MEMBER);
+        return (FirewallingServer.FirewallingEndpointManager)
+                node.getServer().getConnectionManager(MEMBER);
     }
 
     protected Brains getBrains() {
@@ -374,8 +374,8 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
     }
 
     public static void blockCommunicationBetween(HazelcastInstance h1, HazelcastInstance h2) {
-        FirewallingNetworkingService.FirewallingEndpointManager cm1 = getFireWalledEndpointManager(h1);
-        FirewallingNetworkingService.FirewallingEndpointManager cm2 = getFireWalledEndpointManager(h2);
+        FirewallingServer.FirewallingEndpointManager cm1 = getFireWalledEndpointManager(h1);
+        FirewallingServer.FirewallingEndpointManager cm2 = getFireWalledEndpointManager(h2);
         Node node1 = Accessors.getNode(h1);
         Node node2 = Accessors.getNode(h2);
         cm1.blockNewConnection(node2.getThisAddress());
@@ -385,8 +385,8 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
     }
 
     public static void unblockCommunicationBetween(HazelcastInstance h1, HazelcastInstance h2) {
-        FirewallingNetworkingService.FirewallingEndpointManager cm1 = getFireWalledEndpointManager(h1);
-        FirewallingNetworkingService.FirewallingEndpointManager cm2 = getFireWalledEndpointManager(h2);
+        FirewallingServer.FirewallingEndpointManager cm1 = getFireWalledEndpointManager(h1);
+        FirewallingServer.FirewallingEndpointManager cm2 = getFireWalledEndpointManager(h2);
         Node node1 = Accessors.getNode(h1);
         Node node2 = Accessors.getNode(h2);
         cm1.unblock(node2.getThisAddress());

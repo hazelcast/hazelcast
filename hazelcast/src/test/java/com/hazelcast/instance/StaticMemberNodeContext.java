@@ -24,7 +24,7 @@ import com.hazelcast.instance.impl.NodeContext;
 import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.networking.ServerSocketRegistry;
 import com.hazelcast.cluster.Address;
-import com.hazelcast.internal.nio.NetworkingService;
+import com.hazelcast.internal.server.Server;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 
 import java.util.UUID;
@@ -63,7 +63,7 @@ public class StaticMemberNodeContext implements NodeContext {
     }
 
     @Override
-    public NetworkingService createNetworkingService(Node node, ServerSocketRegistry registry) {
-        return delegate.createNetworkingService(node, registry);
+    public Server createServer(Node node, ServerSocketRegistry registry) {
+        return delegate.createServer(node, registry);
     }
 }

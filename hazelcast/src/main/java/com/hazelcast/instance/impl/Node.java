@@ -64,10 +64,10 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.impl.MetricsConfigHelper;
 import com.hazelcast.internal.networking.ServerSocketRegistry;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
-import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.nio.EndpointManager;
-import com.hazelcast.internal.nio.NetworkingService;
+import com.hazelcast.internal.server.ServerConnectionManager;
+import com.hazelcast.internal.server.Server;
 import com.hazelcast.internal.nio.Packet;
+import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.MigrationInterceptor;
@@ -155,7 +155,7 @@ public class Node {
     public final TextCommandService textCommandService;
     public final LoggingServiceImpl loggingService;
 
-    public final NetworkingService networkingService;
+    public final Server server;
 
     /**
      * Member-to-member address only.
@@ -254,7 +254,7 @@ public class Node {
             MetricsRegistry metricsRegistry = nodeEngine.getMetricsRegistry();
             metricsRegistry.provideMetrics(nodeExtension);
 
-            networkingService = nodeContext.createNetworkingService(this, serverSocketRegistry);
+            server = nodeContext.createServer(this, serverSocketRegistry);
             healthMonitor = new HealthMonitor(this);
             clientEngine = hasClientServerSocket() ? new ClientEngineImpl(this) : new NoOpClientEngine();
             JoinConfig joinConfig = getActiveMemberNetworkConfig(this.config).getJoin();
@@ -429,7 +429,7 @@ public class Node {
         initializeListeners(config);
         hazelcastInstance.lifecycleService.fireLifecycleEvent(LifecycleState.STARTING);
         clusterService.sendLocalMembershipEvent();
-        networkingService.start();
+        server.start();
         JoinConfig join = getActiveMemberNetworkConfig(config).getJoin();
         if (join.getMulticastConfig().isEnabled()) {
             final Thread multicastServiceThread = new Thread(multicastService,
@@ -563,9 +563,9 @@ public class Node {
             logger.info("Shutting down multicast service...");
             multicastService.stop();
         }
-        if (networkingService != null) {
+        if (server != null) {
             logger.info("Shutting down connection manager...");
-            networkingService.shutdown();
+            server.shutdown();
         }
 
         if (nodeEngine != null) {
@@ -683,16 +683,16 @@ public class Node {
         return textCommandService;
     }
 
-    public NetworkingService getNetworkingService() {
-        return networkingService;
+    public Server getServer() {
+        return server;
     }
 
-    public EndpointManager getEndpointManager() {
-        return getEndpointManager(MEMBER);
+    public ServerConnectionManager getConnectionManager() {
+        return getConnectionManager(MEMBER);
     }
 
-    public <T extends Connection> EndpointManager<T> getEndpointManager(EndpointQualifier qualifier) {
-        return networkingService.getEndpointManager(qualifier);
+    public <T extends ServerConnection> ServerConnectionManager getConnectionManager(EndpointQualifier qualifier) {
+        return server.getConnectionManager(qualifier);
     }
 
     public ClassLoader getConfigClassLoader() {

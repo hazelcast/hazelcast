@@ -447,7 +447,7 @@ public class InvocationMonitor implements Consumer<Packet>, StaticMetricsProvide
 
         ProcessOperationControlTask(Packet payload) {
             this.payload = payload;
-            this.sender = payload.getConn().getEndPoint();
+            this.sender = payload.getConn().getRemoteAddress();
         }
 
         @Override
@@ -538,7 +538,7 @@ public class InvocationMonitor implements Consumer<Packet>, StaticMetricsProvide
                 Packet packet = new Packet(serializationService.toBytes(opControl))
                         .setPacketType(Packet.Type.OPERATION)
                         .raiseFlags(FLAG_OP_CONTROL | FLAG_URGENT);
-                nodeEngine.getNode().getNetworkingService().getEndpointManager(MEMBER).transmit(packet, address);
+                nodeEngine.getNode().getServer().getConnectionManager(MEMBER).transmit(packet, address);
             }
         }
     }

@@ -33,6 +33,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
@@ -61,7 +62,7 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
             Arrays.asList(Error.class, MemberLeftException.class);
 
     protected final ClientMessage clientMessage;
-    protected final Connection connection;
+    protected final ServerConnection connection;
     protected final ClientEndpoint endpoint;
     protected final NodeEngineImpl nodeEngine;
     protected final InternalSerializationService serializationService;
@@ -77,7 +78,7 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
         this.node = node;
         this.nodeEngine = node.nodeEngine;
         this.serializationService = node.getSerializationService();
-        this.connection = connection;
+        this.connection = (ServerConnection) connection;
         this.clientEngine = node.clientEngine;
         this.endpointManager = clientEngine.getEndpointManager();
         this.endpoint = initEndpoint();
@@ -103,7 +104,7 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
     @Override
     public final void run() {
         try {
-            Address address = connection.getEndPoint();
+            Address address = connection.getRemoteAddress();
             if (isManagementTask() && !clientEngine.getManagementTasksChecker().isTrusted(address)) {
                 String message = "The client address " + address + " is not allowed for management task "
                         + getClass().getName();

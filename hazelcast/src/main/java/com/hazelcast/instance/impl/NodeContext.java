@@ -19,7 +19,7 @@ package com.hazelcast.instance.impl;
 import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.instance.AddressPicker;
 import com.hazelcast.internal.networking.ServerSocketRegistry;
-import com.hazelcast.internal.nio.NetworkingService;
+import com.hazelcast.internal.server.Server;
 
 /**
  * A context for node to provide its dependencies. Acts as a dependency factory.
@@ -37,5 +37,5 @@ public interface NodeContext {
     Joiner createJoiner(Node node);
 
     // TODO Consider the changes here (JET?)
-    NetworkingService createNetworkingService(Node node, ServerSocketRegistry registry);
+    Server createServer(Node node, ServerSocketRegistry registry);
 }

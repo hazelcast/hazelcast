@@ -91,7 +91,7 @@ public class MembersUpdateOp extends AbstractClusterOperation {
         NodeEngineImpl nodeEngine = clusterService.getNodeEngine();
         Node node = nodeEngine.getNode();
         Connection conn = getConnection();
-        return conn != null ? conn.getEndPoint() : node.getThisAddress();
+        return conn != null ? conn.getRemoteAddress() : node.getThisAddress();
     }
 
     final void processPartitionState() {

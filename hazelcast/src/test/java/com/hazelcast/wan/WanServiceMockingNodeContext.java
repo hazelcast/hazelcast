@@ -22,7 +22,7 @@ import com.hazelcast.instance.impl.NodeContext;
 import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.internal.networking.ServerSocketRegistry;
-import com.hazelcast.internal.nio.NetworkingService;
+import com.hazelcast.internal.server.Server;
 
 import java.util.function.Function;
 
@@ -53,7 +53,7 @@ public class WanServiceMockingNodeContext implements NodeContext {
     }
 
     @Override
-    public NetworkingService createNetworkingService(Node node, ServerSocketRegistry serverSocketRegistry) {
-        return this.nodeContextDelegate.createNetworkingService(node, serverSocketRegistry);
+    public Server createServer(Node node, ServerSocketRegistry serverSocketRegistry) {
+        return this.nodeContextDelegate.createServer(node, serverSocketRegistry);
     }
 }

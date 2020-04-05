@@ -40,8 +40,8 @@ import com.hazelcast.internal.cluster.impl.AddressCheckerImpl;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.internal.nio.ConnectionType;
-import com.hazelcast.internal.nio.server.ServerConnection;
 import com.hazelcast.internal.partition.IPartitionService;
+import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.services.CoreService;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
@@ -63,7 +63,6 @@ import com.hazelcast.transaction.TransactionManagerService;
 
 import javax.annotation.Nonnull;
 import javax.security.auth.login.LoginException;
-
 import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.HashMap;
@@ -296,13 +295,12 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
 
         endpointManager.registerEndpoint(endpoint);
 
-        Connection conn = endpoint.getConnection();
-        if (conn instanceof ServerConnection) {
+        ServerConnection conn = endpoint.getConnection();
+        if (conn != null) {
             InetSocketAddress socketAddress = conn.getRemoteSocketAddress();
             //socket address can be null if connection closed before bind
             if (socketAddress != null) {
-                Address address = new Address(socketAddress);
-                ((ServerConnection) conn).setEndPoint(address);
+                conn.setRemoteAddress(new Address(socketAddress));
             }
         }
 
@@ -347,7 +345,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
 
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
-        node.getEndpointManager(CLIENT).addConnectionListener(connectionListener);
+        node.getConnectionManager(CLIENT).addConnectionListener(connectionListener);
 
         ClientHeartbeatMonitor heartbeatMonitor = new ClientHeartbeatMonitor(
                 endpointManager, getLogger(ClientHeartbeatMonitor.class), nodeEngine.getExecutionService(), node.getProperties());
@@ -411,7 +409,9 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         }
 
         @Override
-        public void connectionRemoved(Connection connection) {
+        public void connectionRemoved(Connection c) {
+            ServerConnection connection = (ServerConnection) c;
+
             if (!connection.isClient() || !nodeEngine.isRunning()) {
                 return;
             }
