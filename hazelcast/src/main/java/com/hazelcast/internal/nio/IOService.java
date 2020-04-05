@@ -25,7 +25,7 @@ import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.auditlog.AuditlogService;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
-import com.hazelcast.internal.nio.tcp.TcpIpConnection;
+import com.hazelcast.internal.nio.server.ServerConnection;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.cluster.Address;
@@ -109,9 +109,9 @@ public interface IOService {
 
     MemberSocketInterceptor getSocketInterceptor(EndpointQualifier endpointQualifier);
 
-    InboundHandler[] createInboundHandlers(EndpointQualifier qualifier, TcpIpConnection connection);
+    InboundHandler[] createInboundHandlers(EndpointQualifier qualifier, ServerConnection connection);
 
-    OutboundHandler[] createOutboundHandlers(EndpointQualifier qualifier, TcpIpConnection connection);
+    OutboundHandler[] createOutboundHandlers(EndpointQualifier qualifier, ServerConnection connection);
 
     AuditlogService getAuditLogService();
 

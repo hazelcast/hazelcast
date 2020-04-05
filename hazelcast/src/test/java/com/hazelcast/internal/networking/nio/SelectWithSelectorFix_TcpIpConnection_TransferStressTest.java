@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.networking.nio;
 
-import com.hazelcast.internal.nio.tcp.TcpIpConnection_AbstractTransferStressTest;
+import com.hazelcast.internal.nio.server.ServerConnection_AbstractTransferStressTest;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.Before;
@@ -25,7 +25,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(NightlyTest.class)
-public class SelectWithSelectorFix_TcpIpConnection_TransferStressTest extends TcpIpConnection_AbstractTransferStressTest {
+public class SelectWithSelectorFix_TcpIpConnection_TransferStressTest extends ServerConnection_AbstractTransferStressTest {
 
     @Before
     public void setup() throws Exception {
