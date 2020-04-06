@@ -100,7 +100,7 @@ public interface MapOperationProvider {
      */
     MapOperation createLoadAllOperation(String name, List<Data> keys, boolean replaceExistingValues);
 
-    MapOperation createPutAllOperation(String name, MapEntries mapEntries);
+    MapOperation createPutAllOperation(String name, MapEntries mapEntries, boolean triggerMapLoader);
 
     MapOperation createPutFromLoadAllOperation(String name, List<Data> keyValueSequence, boolean expirationTime);
 
@@ -166,7 +166,8 @@ public interface MapOperationProvider {
 
     OperationFactory createMapSizeOperationFactory(String name);
 
-    OperationFactory createPutAllOperationFactory(String name, int[] partitions, MapEntries[] mapEntries);
+    OperationFactory createPutAllOperationFactory(String name, int[] partitions,
+                                                  MapEntries[] mapEntries, boolean triggerMapLoader);
 
     OperationFactory createMergeOperationFactory(String name, int[] partitions,
                                                  List<MapMergeTypes<Object, Object>>[] mergingEntries,

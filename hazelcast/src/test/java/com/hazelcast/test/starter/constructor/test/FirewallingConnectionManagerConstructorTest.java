@@ -18,7 +18,7 @@ package com.hazelcast.test.starter.constructor.test;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.NetworkingService;
-import com.hazelcast.internal.nio.tcp.FirewallingNetworkingService;
+import com.hazelcast.internal.nio.server.FirewallingNetworkingService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

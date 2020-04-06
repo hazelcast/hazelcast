@@ -50,12 +50,16 @@ import org.junit.runner.RunWith;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.getBaseConfig;
 import static com.hazelcast.test.Accessors.getSerializationService;
@@ -555,6 +559,26 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
                 assertThatOwnedEntryCountEquals(clientMap, 0);
             }
         });
+    }
+
+    @Test
+    public void testMemberSetAll_invalidates_clientNearCache() {
+        int mapSize = 1000;
+        String mapName = randomMapName();
+        HazelcastInstance member = hazelcastFactory.newHazelcastInstance(newConfig());
+        HazelcastInstance client = getClient(hazelcastFactory, newInvalidationOnChangeEnabledNearCacheConfig(mapName));
+
+        Map<Integer, Integer> hashMap = IntStream.range(0, mapSize).boxed()
+            .collect(Collectors.toMap(Function.identity(), Function.identity()));
+
+        IMap<Integer, Integer> clientMap = client.getMap(mapName);
+        hashMap.forEach(clientMap::put);
+        hashMap.keySet().forEach(clientMap::get);
+
+        IMap<Integer, Integer> memberMap = member.getMap(mapName);
+        memberMap.setAll(hashMap);
+
+        assertTrueEventually(() -> assertThatOwnedEntryCountEquals(clientMap, 0));
     }
 
     @Test

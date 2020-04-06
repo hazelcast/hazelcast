@@ -455,14 +455,28 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     @Override
     public void putAll(@Nonnull Map<? extends K, ? extends V> map) {
         checkNotNull(map, "Null argument map is not allowed");
-        putAllInternal(map, null);
+        putAllInternal(map, null, true);
     }
 
     @Override
     public InternalCompletableFuture<Void> putAllAsync(@Nonnull Map<? extends K, ? extends V> map) {
         checkNotNull(map, "Null argument map is not allowed");
         InternalCompletableFuture<Void> future = new InternalCompletableFuture<>();
-        putAllInternal(map, future);
+        putAllInternal(map, future, true);
+        return future;
+    }
+
+    @Override
+    public void setAll(@Nonnull Map<? extends K, ? extends V> map) {
+        checkNotNull(map, "Null argument map is not allowed");
+        putAllInternal(map, null, false);
+    }
+
+    @Override
+    public InternalCompletableFuture<Void> setAllAsync(@Nonnull Map<? extends K, ? extends V> map) {
+        checkNotNull(map, "Null argument map is not allowed");
+        InternalCompletableFuture<Void> future = new InternalCompletableFuture<>();
+        putAllInternal(map, future, false);
         return future;
     }
 

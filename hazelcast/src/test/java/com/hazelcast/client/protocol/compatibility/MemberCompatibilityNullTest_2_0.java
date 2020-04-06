@@ -1197,6 +1197,7 @@ public class MemberCompatibilityNullTest_2_0 {
         MapPutAllCodec.RequestParameters parameters = MapPutAllCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.name));
         assertTrue(isEqual(aListOfDataToData, parameters.entries));
+        assertFalse(parameters.isTriggerMapLoaderExists);
     }
 
     @Test

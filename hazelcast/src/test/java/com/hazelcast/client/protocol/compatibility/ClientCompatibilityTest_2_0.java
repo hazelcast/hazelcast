@@ -1188,7 +1188,7 @@ public class ClientCompatibilityTest_2_0 {
     @Test
     public void test_MapPutAllCodec_encodeRequest() {
         int fileClientMessageIndex = 128;
-        ClientMessage encoded = MapPutAllCodec.encodeRequest(aString, aListOfDataToData);
+        ClientMessage encoded = MapPutAllCodec.encodeRequest(aString, aListOfDataToData, aBoolean);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

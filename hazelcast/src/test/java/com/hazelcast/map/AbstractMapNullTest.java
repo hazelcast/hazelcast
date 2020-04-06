@@ -125,6 +125,9 @@ public abstract class AbstractMapNullTest extends HazelcastTestSupport {
         assertThrowsNPE(m -> m.set("", "", -1, null, -1, sampleTimeUnit));
         assertThrowsNPE(m -> m.set("", "", -1, sampleTimeUnit, -1, null));
 
+        assertThrowsNPE(m -> m.setAll(null));
+        assertThrowsNPE(m -> m.setAllAsync(null));
+
         assertThrowsNPE(m -> m.lock(null));
         assertThrowsNPE(m -> m.lock(null, -1, sampleTimeUnit));
 
