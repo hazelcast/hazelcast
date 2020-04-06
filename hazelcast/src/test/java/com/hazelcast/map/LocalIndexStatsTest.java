@@ -425,7 +425,7 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
 
         long totalMeasuredLatency = 0;
         for (int i = 1; i <= QUERIES; ++i) {
-            long startNanos = timer.nanos();
+            long startNanos = Timer.nanos();
             map.entrySet(Predicates.equal("__key", i));
             totalMeasuredLatency += Timer.nanosElapsed(startNanos);
 
@@ -451,7 +451,7 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
         long totalMeasuredLatency = 0;
         long previousTotalInsertLatency = 0;
         for (int i = 1; i <= 100; ++i) {
-            long startNanos = timer.nanos();
+            long startNanos = Timer.nanos();
             map.put(i, i);
             totalMeasuredLatency += Timer.nanosElapsed(startNanos);
 
@@ -481,7 +481,7 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
         long totalMeasuredLatency = 0;
         long previousTotalUpdateLatency = 0;
         for (int i = 1; i <= 50; ++i) {
-            long startNanos = timer.nanos();
+            long startNanos = Timer.nanos();
             map.put(i, i * 2);
             totalMeasuredLatency += Timer.nanosElapsed(startNanos);
 
