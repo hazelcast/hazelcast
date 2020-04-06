@@ -48,8 +48,7 @@ public class BounceMemberRuleStalenessTest extends HazelcastTestSupport {
 
     @Test
     public void stalenessIsDetected() {
-        Timer timer = Timer.getSystemTimer();
-        long startTime = timer.nanos();
+        long startTimeNanos = Timer.nanos();
         try {
             bounceMemberRule.testRepeatedly(1, new Runnable() {
                 @Override
@@ -60,7 +59,7 @@ public class BounceMemberRuleStalenessTest extends HazelcastTestSupport {
 
             fail("The Bouncing Rule should detect a staleness!");
         } catch (AssertionError ae) {
-            long detectionDurationSeconds = Timer.secondsElapsed(startTime);
+            long detectionDurationSeconds = Timer.secondsElapsed(startTimeNanos);
             assertTrue("Staleness detector was too slow to detect stale. "
                             + "Maximum configured staleness in seconds: " + MAXIMUM_STALENESS_SECONDS
                             + " and it took " + detectionDurationSeconds + " seconds to detect staleness",

@@ -597,11 +597,11 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         return updateAccessDuration(key, record, expiryPolicy, now);
     }
 
-    protected void updateReplaceStat(boolean result, boolean isHit, long startNano) {
+    protected void updateReplaceStat(boolean result, boolean isHit, long startNanos) {
         if (isStatisticsEnabled()) {
             if (result) {
                 statistics.increaseCachePuts(1);
-                statistics.addPutTimeNanos(Timer.nanosElapsed(startNano));
+                statistics.addPutTimeNanos(Timer.nanosElapsed(startNanos));
             }
             if (isHit) {
                 statistics.increaseCacheHits(1);
@@ -1260,7 +1260,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     protected Object put(Data key, Object value, ExpiryPolicy expiryPolicy, UUID source,
                          boolean getValue, boolean disableWriteThrough, int completionId) {
         long now = Clock.currentTimeMillis();
-        long start = isStatisticsEnabled() ? Timer.nanos() : 0;
+        long startNanos = isStatisticsEnabled() ? Timer.nanos() : 0;
         boolean isOnNewPut = false;
         boolean isSaveSucceed;
         Object oldValue = null;
@@ -1283,7 +1283,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             }
             onPut(key, value, expiryPolicy, source, getValue, disableWriteThrough,
                     record, oldValue, isExpired, isOnNewPut, isSaveSucceed);
-            updateGetAndPutStat(isSaveSucceed, getValue, oldValue == null, start);
+            updateGetAndPutStat(isSaveSucceed, getValue, oldValue == null, startNanos);
             if (getValue) {
                 return oldValue;
             } else {
@@ -1591,10 +1591,10 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         }
     }
 
-    private void updateRemoveStatistics(boolean result, int hitCount, long startNano) {
+    private void updateRemoveStatistics(boolean result, int hitCount, long startNanos) {
         if (result && isStatisticsEnabled()) {
             statistics.increaseCacheRemovals(1);
-            statistics.addRemoveTimeNanos(Timer.nanosElapsed(startNano));
+            statistics.addRemoveTimeNanos(Timer.nanosElapsed(startNanos));
             if (hitCount == 1) {
                 statistics.increaseCacheHits(hitCount);
             } else {

@@ -1172,9 +1172,9 @@ public class MigrationManager {
          */
         private void migrationOperationSucceeded() {
             migrationInterceptor.onMigrationComplete(MigrationParticipant.MASTER, migrationInfo, true);
-            long start = Timer.nanos();
+            long startNanos = Timer.nanos();
             boolean commitSuccessful = commitMigrationToDestination(migrationInfo);
-            stats.recordDestinationCommitTime(Timer.nanosElapsed(start));
+            stats.recordDestinationCommitTime(Timer.nanosElapsed(startNanos));
             partitionServiceLock.lock();
             try {
                 if (commitSuccessful) {

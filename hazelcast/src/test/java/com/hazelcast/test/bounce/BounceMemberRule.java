@@ -593,7 +593,6 @@ public class BounceMemberRule implements TestRule {
      */
     final class TestTaskRunnable implements Runnable {
 
-        private final Timer timer = Timer.getSystemTimer();
         private final Runnable task;
 
         private volatile long lastIterationStartedTimestamp;
@@ -609,7 +608,7 @@ public class BounceMemberRule implements TestRule {
         public void run() {
             while (testRunning.get()) {
                 try {
-                    long startedNanos = timer.nanos();
+                    long startedNanos = Timer.nanos();
                     lastIterationStartedTimestamp = startedNanos;
                     currentThread = Thread.currentThread();
                     task.run();

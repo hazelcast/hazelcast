@@ -510,9 +510,8 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
 
         long totalMeasuredLatency = 0;
         long previousTotalRemoveLatency = 0;
-        Timer timer = Timer.getSystemTimer();
         for (int i = 1; i <= 50; ++i) {
-            long startNanos = timer.nanos();
+            long startNanos = Timer.nanos();
             map.remove(i);
             totalMeasuredLatency += Timer.nanosElapsed(startNanos);
 

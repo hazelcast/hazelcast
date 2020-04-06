@@ -25,7 +25,6 @@ import static java.util.concurrent.locks.LockSupport.parkNanos;
 public class JitterThread extends Thread {
 
     private final JitterRecorder jitterRecorder;
-    private final Timer timer = Timer.getSystemTimer();
 
     JitterThread(JitterRecorder jitterRecorder) {
         this.jitterRecorder = jitterRecorder;
@@ -35,7 +34,7 @@ public class JitterThread extends Thread {
     }
 
     public void run() {
-        long beforeNanos = timer.nanos();
+        long beforeNanos = Timer.nanos();
         long shortestHiccup = Long.MAX_VALUE;
         while (true) {
             long beforeMillis = System.currentTimeMillis();
@@ -49,7 +48,7 @@ public class JitterThread extends Thread {
             currentHiccup -= shortestHiccup;
 
             jitterRecorder.recordPause(beforeMillis, currentHiccup);
-            beforeNanos = timer.nanos();
+            beforeNanos = Timer.nanos();
         }
     }
 

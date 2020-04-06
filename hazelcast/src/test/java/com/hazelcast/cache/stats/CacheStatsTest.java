@@ -200,15 +200,14 @@ public class CacheStatsTest extends CacheTestSupport {
 
         final int ENTRY_COUNT = 100;
 
-        Timer timer = Timer.getSystemTimer();
-        long startNanos = timer.nanos();
+        long startNanos = Timer.nanos();
         for (int i = 0; i < ENTRY_COUNT; i++) {
             cache.put(i, "Value-" + i);
         }
-        float avgPutTime = Timer.microsElapsed(startNanos);
+        float avgPutTimeMicros = Timer.microsElapsed(startNanos);
 
         assertTrue(stats.getAveragePutTime() > 0);
-        assertTrue(stats.getAveragePutTime() < avgPutTime);
+        assertTrue(stats.getAveragePutTime() < avgPutTimeMicros);
     }
 
     @Test
@@ -263,15 +262,14 @@ public class CacheStatsTest extends CacheTestSupport {
             cache.put(i, "Value-" + i);
         }
 
-        Timer timer = Timer.getSystemTimer();
-        long startNanos = timer.nanos();
+        long startNanos = Timer.nanos();
         for (int i = 0; i < 2 * ENTRY_COUNT; i++) {
             cache.get(i);
         }
-        float avgGetTime = Timer.microsElapsed(startNanos);
+        float avgGetTimeMicros = Timer.microsElapsed(startNanos);
 
         assertTrue(stats.getAverageGetTime() > 0);
-        assertTrue(stats.getAverageGetTime() < avgGetTime);
+        assertTrue(stats.getAverageGetTime() < avgGetTimeMicros);
     }
 
     @Test
@@ -327,15 +325,14 @@ public class CacheStatsTest extends CacheTestSupport {
             cache.put(i, "Value-" + i);
         }
 
-        Timer timer = Timer.getSystemTimer();
-        long startNanos = timer.nanos();
+        long startNanos = Timer.nanos();
         for (int i = 0; i < ENTRY_COUNT; i++) {
             cache.remove(i);
         }
-        float avgRemoveTime = Timer.microsElapsed(startNanos);
+        float avgRemoveTimeMicros = Timer.microsElapsed(startNanos);
 
         assertTrue(stats.getAverageRemoveTime() > 0);
-        assertTrue(stats.getAverageRemoveTime() < avgRemoveTime);
+        assertTrue(stats.getAverageRemoveTime() < avgRemoveTimeMicros);
 
         float currentAverageRemoveTime = stats.getAverageRemoveTime();
         sleepAtLeastMillis(1);
