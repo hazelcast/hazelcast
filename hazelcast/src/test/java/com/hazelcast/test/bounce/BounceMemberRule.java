@@ -576,9 +576,8 @@ public class BounceMemberRule implements TestRule {
     }
 
     private void sleepSecondsWhenRunning(int seconds) {
-        Timer timer = Timer.getSystemTimer();
-        long deadLine = timer.nanos() + SECONDS.toNanos(seconds);
-        while (timer.nanosElapsedSince(deadLine) < 0 && testRunning.get()) {
+        long deadLine = Timer.nanos() + SECONDS.toNanos(seconds);
+        while (Timer.nanosElapsed(deadLine) < 0 && testRunning.get()) {
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
@@ -615,7 +614,7 @@ public class BounceMemberRule implements TestRule {
                     currentThread = Thread.currentThread();
                     task.run();
                     iterationCounter++;
-                    long latencyNanos = timer.nanosElapsedSince(startedNanos);
+                    long latencyNanos = Timer.nanosElapsed(startedNanos);
                     maxLatencyNanos = max(maxLatencyNanos, latencyNanos);
                 } catch (Throwable t) {
                     testFailed.set(true);

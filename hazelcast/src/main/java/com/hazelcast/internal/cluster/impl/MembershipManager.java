@@ -899,8 +899,7 @@ public class MembershipManager {
                 Address address = member.getAddress();
                 Future<MembersView> future = e.getValue();
 
-                Timer timer = Timer.getSystemTimer();
-                long startNanos = timer.nanos();
+                long startNanos = Timer.nanos();
                 try {
                     long timeout = min(FETCH_MEMBER_LIST_MILLIS, Math.max(mastershipClaimTimeout, 1));
                     MembersView membersView = future.get(timeout, MILLISECONDS);
@@ -934,7 +933,7 @@ public class MembershipManager {
                     }
                 }
 
-                mastershipClaimTimeout -= timer.millisElapsedSince(startNanos);
+                mastershipClaimTimeout -= Timer.millisElapsed(startNanos);
             }
 
             if (done) {

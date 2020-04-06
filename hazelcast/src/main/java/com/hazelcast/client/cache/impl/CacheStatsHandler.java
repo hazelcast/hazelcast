@@ -28,7 +28,6 @@ final class CacheStatsHandler {
 
     private final SerializationService serializationService;
     private final ClientCacheStatisticsImpl statistics;
-    private final Timer timer = Timer.getSystemTimer();
 
     CacheStatsHandler(SerializationService serializationService) {
         this.serializationService = serializationService;
@@ -41,11 +40,11 @@ final class CacheStatsHandler {
 
     void onReplace(boolean isGet, long startNanos, Object response) {
         if (isGet) {
-            statistics.addGetTimeNanos(timer.nanosElapsedSince(startNanos));
+            statistics.addGetTimeNanos(Timer.nanosElapsed(startNanos));
             if (response != null) {
                 statistics.increaseCacheHits();
                 statistics.increaseCachePuts();
-                statistics.addPutTimeNanos(timer.nanosElapsedSince(startNanos));
+                statistics.addPutTimeNanos(Timer.nanosElapsed(startNanos));
             } else {
                 statistics.increaseCacheMisses();
             }
@@ -53,7 +52,7 @@ final class CacheStatsHandler {
             if (Boolean.TRUE.equals(response)) {
                 statistics.increaseCacheHits();
                 statistics.increaseCachePuts();
-                statistics.addPutTimeNanos(timer.nanosElapsedSince(startNanos));
+                statistics.addPutTimeNanos(Timer.nanosElapsed(startNanos));
             } else {
                 statistics.increaseCacheMisses();
             }
@@ -72,7 +71,7 @@ final class CacheStatsHandler {
         if (saved) {
             statistics.increaseCachePuts();
             statistics.increaseCacheMisses();
-            statistics.addPutTimeNanos(timer.nanosElapsedSince(startNanos));
+            statistics.addPutTimeNanos(Timer.nanosElapsed(startNanos));
         }
     }
 
@@ -87,9 +86,9 @@ final class CacheStatsHandler {
 
     void onPut(boolean isGet, long startNanos, boolean cacheHit) {
         statistics.increaseCachePuts();
-        statistics.addPutTimeNanos(timer.nanosElapsedSince(startNanos));
+        statistics.addPutTimeNanos(Timer.nanosElapsed(startNanos));
         if (isGet) {
-            statistics.addGetTimeNanos(timer.nanosElapsedSince(startNanos));
+            statistics.addGetTimeNanos(Timer.nanosElapsed(startNanos));
             if (cacheHit) {
                 statistics.increaseCacheHits();
             } else {
@@ -108,18 +107,18 @@ final class CacheStatsHandler {
 
     void onRemove(boolean isGet, long startNanos, Object response) {
         if (isGet) {
-            statistics.addGetTimeNanos(timer.nanosElapsedSince(startNanos));
+            statistics.addGetTimeNanos(Timer.nanosElapsed(startNanos));
             if (response != null) {
                 statistics.increaseCacheHits();
                 statistics.increaseCacheRemovals();
-                statistics.addRemoveTimeNanos(timer.nanosElapsedSince(startNanos));
+                statistics.addRemoveTimeNanos(Timer.nanosElapsed(startNanos));
             } else {
                 statistics.increaseCacheMisses();
             }
         } else {
             if (Boolean.TRUE.equals(toObject(response))) {
                 statistics.increaseCacheRemovals();
-                statistics.addRemoveTimeNanos(timer.nanosElapsedSince(startNanos));
+                statistics.addRemoveTimeNanos(Timer.nanosElapsed(startNanos));
             }
         }
     }
@@ -138,7 +137,7 @@ final class CacheStatsHandler {
         } else {
             statistics.increaseCacheMisses();
         }
-        statistics.addGetTimeNanos(timer.nanosElapsedSince(startNanos));
+        statistics.addGetTimeNanos(Timer.nanosElapsed(startNanos));
     }
 
     <T> BiConsumer<T, Throwable> newOnGetCallback(final long startNanos) {
@@ -154,19 +153,19 @@ final class CacheStatsHandler {
         // We just assume that if there is no exception, all of them are removed.
         // Otherwise (if there is an exception), we don't update any cache stats about remove.
         statistics.increaseCacheRemovals(batchSize);
-        statistics.addRemoveTimeNanos(timer.nanosElapsedSince(startNanos));
+        statistics.addRemoveTimeNanos(Timer.nanosElapsed(startNanos));
     }
 
     void onBatchGet(long startNanos, int batchSize) {
         statistics.increaseCacheHits(batchSize);
-        statistics.addGetTimeNanos(timer.nanosElapsedSince(startNanos));
+        statistics.addGetTimeNanos(Timer.nanosElapsed(startNanos));
     }
 
     void onBatchPut(long startNanos, int batchSize) {
         // we don't know how many of keys are actually loaded, so we assume that all of them are loaded
         // and calculate statistics based on this assumption
         statistics.increaseCachePuts(batchSize);
-        statistics.addPutTimeNanos(timer.nanosElapsedSince(startNanos));
+        statistics.addPutTimeNanos(Timer.nanosElapsed(startNanos));
     }
 
     void clear() {

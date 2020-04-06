@@ -279,7 +279,7 @@ public class TestLoggerFactory extends LoggerFactorySupport {
         }
 
         private void logOnSlowLogging(long startTimeNanos) {
-            long durationNanos = timer.nanosElapsedSince(startTimeNanos);
+            long durationNanos = Timer.nanosElapsed(startTimeNanos);
             if (durationNanos > WARNING_THRESHOLD_NANOS) {
                 long durationMillis = NANOSECONDS.toMillis(durationNanos);
                 delegate.warning("Logging took " + durationMillis + " ms.");

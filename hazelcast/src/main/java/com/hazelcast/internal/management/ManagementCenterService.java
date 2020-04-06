@@ -63,12 +63,11 @@ public class ManagementCenterService {
     private final BlockingQueue<Event> mcEvents;
     private final ConsoleCommandHandler commandHandler;
     private final ClientBwListConfigHandler bwListConfigHandler;
-    private final Timer timer = Timer.getSystemTimer();
 
     private volatile ManagementCenterEventListener eventListener;
     private volatile String lastMCConfigETag;
     private volatile long lastTMSUpdateNanos;
-    private volatile long lastMCEventsPollNanos = timer.nanos();
+    private volatile long lastMCEventsPollNanos = Timer.nanos();
 
     public ManagementCenterService(HazelcastInstanceImpl instance) {
         this.instance = instance;
@@ -102,7 +101,7 @@ public class ManagementCenterService {
             tmsFactory.init();
         }
 
-        if (timer.nanosElapsedSince(lastTMSUpdateNanos) <= TMS_CACHE_TIMEOUT_NANOS) {
+        if (Timer.nanosElapsed(lastTMSUpdateNanos) <= TMS_CACHE_TIMEOUT_NANOS) {
             return Optional.ofNullable(tmsJson.get());
         }
 
@@ -110,7 +109,7 @@ public class ManagementCenterService {
             TimedMemberState tms;
             synchronized (tmsFactory) {
                 tms = tmsFactory.createTimedMemberState();
-                lastTMSUpdateNanos = timer.nanos();
+                lastTMSUpdateNanos = Timer.nanos();
             }
             JsonObject json = new JsonObject();
             json.add("timedMemberState", tms.toJson());
@@ -134,7 +133,7 @@ public class ManagementCenterService {
      */
     @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
     public void log(Event event) {
-        if (timer.nanosElapsedSince(lastMCEventsPollNanos) > MC_EVENTS_WINDOW_NANOS) {
+        if (Timer.nanosElapsed(lastMCEventsPollNanos) > MC_EVENTS_WINDOW_NANOS) {
             // ignore event and clear the queue if the last poll happened a while ago
             onMCEventWindowExceeded();
         } else {
@@ -166,7 +165,7 @@ public class ManagementCenterService {
     public List<Event> pollMCEvents() {
         List<Event> polled = new ArrayList<>();
         mcEvents.drainTo(polled);
-        lastMCEventsPollNanos = timer.nanos();
+        lastMCEventsPollNanos = Timer.nanos();
         return polled;
     }
 

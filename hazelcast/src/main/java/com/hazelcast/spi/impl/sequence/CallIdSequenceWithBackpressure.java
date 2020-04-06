@@ -58,10 +58,9 @@ public final class CallIdSequenceWithBackpressure extends AbstractCallIdSequence
 
     @Override
     protected void handleNoSpaceLeft() {
-        Timer timer = Timer.getSystemTimer();
-        long startNanos = timer.nanos();
+        long startNanos = Timer.nanos();
         for (long idleCount = 0; ; idleCount++) {
-            long elapsedNanos = timer.nanosElapsedSince(startNanos);
+            long elapsedNanos = Timer.nanosElapsed(startNanos);
             if (elapsedNanos > backoffTimeoutNanos) {
                 throw new HazelcastOverloadException(String.format("Timed out trying to acquire another call ID."
                                 + " maxConcurrentInvocations = %d, backoffTimeout = %d msecs, elapsed:%d msecs",

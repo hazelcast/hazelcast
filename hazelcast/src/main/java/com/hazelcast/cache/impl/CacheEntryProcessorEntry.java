@@ -65,7 +65,7 @@ public class CacheEntryProcessorEntry<K, V, R extends CacheRecord>
         this.cacheRecordStore = cacheRecordStore;
         this.now = now;
         this.completionId = completionId;
-        this.startNano = cacheRecordStore.cacheConfig.isStatisticsEnabled() ? Timer.getSystemTimer().nanos() : 0;
+        this.startNano = cacheRecordStore.cacheConfig.isStatisticsEnabled() ? Timer.nanos() : 0;
 
         final Factory<ExpiryPolicy> expiryPolicyFactory =
                 cacheRecordStore.cacheConfig.getExpiryPolicyFactory();
@@ -164,7 +164,7 @@ public class CacheEntryProcessorEntry<K, V, R extends CacheRecord>
             case CREATE:
                 if (isStatisticsEnabled) {
                     statistics.increaseCachePuts(1);
-                    statistics.addGetTimeNanos(Timer.getSystemTimer().nanosElapsedSince(startNano));
+                    statistics.addGetTimeNanos(Timer.nanosElapsed(startNano));
                 }
                 boolean saved =
                         cacheRecordStore.createRecordWithExpiry(keyData, value, expiryPolicy,
@@ -182,7 +182,7 @@ public class CacheEntryProcessorEntry<K, V, R extends CacheRecord>
                 onUpdate(keyData, value, record, expiryPolicy, now, false, completionId, saved);
                 if (isStatisticsEnabled) {
                     statistics.increaseCachePuts(1);
-                    statistics.addGetTimeNanos(Timer.getSystemTimer().nanosElapsedSince(startNano));
+                    statistics.addGetTimeNanos(Timer.nanosElapsed(startNano));
                 }
                 break;
             case REMOVE:

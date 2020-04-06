@@ -50,78 +50,71 @@ public class LatencyTrackingQueueStore<T> implements QueueStore<T> {
 
     @Override
     public void store(Long key, T value) {
-        Timer timer = Timer.getSystemTimer();
-        long startNanos = timer.nanos();
+        long startNanos = Timer.nanos();
         try {
             delegate.store(key, value);
         } finally {
-            storeProbe.recordValue(timer.nanosElapsedSince(startNanos));
+            storeProbe.recordValue(Timer.nanosElapsed(startNanos));
         }
     }
 
     @Override
     public void storeAll(Map<Long, T> map) {
-        Timer timer = Timer.getSystemTimer();
-        long startNanos = timer.nanos();
+        long startNanos = Timer.nanos();
         try {
             delegate.storeAll(map);
         } finally {
-            storeAllProbe.recordValue(timer.nanosElapsedSince(startNanos));
+            storeAllProbe.recordValue(Timer.nanosElapsed(startNanos));
         }
     }
 
     @Override
     public void delete(Long key) {
-        Timer timer = Timer.getSystemTimer();
-        long startNanos = timer.nanos();
+        long startNanos = Timer.nanos();
         try {
             delegate.delete(key);
         } finally {
-            deleteProbe.recordValue(timer.nanosElapsedSince(startNanos));
+            deleteProbe.recordValue(Timer.nanosElapsed(startNanos));
         }
     }
 
     @Override
     public void deleteAll(Collection<Long> keys) {
-        Timer timer = Timer.getSystemTimer();
-        long startNanos = timer.nanos();
+        long startNanos = Timer.nanos();
         try {
             delegate.deleteAll(keys);
         } finally {
-            deleteAllProbe.recordValue(timer.nanosElapsedSince(startNanos));
+            deleteAllProbe.recordValue(Timer.nanosElapsed(startNanos));
         }
     }
 
     @Override
     public T load(Long key) {
-        Timer timer = Timer.getSystemTimer();
-        long startNanos = timer.nanos();
+        long startNanos = Timer.nanos();
         try {
             return delegate.load(key);
         } finally {
-            loadProbe.recordValue(timer.nanosElapsedSince(startNanos));
+            loadProbe.recordValue(Timer.nanosElapsed(startNanos));
         }
     }
 
     @Override
     public Map<Long, T> loadAll(Collection<Long> keys) {
-        Timer timer = Timer.getSystemTimer();
-        long startNanos = timer.nanos();
+        long startNanos = Timer.nanos();
         try {
             return delegate.loadAll(keys);
         } finally {
-            loadAllProbe.recordValue(timer.nanosElapsedSince(startNanos));
+            loadAllProbe.recordValue(Timer.nanosElapsed(startNanos));
         }
     }
 
     @Override
     public Set<Long> loadAllKeys() {
-        Timer timer = Timer.getSystemTimer();
-        long startNanos = timer.nanos();
+        long startNanos = Timer.nanos();
         try {
             return delegate.loadAllKeys();
         } finally {
-            loadAllKeysProbe.recordValue(timer.nanosElapsedSince(startNanos));
+            loadAllKeysProbe.recordValue(Timer.nanosElapsed(startNanos));
         }
     }
 }

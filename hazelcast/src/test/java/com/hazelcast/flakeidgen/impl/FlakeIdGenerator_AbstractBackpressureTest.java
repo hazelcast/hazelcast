@@ -44,15 +44,14 @@ public abstract class FlakeIdGenerator_AbstractBackpressureTest {
     public void backpressureTest() {
         final FlakeIdGenerator generator = instance.getFlakeIdGenerator("gen");
 
-        Timer timer = Timer.getSystemTimer();
-        long testStartNanos = timer.nanos();
+        long testStartNanos = Timer.nanos();
         long allowedHiccupMillis = 2000;
         for (int i = 1; i <= 15; i++) {
             generator.newId();
-            long elapsedMs = timer.millisElapsedSince(testStartNanos);
+            long elapsedMs = Timer.millisElapsed(testStartNanos);
             long minimumRequiredMs = Math.max(0, (i * BATCH_SIZE >> DEFAULT_BITS_SEQUENCE) - DEFAULT_ALLOWED_FUTURE_MILLIS - CTM_IMPRECISION);
             long maximumAllowedMs = minimumRequiredMs + allowedHiccupMillis;
-            String msg = "Iteration " + i + ", elapsed: " + timer.millisElapsedSince(testStartNanos) + "ms, "
+            String msg = "Iteration " + i + ", elapsed: " + Timer.millisElapsed(testStartNanos) + "ms, "
                     + "minimum: " + minimumRequiredMs + ", maximum: " + maximumAllowedMs;
             LOGGER.info(msg);
             assertTrue(msg, elapsedMs >= minimumRequiredMs && elapsedMs <= maximumAllowedMs);

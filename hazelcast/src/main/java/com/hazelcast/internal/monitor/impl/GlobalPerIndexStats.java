@@ -74,8 +74,6 @@ public class GlobalPerIndexStats implements PerIndexStats {
     private static final AtomicLongFieldUpdater<GlobalPerIndexStats> VALUES_MEMORY_COST = newUpdater(GlobalPerIndexStats.class,
             "valuesMemoryCost");
 
-    private final Timer timer = Timer.getSystemTimer();
-
     private final boolean ordered;
     private final boolean usesCachedQueryableEntries;
     private final long creationTime;
@@ -112,7 +110,7 @@ public class GlobalPerIndexStats implements PerIndexStats {
 
     @Override
     public long makeTimestamp() {
-        return timer.nanos();
+        return Timer.nanos();
     }
 
     @Override
@@ -188,7 +186,7 @@ public class GlobalPerIndexStats implements PerIndexStats {
         }
 
         if (operationSource == Index.OperationSource.USER) {
-            TOTAL_INSERT_LATENCY.addAndGet(this, timer.nanosElapsedSince(timestampNanos));
+            TOTAL_INSERT_LATENCY.addAndGet(this, Timer.nanosElapsed(timestampNanos));
             INSERT_COUNT.incrementAndGet(this);
         }
         ENTRY_COUNT.incrementAndGet(this);
@@ -198,7 +196,7 @@ public class GlobalPerIndexStats implements PerIndexStats {
     @Override
     public void onUpdate(long timestampNanos, IndexOperationStats operationStats, Index.OperationSource operationSource) {
         if (operationSource == Index.OperationSource.USER) {
-            TOTAL_UPDATE_LATENCY.addAndGet(this, timer.nanosElapsedSince(timestampNanos));
+            TOTAL_UPDATE_LATENCY.addAndGet(this, Timer.nanosElapsed(timestampNanos));
             UPDATE_COUNT.incrementAndGet(this);
         }
         VALUES_MEMORY_COST.addAndGet(this, operationStats.getMemoryCostDelta());
@@ -212,7 +210,7 @@ public class GlobalPerIndexStats implements PerIndexStats {
         }
 
         if (operationSource == Index.OperationSource.USER) {
-            TOTAL_REMOVE_LATENCY.addAndGet(this, timer.nanosElapsedSince(timestamp));
+            TOTAL_REMOVE_LATENCY.addAndGet(this, Timer.nanosElapsed(timestamp));
             REMOVE_COUNT.incrementAndGet(this);
         }
         ENTRY_COUNT.decrementAndGet(this);
@@ -233,7 +231,7 @@ public class GlobalPerIndexStats implements PerIndexStats {
             return;
         }
 
-        TOTAL_HIT_LATENCY.addAndGet(this, timer.nanosElapsedSince(timestamp));
+        TOTAL_HIT_LATENCY.addAndGet(this, Timer.nanosElapsed(timestamp));
         HIT_COUNT.incrementAndGet(this);
 
         // limit the cardinality for "safety"

@@ -58,7 +58,7 @@ public class MapGetAllMessageTask
 
     @Override
     protected void beforeProcess() {
-        startTimeNanos = Timer.getSystemTimer().nanos();
+        startTimeNanos = Timer.nanos();
     }
 
     @Override
@@ -67,7 +67,7 @@ public class MapGetAllMessageTask
         MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(parameters.name);
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
             mapService.getMapServiceContext().getLocalMapStatsProvider().getLocalMapStatsImpl(parameters.name)
-                    .incrementGetLatencyNanos(parameters.keys.size(), Timer.getSystemTimer().nanosElapsedSince(startTimeNanos));
+                    .incrementGetLatencyNanos(parameters.keys.size(), Timer.nanosElapsed(startTimeNanos));
         }
         return response;
     }

@@ -127,8 +127,7 @@ public class NearCachePreloader<K> {
             return;
         }
 
-        Timer timer = Timer.getSystemTimer();
-        long startedNanos = timer.nanos();
+        long startedNanos = Timer.nanos();
         BufferingInputStream bis = null;
         try {
             bis = new BufferingInputStream(new FileInputStream(storeFile), BUFFER_SIZE);
@@ -138,7 +137,7 @@ public class NearCachePreloader<K> {
 
             int loadedKeys = loadKeySet(bis, adapter);
 
-            long elapsedMillis = timer.millisElapsedSince(startedNanos);
+            long elapsedMillis = Timer.millisElapsed(startedNanos);
             logger.info(format("Loaded %d keys of Near Cache %s in %d ms", loadedKeys, nearCacheName, elapsedMillis));
         } catch (Exception e) {
             logger.warning(format("Could not pre-load Near Cache %s (%s)", nearCacheName, storeFile.getAbsolutePath()), e);
@@ -168,7 +167,7 @@ public class NearCachePreloader<K> {
      * @param iterator {@link Iterator} over the key set of a {@link com.hazelcast.internal.nearcache.NearCacheRecordStore}
      */
     public void storeKeys(Iterator<K> iterator) {
-        long startedNanos = Timer.getSystemTimer().nanos();
+        long startedNanos = Timer.nanos();
         FileOutputStream fos = null;
         try {
             buf = allocate(BUFFER_SIZE);
@@ -205,7 +204,7 @@ public class NearCachePreloader<K> {
     }
 
     private void updatePersistenceStats(long startedNanos) {
-        long elapsedMillis = Timer.getSystemTimer().millisElapsedSince(startedNanos);
+        long elapsedMillis = Timer.millisElapsed(startedNanos);
         nearCacheStats.addPersistence(elapsedMillis, lastWrittenBytes, lastKeyCount);
 
         logger.info(format("Stored %d keys of Near Cache %s in %d ms (%d kB)", lastKeyCount, nearCacheName, elapsedMillis,

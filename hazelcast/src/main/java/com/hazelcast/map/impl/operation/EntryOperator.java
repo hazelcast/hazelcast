@@ -59,14 +59,13 @@ import static com.hazelcast.wan.impl.CallerProvenance.NOT_WAN;
  */
 public final class EntryOperator {
 
-    private final Timer timer = Timer.getSystemTimer();
     private final boolean shouldClone;
     private final boolean backup;
     private final boolean readOnly;
     private final boolean wanReplicationEnabled;
     private final boolean hasEventRegistration;
     private final int partitionId;
-    private final long startTimeNanos = timer.nanos();
+    private final long startTimeNanos = Timer.nanos();
     private final String mapName;
     private final RecordStore recordStore;
     private final InternalSerializationService ss;
@@ -266,7 +265,7 @@ public final class EntryOperator {
                 entry.setValueByInMemoryFormat(inMemoryFormat, newValue);
             }
             mapServiceContext.interceptAfterPut(mapContainer.getInterceptorRegistry(), newValue);
-            stats.incrementPutLatencyNanos(timer.nanosElapsedSince(startTimeNanos));
+            stats.incrementPutLatencyNanos(Timer.nanosElapsed(startTimeNanos));
         }
     }
 
@@ -276,7 +275,7 @@ public final class EntryOperator {
         } else {
             recordStore.delete(dataKey, NOT_WAN);
             mapServiceContext.interceptAfterRemove(mapContainer.getInterceptorRegistry(), oldValue);
-            stats.incrementRemoveLatencyNanos(timer.nanosElapsedSince(startTimeNanos));
+            stats.incrementRemoveLatencyNanos(Timer.nanosElapsed(startTimeNanos));
         }
     }
 

@@ -205,7 +205,7 @@ public class CacheStatsTest extends CacheTestSupport {
         for (int i = 0; i < ENTRY_COUNT; i++) {
             cache.put(i, "Value-" + i);
         }
-        float avgPutTime = timer.microsElapsedSince(startNanos);
+        float avgPutTime = Timer.microsElapsed(startNanos);
 
         assertTrue(stats.getAveragePutTime() > 0);
         assertTrue(stats.getAveragePutTime() < avgPutTime);
@@ -268,7 +268,7 @@ public class CacheStatsTest extends CacheTestSupport {
         for (int i = 0; i < 2 * ENTRY_COUNT; i++) {
             cache.get(i);
         }
-        float avgGetTime = timer.microsElapsedSince(startNanos);
+        float avgGetTime = Timer.microsElapsed(startNanos);
 
         assertTrue(stats.getAverageGetTime() > 0);
         assertTrue(stats.getAverageGetTime() < avgGetTime);
@@ -332,7 +332,7 @@ public class CacheStatsTest extends CacheTestSupport {
         for (int i = 0; i < ENTRY_COUNT; i++) {
             cache.remove(i);
         }
-        float avgRemoveTime = timer.microsElapsedSince(startNanos);
+        float avgRemoveTime = Timer.microsElapsed(startNanos);
 
         assertTrue(stats.getAverageRemoveTime() > 0);
         assertTrue(stats.getAverageRemoveTime() < avgRemoveTime);

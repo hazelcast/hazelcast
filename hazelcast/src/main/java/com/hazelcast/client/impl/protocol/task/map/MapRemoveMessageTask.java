@@ -42,7 +42,7 @@ public class MapRemoveMessageTask
 
     @Override
     protected void beforeProcess() {
-        startTimeNanos = Timer.getSystemTimer().nanos();
+        startTimeNanos = Timer.nanos();
     }
 
     @Override
@@ -51,7 +51,7 @@ public class MapRemoveMessageTask
         MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(parameters.name);
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
             mapService.getMapServiceContext().getLocalMapStatsProvider().getLocalMapStatsImpl(parameters.name)
-                    .incrementRemoveLatencyNanos(Timer.getSystemTimer().nanosElapsedSince(startTimeNanos));
+                    .incrementRemoveLatencyNanos(Timer.nanosElapsed(startTimeNanos));
         }
         return response;
     }

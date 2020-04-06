@@ -110,7 +110,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     public static final UUID SOURCE_NOT_AVAILABLE = UuidUtil.NIL_UUID;
     protected static final int DEFAULT_INITIAL_CAPACITY = 256;
 
-    protected final Timer timer = Timer.getSystemTimer();
     protected final int partitionId;
     protected final int partitionCount;
     protected final boolean wanReplicationEnabled;
@@ -558,7 +557,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         if (isStatisticsEnabled()) {
             if (isPutSucceed) {
                 statistics.increaseCachePuts(1);
-                statistics.addPutTimeNanos(timer.nanosElapsedSince(startNanos));
+                statistics.addPutTimeNanos(Timer.nanosElapsed(startNanos));
             }
             if (getValue) {
                 if (oldValueNull) {
@@ -566,7 +565,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                 } else {
                     statistics.increaseCacheHits(1);
                 }
-                statistics.addGetTimeNanos(timer.nanosElapsedSince(startNanos));
+                statistics.addGetTimeNanos(Timer.nanosElapsed(startNanos));
             }
         }
     }
@@ -602,7 +601,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         if (isStatisticsEnabled()) {
             if (result) {
                 statistics.increaseCachePuts(1);
-                statistics.addPutTimeNanos(timer.nanosElapsedSince(startNano));
+                statistics.addPutTimeNanos(Timer.nanosElapsed(startNano));
             }
             if (isHit) {
                 statistics.increaseCacheHits(1);
@@ -1147,7 +1146,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     @Override
     public Object get(Data key, ExpiryPolicy expiryPolicy) {
-        long startNano = isStatisticsEnabled() ? timer.nanos() : 0;
+        long startNanos = isStatisticsEnabled() ? Timer.nanos() : 0;
         long now = Clock.currentTimeMillis();
         Object value = null;
         R record = records.get(key);
@@ -1161,7 +1160,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                 value = readThroughCache(key);
                 if (value == null) {
                     if (isStatisticsEnabled()) {
-                        statistics.addGetTimeNanos(timer.nanosElapsedSince(startNano));
+                        statistics.addGetTimeNanos(Timer.nanosElapsed(startNanos));
                     }
                     return null;
                 }
@@ -1174,7 +1173,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                 }
             }
             if (isStatisticsEnabled()) {
-                statistics.addGetTimeNanos(timer.nanosElapsedSince(startNano));
+                statistics.addGetTimeNanos(Timer.nanosElapsed(startNanos));
             }
             onGet(key, expiryPolicy, value, record);
             return value;
@@ -1261,7 +1260,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     protected Object put(Data key, Object value, ExpiryPolicy expiryPolicy, UUID source,
                          boolean getValue, boolean disableWriteThrough, int completionId) {
         long now = Clock.currentTimeMillis();
-        long start = isStatisticsEnabled() ? timer.nanos() : 0;
+        long start = isStatisticsEnabled() ? Timer.nanos() : 0;
         boolean isOnNewPut = false;
         boolean isSaveSucceed;
         Object oldValue = null;
@@ -1323,7 +1322,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     protected boolean putIfAbsent(Data key, Object value, ExpiryPolicy expiryPolicy, UUID source,
                                   boolean disableWriteThrough, int completionId) {
         long now = Clock.currentTimeMillis();
-        long startNano = isStatisticsEnabled() ? timer.nanos() : 0;
+        long startNanos = isStatisticsEnabled() ? Timer.nanos() : 0;
         boolean saved = false;
         R record = records.get(key);
         expiryPolicy = getExpiryPolicy(record, expiryPolicy);
@@ -1342,7 +1341,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             if (isStatisticsEnabled()) {
                 if (saved) {
                     statistics.increaseCachePuts();
-                    statistics.addPutTimeNanos(timer.nanosElapsedSince(startNano));
+                    statistics.addPutTimeNanos(Timer.nanosElapsed(startNanos));
                 }
                 if (cacheMiss) {
                     statistics.increaseCacheMisses();
@@ -1376,7 +1375,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     @Override
     public boolean replace(Data key, Object value, ExpiryPolicy expiryPolicy, UUID source, int completionId) {
         long now = Clock.currentTimeMillis();
-        long startNano = isStatisticsEnabled() ? timer.nanos() : 0;
+        long startNanos = isStatisticsEnabled() ? Timer.nanos() : 0;
         boolean replaced = false;
         R record = records.get(key);
         expiryPolicy = getExpiryPolicy(record, expiryPolicy);
@@ -1394,7 +1393,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                 if (replaced) {
                     statistics.increaseCachePuts(1);
                     statistics.increaseCacheHits(1);
-                    statistics.addPutTimeNanos(timer.nanosElapsedSince(startNano));
+                    statistics.addPutTimeNanos(Timer.nanosElapsed(startNanos));
                 } else {
                     statistics.increaseCacheMisses(1);
                 }
@@ -1410,7 +1409,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     public boolean replace(Data key, Object oldValue, Object newValue, ExpiryPolicy expiryPolicy,
                            UUID source, int completionId) {
         long now = Clock.currentTimeMillis();
-        long startNano = isStatisticsEnabled() ? timer.nanos() : 0;
+        long startNanos = isStatisticsEnabled() ? Timer.nanos() : 0;
         boolean isHit = false;
         boolean replaced = false;
         R record = records.get(key);
@@ -1433,7 +1432,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                 }
             }
             onReplace(key, oldValue, newValue, expiryPolicy, source, false, record, isExpired, replaced);
-            updateReplaceStat(replaced, isHit, startNano);
+            updateReplaceStat(replaced, isHit, startNanos);
             return replaced;
         } catch (Throwable error) {
             onReplaceError(key, oldValue, newValue, expiryPolicy, source, false,
@@ -1445,7 +1444,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     @Override
     public Object getAndReplace(Data key, Object value, ExpiryPolicy expiryPolicy, UUID source, int completionId) {
         long now = Clock.currentTimeMillis();
-        long startNano = isStatisticsEnabled() ? timer.nanos() : 0;
+        long startNanos = isStatisticsEnabled() ? Timer.nanos() : 0;
         boolean replaced = false;
         R record = records.get(key);
         expiryPolicy = getExpiryPolicy(record, expiryPolicy);
@@ -1462,11 +1461,11 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             }
             onReplace(key, null, value, expiryPolicy, source, false, record, isExpired, replaced);
             if (isStatisticsEnabled()) {
-                statistics.addGetTimeNanos(timer.nanosElapsedSince(startNano));
+                statistics.addGetTimeNanos(Timer.nanosElapsed(startNanos));
                 if (obj != null) {
                     statistics.increaseCacheHits(1);
                     statistics.increaseCachePuts(1);
-                    statistics.addPutTimeNanos(timer.nanosElapsedSince(startNano));
+                    statistics.addPutTimeNanos(Timer.nanosElapsed(startNanos));
                 } else {
                     statistics.increaseCacheMisses(1);
                 }
@@ -1523,7 +1522,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     public boolean remove(Data key, UUID source, UUID origin,
                           int completionId, CallerProvenance provenance) {
         long now = Clock.currentTimeMillis();
-        long startNano = isStatisticsEnabled() ? timer.nanos() : 0;
+        long startNanos = isStatisticsEnabled() ? Timer.nanos() : 0;
 
         deleteCacheEntry(key, provenance);
 
@@ -1541,7 +1540,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             onRemove(key, null, source, false, record, removed);
             if (removed && isStatisticsEnabled()) {
                 statistics.increaseCacheRemovals(1);
-                statistics.addRemoveTimeNanos(timer.nanosElapsedSince(startNano));
+                statistics.addRemoveTimeNanos(Timer.nanosElapsed(startNanos));
             }
             return removed;
         } catch (Throwable error) {
@@ -1558,7 +1557,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     @Override
     public boolean remove(Data key, Object value, UUID source, UUID origin, int completionId) {
         long now = Clock.currentTimeMillis();
-        long startNano = timer.nanos();
+        long startNanos = Timer.nanos();
         R record = records.get(key);
         int hitCount = 0;
         boolean removed = false;
@@ -1584,7 +1583,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                 }
             }
             onRemove(key, value, source, false, record, removed);
-            updateRemoveStatistics(removed, hitCount, startNano);
+            updateRemoveStatistics(removed, hitCount, startNanos);
             return removed;
         } catch (Throwable error) {
             onRemoveError(key, null, source, false, record, removed, error);
@@ -1595,7 +1594,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     private void updateRemoveStatistics(boolean result, int hitCount, long startNano) {
         if (result && isStatisticsEnabled()) {
             statistics.increaseCacheRemovals(1);
-            statistics.addRemoveTimeNanos(timer.nanosElapsedSince(startNano));
+            statistics.addRemoveTimeNanos(Timer.nanosElapsed(startNano));
             if (hitCount == 1) {
                 statistics.increaseCacheHits(hitCount);
             } else {
@@ -1629,7 +1628,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     public Object getAndRemove(Data key, UUID source, int completionId, UUID origin) {
         long now = Clock.currentTimeMillis();
-        long startNano = isStatisticsEnabled() ? timer.nanos() : 0;
+        long startNanos = isStatisticsEnabled() ? Timer.nanos() : 0;
 
         deleteCacheEntry(key);
 
@@ -1649,11 +1648,11 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             }
             onRemove(key, null, source, false, record, removed);
             if (isStatisticsEnabled()) {
-                statistics.addGetTimeNanos(timer.nanosElapsedSince(startNano));
+                statistics.addGetTimeNanos(Timer.nanosElapsed(startNanos));
                 if (obj != null) {
                     statistics.increaseCacheHits(1);
                     statistics.increaseCacheRemovals(1);
-                    statistics.addRemoveTimeNanos(timer.nanosElapsedSince(startNano));
+                    statistics.addRemoveTimeNanos(Timer.nanosElapsed(startNanos));
                 } else {
                     statistics.increaseCacheMisses(1);
                 }
@@ -1746,7 +1745,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                              SplitBrainMergePolicy<Object, CacheMergeTypes<Object, Object>, Object> mergePolicy,
                              CallerProvenance callerProvenance) {
         final long now = Clock.currentTimeMillis();
-        final long startNano = isStatisticsEnabled() ? timer.nanos() : 0;
+        final long startNanos = isStatisticsEnabled() ? Timer.nanos() : 0;
 
         injectDependencies(mergingEntry);
         injectDependencies(mergePolicy);
@@ -1774,7 +1773,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
         if (merged && isStatisticsEnabled()) {
             statistics.increaseCachePuts(1);
-            statistics.addPutTimeNanos(timer.nanosElapsedSince(startNano));
+            statistics.addPutTimeNanos(Timer.nanosElapsed(startNanos));
         }
 
         return merged ? record : null;
@@ -1813,7 +1812,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     @Override
     public Object invoke(Data key, EntryProcessor entryProcessor, Object[] arguments, int completionId) {
         long now = Clock.currentTimeMillis();
-        long startNano = isStatisticsEnabled() ? timer.nanos() : 0;
+        long startNanos = isStatisticsEnabled() ? Timer.nanos() : 0;
         R record = records.get(key);
         boolean isExpired = processExpiredEntry(key, record, now);
         if (isExpired) {
@@ -1825,7 +1824,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             } else {
                 statistics.increaseCacheHits(1);
             }
-            statistics.addGetTimeNanos(timer.nanosElapsedSince(startNano));
+            statistics.addGetTimeNanos(Timer.nanosElapsed(startNanos));
         }
         CacheEntryProcessorEntry entry = createCacheEntryProcessorEntry(key, record, now, completionId);
         injectDependencies(entryProcessor);

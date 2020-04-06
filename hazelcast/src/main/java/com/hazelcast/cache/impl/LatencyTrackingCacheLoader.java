@@ -40,23 +40,21 @@ public class LatencyTrackingCacheLoader<K, V> implements CacheLoader<K, V> {
 
     @Override
     public V load(K k) throws CacheLoaderException {
-        Timer timer = Timer.getSystemTimer();
-        long startNanos = timer.nanos();
+        long startNanos = Timer.nanos();
         try {
             return delegate.load(k);
         } finally {
-            loadProbe.recordValue(timer.nanosElapsedSince(startNanos));
+            loadProbe.recordValue(Timer.nanosElapsed(startNanos));
         }
     }
 
     @Override
     public Map<K, V> loadAll(Iterable<? extends K> iterable) throws CacheLoaderException {
-        Timer timer = Timer.getSystemTimer();
-        long startNanos = timer.nanos();
+        long startNanos = Timer.nanos();
         try {
             return delegate.loadAll(iterable);
         } finally {
-            loadAllProbe.recordValue(timer.nanosElapsedSince(startNanos));
+            loadAllProbe.recordValue(Timer.nanosElapsed(startNanos));
         }
     }
 }

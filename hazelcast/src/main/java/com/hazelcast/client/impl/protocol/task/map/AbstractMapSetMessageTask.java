@@ -37,7 +37,7 @@ public abstract class AbstractMapSetMessageTask<P> extends AbstractMapPartitionM
 
     @Override
     protected void beforeProcess() {
-        startTimeNanos = Timer.getSystemTimer().nanos();
+        startTimeNanos = Timer.nanos();
     }
 
     @Override
@@ -46,7 +46,7 @@ public abstract class AbstractMapSetMessageTask<P> extends AbstractMapPartitionM
         MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(getDistributedObjectName());
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
             mapService.getMapServiceContext().getLocalMapStatsProvider().getLocalMapStatsImpl(getDistributedObjectName())
-                    .incrementSetLatencyNanos(Timer.getSystemTimer().nanosElapsedSince(startTimeNanos));
+                    .incrementSetLatencyNanos(Timer.nanosElapsed(startTimeNanos));
         }
         return response;
     }

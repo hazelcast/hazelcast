@@ -30,7 +30,6 @@ import com.hazelcast.internal.services.ObjectNamespace;
 class LatencyTrackingRingbufferStore<T> implements RingbufferStore<T> {
     static final String KEY = "RingbufferStoreLatency";
 
-    private final Timer timer = Timer.getSystemTimer();
     private final LatencyProbe loadProbe;
     private final LatencyProbe getLargestSequenceProbe;
     private final LatencyProbe storeProbe;
@@ -48,41 +47,41 @@ class LatencyTrackingRingbufferStore<T> implements RingbufferStore<T> {
 
     @Override
     public void store(long sequence, T data) {
-        long startNanos = timer.nanos();
+        long startNanos = Timer.nanos();
         try {
             delegate.store(sequence, data);
         } finally {
-            storeProbe.recordValue(timer.nanosElapsedSince(startNanos));
+            storeProbe.recordValue(Timer.nanosElapsed(startNanos));
         }
     }
 
     @Override
     public void storeAll(long firstItemSequence, T[] items) {
-        long startNanos = timer.nanos();
+        long startNanos = Timer.nanos();
         try {
             delegate.storeAll(firstItemSequence, items);
         } finally {
-            storeAllProbe.recordValue(timer.nanosElapsedSince(startNanos));
+            storeAllProbe.recordValue(Timer.nanosElapsed(startNanos));
         }
     }
 
     @Override
     public T load(long sequence) {
-        long startNanos = timer.nanos();
+        long startNanos = Timer.nanos();
         try {
             return delegate.load(sequence);
         } finally {
-            loadProbe.recordValue(timer.nanosElapsedSince(startNanos));
+            loadProbe.recordValue(Timer.nanosElapsed(startNanos));
         }
     }
 
     @Override
     public long getLargestSequence() {
-        long startNanos = timer.nanos();
+        long startNanos = Timer.nanos();
         try {
             return delegate.getLargestSequence();
         } finally {
-            getLargestSequenceProbe.recordValue(timer.nanosElapsedSince(startNanos));
+            getLargestSequenceProbe.recordValue(Timer.nanosElapsed(startNanos));
         }
     }
 }

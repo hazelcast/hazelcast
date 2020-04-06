@@ -62,7 +62,6 @@ public class PartitionPerIndexStats implements PerIndexStats {
     // partitioned indexes since we know for sure only a single thread may
     // mutate the index.
     private final PartitionIndexOperationStats operationStats = new PartitionIndexOperationStats();
-    private final Timer timer = Timer.getSystemTimer();
 
     private final long creationTime;
 
@@ -95,7 +94,7 @@ public class PartitionPerIndexStats implements PerIndexStats {
 
     @Override
     public long makeTimestamp() {
-        return timer.nanos();
+        return Timer.nanos();
     }
 
     @Override
@@ -173,7 +172,7 @@ public class PartitionPerIndexStats implements PerIndexStats {
         }
 
         if (operationSource == Index.OperationSource.USER) {
-            TOTAL_INSERT_LATENCY.lazySet(this, totalInsertLatency + (timer.nanosElapsedSince(timestampNanos)));
+            TOTAL_INSERT_LATENCY.lazySet(this, totalInsertLatency + (Timer.nanosElapsed(timestampNanos)));
             INSERT_COUNT.lazySet(this, insertCount + 1);
         }
         ENTRY_COUNT.lazySet(this, entryCount + 1);
@@ -182,7 +181,7 @@ public class PartitionPerIndexStats implements PerIndexStats {
     @Override
     public void onUpdate(long timestampNanos, IndexOperationStats operationStats, Index.OperationSource operationSource) {
         if (operationSource == Index.OperationSource.USER) {
-            TOTAL_UPDATE_LATENCY.lazySet(this, totalUpdateLatency + (timer.nanosElapsedSince(timestampNanos)));
+            TOTAL_UPDATE_LATENCY.lazySet(this, totalUpdateLatency + (Timer.nanosElapsed(timestampNanos)));
             UPDATE_COUNT.lazySet(this, updateCount + 1);
         }
         ENTRY_COUNT.lazySet(this, entryCount + operationStats.getEntryCountDelta());
@@ -196,7 +195,7 @@ public class PartitionPerIndexStats implements PerIndexStats {
         }
 
         if (operationSource == Index.OperationSource.USER) {
-            TOTAL_REMOVE_LATENCY.lazySet(this, totalRemoveLatency + (timer.nanosElapsedSince(timestamp)));
+            TOTAL_REMOVE_LATENCY.lazySet(this, totalRemoveLatency + (Timer.nanosElapsed(timestamp)));
             REMOVE_COUNT.lazySet(this, removeCount + 1);
         }
         ENTRY_COUNT.lazySet(this, entryCount - 1);
@@ -225,7 +224,7 @@ public class PartitionPerIndexStats implements PerIndexStats {
             return;
         }
 
-        TOTAL_HIT_LATENCY.lazySet(this, totalHitLatency + (timer.nanosElapsedSince(timestamp)));
+        TOTAL_HIT_LATENCY.lazySet(this, totalHitLatency + (Timer.nanosElapsed(timestamp)));
         HIT_COUNT.lazySet(this, hitCount + 1);
 
         // limit the cardinality for "safety"

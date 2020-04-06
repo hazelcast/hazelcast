@@ -54,7 +54,7 @@ public class TxnRemoveOperation extends AbstractKeyBasedMultiMapOperation implem
 
     @Override
     public void run() throws Exception {
-        startTimeNanos = Timer.getSystemTimer().nanos();
+        startTimeNanos = Timer.nanos();
         MultiMapContainer container = getOrCreateContainer();
         MultiMapValue multiMapValue = container.getMultiMapValueOrNull(dataKey);
         if (multiMapValue == null || !multiMapValue.containsRecordId(recordId)) {
@@ -78,7 +78,7 @@ public class TxnRemoveOperation extends AbstractKeyBasedMultiMapOperation implem
 
     @Override
     public void afterRun() throws Exception {
-        long elapsed = Math.max(0, Timer.getSystemTimer().nanosElapsedSince(startTimeNanos));
+        long elapsed = Math.max(0, Timer.nanosElapsed(startTimeNanos));
         MultiMapService service = getService();
         service.getLocalMultiMapStatsImpl(name).incrementRemoveLatencyNanos(elapsed);
         if (Boolean.TRUE.equals(response)) {

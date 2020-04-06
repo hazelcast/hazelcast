@@ -129,14 +129,13 @@ public class ScheduledTaskStatisticsImpl
 
     @Override
     public void onInit() {
-        this.createdAt = Timer.getSystemTimer().nanos();
+        this.createdAt = Timer.nanos();
     }
 
     @Override
     public void onBeforeRun() {
-        Timer timer = Timer.getSystemTimer();
-        this.lastRunStart = timer.nanos();
-        this.lastIdleDuration = timer.nanosElapsedSince(lastRunEnd != 0L ? lastRunEnd : createdAt);
+        this.lastRunStart = Timer.nanos();
+        this.lastIdleDuration = Timer.nanosElapsed(lastRunEnd != 0L ? lastRunEnd : createdAt);
         this.totalIdleDuration += lastIdleDuration;
 
         if (this.firstRunStart == 0L) {
@@ -146,7 +145,7 @@ public class ScheduledTaskStatisticsImpl
 
     @Override
     public void onAfterRun() {
-        this.lastRunEnd = Timer.getSystemTimer().nanos();
+        this.lastRunEnd = Timer.nanos();
         this.lastRunDuration = lastRunEnd - lastRunStart;
         this.runs++;
         this.totalRunDuration += lastRunDuration;

@@ -877,11 +877,10 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         }
 
         long timeoutNanos = node.getProperties().getNanos(ClusterProperty.CLUSTER_SHUTDOWN_TIMEOUT_SECONDS);
-        Timer timer = Timer.getSystemTimer();
-        long startNanos = timer.nanos();
+        long startNanos = Timer.nanos();
         node.getNodeExtension().getInternalHotRestartService()
             .waitPartitionReplicaSyncOnCluster(timeoutNanos, TimeUnit.NANOSECONDS);
-        timeoutNanos -= (timer.nanosElapsedSince(startNanos));
+        timeoutNanos -= (Timer.nanosElapsed(startNanos));
 
         if (node.config.getCPSubsystemConfig().getCPMemberCount() == 0) {
             shutdownNodesConcurrently(timeoutNanos);
@@ -893,12 +892,11 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     private void shutdownNodesConcurrently(final long timeoutNanos) {
         Operation op = new ShutdownNodeOp();
         Collection<Member> members = getMembers(NON_LOCAL_MEMBER_SELECTOR);
-        Timer timer = Timer.getSystemTimer();
-        long startTimeNanos = timer.nanos();
+        long startTimeNanos = Timer.nanos();
 
         logger.info("Sending shut down operations to all members...");
 
-        while (timer.nanosElapsedSince(startTimeNanos) < timeoutNanos && !members.isEmpty()) {
+        while (Timer.nanosElapsed(startTimeNanos) < timeoutNanos && !members.isEmpty()) {
             for (Member member : members) {
                 nodeEngine.getOperationService().send(op, member.getAddress());
             }
@@ -922,13 +920,12 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     private void shutdownNodesSerially(final long timeoutNanos) {
         Operation op = new ShutdownNodeOp();
-        Timer timer = Timer.getSystemTimer();
-        long startTimeNanos = timer.nanos();
+        long startTimeNanos = Timer.nanos();
         Collection<Member> members = getMembers(NON_LOCAL_MEMBER_SELECTOR);
 
         logger.info("Sending shut down operations to other members one by one...");
 
-        while (timer.nanosElapsedSince(startTimeNanos) < timeoutNanos && !members.isEmpty()) {
+        while (Timer.nanosElapsed(startTimeNanos) < timeoutNanos && !members.isEmpty()) {
             Member member = members.iterator().next();
             nodeEngine.getOperationService().send(op, member.getAddress());
             members = getMembers(NON_LOCAL_MEMBER_SELECTOR);

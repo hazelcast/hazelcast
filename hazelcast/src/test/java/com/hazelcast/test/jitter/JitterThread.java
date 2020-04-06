@@ -40,7 +40,7 @@ public class JitterThread extends Thread {
         while (true) {
             long beforeMillis = System.currentTimeMillis();
             sleepNanos(RESOLUTION_NANOS);
-            long delta = timer.nanosElapsedSince(beforeNanos);
+            long delta = Timer.nanosElapsed(beforeNanos);
             long currentHiccup = delta - RESOLUTION_NANOS;
 
             // subtract the shortest observed hiccups, as that's an inherit

@@ -53,7 +53,7 @@ public class TxnPutOperation extends AbstractKeyBasedMultiMapOperation implement
 
     @Override
     public void run() throws Exception {
-        startTimeNanos = Timer.getSystemTimer().nanos();
+        startTimeNanos = Timer.nanos();
         MultiMapContainer container = getOrCreateContainer();
         MultiMapValue multiMapValue = container.getOrCreateMultiMapValue(dataKey);
         if (multiMapValue.containsRecordId(recordId)) {
@@ -69,7 +69,7 @@ public class TxnPutOperation extends AbstractKeyBasedMultiMapOperation implement
 
     @Override
     public void afterRun() throws Exception {
-        long elapsed = Math.max(0, Timer.getSystemTimer().nanosElapsedSince(startTimeNanos));
+        long elapsed = Math.max(0, Timer.nanosElapsed(startTimeNanos));
         MultiMapService service = getService();
         service.getLocalMultiMapStatsImpl(name).incrementPutLatencyNanos(elapsed);
         if (Boolean.TRUE.equals(response)) {

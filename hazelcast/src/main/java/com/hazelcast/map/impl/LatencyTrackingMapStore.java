@@ -24,11 +24,9 @@ import com.hazelcast.internal.diagnostics.StoreLatencyPlugin.LatencyProbe;
 import java.util.Collection;
 import java.util.Map;
 
-@SuppressWarnings("unchecked")
 public class LatencyTrackingMapStore<K, V> implements MapStore<K, V> {
     static final String KEY = "MapStoreLatency";
 
-    private final Timer timer = Timer.getSystemTimer();
     private final LatencyProbe deleteProbe;
     private final LatencyProbe deleteAllProbe;
     private final LatencyProbe storeProbe;
@@ -61,41 +59,41 @@ public class LatencyTrackingMapStore<K, V> implements MapStore<K, V> {
 
     @Override
     public void store(K key, V value) {
-        long startNanos = timer.nanos();
+        long startNanos = Timer.nanos();
         try {
             delegate.store(key, value);
         } finally {
-            storeProbe.recordValue(timer.nanosElapsedSince(startNanos));
+            storeProbe.recordValue(Timer.nanosElapsed(startNanos));
         }
     }
 
     @Override
     public void storeAll(Map<K, V> map) {
-        long startNanos = timer.nanos();
+        long startNanos = Timer.nanos();
         try {
             delegate.storeAll(map);
         } finally {
-            storeAllProbe.recordValue(timer.nanosElapsedSince(startNanos));
+            storeAllProbe.recordValue(Timer.nanosElapsed(startNanos));
         }
     }
 
     @Override
     public void delete(K key) {
-        long startNanos = timer.nanos();
+        long startNanos = Timer.nanos();
         try {
             delegate.delete(key);
         } finally {
-            deleteProbe.recordValue(timer.nanosElapsedSince(startNanos));
+            deleteProbe.recordValue(Timer.nanosElapsed(startNanos));
         }
     }
 
     @Override
     public void deleteAll(Collection<K> keys) {
-        long startNanos = timer.nanos();
+        long startNanos = Timer.nanos();
         try {
             delegate.deleteAll(keys);
         } finally {
-            deleteAllProbe.recordValue(timer.nanosElapsedSince(startNanos));
+            deleteAllProbe.recordValue(Timer.nanosElapsed(startNanos));
         }
     }
 

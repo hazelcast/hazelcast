@@ -517,8 +517,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
 
     private boolean ensureCPMemberRemoved(CPMemberInfo member, long remainingTimeNanos) {
         while (remainingTimeNanos > 0) {
-            Timer timer = Timer.getSystemTimer();
-            long startNanos = timer.nanos();
+            long startNanos = Timer.nanos();
             try {
                 if (metadataGroupManager.getActiveMembers().size() == 1) {
                     logger.warning("I am one of the last 2 CP members...");
@@ -532,7 +531,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
                 if (!(e.getCause() instanceof CannotRemoveCPMemberException)) {
                     throw ExceptionUtil.rethrow(e);
                 }
-                remainingTimeNanos -= timer.nanosElapsedSince(startNanos);
+                remainingTimeNanos -= Timer.nanosElapsed(startNanos);
                 if (remainingTimeNanos <= 0) {
                     throw new IllegalStateException(e.getMessage());
                 }

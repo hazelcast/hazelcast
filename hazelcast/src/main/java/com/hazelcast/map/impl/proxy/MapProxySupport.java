@@ -386,7 +386,7 @@ abstract class MapProxySupport<K, V>
 
         MapOperation operation = operationProvider.createGetOperation(name, keyData);
         try {
-            long startTimeNanos = Timer.getSystemTimer().nanos();
+            long startTimeNanos = Timer.nanos();
             InvocationFuture<Data> future = operationService
                     .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
                     .setResultDeserialized(false)
@@ -465,7 +465,7 @@ abstract class MapProxySupport<K, V>
         try {
             Object result;
             if (statisticsEnabled) {
-                long startTimeNanos = Timer.getSystemTimer().nanos();
+                long startTimeNanos = Timer.nanos();
                 Future future = operationService
                         .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
                         .setResultDeserialized(false)
@@ -493,7 +493,7 @@ abstract class MapProxySupport<K, V>
         MapOperation operation = newPutOperation(keyData, valueData, ttl, ttlUnit, maxIdle, maxIdleUnit);
         operation.setThreadId(getThreadId());
         try {
-            long startTimeNanos = Timer.getSystemTimer().nanos();
+            long startTimeNanos = Timer.nanos();
             InvocationFuture<Data> future = operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
 
             if (statisticsEnabled) {
@@ -516,7 +516,7 @@ abstract class MapProxySupport<K, V>
         try {
             final InvocationFuture<Data> result;
             if (statisticsEnabled) {
-                long startTimeNanos = Timer.getSystemTimer().nanos();
+                long startTimeNanos = Timer.nanos();
                 result = operationService
                         .invokeOnPartition(SERVICE_NAME, operation, partitionId);
                 result.whenCompleteAsync(new IncrementStatsExecutionCallback<>(operation, startTimeNanos), CALLER_RUNS);
@@ -692,7 +692,7 @@ abstract class MapProxySupport<K, V>
         MapOperation operation = operationProvider.createRemoveOperation(name, keyData);
         operation.setThreadId(getThreadId());
         try {
-            long startTimeNanos = Timer.getSystemTimer().nanos();
+            long startTimeNanos = Timer.nanos();
             InvocationFuture<Data> future = operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
 
             if (statisticsEnabled) {
@@ -853,8 +853,7 @@ abstract class MapProxySupport<K, V>
         Map<Integer, Object> responses;
         try {
             OperationFactory operationFactory = operationProvider.createGetAllOperationFactory(name, dataKeys);
-            Timer timer = Timer.getSystemTimer();
-            long startTimeNanos = timer.nanos();
+            long startTimeNanos = Timer.nanos();
 
             responses = operationService.invokeOnPartitions(SERVICE_NAME, operationFactory, partitions);
             for (Object response : responses.values()) {
@@ -864,7 +863,7 @@ abstract class MapProxySupport<K, V>
                     resultingKeyValuePairs.add(entries.getValue(i));
                 }
             }
-            localMapStats.incrementGetLatencyNanos(dataKeys.size(), timer.nanosElapsedSince(startTimeNanos));
+            localMapStats.incrementGetLatencyNanos(dataKeys.size(), Timer.nanosElapsed(startTimeNanos));
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -1058,8 +1057,7 @@ abstract class MapProxySupport<K, V>
         }
 
         OperationFactory factory = operationProvider.createPutAllOperationFactory(name, partitions, entries, triggerMapLoader);
-        Timer timer = Timer.getSystemTimer();
-        long startTimeNanos = timer.nanos();
+        long startTimeNanos = Timer.nanos();
         CompletableFuture<Map<Integer, Object>> future =
                 operationService.invokeOnPartitionsAsync(SERVICE_NAME, factory, singletonMap(address, asIntegerList(partitions)));
         InternalCompletableFuture<Void> resultFuture = new InternalCompletableFuture<>();
@@ -1067,7 +1065,7 @@ abstract class MapProxySupport<K, V>
         future.whenCompleteAsync((response, t) -> {
             putAllVisitSerializedKeys(entries);
             if (t == null) {
-                localMapStats.incrementPutLatencyNanos(finalTotalSize, timer.nanosElapsedSince(startTimeNanos));
+                localMapStats.incrementPutLatencyNanos(finalTotalSize, Timer.nanosElapsed(startTimeNanos));
                 resultFuture.complete(null);
             } else {
                 resultFuture.completeExceptionally(t);

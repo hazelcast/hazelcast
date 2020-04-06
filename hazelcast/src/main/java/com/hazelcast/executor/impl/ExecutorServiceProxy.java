@@ -540,12 +540,11 @@ public class ExecutorServiceProxy
         List<Future<T>> futures = new ArrayList<>(tasks.size());
         boolean done = false;
         try {
-            Timer timer = Timer.getSystemTimer();
             for (Callable<T> task : tasks) {
-                long startNanos = timer.nanos();
+                long startNanos = Timer.nanos();
                 int partitionId = getTaskPartitionId(task);
                 futures.add(submitToPartitionOwner(task, partitionId, true));
-                timeoutNanos -= timer.nanosElapsedSince(startNanos);
+                timeoutNanos -= Timer.nanosElapsed(startNanos);
             }
             if (timeoutNanos <= 0L) {
                 return futures;
@@ -566,9 +565,8 @@ public class ExecutorServiceProxy
 
     private <T> boolean wait(long timeoutNanos, List<Future<T>> futures) throws InterruptedException {
         boolean done = true;
-        Timer timer = Timer.getSystemTimer();
         for (int i = 0, size = futures.size(); i < size; i++) {
-            long startNanos = timer.nanos();
+            long startNanos = Timer.nanos();
             Object value;
             try {
                 Future<T> future = futures.get(i);
@@ -587,7 +585,7 @@ public class ExecutorServiceProxy
             }
 
             futures.set(i, InternalCompletableFuture.newCompletedFuture(value));
-            timeoutNanos -= timer.nanosElapsedSince(startNanos);
+            timeoutNanos -= Timer.nanosElapsed(startNanos);
         }
         return done;
     }

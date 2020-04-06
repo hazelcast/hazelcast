@@ -52,7 +52,7 @@ public class ReplicatedMapGetMessageTask
 
     @Override
     protected void beforeProcess() {
-        startTimeNanos = Timer.getSystemTimer().nanos();
+        startTimeNanos = Timer.nanos();
     }
 
     @Override
@@ -60,7 +60,7 @@ public class ReplicatedMapGetMessageTask
         ReplicatedMapService replicatedMapService = getService(ReplicatedMapService.SERVICE_NAME);
         if (replicatedMapService.getReplicatedMapConfig(parameters.name).isStatisticsEnabled()) {
             LocalReplicatedMapStatsImpl stats = replicatedMapService.getLocalReplicatedMapStatsImpl(parameters.name);
-            stats.incrementGetsNanos(Timer.getSystemTimer().nanosElapsedSince(startTimeNanos));
+            stats.incrementGetsNanos(Timer.nanosElapsed(startTimeNanos));
         }
         return response;
     }

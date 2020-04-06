@@ -69,7 +69,7 @@ public class MapPutAllMessageTask
 
     @Override
     protected void beforeProcess() {
-        startTimeNanos = Timer.getSystemTimer().nanos();
+        startTimeNanos = Timer.nanos();
     }
 
     @Override
@@ -79,7 +79,7 @@ public class MapPutAllMessageTask
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
             mapService.getMapServiceContext().getLocalMapStatsProvider().getLocalMapStatsImpl(parameters.name)
                     .incrementPutLatencyNanos(parameters.entries.size(),
-                            Timer.getSystemTimer().nanosElapsedSince(startTimeNanos));
+                            Timer.nanosElapsed(startTimeNanos));
         }
         return response;
     }

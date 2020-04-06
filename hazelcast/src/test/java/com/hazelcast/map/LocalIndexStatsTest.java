@@ -424,11 +424,10 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
         assertEquals(0, keyStats().getAverageHitLatency());
 
         long totalMeasuredLatency = 0;
-        Timer timer = Timer.getSystemTimer();
         for (int i = 1; i <= QUERIES; ++i) {
             long startNanos = timer.nanos();
             map.entrySet(Predicates.equal("__key", i));
-            totalMeasuredLatency += timer.nanosElapsedSince(startNanos);
+            totalMeasuredLatency += Timer.nanosElapsed(startNanos);
 
             assertTrue(keyStats().getAverageHitLatency() > 0);
             assertTrue(keyStats().getAverageHitLatency() <= totalMeasuredLatency / i);
@@ -451,11 +450,10 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
 
         long totalMeasuredLatency = 0;
         long previousTotalInsertLatency = 0;
-        Timer timer = Timer.getSystemTimer();
         for (int i = 1; i <= 100; ++i) {
             long startNanos = timer.nanos();
             map.put(i, i);
-            totalMeasuredLatency += timer.nanosElapsedSince(startNanos);
+            totalMeasuredLatency += Timer.nanosElapsed(startNanos);
 
             assertEquals(i, keyStats().getInsertCount());
             assertTrue(keyStats().getTotalInsertLatency() > previousTotalInsertLatency);
@@ -482,11 +480,10 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
 
         long totalMeasuredLatency = 0;
         long previousTotalUpdateLatency = 0;
-        Timer timer = Timer.getSystemTimer();
         for (int i = 1; i <= 50; ++i) {
             long startNanos = timer.nanos();
             map.put(i, i * 2);
-            totalMeasuredLatency += timer.nanosElapsedSince(startNanos);
+            totalMeasuredLatency += Timer.nanosElapsed(startNanos);
 
             assertEquals(i, keyStats().getUpdateCount());
             assertTrue(keyStats().getTotalUpdateLatency() > previousTotalUpdateLatency);
@@ -517,7 +514,7 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
         for (int i = 1; i <= 50; ++i) {
             long startNanos = timer.nanos();
             map.remove(i);
-            totalMeasuredLatency += timer.nanosElapsedSince(startNanos);
+            totalMeasuredLatency += Timer.nanosElapsed(startNanos);
 
             assertEquals(i, keyStats().getRemoveCount());
             assertTrue(keyStats().getTotalRemoveLatency() > previousTotalRemoveLatency);

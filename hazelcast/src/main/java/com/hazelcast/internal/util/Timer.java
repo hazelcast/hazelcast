@@ -21,51 +21,33 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 /**
  * Utility class to measure elapsed time in milliseconds. Backed by {@link System#nanoTime()}
  * Example usage {@code
- * Timer timer = Timer.getSystemTimer();
- * long start = timer.nanos();
+ * long start = Timer.nanos();
  * ... // do some work
- * long elapsedNs = timer.nanosElapsedSince(start);
- * long elapsedMs = timer.millisElapsedSince(start);
+ * long elapsedNs = Timer.nanosElapsedSince(start);
+ * long elapsedMs = Timer.millisElapsedSince(start);
  * }
  */
 public class Timer {
-    private static final Timer SYSTEM_TIMER = create(System::nanoTime);
-
-    private final NanoClock nanoClock;
-
-    public Timer(NanoClock nanoClock) {
-        this.nanoClock = nanoClock;
+    private Timer() {
     }
 
-    public static Timer getSystemTimer() {
-        return SYSTEM_TIMER;
+    public static long nanos() {
+        return System.nanoTime();
     }
 
-    static Timer create(NanoClock nanoClock) {
-        return new Timer(nanoClock);
-    }
-
-    public long nanos() {
-        return nanoClock.nanoTime();
-    }
-
-    public long nanosElapsedSince(long startNanos) {
+    public static long nanosElapsed(long startNanos) {
         return nanos() - startNanos;
     }
 
-    public long microsElapsedSince(long startNanos) {
-        return NANOSECONDS.toMicros(nanosElapsedSince(startNanos));
+    public static long microsElapsed(long startNanos) {
+        return NANOSECONDS.toMicros(nanosElapsed(startNanos));
     }
 
-    public long millisElapsedSince(long startNano) {
-        return NANOSECONDS.toMillis(nanosElapsedSince(startNano));
+    public static long millisElapsed(long startNano) {
+        return NANOSECONDS.toMillis(nanosElapsed(startNano));
     }
 
-    public long secondsElapsedSince(long startNano) {
-        return NANOSECONDS.toSeconds(nanosElapsedSince(startNano));
-    }
-
-    interface NanoClock {
-        long nanoTime();
+    public static long secondsElapsed(long startNano) {
+        return NANOSECONDS.toSeconds(nanosElapsed(startNano));
     }
 }

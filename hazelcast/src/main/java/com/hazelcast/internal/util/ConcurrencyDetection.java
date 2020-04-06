@@ -94,9 +94,8 @@ public abstract class ConcurrencyDetection {
 
     private static final class EnabledConcurrencyDetection extends ConcurrencyDetection {
 
-        private final Timer timer = Timer.getSystemTimer();
         private final long windowNanos;
-        private final AtomicLong expirationNanosRef = new AtomicLong(timer.nanos());
+        private final AtomicLong expirationNanosRef = new AtomicLong(Timer.nanos());
         private final long halfWindowNanos;
 
         private EnabledConcurrencyDetection(long delayMs) {
@@ -107,15 +106,15 @@ public abstract class ConcurrencyDetection {
 
         @Override
         public boolean isDetected() {
-            return timer.nanosElapsedSince(expirationNanosRef.get()) < 0;
+            return Timer.nanosElapsed(expirationNanosRef.get()) < 0;
         }
 
         @Override
         public void onDetected() {
-            long nowNanos = timer.nanos();
+            long nowNanos = Timer.nanos();
             long expirationNanos = expirationNanosRef.get();
 
-            if (timer.nanosElapsedSince(expirationNanos - halfWindowNanos) > 0) {
+            if (Timer.nanosElapsed(expirationNanos - halfWindowNanos) > 0) {
                 expirationNanosRef.lazySet(nowNanos + windowNanos);
             }
         }

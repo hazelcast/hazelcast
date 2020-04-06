@@ -83,7 +83,6 @@ public final class RepairingTask implements Runnable {
     private final AtomicBoolean running = new AtomicBoolean(false);
     private final ConcurrentMap<String, RepairingHandler> handlers = new ConcurrentHashMap<String, RepairingHandler>();
     private final ContextMutexFactory contextMutexFactory = new ContextMutexFactory();
-    private final Timer timer = Timer.getSystemTimer();
 
     private volatile long lastAntiEntropyRunNanos;
 
@@ -152,7 +151,7 @@ public final class RepairingTask implements Runnable {
      */
     private void runAntiEntropy() {
         invalidationMetaDataFetcher.fetchMetadata(handlers);
-        lastAntiEntropyRunNanos = timer.nanos();
+        lastAntiEntropyRunNanos = Timer.nanos();
     }
 
     private boolean isAntiEntropyNeeded() {
@@ -160,7 +159,7 @@ public final class RepairingTask implements Runnable {
             return false;
         }
 
-        long sinceLastRunNanos = timer.nanosElapsedSince(lastAntiEntropyRunNanos);
+        long sinceLastRunNanos = Timer.nanosElapsed(lastAntiEntropyRunNanos);
         return sinceLastRunNanos >= reconciliationIntervalNanos;
     }
 
@@ -201,7 +200,7 @@ public final class RepairingTask implements Runnable {
 
         if (running.compareAndSet(false, true)) {
             scheduleNextRun();
-            lastAntiEntropyRunNanos = timer.nanos();
+            lastAntiEntropyRunNanos = Timer.nanos();
         }
 
         return handler;

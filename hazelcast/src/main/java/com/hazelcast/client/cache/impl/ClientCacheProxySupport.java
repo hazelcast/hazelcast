@@ -275,7 +275,7 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
     }
 
     protected long nowInNanosOrDefault() {
-        return statisticsEnabled ? Timer.getSystemTimer().nanos() : -1;
+        return statisticsEnabled ? Timer.nanos() : -1;
     }
 
     protected ClientInvocationFuture invoke(ClientMessage req, int partitionId, int completionId) {
@@ -716,7 +716,7 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
         if (!statisticsEnabled) {
             return null;
         }
-        return statsHandler.newOnPutCallback(isGet, Timer.getSystemTimer().nanos());
+        return statsHandler.newOnPutCallback(isGet, Timer.nanos());
     }
 
     protected boolean setExpiryPolicyInternal(K key, ExpiryPolicy expiryPolicy) {

@@ -45,45 +45,41 @@ public class LatencyTrackingCacheWriter<K, V> implements CacheWriter<K, V> {
 
     @Override
     public void write(Cache.Entry<? extends K, ? extends V> entry) throws CacheWriterException {
-        Timer timer = Timer.getSystemTimer();
-        long startNanos = timer.nanos();
+        long startNanos = Timer.nanos();
         try {
             delegate.write(entry);
         } finally {
-            writeProbe.recordValue(timer.nanosElapsedSince(startNanos));
+            writeProbe.recordValue(Timer.nanosElapsed(startNanos));
         }
     }
 
     @Override
     public void writeAll(Collection<Cache.Entry<? extends K, ? extends V>> collection) throws CacheWriterException {
-        Timer timer = Timer.getSystemTimer();
-        long startNanos = timer.nanos();
+        long startNanos = Timer.nanos();
         try {
             delegate.writeAll(collection);
         } finally {
-            writeAllProbe.recordValue(timer.nanosElapsedSince(startNanos));
+            writeAllProbe.recordValue(Timer.nanosElapsed(startNanos));
         }
     }
 
     @Override
     public void delete(Object o) throws CacheWriterException {
-        Timer timer = Timer.getSystemTimer();
-        long startNanos = timer.nanos();
+        long startNanos = Timer.nanos();
         try {
             delegate.delete(o);
         } finally {
-            deleteProbe.recordValue(timer.nanosElapsedSince(startNanos));
+            deleteProbe.recordValue(Timer.nanosElapsed(startNanos));
         }
     }
 
     @Override
     public void deleteAll(Collection<?> collection) throws CacheWriterException {
-        Timer timer = Timer.getSystemTimer();
-        long startNanos = timer.nanos();
+        long startNanos = Timer.nanos();
         try {
             delegate.deleteAll(collection);
         } finally {
-            deleteAllProbe.recordValue(timer.nanosElapsedSince(startNanos));
+            deleteAllProbe.recordValue(Timer.nanosElapsed(startNanos));
         }
     }
 }
