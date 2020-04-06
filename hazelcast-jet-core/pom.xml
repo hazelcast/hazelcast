@@ -32,7 +32,6 @@
 
     <properties>
         <kotlin.version>1.3.61</kotlin.version>
-        <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
     </properties>
 
     <build>
