@@ -31,9 +31,10 @@ import java.io.IOException;
  * Expression which converts data from one type to another.
  */
 public class CastExpression<T> extends UniExpression<T> {
-    /** Target type. */
+
     private QueryDataType type;
 
+    @SuppressWarnings("unused")
     public CastExpression() {
         // No-op.
     }
@@ -44,9 +45,9 @@ public class CastExpression<T> extends UniExpression<T> {
     }
 
     public static CastExpression<?> create(Expression<?> operand, QueryDataType type) {
-        boolean convertable = operand.getType().getConverter().canConvertTo(type.getTypeFamily());
+        boolean convertible = operand.getType().getConverter().canConvertTo(type.getTypeFamily());
 
-        if (!convertable) {
+        if (!convertible) {
             throw HazelcastSqlException.error("Cannot convert " + operand.getType() + " to " + type);
         }
 
@@ -57,22 +58,19 @@ public class CastExpression<T> extends UniExpression<T> {
     @Override
     public T eval(Row row, ExpressionEvalContext context) {
         Object value = operand.eval(row, context);
-        Converter valueConverter = operand.getType().getConverter();
 
-        return (T) cast(value, valueConverter, type);
+        if (value == null) {
+            return null;
+        }
+
+        Converter valueConverter = operand.getType().getConverter();
+        Converter typeConverter = type.getConverter();
+        return (T) typeConverter.convertToSelf(valueConverter, value);
     }
 
     @Override
     public QueryDataType getType() {
         return type;
-    }
-
-    public static Object cast(Object fromValue, Converter fromValueConverter, QueryDataType toType) {
-        if (fromValue == null) {
-            return null;
-        }
-
-        return toType.getConverter().convertToSelf(fromValueConverter, fromValue);
     }
 
     public static Expression<?> coerceExpression(Expression<?> from, QueryDataTypeFamily toTypeFamily) {
@@ -84,14 +82,6 @@ public class CastExpression<T> extends UniExpression<T> {
             QueryDataType type = QueryDataTypeUtils.resolveTypeForTypeFamily(toTypeFamily);
 
             return CastExpression.create(from, type);
-        }
-    }
-
-    public static Object coerceValue(Object fromValue, QueryDataType fromType, QueryDataType toType) {
-        if (fromType.equals(toType)) {
-            return fromValue;
-        } else {
-            return cast(fromValue, fromType.getConverter(), toType);
         }
     }
 
@@ -108,4 +98,5 @@ public class CastExpression<T> extends UniExpression<T> {
 
         type = in.readObject();
     }
+
 }

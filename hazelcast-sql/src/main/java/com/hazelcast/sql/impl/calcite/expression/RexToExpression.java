@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.calcite.expression;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.calcite.operators.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.SqlToQueryType;
+import com.hazelcast.sql.impl.expression.CastExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.datetime.CurrentDateFunction;
@@ -203,6 +204,9 @@ public final class RexToExpression {
                 Expression<?> escape = operands.length == 2 ? null : operands[2];
                 return LikeFunction.create(operands[0], operands[1], escape);
 
+            case CAST:
+                return CastExpression.create(operands[0], returnType);
+
             case OTHER_FUNCTION:
                 SqlFunction function = (SqlFunction) operator;
 
@@ -247,9 +251,9 @@ public final class RexToExpression {
                 } else if (function == SqlStdOperatorTable.RADIANS) {
                     return DoubleFunction.create(operands[0], DoubleFunctionType.RADIANS);
                 } else if (function == SqlStdOperatorTable.ROUND) {
-                    return RoundTruncateFunction.create(operands[0], operands.length == 1 ? null : operands[0], false);
+                    return RoundTruncateFunction.create(operands[0], operands.length == 1 ? null : operands[1], false);
                 } else if (function == SqlStdOperatorTable.TRUNCATE) {
-                    return RoundTruncateFunction.create(operands[0], operands.length == 1 ? null : operands[0], true);
+                    return RoundTruncateFunction.create(operands[0], operands.length == 1 ? null : operands[1], true);
                 }
 
                 // Strings.
