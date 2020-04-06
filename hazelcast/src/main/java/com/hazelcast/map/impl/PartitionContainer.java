@@ -25,6 +25,7 @@ import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.ContextMutexFactory;
+import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.map.impl.operation.MapClearExpiredOperation;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.query.impl.Indexes;
