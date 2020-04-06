@@ -173,6 +173,7 @@ public class QueryOperationWorkerPoolTest extends HazelcastTestSupport {
         QueryBatchExchangeOperation badOperation = new QueryBatchExchangeOperation(
             QueryId.create(remoteMemberId),
             1,
+            UUID.randomUUID(),
             new ListRowBatch(Collections.singletonList(new HeapRow(new Object[]{new BadValue()}))),
             false,
             100

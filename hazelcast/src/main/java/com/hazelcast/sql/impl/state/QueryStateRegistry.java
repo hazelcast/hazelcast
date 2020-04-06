@@ -37,14 +37,8 @@ public class QueryStateRegistry {
     /** IDs of locally started queries. */
     private final ConcurrentHashMap<QueryId, QueryState> states = new ConcurrentHashMap<>();
 
-    /** Local member ID. */
-    private UUID localMemberId;
-
-    public void start(UUID localMemberId) {
-        this.localMemberId = localMemberId;
-    }
-
     public QueryState onInitiatorQueryStarted(
+        UUID localMemberId,
         long initiatorTimeout,
         Plan initiatorPlan,
         QueryMetadata initiatorMetadata,
@@ -71,7 +65,11 @@ public class QueryStateRegistry {
         return state;
     }
 
-    public QueryState onDistributedQueryStarted(QueryId queryId, QueryStateCompletionCallback completionCallback) {
+    public QueryState onDistributedQueryStarted(
+        UUID localMemberId,
+        QueryId queryId,
+        QueryStateCompletionCallback completionCallback
+    ) {
         UUID initiatorMemberId =  queryId.getMemberId();
 
         boolean local = localMemberId.equals(initiatorMemberId);

@@ -172,7 +172,7 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
         }
 
         // Get or create query state.
-        QueryState state = stateRegistry.onDistributedQueryStarted(operation.getQueryId(), this);
+        QueryState state = stateRegistry.onDistributedQueryStarted(localMemberId, operation.getQueryId(), this);
 
         if (state == null) {
             // Race condition when query start request arrived after query cancel.
@@ -227,16 +227,20 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
     }
 
     private void handleBatch(QueryBatchExchangeOperation operation) {
-        // TODO: Remove
-//        RowBatch batch = operation.getBatch();
-//
-//        System.out.println(">>> BATCH       : " + operation.getCallerId() + " => " + getLocalMemberId()
-//            + " => (" + batch.getRows().size() + ", " + operation.isLast() + ", " + operation.getRemainingMemory() + ")");
+        UUID localMemberId = getLocalMemberId();
 
-        QueryState state = stateRegistry.onDistributedQueryStarted(operation.getQueryId(), this);
+        if (!localMemberId.equals(operation.getTargetMemberId())) {
+            // Received the batch for the old local member ID. I.e. the query was started before the split brain, and the
+            // batch is received after the split brain healing. The query will be cancelled anyway, so ignore the batch.
+            return;
+        }
+
+        QueryState state = stateRegistry.onDistributedQueryStarted(localMemberId, operation.getQueryId(), this);
 
         if (state == null) {
-            // Received stale batch, no-op.
+            // Received stale batch for the query initiated on a local member, ignore.
+            assert localMemberId.equals(operation.getQueryId().getMemberId());
+
             return;
         }
 
@@ -271,10 +275,6 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
     }
 
     private void handleFlowControl(QueryFlowControlExchangeOperation operation) {
-        // TODO: Remove
-//        System.out.println(">>> FLOW CONTROL: " + operation.getCallerUuid() + " => "
-//            + getLocalMemberId() + " => " + operation.getRemainingMemory());
-
         QueryState state = stateRegistry.getState(operation.getQueryId());
 
         if (state == null) {

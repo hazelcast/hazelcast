@@ -97,7 +97,6 @@ public class SqlInternalService {
     public void start() {
         UUID localMemberId = nodeEngine.getLocalMember().getUuid();
 
-        stateRegistry.start(localMemberId);
         stateRegistryUpdater.start(nodeEngine.getClusterService(), nodeEngine.getHazelcastInstance().getClientService());
         operationHandler.start(localMemberId);
     }
@@ -161,6 +160,7 @@ public class SqlInternalService {
         BlockingRootResultConsumer consumer = new BlockingRootResultConsumer();
 
         QueryState state = stateRegistry.onInitiatorQueryStarted(
+            localMemberId,
             timeout,
             plan,
             plan.getMetadata(),
@@ -206,6 +206,7 @@ public class SqlInternalService {
         QueryExplainResultProducer rowSource = new QueryExplainResultProducer(explain);
 
         QueryState state = stateRegistry.onInitiatorQueryStarted(
+            localMemberIdProvider.getLocalMemberId(),
             0,
             plan,
             QueryExplain.EXPLAIN_METADATA,

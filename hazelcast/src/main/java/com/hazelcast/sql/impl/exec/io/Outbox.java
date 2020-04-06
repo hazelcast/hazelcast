@@ -156,7 +156,14 @@ public class Outbox extends AbstractMailbox implements OutboundHandler {
 
         assert batch.getRowCount() > 0 || last;
 
-        QueryBatchExchangeOperation op = new QueryBatchExchangeOperation(queryId, edgeId, batch, last, remainingMemory);
+        QueryBatchExchangeOperation op = new QueryBatchExchangeOperation(
+            queryId,
+            edgeId,
+            targetMemberId,
+            batch,
+            last,
+            remainingMemory
+        );
 
         boolean success = operationChannel.submit(op);
 

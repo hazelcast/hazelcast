@@ -249,6 +249,8 @@ public class QueryOperationsTest extends SqlTestSupport {
     }
 
     private QueryBatchExchangeOperation prepareBatch(QueryId queryId, int edgeId) {
+        UUID targetMemberId = UUID.randomUUID();
+
         RowBatch batch = new ListRowBatch(Arrays.asList(
             new HeapRow(new Object[] { new SqlCustomClass(randomInt()), randomUUID()}),
             new HeapRow(new Object[] { new SqlCustomClass(randomInt()), randomUUID()})
@@ -258,12 +260,13 @@ public class QueryOperationsTest extends SqlTestSupport {
         long remainingMemory = randomLong();
 
         QueryBatchExchangeOperation res = withCallerId(
-            new QueryBatchExchangeOperation(queryId, edgeId, batch, last, remainingMemory)
+            new QueryBatchExchangeOperation(queryId, edgeId, targetMemberId, batch, last, remainingMemory)
         );
 
         assertTrue(res.isInbound());
         assertEquals(queryId, res.getQueryId());
         assertEquals(edgeId, res.getEdgeId());
+        assertEquals(targetMemberId, res.getTargetMemberId());
         checkBatches(batch, res.getBatch());
         assertEquals(last, res.isLast());
         assertEquals(remainingMemory, res.getRemainingMemory());
