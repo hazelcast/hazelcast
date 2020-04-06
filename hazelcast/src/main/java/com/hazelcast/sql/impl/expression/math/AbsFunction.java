@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.expression.math;
 
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.impl.expression.CastExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.UniExpressionWithType;
@@ -38,13 +37,6 @@ public class AbsFunction<T> extends UniExpressionWithType<T> {
     }
 
     public static Expression<?> create(Expression<?> operand) {
-        QueryDataType operandType = operand.getType();
-
-        if (operandType.getTypeFamily() == QueryDataTypeFamily.BIT) {
-            // Bit always remain the same, just coerce it.
-            return CastExpression.coerceExpression(operand, QueryDataTypeFamily.TINYINT);
-        }
-
         return new AbsFunction<>(operand, inferResultType(operand.getType()));
     }
 

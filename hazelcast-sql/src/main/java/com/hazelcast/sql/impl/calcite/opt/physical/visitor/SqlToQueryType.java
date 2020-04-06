@@ -37,7 +37,7 @@ public final class SqlToQueryType {
         SQL_TO_QUERY_TYPE.put(SqlTypeName.VARCHAR, QueryDataType.VARCHAR);
         SQL_TO_QUERY_TYPE.put(SqlTypeName.CHAR, QueryDataType.VARCHAR);
 
-        SQL_TO_QUERY_TYPE.put(SqlTypeName.BOOLEAN, QueryDataType.BIT);
+        SQL_TO_QUERY_TYPE.put(SqlTypeName.BOOLEAN, QueryDataType.BOOLEAN);
 
         SQL_TO_QUERY_TYPE.put(SqlTypeName.TINYINT, QueryDataType.TINYINT);
         SQL_TO_QUERY_TYPE.put(SqlTypeName.SMALLINT, QueryDataType.SMALLINT);

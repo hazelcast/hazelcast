@@ -51,10 +51,6 @@ public abstract class FloorCeilFunction<T> extends UniExpressionWithType<T> {
         QueryDataType operandType = operand.getType();
 
         switch (operandType.getTypeFamily()) {
-            case BIT:
-                // Bit alway remain the same, just coerce it.
-                return CastExpression.coerceExpression(operand, QueryDataTypeFamily.TINYINT);
-
             case TINYINT:
             case SMALLINT:
             case INT:

@@ -34,18 +34,18 @@ public class IsNotFalsePredicate extends UniExpression<Boolean> {
     }
 
     public static IsNotFalsePredicate create(Expression<?> operand) {
-        EnsureConvertible.toBit(operand);
+        EnsureConvertible.toBoolean(operand);
 
         return new IsNotFalsePredicate(operand);
     }
 
     @Override
     public Boolean eval(Row row, ExpressionEvalContext context) {
-        return TernaryLogic.isNotFalse(Eval.asBit(operand, row, context));
+        return TernaryLogic.isNotFalse(Eval.asBoolean(operand, row, context));
     }
 
     @Override
     public QueryDataType getType() {
-        return QueryDataType.BIT;
+        return QueryDataType.BOOLEAN;
     }
 }

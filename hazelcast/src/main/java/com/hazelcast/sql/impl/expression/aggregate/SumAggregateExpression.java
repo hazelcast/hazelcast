@@ -52,7 +52,6 @@ public class SumAggregateExpression<T> extends AbstractSingleOperandAggregateExp
 
     private static QueryDataType inferResultType(QueryDataType operandType) {
         switch (operandType.getTypeFamily()) {
-            case BIT:
             case TINYINT:
             case SMALLINT:
                 return QueryDataType.INT;

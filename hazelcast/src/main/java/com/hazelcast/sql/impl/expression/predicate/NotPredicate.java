@@ -37,18 +37,18 @@ public class NotPredicate extends UniExpression<Boolean> {
     }
 
     public static NotPredicate create(Expression<?> operand) {
-        EnsureConvertible.toBit(operand);
+        EnsureConvertible.toBoolean(operand);
 
         return new NotPredicate(operand);
     }
 
     @Override
     public Boolean eval(Row row, ExpressionEvalContext context) {
-        return TernaryLogic.not(Eval.asBit(operand, row, context));
+        return TernaryLogic.not(Eval.asBoolean(operand, row, context));
     }
 
     @Override
     public QueryDataType getType() {
-        return QueryDataType.BIT;
+        return QueryDataType.BOOLEAN;
     }
 }

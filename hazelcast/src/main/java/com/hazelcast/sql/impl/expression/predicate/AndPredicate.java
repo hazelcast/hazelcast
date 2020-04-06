@@ -38,7 +38,7 @@ public class AndPredicate extends VariExpression<Boolean> {
 
     public static AndPredicate create(Expression<?>... operands) {
         for (Expression<?> operand : operands) {
-            EnsureConvertible.toBit(operand);
+            EnsureConvertible.toBoolean(operand);
         }
 
         return new AndPredicate(operands);
@@ -51,7 +51,7 @@ public class AndPredicate extends VariExpression<Boolean> {
 
     @Override
     public QueryDataType getType() {
-        return QueryDataType.BIT;
+        return QueryDataType.BOOLEAN;
     }
 
 }

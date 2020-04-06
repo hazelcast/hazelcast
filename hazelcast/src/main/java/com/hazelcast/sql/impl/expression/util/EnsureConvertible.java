@@ -30,14 +30,14 @@ public final class EnsureConvertible {
     }
 
     /**
-     * Ensures that the given expression is convertible to BIT type.
+     * Ensures that the given expression is convertible to BOOLEAN type.
      *
      * @param expression the expression to ensure the conversion of.
      * @throws HazelcastSqlException if the expression is not convertible.
      */
-    public static void toBit(Expression<?> expression) {
+    public static void toBoolean(Expression<?> expression) {
         if (!expression.getType().getConverter().canConvertToBit()) {
-            throw HazelcastSqlException.error("Expression cannot be converted to BIT: " + expression);
+            throw HazelcastSqlException.error("Expression cannot be converted to BOOLEAN: " + expression);
         }
     }
 

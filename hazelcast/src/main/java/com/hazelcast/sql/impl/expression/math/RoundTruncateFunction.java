@@ -105,7 +105,6 @@ public abstract class RoundTruncateFunction<T> extends BiExpressionWithType<T> {
         }
 
         switch (operand1Type.getTypeFamily()) {
-            case BIT:
             case TINYINT:
             case SMALLINT:
                 return QueryDataType.INT;

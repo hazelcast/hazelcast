@@ -30,7 +30,7 @@ import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_VARCHAR;
 public enum QueryDataTypeFamily {
     NULL(false, 0, TYPE_LEN_NULL),
     VARCHAR(false, 100, TYPE_LEN_VARCHAR),
-    BIT(false, 200, 1),
+    BOOLEAN(false, 200, 1),
     TINYINT(false, 300, 1),
     SMALLINT(false, 400, 2),
     INT(false, 500, 4),

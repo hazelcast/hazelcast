@@ -37,6 +37,7 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
         SqlConformance conformance
     ) {
         super(opTab, catalogReader, typeFactory, conformance);
+        setTypeCoercion(new HazelcastTypeCoercion(this));
     }
 
     @Override

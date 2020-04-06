@@ -42,6 +42,6 @@ public class IsNullPredicate extends UniExpression<Boolean> {
 
     @Override
     public QueryDataType getType() {
-        return QueryDataType.BIT;
+        return QueryDataType.BOOLEAN;
     }
 }

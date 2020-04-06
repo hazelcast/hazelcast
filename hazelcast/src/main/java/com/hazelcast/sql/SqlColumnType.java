@@ -26,8 +26,8 @@ public enum SqlColumnType {
     /** VARCHAR type. */
     VARCHAR(String.class),
 
-    /** BIT type. */
-    BIT(Boolean.class),
+    /** BOOLEAN type. */
+    BOOLEAN(Boolean.class),
 
     /** TINYINT type. */
     TINYINT(Short.class),

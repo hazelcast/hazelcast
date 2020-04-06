@@ -22,6 +22,7 @@ import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.UniExpressionWithType;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.sql.impl.type.converter.Converter;
 
 public class SignFunction extends UniExpressionWithType<Number> {
@@ -54,7 +55,6 @@ public class SignFunction extends UniExpressionWithType<Number> {
         Converter operandConverter = operandType.getConverter();
 
         switch (resultType.getTypeFamily()) {
-            case BIT:
             case TINYINT:
             case SMALLINT:
             case INT:
@@ -88,15 +88,8 @@ public class SignFunction extends UniExpressionWithType<Number> {
             throw HazelcastSqlException.error("Operand is not numeric: " + operandType);
         }
 
-        switch (operandType.getTypeFamily()) {
-            case BIT:
-                return QueryDataType.TINYINT;
-
-            case VARCHAR:
-                return QueryDataType.DECIMAL;
-
-            default:
-                break;
+        if (operandType.getTypeFamily() == QueryDataTypeFamily.VARCHAR) {
+            return QueryDataType.DECIMAL;
         }
 
         return operandType;

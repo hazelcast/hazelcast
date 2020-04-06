@@ -24,7 +24,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.BIGINT;
-import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.BIT;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.BOOLEAN;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DATE;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DECIMAL;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DOUBLE;
@@ -67,7 +67,7 @@ public class QueryDataTypeFamilyTest {
 
     @Test
     public void testEstimatedSize() {
-        assertTrue(BIT.getEstimatedSize() <= TINYINT.getEstimatedSize());
+        assertTrue(BOOLEAN.getEstimatedSize() <= TINYINT.getEstimatedSize());
         assertTrue(TINYINT.getEstimatedSize() < SMALLINT.getEstimatedSize());
         assertTrue(SMALLINT.getEstimatedSize() < INT.getEstimatedSize());
         assertTrue(INT.getEstimatedSize() < BIGINT.getEstimatedSize());
@@ -80,8 +80,8 @@ public class QueryDataTypeFamilyTest {
     @Test
     public void testPrecedence() {
         assertTrue(NULL.getPrecedence() < VARCHAR.getPrecedence());
-        assertTrue(VARCHAR.getPrecedence() < BIT.getPrecedence());
-        assertTrue(BIT.getPrecedence() < TINYINT.getPrecedence());
+        assertTrue(VARCHAR.getPrecedence() < BOOLEAN.getPrecedence());
+        assertTrue(BOOLEAN.getPrecedence() < TINYINT.getPrecedence());
         assertTrue(TINYINT.getPrecedence() < SMALLINT.getPrecedence());
         assertTrue(SMALLINT.getPrecedence() < INT.getPrecedence());
         assertTrue(INT.getPrecedence() < BIGINT.getPrecedence());

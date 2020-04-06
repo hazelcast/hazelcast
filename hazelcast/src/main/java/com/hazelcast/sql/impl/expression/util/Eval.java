@@ -35,20 +35,20 @@ public final class Eval {
 
     /**
      * Evaluates the given expression on the given row and then converts the
-     * evaluation result to BIT type.
+     * evaluation result to BOOLEAN type.
      *
      * @param expression the expression to evaluate.
      * @param row        the row to evaluate the expression on.
      * @return the converted evaluation result.
      */
-    public static Boolean asBit(Expression<?> expression, Row row, ExpressionEvalContext context) {
+    public static Boolean asBoolean(Expression<?> expression, Row row, ExpressionEvalContext context) {
         Object res = expression.eval(row, context);
 
         if (res == null) {
             return null;
         }
 
-        return expression.getType().getConverter().asBit(res);
+        return expression.getType().getConverter().asBoolean(res);
     }
 
     /**

@@ -47,7 +47,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.BIGINT;
-import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.BIT;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.BOOLEAN;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DATE;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DECIMAL;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DOUBLE;
@@ -141,7 +141,7 @@ public class ConvertersTest {
     public void testBooleanConverter() {
         BooleanConverter converter = BooleanConverter.INSTANCE;
 
-        checkConverter(converter, Converter.ID_BOOLEAN, BIT, Boolean.class);
+        checkConverter(converter, Converter.ID_BOOLEAN, BOOLEAN, Boolean.class);
         checkConverterConversions(converter, VARCHAR, OBJECT);
 
         assertEquals("true", converter.asVarchar(true));
@@ -502,16 +502,15 @@ public class ConvertersTest {
         StringConverter c = StringConverter.INSTANCE;
 
         checkConverter(c, Converter.ID_STRING, VARCHAR, String.class);
-        checkConverterConversions(c,
-            BIT, TINYINT, SMALLINT, INT, BIGINT, DECIMAL, REAL, DOUBLE, TIME, DATE, TIMESTAMP, TIMESTAMP_WITH_TIME_ZONE, OBJECT);
+        checkConverterConversions(c, BOOLEAN, TINYINT, SMALLINT, INT, BIGINT, DECIMAL, REAL, DOUBLE, TIME, DATE, TIMESTAMP, TIMESTAMP_WITH_TIME_ZONE, OBJECT);
 
         // Boolean
-        assertEquals(false, c.asBit("false"));
-        assertEquals(false, c.asBit("False"));
-        assertEquals(true, c.asBit("true"));
-        assertEquals(true, c.asBit("True"));
-        checkDataException(() -> c.asBit("0"));
-        checkDataException(() -> c.asBit("1"));
+        assertEquals(false, c.asBoolean("false"));
+        assertEquals(false, c.asBoolean("False"));
+        assertEquals(true, c.asBoolean("true"));
+        assertEquals(true, c.asBoolean("True"));
+        checkDataException(() -> c.asBoolean("0"));
+        checkDataException(() -> c.asBoolean("1"));
 
         // Numeric
         String invalid = "invalid";
@@ -582,8 +581,7 @@ public class ConvertersTest {
         CharacterConverter c = CharacterConverter.INSTANCE;
 
         checkConverter(c, Converter.ID_CHARACTER, VARCHAR, Character.class);
-        checkConverterConversions(c,
-            BIT, TINYINT, SMALLINT, INT, BIGINT, DECIMAL, REAL, DOUBLE, TIME, DATE, TIMESTAMP, TIMESTAMP_WITH_TIME_ZONE, OBJECT);
+        checkConverterConversions(c, BOOLEAN, TINYINT, SMALLINT, INT, BIGINT, DECIMAL, REAL, DOUBLE, TIME, DATE, TIMESTAMP, TIMESTAMP_WITH_TIME_ZONE, OBJECT);
 
         char invalid = 'c';
 
@@ -618,8 +616,7 @@ public class ConvertersTest {
         ObjectConverter c = ObjectConverter.INSTANCE;
 
         checkConverter(c, Converter.ID_OBJECT, OBJECT, Object.class);
-        checkConverterConversions(c,
-            BIT, TINYINT, SMALLINT, INT, BIGINT, DECIMAL, REAL, DOUBLE, TIME, DATE, TIMESTAMP, TIMESTAMP_WITH_TIME_ZONE, VARCHAR);
+        checkConverterConversions(c, BOOLEAN, TINYINT, SMALLINT, INT, BIGINT, DECIMAL, REAL, DOUBLE, TIME, DATE, TIMESTAMP, TIMESTAMP_WITH_TIME_ZONE, VARCHAR);
 
         checkObjectConverter(c);
 
@@ -630,10 +627,10 @@ public class ConvertersTest {
     public void testNullConverter() {
         NullConverter c = NullConverter.INSTANCE;
         checkConverter(c, Converter.ID_NULL, NULL, Void.class);
-        checkConverterConversions(c, BIT, TINYINT, SMALLINT, INT, BIGINT, DECIMAL, REAL, DOUBLE, TIME, DATE, TIMESTAMP,
+        checkConverterConversions(c, BOOLEAN, TINYINT, SMALLINT, INT, BIGINT, DECIMAL, REAL, DOUBLE, TIME, DATE, TIMESTAMP,
                 TIMESTAMP_WITH_TIME_ZONE, VARCHAR, OBJECT);
 
-        checkUnsupportedException(() -> c.asBit(null));
+        checkUnsupportedException(() -> c.asBoolean(null));
         checkUnsupportedException(() -> c.asTinyint(null));
         checkUnsupportedException(() -> c.asSmallint(null));
         checkUnsupportedException(() -> c.asInt(null));
@@ -686,13 +683,13 @@ public class ConvertersTest {
 
     private void checkObjectConverter(Converter c) {
         // Boolean
-        assertEquals(true, c.asBit(true));
-        assertEquals(true, c.asBit("true"));
-        assertEquals(false, c.asBit(false));
-        assertEquals(false, c.asBit("false"));
-        checkDataException(() -> c.asBit("1"));
-        checkDataException(() -> c.asBit(1));
-        checkDataException(() -> c.asBit(new Object()));
+        assertEquals(true, c.asBoolean(true));
+        assertEquals(true, c.asBoolean("true"));
+        assertEquals(false, c.asBoolean(false));
+        assertEquals(false, c.asBoolean("false"));
+        checkDataException(() -> c.asBoolean("1"));
+        checkDataException(() -> c.asBoolean(1));
+        checkDataException(() -> c.asBoolean(new Object()));
 
         // Numeric
         String invalid = "invalid";
@@ -804,7 +801,7 @@ public class ConvertersTest {
 
                 break;
 
-            case BIT:
+            case BOOLEAN:
                 assertEquals(expected, converter.canConvertToBit());
 
                 break;
@@ -885,8 +882,8 @@ public class ConvertersTest {
 
                     break;
 
-                case BIT:
-                    converter.asBit(val);
+                case BOOLEAN:
+                    converter.asBoolean(val);
 
                     break;
 
@@ -983,8 +980,8 @@ public class ConvertersTest {
         }
 
         @Override
-        public boolean asBit(Object val) {
-            invoked = BIT;
+        public boolean asBoolean(Object val) {
+            invoked = BOOLEAN;
 
             return true;
         }

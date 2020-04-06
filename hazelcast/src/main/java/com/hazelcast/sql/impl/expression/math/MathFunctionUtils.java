@@ -156,7 +156,6 @@ public final class MathFunctionUtils {
         return expandPrecision(type1);
     }
 
-    @SuppressWarnings("checkstyle:NPathComplexity")
     public static QueryDataType inferDivideResultType(QueryDataType type1, QueryDataType type2) {
         if (type1.getTypeFamily() == NULL || type2.getTypeFamily() == NULL) {
             return QueryDataType.NULL;
@@ -188,10 +187,6 @@ public final class MathFunctionUtils {
             throw HazelcastSqlException.error("Operand 2 is not numeric.");
         }
 
-        if (type1 == QueryDataType.BIT) {
-            type1 = QueryDataType.TINYINT;
-        }
-
         return type1;
     }
 
@@ -217,10 +212,6 @@ public final class MathFunctionUtils {
             throw HazelcastSqlException.error("Operand 2 is not numeric.");
         }
 
-        if (type1 == QueryDataType.BIT) {
-            type1 = QueryDataType.TINYINT;
-        }
-
         return type1;
     }
 
@@ -230,7 +221,6 @@ public final class MathFunctionUtils {
         int precision = type.getPrecision();
 
         switch (typeFamily) {
-            case BIT:
             case TINYINT:
             case SMALLINT:
             case INT:

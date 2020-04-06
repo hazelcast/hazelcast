@@ -41,8 +41,8 @@ public final class ObjectConverter extends Converter {
     }
 
     @Override
-    public boolean asBit(Object val) {
-        return resolveConverter(val, QueryDataTypeFamily.BIT).asBit(val);
+    public boolean asBoolean(Object val) {
+        return resolveConverter(val, QueryDataTypeFamily.BOOLEAN).asBoolean(val);
     }
 
     @Override

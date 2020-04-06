@@ -64,7 +64,7 @@ public class LikeFunction extends TriExpression<Boolean> {
 
     @Override
     public QueryDataType getType() {
-        return QueryDataType.BIT;
+        return QueryDataType.BOOLEAN;
     }
 
     @Override

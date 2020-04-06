@@ -169,7 +169,7 @@ public abstract class MapSqlSchemaResolver implements SqlSchemaResolver {
     private static QueryDataType resolvePortableType(FieldType portableType) {
         switch (portableType) {
             case BOOLEAN:
-                return QueryDataType.BIT;
+                return QueryDataType.BOOLEAN;
 
             case BYTE:
                 return QueryDataType.TINYINT;

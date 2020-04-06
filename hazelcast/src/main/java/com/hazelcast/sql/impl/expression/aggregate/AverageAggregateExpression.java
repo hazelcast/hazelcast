@@ -53,7 +53,6 @@ public class AverageAggregateExpression<T> extends AbstractSingleOperandAggregat
     public static QueryDataType inferResultType(QueryDataType operandType) {
         // TODO: Read ANSI standard on how to infer return types here.
         switch (operandType.getTypeFamily()) {
-            case BIT:
             case TINYINT:
             case SMALLINT:
             case INT:

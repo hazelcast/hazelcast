@@ -28,7 +28,7 @@ Types supported by the Hazelcast Mustang are listed in Table 1. Precision is the
 | SQL Type | Precedence | Precision |
 |---|---|---|
 | `VARCHAR` | 100 |  |
-| `BIT` | 200 | 1 |
+| `BOOLEAN` | 200 |  |
 | `TINYINT` | 300 | 4 |
 | `SMALLINT` | 400 | 7 |
 | `INT` | 500 | 11 |
@@ -69,7 +69,7 @@ Table 2 establishes a strict one-to-one mapping between SQL and Java types.
 | SQL Type | Java Type |
 |---|---|
 | `VARCHAR` | `java.lang.String` |
-| `BIT` | `java.lang.Boolean` |
+| `BOOLEAN` | `java.lang.Boolean` |
 | `TINYINT` | `java.lang.Byte` |
 | `SMALLINT` | `java.lang.Short` |
 | `INT` | `java.lang.Integer` |
@@ -95,7 +95,7 @@ Table 3 establishes a many-to-one mapping between Java and SQL types.
 |---|---|
 | `java.lang.String` | `VARCHAR` |
 | `java.lang.Character` | `VARCHAR` |
-| `java.lang.Boolean` | `BIT` |
+| `java.lang.Boolean` | `BOOLEAN` |
 | `java.lang.Byte` | `TINYINT` |
 | `java.lang.Short` | `SMALLINT` |
 | `java.lang.Integer` | `INT` |
@@ -127,10 +127,10 @@ converted to the target type.
 
 *Table 4: Type conversions (I - implicit, E - explicit)*
 
-| From/To | VARCHAR | BIT | TINYINT | SMALLINT | INT | BINGINT | DECIMAL | REAL | DOUBLE | DATE | TIME | TIMESTAMP | TIMESTAMP W/ TZ | OBJECT |
+| From/To | VARCHAR | BOOLEAN | TINYINT | SMALLINT | INT | BINGINT | DECIMAL | REAL | DOUBLE | DATE | TIME | TIMESTAMP | TIMESTAMP W/ TZ | OBJECT |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | **VARCHAR** | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` |
-| **BIT** | `E` | `I` |  |  |  |  |  |  |  |  |  |  |  | `I` |
+| **BOOLEAN** | `E` | `I` |  |  |  |  |  |  |  |  |  |  |  | `I` |
 | **TINYINT** | `E` |  | `I` | `I` | `I` | `I` | `I` | `I` |`I`  |  |  |  |  | `I` |
 | **SMALLINT** | `E` |  | `E` | `I` | `I` | `I` | `I` | `I` | `I` |  |  |  |  | `I` |
 | **INT** | `E` |  | `E` | `E` | `I` | `I` | `I` | `I` | `I` |  |  |  |  | `I` |

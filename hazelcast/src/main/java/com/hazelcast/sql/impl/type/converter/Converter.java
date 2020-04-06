@@ -67,7 +67,7 @@ public abstract class Converter implements Serializable {
     private final int id;
     private final QueryDataTypeFamily typeFamily;
 
-    private final boolean convertToBit;
+    private final boolean convertToBoolean;
     private final boolean convertToTinyint;
     private final boolean convertToSmallint;
     private final boolean convertToInt;
@@ -89,7 +89,7 @@ public abstract class Converter implements Serializable {
         try {
             Class<? extends Converter> clazz = getClass();
 
-            convertToBit = canConvert(clazz.getMethod("asBit", Object.class));
+            convertToBoolean = canConvert(clazz.getMethod("asBoolean", Object.class));
             convertToTinyint = canConvert(clazz.getMethod("asTinyint", Object.class));
             convertToSmallint = canConvert(clazz.getMethod("asSmallint", Object.class));
             convertToInt = canConvert(clazz.getMethod("asInt", Object.class));
@@ -119,8 +119,8 @@ public abstract class Converter implements Serializable {
     public abstract Class<?> getValueClass();
 
     @NotConvertible
-    public boolean asBit(Object val) {
-        throw cannotConvert(QueryDataTypeFamily.BIT);
+    public boolean asBoolean(Object val) {
+        throw cannotConvert(QueryDataTypeFamily.BOOLEAN);
     }
 
     @NotConvertible
@@ -188,7 +188,7 @@ public abstract class Converter implements Serializable {
     }
 
     public final boolean canConvertToBit() {
-        return convertToBit;
+        return convertToBoolean;
     }
 
     public final boolean canConvertToTinyint() {
@@ -246,7 +246,7 @@ public abstract class Converter implements Serializable {
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:ReturnCount"})
     public final boolean canConvertTo(QueryDataTypeFamily typeFamily) {
         switch (typeFamily) {
-            case BIT:
+            case BOOLEAN:
                 return canConvertToBit();
 
             case TINYINT:

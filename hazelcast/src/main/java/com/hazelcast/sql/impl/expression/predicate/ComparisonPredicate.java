@@ -94,7 +94,7 @@ public class ComparisonPredicate extends BiExpression<Boolean> {
         Converter converter2 = operand2Type.getConverter();
 
         switch (type.getTypeFamily()) {
-            case BIT:
+            case BOOLEAN:
             case TINYINT:
             case SMALLINT:
             case INT:
@@ -212,7 +212,7 @@ public class ComparisonPredicate extends BiExpression<Boolean> {
 
     @Override
     public QueryDataType getType() {
-        return QueryDataType.BIT;
+        return QueryDataType.BOOLEAN;
     }
 
     @Override

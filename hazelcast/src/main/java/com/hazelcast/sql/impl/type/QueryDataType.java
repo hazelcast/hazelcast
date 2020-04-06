@@ -55,7 +55,6 @@ import java.io.Serializable;
  * <p>Java serialization is needed for Jet.
  */
 public class QueryDataType implements IdentifiedDataSerializable, Serializable {
-    public static final int PRECISION_BIT = 1;
     public static final int PRECISION_TINYINT = 4;
     public static final int PRECISION_SMALLINT = 7;
     public static final int PRECISION_INT = 11;
@@ -65,7 +64,8 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
     public static final QueryDataType VARCHAR = new QueryDataType(StringConverter.INSTANCE);
     public static final QueryDataType VARCHAR_CHARACTER = new QueryDataType(CharacterConverter.INSTANCE);
 
-    public static final QueryDataType BIT = new QueryDataType(BooleanConverter.INSTANCE, PRECISION_BIT);
+    public static final QueryDataType BOOLEAN = new QueryDataType(BooleanConverter.INSTANCE);
+
     public static final QueryDataType TINYINT = new QueryDataType(ByteConverter.INSTANCE, PRECISION_TINYINT);
     public static final QueryDataType SMALLINT = new QueryDataType(ShortConverter.INSTANCE, PRECISION_SMALLINT);
     public static final QueryDataType INT = new QueryDataType(IntegerConverter.INSTANCE, PRECISION_INT);

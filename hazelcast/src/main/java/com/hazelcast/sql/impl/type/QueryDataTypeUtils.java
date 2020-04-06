@@ -29,7 +29,7 @@ import com.hazelcast.sql.impl.type.converter.StringConverter;
 import com.hazelcast.sql.impl.type.converter.ZonedDateTimeConverter;
 
 import static com.hazelcast.sql.impl.type.QueryDataType.BIGINT;
-import static com.hazelcast.sql.impl.type.QueryDataType.BIT;
+import static com.hazelcast.sql.impl.type.QueryDataType.BOOLEAN;
 import static com.hazelcast.sql.impl.type.QueryDataType.DATE;
 import static com.hazelcast.sql.impl.type.QueryDataType.DECIMAL;
 import static com.hazelcast.sql.impl.type.QueryDataType.DECIMAL_BIG_INTEGER;
@@ -40,7 +40,6 @@ import static com.hazelcast.sql.impl.type.QueryDataType.INTERVAL_YEAR_MONTH;
 import static com.hazelcast.sql.impl.type.QueryDataType.NULL;
 import static com.hazelcast.sql.impl.type.QueryDataType.OBJECT;
 import static com.hazelcast.sql.impl.type.QueryDataType.PRECISION_BIGINT;
-import static com.hazelcast.sql.impl.type.QueryDataType.PRECISION_BIT;
 import static com.hazelcast.sql.impl.type.QueryDataType.PRECISION_INT;
 import static com.hazelcast.sql.impl.type.QueryDataType.PRECISION_SMALLINT;
 import static com.hazelcast.sql.impl.type.QueryDataType.PRECISION_TINYINT;
@@ -100,9 +99,7 @@ public final class QueryDataTypeUtils {
         for (int i = 1; i <= PRECISION_BIGINT; i++) {
             QueryDataType type;
 
-            if (i == PRECISION_BIT) {
-                type = BIT;
-            } else if (i < PRECISION_TINYINT) {
+            if (i < PRECISION_TINYINT) {
                 type = new QueryDataType(TINYINT.getConverter(), i);
             } else if (i == PRECISION_TINYINT) {
                 type = TINYINT;
@@ -144,8 +141,8 @@ public final class QueryDataTypeUtils {
                     return VARCHAR_CHARACTER;
                 }
 
-            case BIT:
-                return BIT;
+            case BOOLEAN:
+                return BOOLEAN;
 
             case TINYINT:
                 return TINYINT;
@@ -221,8 +218,8 @@ public final class QueryDataTypeUtils {
             case VARCHAR:
                 return VARCHAR;
 
-            case BIT:
-                return BIT;
+            case BOOLEAN:
+                return BOOLEAN;
 
             case TINYINT:
                 return TINYINT;

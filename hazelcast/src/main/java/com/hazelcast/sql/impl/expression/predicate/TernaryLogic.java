@@ -31,7 +31,7 @@ public final class TernaryLogic {
         boolean seenUnknown = false;
 
         for (Expression<?> operand : operands) {
-            Boolean result = Eval.asBit(operand, row, context);
+            Boolean result = Eval.asBoolean(operand, row, context);
 
             if (result == Boolean.FALSE) {
                 return Boolean.FALSE;
@@ -49,7 +49,7 @@ public final class TernaryLogic {
         boolean seenUnknown = false;
 
         for (Expression<?> operand : operands) {
-            Boolean result = Eval.asBit(operand, row, context);
+            Boolean result = Eval.asBoolean(operand, row, context);
 
             if (result == Boolean.TRUE) {
                 return Boolean.TRUE;

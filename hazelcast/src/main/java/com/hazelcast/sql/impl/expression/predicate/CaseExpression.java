@@ -86,7 +86,7 @@ public class CaseExpression<T> implements Expression<T> {
         for (int i = 0; i < conditions.length; i++) {
             Expression<Boolean> condition = conditions[i];
 
-            Boolean conditionRes = Eval.asBit(condition, row, context);
+            Boolean conditionRes = Eval.asBoolean(condition, row, context);
 
             if (conditionRes != null && conditionRes) {
                 return (T) results[i].eval(row, context);

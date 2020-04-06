@@ -44,7 +44,7 @@ public final class HazelcastTable extends AbstractTable {
     static {
         QUERY_TO_SQL_TYPE.put(QueryDataTypeFamily.VARCHAR, SqlTypeName.VARCHAR);
 
-        QUERY_TO_SQL_TYPE.put(QueryDataTypeFamily.BIT, SqlTypeName.BOOLEAN);
+        QUERY_TO_SQL_TYPE.put(QueryDataTypeFamily.BOOLEAN, SqlTypeName.BOOLEAN);
 
         QUERY_TO_SQL_TYPE.put(QueryDataTypeFamily.TINYINT, SqlTypeName.TINYINT);
         QUERY_TO_SQL_TYPE.put(QueryDataTypeFamily.SMALLINT, SqlTypeName.SMALLINT);

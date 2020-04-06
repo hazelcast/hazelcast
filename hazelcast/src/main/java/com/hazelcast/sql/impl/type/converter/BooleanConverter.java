@@ -29,7 +29,7 @@ public final class BooleanConverter extends Converter {
     protected static final String FALSE = "false";
 
     private BooleanConverter() {
-        super(ID_BOOLEAN, QueryDataTypeFamily.BIT);
+        super(ID_BOOLEAN, QueryDataTypeFamily.BOOLEAN);
     }
 
     @Override
@@ -38,7 +38,7 @@ public final class BooleanConverter extends Converter {
     }
 
     @Override
-    public boolean asBit(Object val) {
+    public boolean asBoolean(Object val) {
         return ((Boolean) val);
     }
 
@@ -51,6 +51,6 @@ public final class BooleanConverter extends Converter {
 
     @Override
     public Object convertToSelf(Converter valConverter, Object val) {
-        return valConverter.asBit(val);
+        return valConverter.asBoolean(val);
     }
 }

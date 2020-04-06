@@ -48,7 +48,7 @@ public final class NullConverter extends Converter {
     }
 
     @Override
-    public boolean asBit(Object val) {
+    public boolean asBoolean(Object val) {
         throw new UnsupportedOperationException("should never be called");
     }
 

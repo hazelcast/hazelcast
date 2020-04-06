@@ -80,8 +80,8 @@ public final class QueryUtils {
 
                 break;
 
-            case BIT:
-                type = SqlColumnType.BIT;
+            case BOOLEAN:
+                type = SqlColumnType.BOOLEAN;
 
                 break;
 
