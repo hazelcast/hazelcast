@@ -57,7 +57,6 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
     private final QueryStateRegistry stateRegistry;
     private final QueryFragmentWorkerPool fragmentPool;
     private final QueryOperationWorkerPool operationPool;
-    private final QueryOperationChannel localOperationChannel;
 
     public QueryOperationHandlerImpl(
         NodeEngineImpl nodeEngine,
@@ -83,8 +82,6 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
             nodeEngine.getSerializationService(),
             nodeEngine.getLogger(QueryOperationWorkerPool.class)
         );
-
-        localOperationChannel = new QueryOperationChannelImpl(this, null);
     }
 
     public void start(UUID localMemberId) {
@@ -97,30 +94,33 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
     }
 
     @Override
-    public boolean submit(UUID memberId, QueryOperation operation) {
-        if (memberId.equals(getLocalMemberId())) {
-            submitLocal(operation);
+    public boolean submit(UUID targetMemberId, QueryOperation operation) {
+        // TODO: Pass from the outside.
+        UUID localMemberId = getLocalMemberId();
+
+        if (targetMemberId.equals(localMemberId)) {
+            submitLocal(localMemberId, operation);
 
             return true;
         } else {
-            Connection connection = getConnection(memberId);
+            Connection connection = getConnection(targetMemberId);
 
             if (connection == null) {
                 return false;
             }
 
-            return submitRemote(connection, operation, false);
+            return submitRemote(localMemberId, connection, operation, false);
         }
     }
 
-    public void submitLocal(QueryOperation operation) {
-        operation.setCallerId(getLocalMemberId());
+    public void submitLocal(UUID callerId, QueryOperation operation) {
+        operation.setCallerId(callerId);
 
         operationPool.submit(operation.getPartition(), QueryOperationExecutable.local(operation));
     }
 
-    public boolean submitRemote(Connection connection, QueryOperation operation, boolean ordered) {
-        operation.setCallerId(getLocalMemberId());
+    public boolean submitRemote(UUID callerId, Connection connection, QueryOperation operation, boolean ordered) {
+        operation.setCallerId(callerId);
 
         byte[] bytes = serializeOperation(operation);
 
@@ -134,17 +134,17 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
     }
 
     @Override
-    public QueryOperationChannel createChannel(UUID memberId) {
-        if (memberId.equals(getLocalMemberId())) {
-            return localOperationChannel;
+    public QueryOperationChannel createChannel(UUID sourceMemberId, UUID targetMemberId) {
+        if (targetMemberId.equals(getLocalMemberId())) {
+            return new QueryOperationChannelImpl(this, sourceMemberId, null);
         } else {
-            Connection connection = getConnection(memberId);
+            Connection connection = getConnection(targetMemberId);
 
             if (connection == null) {
-                throw HazelcastSqlException.memberLeave(memberId);
+                throw HazelcastSqlException.memberLeave(targetMemberId);
             }
 
-            return new QueryOperationChannelImpl(this, connection);
+            return new QueryOperationChannelImpl(this, sourceMemberId, connection);
         }
     }
 
@@ -166,12 +166,19 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
     }
 
     private void handleExecute(QueryExecuteOperation operation) {
+        UUID localMemberId = getLocalMemberId();
+
+        if (!operation.getPartitionMapping().containsKey(localMemberId)) {
+            // Race condition when the message was initiated before the split brain, but arrived after it when the member got
+            // a new local ID. No need to start the query, because it will be cancelled by the initiator anyway.
+            return;
+        }
+
         // Get or create query state.
         QueryState state = stateRegistry.onDistributedQueryStarted(operation.getQueryId(), this);
 
         if (state == null) {
-            // Rare situation when query start request arrived after query cancel and the epoch is advanced enough that
-            // we know for sure that the query should not start at all.
+            // Race condition when query start request arrived after query cancel.
             return;
         }
 
@@ -187,6 +194,7 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
             CreateExecPlanNodeVisitor visitor = new CreateExecPlanNodeVisitor(
                 this,
                 nodeEngine,
+                localMemberId,
                 operation,
                 operation.getPartitionMapping().get(getLocalMemberId()),
                 OUTBOX_BATCH_SIZE

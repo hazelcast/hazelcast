@@ -240,7 +240,7 @@ public class QueryOperationWorkerPoolTest extends HazelcastTestSupport {
         }
 
         @Override
-        public QueryOperationChannel createChannel(UUID memberId) {
+        public QueryOperationChannel createChannel(UUID sourceMemberId, UUID targetMemberId) {
             return null;
         }
 

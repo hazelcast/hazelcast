@@ -61,6 +61,7 @@ public class CreateExecPlanNodeVisitorTest {
         CreateExecPlanNodeVisitor visitor = new CreateExecPlanNodeVisitor(
             null,
             null,
+            null,
             new QueryExecuteOperation().setRootConsumer(consumer, 1000),
             null,
             OUTBOX_BATCH_SIZE

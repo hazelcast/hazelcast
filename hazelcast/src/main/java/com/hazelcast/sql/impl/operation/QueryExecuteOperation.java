@@ -93,6 +93,7 @@ public class QueryExecuteOperation extends QueryAbstractIdAwareOperation {
         this.timeout = timeout;
     }
 
+    // TODO: Make sure that it contains members without partitions as well!
     public Map<UUID, PartitionIdSet> getPartitionMapping() {
         return partitionMapping;
     }

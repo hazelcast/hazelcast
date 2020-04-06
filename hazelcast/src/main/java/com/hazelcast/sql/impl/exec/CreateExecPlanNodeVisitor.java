@@ -82,6 +82,9 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
     /** Node engine. */
     private final NodeEngine nodeEngine;
 
+    /** Local member ID. */
+    private final UUID localMemberId;
+
     /** Operation. */
     private final QueryExecuteOperation operation;
 
@@ -106,12 +109,14 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
     public CreateExecPlanNodeVisitor(
         QueryOperationHandler operationHandler,
         NodeEngine nodeEngine,
+        UUID localMemberId,
         QueryExecuteOperation operation,
         PartitionIdSet localParts,
         int outboxBatchSize
     ) {
         this.operationHandler = operationHandler;
         this.nodeEngine = nodeEngine;
+        this.localMemberId = localMemberId;
         this.operation = operation;
         this.localParts = localParts;
         this.outboxBatchSize = outboxBatchSize;
@@ -264,6 +269,7 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
                 operationHandler,
                 edgeId,
                 rowWidth,
+                localMemberId,
                 receiveMemberId,
                 outboxBatchSize,
                 operation.getEdgeCreditMap().get(edgeId)
