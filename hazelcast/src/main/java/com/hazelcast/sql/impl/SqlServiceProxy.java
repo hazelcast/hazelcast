@@ -147,7 +147,9 @@ public class SqlServiceProxy implements SqlService {
     }
 
     private SqlInternalService createInternalService(NodeEngineImpl nodeEngine) {
-        return new SqlInternalService(nodeEngine);
+        LocalMemberIdProvider localMemberIdProvider = new LocalMemberIdProviderImpl(nodeEngine);
+
+        return new SqlInternalService(nodeEngine, localMemberIdProvider);
     }
 
     /**

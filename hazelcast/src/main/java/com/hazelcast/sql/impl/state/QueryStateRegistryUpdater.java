@@ -115,13 +115,15 @@ public class QueryStateRegistryUpdater {
         }
 
         private void checkMemberState() {
+            UUID localMemberID = clusterService.getLocalMember().getUuid();
+
             Set<UUID> activeMemberIds = new HashSet<>();
 
             for (Member member : clusterService.getMembers(MemberSelectors.DATA_MEMBER_SELECTOR)) {
                 activeMemberIds.add(member.getUuid());
             }
 
-            stateRegistry.update(activeMemberIds, operationHandler);
+            stateRegistry.update(localMemberID, activeMemberIds, operationHandler);
         }
 
         private void checkClientState() {

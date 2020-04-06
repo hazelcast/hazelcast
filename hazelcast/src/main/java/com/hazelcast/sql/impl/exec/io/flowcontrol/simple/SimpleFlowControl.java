@@ -39,6 +39,7 @@ public class SimpleFlowControl implements FlowControl {
 
     private QueryId queryId;
     private int edgeId;
+    private UUID localMemberId;
     private QueryOperationHandler operationHandler;
 
     /** Remote streams. */
@@ -52,9 +53,10 @@ public class SimpleFlowControl implements FlowControl {
     }
 
     @Override
-    public void setup(QueryId queryId, int edgeId, QueryOperationHandler operationHandler) {
+    public void setup(QueryId queryId, int edgeId, UUID localMemberId, QueryOperationHandler operationHandler) {
         this.queryId = queryId;
         this.edgeId = edgeId;
+        this.localMemberId = localMemberId;
         this.operationHandler = operationHandler;
     }
 
@@ -150,7 +152,7 @@ public class SimpleFlowControl implements FlowControl {
             stream.getLocalMemory()
         );
 
-        boolean success = operationHandler.submit(stream.getMemberId(), operation);
+        boolean success = operationHandler.submit(localMemberId, stream.getMemberId(), operation);
 
         if (!success) {
             throw HazelcastSqlException.error(SqlErrorCode.MEMBER_LEAVE,

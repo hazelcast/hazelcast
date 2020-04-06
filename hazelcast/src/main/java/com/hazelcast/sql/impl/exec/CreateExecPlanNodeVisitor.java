@@ -146,10 +146,11 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
 
         // Create and register inbox.
         Inbox inbox = new Inbox(
+            operationHandler,
             operation.getQueryId(),
             edgeId,
             sendFragment.getNode().getSchema().getEstimatedRowSize(),
-            operationHandler,
+            localMemberId,
             fragmentMemberCount,
             createFlowControl(edgeId)
         );
@@ -172,10 +173,11 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
         QueryExecuteOperationFragment sendFragment = operation.getFragments().get(sendFragmentPos);
 
         StripedInbox inbox = new StripedInbox(
+            operationHandler,
             operation.getQueryId(),
             edgeId,
             node.getSchema().getEstimatedRowSize(),
-            operationHandler,
+            localMemberId,
             getFragmentMembers(sendFragment),
             createFlowControl(edgeId)
         );
@@ -265,8 +267,7 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
 
         for (UUID receiveMemberId : receiveFragmentMemberIds) {
             Outbox outbox = new Outbox(
-                operation.getQueryId(),
-                operationHandler,
+                operationHandler, operation.getQueryId(),
                 edgeId,
                 rowWidth,
                 localMemberId,

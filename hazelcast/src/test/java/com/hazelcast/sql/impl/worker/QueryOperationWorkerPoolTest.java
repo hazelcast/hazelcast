@@ -228,8 +228,8 @@ public class QueryOperationWorkerPoolTest extends HazelcastTestSupport {
         private final LinkedBlockingQueue<ExecuteInfo> executeInfos = new LinkedBlockingQueue<>();
 
         @Override
-        public boolean submit(UUID memberId, QueryOperation operation) {
-            submitInfos.add(new SubmitInfo(memberId, operation));
+        public boolean submit(UUID localMemberId, UUID targetMemberId, QueryOperation operation) {
+            submitInfos.add(new SubmitInfo(targetMemberId, operation));
 
             return true;
         }

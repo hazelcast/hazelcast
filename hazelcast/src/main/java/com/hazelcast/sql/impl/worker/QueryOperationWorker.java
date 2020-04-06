@@ -46,6 +46,7 @@ public class QueryOperationWorker implements Runnable {
     private final MPSCQueue<Object> queue;
     private final ILogger logger;
 
+    // TODO: Replace with local member ID resolver.
     private UUID localMemberId;
 
     public QueryOperationWorker(
@@ -165,7 +166,7 @@ public class QueryOperationWorker implements Runnable {
             new QueryCancelOperation(queryId, error.getCode(), error.getMessage(), localMemberId);
 
         try {
-            operationHandler.submit(queryId.getMemberId(), cancelOperation);
+            operationHandler.submit(localMemberId, queryId.getMemberId(), cancelOperation);
         } catch (Exception ignore) {
             // This should never happen, since we do not transmit user objects.
         }

@@ -47,6 +47,8 @@ public class SqlInternalService {
     /** Node engine. */
     private final NodeEngineImpl nodeEngine;
 
+    private final LocalMemberIdProvider localMemberIdProvider;
+
     /** Global memory manager. */
     private final GlobalMemoryReservationManager memoryManager;
 
@@ -62,8 +64,9 @@ public class SqlInternalService {
     /** State registry updater. */
     private final QueryStateRegistryUpdater stateRegistryUpdater;
 
-    public SqlInternalService(NodeEngineImpl nodeEngine) {
+    public SqlInternalService(NodeEngineImpl nodeEngine, LocalMemberIdProvider localMemberIdProvider) {
         this.nodeEngine = nodeEngine;
+        this.localMemberIdProvider = localMemberIdProvider;
 
         SqlConfig config = nodeEngine.getConfig().getSqlConfig();
 
@@ -139,6 +142,13 @@ public class SqlInternalService {
             params.set(i, value);
         }
 
+        // Get local member ID and check if it is still part of the plan.
+        UUID localMemberId = localMemberIdProvider.getLocalMemberId();
+
+        if (!plan.getPartitionMap().containsKey(localMemberId)) {
+            throw HazelcastSqlException.memberLeave(localMemberId);
+        }
+
         // Prepare mappings.
         QueryExecuteOperationFactory operationFactory = new QueryExecuteOperationFactory(
             plan,
@@ -161,26 +171,24 @@ public class SqlInternalService {
 
         try {
             // Start execution on local member.
-            UUID localMemberId = nodeEngine.getLocalMember().getUuid();
-
             QueryExecuteOperation localOp = operationFactory.create(state.getQueryId(), localMemberId);
 
             localOp.setRootConsumer(consumer, pageSize);
 
-            operationHandler.submit(localMemberId, localOp);
+            operationHandler.submitLocal(localMemberId, localOp);
 
             // Start execution on remote members.
             for (int i = 0; i < plan.getDataMemberIds().size(); i++) {
-                UUID memberId = plan.getDataMemberIds().get(i);
+                UUID remoteMemberId = plan.getDataMemberIds().get(i);
 
-                if (memberId.equals(localMemberId)) {
+                if (remoteMemberId.equals(localMemberId)) {
                     continue;
                 }
 
-                QueryExecuteOperation remoteOp = operationFactory.create(state.getQueryId(), memberId);
+                QueryExecuteOperation remoteOp = operationFactory.create(state.getQueryId(), remoteMemberId);
 
-                if (!operationHandler.submit(memberId, remoteOp)) {
-                    throw HazelcastSqlException.memberLeave(memberId);
+                if (!operationHandler.submit(localMemberId, remoteMemberId, remoteOp)) {
+                    throw HazelcastSqlException.memberLeave(remoteMemberId);
                 }
             }
 

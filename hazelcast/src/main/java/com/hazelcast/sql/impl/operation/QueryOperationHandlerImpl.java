@@ -94,10 +94,7 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
     }
 
     @Override
-    public boolean submit(UUID targetMemberId, QueryOperation operation) {
-        // TODO: Pass from the outside.
-        UUID localMemberId = getLocalMemberId();
-
+    public boolean submit(UUID localMemberId, UUID targetMemberId, QueryOperation operation) {
         if (targetMemberId.equals(localMemberId)) {
             submitLocal(localMemberId, operation);
 
@@ -305,7 +302,7 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
 
         QueryCheckResponseOperation responseOperation = new QueryCheckResponseOperation(inactiveQueryIds);
 
-        submit(operation.getCallerId(), responseOperation);
+        submit(getLocalMemberId(), operation.getCallerId(), responseOperation);
     }
 
     private void handleCheckResponse(QueryCheckResponseOperation operation) {
@@ -343,7 +340,7 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
             QueryCancelOperation operation = new QueryCancelOperation(queryId, errCode, errMessage, originatingMemberId);
 
             for (UUID memberId : memberIds) {
-                submit(memberId, operation);
+                submit(getLocalMemberId(), memberId, operation);
             }
         } finally {
             stateRegistry.complete(queryId);

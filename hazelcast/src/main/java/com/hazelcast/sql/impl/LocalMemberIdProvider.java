@@ -14,31 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.exec.io;
-
-import com.hazelcast.sql.impl.QueryId;
+package com.hazelcast.sql.impl;
 
 import java.util.UUID;
 
 /**
- * Base class for inboxes and outboxes.
+ * And interface to get local member ID. We use it to avoid passing {@link com.hazelcast.spi.impl.NodeEngine} everywhere.
  */
-public abstract class AbstractMailbox {
-    /** Query ID. */
-    protected final QueryId queryId;
-
-    /** Edge ID. */
-    protected final int edgeId;
-
-    /** Width of a single row in bytes. */
-    protected final int rowWidth;
-
-    protected UUID localMemberId;
-
-    public AbstractMailbox(QueryId queryId, int edgeId, int rowWidth, UUID localMemberId) {
-        this.queryId = queryId;
-        this.edgeId = edgeId;
-        this.rowWidth = rowWidth;
-        this.localMemberId = localMemberId;
-    }
+public interface LocalMemberIdProvider {
+    /**
+     * @return Current local member ID.
+     */
+    UUID getLocalMemberId();
 }

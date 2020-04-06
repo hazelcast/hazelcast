@@ -14,31 +14,25 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.exec.io;
+package com.hazelcast.sql.impl;
 
-import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.spi.impl.NodeEngine;
 
 import java.util.UUID;
 
 /**
- * Base class for inboxes and outboxes.
+ * Provider that gets local member ID from the node engine.
  */
-public abstract class AbstractMailbox {
-    /** Query ID. */
-    protected final QueryId queryId;
+public class LocalMemberIdProviderImpl implements LocalMemberIdProvider {
 
-    /** Edge ID. */
-    protected final int edgeId;
+    private final NodeEngine nodeEngine;
 
-    /** Width of a single row in bytes. */
-    protected final int rowWidth;
+    public LocalMemberIdProviderImpl(NodeEngine nodeEngine) {
+        this.nodeEngine = nodeEngine;
+    }
 
-    protected UUID localMemberId;
-
-    public AbstractMailbox(QueryId queryId, int edgeId, int rowWidth, UUID localMemberId) {
-        this.queryId = queryId;
-        this.edgeId = edgeId;
-        this.rowWidth = rowWidth;
-        this.localMemberId = localMemberId;
+    @Override
+    public UUID getLocalMemberId() {
+        return nodeEngine.getClusterService().getLocalMember().getUuid();
     }
 }

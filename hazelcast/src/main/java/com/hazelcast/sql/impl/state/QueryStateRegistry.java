@@ -113,7 +113,7 @@ public class QueryStateRegistry {
         states.clear();
     }
 
-    public void update(Collection<UUID> memberIds, QueryOperationHandler operationHandler) {
+    public void update(UUID localMemberId, Collection<UUID> memberIds, QueryOperationHandler operationHandler) {
         Map<UUID, Collection<QueryId>> checkMap = new HashMap<>();
 
         for (QueryState state : states.values()) {
@@ -139,7 +139,7 @@ public class QueryStateRegistry {
         for (Map.Entry<UUID, Collection<QueryId>> checkEntry : checkMap.entrySet()) {
             QueryCheckOperation operation = new QueryCheckOperation(checkEntry.getValue());
 
-            operationHandler.submit(checkEntry.getKey(), operation);
+            operationHandler.submit(localMemberId, checkEntry.getKey(), operation);
         }
     }
 }

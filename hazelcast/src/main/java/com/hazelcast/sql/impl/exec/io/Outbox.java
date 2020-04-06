@@ -37,9 +37,6 @@ public class Outbox extends AbstractMailbox implements OutboundHandler {
     /** Operation handler. */
     private final QueryOperationHandler operationHandler;
 
-    /** Source member ID. */
-    private final UUID sourceMemberId;
-
     /** Target member ID. */
     private final UUID targetMemberId;
 
@@ -56,26 +53,25 @@ public class Outbox extends AbstractMailbox implements OutboundHandler {
     private long remainingMemory;
 
     public Outbox(
-        QueryId queryId,
         QueryOperationHandler operationHandler,
+        QueryId queryId,
         int edgeId,
         int rowWidth,
-        UUID sourceMemberId,
+        UUID localMemberId,
         UUID targetMemberId,
         int batchSize,
         long remainingMemory
     ) {
-        super(queryId, edgeId, rowWidth);
+        super(queryId, edgeId, rowWidth, localMemberId);
 
         this.operationHandler = operationHandler;
-        this.sourceMemberId = sourceMemberId;
         this.targetMemberId = targetMemberId;
         this.batchSize = batchSize;
         this.remainingMemory = remainingMemory;
     }
 
     public void setup() {
-        operationChannel = operationHandler.createChannel(sourceMemberId, targetMemberId);
+        operationChannel = operationHandler.createChannel(localMemberId, targetMemberId);
     }
 
     public UUID getTargetMemberId() {
