@@ -48,12 +48,12 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ClientCompatibilityTest_2_0 {
+public class ClientCompatibilityTest_2_1 {
     private List<ClientMessage> clientMessages = new ArrayList<>();
 
     @Before
     public void setUp() throws IOException {
-        File file = new File(getClass().getResource("/2.0.protocol.compatibility.binary").getFile());
+        File file = new File(getClass().getResource("/2.1.protocol.compatibility.binary").getFile());
         InputStream inputStream = new FileInputStream(file);
         byte[] data = new byte[(int) file.length()];
         inputStream.read(data);

@@ -1601,18 +1601,32 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
     @Override
     public void putAll(@Nonnull Map<? extends K, ? extends V> m) {
-        putAllInternal(m, null);
+        putAllInternal(m, null, true);
     }
 
     @Override
     public InternalCompletableFuture<Void> putAllAsync(@Nonnull Map<? extends K, ? extends V> m) {
         InternalCompletableFuture<Void> future = new InternalCompletableFuture<>();
-        putAllInternal(m, future);
+        putAllInternal(m, future, true);
+        return future;
+    }
+
+    @Override
+    public void setAll(@Nonnull Map<? extends K, ? extends V> m) {
+        putAllInternal(m, null, false);
+    }
+
+    @Override
+    public InternalCompletableFuture<Void> setAllAsync(@Nonnull Map<? extends K, ? extends V> m) {
+        InternalCompletableFuture<Void> future = new InternalCompletableFuture<>();
+        putAllInternal(m, future, false);
         return future;
     }
 
     @SuppressWarnings("checkstyle:npathcomplexity")
-    private void putAllInternal(@Nonnull Map<? extends K, ? extends V> map, @Nullable InternalCompletableFuture<Void> future) {
+    private void putAllInternal(@Nonnull Map<? extends K, ? extends V> map,
+                                @Nullable InternalCompletableFuture<Void> future,
+                                boolean triggerMapLoader) {
         if (map.isEmpty()) {
             if (future != null) {
                 future.complete(null);
@@ -1656,7 +1670,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
             Integer partitionId = entry.getKey();
             // if there is only one entry, consider how we can use MapPutRequest
             // without having to get back the return value
-            ClientMessage request = MapPutAllCodec.encodeRequest(name, entry.getValue());
+            ClientMessage request = MapPutAllCodec.encodeRequest(name, entry.getValue(), triggerMapLoader);
             new ClientInvocation(getClient(), request, getName(), partitionId)
                     .invoke()
                     .whenCompleteAsync(callback);
