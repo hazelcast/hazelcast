@@ -12,7 +12,8 @@
       "tutorials/cdc",
       "tutorials/map-join",
       "tutorials/windowing",
-      "tutorials/python"
+      "tutorials/python",
+      "tutorials/spring-boot"
     ],
     "Concepts": [
       "concepts/dag",
