@@ -15,7 +15,7 @@ failure, using the latest snapshot to restore the state and continue.
 
 However, the exactly-once guarantee didn't work with most of the
 connectors. Only [replayable
-sources](https://docs.hazelcast.org/docs/jet/latest-dev/manual/#replayable-source),
+sources](/docs/architecture/fault-tolerance),
 such as Apache Kafka or IMap Journal were supported. And no sink
 supported this level of guarantee. Why was that?
 
@@ -104,7 +104,7 @@ don't know if the step 5 was executed or not.
 The 1st phase is common for transactional processors and for processors
 that only save internal state. It is coordinated using the snapshot
 barrier, based on the [Chandy-Lamport
-algorithm](https://docs.hazelcast.org/docs/jet/latest-dev/manual/#distributed-snapshot).
+algorithm](/docs/architecture/fault-tolerance#distributed-snapshot).
 The consequence is that the moment at which internal processors save
 their state and external processors prepare and switch their
 transactions is the same. Therefore you can combine exactly-once stages

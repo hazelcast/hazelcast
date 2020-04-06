@@ -348,7 +348,7 @@ then the `source` or `sink` tags will also be set to true.
     <td>
         The number of pending (in flight) operations when using
         asynchronous mapping processors. See
-        <a href="https://docs.hazelcast.org/docs/jet/4.0/javadoc/com/hazelcast/jet/core/processor/Processors.html#mapUsingServiceAsyncP-com.hazelcast.jet.pipeline.ServiceFactory-int-boolean-com.hazelcast.function.FunctionEx-com.hazelcast.function.BiFunctionEx-">
+        <a href="/javadoc/4.0/com/hazelcast/jet/core/processor/Processors.html#mapUsingServiceAsyncP-com.hazelcast.jet.pipeline.ServiceFactory-int-boolean-com.hazelcast.function.FunctionEx-com.hazelcast.function.BiFunctionEx-">
         Processors.mapUsingServiceAsyncP</a>.
     </td>
     <td rowspan="9">
@@ -376,7 +376,7 @@ then the `source` or `sink` tags will also be set to true.
     <td>
         The number of active windows being tracked by a session window
         processor. See
-        <a href="https://docs.hazelcast.org/docs/jet/4.0/javadoc/com/hazelcast/jet/core/processor/Processors.html#aggregateToSessionWindowP-long-long-java.util.List-java.util.List-com.hazelcast.jet.aggregate.AggregateOperation-com.hazelcast.jet.core.function.KeyedWindowResultFunction-">
+        <a href="/javadoc/4.0/com/hazelcast/jet/core/processor/Processors.html#aggregateToSessionWindowP-long-long-java.util.List-java.util.List-com.hazelcast.jet.aggregate.AggregateOperation-com.hazelcast.jet.core.function.KeyedWindowResultFunction-">
         Processors.aggregateToSessionWindowP</a>.
     </td>
   </tr>
@@ -394,7 +394,7 @@ then the `source` or `sink` tags will also be set to true.
     <td>
         The number of grouping keys associated with the current active
         frames of a sliding window processor. See
-        <a href="https://docs.hazelcast.org/docs/jet/4.0/javadoc/com/hazelcast/jet/core/processor/Processors.html#aggregateToSlidingWindowP-java.util.List-java.util.List-com.hazelcast.jet.core.TimestampKind-com.hazelcast.jet.core.SlidingWindowPolicy-long-com.hazelcast.jet.aggregate.AggregateOperation-com.hazelcast.jet.core.function.KeyedWindowResultFunction-">
+        <a href="/javadoc/4.0/com/hazelcast/jet/core/processor/Processors.html#aggregateToSlidingWindowP-java.util.List-java.util.List-com.hazelcast.jet.core.TimestampKind-com.hazelcast.jet.core.SlidingWindowPolicy-long-com.hazelcast.jet.aggregate.AggregateOperation-com.hazelcast.jet.core.function.KeyedWindowResultFunction-">
         Processors.aggregateToSlidingWindowP</a>.
     </td>
   </tr>
@@ -440,7 +440,7 @@ p.readFrom(source)
  .writeTo(sink);
 ```
 
-For further details consult the [Javadoc](https://docs.hazelcast.org/docs/jet/4.0/javadoc/com/hazelcast/jet/core/metrics/Metrics.html).
+For further details consult the [Javadoc](/javadoc/4.0/com/hazelcast/jet/core/metrics/Metrics.html).
 
 User-defined metrics can be used anywhere in pipeline definitions where
 custom code can be added. This means (just to name the most important
@@ -472,16 +472,16 @@ Hazelcast metrics are stored under the
 #### Via Job API
 
 The `Job` class has a
-[`getMetrics()`](https://docs.hazelcast.org/docs/jet/4.0/javadoc/com/hazelcast/jet/Job.html#getMetrics--)
+[`getMetrics()`](/javadoc/4.0/com/hazelcast/jet/Job.html#getMetrics--)
 method which returns a
-[JobMetrics](https://docs.hazelcast.org/docs/jet/4.0/javadoc/com/hazelcast/jet/core/metrics/JobMetrics.html)
+[JobMetrics](/javadoc/4.0/com/hazelcast/jet/core/metrics/JobMetrics.html)
 instance. It contains the latest known metric values for the job.
 
 This functionality has been developed primarily to give access to
 metrics of finished jobs, but can in fact be used for jobs in any state.
 
 For details on how to use and filter the metric values consult the
-[JobMetrics API docs](https://docs.hazelcast.org/docs/jet/4.0/javadoc/com/hazelcast/jet/core/metrics/JobMetrics.html)
+[JobMetrics API docs](/javadoc/4.0/com/hazelcast/jet/core/metrics/JobMetrics.html)
 . A simple example for computing the number of data items emitted by a
 certain vertex (let’s call it vertexA), excluding items emitted to the
 snapshot, would look like this:

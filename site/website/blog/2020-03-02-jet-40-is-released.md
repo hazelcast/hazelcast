@@ -235,8 +235,7 @@ Intel Optane DC Support and encryption at rest.
 
 As part of 4.0, we've also done some house cleaning and as a result some
 things have been moved around. All the changes are listed as part of the
-[migration guide in the reference
-manual](https://docs.hazelcast.org/docs/jet/latest-dev/manual/#migration-guides).
+[migration guide blog post](/blog/2020/04/01/upgrading-to-jet-40).
 
 We are committed to backwards compatibility going forward and any
 interfaces or classes which are subject to change will be marked as
