@@ -303,12 +303,8 @@ public abstract class JmsSourceIntegrationTestBase extends SimpleTestInClusterSu
         JmsSourceBuilder sourceBuilder;
         if (useTopic) {
             sourceBuilder = Sources.jmsTopicBuilder(getConnectionFactory())
-                    .connectionFn(f -> {
-                        Connection conn = f.createConnection();
-                        conn.setClientID("foo-client-id");
-                        return conn;
-                    })
-                    .consumerFn(s -> s.createDurableSubscriber(s.createTopic(destName), "foo-consumer"));
+                    .sharedConsumer(true)
+                    .consumerFn(s -> s.createSharedDurableConsumer(s.createTopic(destName), "foo-consumer"));
             // create the durable subscriber now so that it doesn't lose the initial messages
             try (Connection conn = getConnectionFactory().get().createConnection()) {
                 conn.setClientID("foo-client-id");

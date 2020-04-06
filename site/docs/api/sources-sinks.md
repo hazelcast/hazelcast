@@ -424,7 +424,7 @@ or greater than 1.0.0.
 ### JMS
 
 JMS (Java Message Service) is a standard API for communicating with
-various message brokers using the publish-subscribe patterns.
+various message brokers using the queue or publish-subscribe patterns.
 
 There are several brokers that implement the JMS standard, including:
 
@@ -433,34 +433,61 @@ There are several brokers that implement the JMS standard, including:
 * IBM MQ
 * RabbitMQ
 * Solace
+* ...
 
-Jet is able to utilize these brokers both as a source and sink through
+Jet is able to utilize these brokers both as a source and a sink through
 the use of the JMS API.
 
-To use a JMS broker, such as ActiveMQ, you'll need the client libraries
-either on the classpath (by putting them on the `lib` folder) of the
-node or submit them with the job. The Jet JMS connector is part of the
+To use a JMS broker, such as ActiveMQ, you need the client libraries
+either on the classpath (by putting them into the `lib` folder) of the
+node or submit them with the job. The Jet JMS connector is a part of the
 `hazelcast-jet` module, so requires no other dependencies than the
 client jar.
 
+#### JMS Source Connector
+
 A very simple pipeline which consumes messages from a given ActiveMQ
-and then logs them is given below:
+queue and then logs them is given below:
 
 ```java
 Pipeline p = Pipeline.create();
-p.readFrom(Sources.jmsQueue(() -> new ActiveMQConnectionFactory(
-        "tcp://localhost:61616"), "queue"))
+p.readFrom(Sources.jmsQueue("queueName",
+        () -> new ActiveMQConnectionFactory("tcp://localhost:61616")))
  .withoutTimestamps()
  .writeTo(Sinks.logger());
 ```
 
-For the topic, we recommend using a durable consumer where possible
-so that you are able to make use of fault-tolerance features of Jet:
+For a topic you can choose whether the consumer is durable or shared.
+You need to use the `consumerFn` to create the desired consumer using a
+JMS `Session` object.
+
+If you create a shared consumer, you need to let Jet know by calling
+`sharedConsumer(true)` on the builder. If you don't do this, only one
+cluster member will actually connect to the JMS broker and will receive
+all of the messages. We always assume a shared consumer for queues.
+
+If you create a non-durable consumer, the fault-tolerance features won't
+work since the JMS broker won't track which messages were delivered to
+the client and which not.
+
+Below is a simple example to create a non-durable non-shared topic
+source:
 
 ```java
 Pipeline p = Pipeline.create();
-p.readFrom(Sources.jmsTopicBuilder(() ->
-    new ActiveMQConnectionFactory("tcp://localhost:61616")
+p.readFrom(Sources.jmsTopic("topic",
+        () -> new ActiveMQConnectionFactory("tcp://localhost:61616")))
+ .withoutTimestamps()
+ .writeTo(Sinks.logger());
+```
+
+Here is a more complex example that uses a shared, durable consumer:
+
+```java
+Pipeline p = Pipeline.create();
+p.readFrom(Sources
+        .jmsTopicBuilder(() ->
+                new ActiveMQConnectionFactory("tcp://localhost:61616"))
         .sharedConsumer(true)
         .consumerFn(session -> {
             Topic topic = session.createTopic("topic");
@@ -471,21 +498,40 @@ p.readFrom(Sources.jmsTopicBuilder(() ->
  .writeTo(Sinks.logger());
 ```
 
-It is recommended to use the JMS topic with a shared consumer so that
-multiple Jet nodes can read in parallel, otherwise a global parallelism
-of 1 will be used, meaning only a single node will receive all the
-messages. When you create a shared consumer in the `consumerFn`, you
-should also call `sharedConsumer(true)` on the builder, as in the sample
-code above. For a queue we always assume a shared consumer.
+#### Source fault tolerance
 
-#### Using as a sink
+The source connector is fault-tolerant with the exactly-once guarantee
+(except for the non-durable topic consumer). Fault tolerance is achieved
+by acknowledging the consumed messages only after they were fully
+processed by the downstream stages. Acknowledging is done once per
+snapshot, you need to enable the processing guarantee in the
+`JobConfig`.
 
-The JMS sink uses the supplied function to create a Message object for
-each input item. After a batch of messages is sent, sink commits the
-session.
+In the exactly-once mode the processor saves the IDs of the messages
+processed since the last snapshot into the snapshotted state. Therefore
+this mode will not work if your messages don't have the JMS Message ID
+set (it is an optional feature of JMS). In this case you need to set
+`messageIdFn` on the builder to extract the message ID from the payload.
+If you don't have a message ID to use, you must reduce the source
+guarantee to at-least-once:
 
-The following code snippets show writing to a JMS queue and a JMS topic
-using ActiveMQ JMS Client.
+```java
+p.readFrom(Sources.jmsTopicBuilder(...)
+        .maxGuarantee(ProcessingGuarantee.AT_LEAST_ONCE)
+        ...
+```
+
+In the at-least-once mode messages are acknowledged in the same way as
+in the exactly-once mode, but message IDs are not saved to the snapshot.
+
+If you have no processing guarantee enabled, the processor will consume
+the messages in the `DUPS_OK_ACKNOWLEDGE` mode.
+
+#### JMS Sink Connector
+
+The JMS sink uses the supplied function to create a `Message` object for
+each input item. The following code snippets show writing to a JMS queue
+and a JMS topic using the ActiveMQ JMS client.
 
 ```java
 Pipeline p = Pipeline.create();
@@ -503,39 +549,45 @@ p.readFrom(Sources.list("inputList"))
  );
 ```
 
+#### Fault Tolerance
+
+The JMS sink supports the exactly-once guarantee. It uses two-phase XA
+transactions, messages are committed consistent with the last state
+snapshot. This greatly increases the latency, it is determined by the
+snapshot interval: messages are visible to consumers only after the
+commit. In order to make it work, the connection factory you provide has
+to implement `javax.jms.XAConnectionFactory`, otherwise the job will not
+start.
+
+If you want to avoid the higher latency, decrease the overhead
+introduced by the XA transactions, if your JMS implementation doesn't
+support XA transactions or if you just don't need the guarantee, you can
+reduce it just for the sink:
+
+```java
+stage.writeTo(Sinks
+         .jmsQueueBuilder(() -> new ActiveMQConnectionFactory("tcp://localhost:61616"))
+         // decrease the guarantee for the sink
+         .exactlyOnce(false)
+         .build());
+```
+
+In the at-least-once mode or if no guarantee is enabled, the transaction
+is committed after each batch of messages: transactions are used for
+performance as this is JMS' way to send messages in batches. Batches are
+created from readily available messages so they incur minimal extra
+latency.
+
 #### Connection Handling
 
-The JMS connectors opens one connection to the JMS server for each
-member. Then each underlying worker of the source creates a session and
-a message consumer using that connection. The user supplies necessary
-functions to create the connection, session and message consumer.
+The JMS source and sink open one connection to the JMS server for each
+member and each vertex. Then each parallel worker of the source creates
+a session and a message consumer/producer using that connection.
 
-IO failures are generally handled by the JMS Client and do not cause the
+IO failures are generally handled by the JMS client and do not cause the
 connector to fail. Most of the clients offer a configuration parameter
 to enable auto-reconnection, refer to the specific client documentation
 for details.
-
-#### Fault Tolerance
-
-JMS for Jet is a transactional source, and supports both at-least-once
-and exactly-once processing. The sink currently supports at-least-once
-and will be extended to have exactly-once guarantee through the use XA
-transactions in the future.
-
-If you have no processing guarantee enabled, the processor will consume
-the messages in `DUPS_OK_ACKNOWLEDGE` mode, and otherwise will only
-acknowledge messages in transactions in the 2nd phase of the snapshot,
-that is after all downstream stages (including any sinks) fully
-processed the messages. Additionally, if the exactly-once processing
-guarantee is used, the processor will store message IDs of the
-unacknowledged messages to the snapshot and should the job fail after
-the snapshot was successful, but before Jet managed to acknowledge the
-messages, the stored IDs will be used to filter out the re-delivered
-messages to avoid duplication.
-
-The exactly-once guarantee for JMS topic requires the use of a durable
-topic consumer, since the broker doesn't store and can't replay messages
-otherwise.
 
 ### Apache Pulsar
 
@@ -770,12 +822,12 @@ which we will explore.
 
 ### JDBC
 
-JDBC is a very well established database API supported by every major
-relational (and many non-relational) database implementation out there
-including Oracle, MySQL, PostgreSQL, Microsoft SQL Server. The libraries
-are typically referred to as _drivers_ and every major database vendor will
-have this driver available for either download or on a package repository
-such as maven.
+JDBC is a well-established database API supported by every major
+relational (and many non-relational) database implementations including
+Oracle, MySQL, PostgreSQL, Microsoft SQL Server. They provide libraries
+called _JDBC drivers_ and every major database vendor will have this
+driver available for either download or in a package repository such as
+maven.
 
 Jet is able to utilize these drivers both for sources and sinks and the
 only step required is to add the driver to the `lib` folder of Jet or
@@ -793,7 +845,7 @@ p.readFrom(Sources.jdbc("jdbc:mysql://localhost:3306/mysql",
 ```
 
 Jet is also able to distribute a query across multiple nodes by
-customizing a different query per node:
+customizing the filtering criteria for each node:
 
 ```java
 Pipeline p = Pipeline.create();
@@ -813,13 +865,13 @@ The JDBC source only works in batching mode, meaning the query is only
 executed once, for streaming changes from the database you can follow the
 [Change Data Capture tutorial](../tutorials/cdc.md).
 
-#### Data Sink
+#### JDBC Data Sink
 
 Jet is also able to output the results of a job to a database using the
 JDBC driver by using an update query.
 
 The supplied update query should be a parameterized query where the
-parameters are modified for each item:
+parameters are set for each item:
 
 ```java
 Pipeline p = Pipeline.create();
@@ -837,7 +889,38 @@ p.readFrom(KafkaSources.<Person>kafka(.., "people"))
 JDBC sink will automatically try to reconnect during database
 connectivity issues and is suitable for use in streaming jobs. If you
 want to avoid duplicate writes to the database, then a suitable
-_insert-or-update_ statement should be used instead of `INSERT`.
+_insert-or-update_ statement should be used instead of `INSERT`, such as
+`MERGE` or `REPLACE` or `INSERT .. ON CONFLICT ..`.
+
+#### Fault tolerance
+
+The JDBC sink supports the exactly-once guarantee. It uses two-phase XA
+transactions, the DML statements are committed consistently with the
+last state snapshot. This greatly increases the latency, it is
+determined by the snapshot interval: messages are visible to consumers
+only after the commit. In order to make it work, instead of the JDBC URL
+you have to use the variant with `Supplier<CommonDataSource>` and it
+must return an instance of `javax.sql.XADataSource`, otherwise the job
+will not start.
+
+Here is an example for PostgreSQL:
+
+```java
+stage.writeTo(Sinks.jdbc("INSERT INTO " + tableName + " VALUES(?, ?)",
+         () -> {
+                 BaseDataSource dataSource = new PGXADataSource();
+                 dataSource.setUrl("localhost:5432");
+                 dataSource.setUser("user");
+                 dataSource.setPassword("pwd");
+                 dataSource.setDatabaseName("database1");
+                 return dataSource;
+         },
+         (stmt, item) -> {
+             stmt.setInt(1, item.getKey());
+             stmt.setString(2, item.getValue());
+         }
+ ));
+```
 
 ### MongoDB
 
