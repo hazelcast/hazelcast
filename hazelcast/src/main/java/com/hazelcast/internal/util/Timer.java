@@ -27,7 +27,7 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * long elapsedMs = Timer.millisElapsedSince(start);
  * }
  */
-public class Timer {
+public final class Timer {
     private Timer() {
     }
 
