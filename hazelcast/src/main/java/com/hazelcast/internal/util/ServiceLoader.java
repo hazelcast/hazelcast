@@ -25,7 +25,6 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -106,13 +105,8 @@ public final class ServiceLoader {
             Set<URLDefinition> urlDefinitions = new HashSet<URLDefinition>();
             while (configs.hasMoreElements()) {
                 URL url = configs.nextElement();
-                String externalForm = url.toExternalForm()
-                                         .replace(" ", "%20")
-                                         .replace("^", "%5e");
-                URI uri = new URI(externalForm);
-
                 if (!classLoader.getClass().getName().equals(IGNORED_GLASSFISH_MAGIC_CLASSLOADER)) {
-                    urlDefinitions.add(new URLDefinition(uri, classLoader));
+                    urlDefinitions.add(new URLDefinition(url, classLoader));
                 }
             }
             return urlDefinitions;
@@ -128,7 +122,7 @@ public final class ServiceLoader {
             Set<ServiceDefinition> names = new HashSet<ServiceDefinition>();
             BufferedReader r = null;
             try {
-                URL url = urlDefinition.uri.toURL();
+                URL url = urlDefinition.url;
                 r = new BufferedReader(new InputStreamReader(url.openStream(), "UTF-8"));
                 while (true) {
                     String line = r.readLine();
@@ -237,11 +231,11 @@ public final class ServiceLoader {
      */
     private static final class URLDefinition {
 
-        private final URI uri;
+        private final URL url;
         private final ClassLoader classLoader;
 
-        private URLDefinition(URI url, ClassLoader classLoader) {
-            this.uri = url;
+        private URLDefinition(URL url, ClassLoader classLoader) {
+            this.url = url;
             this.classLoader = classLoader;
         }
 
@@ -255,7 +249,7 @@ public final class ServiceLoader {
             }
 
             URLDefinition that = (URLDefinition) o;
-            if (uri != null ? !uri.equals(that.uri) : that.uri != null) {
+            if (url != null ? !url.equals(that.url) : that.url != null) {
                 return false;
             }
             return true;
@@ -263,7 +257,7 @@ public final class ServiceLoader {
 
         @Override
         public int hashCode() {
-            return uri == null ? 0 : uri.hashCode();
+            return url == null ? 0 : url.hashCode();
         }
     }
 
