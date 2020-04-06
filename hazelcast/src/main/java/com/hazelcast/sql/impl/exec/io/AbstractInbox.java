@@ -99,7 +99,7 @@ public abstract class AbstractInbox extends AbstractMailbox implements InboundHa
     }
 
     /**
-     * @return {@code True} if no more incoming batches are expected.
+     * @return {@code true} if no more incoming batches are expected.
      */
     public boolean closed() {
         return enqueuedBatches == 0 && remainingStreams == 0;

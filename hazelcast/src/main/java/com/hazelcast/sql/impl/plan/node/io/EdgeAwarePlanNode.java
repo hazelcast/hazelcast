@@ -23,7 +23,7 @@ import com.hazelcast.sql.impl.plan.node.PlanNode;
  */
 public interface EdgeAwarePlanNode extends PlanNode {
     /**
-     * @return {@code True} if this is an outbound node, {@code false} if this is an inbound node.
+     * @return {@code true} if this is an outbound node, {@code false} if this is an inbound node.
      */
     boolean isSender();
 

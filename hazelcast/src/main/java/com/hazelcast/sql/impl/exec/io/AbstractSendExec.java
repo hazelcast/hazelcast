@@ -78,7 +78,7 @@ public abstract class AbstractSendExec extends AbstractUpstreamAwareExec {
     /**
      * Push pending batches if needed.
      *
-     * @return {@code True} if there are no more pending batches.
+     * @return {@code true} if there are no more pending batches.
      */
     private boolean pushPendingBatch() {
         // If there are no pending rows, then all data has been flushed.
@@ -102,7 +102,7 @@ public abstract class AbstractSendExec extends AbstractUpstreamAwareExec {
      *
      * @param batch Row batch.
      * @param last Whether this is the last batch.
-     * @return {@code True} if the batch was accepted by all inboxes.
+     * @return {@code true} if the batch was accepted by all inboxes.
      */
     private boolean pushBatch(RowBatch batch, boolean last) {
         // Pending state must be cleared at this point.
