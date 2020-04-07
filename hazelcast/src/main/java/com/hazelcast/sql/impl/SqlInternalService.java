@@ -23,6 +23,7 @@ import com.hazelcast.sql.impl.exec.root.BlockingRootResultConsumer;
 import com.hazelcast.sql.impl.explain.QueryExplain;
 import com.hazelcast.sql.impl.explain.QueryExplainResultProducer;
 import com.hazelcast.sql.impl.memory.GlobalMemoryReservationManager;
+import com.hazelcast.sql.impl.memory.MemoryPressure;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperationFactory;
 import com.hazelcast.sql.impl.operation.QueryOperationHandlerImpl;
@@ -33,7 +34,9 @@ import com.hazelcast.sql.impl.state.QueryStateRegistryUpdater;
 import com.hazelcast.sql.impl.type.converter.Converter;
 import com.hazelcast.sql.impl.type.converter.Converters;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -42,6 +45,13 @@ import java.util.UUID;
 public class SqlInternalService {
     /** Default state check frequency. */
     public static final long STATE_CHECK_FREQUENCY = 2000L;
+
+    private static final int SMALL_TOPOLOGY_THRESHOLD = 8;
+    private static final int MEDIUM_TOPOLOGY_THRESHOLD = 16;
+
+    private static final int LOW_PRESSURE_CREDIT = 1024 * 1024;
+    private static final int MEDIUM_PRESSURE_CREDIT = 512 * 1024;
+    private static final int HIGH_PRESSURE_CREDIT = 256 * 1024;
 
     /** Node service provider. */
     private final NodeServiceProvider nodeServiceProvider;
@@ -154,7 +164,7 @@ public class SqlInternalService {
             plan,
             params,
             timeout,
-            memoryManager.getMemoryPressure()
+            createEdgeInitialMemoryMapForPlan(plan)
         );
 
         // Register the state.
@@ -198,6 +208,50 @@ public class SqlInternalService {
             state.cancel(e);
 
             throw e;
+        }
+    }
+
+    private Map<Integer, Long> createEdgeInitialMemoryMapForPlan(Plan plan) {
+        Map<Integer, Integer> inboundEdgeMemberCountMap = plan.getInboundEdgeMemberCountMap();
+
+        Map<Integer, Long> res = new HashMap<>(inboundEdgeMemberCountMap.size());
+
+        for (Map.Entry<Integer, Integer> entry : inboundEdgeMemberCountMap.entrySet()) {
+            res.put(entry.getKey(), getCredit(memoryManager.getMemoryPressure(), entry.getValue()));
+        }
+
+        return res;
+    }
+
+    private static long getCredit(MemoryPressure memoryPressure, int memberCount) {
+        MemoryPressure memoryPressure0;
+
+        if (memberCount <= SMALL_TOPOLOGY_THRESHOLD) {
+            // Small topology. Do not adjust memory pressure.
+            memoryPressure0 = memoryPressure;
+        } else if (memberCount <= MEDIUM_TOPOLOGY_THRESHOLD) {
+            // Medium topology. Treat LOW as MEDIUM.
+            memoryPressure0 = memoryPressure == MemoryPressure.LOW ? MemoryPressure.MEDIUM : memoryPressure;
+        } else {
+            // Large topology. Tread everything as HIGH.
+            memoryPressure0 = MemoryPressure.HIGH;
+        }
+
+        switch (memoryPressure0) {
+            case LOW:
+                // 1Mb
+                return LOW_PRESSURE_CREDIT;
+
+            case MEDIUM:
+                // 512Kb
+                return MEDIUM_PRESSURE_CREDIT;
+
+            case HIGH:
+                // 256Kb
+                return HIGH_PRESSURE_CREDIT;
+
+            default:
+                throw new IllegalStateException("Invalid memory pressure: " + memoryPressure0);
         }
     }
 
