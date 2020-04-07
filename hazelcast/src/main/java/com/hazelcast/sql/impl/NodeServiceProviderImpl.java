@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl;
 
-import com.hazelcast.client.Client;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
@@ -55,17 +54,6 @@ public class NodeServiceProviderImpl implements NodeServiceProvider {
 
         for (Member member : nodeEngine.getClusterService().getMembers(MemberSelectors.DATA_MEMBER_SELECTOR)) {
             res.add(member.getUuid());
-        }
-
-        return res;
-    }
-
-    @Override
-    public Collection<UUID> getClientMembersIds() {
-        Set<UUID> res = new HashSet<>();
-
-        for (Client client : nodeEngine.getHazelcastInstance().getClientService().getConnectedClients()) {
-            res.add(client.getUuid());
         }
 
         return res;

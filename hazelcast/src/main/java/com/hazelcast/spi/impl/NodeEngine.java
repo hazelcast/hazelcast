@@ -35,6 +35,7 @@ import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
+import com.hazelcast.sql.impl.SqlServiceProxy;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.wan.impl.WanReplicationService;
@@ -113,6 +114,13 @@ public interface NodeEngine {
      * @return the SplitBrainProtectionService
      */
     SplitBrainProtectionService getSplitBrainProtectionService();
+
+    /**
+     * Gets SQL service.
+     *
+     * @return the SQL service
+     */
+    SqlServiceProxy getSqlService();
 
     /**
      * Gets the TransactionManagerService.

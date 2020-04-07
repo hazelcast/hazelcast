@@ -18,18 +18,22 @@ package com.hazelcast.sql;
 
 import com.hazelcast.core.HazelcastException;
 
+import java.util.Collection;
 import java.util.UUID;
 
 /**
  * Exception occurred during SQL query execution.
  */
 public final class HazelcastSqlException extends HazelcastException {
-    private int code;
 
-    private HazelcastSqlException(int code, String message, Throwable cause) {
+    private int code;
+    private UUID originatingMemberId;
+
+    private HazelcastSqlException(int code, String message, Throwable cause, UUID originatingMemberId) {
         super(message, cause);
 
         this.code = code;
+        this.originatingMemberId = originatingMemberId;
     }
 
     /**
@@ -72,11 +76,39 @@ public final class HazelcastSqlException extends HazelcastException {
      * @return Exception object.
      */
     public static HazelcastSqlException error(int code, String message, Throwable cause) {
-        return new HazelcastSqlException(code, message, cause);
+        return new HazelcastSqlException(code, message, cause, null);
+    }
+
+    /**
+     * Constructs an error which occurred on a remote member.
+     *
+     * @param code Code.
+     * @param message Message.
+     * @param originatingMemberId Originating member ID.
+     * @return Exception object.
+     */
+    public static HazelcastSqlException remoteError(int code, String message, UUID originatingMemberId) {
+        return new HazelcastSqlException(code, message, null, originatingMemberId);
     }
 
     public static HazelcastSqlException memberConnection(UUID memberId) {
         return error(SqlErrorCode.MEMBER_CONNECTION, "Connection to member is broken: " + memberId);
+    }
+
+    public static HazelcastSqlException memberLeave(UUID memberId) {
+        return error(SqlErrorCode.MEMBER_LEAVE, "Participating member has left the topology: " + memberId);
+    }
+
+    public static HazelcastSqlException memberLeave(Collection<UUID> memberIds) {
+        return error(SqlErrorCode.MEMBER_LEAVE, "Participating members has left the topology: " + memberIds);
+    }
+
+    public static HazelcastSqlException timeout(long timeout) {
+        return error(SqlErrorCode.TIMEOUT, "Query has been cancelled due to timeout (" + timeout + " ms)");
+    }
+
+    public static HazelcastSqlException cancelledByUser() {
+        return error(SqlErrorCode.CANCELLED_BY_USER, "Query was cancelled by user");
     }
 
     /**
@@ -86,8 +118,16 @@ public final class HazelcastSqlException extends HazelcastException {
         return code;
     }
 
+    public UUID getOriginatingMemberId() {
+        return originatingMemberId;
+    }
+
     @Override
     public String getMessage() {
-        return super.getMessage() + " (code " + code + ')';
+        if (originatingMemberId != null) {
+            return super.getMessage() + " (code=" + code + ", originatingMemberId=" + originatingMemberId + ')';
+        } else {
+            return super.getMessage() + " (code=" + code + ')';
+        }
     }
 }
