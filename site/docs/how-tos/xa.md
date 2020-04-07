@@ -45,7 +45,7 @@ The module contains two tests:
 
 Let's test compatibility of XA support for `PostgreSQL`.
 
-1. Add the database dependency to `build.gradle`:
+1. Add the database connector dependency to `build.gradle`:
 
 ```groovy
   compile group: 'org.postgresql', name: 'postgresql', version: '42.2.9'
