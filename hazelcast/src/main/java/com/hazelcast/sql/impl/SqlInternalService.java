@@ -27,7 +27,9 @@ import com.hazelcast.sql.impl.state.QueryState;
 import com.hazelcast.sql.impl.state.QueryStateRegistry;
 import com.hazelcast.sql.impl.state.QueryStateRegistryUpdater;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -36,6 +38,9 @@ import java.util.UUID;
 public class SqlInternalService {
     /** Default state check frequency. */
     public static final long STATE_CHECK_FREQUENCY = 2000L;
+
+    /** Memory assigned to a single edge mailbox. Will be reworked to dynamic mode when memory manager is implemented. */
+    private static final long MEMORY_PER_EDGE_MAILBOX = 512 * 1024;
 
     /** Node service provider. */
     private final NodeServiceProvider nodeServiceProvider;
@@ -113,7 +118,7 @@ public class SqlInternalService {
             plan,
             params,
             timeout,
-            memoryManager.getMemoryPressure()
+            createEdgeInitialMemoryMapForPlan(plan)
         );
 
         // Register the state.
@@ -157,6 +162,18 @@ public class SqlInternalService {
 
             throw e;
         }
+    }
+
+    private Map<Integer, Long> createEdgeInitialMemoryMapForPlan(Plan plan) {
+        Map<Integer, Integer> inboundEdgeMemberCountMap = plan.getInboundEdgeMemberCountMap();
+
+        Map<Integer, Long> res = new HashMap<>(inboundEdgeMemberCountMap.size());
+
+        for (Map.Entry<Integer, Integer> entry : inboundEdgeMemberCountMap.entrySet()) {
+            res.put(entry.getKey(), MEMORY_PER_EDGE_MAILBOX);
+        }
+
+        return res;
     }
 
     public QueryOperationHandlerImpl getOperationHandler() {

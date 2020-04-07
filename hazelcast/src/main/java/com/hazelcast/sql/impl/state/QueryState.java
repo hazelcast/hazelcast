@@ -18,7 +18,6 @@ package com.hazelcast.sql.impl.state;
 
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlErrorCode;
-import com.hazelcast.sql.impl.QueryMetadata;
 import com.hazelcast.sql.impl.QueryResultProducer;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.plan.Plan;

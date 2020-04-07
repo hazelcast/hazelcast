@@ -37,9 +37,10 @@ public interface FlowControl {
      *
      * @param queryId ID of the owning query.
      * @param edgeId Edge ID.
+     * @param localMemberId Local member ID.
      * @param operationHandler Operation handler that will be used for operation.
      */
-    void setup(QueryId queryId, int edgeId, QueryOperationHandler operationHandler);
+    void setup(QueryId queryId, int edgeId, UUID localMemberId, QueryOperationHandler operationHandler);
 
     /**
      * Callback invoked when a batch is added to the inbox.
