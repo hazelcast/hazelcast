@@ -26,6 +26,8 @@ public enum QueryExecuteOperationFragmentMapping {
     /** Fragment members are data members. */
     DATA_MEMBERS(2);
 
+    private static final QueryExecuteOperationFragmentMapping[] VALUES = values();
+
     private final int id;
 
     QueryExecuteOperationFragmentMapping(int id) {
@@ -37,7 +39,7 @@ public enum QueryExecuteOperationFragmentMapping {
     }
 
     public static QueryExecuteOperationFragmentMapping getById(final int id) {
-        for (QueryExecuteOperationFragmentMapping type : values()) {
+        for (QueryExecuteOperationFragmentMapping type : VALUES) {
             if (type.id == id) {
                 return type;
             }
