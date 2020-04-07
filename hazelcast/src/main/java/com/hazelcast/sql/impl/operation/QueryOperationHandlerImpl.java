@@ -27,6 +27,7 @@ import com.hazelcast.sql.impl.exec.CreateExecPlanNodeVisitor;
 import com.hazelcast.sql.impl.exec.Exec;
 import com.hazelcast.sql.impl.exec.io.InboundHandler;
 import com.hazelcast.sql.impl.exec.io.OutboundHandler;
+import com.hazelcast.sql.impl.exec.io.flowcontrol.simple.SimpleFlowControlFactory;
 import com.hazelcast.sql.impl.state.QueryState;
 import com.hazelcast.sql.impl.state.QueryStateCompletionCallback;
 import com.hazelcast.sql.impl.state.QueryStateRegistry;
@@ -186,11 +187,9 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
             // Create executors and inboxes.
             CreateExecPlanNodeVisitor visitor = new CreateExecPlanNodeVisitor(
                 this,
-                nodeServiceProvider,
-                serializationService,
                 localMemberId,
                 operation,
-                operation.getPartitionMap().get(localMemberId),
+                SimpleFlowControlFactory.INSTANCE,
                 OUTBOX_BATCH_SIZE
             );
 

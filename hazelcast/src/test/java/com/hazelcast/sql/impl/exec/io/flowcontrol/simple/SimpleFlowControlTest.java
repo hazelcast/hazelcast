@@ -47,7 +47,7 @@ public class SimpleFlowControlTest {
         SimpleFlowControl flowControl = (SimpleFlowControl) SimpleFlowControlFactory.INSTANCE.create(initialMemory);
 
         assertEquals(initialMemory, flowControl.getMaxMemory());
-        assertEquals(SimpleFlowControl.THRESHOLD_PERCENTAGE, flowControl.getLwmPercentage(), 0.0d);
+        assertEquals(SimpleFlowControl.THRESHOLD_PERCENTAGE, flowControl.getThresholdPercentage(), 0.0d);
     }
 
     @Test
@@ -79,7 +79,7 @@ public class SimpleFlowControlTest {
         int edgeId = 1;
         LoggingQueryOperationHandler operationHandler = new LoggingQueryOperationHandler();
 
-        flowControl.setup(queryId, edgeId, operationHandler);
+        flowControl.setup(queryId, edgeId, UUID.randomUUID(), operationHandler);
 
         // Test above LWM.
         UUID memberId1 = UUID.randomUUID();
@@ -140,7 +140,7 @@ public class SimpleFlowControlTest {
     @Test
     public void testCannotSend() {
         SimpleFlowControl flowControl = new SimpleFlowControl(1_000L, 0.5d);
-        flowControl.setup(QueryId.create(UUID.randomUUID()), 1, FaultyQueryOperationHandler.INSTANCE);
+        flowControl.setup(QueryId.create(UUID.randomUUID()), 1, UUID.randomUUID(), FaultyQueryOperationHandler.INSTANCE);
 
         UUID memberId = UUID.randomUUID();
 

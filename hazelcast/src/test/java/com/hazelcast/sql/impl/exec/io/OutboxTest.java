@@ -50,6 +50,7 @@ public class OutboxTest extends SqlTestSupport {
 
     private static final QueryId QUERY_ID = QueryId.create(UUID.randomUUID());
     private static final int EDGE_ID = 1;
+    private static final UUID LOCAL_MEMBER_ID = UUID.randomUUID();
     private static final UUID TARGET_MEMBER_ID = UUID.randomUUID();
 
     private static final int ROW_WIDTH = 100;
@@ -157,6 +158,7 @@ public class OutboxTest extends SqlTestSupport {
                 break;
             }
 
+            assertEquals(LOCAL_MEMBER_ID, submitInfo.getSourceMemberId());
             assertEquals(TARGET_MEMBER_ID, submitInfo.getMemberId());
 
             QueryBatchExchangeOperation operation = submitInfo.getOperation();
@@ -219,10 +221,11 @@ public class OutboxTest extends SqlTestSupport {
 
     private static Outbox createOutbox(QueryOperationHandler operationHandler) {
         Outbox res = new Outbox(
-            QUERY_ID,
             operationHandler,
+            QUERY_ID,
             EDGE_ID,
             ROW_WIDTH,
+            LOCAL_MEMBER_ID,
             TARGET_MEMBER_ID,
             BATCH_SIZE,
             REMAINING_MEMORY
