@@ -81,7 +81,7 @@ public class SimpleFlowControlTest {
 
         flowControl.setup(queryId, edgeId, operationHandler);
 
-        // Test above LWM.
+        // Test above threshold.
         UUID memberId1 = UUID.randomUUID();
 
         long deltaSmall = 100L;
@@ -94,7 +94,7 @@ public class SimpleFlowControlTest {
         flowControl.onFragmentExecutionCompleted();
         assertNull(operationHandler.tryPollSubmitInfo());
 
-        // Test below LWM.
+        // Test below threshold.
         long deltaBig = 800L;
 
         flowControl.onBatchAdded(memberId1, deltaSmall, false, memMax - deltaSmall);
@@ -115,7 +115,7 @@ public class SimpleFlowControlTest {
         flowControl.onFragmentExecutionCompleted();
         assertNull(operationHandler.tryPollSubmitInfo());
 
-        // Test below LWM with last batch.
+        // Test below threshold with last batch.
         flowControl.onBatchAdded(memberId1, deltaSmall, false, memMax - deltaSmall);
         flowControl.onBatchAdded(memberId1, deltaBig, true, memMax - deltaSmall - deltaBig);
         flowControl.onBatchRemoved(memberId1, deltaSmall, false);
