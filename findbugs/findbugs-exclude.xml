@@ -17,7 +17,12 @@
 <FindBugsFilter>
     <Match>
         <!-- We don't serialize AwsProperties anywhere -->
-        <Class name="com.hazelcast.aws.AwsProperties" />
-        <Bug pattern="SE_BAD_FIELD_STORE" />
+        <Class name="com.hazelcast.aws.AwsProperties"/>
+        <Bug pattern="SE_BAD_FIELD_STORE"/>
+    </Match>
+    <Match>
+        <!-- AwsEc2RequestSigner should always use '\n' as new line (and not platform-specific '%n' -->
+        <Class name="com.hazelcast.aws.AwsEc2RequestSigner"/>
+        <Bug pattern="VA_FORMAT_STRING_USES_NEWLINE"/>
     </Match>
 </FindBugsFilter>

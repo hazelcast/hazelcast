@@ -176,7 +176,7 @@ public class AwsClientTest {
             .setIamRole("")
             .build();
         String relativePath = "/some/relative/path";
-        given(environment.getEnvVar(ECS_CREDENTIALS_ENV_VAR_NAME)).willReturn(relativePath);
+        given(environment.getEnv(ECS_CREDENTIALS_ENV_VAR_NAME)).willReturn(relativePath);
         given(awsMetadataApi.credentialsFromEcs(relativePath)).willReturn(CREDENTIALS);
         AwsClient awsClient = new AwsClient(awsMetadataApi, awsDescribeInstancesApi, awsConfig, environment);
 
@@ -196,7 +196,7 @@ public class AwsClientTest {
             .setIamRole("")
             .build();
         String invalidPath = "/some/relative/path";
-        given(environment.getEnvVar(ECS_CREDENTIALS_ENV_VAR_NAME)).willReturn(invalidPath);
+        given(environment.getEnv(ECS_CREDENTIALS_ENV_VAR_NAME)).willReturn(invalidPath);
         given(awsMetadataApi.credentialsFromEcs(invalidPath)).willThrow(new RuntimeException("Invalid ECS Metadata"));
         AwsClient awsClient = new AwsClient(awsMetadataApi, awsDescribeInstancesApi, awsConfig, environment);
 

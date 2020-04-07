@@ -56,15 +56,10 @@ public class AwsDiscoveryStrategyTest {
         awsDiscoveryStrategy = new AwsDiscoveryStrategy(properties, awsClient);
     }
 
-    private Map<String, Comparable> getProperties() {
-        Map<String, Comparable> properties = new HashMap<>();
-        return properties;
-    }
-
     @Test(expected = InvalidConfigurationException.class)
     public void newInvalidPortRangeProperty() {
         // given
-        Map<String, Comparable> properties = new HashMap<String, Comparable>();
+        Map<String, Comparable> properties = new HashMap<>();
         properties.put("hz-port", "invalid");
 
         // when
@@ -87,7 +82,7 @@ public class AwsDiscoveryStrategyTest {
     }
 
     @Test
-    public void discoverNodes() throws IOException {
+    public void discoverNodes() {
         // given
         String privateIp = "192.168.1.15";
         String publicIp = "38.146.24.2";
@@ -110,7 +105,7 @@ public class AwsDiscoveryStrategyTest {
     }
 
     @Test
-    public void discoverNodesMultipleAddressesManyPorts() throws IOException {
+    public void discoverNodesMultipleAddressesManyPorts() {
         // given
         // 8 ports in the port range
         Map<String, Comparable> properties = new HashMap<>();
@@ -132,7 +127,7 @@ public class AwsDiscoveryStrategyTest {
     }
 
     @Test
-    public void discoverNodesEmpty() throws IOException {
+    public void discoverNodesEmpty() {
         // given
         given(awsClient.getAddresses()).willReturn(Collections.emptyMap());
 
@@ -144,7 +139,7 @@ public class AwsDiscoveryStrategyTest {
     }
 
     @Test
-    public void discoverNodesException() throws IOException {
+    public void discoverNodesException() {
         // given
         given(awsClient.getAddresses()).willThrow(new RuntimeException("Unknown exception"));
 

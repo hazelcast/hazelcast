@@ -15,14 +15,27 @@
 
 package com.hazelcast.aws;
 
-import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;
 
-public class AwsURLEncoderTest
-        extends HazelcastTestSupport {
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
+
+
+public class AwsUrlUtilsTest {
 
     @Test
-    public void testConstructor() {
-        assertUtilityConstructor(AwsURLEncoder.class);
+    public void canonicalQueryString() {
+        // given
+        Map<String, String> attributes = new HashMap<>();
+        attributes.put("second-attribute", "second-attribute+value");
+        attributes.put("attribute", "attribute+value");
+
+        // when
+        String result = AwsUrlUtils.canonicalQueryString(attributes);
+
+        assertEquals("attribute=attribute%2Bvalue&second-attribute=second-attribute%2Bvalue", result);
     }
+
 }

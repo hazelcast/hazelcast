@@ -26,6 +26,7 @@ import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
 import com.hazelcast.spi.partitiongroup.PartitionGroupMetaData;
 
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -70,7 +71,8 @@ public class AwsDiscoveryStrategy
         logConfiguration(awsConfig);
 
         AwsMetadataApi awsMetadataApi = new AwsMetadataApi(awsConfig);
-        AwsDescribeInstancesApi awsDescribeInstancesApi = new AwsDescribeInstancesApi(awsConfig);
+        AwsDescribeInstancesApi awsDescribeInstancesApi = new AwsDescribeInstancesApi(awsConfig,
+            new AwsEc2RequestSigner(), Clock.systemUTC());
 
         this.awsClient = new AwsClient(awsMetadataApi, awsDescribeInstancesApi, awsConfig, new Environment());
         this.portRange = awsConfig.getHzPort();

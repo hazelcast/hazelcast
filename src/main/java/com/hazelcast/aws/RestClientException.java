@@ -15,11 +15,16 @@
 
 package com.hazelcast.aws;
 
-final class Constants {
-    static final String DOC_VERSION = "2016-11-15";
-    static final String SIGNATURE_METHOD_V4 = "AWS4-HMAC-SHA256";
-    static final String GET = "GET";
+/**
+ * Exception to indicate any issues while executing a REST call.
+ */
+class RestClientException
+        extends RuntimeException {
+    RestClientException(String message) {
+        super(message);
+    }
 
-    private Constants() {
+    RestClientException(String message, Throwable cause) {
+        super(message, cause);
     }
 }

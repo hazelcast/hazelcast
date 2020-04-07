@@ -15,22 +15,22 @@
 
 package com.hazelcast.aws;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+import org.w3c.dom.Node;
+
 import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.Clock;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Scanner;
+import java.util.Optional;
 import java.util.TimeZone;
-import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
-import static com.hazelcast.aws.Constants.DOC_VERSION;
-import static com.hazelcast.aws.Constants.SIGNATURE_METHOD_V4;
-import static com.hazelcast.aws.StringUtil.isNotEmpty;
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.aws.AwsEc2RequestSigner.SIGNATURE_METHOD_V4;
+import static com.hazelcast.aws.AwsUrlUtils.canonicalQueryString;
+import static com.hazelcast.aws.StringUtils.isNotEmpty;
 
 /**
  * Responsible for connecting to AWS EC2 Describe Instances API.
@@ -38,13 +38,18 @@ import static com.hazelcast.internal.nio.IOUtil.closeResource;
  * @see <a href="http://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstances.html">EC2 Describe Instances</a>
  */
 class AwsDescribeInstancesApi {
-    private static final int MIN_HTTP_CODE_FOR_AWS_ERROR = 400;
-    private static final int MAX_HTTP_CODE_FOR_AWS_ERROR = 600;
+    private static final ILogger LOGGER = Logger.getLogger(AwsDescribeInstancesApi.class);
+
+    private static final int TIMESTAMP_FIELD_LENGTH = 8;
 
     private final AwsConfig awsConfig;
+    private final AwsEc2RequestSigner requestSigner;
+    private final Clock clock;
 
-    AwsDescribeInstancesApi(AwsConfig awsConfig) {
+    AwsDescribeInstancesApi(AwsConfig awsConfig, AwsEc2RequestSigner requestSigner, Clock clock) {
         this.awsConfig = awsConfig;
+        this.requestSigner = requestSigner;
+        this.clock = clock;
     }
 
     /**
@@ -55,48 +60,46 @@ class AwsDescribeInstancesApi {
      * @return map from private to public IP or empty map in case of failed response unmarshalling
      */
     Map<String, String> addresses(String region, String endpoint, AwsCredentials credentials) {
+        Map<String, String> attributes = createAttributes(region, endpoint, credentials);
+        return callServiceWithRetries(endpoint, attributes);
+    }
+
+    private Map<String, String> createAttributes(String region, String endpoint, AwsCredentials credentials) {
         Map<String, String> attributes = new HashMap<>();
+
         if (credentials.getToken() != null) {
             attributes.put("X-Amz-Security-Token", credentials.getToken());
         }
-
-        EC2RequestSigner requestSigner = getRequestSigner(attributes, region, endpoint, credentials);
-        attributes.put("X-Amz-Signature", requestSigner.sign("ec2", attributes));
-
-        InputStream stream = null;
-        try {
-            stream = callServiceWithRetries(attributes, endpoint, requestSigner);
-            return CloudyUtility.unmarshalTheResponse(stream);
-        } finally {
-            closeResource(stream);
-        }
-    }
-
-    private EC2RequestSigner getRequestSigner(Map<String, String> attributes, String region, String endpoint,
-                                              AwsCredentials credentials) {
-        String timeStamp = getFormattedTimestamp();
-        EC2RequestSigner rs = new EC2RequestSigner(timeStamp, region, endpoint, credentials);
         attributes.put("Action", "DescribeInstances");
-        attributes.put("Version", DOC_VERSION);
-        attributes.put("X-Amz-Algorithm", SIGNATURE_METHOD_V4);
-        attributes.put("X-Amz-Credential", rs.createFormattedCredential());
-        attributes.put("X-Amz-Date", timeStamp);
+        attributes.put("Version", "2016-11-15");
         attributes.put("X-Amz-SignedHeaders", "host");
         attributes.put("X-Amz-Expires", "30");
-        addFilters(attributes);
-        return rs;
+
+        String timestamp = formatCurrentTimestamp();
+        attributes.put("X-Amz-Date", timestamp);
+        attributes.put("X-Amz-Credential", formatCredentials(region, credentials, timestamp));
+
+        attributes.putAll(filterAttributes());
+        attributes.put("X-Amz-Algorithm", SIGNATURE_METHOD_V4);
+        attributes.put("X-Amz-Signature", requestSigner.sign(attributes, region, endpoint, credentials, timestamp));
+
+        return attributes;
     }
 
-    private static String getFormattedTimestamp() {
+    private String formatCurrentTimestamp() {
         SimpleDateFormat df = new SimpleDateFormat("yyyyMMdd'T'HHmmss'Z'");
         df.setTimeZone(TimeZone.getTimeZone("UTC"));
-        return df.format(new Date());
+        return df.format(Instant.now(clock).toEpochMilli());
     }
 
-    /**
-     * Add available filters to narrow down the scope of the query
-     */
-    private void addFilters(Map<String, String> attributes) {
+    private static String formatCredentials(String region, AwsCredentials credentials, String timestamp) {
+        return String.format("%s/%s/%s/ec2/aws4_request",
+            credentials.getAccessKey(),
+            timestamp.substring(0, TIMESTAMP_FIELD_LENGTH),
+            region);
+    }
+
+    private Map<String, String> filterAttributes() {
         Filter filter = new Filter();
         if (isNotEmpty(awsConfig.getTagKey())) {
             if (isNotEmpty(awsConfig.getTagValue())) {
@@ -113,60 +116,76 @@ class AwsDescribeInstancesApi {
         }
 
         filter.addFilter("instance-state-name", "running");
-        attributes.putAll(filter.getFilters());
+        return filter.getFilterAttributes();
     }
 
-    private InputStream callServiceWithRetries(Map<String, String> attributes, String endpoint, EC2RequestSigner requestSigner) {
-        return RetryUtils.retry(() -> callService(attributes, endpoint, requestSigner),
+    private Map<String, String> callServiceWithRetries(String endpoint, Map<String, String> attributes) {
+        return RetryUtils.retry(() -> callService(endpoint, attributes),
             awsConfig.getConnectionRetries());
     }
 
-    // visible for testing
-    InputStream callService(Map<String, String> attributes, String endpoint, EC2RequestSigner requestSigner)
-        throws Exception {
-        String query = requestSigner.getCanonicalizedQueryString(attributes);
-        URL url = new URL("https", endpoint, -1, "/?" + query);
-
-        HttpURLConnection httpConnection = (HttpURLConnection) (url.openConnection());
-        httpConnection.setRequestMethod(Constants.GET);
-        httpConnection.setReadTimeout((int) TimeUnit.SECONDS.toMillis(awsConfig.getReadTimeoutSeconds()));
-        httpConnection.setConnectTimeout((int) TimeUnit.SECONDS.toMillis(awsConfig.getConnectionTimeoutSeconds()));
-        httpConnection.setDoOutput(false);
-        httpConnection.connect();
-
-        checkNoAwsErrors(httpConnection);
-
-        return httpConnection.getInputStream();
+    private Map<String, String> callService(String endpoint, Map<String, String> attributes) {
+        String query = canonicalQueryString(attributes);
+        String response = RestClient.create(urlFor(endpoint, query))
+            .withConnectTimeoutSeconds(awsConfig.getConnectionTimeoutSeconds())
+            .withReadTimeoutSeconds(awsConfig.getReadTimeoutSeconds())
+            .get();
+        return parse(response);
     }
 
-    // visible for testing
-    void checkNoAwsErrors(HttpURLConnection httpConnection)
-        throws IOException {
-        int responseCode = httpConnection.getResponseCode();
-        if (isAwsError(responseCode)) {
-            String errorMessage = extractErrorMessage(httpConnection);
-            throw new AwsConnectionException(responseCode, errorMessage);
+    private static String urlFor(String endpoint, String query) {
+        if (endpoint.startsWith("http")) {
+            return endpoint + "/?" + query;
+        }
+        return "https://" + endpoint + "/?" + query;
+    }
+
+    private static Map<String, String> parse(String xmlResponse) {
+        try {
+            return tryParse(xmlResponse);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
-    /**
-     * AWS response codes for client and server errors are specified here:
-     * {@see http://docs.aws.amazon.com/AWSEC2/latest/APIReference/errors-overview.html}.
-     */
-    private static boolean isAwsError(int responseCode) {
-        return responseCode >= MIN_HTTP_CODE_FOR_AWS_ERROR && responseCode < MAX_HTTP_CODE_FOR_AWS_ERROR;
+    private static Map<String, String> tryParse(String xmlResponse) throws Exception {
+        return XmlNode.create(xmlResponse)
+            .getSubNodes("reservationset").stream()
+            .flatMap(e -> e.getSubNodes("item").stream())
+            .flatMap(e -> e.getSubNodes("instancesset").stream())
+            .flatMap(e -> e.getSubNodes("item").stream())
+            .filter(e -> e.getValue("privateipaddress") != null)
+            .peek(AwsDescribeInstancesApi::logInstanceName)
+            .collect(Collectors.toMap(
+                e -> e.getValue("privateipaddress"),
+                e -> e.getValue("ipaddress"))
+            );
     }
 
-    private static String extractErrorMessage(HttpURLConnection httpConnection) {
-        InputStream errorStream = httpConnection.getErrorStream();
-        if (errorStream == null) {
-            return "";
-        }
-        return readFrom(errorStream);
+    private static void logInstanceName(XmlNode item) {
+        LOGGER.fine(String.format("Accepting EC2 instance [%s][%s]",
+            parseInstanceName(item).orElse("<unknown>"),
+            item.getValue("privateipaddress")));
     }
 
-    private static String readFrom(InputStream stream) {
-        Scanner scanner = new Scanner(stream, "UTF-8").useDelimiter("\\A");
-        return scanner.hasNext() ? scanner.next() : "";
+    private static Optional<String> parseInstanceName(XmlNode nodeHolder) {
+        return nodeHolder.getSubNodes("tagset").stream()
+            .flatMap(e -> e.getSubNodes("item").stream())
+            .filter(AwsDescribeInstancesApi::isNameField)
+            .flatMap(e -> e.getSubNodes("value").stream())
+            .map(XmlNode::getNode)
+            .map(Node::getFirstChild)
+            .map(Node::getNodeValue)
+            .findFirst();
+    }
+
+    private static boolean isNameField(XmlNode item) {
+        return item.getSubNodes("key").stream()
+            .map(XmlNode::getNode)
+            .map(Node::getFirstChild)
+            .map(Node::getNodeValue)
+            .map("Name"::equals)
+            .findFirst()
+            .orElse(false);
     }
 }

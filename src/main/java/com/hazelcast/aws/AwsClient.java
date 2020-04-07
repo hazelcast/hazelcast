@@ -55,7 +55,7 @@ class AwsClient {
     }
 
     private String resolveRegion() {
-        if (StringUtil.isNotEmpty(awsConfig.getRegion())) {
+        if (StringUtils.isNotEmpty(awsConfig.getRegion())) {
             return awsConfig.getRegion();
         }
 
@@ -71,14 +71,17 @@ class AwsClient {
     }
 
     private String resolveIamRole() {
-        if (StringUtil.isNotEmpty(awsConfig.getAccessKey())) {
+        if (StringUtils.isNotEmpty(awsConfig.getAccessKey())) {
             // no need to resolve IAM Role, since using hardcoded Access/Secret keys takes precedence
             return null;
         }
-        if (StringUtil.isNotEmpty(awsConfig.getIamRole()) && !"DEFAULT".equals(awsConfig.getIamRole())) {
+        if (StringUtils.isNotEmpty(awsConfig.getIamRole()) && !"DEFAULT".equals(awsConfig.getIamRole())) {
             return awsConfig.getIamRole();
         }
-        return awsMetadataApi.defaultIamRole();
+
+        String iamRole = awsMetadataApi.defaultIamRole();
+        LOGGER.info(String.format("Using IAM Role attached to EC2 Instance: %s", iamRole));
+        return iamRole;
     }
 
     Map<String, String> getAddresses() {
@@ -86,7 +89,7 @@ class AwsClient {
     }
 
     private AwsCredentials prepareCredentials() {
-        if (StringUtil.isNotEmpty(awsConfig.getAccessKey())) {
+        if (StringUtils.isNotEmpty(awsConfig.getAccessKey())) {
             // authenticate using access key and secret key from the configuration
             return AwsCredentials.builder()
                 .setAccessKey(awsConfig.getAccessKey())
@@ -94,9 +97,9 @@ class AwsClient {
                 .build();
         }
 
-        if (StringUtil.isNotEmpty(iamRole)) {
+        if (StringUtils.isNotEmpty(iamRole)) {
             // authenticate using IAM Role
-            LOGGER.info(String.format("Fetching credentials using IAM Role: %s", iamRole));
+            LOGGER.fine(String.format("Fetching credentials using IAM Role: %s", iamRole));
             try {
                 return awsMetadataApi.credentials(iamRole);
             } catch (Exception e) {
@@ -113,7 +116,7 @@ class AwsClient {
     private AwsCredentials fetchCredentialsFromEcs() {
         // before giving up, attempt to discover whether we're running in an ECS Container,
         // in which case, AWS_CONTAINER_CREDENTIALS_RELATIVE_URI will exist as an env var.
-        String relativePath = environment.getEnvVar(ECS_CREDENTIALS_ENV_VAR_NAME);
+        String relativePath = environment.getEnv(ECS_CREDENTIALS_ENV_VAR_NAME);
         if (relativePath == null) {
             throw new InvalidConfigurationException("Could not acquire credentials! "
                 + "Did not find declared AWS access key or IAM Role, and could not discover IAM Task Role or default role.");

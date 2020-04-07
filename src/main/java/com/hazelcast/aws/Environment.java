@@ -16,13 +16,13 @@
 package com.hazelcast.aws;
 
 /**
- * This class is used to lookup env vars, so that we can use mocks in our tests,
- * when checking for the presence of an env var.
+ * This class is introduced to lookup system parameters.
+ * <p>
+ * It is introduced to isolate and mock system-related stuff.
  */
 class Environment {
 
-    String getEnvVar(String name) {
+    String getEnv(String name) {
         return System.getenv(name);
     }
-
 }

@@ -15,19 +15,10 @@
 
 package com.hazelcast.aws;
 
-import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.net.URLConnection;
-import java.nio.charset.StandardCharsets;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Responsible for connecting to AWS EC2 and ECS Instance Metadata API.
@@ -63,13 +54,6 @@ class AwsMetadataApi {
         this.awsConfig = awsConfig;
     }
 
-    private String retrieveMetadataFromURI(String uri) {
-        return retrieveMetadataFromURI(uri,
-            awsConfig.getConnectionTimeoutSeconds(),
-            awsConfig.getConnectionRetries(),
-            awsConfig.getReadTimeoutSeconds());
-    }
-
     String availabilityZone() {
         String uri = ec2Endpoint.concat(AVAILABILITY_ZONE_URI);
         return retrieveMetadataFromURI(uri);
@@ -103,61 +87,12 @@ class AwsMetadataApi {
 
     /**
      * Performs the HTTP request to retrieve AWS Instance Metadata from the given URI.
-     *
-     * @param uri                     the full URI where a `GET` request will retrieve the metadata information,
-     *                                represented as JSON.
-     * @param connectTimeoutInSeconds connect timeout for the AWS service call
-     * @param retries                 number of retries in case the AWS request fails
-     * @param readTimeoutInSeconds    read timeout for the AWS service call
-     * @return The content of the HTTP response, as a String. NOTE: This is NEVER null.
      */
-    private static String retrieveMetadataFromURI(final String uri, final int connectTimeoutInSeconds,
-                                                  final int retries, final int readTimeoutInSeconds) {
-        return RetryUtils.retry(() -> retrieveMetadataFromURI(uri, connectTimeoutInSeconds, readTimeoutInSeconds), retries);
-    }
-
-    /**
-     * Performs the HTTP request to retrieve AWS Instance Metadata from the given URI.
-     *
-     * @param uri                     the full URI where a `GET` request will retrieve the metadata information,
-     *                                represented as JSON.
-     * @param connectTimeoutInSeconds connect timeout for the AWS service call
-     * @param readTimeoutSeconds      read timeout for the AWS service call
-     * @return The content of the HTTP response, as a String. NOTE: This is NEVER null.
-     */
-    private static String retrieveMetadataFromURI(String uri, int connectTimeoutInSeconds, int readTimeoutSeconds) {
-        StringBuilder response = new StringBuilder();
-
-        InputStreamReader is = null;
-        BufferedReader reader = null;
-        try {
-            URLConnection url = new URL(uri).openConnection();
-            url.setReadTimeout((int) TimeUnit.SECONDS.toMillis(readTimeoutSeconds));
-            url.setConnectTimeout((int) TimeUnit.SECONDS.toMillis(connectTimeoutInSeconds));
-            is = new InputStreamReader(url.getInputStream(), StandardCharsets.UTF_8);
-            reader = new BufferedReader(is);
-            String resp;
-            while ((resp = reader.readLine()) != null) {
-                response = response.append(resp);
-            }
-            return response.toString();
-        } catch (IOException io) {
-            throw new InvalidConfigurationException("Unable to lookup role in URI: " + uri, io);
-        } finally {
-            if (is != null) {
-                try {
-                    is.close();
-                } catch (IOException e) {
-                    LOGGER.warning(e);
-                }
-            }
-            if (reader != null) {
-                try {
-                    reader.close();
-                } catch (IOException e) {
-                    LOGGER.warning(e);
-                }
-            }
-        }
+    private String retrieveMetadataFromURI(final String uri) {
+        return RetryUtils.retry(() -> RestClient.create(uri)
+                .withConnectTimeoutSeconds(awsConfig.getConnectionTimeoutSeconds())
+                .withReadTimeoutSeconds(awsConfig.getReadTimeoutSeconds())
+                .get()
+            , awsConfig.getConnectionRetries());
     }
 }

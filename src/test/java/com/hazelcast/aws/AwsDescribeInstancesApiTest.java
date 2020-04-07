@@ -15,230 +15,153 @@
 
 package com.hazelcast.aws;
 
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Assert;
+import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.Map;
 
-import static org.hamcrest.Matchers.containsString;
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category( {QuickTest.class, ParallelJVMTest.class})
+@RunWith(MockitoJUnitRunner.class)
 public class AwsDescribeInstancesApiTest {
-    public static final String DUMMY_PRIVATE_IP = "10.0.0.1";
-    private static final String REGION = "us-east-1";
-    private static final String HOST_HEADER = "ec2.amazonaws.com";
+    private static final Clock CLOCK = Clock.fixed(Instant.ofEpochMilli(1585909518929L), ZoneId.systemDefault());
+    private static final String SIGNATURE = "032264a26b2b3bd7c021603233dd7822b571750e174fb1e47b8e0784dd160fb6";
+    private static final AwsConfig AWS_CONFIG = AwsConfig.builder()
+        .setSecurityGroupName("hazelcast")
+        .setTagKey("aws-test-cluster")
+        .setTagValue("cluster1")
+        .build();
+    private static final String REGION = "eu-central-1";
+    private static final AwsCredentials CREDENTIALS = AwsCredentials.builder()
+        .setAccessKey("AKIDEXAMPLE")
+        .setSecretKey("wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY")
+        .setToken("IQoJb3JpZ2luX2VjEFIaDGV1LWNlbnRyYWwtMSJGMEQCIGNqWOCTxslYFGiTqX2smgm5wANL67R4PE1HPpisXiQxAiBwtbamKgJR8FAcbOOEEMm1nTCsarvIqDGip5SE55ZNsSq6AwhbEAAaDDY2NTQ2NjczMTU3NyIM345eTegAGRnGjFHaKpcD/E8DRZLAQeDobXIgX1/oezU1Q6ZOv/M3tk6maifeh+UQIpRFLntzpPjadt5LiJTngti4KQkXb8XQKKHjIp+zN4rrRYhqUqhAe+BP8Qm7L2NczwRhnSVfoTJjZOx5CNw/tQf1n3CdNWKgZcgTSVwF1lLPyKK0bpoj3AkQvOjfSIo0ix9xHj1FnezO1QVzdFjJK70oMU806bAPzQ48KAVfh2L5gihaZo3KUDydOUpPcRbKYlrflOuifsxO25OAEqxhTLfFQAggApZ1a8ZGG278f+40Quh5XBAySU+SUgm3kDZ5ufWBePXVdfS8MD/WnO1sSRUKJMEFPgVHQ5DwcK8I+k0T4GhSIFxHjtUg8upKviSw1PR3OXI9AxLFpbHNcTXz9Q06sPj59VgnXvIdUwdZ/usL3YOhWI10ouPQQVG6KLdDMZT/gjWlrARN1rXHhuWOzyG5l8HfaYBMczGqgA1H1Oqjc767GaojiJ2N6cQbmmdYZMzG3EuBwKedIloDL0/2hYtiivwoOIycFOPMZcYzBPr8IbxGkVUwkIWc9AU67AHTKRcXVecgSjGOWuhoLz0gd8kSvBCqzvJdAdh0gVxsgTRmsh2BFEmEkqJHckIgpVZC8yEp/UZMAm8yu8RSeIcoxlEZfLKKqqQbWs9iHDBSGFwD5FLi7rHAMmYG2k6zGew2Vse3qI5uXquJDJlyzurZdnxu6O9BFSN0LBgO4e9OGHrLnwPMjYHwCqcsleS3mM7+v8a7i3HPE+wBIjfh9X96Dl25k1OBhvy8Xuzr+cERGqsMWLr5m5eck3V23Y+/pbS6FiFfaYMjc4ewjtPGT3/51wcvOvUTbl5B52uHKwMqIszO/qXTmqm0roC/OA==")
+        .build();
+    private static String endpoint;
 
-    private static InputStream toInputStream(String s)
-        throws Exception {
-        return new ByteArrayInputStream(s.getBytes("UTF-8"));
+    @Mock
+    private Environment environment;
+
+    @Mock
+    private AwsEc2RequestSigner requestSigner;
+
+    private AwsDescribeInstancesApi awsDescribeInstancesApi;
+
+    @Rule
+    public WireMockRule wireMockRule = new WireMockRule(wireMockConfig().dynamicPort());
+
+    @Before
+    public void setUp() {
+        given(requestSigner.sign(any(), any(), any(), any(), any())).willReturn(SIGNATURE);
+        awsDescribeInstancesApi = new AwsDescribeInstancesApi(AWS_CONFIG, requestSigner, CLOCK);
+
+        endpoint = String.format("http://localhost:%s", wireMockRule.port());
     }
 
     @Test
-    public void test_CheckNoAwsErrors_NoAwsErrors()
-        throws Exception {
+    public void addresses() {
         // given
-        int httpResponseCode = 200;
-
-        HttpURLConnection httpConnection = mock(HttpURLConnection.class);
-        given(httpConnection.getResponseCode()).willReturn(httpResponseCode);
-
-        AwsConfig awsConfig = predefinedAwsConfigBuilder().build();
-        AwsDescribeInstancesApi awsDescribeInstancesApi = new AwsDescribeInstancesApi(awsConfig);
+        stubFor(get(urlEqualTo(requestUrl()))
+            .willReturn(aResponse().withStatus(200).withBody(response())));
 
         // when
-        awsDescribeInstancesApi.checkNoAwsErrors(httpConnection);
+        Map<String, String> result = awsDescribeInstancesApi.addresses(REGION, endpoint, CREDENTIALS);
 
         // then
-        // no exceptions thrown
+        assertEquals(2, result.size());
+        assertEquals("54.93.121.213", result.get("10.0.1.25"));
+        assertEquals("18.196.228.248", result.get("172.31.14.42"));
     }
 
     @Test
-    public void test_CheckNoAwsErrors_ConnectionFailed()
-        throws Exception {
+    public void addressesAwsError() {
         // given
-        int httpResponseCode = 401;
-        String errorMessage = "Error message retrived from AWS";
-
-        HttpURLConnection httpConnection = mock(HttpURLConnection.class);
-        given(httpConnection.getResponseCode()).willReturn(httpResponseCode);
-        given(httpConnection.getErrorStream()).willReturn(toInputStream(errorMessage));
-
-        AwsConfig awsConfig = predefinedAwsConfigBuilder().build();
-        AwsDescribeInstancesApi awsDescribeInstancesApi = new AwsDescribeInstancesApi(awsConfig);
-
-        // when & then
-        try {
-            awsDescribeInstancesApi.checkNoAwsErrors(httpConnection);
-            fail("AwsConnectionFailed exception was not thrown");
-        } catch (AwsConnectionException e) {
-            assertEquals(httpResponseCode, e.getHttpReponseCode());
-            assertEquals(errorMessage, e.getErrorMessage());
-            assertThat(e.getMessage(), containsString(Integer.toString(httpResponseCode)));
-            assertThat(e.getMessage(), containsString(errorMessage));
-
-        }
-    }
-
-    @Test
-    public void test_CheckNoAwsErrors_ConnectionFailedAndNullErrorStream()
-        throws Exception {
-        // given
-        int httpResponseCode = 401;
-
-        HttpURLConnection httpConnection = mock(HttpURLConnection.class);
-        given(httpConnection.getResponseCode()).willReturn(httpResponseCode);
-        given(httpConnection.getErrorStream()).willReturn(null);
-
-        AwsConfig awsConfig = predefinedAwsConfigBuilder().build();
-        AwsDescribeInstancesApi awsDescribeInstancesApi = new AwsDescribeInstancesApi(awsConfig);
-
-        // when & then
-        try {
-            awsDescribeInstancesApi.checkNoAwsErrors(httpConnection);
-            fail("AwsConnectionFailed exception was not thrown");
-        } catch (AwsConnectionException e) {
-            assertEquals(httpResponseCode, e.getHttpReponseCode());
-            assertEquals("", e.getErrorMessage());
-            assertThat(e.getMessage(), containsString(Integer.toString(httpResponseCode)));
-        }
-    }
-
-    @Test
-    public void test_Addresses()
-        throws Exception {
-        // given
-        AwsConfig awsConfig = predefinedAwsConfigBuilder().build();
-        AwsCredentials credentials = AwsCredentials.builder()
-            .setAccessKey("dummyAccessKey")
-            .setSecretKey("dummySecretKey")
-            .build();
-
-        AwsDescribeInstancesApi describeInstances = spy(new AwsDescribeInstancesApi(awsConfig));
-        doReturn(stubDescribeInstancesResponse()).when(describeInstances).callService(any(), any(), any());
+        int errorCode = 401;
+        String errorMessage = "Error message retrieved from AWS";
+        stubFor(get(urlEqualTo(requestUrl()))
+            .willReturn(aResponse().withStatus(errorCode).withBody(errorMessage)));
 
         // when
-        Map<String, String> result = describeInstances.addresses(REGION, HOST_HEADER, credentials);
+        RestClientException exception = assertThrows(RestClientException.class,
+            () -> awsDescribeInstancesApi.addresses(REGION, endpoint, CREDENTIALS));
 
         // then
-        Assert.assertNotNull(result);
-        assertEquals(1, result.size());
-        Assert.assertNotNull(result.get(DUMMY_PRIVATE_IP));
+        assertTrue(exception.getMessage().contains(Integer.toString(errorCode)));
+        assertTrue(exception.getMessage().contains(errorMessage));
     }
 
-    private InputStream stubDescribeInstancesResponse() {
-        String response = String.format("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+    private static String requestUrl() {
+        return "/?Action=DescribeInstances"
+            + "&Filter.1.Name=tag%3Aaws-test-cluster"
+            + "&Filter.1.Value.1=cluster1"
+            + "&Filter.2.Name=instance.group-name"
+            + "&Filter.2.Value.1=hazelcast"
+            + "&Filter.3.Name=instance-state-name&Filter.3.Value.1=running"
+            + "&Version=2016-11-15"
+            + "&X-Amz-Algorithm=AWS4-HMAC-SHA256"
+            + "&X-Amz-Credential=AKIDEXAMPLE%2F20200403%2Feu-central-1%2Fec2%2Faws4_request"
+            + "&X-Amz-Date=20200403T102518Z"
+            + "&X-Amz-Expires=30"
+            + "&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEFIaDGV1LWNlbnRyYWwtMSJGMEQCIGNqWOCTxslYFGiTqX2smgm5wANL67R4PE1HPpisXiQxAiBwtbamKgJR8FAcbOOEEMm1nTCsarvIqDGip5SE55ZNsSq6AwhbEAAaDDY2NTQ2NjczMTU3NyIM345eTegAGRnGjFHaKpcD%2FE8DRZLAQeDobXIgX1%2FoezU1Q6ZOv%2FM3tk6maifeh%2BUQIpRFLntzpPjadt5LiJTngti4KQkXb8XQKKHjIp%2BzN4rrRYhqUqhAe%2BBP8Qm7L2NczwRhnSVfoTJjZOx5CNw%2FtQf1n3CdNWKgZcgTSVwF1lLPyKK0bpoj3AkQvOjfSIo0ix9xHj1FnezO1QVzdFjJK70oMU806bAPzQ48KAVfh2L5gihaZo3KUDydOUpPcRbKYlrflOuifsxO25OAEqxhTLfFQAggApZ1a8ZGG278f%2B40Quh5XBAySU%2BSUgm3kDZ5ufWBePXVdfS8MD%2FWnO1sSRUKJMEFPgVHQ5DwcK8I%2Bk0T4GhSIFxHjtUg8upKviSw1PR3OXI9AxLFpbHNcTXz9Q06sPj59VgnXvIdUwdZ%2FusL3YOhWI10ouPQQVG6KLdDMZT%2FgjWlrARN1rXHhuWOzyG5l8HfaYBMczGqgA1H1Oqjc767GaojiJ2N6cQbmmdYZMzG3EuBwKedIloDL0%2F2hYtiivwoOIycFOPMZcYzBPr8IbxGkVUwkIWc9AU67AHTKRcXVecgSjGOWuhoLz0gd8kSvBCqzvJdAdh0gVxsgTRmsh2BFEmEkqJHckIgpVZC8yEp%2FUZMAm8yu8RSeIcoxlEZfLKKqqQbWs9iHDBSGFwD5FLi7rHAMmYG2k6zGew2Vse3qI5uXquJDJlyzurZdnxu6O9BFSN0LBgO4e9OGHrLnwPMjYHwCqcsleS3mM7%2Bv8a7i3HPE%2BwBIjfh9X96Dl25k1OBhvy8Xuzr%2BcERGqsMWLr5m5eck3V23Y%2B%2FpbS6FiFfaYMjc4ewjtPGT3%2F51wcvOvUTbl5B52uHKwMqIszO%2FqXTmqm0roC%2FOA%3D%3D"
+            + "&X-Amz-Signature=" + SIGNATURE
+            + "&X-Amz-SignedHeaders=host";
+    }
+
+    private static String response() {
+        //language=XML
+        return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
             + "<DescribeInstancesResponse xmlns=\"http://ec2.amazonaws.com/doc/2016-11-15/\">\n"
-            + "    <requestId>02cc8d1a-a4c4-46d4-b8da-b82c38a443a1</requestId>\n" + "    <reservationSet>\n"
-            + "        <item>\n" + "            <reservationId>r-06667d2ad4b67d67d</reservationId>\n"
-            + "            <ownerId>665466731577</ownerId>\n" + "            <groupSet/>\n" + "            <instancesSet>\n"
-            + "                <item>\n" + "                    <instanceId>i-0d5215783d8c7ce4b</instanceId>\n"
-            + "                    <imageId>ami-bc4052c6</imageId>\n" + "                    <instanceState>\n"
-            + "                        <code>16</code>\n" + "                        <name>running</name>\n"
-            + "                    </instanceState>\n"
-            + "                    <privateDnsName>ip-172-30-0-135.ec2.internal</privateDnsName>\n"
-            + "                    <dnsName>ec2-34-229-19-19.compute-1.amazonaws.com</dnsName>\n"
-            + "                    <reason/>\n" + "                    <keyName>cpp-release</keyName>\n"
-            + "                    <amiLaunchIndex>0</amiLaunchIndex>\n" + "                    <productCodes/>\n"
-            + "                    <instanceType>t2.xlarge</instanceType>\n"
-            + "                    <launchTime>2018-05-14T11:15:47.000Z</launchTime>\n" + "                    <placement>\n"
-            + "                        <availabilityZone>us-east-1a</availabilityZone>\n"
-            + "                        <groupName/>\n" + "                        <tenancy>default</tenancy>\n"
-            + "                    </placement>\n" + "                    <platform>windows</platform>\n"
-            + "                    <monitoring>\n" + "                        <state>disabled</state>\n"
-            + "                    </monitoring>\n" + "                    <subnetId>subnet-89679cfe</subnetId>\n"
-            + "                    <vpcId>vpc-26c61c43</vpcId>\n"
-            + "                    <privateIpAddress>%s</privateIpAddress>\n"
-            + "                    <ipAddress>34.229.19.19</ipAddress>\n"
-            + "                    <sourceDestCheck>true</sourceDestCheck>\n" + "                    <groupSet>\n"
-            + "                        <item>\n" + "                            <groupId>sg-fddc2b82</groupId>\n"
-            + "                            <groupName>launch-wizard-147</groupName>\n" + "                        </item>\n"
-            + "                    </groupSet>\n" + "                    <architecture>x86_64</architecture>\n"
-            + "                    <rootDeviceType>ebs</rootDeviceType>\n"
-            + "                    <rootDeviceName>/dev/sda1</rootDeviceName>\n"
-            + "                    <blockDeviceMapping>\n" + "                        <item>\n"
-            + "                            <deviceName>/dev/sda1</deviceName>\n" + "                            <ebs>\n"
-            + "                                <volumeId>vol-0371f04cfabfee833</volumeId>\n"
-            + "                                <status>attached</status>\n"
-            + "                                <attachTime>2018-05-12T08:34:46.000Z</attachTime>\n"
-            + "                                <deleteOnTermination>false</deleteOnTermination>\n"
-            + "                            </ebs>\n" + "                        </item>\n"
-            + "                    </blockDeviceMapping>\n"
-            + "                    <virtualizationType>hvm</virtualizationType>\n" + "                    <clientToken/>\n"
-            + "                    <tagSet>\n" + "                        <item>\n"
+            + "    <reservationSet>\n"
+            + "        <item>\n"
+            + "            <instancesSet>\n"
+            + "                <item>\n"
+            + "                    <privateIpAddress>10.0.1.25</privateIpAddress>\n"
+            + "                    <ipAddress>54.93.121.213</ipAddress>\n"
+            + "                    <tagSet>\n"
+            + "                        <item>\n"
+            + "                            <key>kubernetes.io/cluster/openshift-cluster</key>\n"
+            + "                            <value>openshift-cluster-eu-central-1</value>\n"
+            + "                        </item>\n"
+            + "                        <item>\n"
             + "                            <key>Name</key>\n"
-            + "                            <value>*windows-jenkins-cpp</value>\n" + "                        </item>\n"
-            + "                        <item>\n" + "                            <key>aws-test-tag</key>\n"
-            + "                            <value>aws-tag-value-1</value>\n" + "                        </item>\n"
-            + "                    </tagSet>\n" + "                    <hypervisor>xen</hypervisor>\n"
-            + "                    <networkInterfaceSet>\n" + "                        <item>\n"
-            + "                            <networkInterfaceId>eni-5f8420c1</networkInterfaceId>\n"
-            + "                            <subnetId>subnet-89679cfe</subnetId>\n"
-            + "                            <vpcId>vpc-26c61c43</vpcId>\n"
-            + "                            <description>Primary network interface</description>\n"
-            + "                            <ownerId>665466731577</ownerId>\n"
-            + "                            <status>in-use</status>\n"
-            + "                            <macAddress>0a:50:3a:ec:bf:26</macAddress>\n"
-            + "                            <privateIpAddress>%s</privateIpAddress>\n"
-            + "                            <privateDnsName>ip-172-30-0-135.ec2.internal</privateDnsName>\n"
-            + "                            <sourceDestCheck>true</sourceDestCheck>\n"
-            + "                            <groupSet>\n" + "                                <item>\n"
-            + "                                    <groupId>sg-fddc2b82</groupId>\n"
-            + "                                    <groupName>launch-wizard-147</groupName>\n"
-            + "                                </item>\n" + "                            </groupSet>\n"
-            + "                            <attachment>\n"
-            + "                                <attachmentId>eni-attach-92200632</attachmentId>\n"
-            + "                                <deviceIndex>0</deviceIndex>\n"
-            + "                                <status>attached</status>\n"
-            + "                                <attachTime>2018-05-12T08:34:46.000Z</attachTime>\n"
-            + "                                <deleteOnTermination>true</deleteOnTermination>\n"
-            + "                            </attachment>\n" + "                            <association>\n"
-            + "                                <publicIp>34.229.19.19</publicIp>\n"
-            + "                                <publicDnsName>ec2-34-229-19-19.compute-1.amazonaws.com</publicDnsName>\n"
-            + "                                <ipOwnerId>amazon</ipOwnerId>\n"
-            + "                            </association>\n" + "                            <privateIpAddressesSet>\n"
-            + "                                <item>\n"
-            + "                                    <privateIpAddress>%s</privateIpAddress>\n"
-            + "                                    <privateDnsName>ip-172-30-0-135.ec2.internal</privateDnsName>\n"
-            + "                                    <primary>true</primary>\n"
-            + "                                    <association>\n"
-            + "                                    <publicIp>34.229.19.19</publicIp>\n"
-            + "                                    <publicDnsName>ec2-34-229-19-19.compute-1.amazonaws.com</publicDnsName>\n"
-            + "                                    <ipOwnerId>amazon</ipOwnerId>\n"
-            + "                                    </association>\n" + "                                </item>\n"
-            + "                            </privateIpAddressesSet>\n" + "                            <ipv6AddressesSet/>\n"
-            + "                        </item>\n" + "                    </networkInterfaceSet>\n"
-            + "                    <iamInstanceProfile>\n"
-            + "                        <arn>arn:aws:iam::665466731577:instance-profile/cloudbees-role</arn>\n"
-            + "                        <id>AIPAIFCB7AIF75MJZDAOO</id>\n" + "                    </iamInstanceProfile>\n"
-            + "                    <ebsOptimized>false</ebsOptimized>\n" + "                    <cpuOptions>\n"
-            + "                        <coreCount>4</coreCount>\n"
-            + "                        <threadsPerCore>1</threadsPerCore>\n" + "                    </cpuOptions>\n"
-            + "                </item>\n" + "            </instancesSet>\n" + "        </item>\n" + "    </reservationSet>\n"
-            + "</DescribeInstancesResponse>", DUMMY_PRIVATE_IP, DUMMY_PRIVATE_IP, DUMMY_PRIVATE_IP);
-        return new ByteArrayInputStream(response.getBytes());
-    }
-
-    private static AwsConfig.Builder predefinedAwsConfigBuilder() {
-        return AwsConfig.builder()
-            .setHostHeader(HOST_HEADER)
-            .setRegion(REGION)
-            .setConnectionTimeoutSeconds(5);
+            + "                            <value>* OpenShift Node 1</value>\n"
+            + "                        </item>\n"
+            + "                    </tagSet>\n"
+            + "                </item>\n"
+            + "            </instancesSet>\n"
+            + "        </item>\n"
+            + "        <item>\n"
+            + "            <instancesSet>\n"
+            + "                <item>\n"
+            + "                    <privateIpAddress>172.31.14.42</privateIpAddress>\n"
+            + "                    <ipAddress>18.196.228.248</ipAddress>\n"
+            + "                    <tagSet>\n"
+            + "                        <item>\n"
+            + "                            <key>Name</key>\n"
+            + "                            <value>rafal-ubuntu-2</value>\n"
+            + "                        </item>\n"
+            + "                    </tagSet>\n"
+            + "                </item>\n"
+            + "            </instancesSet>\n"
+            + "        </item>\n"
+            + "    </reservationSet>\n"
+            + "</DescribeInstancesResponse>";
     }
 }

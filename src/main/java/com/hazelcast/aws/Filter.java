@@ -21,9 +21,9 @@ import java.util.Map;
 /**
  * Query filter to narrow down the scope of the queried EC2 instance set.
  */
-public class Filter {
+final class Filter {
 
-    private Map<String, String> filters = new HashMap<String, String>();
+    private Map<String, String> filters = new HashMap<>();
 
     /**
      * Filter index, each filter need to have a sequential index, starting from 1.
@@ -36,13 +36,13 @@ public class Filter {
      * @param name  Filter name
      * @param value Filter value
      */
-    public void addFilter(String name, String value) {
+    void addFilter(String name, String value) {
         filters.put("Filter." + index + ".Name", name);
         filters.put("Filter." + index + ".Value.1", value);
         ++index;
     }
 
-    public Map<String, String> getFilters() {
-        return filters;
+    Map<String, String> getFilterAttributes() {
+        return new HashMap<>(filters);
     }
 }

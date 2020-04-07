@@ -107,7 +107,7 @@ enum AwsProperties {
         this.propertyDefinition = new SimplePropertyDefinition(key, optional, typeConverter);
     }
 
-    public PropertyDefinition getDefinition() {
+    PropertyDefinition getDefinition() {
         return propertyDefinition;
     }
 }
