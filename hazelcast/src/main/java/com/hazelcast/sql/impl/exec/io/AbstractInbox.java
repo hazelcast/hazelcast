@@ -30,10 +30,7 @@ public abstract class AbstractInbox extends AbstractMailbox implements InboundHa
     /** Remaining active sources. */
     private int remainingStreams;
 
-    /** Parent service. */
     private final QueryOperationHandler operationHandler;
-
-    /** Backpressure control. */
     private final FlowControl flowControl;
 
     protected AbstractInbox(

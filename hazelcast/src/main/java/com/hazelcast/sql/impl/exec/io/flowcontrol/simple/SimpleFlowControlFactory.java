@@ -29,6 +29,6 @@ public final class SimpleFlowControlFactory implements FlowControlFactory {
 
     @Override
     public FlowControl create(long initialMemory) {
-        return new SimpleFlowControl(initialMemory, SimpleFlowControl.LWM_PERCENTAGE);
+        return new SimpleFlowControl(initialMemory, SimpleFlowControl.THRESHOLD_PERCENTAGE);
     }
 }

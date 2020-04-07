@@ -47,7 +47,7 @@ public class SimpleFlowControlTest {
         SimpleFlowControl flowControl = (SimpleFlowControl) SimpleFlowControlFactory.INSTANCE.create(initialMemory);
 
         assertEquals(initialMemory, flowControl.getMaxMemory());
-        assertEquals(SimpleFlowControl.LWM_PERCENTAGE, flowControl.getLwmPercentage(), 0.0d);
+        assertEquals(SimpleFlowControl.THRESHOLD_PERCENTAGE, flowControl.getLwmPercentage(), 0.0d);
     }
 
     @Test

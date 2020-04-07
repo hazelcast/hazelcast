@@ -27,11 +27,11 @@ import java.util.UUID;
 
 /**
  * Simple implementation of a flow control. The flow control message is sent when the remote end thinks that local end is low
- * on memory, while this is no longer the case for the local end.
+ * on memory.
  */
 public class SimpleFlowControl implements FlowControl {
-    /** Constant LWM threashold. */
-    static final double LWM_PERCENTAGE = 0.25f;
+    /** Default threashold. */
+    static final double THRESHOLD_PERCENTAGE = 0.25f;
 
     /** Maximum amount of memory allowed to be consumed by the local stream. */
     private final long maxMemory;
