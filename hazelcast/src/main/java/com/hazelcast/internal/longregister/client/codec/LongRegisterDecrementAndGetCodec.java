@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,9 @@ package com.hazelcast.internal.longregister.client.codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
+
+import javax.annotation.Nullable;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -33,14 +36,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Atomically decrements the current value by one.
  */
-@Generated("2bcdddb5c76e4746ec50db72c80d6c92")
+@Generated("06b1e25505f5eacacafd507a42aef6a7")
 public final class LongRegisterDecrementAndGetCodec {
-    //hex: 0xFF0300
-    public static final int REQUEST_MESSAGE_TYPE = 16712448;
-    //hex: 0xFF0301
-    public static final int RESPONSE_MESSAGE_TYPE = 16712449;
+    //hex: 0xFF0200
+    public static final int REQUEST_MESSAGE_TYPE = 16712192;
+    //hex: 0xFF0201
+    public static final int RESPONSE_MESSAGE_TYPE = 16712193;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
     private LongRegisterDecrementAndGetCodec() {
@@ -52,23 +55,22 @@ public final class LongRegisterDecrementAndGetCodec {
         /**
          * The name of this IAtomicLong instance.
          */
-        public java.lang.String name;
+        public String name;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name) {
+    public static ClientMessage encodeRequest(String name) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("LongRegister.DecrementAndGet");
-        ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
+        Frame initialFrame = new Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         return clientMessage;
     }
 
-    public static LongRegisterDecrementAndGetCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
+    public static RequestParameters decodeRequest(ClientMessage clientMessage) {
+        ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
@@ -87,7 +89,7 @@ public final class LongRegisterDecrementAndGetCodec {
 
     public static ClientMessage encodeResponse(long response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
-        ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
+        Frame initialFrame = new Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         encodeLong(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET, response);
         clientMessage.add(initialFrame);
@@ -95,10 +97,10 @@ public final class LongRegisterDecrementAndGetCodec {
         return clientMessage;
     }
 
-    public static LongRegisterDecrementAndGetCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
+    public static ResponseParameters decodeResponse(ClientMessage clientMessage) {
+        ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
-        ClientMessage.Frame initialFrame = iterator.next();
+        Frame initialFrame = iterator.next();
         response.response = decodeLong(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
         return response;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -894,7 +894,8 @@ public interface ICache<K, V>
     V getAndReplace(K key, V value, ExpiryPolicy expiryPolicy);
 
     /**
-     * Total entry count.
+     * Total entry count. If the cache contains more than
+     * <code>Integer.MAX_VALUE</code> elements, returns <code>Integer.MAX_VALUE</code>.
      *
      * @return total entry count
      */

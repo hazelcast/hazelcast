@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,17 @@
  */
 
 package com.hazelcast.collection.impl.collection;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.Future;
+
+import javax.annotation.Nonnull;
 
 import com.hazelcast.collection.ItemListener;
 import com.hazelcast.collection.impl.collection.operations.CollectionAddAllOperation;
@@ -32,26 +43,16 @@ import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.services.RemoteService;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
-import com.hazelcast.spi.impl.eventservice.EventRegistration;
-import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.InitializingObject;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.internal.services.RemoteService;
 import com.hazelcast.spi.impl.SerializableList;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.util.ExceptionUtil;
-
-import javax.annotation.Nonnull;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.Future;
+import com.hazelcast.spi.impl.eventservice.EventRegistration;
+import com.hazelcast.spi.impl.eventservice.EventService;
 
 import static com.hazelcast.internal.config.ConfigValidator.checkCollectionConfig;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;

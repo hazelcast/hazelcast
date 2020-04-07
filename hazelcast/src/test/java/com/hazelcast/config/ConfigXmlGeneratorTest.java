@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -732,7 +732,8 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
     @Test
     public void testManagementCenterConfigGenerator() {
         ManagementCenterConfig managementCenterConfig = new ManagementCenterConfig()
-                .setScriptingEnabled(false);
+                .setScriptingEnabled(false)
+                .setTrustedInterfaces(newHashSet("192.168.1.1"));
 
         Config config = new Config()
                 .setManagementCenterConfig(managementCenterConfig);
@@ -741,6 +742,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
         ManagementCenterConfig xmlMCConfig = xmlConfig.getManagementCenterConfig();
         assertEquals(managementCenterConfig.isScriptingEnabled(), xmlMCConfig.isScriptingEnabled());
+        assertEquals(managementCenterConfig.getTrustedInterfaces(), xmlMCConfig.getTrustedInterfaces());
     }
 
     @Test
@@ -782,8 +784,11 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         FlakeIdGeneratorConfig figConfig = new FlakeIdGeneratorConfig("flake-id-gen1")
                 .setPrefetchCount(3)
                 .setPrefetchValidityMillis(10L)
-                .setIdOffset(20L)
+                .setEpochStart(1000000L)
                 .setNodeIdOffset(30L)
+                .setBitsSequence(2)
+                .setBitsNodeId(3)
+                .setAllowedFutureMillis(123L)
                 .setStatisticsEnabled(false);
 
         Config config = new Config()
@@ -2007,7 +2012,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
     private static WanReplicationRef wanReplicationRef() {
         return new WanReplicationRef()
                 .setName("wanReplication")
-                .setMergePolicy("mergePolicy")
+                .setMergePolicyClassName("mergePolicy")
                 .setRepublishingEnabled(true)
                 .setFilters(Arrays.asList("filter1", "filter2"));
     }

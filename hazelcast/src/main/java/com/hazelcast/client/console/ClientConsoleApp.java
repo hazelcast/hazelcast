@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,11 +46,12 @@ import com.hazelcast.topic.Message;
 import com.hazelcast.topic.MessageListener;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import java.io.BufferedReader;
-import java.io.File;
+import java.io.PrintStream;
 import java.io.FileReader;
-import java.io.IOException;
+import java.io.File;
+import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.nio.charset.Charset;
 import java.util.Collection;
@@ -76,7 +77,7 @@ import static java.lang.Thread.currentThread;
 /**
  * A demo application to demonstrate a Hazelcast client. This is probably NOT something you want to use in production.
  */
-@SuppressWarnings({"WeakerAccess", "unused"})
+@SuppressWarnings({"WeakerAccess", "unused", "checkstyle:ClassFanOutComplexity"})
 public class ClientConsoleApp implements EntryListener, ItemListener, MessageListener {
 
     private static final int ONE_KB = 1024;
@@ -103,12 +104,15 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     private boolean silent;
     private boolean echo;
 
-    private volatile HazelcastInstance hazelcast;
     private volatile LineReader lineReader;
     private volatile boolean running;
 
-    public ClientConsoleApp(HazelcastInstance hazelcast) {
+    private final PrintStream outOrig;
+    private final HazelcastInstance hazelcast;
+
+    public ClientConsoleApp(HazelcastInstance hazelcast, PrintStream outOrig) {
         this.hazelcast = hazelcast;
+        this.outOrig = outOrig;
     }
 
     public IQueue<Object> getQueue() {
@@ -144,15 +148,6 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     public IList<Object> getList() {
         list = hazelcast.getList(namespace);
         return list;
-    }
-
-    public void setHazelcast(HazelcastInstance hazelcast) {
-        this.hazelcast = hazelcast;
-        map = null;
-        list = null;
-        set = null;
-        queue = null;
-        topic = null;
     }
 
     public void stop() {
@@ -945,6 +940,10 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
             println(getMultiMap().getLocalMultiMapStats());
         } else if (iteratorStr.startsWith("q.")) {
             println(getQueue().getLocalQueueStats());
+        } else if (iteratorStr.startsWith("l.")) {
+            println(getList().getLocalListStats());
+        } else if (iteratorStr.startsWith("s.")) {
+            println(getSet().getLocalSetStats());
         }
     }
 
@@ -1534,13 +1533,13 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
 
     public void println(Object obj) {
         if (!silent) {
-            System.out.println(obj);
+            outOrig.println(obj);
         }
     }
 
     public void print(Object obj) {
         if (!silent) {
-            System.out.print(obj);
+            outOrig.print(obj);
         }
     }
 
@@ -1557,7 +1556,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
             clientConfig = new ClientConfig();
         }
         final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
-        ClientConsoleApp clientConsoleApp = new ClientConsoleApp(client);
+        ClientConsoleApp clientConsoleApp = new ClientConsoleApp(client, System.out);
         clientConsoleApp.start(args);
     }
 }

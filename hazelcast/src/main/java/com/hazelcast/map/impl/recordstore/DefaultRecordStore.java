@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.internal.locksupport.LockSupportService;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.partition.IPartitionService;
@@ -242,13 +243,13 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public MapKeysWithCursor fetchKeys(int tableIndex, int size) {
-        return storage.fetchKeys(tableIndex, size);
+    public MapKeysWithCursor fetchKeys(IterationPointer[] pointers, int size) {
+        return storage.fetchKeys(pointers, size);
     }
 
     @Override
-    public MapEntriesWithCursor fetchEntries(int tableIndex, int size) {
-        return storage.fetchEntries(tableIndex, size, serializationService);
+    public MapEntriesWithCursor fetchEntries(IterationPointer[] pointers, int size) {
+        return storage.fetchEntries(pointers, size);
     }
 
     /**
@@ -772,13 +773,14 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public boolean merge(MapMergeTypes mergingEntry, SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy) {
+    public boolean merge(MapMergeTypes<Object, Object> mergingEntry,
+                         SplitBrainMergePolicy<Object, MapMergeTypes<Object, Object>, Object> mergePolicy) {
         return merge(mergingEntry, mergePolicy, CallerProvenance.NOT_WAN);
     }
 
     @Override
-    public boolean merge(MapMergeTypes mergingEntry,
-                         SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy,
+    public boolean merge(MapMergeTypes<Object, Object> mergingEntry,
+                         SplitBrainMergePolicy<Object, MapMergeTypes<Object, Object>, Object> mergePolicy,
                          CallerProvenance provenance) {
         checkIfLoaded();
         long now = getNow();
@@ -786,7 +788,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         serializationService.getManagedContext().initialize(mergingEntry);
         serializationService.getManagedContext().initialize(mergePolicy);
 
-        Data key = mergingEntry.getKey();
+        Data key = (Data) mergingEntry.getRawKey();
         Record record = getRecordOrNull(key, now, false);
         Object newValue;
         Object oldValue;
@@ -805,7 +807,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             mutationObserver.onPutRecord(key, record, null, false);
         } else {
             oldValue = record.getValue();
-            MapMergeTypes existingEntry = createMergingEntry(serializationService, key, record);
+            MapMergeTypes<Object, Object> existingEntry = createMergingEntry(serializationService, key, record);
             newValue = mergePolicy.merge(mergingEntry, existingEntry);
             // existing entry will be removed
             if (newValue == null) {

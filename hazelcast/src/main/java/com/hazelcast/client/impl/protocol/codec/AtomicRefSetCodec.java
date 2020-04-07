@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Atomically sets the given value
  */
-@Generated("0f3e5d2fecc975d6b96793e812a5f313")
+@Generated("06d15b56fac3c0238e1c4f3a46685f27")
 public final class AtomicRefSetCodec {
     //hex: 0x0A0500
     public static final int REQUEST_MESSAGE_TYPE = 656640;
@@ -44,7 +44,7 @@ public final class AtomicRefSetCodec {
     public static final int RESPONSE_MESSAGE_TYPE = 656641;
     private static final int REQUEST_RETURN_OLD_VALUE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_RETURN_OLD_VALUE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private AtomicRefSetCodec() {
     }
@@ -79,6 +79,7 @@ public final class AtomicRefSetCodec {
         clientMessage.setOperationName("AtomicRef.Set");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeBoolean(initialFrame.content, REQUEST_RETURN_OLD_VALUE_FIELD_OFFSET, returnOldValue);
         clientMessage.add(initialFrame);
         RaftGroupIdCodec.encode(clientMessage, groupId);

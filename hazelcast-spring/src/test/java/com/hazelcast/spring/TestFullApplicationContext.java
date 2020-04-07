@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -311,7 +311,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
         WanReplicationRef wanRef = cacheConfig.getWanReplicationRef();
         assertEquals("testWan", wanRef.getName());
-        assertEquals("PUT_IF_ABSENT", wanRef.getMergePolicy());
+        assertEquals("PUT_IF_ABSENT", wanRef.getMergePolicyClassName());
         assertEquals(1, wanRef.getFilters().size());
         assertEquals("com.example.SampleFilter", wanRef.getFilters().get(0));
     }
@@ -396,7 +396,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         // test testMapConfig2's WanReplicationConfig
         WanReplicationRef wanReplicationRef = testMapConfig2.getWanReplicationRef();
         assertEquals("testWan", wanReplicationRef.getName());
-        assertEquals("PUT_IF_ABSENT", wanReplicationRef.getMergePolicy());
+        assertEquals("PUT_IF_ABSENT", wanReplicationRef.getMergePolicyClassName());
         assertTrue(wanReplicationRef.isRepublishingEnabled());
 
         assertEquals(1000, testMapConfig2.getEvictionConfig().getSize());
@@ -463,7 +463,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         // test testMapConfig2's WanReplicationConfig
         WanReplicationRef wanReplicationRef = testMapConfig2.getWanReplicationRef();
         assertEquals("testWan", wanReplicationRef.getName());
-        assertEquals("PUT_IF_ABSENT", wanReplicationRef.getMergePolicy());
+        assertEquals("PUT_IF_ABSENT", wanReplicationRef.getMergePolicyClassName());
     }
 
     @Test
@@ -471,8 +471,11 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         FlakeIdGeneratorConfig c = instance.getConfig().findFlakeIdGeneratorConfig("flakeIdGenerator");
         assertEquals(3, c.getPrefetchCount());
         assertEquals(10L, c.getPrefetchValidityMillis());
-        assertEquals(20L, c.getIdOffset());
         assertEquals(30L, c.getNodeIdOffset());
+        assertEquals(22, c.getBitsSequence());
+        assertEquals(33, c.getBitsNodeId());
+        assertEquals(20000L, c.getAllowedFutureMillis());
+        assertFalse(c.isStatisticsEnabled());
         assertEquals("flakeIdGenerator*", c.getName());
         assertFalse(c.isStatisticsEnabled());
     }
@@ -582,7 +585,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         final Set<PermissionConfig> clientPermissionConfigs = securityConfig.getClientPermissionConfigs();
         assertFalse(securityConfig.getClientBlockUnmappedActions());
         assertTrue(isNotEmpty(clientPermissionConfigs));
-        assertEquals(22, clientPermissionConfigs.size());
+        assertEquals(24, clientPermissionConfigs.size());
         final PermissionConfig pnCounterPermission = new PermissionConfig(PermissionType.PN_COUNTER, "pnCounterPermission", "*")
                 .addAction("create")
                 .setEndpoints(Collections.emptySet());
@@ -1052,7 +1055,10 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     public void testManagementCenterConfig() {
         ManagementCenterConfig managementCenterConfig = config.getManagementCenterConfig();
         assertNotNull(managementCenterConfig);
-        assertFalse(managementCenterConfig.isScriptingEnabled());
+        assertTrue(managementCenterConfig.isScriptingEnabled());
+        Set<String> tis = managementCenterConfig.getTrustedInterfaces();
+        assertEquals(1, tis.size());
+        assertEquals("10.1.2.*", tis.iterator().next());
     }
 
     @Test

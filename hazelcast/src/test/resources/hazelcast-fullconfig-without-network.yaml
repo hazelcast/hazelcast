@@ -1,4 +1,4 @@
-# Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+# Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -39,6 +39,9 @@ hazelcast:
 
   management-center:
     scripting-enabled: false
+    trusted-interfaces:
+      - 10.10.1.*
+      - 10.10.2.*
 
   properties:
     foo: bar
@@ -301,18 +304,40 @@ hazelcast:
 
       wan-replication-ref:
         my-wan-cluster:
-          merge-policy: hz.PASS_THROUGH
+          merge-policy-class-name: hz.PASS_THROUGH
           filters:
             - com.example.WanTestFilter1
             - com.example.WanTestFilter2
           republishing-enabled: false
 
       indexes:
+        # unordered/hash index on the name attribute
         - type: HASH
           attributes:
             - "name"
+        # ordered/tree index on the age attribute
         - attributes:
           - "age"
+        # composite unordered/hash index on the name and age attributes
+        - type: HASH
+          attributes:
+            - "name"
+            - "age"
+        # composite ordered/tree index on the age and name attributes
+        - attributes:
+          - "age"
+          - "name"
+        # bitmap index on the age attribute
+        - type: BITMAP
+          attributes:
+            - "age"
+        # bitmap index on the name attribute with options
+        - type: BITMAP
+          attributes:
+            - "name"
+          bitmap-index-options:
+            unique-key: id
+            unique-key-transformation: RAW
 
       attributes:
         currency:
@@ -483,7 +508,7 @@ hazelcast:
         size: 50
       wan-replication-ref:
         name: my-wan-cluster
-        merge-policy: hz.PASS_THROUGH
+        merge-policy-class-name: hz.PASS_THROUGH
         filters:
           - com.example.WanTestFilter1
           - com.example.WanTestFilter2
@@ -504,13 +529,15 @@ hazelcast:
     default:
       prefetch-count: 100
       prefetch-validity-millis: 600000
-      id-offset: 0
+      epoch-start: 1514764800000
       node-id-offset: 0
+      bits-sequence: 6
+      bits-node-id: 16
+      allowed-future-millis: 15000
       statistics-enabled: false
 
   listeners:
     - com.hazelcast.examples.MembershipListener
-    - com.hazelcast.examples.InstanceListener
     - com.hazelcast.examples.MigrationListener
     - com.hazelcast.examples.PartitionLostListener
 
@@ -699,6 +726,16 @@ hazelcast:
           actions:
             - all
       executor-service:
+        - name: "*"
+          principal: "*"
+          actions:
+            - all
+      ring-buffer:
+        - name: "*"
+          principal: "*"
+          actions:
+            - all
+      reliable-topic:
         - name: "*"
           principal: "*"
           actions:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -159,8 +159,8 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
         LocalMapStats localMapStats1 = map1.getLocalMapStats();
         LocalMapStats localMapStats2 = map2.getLocalMapStats();
 
-        assertEquals(localMapStats1.getOwnedEntryCount(), localMapStats2.getBackupEntryCount());
-        assertEquals(localMapStats2.getOwnedEntryCount(), localMapStats1.getBackupEntryCount());
+        assertEqualsEventually(() -> localMapStats2.getBackupEntryCount(), localMapStats1.getOwnedEntryCount());
+        assertEqualsEventually(() -> localMapStats1.getBackupEntryCount(), localMapStats2.getOwnedEntryCount());
     }
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.util.concurrent.TimeUnit;
 
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -33,6 +34,27 @@ public final class TimeUtil {
     private static final int HOURS_PER_DAY = 24;
 
     private TimeUtil() {
+    }
+
+    /**
+     * Convert nanoseconds to milliseconds
+     * If conversion result is 0 and {@code nanos} was &gt; 0, then 1 is returned.
+     *
+     * @param nanos     The number of nanoseconds
+     * @return The millisecond representation of the input
+     */
+    public static long convertNanosToMillis(long nanos) {
+        return timeInMsOrOneIfResultIsZero(nanos, NANOSECONDS);
+    }
+
+    /**
+     * Convert milliseconds to nanoseconds
+     *
+     * @param millis     The number of milliseconds
+     * @return The nanoseconds representation of the input
+     */
+    public static long convertMillisToNanos(long millis) {
+        return MILLISECONDS.toNanos(millis);
     }
 
     /**

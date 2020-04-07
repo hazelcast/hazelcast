@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,9 +34,9 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * TODO DOC
+ * Creates a publisher that includes value for the cache events it sends.
  */
-@Generated("091c253e73378fb0f841c13563ff5851")
+@Generated("6fdea62719aff17ee29bd73579545378")
 public final class ContinuousQueryPublisherCreateWithValueCodec {
     //hex: 0x160100
     public static final int REQUEST_MESSAGE_TYPE = 1442048;
@@ -48,7 +48,7 @@ public final class ContinuousQueryPublisherCreateWithValueCodec {
     private static final int REQUEST_POPULATE_FIELD_OFFSET = REQUEST_DELAY_SECONDS_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_COALESCE_FIELD_OFFSET = REQUEST_POPULATE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_COALESCE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private ContinuousQueryPublisherCreateWithValueCodec() {
     }
@@ -104,6 +104,7 @@ public final class ContinuousQueryPublisherCreateWithValueCodec {
         clientMessage.setOperationName("ContinuousQuery.PublisherCreateWithValue");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeInt(initialFrame.content, REQUEST_BATCH_SIZE_FIELD_OFFSET, batchSize);
         encodeInt(initialFrame.content, REQUEST_BUFFER_SIZE_FIELD_OFFSET, bufferSize);
         encodeLong(initialFrame.content, REQUEST_DELAY_SECONDS_FIELD_OFFSET, delaySeconds);

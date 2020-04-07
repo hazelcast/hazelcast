@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,5 +73,10 @@ public class RunGcMessageTask extends AbstractCallableMessageTask<RequestParamet
     @Override
     public Object[] getParameters() {
         return new Object[0];
+    }
+
+    @Override
+    public boolean isManagementTask() {
+        return true;
     }
 }

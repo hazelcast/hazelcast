@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,13 @@
 
 package com.hazelcast.collection.impl.txnqueue;
 
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.collection.ItemEvent;
+import com.hazelcast.collection.ItemListener;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.collection.IQueue;
-import com.hazelcast.collection.ItemEvent;
-import com.hazelcast.collection.ItemListener;
-import com.hazelcast.transaction.TransactionalQueue;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -34,6 +33,7 @@ import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions;
+import com.hazelcast.transaction.TransactionalQueue;
 import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.transaction.TransactionalTaskContext;
 import org.junit.Test;
@@ -48,6 +48,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 
+import static com.hazelcast.test.Accessors.getNode;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;

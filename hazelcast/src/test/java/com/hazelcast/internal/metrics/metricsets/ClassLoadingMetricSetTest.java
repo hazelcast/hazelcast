@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,10 @@ package com.hazelcast.internal.metrics.metricsets;
 import com.hazelcast.internal.metrics.LongGauge;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -31,6 +31,9 @@ import org.junit.runner.RunWith;
 import java.lang.management.ClassLoadingMXBean;
 import java.lang.management.ManagementFactory;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLASSLOADING_FULL_METRIC_LOADED_CLASSES_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLASSLOADING_FULL_METRIC_TOTAL_LOADED_CLASSES_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLASSLOADING_FULL_METRIC_UNLOADED_CLASSES_COUNT;
 import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static org.junit.Assert.assertEquals;
 
@@ -48,6 +51,11 @@ public class ClassLoadingMetricSetTest extends HazelcastTestSupport {
         ClassLoadingMetricSet.register(metricsRegistry);
     }
 
+    @After
+    public void tearDown() {
+        metricsRegistry.shutdown();
+    }
+
     @Test
     public void utilityConstructor() {
         assertUtilityConstructor(ClassLoadingMetricSet.class);
@@ -55,38 +63,23 @@ public class ClassLoadingMetricSetTest extends HazelcastTestSupport {
 
     @Test
     public void loadedClassesCount() {
-        final LongGauge gauge = metricsRegistry.newLongGauge("classloading.loadedClassesCount");
+        final LongGauge gauge = metricsRegistry.newLongGauge(CLASSLOADING_FULL_METRIC_LOADED_CLASSES_COUNT);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(BEAN.getLoadedClassCount(), gauge.read(), 100);
-            }
-        });
+        assertTrueEventually(() -> assertEquals(BEAN.getLoadedClassCount(), gauge.read(), 100));
     }
 
     @Test
     public void totalLoadedClassesCount() {
-        final LongGauge gauge = metricsRegistry.newLongGauge("classloading.totalLoadedClassesCount");
+        final LongGauge gauge = metricsRegistry.newLongGauge(CLASSLOADING_FULL_METRIC_TOTAL_LOADED_CLASSES_COUNT);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(BEAN.getTotalLoadedClassCount(), gauge.read(), 100);
-            }
-        });
+        assertTrueEventually(() -> assertEquals(BEAN.getTotalLoadedClassCount(), gauge.read(), 100));
     }
 
     @Test
     public void unloadedClassCount() {
-        final LongGauge gauge = metricsRegistry.newLongGauge("classloading.unloadedClassCount");
+        final LongGauge gauge = metricsRegistry.newLongGauge(CLASSLOADING_FULL_METRIC_UNLOADED_CLASSES_COUNT);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(BEAN.getUnloadedClassCount(), gauge.read(), 100);
-            }
-        });
+        assertTrueEventually(() -> assertEquals(BEAN.getUnloadedClassCount(), gauge.read(), 100));
     }
 
 }

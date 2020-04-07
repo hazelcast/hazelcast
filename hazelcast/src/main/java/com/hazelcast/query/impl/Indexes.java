@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,13 +19,13 @@ package com.hazelcast.query.impl;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.TypeConverter;
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.map.impl.StoreAdapter;
 import com.hazelcast.internal.monitor.impl.GlobalIndexesStats;
 import com.hazelcast.internal.monitor.impl.IndexesStats;
 import com.hazelcast.internal.monitor.impl.PartitionIndexesStats;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.map.impl.StoreAdapter;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.IndexAwarePredicate;
@@ -45,6 +45,12 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 @SuppressWarnings("checkstyle:finalclass")
 public class Indexes {
 
+    /**
+     * The partitions count check detects a race condition when a
+     * query is executed on the index which is under (re)construction.
+     * The negative value means the check should be skipped.
+     */
+    public static final int SKIP_PARTITIONS_COUNT_CHECK = -1;
     private static final InternalIndex[] EMPTY_INDEXES = {};
 
     private final boolean global;
@@ -58,6 +64,7 @@ public class Indexes {
 
     private final Map<String, InternalIndex> indexesByName = new ConcurrentHashMap<>(3);
     private final AttributeIndexRegistry attributeIndexRegistry = new AttributeIndexRegistry();
+    private final AttributeIndexRegistry evaluateOnlyAttributeIndexRegistry = new AttributeIndexRegistry();
     private final ConverterCache converterCache = new ConverterCache(this);
     private final Map<String, IndexConfig> definitions = new ConcurrentHashMap<>();
 
@@ -122,16 +129,20 @@ public class Indexes {
         }
 
         index = indexProvider.createIndex(
-            indexConfig,
-            extractors,
-            serializationService,
-            indexCopyBehavior,
-            stats.createPerIndexStats(indexConfig.getType() == IndexType.SORTED, usesCachedQueryableEntries),
-            partitionStoreAdapter
+                indexConfig,
+                extractors,
+                serializationService,
+                indexCopyBehavior,
+                stats.createPerIndexStats(indexConfig.getType() == IndexType.SORTED, usesCachedQueryableEntries),
+                partitionStoreAdapter
         );
 
         indexesByName.put(name, index);
-        attributeIndexRegistry.register(index);
+        if (index.isEvaluateOnly()) {
+            evaluateOnlyAttributeIndexRegistry.register(index);
+        } else {
+            attributeIndexRegistry.register(index);
+        }
         converterCache.invalidate(index);
 
         indexes = indexesByName.values().toArray(EMPTY_INDEXES);
@@ -205,6 +216,7 @@ public class Indexes {
         compositeIndexes = EMPTY_INDEXES;
         indexesByName.clear();
         attributeIndexRegistry.clear();
+        evaluateOnlyAttributeIndexRegistry.clear();
         converterCache.clear();
 
         for (InternalIndex index : indexesSnapshot) {
@@ -302,12 +314,14 @@ public class Indexes {
     /**
      * Performs a query on this indexes instance using the given predicate.
      *
-     * @param predicate the predicate to evaluate.
+     * @param predicate           the predicate to evaluate.
+     * @param ownedPartitionCount a count of owned partitions a query runs on.
+     *                            Negative value indicates that the value is not defined.
      * @return the produced result set or {@code null} if the query can't be
      * performed using the indexes known to this indexes instance.
      */
     @SuppressWarnings("unchecked")
-    public Set<QueryableEntry> query(Predicate predicate) {
+    public Set<QueryableEntry> query(Predicate predicate, int ownedPartitionCount) {
         stats.incrementQueryCount();
 
         if (!haveAtLeastOneIndex() || !(predicate instanceof IndexAwarePredicate)) {
@@ -315,7 +329,7 @@ public class Indexes {
         }
 
         IndexAwarePredicate indexAwarePredicate = (IndexAwarePredicate) predicate;
-        QueryContext queryContext = queryContextProvider.obtainContextFor(this);
+        QueryContext queryContext = queryContextProvider.obtainContextFor(this, ownedPartitionCount);
         if (!indexAwarePredicate.isIndexed(queryContext)) {
             return null;
         }
@@ -332,19 +346,70 @@ public class Indexes {
     /**
      * Matches an index for the given pattern and match hint.
      *
-     * @param pattern   the pattern to match an index for. May be either an
-     *                  attribute name or an exact index name.
-     * @param matchHint the match hint.
+     * @param pattern             the pattern to match an index for. May be either an
+     *                            attribute name or an exact index name.
+     * @param matchHint           the match hint.
+     * @param ownedPartitionCount a count of owned partitions a query runs on.
+     *                            Negative value indicates that the value is not defined.
      * @return the matched index or {@code null} if nothing matched.
      * @see QueryContext.IndexMatchHint
-     * @see Indexes#matchIndex
+     * @see QueryContext#matchIndex
      */
-    public InternalIndex matchIndex(String pattern, QueryContext.IndexMatchHint matchHint) {
+    public InternalIndex matchIndex(String pattern, QueryContext.IndexMatchHint matchHint, int ownedPartitionCount) {
+        InternalIndex index;
         if (matchHint == QueryContext.IndexMatchHint.EXACT_NAME) {
-            return indexesByName.get(pattern);
+            index = indexesByName.get(pattern);
         } else {
-            return attributeIndexRegistry.match(pattern, matchHint);
+            index = attributeIndexRegistry.match(pattern, matchHint);
         }
+
+        if (index == null || !index.allPartitionsIndexed(ownedPartitionCount)) {
+            return null;
+        }
+
+        return index;
+    }
+
+    /**
+     * Matches an index for the given pattern and match hint that can evaluate
+     * the given predicate class.
+     *
+     * @param pattern             the pattern to match an index for. May be either an
+     *                            attribute name or an exact index name.
+     * @param predicateClass      the predicate class the matched index must be
+     *                            able to evaluate.
+     * @param matchHint           the match hint.
+     * @param ownedPartitionCount a count of owned partitions a query runs on.
+     *                            Negative value indicates that the value is not defined.
+     * @return the matched index or {@code null} if nothing matched.
+     * @see QueryContext.IndexMatchHint
+     * @see Index#evaluate
+     */
+    public InternalIndex matchIndex(String pattern, Class<? extends Predicate> predicateClass,
+                                    QueryContext.IndexMatchHint matchHint, int ownedPartitionCount) {
+        InternalIndex index;
+        if (matchHint == QueryContext.IndexMatchHint.EXACT_NAME) {
+            index = indexesByName.get(pattern);
+        } else {
+            index = evaluateOnlyAttributeIndexRegistry.match(pattern, matchHint);
+            if (index == null) {
+                index = attributeIndexRegistry.match(pattern, matchHint);
+            }
+        }
+
+        if (index == null) {
+            return null;
+        }
+
+        if (!index.canEvaluate(predicateClass)) {
+            return null;
+        }
+
+        if (!index.allPartitionsIndexed(ownedPartitionCount)) {
+            return null;
+        }
+
+        return index;
     }
 
     /**

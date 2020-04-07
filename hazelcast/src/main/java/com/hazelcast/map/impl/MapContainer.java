@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -229,7 +229,8 @@ public class MapContainer {
 
         WanReplicationService wanReplicationService = nodeEngine.getWanReplicationService();
         wanReplicationDelegate = wanReplicationService.getWanReplicationPublishers(wanReplicationRefName);
-        wanMergePolicy = nodeEngine.getSplitBrainMergePolicyProvider().getMergePolicy(wanReplicationRef.getMergePolicy());
+        wanMergePolicy = nodeEngine.getSplitBrainMergePolicyProvider()
+                                   .getMergePolicy(wanReplicationRef.getMergePolicyClassName());
 
         WanReplicationConfig wanReplicationConfig = config.getWanReplicationConfig(wanReplicationRefName);
         if (wanReplicationConfig != null) {

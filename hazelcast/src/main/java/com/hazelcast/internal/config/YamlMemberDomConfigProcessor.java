@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,6 @@ import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.WanBatchPublisherConfig;
-import com.hazelcast.config.WanCustomPublisherConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EndpointConfig;
@@ -43,7 +41,6 @@ import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.config.MulticastConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.OnJoinPermissionOperationName;
 import com.hazelcast.config.PNCounterConfig;
@@ -66,6 +63,9 @@ import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.config.SplitBrainProtectionListenerConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TopicConfig;
+import com.hazelcast.config.TrustedInterfacesConfigurable;
+import com.hazelcast.config.WanBatchPublisherConfig;
+import com.hazelcast.config.WanCustomPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.cp.CPSubsystemConfig;
@@ -124,55 +124,16 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
                     .valueOf(upperCaseInternal(onJoinOp));
             config.getSecurityConfig().setOnJoinPermissionOperation(onJoinPermissionOperation);
         }
-        for (Node child : childElements(node)) {
+        Iterable<Node> nodes = childElements(node);
+        for (Node child : nodes) {
             String nodeName = cleanNodeName(child);
-            PermissionType type;
-            if ("map".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.MAP;
-            } else if ("queue".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.QUEUE;
-            } else if ("multimap".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.MULTIMAP;
-            } else if ("topic".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.TOPIC;
-            } else if ("list".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.LIST;
-            } else if ("set".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.SET;
-            } else if ("lock".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.LOCK;
-            } else if ("atomic-long".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.ATOMIC_LONG;
-            } else if ("atomic-reference".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.ATOMIC_REFERENCE;
-            } else if ("countdown-latch".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.COUNTDOWN_LATCH;
-            } else if ("semaphore".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.SEMAPHORE;
-            } else if ("flake-id-generator".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.FLAKE_ID_GENERATOR;
-            } else if ("executor-service".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.EXECUTOR_SERVICE;
-            } else if ("transaction".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.TRANSACTION;
-            } else if ("all".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.ALL;
-            } else if ("durable-executor-service".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.DURABLE_EXECUTOR_SERVICE;
-            } else if ("cardinality-estimator".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.CARDINALITY_ESTIMATOR;
-            } else if ("scheduled-executor".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.SCHEDULED_EXECUTOR;
-            } else if ("pn-counter".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.PN_COUNTER;
-            } else if ("cache".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.CACHE;
-            } else if ("user-code-deployment".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.USER_CODE_DEPLOYMENT;
-            } else if ("config".equals(nodeName)) {
-                type = PermissionConfig.PermissionType.CONFIG;
-            } else {
+            if ("on-join-operation".equals(nodeName)) {
                 continue;
+            }
+            nodeName = "all".equals(nodeName) ? nodeName + "-permissions" : nodeName + "-permission";
+            PermissionType type = PermissionConfig.PermissionType.getType(nodeName);
+            if (type == null) {
+                throw new InvalidConfigurationException("Security permission type is not valid " + nodeName);
             }
 
             if (PermissionConfig.PermissionType.CONFIG == type
@@ -206,13 +167,13 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     }
 
     @Override
-    protected void handleTrustedInterfaces(MulticastConfig multicastConfig, Node n) {
+    protected void handleTrustedInterfaces(TrustedInterfacesConfigurable<?> tiConfig, Node n) {
         YamlSequence yamlNode = getWrappedYamlSequence(n);
         for (YamlNode interfaceNode : yamlNode.children()) {
             String trustedInterface = asScalar(interfaceNode).nodeValue();
-            multicastConfig.addTrustedInterface(trustedInterface);
+            tiConfig.addTrustedInterface(trustedInterface);
         }
-        super.handleTrustedInterfaces(multicastConfig, n);
+        super.handleTrustedInterfaces(tiConfig, n);
     }
 
     @Override

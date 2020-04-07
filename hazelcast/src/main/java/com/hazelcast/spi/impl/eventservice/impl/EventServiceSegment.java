@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,13 @@
 
 package com.hazelcast.spi.impl.eventservice.impl;
 
-import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.cluster.Address;
-import com.hazelcast.spi.impl.eventservice.EventFilter;
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.services.ListenerWrapperEventFilter;
 import com.hazelcast.internal.services.NotifiableEventListener;
 import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.spi.impl.eventservice.EventFilter;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
@@ -32,6 +32,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EVENT_METRIC_EVENT_SERVICE_SEGMENT_LISTENER_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EVENT_METRIC_EVENT_SERVICE_SEGMENT_PUBLICATION_COUNT;
 import static java.util.Collections.newSetFromMap;
 
 /**
@@ -45,20 +47,28 @@ import static java.util.Collections.newSetFromMap;
  * @param <S> the service type for which this segment is responsible
  */
 public class EventServiceSegment<S> {
-    /** The name of the service for which this segment is responsible */
+    /**
+     * The name of the service for which this segment is responsible
+     */
     private final String serviceName;
-    /** The service for which this segment is responsible */
+    /**
+     * The service for which this segment is responsible
+     */
     private final S service;
 
-    /** Map of {@link Registration}s grouped by event topic */
+    /**
+     * Map of {@link Registration}s grouped by event topic
+     */
     private final ConcurrentMap<String, Collection<Registration>> registrations
-            = new ConcurrentHashMap<String, Collection<Registration>>();
+            = new ConcurrentHashMap<>();
 
-    /** Registration ID to registration map */
-    @Probe(name = "listenerCount")
-    private final ConcurrentMap<UUID, Registration> registrationIdMap = new ConcurrentHashMap<UUID, Registration>();
+    /**
+     * Registration ID to registration map
+     */
+    @Probe(name = EVENT_METRIC_EVENT_SERVICE_SEGMENT_LISTENER_COUNT)
+    private final ConcurrentMap<UUID, Registration> registrationIdMap = new ConcurrentHashMap<>();
 
-    @Probe(name = "publicationCount")
+    @Probe(name = EVENT_METRIC_EVENT_SERVICE_SEGMENT_PUBLICATION_COUNT)
     private final AtomicLong totalPublishes = new AtomicLong();
 
     public EventServiceSegment(String serviceName, S service) {

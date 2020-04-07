@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,11 @@
 
 package com.hazelcast.executor;
 
+import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.map.IMap;
-import com.hazelcast.cluster.Member;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -45,12 +44,12 @@ import static org.junit.Assert.assertTrue;
 public class ExecutorServiceLiteMemberTest
         extends ExecutorServiceTestSupport {
 
-    private Config liteConfig = new Config().setLiteMember(true);
+    private Config liteConfig = smallInstanceConfig().setLiteMember(true);
 
     @Test(expected = RejectedExecutionException.class)
     public void test_executeRunnable_failsWhenNoLiteMemberExists() {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        final HazelcastInstance instance = factory.newHazelcastInstance();
+        final HazelcastInstance instance = factory.newHazelcastInstance(smallInstanceConfig());
         final String name = randomString();
         final IExecutorService executor = instance.getExecutorService(name);
         executor.execute(new ResultSettingRunnable(name), LITE_MEMBER_SELECTOR);
@@ -61,23 +60,19 @@ public class ExecutorServiceLiteMemberTest
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         final HazelcastInstance lite1 = factory.newHazelcastInstance(liteConfig);
         final HazelcastInstance lite2 = factory.newHazelcastInstance(liteConfig);
-        final HazelcastInstance other = factory.newHazelcastInstance();
+        final HazelcastInstance other = factory.newHazelcastInstance(smallInstanceConfig());
 
         final String name = randomString();
         final IExecutorService executor = other.getExecutorService(name);
         executor.execute(new ResultSettingRunnable(name), LITE_MEMBER_SELECTOR);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                final IMap<Object, Object> results = lite1.getMap(name);
-                assertEquals(1, results.size());
-                final boolean executedOnLite1 = results.containsKey(lite1.getCluster().getLocalMember());
-                final boolean executedOnLite2 = results.containsKey(lite2.getCluster().getLocalMember());
+        assertTrueEventually(() -> {
+            final IMap<Object, Object> results = lite1.getMap(name);
+            assertEquals(1, results.size());
+            final boolean executedOnLite1 = results.containsKey(lite1.getCluster().getLocalMember());
+            final boolean executedOnLite2 = results.containsKey(lite2.getCluster().getLocalMember());
 
-                assertTrue(executedOnLite1 || executedOnLite2);
-            }
+            assertTrue(executedOnLite1 || executedOnLite2);
         });
     }
 
@@ -86,21 +81,17 @@ public class ExecutorServiceLiteMemberTest
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         final HazelcastInstance lite1 = factory.newHazelcastInstance(liteConfig);
         final HazelcastInstance lite2 = factory.newHazelcastInstance(liteConfig);
-        final HazelcastInstance other = factory.newHazelcastInstance();
+        final HazelcastInstance other = factory.newHazelcastInstance(smallInstanceConfig());
 
         final String name = randomString();
         final IExecutorService executor = other.getExecutorService(name);
         executor.executeOnMembers(new ResultSettingRunnable(name), LITE_MEMBER_SELECTOR);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                final IMap<Object, Object> results = lite1.getMap(name);
-                assertEquals(2, results.size());
-                assertTrue(results.containsKey(lite1.getCluster().getLocalMember()));
-                assertTrue(results.containsKey(lite2.getCluster().getLocalMember()));
-            }
+        assertTrueEventually(() -> {
+            final IMap<Object, Object> results = lite1.getMap(name);
+            assertEquals(2, results.size());
+            assertTrue(results.containsKey(lite1.getCluster().getLocalMember()));
+            assertTrue(results.containsKey(lite2.getCluster().getLocalMember()));
         });
 
     }
@@ -108,7 +99,7 @@ public class ExecutorServiceLiteMemberTest
     @Test(expected = RejectedExecutionException.class)
     public void test_submitCallable_failsWhenNoLiteMemberExists() {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        final HazelcastInstance instance = factory.newHazelcastInstance();
+        final HazelcastInstance instance = factory.newHazelcastInstance(smallInstanceConfig());
         final IExecutorService executor = instance.getExecutorService(randomString());
         executor.submit(new LocalMemberReturningCallable(), LITE_MEMBER_SELECTOR);
     }
@@ -119,7 +110,7 @@ public class ExecutorServiceLiteMemberTest
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         final HazelcastInstance lite1 = factory.newHazelcastInstance(liteConfig);
         final HazelcastInstance lite2 = factory.newHazelcastInstance(liteConfig);
-        final HazelcastInstance other = factory.newHazelcastInstance();
+        final HazelcastInstance other = factory.newHazelcastInstance(smallInstanceConfig());
 
         final IExecutorService executor = other.getExecutorService(randomString());
         final Future<Member> future = executor.submit(new LocalMemberReturningCallable(), LITE_MEMBER_SELECTOR);
@@ -136,7 +127,7 @@ public class ExecutorServiceLiteMemberTest
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         final HazelcastInstance lite1 = factory.newHazelcastInstance(liteConfig);
         final HazelcastInstance lite2 = factory.newHazelcastInstance(liteConfig);
-        final HazelcastInstance other = factory.newHazelcastInstance();
+        final HazelcastInstance other = factory.newHazelcastInstance(smallInstanceConfig());
 
         final IExecutorService executor = other.getExecutorService(randomString());
         final Map<Member, Future<Member>> results = executor
@@ -156,9 +147,9 @@ public class ExecutorServiceLiteMemberTest
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         final HazelcastInstance lite1 = factory.newHazelcastInstance(liteConfig);
         final HazelcastInstance lite2 = factory.newHazelcastInstance(liteConfig);
-        final HazelcastInstance other = factory.newHazelcastInstance();
+        final HazelcastInstance other = factory.newHazelcastInstance(smallInstanceConfig());
 
-        final CountingDownExecutionCallback<Member> callback = new CountingDownExecutionCallback<Member>(1);
+        final CountingDownExecutionCallback<Member> callback = new CountingDownExecutionCallback<>(1);
         final IExecutorService executor = other.getExecutorService(randomString());
         executor.submit(new LocalMemberReturningCallable(), LITE_MEMBER_SELECTOR, callback);
 
@@ -174,24 +165,20 @@ public class ExecutorServiceLiteMemberTest
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         final HazelcastInstance lite1 = factory.newHazelcastInstance(liteConfig);
         final HazelcastInstance lite2 = factory.newHazelcastInstance(liteConfig);
-        final HazelcastInstance other = factory.newHazelcastInstance();
+        final HazelcastInstance other = factory.newHazelcastInstance(smallInstanceConfig());
 
         final ResultHoldingMultiExecutionCallback callback = new ResultHoldingMultiExecutionCallback();
         final IExecutorService executor = other.getExecutorService(randomString());
         executor.submitToMembers(new LocalMemberReturningCallable(), LITE_MEMBER_SELECTOR, callback);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                final Map<Member, Object> results = callback.getResults();
+        assertTrueEventually(() -> {
+            final Map<Member, Object> results = callback.getResults();
 
-                assertNotNull(results);
-                final Member liteMember1 = lite1.getCluster().getLocalMember();
-                final Member liteMember2 = lite2.getCluster().getLocalMember();
-                assertEquals(liteMember1, results.get(liteMember1));
-                assertEquals(liteMember2, results.get(liteMember2));
-            }
+            assertNotNull(results);
+            final Member liteMember1 = lite1.getCluster().getLocalMember();
+            final Member liteMember2 = lite2.getCluster().getLocalMember();
+            assertEquals(liteMember1, results.get(liteMember1));
+            assertEquals(liteMember2, results.get(liteMember2));
         });
     }
 }

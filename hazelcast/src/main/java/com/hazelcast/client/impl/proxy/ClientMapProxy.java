@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -88,7 +88,6 @@ import com.hazelcast.client.impl.protocol.codec.MapValuesCodec;
 import com.hazelcast.client.impl.protocol.codec.MapValuesWithPagingPredicateCodec;
 import com.hazelcast.client.impl.protocol.codec.MapValuesWithPredicateCodec;
 import com.hazelcast.client.impl.protocol.codec.holder.PagingPredicateHolder;
-import com.hazelcast.client.impl.querycache.ClientQueryCacheContext;
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.ClientPartitionService;
 import com.hazelcast.client.impl.spi.ClientProxy;
@@ -96,8 +95,9 @@ import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
-import com.hazelcast.client.map.impl.ClientMapPartitionIterator;
-import com.hazelcast.client.map.impl.ClientMapQueryPartitionIterator;
+import com.hazelcast.client.map.impl.iterator.ClientMapPartitionIterator;
+import com.hazelcast.client.map.impl.iterator.ClientMapQueryPartitionIterator;
+import com.hazelcast.client.map.impl.querycache.ClientQueryCacheContext;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.core.EntryEvent;
@@ -107,6 +107,7 @@ import com.hazelcast.core.ReadOnly;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.IterationType;
@@ -127,7 +128,6 @@ import com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest;
 import com.hazelcast.map.impl.querycache.subscriber.SubscriberContext;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.PartitionPredicate;
@@ -156,6 +156,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 import static com.hazelcast.internal.util.CollectionUtil.objectToDataCollection;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
@@ -195,7 +197,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
     protected static final String NULL_TTL_UNIT_IS_NOT_ALLOWED = "Null ttlUnit is not allowed!";
     protected static final String NULL_MAX_IDLE_UNIT_IS_NOT_ALLOWED = "Null maxIdleUnit is not allowed!";
     protected static final String NULL_TIMEUNIT_IS_NOT_ALLOWED = "Null timeunit is not allowed!";
-
+    protected static final String NULL_BIFUNCTION_IS_NOT_ALLOWED = "Null BiFunction is not allowed!";
+    protected static final String NULL_FUNCTION_IS_NOT_ALLOWED = "Null Function is not allowed!";
 
     private ClientLockReferenceIdGenerator lockReferenceIdGenerator;
     private ClientQueryCacheContext queryCacheContext;
@@ -1549,9 +1552,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         }
     }
 
-    /**
-     * Async version of {@link #executeOnKeys}.
-     */
+    @Override
     public <R> InternalCompletableFuture<Map<K, R>> submitToKeys(@Nonnull Set<K> keys,
                                                                  @Nonnull EntryProcessor<K, V, R> entryProcessor) {
         checkNotNull(keys, NULL_KEY_IS_NOT_ALLOWED);
@@ -1600,18 +1601,32 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
     @Override
     public void putAll(@Nonnull Map<? extends K, ? extends V> m) {
-        putAllInternal(m, null);
+        putAllInternal(m, null, true);
     }
 
-    // used by Jet
+    @Override
     public InternalCompletableFuture<Void> putAllAsync(@Nonnull Map<? extends K, ? extends V> m) {
         InternalCompletableFuture<Void> future = new InternalCompletableFuture<>();
-        putAllInternal(m, future);
+        putAllInternal(m, future, true);
+        return future;
+    }
+
+    @Override
+    public void setAll(@Nonnull Map<? extends K, ? extends V> m) {
+        putAllInternal(m, null, false);
+    }
+
+    @Override
+    public InternalCompletableFuture<Void> setAllAsync(@Nonnull Map<? extends K, ? extends V> m) {
+        InternalCompletableFuture<Void> future = new InternalCompletableFuture<>();
+        putAllInternal(m, future, false);
         return future;
     }
 
     @SuppressWarnings("checkstyle:npathcomplexity")
-    private void putAllInternal(@Nonnull Map<? extends K, ? extends V> map, @Nullable InternalCompletableFuture<Void> future) {
+    private void putAllInternal(@Nonnull Map<? extends K, ? extends V> map,
+                                @Nullable InternalCompletableFuture<Void> future,
+                                boolean triggerMapLoader) {
         if (map.isEmpty()) {
             if (future != null) {
                 future.complete(null);
@@ -1655,7 +1670,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
             Integer partitionId = entry.getKey();
             // if there is only one entry, consider how we can use MapPutRequest
             // without having to get back the return value
-            ClientMessage request = MapPutAllCodec.encodeRequest(name, entry.getValue());
+            ClientMessage request = MapPutAllCodec.encodeRequest(name, entry.getValue(), triggerMapLoader);
             new ClientInvocation(getClient(), request, getName(), partitionId)
                     .invoke()
                     .whenCompleteAsync(callback);
@@ -1696,11 +1711,14 @@ public class ClientMapProxy<K, V> extends ClientProxy
      * including internal operations.
      * The underlying implementation may send more values in one batch than {@code fetchSize} if it needs to get to
      * a "safepoint" to later resume iteration.
-     * <p>
      * <b>NOTE</b>
-     * Iterating the map should be done only when the {@link IMap} is not being
-     * mutated and the cluster is stable (there are no migrations or membership changes).
-     * In other cases, the iterator may not return some entries or may return an entry twice.
+     * The iteration may be done when the map is being mutated or when there are
+     * membership changes. The iterator does not reflect the state when it has
+     * been constructed - it may return some entries that were added after the
+     * iteration has started and may not return some entries that were removed
+     * after iteration has started.
+     * The iterator will not, however, skip an entry if it has not been changed
+     * and will not return an entry twice.
      *
      * @param fetchSize   the size of the batches which will be sent when iterating the data
      * @param partitionId the partition ID which is being iterated
@@ -1723,11 +1741,14 @@ public class ClientMapProxy<K, V> extends ClientProxy
      * The underlying implementation may send more values in one batch than {@code fetchSize} if it needs to get to
      * a "safepoint" to later resume iteration.
      * Predicates of type {@link PagingPredicate} are not supported.
-     * <p>
-     * <b>NOTE</b>
-     * Iterating the map should be done only when the {@link IMap} is not being
-     * mutated and the cluster is stable (there are no migrations or membership changes).
-     * In other cases, the iterator may not return some entries or may return an entry twice.
+     <b>NOTE</b>
+     * The iteration may be done when the map is being mutated or when there are
+     * membership changes. The iterator does not reflect the state when it has
+     * been constructed - it may return some entries that were added after the
+     * iteration has started and may not return some entries that were removed
+     * after iteration has started.
+     * The iterator will not, however, skip an entry if it has not been changed
+     * and will not return an entry twice.
      *
      * @param fetchSize   the size of the batches which will be sent when iterating the data
      * @param partitionId the partition ID which is being iterated
@@ -1978,4 +1999,62 @@ public class ClientMapProxy<K, V> extends ClientProxy
             super.onDestroy();
         }
     }
+
+    @Override
+    public V computeIfPresent(@Nonnull K key, @Nonnull BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(key, NULL_BIFUNCTION_IS_NOT_ALLOWED);
+
+        return computeIfPresentLocally(key, remappingFunction);
+    }
+
+
+    private V computeIfPresentLocally(K key,
+                                      BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+
+        while (true) {
+            Data oldValueAsData = toData(getInternal(key));
+            if (oldValueAsData == null) {
+                return null;
+            }
+
+            V oldValueClone = toObject(oldValueAsData);
+            V newValue = remappingFunction.apply(key, oldValueClone);
+            if (newValue != null) {
+                if (replaceIfSameInternal(key, oldValueAsData, toData(newValue))) {
+                    return newValue;
+                }
+            } else if (removeInternal(key, oldValueAsData)) {
+                return null;
+            }
+        }
+    }
+
+    @Override
+    public V computeIfAbsent(@Nonnull K key, @Nonnull Function<? super K, ? extends V> mappingFunction) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(mappingFunction, NULL_FUNCTION_IS_NOT_ALLOWED);
+
+        return computeIfAbsentLocally(key, mappingFunction);
+    }
+
+    private V computeIfAbsentLocally(K key, Function<? super K, ? extends V> mappingFunction) {
+        V oldValue = toObject(getInternal(key));
+        if (oldValue != null) {
+            return oldValue;
+        }
+
+        V newValue = mappingFunction.apply(key);
+        if (newValue == null) {
+            return null;
+        }
+
+        V result = putIfAbsentInternal(UNSET, MILLISECONDS, null, null, key, toData(newValue));
+        if (result == null) {
+            return newValue;
+        } else {
+            return result;
+        }
+    }
+
 }

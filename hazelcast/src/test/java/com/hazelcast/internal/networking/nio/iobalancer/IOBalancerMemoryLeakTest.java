@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,13 @@
 
 package com.hazelcast.internal.networking.nio.iobalancer;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.internal.ascii.HTTPCommunicator;
 import com.hazelcast.internal.networking.nio.NioNetworking;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.NetworkingService;
 import com.hazelcast.internal.nio.Protocols;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -38,6 +38,7 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.net.Socket;
 
+import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)

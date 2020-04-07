@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.MigrationInterceptor;
+import com.hazelcast.internal.partition.impl.MigrationManager;
 import com.hazelcast.internal.partition.service.TestMigrationAwareService;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -34,6 +35,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -48,6 +50,10 @@ import static com.hazelcast.internal.partition.impl.PartitionDataSerializerHook.
 import static com.hazelcast.internal.partition.impl.PartitionDataSerializerHook.PARTITION_STATE_OP;
 import static com.hazelcast.internal.partition.impl.PartitionDataSerializerHook.PROMOTION_COMMIT;
 import static com.hazelcast.spi.impl.SpiDataSerializerHook.NORMAL_RESPONSE;
+import static com.hazelcast.test.Accessors.getAddress;
+import static com.hazelcast.test.Accessors.getNode;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
+import static com.hazelcast.test.Accessors.getPartitionService;
 import static com.hazelcast.test.PacketFiltersUtil.dropOperationsBetween;
 import static com.hazelcast.test.PacketFiltersUtil.rejectOperationsFrom;
 import static com.hazelcast.test.PacketFiltersUtil.resetPacketFiltersFrom;
@@ -198,9 +204,7 @@ public class MigrationInvocationsSafetyTest extends PartitionCorrectnessTestSupp
     @Test
     public void migrationCommit_shouldBeRetried_whenTargetNotResponds() throws Exception {
         Config config = getConfig(true, true)
-                .setProperty(ClusterProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), "5")
-                .setProperty(ClusterProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "1")
-                .setProperty(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "3000");
+                .setProperty(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "4000");
 
         HazelcastInstance master = factory.newHazelcastInstance(config);
         HazelcastInstance slave1 = factory.newHazelcastInstance(config);
@@ -208,6 +212,8 @@ public class MigrationInvocationsSafetyTest extends PartitionCorrectnessTestSupp
 
         assertClusterSizeEventually(3, slave1, slave2);
         warmUpPartitions(master, slave1, slave2);
+
+        setMigrationCommitTimeoutMillis(master, 5000);
 
         fillAndAssertData(master);
 
@@ -268,9 +274,7 @@ public class MigrationInvocationsSafetyTest extends PartitionCorrectnessTestSupp
     @Test
     public void migrationCommit_shouldRollback_whenTargetCrashes() throws Exception {
         Config config = getConfig(true, true)
-                .setProperty(ClusterProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), "5")
-                .setProperty(ClusterProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "1")
-                .setProperty(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "3000");
+                .setProperty(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "4000");
 
         HazelcastInstance master = factory.newHazelcastInstance(config);
         HazelcastInstance slave1 = factory.newHazelcastInstance(config);
@@ -278,6 +282,8 @@ public class MigrationInvocationsSafetyTest extends PartitionCorrectnessTestSupp
 
         assertClusterSizeEventually(3, slave1, slave2);
         warmUpPartitions(master, slave1, slave2);
+
+        setMigrationCommitTimeoutMillis(master, 5000);
 
         fillAndAssertData(master);
 
@@ -316,9 +322,7 @@ public class MigrationInvocationsSafetyTest extends PartitionCorrectnessTestSupp
     @Test
     public void promotionCommit_shouldBeRetried_whenTargetNotResponds() throws Exception {
         Config config = getConfig(true, true)
-                .setProperty(ClusterProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), "5")
-                .setProperty(ClusterProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "1")
-                .setProperty(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "3000");
+                .setProperty(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "4000");
 
         HazelcastInstance master = factory.newHazelcastInstance(config);
         HazelcastInstance slave1 = factory.newHazelcastInstance(config);
@@ -327,6 +331,8 @@ public class MigrationInvocationsSafetyTest extends PartitionCorrectnessTestSupp
 
         assertClusterSizeEventually(4, slave1, slave2, slave3);
         warmUpPartitions(master, slave1, slave2, slave3);
+
+        setMigrationCommitTimeoutMillis(master, 5000);
 
         fillAndAssertData(master);
 
@@ -363,9 +369,7 @@ public class MigrationInvocationsSafetyTest extends PartitionCorrectnessTestSupp
     @Test
     public void promotionCommit_shouldRollback_whenTargetCrashes() throws Exception {
         Config config = getConfig(true, true)
-                .setProperty(ClusterProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), "5")
-                .setProperty(ClusterProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "1")
-                .setProperty(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "3000");
+                .setProperty(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "4000");
 
         HazelcastInstance master = factory.newHazelcastInstance(config);
         HazelcastInstance slave1 = factory.newHazelcastInstance(config);
@@ -374,6 +378,8 @@ public class MigrationInvocationsSafetyTest extends PartitionCorrectnessTestSupp
 
         assertClusterSizeEventually(4, slave1, slave2, slave3);
         warmUpPartitions(master, slave1, slave2, slave3);
+
+        setMigrationCommitTimeoutMillis(master, 5000);
 
         fillAndAssertData(master);
 
@@ -401,6 +407,13 @@ public class MigrationInvocationsSafetyTest extends PartitionCorrectnessTestSupp
 
         assertNoDuplicateMigrations(master);
         assertNoDuplicateMigrations(slave1);
+    }
+
+    private void setMigrationCommitTimeoutMillis(HazelcastInstance master, long timeout) throws Exception {
+        MigrationManager migrationManager = getPartitionServiceImpl(master).getMigrationManager();
+        Field field = MigrationManager.class.getDeclaredField("memberHeartbeatTimeoutMillis");
+        field.setAccessible(true);
+        field.setLong(migrationManager, timeout);
     }
 
     private void fillAndAssertData(HazelcastInstance hz) {

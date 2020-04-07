@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
+import static java.util.Objects.requireNonNull;
 
 /**
  * A {@link InternalCompletableFuture} implementation that delegates the real logic to an underlying
@@ -426,11 +427,18 @@ public class DelegatingCompletableFuture<V> extends InternalCompletableFuture<V>
         return future.toString();
     }
 
+    // used for testing
+    public V getDeserializedValue() {
+        return (V) deserializedValue;
+    }
+
     static class DeserializingFunction<E, R> implements Function<E, R> {
         private final SerializationService serializationService;
         private final Function<E, R> delegate;
 
         DeserializingFunction(SerializationService serializationService, Function<E, R> delegate) {
+            requireNonNull(delegate);
+
             this.serializationService = serializationService;
             this.delegate = delegate;
         }
@@ -446,6 +454,8 @@ public class DelegatingCompletableFuture<V> extends InternalCompletableFuture<V>
         private final Consumer<E> delegate;
 
         DeserializingConsumer(SerializationService serializationService, Consumer<E> delegate) {
+            requireNonNull(delegate);
+
             this.serializationService = serializationService;
             this.delegate = delegate;
         }
@@ -461,6 +471,8 @@ public class DelegatingCompletableFuture<V> extends InternalCompletableFuture<V>
         private final BiFunction<T, U, R> delegate;
 
         DeserializingBiFunction(SerializationService serializationService, BiFunction<T, U, R> delegate) {
+            requireNonNull(delegate);
+
             this.serializationService = serializationService;
             this.delegate = delegate;
         }
@@ -477,6 +489,8 @@ public class DelegatingCompletableFuture<V> extends InternalCompletableFuture<V>
         private final BiConsumer<T, U> delegate;
 
         DeserializingBiConsumer(SerializationService serializationService, BiConsumer<T, U> delegate) {
+            requireNonNull(delegate);
+
             this.serializationService = serializationService;
             this.delegate = delegate;
         }

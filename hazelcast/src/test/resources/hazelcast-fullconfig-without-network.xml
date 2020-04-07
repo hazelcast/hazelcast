@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -39,12 +39,17 @@
 <hazelcast xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xsi:schemaLocation="http://www.hazelcast.com/schema/config
-           http://www.hazelcast.com/schema/config/hazelcast-config-4.0.xsd">
+           http://www.hazelcast.com/schema/config/hazelcast-config-4.1.xsd">
 
     <cluster-name>my-cluster</cluster-name>
     <license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</license-key>
     <instance-name>dummy</instance-name>
-    <management-center scripting-enabled="false" />
+    <management-center scripting-enabled="false">
+        <trusted-interfaces>
+            <interface>10.10.1.*</interface>
+            <interface>10.10.2.*</interface>
+        </trusted-interfaces>
+    </management-center>
 
     <properties>
         <property name="foo">bar</property>
@@ -315,7 +320,7 @@
         </near-cache>
 
         <wan-replication-ref name="my-wan-cluster">
-            <merge-policy>hz.PASS_THROUGH</merge-policy>
+            <merge-policy-class-name>hz.PASS_THROUGH</merge-policy-class-name>
             <filters>
                 <filter-impl>com.example.WanTestFilter1</filter-impl>
                 <filter-impl>com.example.WanTestFilter2</filter-impl>
@@ -324,15 +329,47 @@
         </wan-replication-ref>
 
         <indexes>
+            <!-- unordered/hash index on the name attribute -->
             <index type="HASH">
                 <attributes>
                     <attribute>name</attribute>
                 </attributes>
             </index>
+            <!-- ordered/tree index on the age attribute -->
             <index>
                 <attributes>
                     <attribute>age</attribute>
                 </attributes>
+            </index>
+            <!-- composite unordered/hash index on the name and age attributes -->
+            <index type="HASH">
+                <attributes>
+                    <attribute>name</attribute>
+                    <attribute>age</attribute>
+                </attributes>
+            </index>
+            <!-- composite ordered/tree index on the age and name attributes -->
+            <index>
+                <attributes>
+                    <attribute>age</attribute>
+                    <attribute>name</attribute>
+                </attributes>
+            </index>
+            <!-- bitmap index on the age attribute -->
+            <index type="BITMAP">
+                <attributes>
+                    <attribute>age</attribute>
+                </attributes>
+            </index>
+            <!-- bitmap index on the name attribute with options -->
+            <index type="BITMAP">
+                <attributes>
+                    <attribute>name</attribute>
+                </attributes>
+                <bitmap-index-options>
+                    <unique-key>id</unique-key>
+                    <unique-key-transformation>RAW</unique-key-transformation>
+                </bitmap-index-options>
             </index>
         </indexes>
 
@@ -486,7 +523,7 @@
         <eviction comparator-class-name="DummyClass" eviction-policy="LRU"
                   max-size-policy="ENTRY_COUNT" size="50"/>
         <wan-replication-ref name="my-wan-cluster">
-            <merge-policy>hz.PASS_THROUGH</merge-policy>
+            <merge-policy-class-name>hz.PASS_THROUGH</merge-policy-class-name>
             <filters>
                 <filter-impl>com.example.WanTestFilter1</filter-impl>
                 <filter-impl>com.example.WanTestFilter2</filter-impl>
@@ -509,14 +546,16 @@
     <flake-id-generator name="default">
         <prefetch-count>100</prefetch-count>
         <prefetch-validity-millis>600000</prefetch-validity-millis>
-        <id-offset>0</id-offset>
+        <epoch-start>1514764800000</epoch-start>
         <node-id-offset>0</node-id-offset>
+        <bits-sequence>6</bits-sequence>
+        <bits-node-id>16</bits-node-id>
+        <allowed-future-millis>15000</allowed-future-millis>
         <statistics-enabled>false</statistics-enabled>
     </flake-id-generator>
 
     <listeners>
         <listener>com.hazelcast.examples.MembershipListener</listener>
-        <listener>com.hazelcast.examples.InstanceListener</listener>
         <listener>com.hazelcast.examples.MigrationListener</listener>
         <listener>com.hazelcast.examples.PartitionLostListener</listener>
     </listeners>
@@ -718,6 +757,16 @@
                     <action>all</action>
                 </actions>
             </pn-counter-permission>
+            <ring-buffer-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </ring-buffer-permission>
+            <reliable-topic-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </reliable-topic-permission>
         </client-permissions>
         <client-block-unmapped-actions>true</client-block-unmapped-actions>
     </security>
@@ -752,13 +801,14 @@
     <split-brain-protection enabled="true" name="probabilistic-split-brain-protection">
         <minimum-cluster-size>3</minimum-cluster-size>
         <protect-on>READ_WRITE</protect-on>
-        <probabilistic-split-brain-protection acceptable-heartbeat-pause-millis="100" max-sample-size="20" suspicion-threshold="10" />
+        <probabilistic-split-brain-protection acceptable-heartbeat-pause-millis="100" max-sample-size="20"
+                                              suspicion-threshold="10"/>
     </split-brain-protection>
 
     <split-brain-protection enabled="true" name="recently-active-split-brain-protection">
         <minimum-cluster-size>4</minimum-cluster-size>
         <protect-on>READ_WRITE</protect-on>
-        <recently-active-split-brain-protection heartbeat-tolerance-millis="60000" />
+        <recently-active-split-brain-protection heartbeat-tolerance-millis="60000"/>
     </split-brain-protection>
 
     <hot-restart-persistence enabled="false">

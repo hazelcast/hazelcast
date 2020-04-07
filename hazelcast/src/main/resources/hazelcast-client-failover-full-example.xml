@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@
 <hazelcast-client-failover xmlns="http://www.hazelcast.com/schema/client-config"
                            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                            xsi:schemaLocation="http://www.hazelcast.com/schema/client-config
-                           http://www.hazelcast.com/schema/client-config/hazelcast-client-failover-config-4.0.xsd">
+                           http://www.hazelcast.com/schema/client-config/hazelcast-client-failover-config-4.1.xsd">
 
     <!--
         The Hazelcast client can configurations that the client is using to connect to a Hazelcast cluster in the case

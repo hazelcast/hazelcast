@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,6 +56,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_METRIC_LISTENER_SERVICE_EVENTS_PROCESSED;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_METRIC_LISTENER_SERVICE_EVENT_QUEUE_SIZE;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_PREFIX_LISTENERS;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
@@ -142,22 +145,29 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
 
     @Override
     public void provideStaticMetrics(MetricsRegistry registry) {
-        registry.registerStaticMetrics(this, "listeners");
+        registry.registerStaticMetrics(this, CLIENT_PREFIX_LISTENERS);
     }
 
-    @Probe(level = MANDATORY)
+    @Probe(name = CLIENT_METRIC_LISTENER_SERVICE_EVENT_QUEUE_SIZE, level = MANDATORY)
     private int eventQueueSize() {
         return eventExecutor.getWorkQueueSize();
     }
 
-    @Probe(level = MANDATORY)
+    @Probe(name = CLIENT_METRIC_LISTENER_SERVICE_EVENTS_PROCESSED, level = MANDATORY)
     private long eventsProcessed() {
         return eventExecutor.processedCount();
     }
 
     public void handleEventMessage(ClientMessage clientMessage) {
+        Runnable eventProcessor;
+        if (clientMessage.getPartitionId() == -1) {
+            // Execute on a random worker
+            eventProcessor = () -> handleEventMessageOnCallingThread(clientMessage);
+        } else {
+            eventProcessor = new ClientEventProcessor(clientMessage);
+        }
         try {
-            eventExecutor.execute(new ClientEventProcessor(clientMessage));
+            eventExecutor.execute(eventProcessor);
         } catch (RejectedExecutionException e) {
             logger.warning("Event clientMessage could not be handled", e);
         }
@@ -186,6 +196,9 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
         ListenerMessageCodec codec = listenerRegistration.getCodec();
         ClientMessage request = codec.encodeAddRequest(registersLocalOnly());
         EventHandler handler = listenerRegistration.getHandler();
+        if (logger.isFinestEnabled()) {
+            logger.finest("Register attempt of " + listenerRegistration + " to " + connection);
+        }
         handler.beforeListenerRegister(connection);
 
         ClientInvocation invocation = new ClientInvocation(client, request, null, connection);
@@ -200,6 +213,9 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
         }
 
         UUID serverRegistrationId = codec.decodeAddResponse(clientMessage);
+        if (logger.isFinestEnabled()) {
+            logger.finest("Registered " + listenerRegistration + " to " + connection);
+        }
         handler.onListenerRegister(connection);
         long correlationId = request.getCorrelationId();
         ClientConnectionRegistration registration

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -106,10 +106,14 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
         }
 
         Address masterAddress = nodeEngine.getMasterAddress();
-        Address callerAddress = getCallerAddress();
-        if (!callerAddress.equals(masterAddress)) {
-            throw new IllegalStateException("Caller is not master node! Caller: " + callerAddress
-                + ", Master: " + masterAddress);
+        Address caller = getCallerAddress();
+        if (!caller.equals(masterAddress)) {
+            throw new IllegalStateException("Caller is not master node! Caller: " + caller + ", Master: " + masterAddress);
+        }
+
+        InternalPartitionServiceImpl partitionService = getService();
+        if (!partitionService.isMemberMaster(caller)) {
+            throw new RetryableHazelcastException("Caller is not master node known by migration system! Caller: " + caller);
         }
     }
 

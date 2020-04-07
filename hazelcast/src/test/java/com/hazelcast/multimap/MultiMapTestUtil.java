@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,20 +18,21 @@ package com.hazelcast.multimap;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapPartitionContainer;
 import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.multimap.impl.MultiMapValue;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.test.HazelcastTestSupport;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 
 @SuppressWarnings("WeakerAccess")
 public final class MultiMapTestUtil {
@@ -53,7 +54,7 @@ public final class MultiMapTestUtil {
     public static <K, V> Map<K, Collection<V>> getBackupMultiMap(HazelcastInstance[] instances, String multiMapName) {
         Map<K, Collection<V>> map = new HashMap<K, Collection<V>>();
         for (HazelcastInstance instance : instances) {
-            NodeEngineImpl nodeEngine = HazelcastTestSupport.getNodeEngineImpl(instance);
+            NodeEngineImpl nodeEngine = getNodeEngineImpl(instance);
             MultiMapService mapService = nodeEngine.getService(MultiMapService.SERVICE_NAME);
             InternalPartitionService partitionService = nodeEngine.getPartitionService();
             SerializationService serializationService = nodeEngine.getSerializationService();

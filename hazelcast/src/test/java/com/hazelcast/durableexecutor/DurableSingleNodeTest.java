@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.Serializable;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -73,7 +72,7 @@ public class DurableSingleNodeTest extends ExecutorServiceTestSupport {
     @Test
     public void submitBasicTask() throws Exception {
         Callable<String> task = new BasicTestCallable();
-        Future future = executor.submit(task);
+        Future<String> future = executor.submit(task);
         assertEquals(future.get(), BasicTestCallable.RESULT);
     }
 
@@ -100,7 +99,7 @@ public class DurableSingleNodeTest extends ExecutorServiceTestSupport {
     @Test
     public void isDoneAfterGet() throws Exception {
         Callable<String> task = new BasicTestCallable();
-        Future future = executor.submit(task);
+        Future<String> future = executor.submit(task);
         assertEquals(future.get(), BasicTestCallable.RESULT);
         assertTrue(future.isDone());
     }
@@ -121,10 +120,8 @@ public class DurableSingleNodeTest extends ExecutorServiceTestSupport {
 
     @Test
     public void issue292() throws Exception {
-        final BlockingQueue<Member> responseQueue = new ArrayBlockingQueue<Member>(1);
-        executor.submit(new MemberCheck()).toCompletableFuture().thenAccept(response -> {
-            responseQueue.offer(response);
-        });
+        final BlockingQueue<Member> responseQueue = new ArrayBlockingQueue<>(1);
+        executor.submit(new MemberCheck()).toCompletableFuture().thenAccept(responseQueue::offer);
         assertNotNull(responseQueue.poll(10, TimeUnit.SECONDS));
     }
 
@@ -217,14 +214,4 @@ public class DurableSingleNodeTest extends ExecutorServiceTestSupport {
     //        }
     //    });
     //}
-
-    static class LatchRunnable implements Runnable, Serializable {
-
-        static CountDownLatch latch;
-
-        @Override
-        public void run() {
-            latch.countDown();
-        }
-    }
 }

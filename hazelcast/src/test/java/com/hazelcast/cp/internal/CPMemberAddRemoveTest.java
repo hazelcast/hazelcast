@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,6 +61,9 @@ import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getSnapshotEntry;
 import static com.hazelcast.cp.internal.session.AbstractProxySessionManager.NO_SESSION_ID;
 import static com.hazelcast.instance.impl.HazelcastInstanceFactory.newHazelcastInstance;
 import static com.hazelcast.internal.util.FutureUtil.returnWithDeadline;
+import static com.hazelcast.test.Accessors.getAddress;
+import static com.hazelcast.test.Accessors.getNode;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.test.TestHazelcastInstanceFactory.initOrCreateConfig;
 import static java.util.Arrays.asList;
 import static org.hamcrest.Matchers.greaterThan;
@@ -726,6 +729,47 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
             assertArrayEquals(group2.members().toArray(new CPMember[0]), g2.members().toArray(new CPMember[0]));
 
             List<CPMemberInfo> activeMembers = new ArrayList<>(getRaftService(newInstance).getMetadataGroupManager().getActiveMembers());
+            assertEquals(cpMembers, activeMembers);
+        });
+    }
+
+    @Test
+    public void when_snapshotIsTakenWhileRemovingCPMember_newMemberInstallsSnapshot() throws Exception {
+        int nodeCount = 3;
+        int commitIndexAdvanceCountToSnapshot = 50;
+        Config config = createConfig(nodeCount, nodeCount);
+        config.getCPSubsystemConfig().getRaftAlgorithmConfig()
+                .setCommitIndexAdvanceCountToSnapshot(commitIndexAdvanceCountToSnapshot);
+
+        HazelcastInstance[] instances = new HazelcastInstance[nodeCount];
+        for (int i = 0; i < nodeCount; i++) {
+            instances[i] = factory.newHazelcastInstance(config);
+        }
+
+        assertClusterSizeEventually(nodeCount, instances);
+        waitUntilCPDiscoveryCompleted(instances);
+
+        // `commitIndexAdvanceCountToSnapshot - 5` is selected on purpose to partially include removal of CP member in snapshot.
+        // Specifically, RemoveCPMemberOp will be in snapshot but CompleteRaftGroupMembershipChangesOp will not.
+        for (int i = 0; i < commitIndexAdvanceCountToSnapshot - 5; i++) {
+            getRaftInvocationManager(instances[0]).invoke(getMetadataGroupId(instances[0]), new GetActiveCPMembersOp()).get();
+        }
+
+        // This will add 3 entries, RemoveCPMemberOp, ChangeRaftGroupMembersCmd and CompleteRaftGroupMembershipChangesOp.
+        // RemoveCPMemberOp will be in snapshot but CompleteRaftGroupMembershipChangesOp will not be included.
+        instances[0].shutdown();
+
+        HazelcastInstance newInstance = factory.newHazelcastInstance(config);
+        newInstance.getCPSubsystem().getCPSubsystemManagementService().promoteToCPMember().toCompletableFuture().join();
+
+        List<CPMember> cpMembers = new ArrayList<>(newInstance.getCPSubsystem()
+                .getCPSubsystemManagementService()
+                .getCPMembers()
+                .toCompletableFuture().join());
+
+        assertTrueEventually(() -> {
+            RaftService service = getRaftService(newInstance);
+            List<CPMemberInfo> activeMembers = new ArrayList<>(service.getMetadataGroupManager().getActiveMembers());
             assertEquals(cpMembers, activeMembers);
         });
     }

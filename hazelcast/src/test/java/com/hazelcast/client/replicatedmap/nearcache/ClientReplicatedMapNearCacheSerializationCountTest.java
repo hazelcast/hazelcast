@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,13 +26,13 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.adapter.DataStructureAdapter.DataStructureMethods;
 import com.hazelcast.internal.adapter.DataStructureAdapterMethod;
 import com.hazelcast.internal.adapter.ReplicatedMapDataStructureAdapter;
-import com.hazelcast.internal.nearcache.AbstractNearCacheSerializationCountTest;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheManager;
-import com.hazelcast.internal.nearcache.NearCacheSerializationCountConfigBuilder;
-import com.hazelcast.internal.nearcache.NearCacheTestContext;
-import com.hazelcast.internal.nearcache.NearCacheTestContextBuilder;
-import com.hazelcast.internal.nearcache.NearCacheTestUtils;
+import com.hazelcast.internal.nearcache.impl.AbstractNearCacheSerializationCountTest;
+import com.hazelcast.internal.nearcache.impl.NearCacheSerializationCountConfigBuilder;
+import com.hazelcast.internal.nearcache.impl.NearCacheTestContext;
+import com.hazelcast.internal.nearcache.impl.NearCacheTestContextBuilder;
+import com.hazelcast.internal.nearcache.impl.NearCacheTestUtils;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
@@ -51,7 +51,7 @@ import java.util.Collection;
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.internal.adapter.DataStructureAdapter.DataStructureMethods.GET;
-import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCacheConfig;
+import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.createNearCacheConfig;
 import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
 import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_OPERATION_THREAD_COUNT;
 import static java.util.Arrays.asList;
@@ -85,26 +85,19 @@ public class ClientReplicatedMapNearCacheSerializationCountTest extends Abstract
     @Parameter(value = 6)
     public InMemoryFormat nearCacheInMemoryFormat;
 
-    @Parameter(value = 7)
-    public Boolean serializeKeys;
-
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
     @Parameters(name = "method:{0} replicatedMapFormat:{5} nearCacheFormat:{6} serializeKeys:{7}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
-                {GET, newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 1), BINARY, null, null},
-                {GET, newInt(1, 1, 0), newInt(0, 0, 0), newInt(1, 1, 0), newInt(0, 1, 1), BINARY, BINARY, true},
-                {GET, newInt(1, 1, 0), newInt(0, 0, 0), newInt(1, 1, 0), newInt(0, 1, 1), BINARY, BINARY, false},
-                {GET, newInt(1, 1, 0), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 0), BINARY, OBJECT, true},
-                {GET, newInt(1, 1, 0), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 0), BINARY, OBJECT, false},
+                {GET, newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 1), BINARY, null},
+                {GET, newInt(1, 1, 0), newInt(0, 0, 0), newInt(1, 1, 0), newInt(0, 1, 1), BINARY, BINARY},
+                {GET, newInt(1, 1, 0), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 0), BINARY, OBJECT},
 
                 // FIXME: we should not serialize the value twice
-                {GET, newInt(1, 1, 1), newInt(1, 1, 1), newInt(1, 1, 1), newInt(1, 1, 1), OBJECT, null, null},
-                {GET, newInt(1, 1, 0), newInt(1, 1, 0), newInt(1, 2, 0), newInt(1, 1, 1), OBJECT, BINARY, true},
-                {GET, newInt(1, 1, 0), newInt(1, 1, 0), newInt(1, 2, 0), newInt(1, 1, 1), OBJECT, BINARY, false},
-                {GET, newInt(1, 1, 0), newInt(1, 1, 0), newInt(1, 1, 0), newInt(1, 1, 0), OBJECT, OBJECT, true},
-                {GET, newInt(1, 1, 0), newInt(1, 1, 0), newInt(1, 1, 0), newInt(1, 1, 0), OBJECT, OBJECT, false},
+                {GET, newInt(1, 1, 1), newInt(1, 1, 1), newInt(1, 1, 1), newInt(1, 1, 1), OBJECT, null},
+                {GET, newInt(1, 1, 0), newInt(1, 1, 0), newInt(1, 2, 0), newInt(1, 1, 1), OBJECT, BINARY},
+                {GET, newInt(1, 1, 0), newInt(1, 1, 0), newInt(1, 1, 0), newInt(1, 1, 0), OBJECT, OBJECT},
         });
     }
 
@@ -116,7 +109,7 @@ public class ClientReplicatedMapNearCacheSerializationCountTest extends Abstract
         expectedValueSerializationCounts = valueSerializationCounts;
         expectedValueDeserializationCounts = valueDeserializationCounts;
         if (nearCacheInMemoryFormat != null) {
-            nearCacheConfig = createNearCacheConfig(nearCacheInMemoryFormat, serializeKeys)
+            nearCacheConfig = createNearCacheConfig(nearCacheInMemoryFormat, false)
                     // we have to disable invalidations, otherwise there will be an non-deterministic serialization in a listener
                     .setInvalidateOnChange(false);
         }
@@ -132,7 +125,6 @@ public class ClientReplicatedMapNearCacheSerializationCountTest extends Abstract
         configBuilder.append(method);
         configBuilder.append(replicatedMapInMemoryFormat);
         configBuilder.append(nearCacheInMemoryFormat);
-        configBuilder.append(serializeKeys);
     }
 
     @Override

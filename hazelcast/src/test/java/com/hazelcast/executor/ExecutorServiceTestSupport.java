@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package com.hazelcast.executor;
 
 import com.hazelcast.cluster.Member;
-import com.hazelcast.config.Config;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.core.ExecutionCallback;
@@ -46,6 +45,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
+import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.fail;
 
 public class ExecutorServiceTestSupport extends HazelcastTestSupport {
@@ -64,13 +64,13 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
 
     IExecutorService createSingleNodeExecutorService(String name, int poolSize, boolean statsEnabled) {
         ExecutorConfig executorConfig = new ExecutorConfig(name, poolSize).setStatisticsEnabled(statsEnabled);
-        HazelcastInstance instance = createHazelcastInstance(new Config().addExecutorConfig(executorConfig));
+        HazelcastInstance instance = createHazelcastInstance(smallInstanceConfig().addExecutorConfig(executorConfig));
         return instance.getExecutorService(name);
     }
 
     protected DurableExecutorService createSingleNodeDurableExecutorService(String name, int poolSize) {
         DurableExecutorConfig executorConfig = new DurableExecutorConfig(name).setPoolSize(poolSize);
-        HazelcastInstance instance = createHazelcastInstance(new Config().addDurableExecutorConfig(executorConfig));
+        HazelcastInstance instance = createHazelcastInstance(smallInstanceConfig().addDurableExecutorConfig(executorConfig));
         return instance.getDurableExecutorService(name);
     }
 
@@ -105,7 +105,7 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
 
     public static class CountingDownExecutionCallback<T> implements BiConsumer<T, Throwable>, ExecutionCallback<T> {
 
-        private final AtomicReference<Object> result = new AtomicReference<Object>();
+        private final AtomicReference<Object> result = new AtomicReference<>();
         private final CountDownLatch latch;
 
         public CountingDownExecutionCallback(int count) {
@@ -152,7 +152,7 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
         }
     }
 
-    public static class BasicTestCallable implements Callable<String>, Serializable, PartitionAware {
+    public static class BasicTestCallable implements Callable<String>, Serializable, PartitionAware<String> {
 
         public static final String RESULT = "Task completed";
 
@@ -162,7 +162,7 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
         }
 
         @Override
-        public Object getPartitionKey() {
+        public String getPartitionKey() {
             return "key";
         }
     }
@@ -199,7 +199,7 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
         }
     }
 
-    public static class SleepingTask implements Callable<Boolean>, Serializable, PartitionAware {
+    public static class SleepingTask implements Callable<Boolean>, Serializable, PartitionAware<String> {
 
         long sleepSeconds;
 
@@ -214,7 +214,7 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
         }
 
         @Override
-        public Object getPartitionKey() {
+        public String getPartitionKey() {
             return "key";
         }
     }
@@ -225,8 +225,8 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
 
         @Override
         public String call() throws Exception {
-            Future future = instance.getExecutorService("NestedExecutorTask").submit(new BasicTestCallable());
-            return (String) future.get();
+            Future<String> future = instance.getExecutorService("NestedExecutorTask").submit(new BasicTestCallable());
+            return future.get();
         }
 
         @Override
@@ -300,7 +300,6 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
         }
     }
 
-    @SuppressWarnings("unused")
     public static class NullResponseCountingCallback<T> implements Consumer<T>, ExecutionCallback<T> {
 
         private final AtomicInteger nullResponseCount = new AtomicInteger(0);

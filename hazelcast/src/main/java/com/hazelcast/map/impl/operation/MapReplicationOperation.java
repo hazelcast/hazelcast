@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,18 +41,14 @@ public class MapReplicationOperation extends Operation
     private WriteBehindStateHolder writeBehindStateHolder;
     private MapNearCacheStateHolder mapNearCacheStateHolder;
 
-
     private transient NativeOutOfMemoryError oome;
 
     public MapReplicationOperation() {
     }
 
-    public MapReplicationOperation(PartitionContainer container, int partitionId, int replicaIndex) {
-        this(container, container.getAllNamespaces(replicaIndex), partitionId, replicaIndex);
-    }
+    public MapReplicationOperation(PartitionContainer container,
+                                   Collection<ServiceNamespace> namespaces, int partitionId, int replicaIndex) {
 
-    public MapReplicationOperation(PartitionContainer container, Collection<ServiceNamespace> namespaces,
-                                   int partitionId, int replicaIndex) {
         setPartitionId(partitionId).setReplicaIndex(replicaIndex);
 
         this.mapReplicationStateHolder = new MapReplicationStateHolder();

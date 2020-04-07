@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,12 +44,7 @@ public class RaftUtil {
     }
 
     public static <T extends RaftEndpoint> T getLeaderMember(final RaftNodeImpl node) {
-        Callable<RaftEndpoint> task = new Callable<RaftEndpoint>() {
-            @Override
-            public RaftEndpoint call() {
-                return node.state().leader();
-            }
-        };
+        Callable<RaftEndpoint> task = () -> node.state().leader();
         return (T) readRaftState(node, task);
     }
 
@@ -72,12 +67,7 @@ public class RaftUtil {
     }
 
     public static long getLastApplied(final RaftNodeImpl node) {
-        Callable<Long> task = new Callable<Long>() {
-            @Override
-            public Long call() {
-                return node.state().lastApplied();
-            }
-        };
+        Callable<Long> task = () -> node.state().lastApplied();
         return readRaftState(node, task);
     }
 
@@ -124,6 +114,12 @@ public class RaftUtil {
         return readRaftState(node, task);
     }
 
+    public static RaftEndpoint getVotedFor(RaftNodeImpl node) {
+        Callable<RaftEndpoint> task = () -> node.state().votedFor();
+
+        return readRaftState(node, task);
+    }
+
     public static void waitUntilLeaderElected(RaftNodeImpl node) {
         assertTrueEventually(() -> assertNotNull("Leader is null on " + node, getLeaderMember(node)));
     }
@@ -160,24 +156,16 @@ public class RaftUtil {
     }
 
     public static RestoredRaftState getRestoredState(final RaftNodeImpl node) {
-        Callable<RestoredRaftState> task = new Callable<RestoredRaftState>() {
-            @Override
-            public RestoredRaftState call() {
-                InMemoryRaftStateStore store = (InMemoryRaftStateStore) node.state().stateStore();
-                return store.toRestoredRaftState();
-            }
+        Callable<RestoredRaftState> task = () -> {
+            InMemoryRaftStateStore store = (InMemoryRaftStateStore) node.state().stateStore();
+            return store.toRestoredRaftState();
         };
 
         return readRaftState(node, task);
     }
 
     public static <T extends RaftStateStore> T getRaftStateStore(final RaftNodeImpl node) {
-        Callable<RaftStateStore> task = new Callable<RaftStateStore>() {
-            @Override
-            public RaftStateStore call() {
-                return node.state().stateStore();
-            }
-        };
+        Callable<RaftStateStore> task = () -> node.state().stateStore();
         return (T) readRaftState(node, task);
     }
 

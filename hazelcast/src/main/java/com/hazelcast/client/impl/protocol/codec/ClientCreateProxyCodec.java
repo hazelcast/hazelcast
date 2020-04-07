@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,16 +34,16 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * TODO DOC
+ * Creates a cluster-wide proxy with the given name and service.
  */
-@Generated("ac7165452f1626a92b1113d96948aba9")
+@Generated("cdf359635efe8763e87e744b2036a6ac")
 public final class ClientCreateProxyCodec {
     //hex: 0x000400
     public static final int REQUEST_MESSAGE_TYPE = 1024;
     //hex: 0x000401
     public static final int RESPONSE_MESSAGE_TYPE = 1025;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private ClientCreateProxyCodec() {
     }
@@ -83,6 +83,7 @@ public final class ClientCreateProxyCodec {
         clientMessage.setOperationName("Client.CreateProxy");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         StringCodec.encode(clientMessage, serviceName);

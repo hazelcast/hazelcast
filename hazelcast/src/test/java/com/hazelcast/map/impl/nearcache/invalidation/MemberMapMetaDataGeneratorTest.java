@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,9 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidator;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataGenerator;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
@@ -35,8 +35,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
+import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.getBaseConfig;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 

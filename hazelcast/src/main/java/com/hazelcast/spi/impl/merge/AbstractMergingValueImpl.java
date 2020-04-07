@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import java.io.IOException;
 public abstract class AbstractMergingValueImpl<V, T extends AbstractMergingValueImpl<V, T>>
         implements MergingValue<V>, SerializationServiceAware, IdentifiedDataSerializable {
 
-    private V value;
+    private Object value;
 
     private transient SerializationService serializationService;
 
@@ -48,16 +48,16 @@ public abstract class AbstractMergingValueImpl<V, T extends AbstractMergingValue
     }
 
     @Override
-    public V getValue() {
+    public Object getRawValue() {
         return value;
     }
 
     @Override
-    public Object getDeserializedValue() {
+    public V getValue() {
         return serializationService.toObject(value);
     }
 
-    public T setValue(V value) {
+    public T setValue(Object value) {
         this.value = value;
         //noinspection unchecked
         return (T) this;

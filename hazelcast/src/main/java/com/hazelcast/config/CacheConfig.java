@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -415,6 +415,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
      * <ul>
      * <li>BINARY (default): keys and values will be stored as binary data</li>
      * <li>OBJECT: values will be stored in their object forms</li>
+     * <li>NATIVE: values will be stored in non-heap region of JVM (Hazelcast Enterprise only)</li>
      * </ul>
      *
      * @param inMemoryFormat the record type to set

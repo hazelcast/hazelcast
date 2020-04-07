@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,14 +40,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * matching to a different partition id shall be ignored. The API implementation using this request may need to send multiple
  * of these request messages for filling a request for a key set if the keys belong to different partitions.
  */
-@Generated("b4a045fac3c9252c6483540e8f1ad70d")
+@Generated("4965328f0ab43a586da2c942b60b7771")
 public final class MapGetAllCodec {
     //hex: 0x012300
     public static final int REQUEST_MESSAGE_TYPE = 74496;
     //hex: 0x012301
     public static final int RESPONSE_MESSAGE_TYPE = 74497;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private MapGetAllCodec() {
     }
@@ -72,6 +72,7 @@ public final class MapGetAllCodec {
         clientMessage.setOperationName("Map.GetAll");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         ListMultiFrameCodec.encode(clientMessage, keys, DataCodec::encode);

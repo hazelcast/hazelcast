@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cluster.Address;
 
-import static com.hazelcast.test.HazelcastTestSupport.getNode;
+import static com.hazelcast.test.Accessors.getNode;
 
 @SuppressWarnings("WeakerAccess")
 public class SplitBrainProtectionTestUtil {

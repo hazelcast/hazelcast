@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,6 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.internal.util.ThreadLocalRandomProvider;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.partition.NoDataMemberInClusterException;
 
 import java.util.ArrayList;
@@ -51,9 +50,9 @@ public class ClientPNCounterProxy extends ClientProxy implements PNCounter {
      */
     private static final AtomicReferenceFieldUpdater<ClientPNCounterProxy, VectorClock> OBSERVED_TIMESTAMPS_UPDATER =
             AtomicReferenceFieldUpdater.newUpdater(ClientPNCounterProxy.class, VectorClock.class, "observedClock");
-    private static final List<Address> EMPTY_ADDRESS_LIST = Collections.emptyList();
+    private static final List<Member> EMPTY_ADDRESS_LIST = Collections.emptyList();
     private final ILogger logger;
-    private volatile Address currentTargetReplicaAddress;
+    private volatile Member currentTargetReplicaAddress;
     private final Object targetSelectionMutex = new Object();
     private volatile int maxConfiguredReplicaCount;
 
@@ -84,7 +83,7 @@ public class ClientPNCounterProxy extends ClientProxy implements PNCounter {
 
     @Override
     public long get() {
-        final Address target = getCRDTOperationTarget(EMPTY_ADDRESS_LIST);
+        final Member target = getCRDTOperationTarget(EMPTY_ADDRESS_LIST);
         if (target == null) {
             throw new NoDataMemberInClusterException(
                     "Cannot invoke operations on a CRDT because the cluster does not contain any data members");
@@ -97,7 +96,7 @@ public class ClientPNCounterProxy extends ClientProxy implements PNCounter {
 
     @Override
     public long getAndAdd(long delta) {
-        final Address target = getCRDTOperationTarget(EMPTY_ADDRESS_LIST);
+        final Member target = getCRDTOperationTarget(EMPTY_ADDRESS_LIST);
         if (target == null) {
             throw new NoDataMemberInClusterException(
                     "Cannot invoke operations on a CRDT because the cluster does not contain any data members");
@@ -110,7 +109,7 @@ public class ClientPNCounterProxy extends ClientProxy implements PNCounter {
 
     @Override
     public long addAndGet(long delta) {
-        final Address target = getCRDTOperationTarget(EMPTY_ADDRESS_LIST);
+        final Member target = getCRDTOperationTarget(EMPTY_ADDRESS_LIST);
         if (target == null) {
             throw new NoDataMemberInClusterException(
                     "Cannot invoke operations on a CRDT because the cluster does not contain any data members");
@@ -123,7 +122,7 @@ public class ClientPNCounterProxy extends ClientProxy implements PNCounter {
 
     @Override
     public long getAndSubtract(long delta) {
-        final Address target = getCRDTOperationTarget(EMPTY_ADDRESS_LIST);
+        final Member target = getCRDTOperationTarget(EMPTY_ADDRESS_LIST);
         if (target == null) {
             throw new NoDataMemberInClusterException(
                     "Cannot invoke operations on a CRDT because the cluster does not contain any data members");
@@ -136,7 +135,7 @@ public class ClientPNCounterProxy extends ClientProxy implements PNCounter {
 
     @Override
     public long subtractAndGet(long delta) {
-        final Address target = getCRDTOperationTarget(EMPTY_ADDRESS_LIST);
+        final Member target = getCRDTOperationTarget(EMPTY_ADDRESS_LIST);
         if (target == null) {
             throw new NoDataMemberInClusterException(
                     "Cannot invoke operations on a CRDT because the cluster does not contain any data members");
@@ -149,7 +148,7 @@ public class ClientPNCounterProxy extends ClientProxy implements PNCounter {
 
     @Override
     public long decrementAndGet() {
-        final Address target = getCRDTOperationTarget(EMPTY_ADDRESS_LIST);
+        final Member target = getCRDTOperationTarget(EMPTY_ADDRESS_LIST);
         if (target == null) {
             throw new NoDataMemberInClusterException(
                     "Cannot invoke operations on a CRDT because the cluster does not contain any data members");
@@ -162,7 +161,7 @@ public class ClientPNCounterProxy extends ClientProxy implements PNCounter {
 
     @Override
     public long incrementAndGet() {
-        final Address target = getCRDTOperationTarget(EMPTY_ADDRESS_LIST);
+        final Member target = getCRDTOperationTarget(EMPTY_ADDRESS_LIST);
         if (target == null) {
             throw new NoDataMemberInClusterException(
                     "Cannot invoke operations on a CRDT because the cluster does not contain any data members");
@@ -175,7 +174,7 @@ public class ClientPNCounterProxy extends ClientProxy implements PNCounter {
 
     @Override
     public long getAndDecrement() {
-        final Address target = getCRDTOperationTarget(EMPTY_ADDRESS_LIST);
+        final Member target = getCRDTOperationTarget(EMPTY_ADDRESS_LIST);
         if (target == null) {
             throw new NoDataMemberInClusterException(
                     "Cannot invoke operations on a CRDT because the cluster does not contain any data members");
@@ -188,7 +187,7 @@ public class ClientPNCounterProxy extends ClientProxy implements PNCounter {
 
     @Override
     public long getAndIncrement() {
-        final Address target = getCRDTOperationTarget(EMPTY_ADDRESS_LIST);
+        final Member target = getCRDTOperationTarget(EMPTY_ADDRESS_LIST);
         if (target == null) {
             throw new NoDataMemberInClusterException(
                     "Cannot invoke operations on a CRDT because the cluster does not contain any data members");
@@ -244,9 +243,9 @@ public class ClientPNCounterProxy extends ClientProxy implements PNCounter {
      *                                        {@code lastException} is {@code null}
      */
     private ClientMessage invokeAddInternal(long delta, boolean getBeforeUpdate,
-                                            List<Address> excludedAddresses,
+                                            List<Member> excludedAddresses,
                                             HazelcastException lastException,
-                                            Address target) {
+                                            Member target) {
         if (target == null) {
             throw lastException != null
                     ? lastException
@@ -255,8 +254,8 @@ public class ClientPNCounterProxy extends ClientProxy implements PNCounter {
         }
         try {
             final ClientMessage request = PNCounterAddCodec.encodeRequest(
-                    name, delta, getBeforeUpdate, observedClock.entrySet(), target);
-            return invokeOnAddress(request, target);
+                    name, delta, getBeforeUpdate, observedClock.entrySet(), target.getUuid());
+            return invokeOnMember(request, target.getUuid());
         } catch (HazelcastException e) {
             logger.fine("Unable to provide session guarantees when sending operations to " + target
                     + ", choosing different target");
@@ -264,7 +263,7 @@ public class ClientPNCounterProxy extends ClientProxy implements PNCounter {
                 excludedAddresses = new ArrayList<>();
             }
             excludedAddresses.add(target);
-            final Address newTarget = getCRDTOperationTarget(excludedAddresses);
+            final Member newTarget = getCRDTOperationTarget(excludedAddresses);
             return invokeAddInternal(delta, getBeforeUpdate, excludedAddresses, e, newTarget);
         }
     }
@@ -287,9 +286,9 @@ public class ClientPNCounterProxy extends ClientProxy implements PNCounter {
      * @throws NoDataMemberInClusterException if there are no replicas and the
      *                                        {@code lastException} is false
      */
-    private ClientMessage invokeGetInternal(List<Address> excludedAddresses,
+    private ClientMessage invokeGetInternal(List<Member> excludedAddresses,
                                             HazelcastException lastException,
-                                            Address target) {
+                                            Member target) {
         if (target == null) {
             throw lastException != null
                     ? lastException
@@ -297,15 +296,15 @@ public class ClientPNCounterProxy extends ClientProxy implements PNCounter {
                     "Cannot invoke operations on a CRDT because the cluster does not contain any data members");
         }
         try {
-            final ClientMessage request = PNCounterGetCodec.encodeRequest(name, observedClock.entrySet(), target);
-            return invokeOnAddress(request, target);
+            final ClientMessage request = PNCounterGetCodec.encodeRequest(name, observedClock.entrySet(), target.getUuid());
+            return invokeOnMember(request, target.getUuid());
         } catch (HazelcastException e) {
             logger.fine("Exception occurred while invoking operation on target " + target + ", choosing different target", e);
             if (excludedAddresses == EMPTY_ADDRESS_LIST) {
                 excludedAddresses = new ArrayList<>();
             }
             excludedAddresses.add(target);
-            final Address newTarget = getCRDTOperationTarget(excludedAddresses);
+            final Member newTarget = getCRDTOperationTarget(excludedAddresses);
             return invokeGetInternal(excludedAddresses, e, newTarget);
         }
     }
@@ -324,7 +323,7 @@ public class ClientPNCounterProxy extends ClientProxy implements PNCounter {
      * @return a CRDT replica address or {@code null} if there are no viable
      * addresses
      */
-    private Address getCRDTOperationTarget(Collection<Address> excludedAddresses) {
+    private Member getCRDTOperationTarget(Collection<Member> excludedAddresses) {
         if (currentTargetReplicaAddress != null && !excludedAddresses.contains(currentTargetReplicaAddress)) {
             return currentTargetReplicaAddress;
         }
@@ -348,8 +347,8 @@ public class ClientPNCounterProxy extends ClientProxy implements PNCounter {
      *                          address, must not be {@code null}
      * @return a CRDT replica address or {@code null} if there are no viable addresses
      */
-    private Address chooseTargetReplica(Collection<Address> excludedAddresses) {
-        final List<Address> replicaAddresses = getReplicaAddresses(excludedAddresses);
+    private Member chooseTargetReplica(Collection<Member> excludedAddresses) {
+        final List<Member> replicaAddresses = getReplicaAddresses(excludedAddresses);
         if (replicaAddresses.isEmpty()) {
             return null;
         }
@@ -366,16 +365,16 @@ public class ClientPNCounterProxy extends ClientProxy implements PNCounter {
      *                          address, must not be {@code null}
      * @return list of possible CRDT replica addresses
      */
-    private List<Address> getReplicaAddresses(Collection<Address> excludedAddresses) {
+    private List<Member> getReplicaAddresses(Collection<Member> excludedAddresses) {
         final Collection<Member> dataMembers = getContext().getClusterService()
                                                            .getMembers(MemberSelectors.DATA_MEMBER_SELECTOR);
         final int maxConfiguredReplicaCount = getMaxConfiguredReplicaCount();
         final int currentReplicaCount = Math.min(maxConfiguredReplicaCount, dataMembers.size());
-        final ArrayList<Address> replicaAddresses = new ArrayList<>(currentReplicaCount);
+        final ArrayList<Member> replicaAddresses = new ArrayList<>(currentReplicaCount);
         final Iterator<Member> dataMemberIterator = dataMembers.iterator();
 
         for (int i = 0; i < currentReplicaCount; i++) {
-            final Address dataMemberAddress = dataMemberIterator.next().getAddress();
+            final Member dataMemberAddress = dataMemberIterator.next();
             if (!excludedAddresses.contains(dataMemberAddress)) {
                 replicaAddresses.add(dataMemberAddress);
             }
@@ -429,7 +428,7 @@ public class ClientPNCounterProxy extends ClientProxy implements PNCounter {
      * sending invocations.
      */
     // public for testing purposes
-    public Address getCurrentTargetReplicaAddress() {
+    public Member getCurrentTargetReplica() {
         return currentTargetReplicaAddress;
     }
 }

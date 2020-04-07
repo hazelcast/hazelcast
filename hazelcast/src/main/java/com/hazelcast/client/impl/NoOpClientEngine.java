@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,11 +21,11 @@ import com.hazelcast.client.impl.protocol.ClientExceptions;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.statistics.ClientStatistics;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.cluster.AddressChecker;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.SecurityContext;
-import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.proxyservice.ProxyService;
 import com.hazelcast.transaction.TransactionManagerService;
@@ -138,18 +138,6 @@ public class NoOpClientEngine implements ClientEngine {
     }
 
     @Override
-    public Address memberAddressOf(Address clientAddress) {
-        throw new TargetNotMemberException("NoOpClientEngine does not supply translation from client to "
-                + "member address");
-    }
-
-    @Override
-    public Address clientAddressOf(Address clientAddress) {
-        throw new TargetNotMemberException("NoOpClientEngine does not supply translation from member to "
-                + "client address");
-    }
-
-    @Override
     public void onClientAcquiredResource(UUID uuid) {
 
     }
@@ -167,5 +155,10 @@ public class NoOpClientEngine implements ClientEngine {
     @Override
     public boolean deregisterBackupListener(UUID clientUUID) {
         return false;
+    }
+
+    @Override
+    public AddressChecker getManagementTasksChecker() {
+        return null;
     }
 }

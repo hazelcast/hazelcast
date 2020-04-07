@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import org.junit.runner.RunWith;
 import java.util.List;
 
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
+import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -87,9 +88,11 @@ public class ManagementCenterServiceIntegrationTest extends HazelcastTestSupport
 
     @Test
     public void testTimedMemberState_usesCache_shortTimeFrame() {
-        String responseOne = mcs.getTimedMemberStateJson().orElse(null);
-        String responseTwo = mcs.getTimedMemberStateJson().orElse(null);
-        assertSame(responseOne, responseTwo);
+        assertTrueEventually(() -> {
+            String responseOne = mcs.getTimedMemberStateJson().orElse(null);
+            String responseTwo = mcs.getTimedMemberStateJson().orElse(null);
+            assertSame(responseOne, responseTwo);
+        });
     }
 
     @Test

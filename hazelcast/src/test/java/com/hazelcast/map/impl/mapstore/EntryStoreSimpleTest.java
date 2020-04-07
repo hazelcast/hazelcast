@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
+import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -36,12 +37,16 @@ import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static java.util.Arrays.asList;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
@@ -119,15 +124,31 @@ public class EntryStoreSimpleTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testPutAll() {
-        Map<String, String> businessObjects = new HashMap<>();
-        for (int i = 0; i < 100; i++) {
-            businessObjects.put("k" + i, "v" + i);
-        }
+    public void testPutAll_WithoutMapListener() {
+        final int max = 100;
+        final Map<String, String> businessObjects = IntStream.range(0, max).boxed()
+            .collect(Collectors.toMap(i -> "k" + i, i -> "v" + i));
+
         map.putAll(businessObjects);
-        for (int i = 0; i < 100; i++) {
-            assertEntryStore("k" + i, "v" + i);
-        }
+
+        IntStream.range(0, max).forEach(i -> assertEntryStore("k" + i, "v" + i));
+        assertEquals(0, testEntryStore.getLoadCallCount());
+    }
+
+    @Test
+    public void testPutAll_WithMapListener() {
+        final int max = 100;
+        final Map<String, String> businessObjects = IntStream.range(0, max).boxed()
+            .collect(Collectors.toMap(i -> "k" + i, i -> "v" + i));
+
+        final CountDownLatch latch = new CountDownLatch(max);
+        map.addEntryListener((EntryAddedListener) event -> latch.countDown(), true);
+
+        map.putAll(businessObjects);
+
+        IntStream.range(0, max).forEach(i -> assertEntryStore("k" + i, "v" + i));
+        assertEquals(max, testEntryStore.getLoadCallCount());
+        assertOpenEventually(latch);
     }
 
     @Test
@@ -261,6 +282,47 @@ public class EntryStoreSimpleTest extends HazelcastTestSupport {
     public void testSetAsync_withMaxIdle() throws ExecutionException, InterruptedException {
         map.setAsync("key", "value", 10, TimeUnit.DAYS, 5, TimeUnit.DAYS).toCompletableFuture().get();
         assertEntryStore("key", "value", 5, TimeUnit.DAYS, 10000);
+    }
+
+    @Test
+    public void testSetAll_WithoutMapListener() {
+        final int max = 100;
+        final Map<String, String> businessObjects = IntStream.range(0, max).boxed()
+            .collect(Collectors.toMap(i -> "k" + i, i -> "v" + i));
+
+        map.setAll(businessObjects);
+
+        IntStream.range(0, max).forEach(i -> assertEntryStore("k" + i, "v" + i));
+        assertEquals(0, testEntryStore.getLoadCallCount());
+    }
+
+    @Test
+    public void testSetAll_WithMapListener() {
+        final int max = 100;
+        final Map<String, String> businessObjects = IntStream.range(0, max).boxed()
+            .collect(Collectors.toMap(i -> "k" + i, i -> "v" + i));
+
+        final CountDownLatch latch = new CountDownLatch(max);
+        map.addEntryListener((EntryAddedListener) event -> latch.countDown(), true);
+
+        map.setAll(businessObjects);
+
+        IntStream.range(0, max).forEach(i -> assertEntryStore("k" + i, "v" + i));
+        assertEquals(0, testEntryStore.getLoadCallCount());
+        assertOpenEventually(latch);
+    }
+
+    @Test
+    public void testSetAllAsync() {
+        final int max = 100;
+        final Map<String, String> businessObjects = IntStream.range(0, max).boxed()
+            .collect(Collectors.toMap(i -> "k" + i, i -> "v" + i));
+
+        final Future<Void> future = map.setAllAsync(businessObjects).toCompletableFuture();
+        assertEqualsEventually(future::isDone, true);
+
+        IntStream.range(0, max).forEach(i -> assertEntryStore("k" + i, "v" + i));
+        assertEquals(0, testEntryStore.getLoadCallCount());
     }
 
     @Test

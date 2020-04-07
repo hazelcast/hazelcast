@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,7 +52,7 @@ import static com.hazelcast.client.impl.management.ManagementCenterService.MC_CL
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
-import static com.hazelcast.test.HazelcastTestSupport.getNodeEngineImpl;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 
 class TestClientRegistry {
 
@@ -65,8 +65,8 @@ class TestClientRegistry {
         this.nodeRegistry = nodeRegistry;
     }
 
-    ClientConnectionManagerFactory createClientServiceFactory() {
-        return new MockClientConnectionManagerFactory("127.0.0.1", CLIENT_PORTS);
+    ClientConnectionManagerFactory createClientServiceFactory(String sourceIp) {
+        return new MockClientConnectionManagerFactory(sourceIp == null ? "127.0.0.1" : sourceIp, CLIENT_PORTS);
     }
 
     private class MockClientConnectionManagerFactory implements ClientConnectionManagerFactory {

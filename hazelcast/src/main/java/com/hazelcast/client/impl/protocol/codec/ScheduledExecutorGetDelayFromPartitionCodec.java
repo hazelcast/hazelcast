@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,14 +36,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns the ScheduledFuture's delay in nanoseconds for the task in the scheduler.
  */
-@Generated("3c28fef578297dc7e35bd21bf60c31fa")
+@Generated("e25e4fc494ea22352ed0ac73a08bd28f")
 public final class ScheduledExecutorGetDelayFromPartitionCodec {
     //hex: 0x1A0700
     public static final int REQUEST_MESSAGE_TYPE = 1705728;
     //hex: 0x1A0701
     public static final int RESPONSE_MESSAGE_TYPE = 1705729;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
     private ScheduledExecutorGetDelayFromPartitionCodec() {
@@ -69,6 +69,7 @@ public final class ScheduledExecutorGetDelayFromPartitionCodec {
         clientMessage.setOperationName("ScheduledExecutor.GetDelayFromPartition");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, schedulerName);
         StringCodec.encode(clientMessage, taskName);

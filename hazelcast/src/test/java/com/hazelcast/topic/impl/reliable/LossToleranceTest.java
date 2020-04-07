@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,12 @@
 
 package com.hazelcast.topic.impl.reliable;
 
+import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.impl.TestUtil;
 import com.hazelcast.ringbuffer.Ringbuffer;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -32,8 +31,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.UUID;
+
 import static com.hazelcast.ringbuffer.impl.RingbufferService.TOPIC_RB_PREFIX;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -80,20 +80,12 @@ public class LossToleranceTest extends HazelcastTestSupport {
         topic.publish("foo");
 
         // we add so many items that the items the listener wants to listen to, doesn't exist anymore
-        for (; ; ) {
+        do {
             topic.publish("item");
-            if (ringbuffer.headSequence() > listener.initialSequence) {
-                break;
-            }
-        }
+        } while (ringbuffer.headSequence() <= listener.initialSequence);
         topic.addMessageListener(listener);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertTrue(topic.runnersMap.isEmpty());
-            }
-        });
+        assertTrueEventually(() -> assertTrue(topic.runnersMap.isEmpty()));
     }
 
     @Test
@@ -103,23 +95,14 @@ public class LossToleranceTest extends HazelcastTestSupport {
         listener.isLossTolerant = true;
 
         // we add so many items that the items the listener wants to listen to, doesn't exist anymore
-        for (; ; ) {
+        do {
             topic.publish("item");
-            if (ringbuffer.headSequence() > listener.initialSequence) {
-                break;
-            }
-        }
+        } while (ringbuffer.headSequence() <= listener.initialSequence);
 
         topic.addMessageListener(listener);
         topic.publish("newItem");
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertContains(listener.objects, "newItem");
-                assertFalse(topic.runnersMap.isEmpty());
-            }
-        });
+        assertTrueEventually(() -> assertContains(listener.objects, "newItem"));
     }
 
     @Test
@@ -130,24 +113,16 @@ public class LossToleranceTest extends HazelcastTestSupport {
         topic.publish("item1");
         topic.publish("item2");
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertContains(listener.objects, "item1");
-                assertContains(listener.objects, "item2");
-            }
+        assertTrueEventually(() -> {
+            assertContains(listener.objects, "item1");
+            assertContains(listener.objects, "item2");
         });
         TestUtil.terminateInstance(topicOwnerInstance);
 
-        topic.publish("newItem");
-
-
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertContains(listener.objects, "newItem");
-                assertFalse(topic.runnersMap.isEmpty());
-            }
+        assertTrueEventually(() -> {
+            String item = "newItem " + UUID.randomUUID();
+            topic.publish(item);
+            assertTrueEventually(() -> assertContains(listener.objects, item), 5);
         });
     }
 }

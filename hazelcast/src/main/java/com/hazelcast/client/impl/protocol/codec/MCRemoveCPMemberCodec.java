@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Removes the given unreachable CP member from the active CP members
  * list and all CP groups it belongs to.
  */
-@Generated("e8e0ee4462eb61334fef78c548b4ba98")
+@Generated("95f7469bb890a2b18e040e4ab36a4320")
 public final class MCRemoveCPMemberCodec {
     //hex: 0x201B00
     public static final int REQUEST_MESSAGE_TYPE = 2104064;
@@ -45,7 +45,7 @@ public final class MCRemoveCPMemberCodec {
     public static final int RESPONSE_MESSAGE_TYPE = 2104065;
     private static final int REQUEST_CP_MEMBER_UUID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_CP_MEMBER_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private MCRemoveCPMemberCodec() {
     }
@@ -65,6 +65,7 @@ public final class MCRemoveCPMemberCodec {
         clientMessage.setOperationName("MC.RemoveCPMember");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeUUID(initialFrame.content, REQUEST_CP_MEMBER_UUID_FIELD_OFFSET, cpMemberUuid);
         clientMessage.add(initialFrame);
         return clientMessage;

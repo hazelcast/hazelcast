@@ -1,0 +1,13 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Hazelcast Google Group
+    url: https://groups.google.com/forum/#!forum/hazelcast
+    about: We're not actively answering questions in Github so feel free to ask one in Google Group
+  - name: Stack Overflow
+    url: https://stackoverflow.com/questions/tagged/hazelcast
+    about: We're not actively answering questions in Github so feel free to ask one in Stack Overflow
+  - name: Hazelcast Gitter Room
+    url: https://gitter.im/hazelcast/hazelcast
+    about: We're not actively answering questions in Github so feel free to ask one in Gitter
+
+

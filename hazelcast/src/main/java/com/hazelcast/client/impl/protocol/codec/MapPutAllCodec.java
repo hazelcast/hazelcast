@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,14 +42,15 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * matching to a different partition id shall be ignored. The API implementation using this request may need to send multiple
  * of these request messages for filling a request for a key set if the keys belong to different partitions.
  */
-@Generated("ea8cb00c671cc3751bb4e0b407c9b8de")
+@Generated("31e34c6c5d6f83e937902f4c7ce4c81f")
 public final class MapPutAllCodec {
     //hex: 0x012C00
     public static final int REQUEST_MESSAGE_TYPE = 76800;
     //hex: 0x012C01
     public static final int RESPONSE_MESSAGE_TYPE = 76801;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_TRIGGER_MAP_LOADER_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_TRIGGER_MAP_LOADER_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private MapPutAllCodec() {
     }
@@ -66,14 +67,27 @@ public final class MapPutAllCodec {
          * mappings to be stored in this map
          */
         public java.util.List<java.util.Map.Entry<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data>> entries;
+
+        /**
+         * should trigger MapLoader for elements not in this map
+         */
+        public boolean triggerMapLoader;
+
+        /**
+         * True if the triggerMapLoader is received from the client, false otherwise.
+         * If this is false, triggerMapLoader has the default value for its type.
+        */
+        public boolean isTriggerMapLoaderExists;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<java.util.Map.Entry<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data>> entries) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.util.Collection<java.util.Map.Entry<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data>> entries, boolean triggerMapLoader) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("Map.PutAll");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
+        encodeBoolean(initialFrame.content, REQUEST_TRIGGER_MAP_LOADER_FIELD_OFFSET, triggerMapLoader);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         EntryListCodec.encode(clientMessage, entries, DataCodec::encode, DataCodec::encode);
@@ -83,8 +97,13 @@ public final class MapPutAllCodec {
     public static MapPutAllCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
-        //empty initial frame
-        iterator.next();
+        ClientMessage.Frame initialFrame = iterator.next();
+        if (initialFrame.content.length >= REQUEST_TRIGGER_MAP_LOADER_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES) {
+            request.triggerMapLoader = decodeBoolean(initialFrame.content, REQUEST_TRIGGER_MAP_LOADER_FIELD_OFFSET);
+            request.isTriggerMapLoaderExists = true;
+        } else {
+            request.isTriggerMapLoaderExists = false;
+        }
         request.name = StringCodec.decode(iterator);
         request.entries = EntryListCodec.decode(iterator, DataCodec::decode, DataCodec::decode);
         return request;

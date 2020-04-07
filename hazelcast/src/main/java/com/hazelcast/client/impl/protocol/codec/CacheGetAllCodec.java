@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,14 +39,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * configured javax.cache.integration.CacheLoader might be called to retrieve the values of the keys from any kind
  * of external resource.
  */
-@Generated("32d5f111176a266fb5d9fada189b90b8")
+@Generated("6991edf7a180e3f9e09d40b140bdda26")
 public final class CacheGetAllCodec {
     //hex: 0x130900
     public static final int REQUEST_MESSAGE_TYPE = 1247488;
     //hex: 0x130901
     public static final int RESPONSE_MESSAGE_TYPE = 1247489;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private CacheGetAllCodec() {
     }
@@ -77,6 +77,7 @@ public final class CacheGetAllCodec {
         clientMessage.setOperationName("Cache.GetAll");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         ListMultiFrameCodec.encode(clientMessage, keys, DataCodec::encode);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -340,8 +340,8 @@ public class DistributedScheduledExecutorService
                 for (ScheduledExecutorContainer container : containers) {
                     String name = container.getName();
                     MergePolicyConfig mergePolicyConfig = collector.getMergePolicyConfig(container);
-                    SplitBrainMergePolicy<ScheduledTaskDescriptor, ScheduledExecutorMergeTypes> mergePolicy
-                            = getMergePolicy(mergePolicyConfig);
+                    SplitBrainMergePolicy<ScheduledTaskDescriptor, ScheduledExecutorMergeTypes,
+                            ScheduledTaskDescriptor> mergePolicy = getMergePolicy(mergePolicyConfig);
                     int batchSize = mergePolicyConfig.getBatchSize();
 
                     mergingEntries = new ArrayList<>(batchSize);
@@ -364,7 +364,8 @@ public class DistributedScheduledExecutorService
         }
 
         private void sendBatch(int partitionId, String name, List<ScheduledExecutorMergeTypes> mergingEntries,
-                               SplitBrainMergePolicy<ScheduledTaskDescriptor, ScheduledExecutorMergeTypes> mergePolicy) {
+                               SplitBrainMergePolicy<ScheduledTaskDescriptor, ScheduledExecutorMergeTypes,
+                                       ScheduledTaskDescriptor> mergePolicy) {
             MergeOperation operation = new MergeOperation(name, mergingEntries, mergePolicy);
             invoke(SERVICE_NAME, operation, partitionId);
         }

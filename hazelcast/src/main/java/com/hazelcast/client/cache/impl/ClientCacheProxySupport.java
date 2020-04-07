@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.hazelcast.cache.impl.CacheSyncListenerCompleter;
 import com.hazelcast.cache.impl.ICacheInternal;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.client.cache.impl.ClientCacheProxySupportUtil.EmptyCompletionListener;
+import com.hazelcast.internal.nearcache.impl.NearCachingHook;
 import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
@@ -48,7 +49,6 @@ import com.hazelcast.client.impl.spi.ClientPartitionService;
 import com.hazelcast.client.impl.spi.ClientProxy;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ManagedContext;
@@ -449,7 +449,7 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
 
     protected boolean callReplaceSync(K key, Data keyData, V newValue, Data newValueData,
                                       Data oldValueData, Data expiryPolicyData) {
-        InternalCompletableFuture<Boolean> future = doReplaceOnServer(keyData, newValueData,
+        CompletableFuture<Boolean> future = doReplaceOnServer(keyData, newValueData,
                 oldValueData, expiryPolicyData, true, null);
         try {
             return future.get();
@@ -490,10 +490,10 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
         return doReplaceOnServer(keyData, newValueData, oldValueData, expiryPolicyData, withCompletionEvent, statsCallback);
     }
 
-    private InternalCompletableFuture<Boolean> doReplaceOnServer(Data keyData, Data newValueData,
-                                                                 Data oldValueData, Data expiryPolicyData,
-                                                                 boolean withCompletionEvent,
-                                                                 BiConsumer<Boolean, Throwable> statsCallback) {
+    private CompletableFuture<Boolean> doReplaceOnServer(Data keyData, Data newValueData,
+                                                         Data oldValueData, Data expiryPolicyData,
+                                                         boolean withCompletionEvent,
+                                                         BiConsumer<Boolean, Throwable> statsCallback) {
         int completionId = withCompletionEvent ? nextCompletionId() : -1;
         ClientMessage request = CacheReplaceCodec.encodeRequest(nameWithPrefix, keyData, oldValueData, newValueData,
                 expiryPolicyData, completionId);
@@ -540,10 +540,10 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
         }
     }
 
-    private <T> InternalCompletableFuture<T> doGetAndReplaceOnServer(Data keyData, Data newValueData,
-                                                                     Data expiryPolicyData,
-                                                                     boolean withCompletionEvent,
-                                                                     BiConsumer<T, Throwable> statsCallback) {
+    private <T> CompletableFuture<T> doGetAndReplaceOnServer(Data keyData, Data newValueData,
+                                                             Data expiryPolicyData,
+                                                             boolean withCompletionEvent,
+                                                             BiConsumer<T, Throwable> statsCallback) {
         int completionId = withCompletionEvent ? nextCompletionId() : -1;
         ClientMessage request = CacheGetAndReplaceCodec.encodeRequest(nameWithPrefix, keyData,
                 newValueData, expiryPolicyData, completionId);
@@ -828,7 +828,7 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
         }
     }
 
-    protected InternalCompletableFuture<V> getAsyncInternal(Object key, ExpiryPolicy expiryPolicy) {
+    protected CompletableFuture<V> getAsyncInternal(Object key, ExpiryPolicy expiryPolicy) {
         long startNanos = nowInNanosOrDefault();
         BiConsumer<V, Throwable> statsCallback = statisticsEnabled
                 ? statsHandler.newOnGetCallback(startNanos) : null;
@@ -836,16 +836,16 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
     }
 
     @Nonnull
-    protected InternalCompletableFuture<V> callGetAsync(Object key, ExpiryPolicy expiryPolicy,
-                                                        BiConsumer<V, Throwable> statsCallback) {
+    protected CompletableFuture<V> callGetAsync(Object key, ExpiryPolicy expiryPolicy,
+                                                BiConsumer<V, Throwable> statsCallback) {
         Data dataKey = toData(key);
         ClientDelegatingFuture<V> future = getInternal(dataKey, expiryPolicy, true);
-        addCallback(future, statsCallback);
-        return future;
+        return addCallback(future, statsCallback);
     }
 
-    protected void getAllInternal(Set<? extends K> keys, Collection<Data> dataKeys, ExpiryPolicy expiryPolicy,
-                                  List<Object> resultingKeyValuePairs, long startNanos) {
+    protected void getAllInternal(Set<? extends K> keys, Collection<Data> dataKeys,
+                                  ExpiryPolicy expiryPolicy, List<Object> resultingKeyValuePairs,
+                                  long startNanos) {
         if (dataKeys.isEmpty()) {
             objectToDataCollection(keys, dataKeys, getSerializationService(), NULL_KEY_IS_NOT_ALLOWED);
         }
@@ -869,7 +869,8 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
         setExpiryPolicyInternal(keys, policy, null);
     }
 
-    protected void setExpiryPolicyInternal(Set<? extends K> keys, ExpiryPolicy policy, Set<Data> serializedKeys) {
+    protected void setExpiryPolicyInternal(Set<? extends K> keys, ExpiryPolicy policy,
+                                           Set<Data> serializedKeys) {
         try {
             List<Data>[] keysByPartition = groupKeysToPartitions(keys, serializedKeys);
             setExpiryPolicyAndWaitForCompletion(keysByPartition, policy);
@@ -1034,11 +1035,11 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
         Collection<Member> members = getContext().getClusterService().getMemberList();
         for (Member member : members) {
             try {
-                Address address = member.getAddress();
+                UUID uuid = member.getUuid();
                 Data configData = toData(cacheEntryListenerConfiguration);
                 ClientMessage request = CacheListenerRegistrationCodec.encodeRequest(nameWithPrefix, configData, isRegister,
-                        address);
-                ClientInvocation invocation = new ClientInvocation(getClient(), request, getName(), address);
+                        uuid);
+                ClientInvocation invocation = new ClientInvocation(getClient(), request, getName(), uuid);
                 invocation.invoke();
             } catch (Exception e) {
                 sneakyThrow(e);

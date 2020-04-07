@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,11 +70,11 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 public @interface Probe {
 
     /**
-     * The name of the Probe. By default the name of the field or method is used.
+     * The name of the Probe.
      *
      * @return the name of the Probe.
      */
-    String name() default "";
+    String name();
 
     /**
      * Returns the ProbeLevel.

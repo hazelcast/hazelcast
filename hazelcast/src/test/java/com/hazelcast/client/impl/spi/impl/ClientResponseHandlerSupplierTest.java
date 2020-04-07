@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -95,7 +95,7 @@ public class ClientResponseHandlerSupplierTest extends ClientTestSupport {
                         .setProperty(RESPONSE_THREAD_COUNT.getName(), "" + threadCount)
                         .setProperty(RESPONSE_THREAD_DYNAMIC.getName(), "" + dynamic));
         HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
-        AbstractClientInvocationService invocationService = (AbstractClientInvocationService) clientInstanceImpl.getInvocationService();
+        ClientInvocationServiceImpl invocationService = (ClientInvocationServiceImpl) clientInstanceImpl.getInvocationService();
 
         ClientResponseHandlerSupplier responseHandlerSupplier =
                 new ClientResponseHandlerSupplier(invocationService, clientInstanceImpl.getConcurrencyDetection());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,8 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.config.EvictionPolicy.NONE;
+import static com.hazelcast.test.Accessors.getAddress;
+import static com.hazelcast.test.Accessors.getOperationService;
 import static java.util.Objects.requireNonNull;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;

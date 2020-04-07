@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ import static org.junit.Assert.assertTrue;
 public class MembersViewTest {
 
     @Test
-    public void createNew() throws Exception {
+    public void createNew() {
         int version = 7;
         MemberImpl[] members = MemberMapTest.newMembers(5);
         MembersView view = MembersView.createNew(version, Arrays.asList(members));
@@ -52,7 +52,7 @@ public class MembersViewTest {
     }
 
     @Test
-    public void cloneAdding() throws Exception {
+    public void cloneAdding() {
         int version = 6;
         MemberImpl[] members = MemberMapTest.newMembers(4);
         List<MemberInfo> additionalMembers
@@ -72,7 +72,7 @@ public class MembersViewTest {
     }
 
     @Test
-    public void toMemberMap() throws Exception {
+    public void toMemberMap() {
         int version = 5;
         MemberImpl[] members = MemberMapTest.newMembers(3);
         MembersView view = MembersView.createNew(version, Arrays.asList(members));
@@ -84,7 +84,7 @@ public class MembersViewTest {
     }
 
     @Test
-    public void containsAddress() throws Exception {
+    public void containsAddress() {
         MemberImpl[] members = MemberMapTest.newMembers(3);
         MembersView view = MembersView.createNew(1, Arrays.asList(members));
 
@@ -94,7 +94,7 @@ public class MembersViewTest {
     }
 
     @Test
-    public void containsMember() throws Exception {
+    public void containsMember() {
         MemberImpl[] members = MemberMapTest.newMembers(3);
         MembersView view = MembersView.createNew(1, Arrays.asList(members));
 
@@ -104,7 +104,7 @@ public class MembersViewTest {
     }
 
     @Test
-    public void getAddresses() throws Exception {
+    public void getAddresses() {
         MemberImpl[] members = MemberMapTest.newMembers(3);
         MembersView view = MembersView.createNew(1, Arrays.asList(members));
 
@@ -117,7 +117,7 @@ public class MembersViewTest {
     }
 
     @Test
-    public void getMember() throws Exception {
+    public void getMember() {
         MemberImpl[] members = MemberMapTest.newMembers(3);
         MembersView view = MembersView.createNew(1, Arrays.asList(members));
 
@@ -127,7 +127,7 @@ public class MembersViewTest {
     }
 
     @Test
-    public void isLaterThan() throws Exception {
+    public void isLaterThan() {
         MembersView view1 = MembersView.createNew(1, Arrays.asList(MemberMapTest.newMembers(5)));
         MembersView view2 = MembersView.createNew(3, Arrays.asList(MemberMapTest.newMembers(5)));
         MembersView view3 = MembersView.createNew(5, Arrays.asList(MemberMapTest.newMembers(5)));

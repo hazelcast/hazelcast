@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,30 +16,35 @@
 
 package com.hazelcast.query.impl.predicates;
 
+import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.BinaryInterface;
+import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.Comparables;
 import com.hazelcast.query.impl.Index;
+import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Set;
 
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
+import static com.hazelcast.query.impl.predicates.PredicateUtils.isNull;
 
 /**
  * In Predicate
  */
 @BinaryInterface
-public class InPredicate extends AbstractIndexAwarePredicate {
+public class InPredicate extends AbstractIndexAwarePredicate implements VisitablePredicate {
 
     private static final long serialVersionUID = 1L;
 
     Comparable[] values;
     private transient volatile Set<Comparable> convertedInValues;
+    private transient volatile Boolean valuesContainNull;
 
     public InPredicate() {
     }
@@ -53,17 +58,51 @@ public class InPredicate extends AbstractIndexAwarePredicate {
         this.values = values;
     }
 
+    @SuppressFBWarnings("EI_EXPOSE_REP")
+    public Comparable[] getValues() {
+        return values;
+    }
+
+    @Override
+    public Predicate accept(Visitor visitor, Indexes indexes) {
+        return visitor.visit(this, indexes);
+    }
+
     @Override
     protected boolean applyForSingleAttributeValue(Comparable attributeValue) {
-        if (attributeValue == null) {
+        Set<Comparable> set = convertedInValues;
+
+        if (attributeValue == null && set == null) {
+            Boolean valuesContainNull = this.valuesContainNull;
+            if (valuesContainNull != null) {
+                return valuesContainNull;
+            }
+
+            // Conversion of the values given to the predicate is possible only
+            // if the passed attribute value is non-null, otherwise we are
+            // unable to infer a proper converter. Postpone the conversion and
+            // detect the presence of nulls.
+
+            for (Comparable value : values) {
+                if (isNull(value)) {
+                    this.valuesContainNull = true;
+                    return true;
+                }
+            }
+            this.valuesContainNull = false;
             return false;
         }
+
         attributeValue = (Comparable) convertEnumValue(attributeValue);
-        Set<Comparable> set = convertedInValues;
         if (set == null) {
             set = createHashSet(values.length);
             for (Comparable value : values) {
                 Comparable converted = convert(attributeValue, value);
+                if (isNull(converted)) {
+                    // Convert all kind of nulls to plain Java null, so we can
+                    // match all of them using set.contains(...).
+                    converted = null;
+                }
                 set.add(Comparables.canonicalizeForHashLookup(converted));
             }
             convertedInValues = set;

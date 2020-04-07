@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -206,9 +206,9 @@ public class RaftSessionService extends AbstractCPMigrationAwareService
     }
 
     public SessionResponse createNewSession(CPGroupId groupId, Address endpoint, String endpointName,
-                                            CPSessionOwnerType endpointType, long creationTime) {
+                                            CPSessionOwnerType endpointType) {
         RaftSessionRegistry registry = getOrInitRegistry(groupId);
-
+        long creationTime = Clock.currentTimeMillis();
         long sessionTTLMillis = getSessionTTLMillis();
         long sessionId = registry.createNewSession(sessionTTLMillis, endpoint, endpointName, endpointType, creationTime);
         logger.info("Created new session: " + sessionId + " in " + groupId + " for " + endpointType + " -> " + endpoint);

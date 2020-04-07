@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,14 +24,11 @@ import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import java.io.IOException;
 
 public class CustomReplicatedMapMergePolicy
-        implements SplitBrainMergePolicy<Integer, MergingValue<Integer>> {
+        implements SplitBrainMergePolicy<Integer, MergingValue<Integer>, Integer> {
 
     @Override
     public Integer merge(MergingValue<Integer> mergingValue, MergingValue<Integer> existingValue) {
-        if (mergingValue.getValue() instanceof Integer) {
-            return mergingValue.getValue();
-        }
-        return null;
+        return mergingValue.getValue();
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,8 +33,8 @@ import com.hazelcast.internal.serialization.SerializationService;
  *            or a composition like {@code MergingEntry<String, V> & MergingHits}
  * @since 3.10
  */
-public abstract class AbstractSplitBrainMergePolicy<V, T extends MergingValue<V>>
-        implements SplitBrainMergePolicy<V, T>, IdentifiedDataSerializable {
+public abstract class AbstractSplitBrainMergePolicy<V, T extends MergingValue<V>, R>
+        implements SplitBrainMergePolicy<V, T, R>, IdentifiedDataSerializable {
 
     @Override
     public int getFactoryId() {

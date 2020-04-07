@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,15 +28,18 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionTableView;
+import com.hazelcast.internal.util.EmptyStatement;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 
+import java.nio.channels.CancelledKeyException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -86,7 +89,17 @@ public class ClusterViewListenerService {
             ClientMessage message = clientMessage.copyWithNewCorrelationId(correlationId);
             ClientEndpoint clientEndpoint = entry.getKey();
             Connection connection = clientEndpoint.getConnection();
+            write(message, connection);
+        }
+    }
+
+    private void write(ClientMessage message, Connection connection) {
+        try {
             connection.write(message);
+        } catch (CancelledKeyException ignored) {
+            //if connection closes, while writing we can get CancelledKeyException.
+            // In that case, we can safely ignore the exception
+            EmptyStatement.ignore(ignored);
         }
     }
 
@@ -98,19 +111,19 @@ public class ClusterViewListenerService {
 
         ClientMessage memberListViewMessage = getMemberListViewMessage();
         memberListViewMessage.setCorrelationId(correlationId);
-        clientEndpoint.getConnection().write(memberListViewMessage);
+        write(memberListViewMessage, clientEndpoint.getConnection());
 
         ClientMessage partitionViewMessage = getPartitionViewMessageOrNull();
         if (partitionViewMessage != null) {
             partitionViewMessage.setCorrelationId(correlationId);
-            clientEndpoint.getConnection().write(partitionViewMessage);
+            write(partitionViewMessage, clientEndpoint.getConnection());
         }
     }
 
     private ClientMessage getPartitionViewMessageOrNull() {
         InternalPartitionService partitionService = (InternalPartitionService) nodeEngine.getPartitionService();
         PartitionTableView partitionTableView = partitionService.createPartitionTableView();
-        Map<Address, List<Integer>> partitions = getPartitions(partitionTableView);
+        Map<UUID, List<Integer>> partitions = getPartitions(partitionTableView);
         if (partitions.size() == 0) {
             return null;
         }
@@ -158,26 +171,25 @@ public class ClusterViewListenerService {
      * @param partitionTableView will be converted to address-&gt;partitions mapping
      * @return address-&gt;partitions mapping, where address is the client address of the member
      */
-    public Map<Address, List<Integer>> getPartitions(PartitionTableView partitionTableView) {
-
-        Map<Address, List<Integer>> partitionsMap = new HashMap<>();
+    public Map<UUID, List<Integer>> getPartitions(PartitionTableView partitionTableView) {
+        Map<UUID, List<Integer>> partitionsMap = new HashMap<>();
 
         int partitionCount = partitionTableView.getLength();
+
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             PartitionReplica owner = partitionTableView.getReplica(partitionId, 0);
-            if (owner == null) {
+            if (owner == null || owner.uuid() == null) {
                 partitionsMap.clear();
                 return partitionsMap;
             }
-            Address clientOwnerAddress = clientAddressOf(owner.address());
-            if (clientOwnerAddress == null) {
-                partitionsMap.clear();
-                return partitionsMap;
-            }
-            List<Integer> indexes = partitionsMap.computeIfAbsent(clientOwnerAddress, k -> new LinkedList<>());
-            indexes.add(partitionId);
+            partitionsMap.computeIfAbsent(owner.uuid(),
+                    k -> new LinkedList<>()).add(partitionId);
         }
         return partitionsMap;
     }
 
+    //for test purpose only
+    public Map<ClientEndpoint, Long> getClusterListeningEndpoints() {
+        return clusterListeningEndpoints;
+    }
 }

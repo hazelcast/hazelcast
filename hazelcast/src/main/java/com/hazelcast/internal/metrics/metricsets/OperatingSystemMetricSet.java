@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,17 @@ import java.lang.management.OperatingSystemMXBean;
 import java.lang.reflect.Method;
 import java.util.logging.Level;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OS_FULL_METRIC_COMMITTED_VIRTUAL_MEMORY_SIZE;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OS_FULL_METRIC_FREE_PHYSICAL_MEMORY_SIZE;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OS_FULL_METRIC_FREE_SWAP_SPACE_SIZE;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OS_FULL_METRIC_MAX_FILE_DESCRIPTOR_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OS_FULL_METRIC_OPEN_FILE_DESCRIPTOR_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OS_FULL_METRIC_PROCESS_CPU_LOAD;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OS_FULL_METRIC_PROCESS_CPU_TIME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OS_FULL_METRIC_SYSTEM_CPU_LOAD;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OS_FULL_METRIC_SYSTEM_LOAD_AVERAGE;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OS_FULL_METRIC_TOTAL_PHYSICAL_MEMORY_SIZE;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OS_FULL_METRIC_TOTAL_SWAP_SPACE_SIZE;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
@@ -53,22 +64,22 @@ public final class OperatingSystemMetricSet {
 
         OperatingSystemMXBean mxBean = ManagementFactory.getOperatingSystemMXBean();
 
-        registerMethod(metricsRegistry, mxBean, "getCommittedVirtualMemorySize", "os.committedVirtualMemorySize");
-        registerMethod(metricsRegistry, mxBean, "getFreePhysicalMemorySize", "os.freePhysicalMemorySize");
-        registerMethod(metricsRegistry, mxBean, "getFreeSwapSpaceSize", "os.freeSwapSpaceSize");
-        registerMethod(metricsRegistry, mxBean, "getProcessCpuTime", "os.processCpuTime");
-        registerMethod(metricsRegistry, mxBean, "getTotalPhysicalMemorySize", "os.totalPhysicalMemorySize");
-        registerMethod(metricsRegistry, mxBean, "getTotalSwapSpaceSize", "os.totalSwapSpaceSize");
-        registerMethod(metricsRegistry, mxBean, "getMaxFileDescriptorCount", "os.maxFileDescriptorCount");
-        registerMethod(metricsRegistry, mxBean, "getOpenFileDescriptorCount", "os.openFileDescriptorCount");
+        registerMethod(metricsRegistry, mxBean, "getCommittedVirtualMemorySize", OS_FULL_METRIC_COMMITTED_VIRTUAL_MEMORY_SIZE);
+        registerMethod(metricsRegistry, mxBean, "getFreePhysicalMemorySize", OS_FULL_METRIC_FREE_PHYSICAL_MEMORY_SIZE);
+        registerMethod(metricsRegistry, mxBean, "getFreeSwapSpaceSize", OS_FULL_METRIC_FREE_SWAP_SPACE_SIZE);
+        registerMethod(metricsRegistry, mxBean, "getProcessCpuTime", OS_FULL_METRIC_PROCESS_CPU_TIME);
+        registerMethod(metricsRegistry, mxBean, "getTotalPhysicalMemorySize", OS_FULL_METRIC_TOTAL_PHYSICAL_MEMORY_SIZE);
+        registerMethod(metricsRegistry, mxBean, "getTotalSwapSpaceSize", OS_FULL_METRIC_TOTAL_SWAP_SPACE_SIZE);
+        registerMethod(metricsRegistry, mxBean, "getMaxFileDescriptorCount", OS_FULL_METRIC_MAX_FILE_DESCRIPTOR_COUNT);
+        registerMethod(metricsRegistry, mxBean, "getOpenFileDescriptorCount", OS_FULL_METRIC_OPEN_FILE_DESCRIPTOR_COUNT);
 
         // value will be between 0.0 and 1.0 or a negative value, if not available
-        registerMethod(metricsRegistry, mxBean, "getProcessCpuLoad", "os.processCpuLoad", PERCENTAGE_MULTIPLIER);
+        registerMethod(metricsRegistry, mxBean, "getProcessCpuLoad", OS_FULL_METRIC_PROCESS_CPU_LOAD, PERCENTAGE_MULTIPLIER);
 
         // value will be between 0.0 and 1.0 or a negative value, if not available
-        registerMethod(metricsRegistry, mxBean, "getSystemCpuLoad", "os.systemCpuLoad", PERCENTAGE_MULTIPLIER);
+        registerMethod(metricsRegistry, mxBean, "getSystemCpuLoad", OS_FULL_METRIC_SYSTEM_CPU_LOAD, PERCENTAGE_MULTIPLIER);
 
-        metricsRegistry.registerStaticProbe(mxBean, "os.systemLoadAverage", MANDATORY,
+        metricsRegistry.registerStaticProbe(mxBean, OS_FULL_METRIC_SYSTEM_LOAD_AVERAGE, MANDATORY,
                 OperatingSystemMXBean::getSystemLoadAverage
         );
     }

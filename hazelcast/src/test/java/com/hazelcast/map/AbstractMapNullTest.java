@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -124,6 +124,9 @@ public abstract class AbstractMapNullTest extends HazelcastTestSupport {
         assertThrowsNPE(m -> m.set("", null, -1, sampleTimeUnit, -1, sampleTimeUnit));
         assertThrowsNPE(m -> m.set("", "", -1, null, -1, sampleTimeUnit));
         assertThrowsNPE(m -> m.set("", "", -1, sampleTimeUnit, -1, null));
+
+        assertThrowsNPE(m -> m.setAll(null));
+        assertThrowsNPE(m -> m.setAllAsync(null));
 
         assertThrowsNPE(m -> m.lock(null));
         assertThrowsNPE(m -> m.lock(null, -1, sampleTimeUnit));

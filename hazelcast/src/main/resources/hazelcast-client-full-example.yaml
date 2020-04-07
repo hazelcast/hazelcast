@@ -1,4 +1,4 @@
-# Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+# Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -352,11 +352,10 @@ hazelcast-client:
   # ===== HAZELCAST LISTENER CONFIGURATIONS =====
   #
   # Configuration used to register the listeners that you created by implementing Hazelcast's
-  # MembershipListener, InstanceListener and MigrationListener interfaces.
+  # MembershipListener and MigrationListener interfaces.
   #
   listeners:
     - com.hazelcast.examples.MembershipListener
-    - com.hazelcast.examples.InstanceListener
     - com.hazelcast.examples.MigrationListener
   #
   # ===== HAZELCAST SERIALIZATION CONFIGURATION =====

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a multimap configuration with the given {@code name} already exists, then
  * the new multimap config is ignored and the existing one is preserved.
  */
-@Generated("8304df31928bf0d161f25348bd042591")
+@Generated("11c9d4ab485ac9224b8ef082795c6451")
 public final class DynamicConfigAddMultiMapConfigCodec {
     //hex: 0x1B0100
     public static final int REQUEST_MESSAGE_TYPE = 1769728;
@@ -50,7 +50,7 @@ public final class DynamicConfigAddMultiMapConfigCodec {
     private static final int REQUEST_STATISTICS_ENABLED_FIELD_OFFSET = REQUEST_ASYNC_BACKUP_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_MERGE_BATCH_SIZE_FIELD_OFFSET = REQUEST_STATISTICS_ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_MERGE_BATCH_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private DynamicConfigAddMultiMapConfigCodec() {
     }
@@ -102,12 +102,13 @@ public final class DynamicConfigAddMultiMapConfigCodec {
         public @Nullable java.lang.String splitBrainProtectionName;
 
         /**
-         * TODO DOC
+         * Name of a class implementing SplitBrainMergePolicy that handles merging of values for this cache
+         * while recovering from network partitioning.
          */
         public java.lang.String mergePolicy;
 
         /**
-         * TODO DOC
+         * Number of entries to be sent in a merge operation.
          */
         public int mergeBatchSize;
     }
@@ -118,6 +119,7 @@ public final class DynamicConfigAddMultiMapConfigCodec {
         clientMessage.setOperationName("DynamicConfig.AddMultiMapConfig");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeBoolean(initialFrame.content, REQUEST_BINARY_FIELD_OFFSET, binary);
         encodeInt(initialFrame.content, REQUEST_BACKUP_COUNT_FIELD_OFFSET, backupCount);
         encodeInt(initialFrame.content, REQUEST_ASYNC_BACKUP_COUNT_FIELD_OFFSET, asyncBackupCount);

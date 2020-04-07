@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import com.hazelcast.internal.services.ServiceNamespace;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 // read and updated only by partition threads
 final class PartitionReplicaVersions {
@@ -86,7 +85,7 @@ final class PartitionReplicaVersions {
         return fragmentVersions;
     }
 
-    void retainNamespaces(Set<ServiceNamespace> namespaces) {
+    void retainNamespaces(Collection<ServiceNamespace> namespaces) {
         fragmentVersionsMap.keySet().retainAll(namespaces);
     }
 

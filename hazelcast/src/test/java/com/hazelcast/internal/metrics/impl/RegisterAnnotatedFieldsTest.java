@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,7 +73,7 @@ public class RegisterAnnotatedFieldsTest extends HazelcastTestSupport {
     }
 
     public class PrimitiveIntegerField {
-        @Probe
+        @Probe(name = "field")
         private int field;
     }
 
@@ -88,7 +88,7 @@ public class RegisterAnnotatedFieldsTest extends HazelcastTestSupport {
     }
 
     public class PrimitiveLongField {
-        @Probe
+        @Probe(name = "field")
         private long field;
     }
 
@@ -103,7 +103,7 @@ public class RegisterAnnotatedFieldsTest extends HazelcastTestSupport {
     }
 
     public class PrimitiveDoubleField {
-        @Probe
+        @Probe(name = "field")
         private double field;
     }
 
@@ -122,7 +122,7 @@ public class RegisterAnnotatedFieldsTest extends HazelcastTestSupport {
     }
 
     public class ConcurrentMapField {
-        @Probe
+        @Probe(name = "field")
         private ConcurrentHashMap field = new ConcurrentHashMap();
     }
 
@@ -140,7 +140,7 @@ public class RegisterAnnotatedFieldsTest extends HazelcastTestSupport {
     }
 
     public class CounterField {
-        @Probe
+        @Probe(name = "field")
         private Counter field = newSwCounter();
     }
 
@@ -158,7 +158,7 @@ public class RegisterAnnotatedFieldsTest extends HazelcastTestSupport {
     }
 
     public static class StaticField {
-        @Probe
+        @Probe(name = "field")
         static AtomicInteger field = new AtomicInteger();
     }
 
@@ -175,7 +175,7 @@ public class RegisterAnnotatedFieldsTest extends HazelcastTestSupport {
     }
 
     public static class SuperClass {
-        @Probe
+        @Probe(name = "field")
         int field;
     }
 

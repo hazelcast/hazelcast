@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,8 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.util.Clock;
-import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryExpiredListener;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
@@ -63,7 +63,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -71,7 +70,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static java.util.Collections.emptyMap;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -79,7 +80,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -213,30 +213,6 @@ public class BasicMapTest extends HazelcastTestSupport {
         assertEquals(map.putIfAbsent("key1", "valueX"), "value1");
         assertEquals(map.get("key1"), "value1");
         assertEquals(map.size(), 2);
-    }
-
-    @Test
-    public void testComputeIfPresent() {
-        final IMap<String, AtomicBoolean> map = getInstance().getMap("testComputeIfPresent");
-
-        map.put("presentKey", new AtomicBoolean(false));
-        AtomicBoolean value = emulateComputeIfPresent(map, "presentKey", new BiFunction<String, AtomicBoolean, AtomicBoolean>() {
-            @Override
-            public AtomicBoolean apply(String key, AtomicBoolean value) {
-                return new AtomicBoolean(true);
-            }
-        });
-        assertNotNull(value);
-        assertTrue(value.get());
-
-        value = emulateComputeIfPresent(map, "absentKey", new BiFunction<String, AtomicBoolean, AtomicBoolean>() {
-            @Override
-            public AtomicBoolean apply(String s, AtomicBoolean atomicBoolean) {
-                fail("should not be called");
-                return null;
-            }
-        });
-        assertNull(value);
     }
 
     @Test
@@ -944,7 +920,7 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void tstPutAllAsyncEmpty() {
+    public void testPutAllAsyncEmpty() {
         IMap<Integer, Integer> map = getInstance().getMap("testPutAllEmpty");
         ((MapProxyImpl<Integer, Integer>) map).putAllAsync(emptyMap());
     }
@@ -1062,6 +1038,60 @@ public class BasicMapTest extends HazelcastTestSupport {
         for (int i = 0; i < size; i++) {
             assertEquals(i, map.get(i).intValue());
         }
+    }
+
+    @Test
+    public void testSetAll() {
+        int max = 10000;
+        final IMap<Integer, Integer> map = instances[0].getMap(randomString());
+
+        final CountDownLatch latch = new CountDownLatch(max);
+        map.addEntryListener((EntryAddedListener<Integer, Integer>) event -> latch.countDown(), true);
+
+        final Map<Integer, Integer> expected = IntStream.range(0, max).boxed()
+            .collect(Collectors.toMap(Function.identity(), Function.identity()));
+        map.setAll(expected);
+
+        assertEquals(max, map.size());
+        expected.keySet().forEach(i -> assertEquals(i, map.get(i)));
+        assertOpenEventually(latch);
+    }
+
+    @Test
+    public void testSetAll_WhenKeyExists() {
+        int max = 100;
+        final IMap<Integer, Integer> map = instances[0].getMap(randomString());
+        IntStream.range(0, max).forEach(i -> map.put(i, 0));
+        assertEquals(max, map.size());
+
+        final CountDownLatch latch = new CountDownLatch(max);
+        map.addEntryListener((EntryAddedListener<Integer, Integer>) event -> latch.countDown(), true);
+
+        final Map<Integer, Integer> expected = IntStream.range(0, max).boxed()
+            .collect(Collectors.toMap(Function.identity(), Function.identity()));
+        map.setAll(expected);
+
+        assertEquals(max, map.size());
+        expected.keySet().forEach(i -> assertEquals(i, map.get(i)));
+        assertOpenEventually(latch);
+    }
+
+    @Test
+    public void testSetAllAsync() {
+        int max = 100;
+        final IMap<Integer, Integer> map = instances[0].getMap(randomString());
+
+        final CountDownLatch latch = new CountDownLatch(max);
+        map.addEntryListener((EntryAddedListener<Integer, Integer>) event -> latch.countDown(), true);
+
+        final Map<Integer, Integer> expected = IntStream.range(0, max).boxed()
+            .collect(Collectors.toMap(Function.identity(), Function.identity()));
+        final Future<Void> future = map.setAllAsync(expected).toCompletableFuture();
+
+        assertEqualsEventually(future::isDone, true);
+        assertEquals(max, map.size());
+        expected.keySet().forEach(i -> assertEquals(i, map.get(i)));
+        assertOpenEventually(latch);
     }
 
     @Test
@@ -1910,27 +1940,6 @@ public class BasicMapTest extends HazelcastTestSupport {
             entry.setValue(entry.getValue() + 1);
             return true;
         }
-    }
-
-    private static <K, V> V emulateComputeIfPresent(ConcurrentMap<K, V> map, K key,
-                                                    BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
-        // emulates ConcurrentMap.computeIfPresent() introduced in Java 8
-
-        Preconditions.checkNotNull(remappingFunction);
-
-        V oldValue;
-        while ((oldValue = map.get(key)) != null) {
-            V newValue = remappingFunction.apply(key, oldValue);
-            if (newValue != null) {
-                if (map.replace(key, oldValue, newValue)) {
-                    return newValue;
-                }
-            } else if (map.remove(key, oldValue)) {
-                return null;
-            }
-        }
-
-        return null;
     }
 
 }

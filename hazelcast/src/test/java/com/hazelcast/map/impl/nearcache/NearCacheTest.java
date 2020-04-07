@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,6 +53,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.test.Accessors.getPartitionService;
 import static java.lang.String.format;
 import static java.lang.String.valueOf;
 import static org.junit.Assert.assertEquals;
@@ -313,6 +314,36 @@ public class NearCacheTest extends NearCacheTestSupport {
 
         assertTrueEventually(
                 () -> assertEquals("Invalidation is not working on putAll()", 0, getNearCacheSize(map))
+        );
+    }
+
+    @Test
+    public void testNearCacheInvalidationByUsingMapSetAll() {
+        int clusterSize = 3;
+        int mapSize = 5000;
+        String mapName = randomMapName();
+
+        Config config = getConfig();
+        config.getMapConfig(mapName).setNearCacheConfig(newNearCacheConfig().setInvalidateOnChange(true));
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(clusterSize);
+
+        HazelcastInstance[] instances = factory.newInstances(config);
+        final IMap<Integer, Integer> map = instances[0].getMap(mapName);
+
+        populateMap(map, mapSize);
+        populateNearCache(map, mapSize);
+
+        // more-or-less (count / no_of_nodes) should be in the Near Cache now
+        assertTrue(getNearCacheSize(map) > (mapSize / clusterSize - mapSize * 0.1));
+
+        Map<Integer, Integer> invalidationMap = new HashMap<>(mapSize);
+        populateMap(invalidationMap, mapSize);
+
+        // this should invalidate the Near Cache
+        map.setAll(invalidationMap);
+
+        assertTrueEventually(
+            () -> assertEquals("Invalidation is not working on setAll()", 0, getNearCacheSize(map))
         );
     }
 

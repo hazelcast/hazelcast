@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.cache.CacheEventType;
 import com.hazelcast.cache.impl.CacheEventDataImpl;
+import com.hazelcast.config.BitmapIndexOptions;
+import com.hazelcast.config.BitmapIndexOptions.UniqueKeyTransformation;
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.HotRestartConfig;
@@ -162,10 +164,20 @@ public final class CustomTypeFactory {
         return new DurationConfig(durationAmount, timeUnit);
     }
 
-    public static IndexConfig createIndexConfig(String name, int type, List<String> attributes) {
+    public static IndexConfig createIndexConfig(String name, int type, List<String> attributes,
+                                                BitmapIndexOptions bitmapIndexOptions) {
         IndexType type0 = IndexType.getById(type);
 
-        return new IndexConfig().setName(name).setType(type0).setAttributes(attributes);
+        return new IndexConfig()
+                .setName(name)
+                .setType(type0)
+                .setAttributes(attributes)
+                .setBitmapIndexOptions(bitmapIndexOptions);
+    }
+
+    public static BitmapIndexOptions createBitmapIndexOptions(String uniqueKey, int uniqueKeyTransformation) {
+        UniqueKeyTransformation resolvedUniqueKeyTransformation = UniqueKeyTransformation.fromId(uniqueKeyTransformation);
+        return new BitmapIndexOptions().setUniqueKey(uniqueKey).setUniqueKeyTransformation(resolvedUniqueKeyTransformation);
     }
 
     public static ClientBwListEntryDTO createClientBwListEntry(int type, String value) {

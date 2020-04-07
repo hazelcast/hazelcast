@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,20 +32,7 @@ public final class StringCodec {
         clientMessage.add(new ClientMessage.Frame(value.getBytes(Bits.UTF_8)));
     }
 
-    public static void encode(ClientMessage clientMessage, TimeUnit timeUnit) {
-        encode(clientMessage, timeUnit.name());
-    }
-
-    public static void encode(ClientMessage clientMessage, ExpiryPolicyType expiryPolicyType) {
-        encode(clientMessage, expiryPolicyType.name());
-    }
-
     public static String decode(ClientMessage.ForwardFrameIterator iterator) {
-        return decode(iterator.next());
+        return new String(iterator.next().content, Bits.UTF_8);
     }
-
-    public static String decode(ClientMessage.Frame frame) {
-        return new String(frame.content, Bits.UTF_8);
-    }
-
 }

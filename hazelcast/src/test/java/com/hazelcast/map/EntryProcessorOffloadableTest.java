@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,6 +66,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -867,7 +868,7 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
         final Address instance1Address = instances[1].getCluster().getLocalMember().getAddress();
         final List<Long> heartBeatTimestamps = new LinkedList<>();
         Thread hbMonitorThread = new Thread(() -> {
-            NodeEngine nodeEngine = HazelcastTestSupport.getNodeEngineImpl(instances[0]);
+            NodeEngine nodeEngine = getNodeEngineImpl(instances[0]);
             OperationServiceImpl osImpl = (OperationServiceImpl) nodeEngine.getOperationService();
             Map<Address, AtomicLong> heartBeats = osImpl.getInvocationMonitor().getHeartbeatPerMember();
             long lastbeat = Long.MIN_VALUE;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@
 package com.hazelcast.scheduledexecutor.impl;
 
 import com.hazelcast.cluster.MembershipEvent;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.partition.PartitionLostEvent;
 import com.hazelcast.scheduledexecutor.IScheduledFuture;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
@@ -33,11 +33,13 @@ import com.hazelcast.scheduledexecutor.impl.operations.GetResultOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.GetStatisticsOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.IsCanceledOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.IsDoneOperation;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.util.UUID;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -183,7 +185,7 @@ public final class ScheduledFutureProxy<V>
         }
 
         if (handler.isAssignedToMember()
-                && handler.getAddress().equals(event.getMember().getAddress())) {
+                && handler.getUuid().equals(event.getMember().getUuid())) {
             this.memberLost.set(true);
         }
     }
@@ -212,7 +214,7 @@ public final class ScheduledFutureProxy<V>
             }
         } else {
             if (memberLost.get()) {
-                throw new IllegalStateException("Member with address: " + handler.getAddress() +  ",  holding this scheduled task"
+                throw new IllegalStateException("Member with address: " + handler.getUuid() + ",  holding this scheduled task"
                         + " is not part of this cluster.");
             }
         }
@@ -229,7 +231,7 @@ public final class ScheduledFutureProxy<V>
             op.setPartitionId(handler.getPartitionId());
             return invokeOnPartition(op);
         } else {
-            return invokeOnAddress(op, handler.getAddress());
+            return invokeOnAddress(op, handler.getUuid());
         }
     }
 
@@ -239,9 +241,11 @@ public final class ScheduledFutureProxy<V>
         return opService.invokeOnPartition(op);
     }
 
-    private <T> InvocationFuture<T> invokeOnAddress(Operation op, Address address) {
-        OperationService opService = ((HazelcastInstanceImpl) instance).node.getNodeEngine().getOperationService();
-        return opService.invokeOnTarget(op.getServiceName(), op, address);
+    private <T> InvocationFuture<T> invokeOnAddress(Operation op, UUID uuid) {
+        NodeEngineImpl nodeEngine = ((HazelcastInstanceImpl) instance).node.getNodeEngine();
+        MemberImpl member = nodeEngine.getClusterService().getMember(uuid);
+        OperationService opService = nodeEngine.getOperationService();
+        return opService.invokeOnTarget(op.getServiceName(), op, member.getAddress());
     }
 
 }

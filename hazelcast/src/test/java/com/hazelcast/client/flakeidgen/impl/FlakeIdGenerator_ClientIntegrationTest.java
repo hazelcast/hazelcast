@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.flakeidgen.impl.FlakeIdConcurrencyTestUtil;
-import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorProxy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -32,8 +31,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.function.Supplier;
-
+import static com.hazelcast.config.FlakeIdGeneratorConfig.DEFAULT_BITS_NODE_ID;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -59,20 +57,16 @@ public class FlakeIdGenerator_ClientIntegrationTest {
     public void smokeTest() throws Exception {
         before(null);
         final FlakeIdGenerator generator = instance.getFlakeIdGenerator("gen");
-        FlakeIdConcurrencyTestUtil.concurrentlyGenerateIds(new Supplier<Long>() {
-            @Override
-            public Long get() {
-                return generator.newId();
-            }
-        });
+        FlakeIdConcurrencyTestUtil.concurrentlyGenerateIds(generator::newId);
     }
 
     @Test
     public void configTest() throws Exception {
         int myBatchSize = 3;
-        before(new ClientConfig().addFlakeIdGeneratorConfig(new ClientFlakeIdGeneratorConfig("gen")
+        ClientFlakeIdGeneratorConfig clientFlakeIdGeneratorConfig = new ClientFlakeIdGeneratorConfig("gen")
                 .setPrefetchCount(myBatchSize)
-                .setPrefetchValidityMillis(3000)));
+                .setPrefetchValidityMillis(3000);
+        before(new ClientConfig().addFlakeIdGeneratorConfig(clientFlakeIdGeneratorConfig));
         final FlakeIdGenerator generator = instance.getFlakeIdGenerator("gen");
 
         assertTrue("This test assumes default validity be larger than 3000 by a good margin",
@@ -81,11 +75,12 @@ public class FlakeIdGenerator_ClientIntegrationTest {
         long id1 = generator.newId();
         // this should take second ID from auto-created batch. It should be exactly next to id1
         long id2 = generator.newId();
-        assertEquals(id1 + FlakeIdGeneratorProxy.INCREMENT, id2);
+        long increment = 1 << DEFAULT_BITS_NODE_ID;
+        assertEquals(id1 + increment, id2);
 
         Thread.sleep(3000);
         // this ID should be from a new batch, because the validity elapsed
         long id3 = generator.newId();
-        assertTrue(id1 + FlakeIdGeneratorProxy.INCREMENT * myBatchSize < id3);
+        assertTrue(id1 + increment * myBatchSize < id3);
     }
 }

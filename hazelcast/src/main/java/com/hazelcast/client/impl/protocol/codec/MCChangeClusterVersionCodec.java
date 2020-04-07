@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Changes the cluster version.
  */
-@Generated("8c9b5e88d6f7458263d0ad81ff7bef18")
+@Generated("7ea3867c0fae8b55b99feda494a55da1")
 public final class MCChangeClusterVersionCodec {
     //hex: 0x201000
     public static final int REQUEST_MESSAGE_TYPE = 2101248;
@@ -45,7 +45,7 @@ public final class MCChangeClusterVersionCodec {
     private static final int REQUEST_MAJOR_VERSION_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_MINOR_VERSION_FIELD_OFFSET = REQUEST_MAJOR_VERSION_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_MINOR_VERSION_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private MCChangeClusterVersionCodec() {
     }
@@ -70,6 +70,7 @@ public final class MCChangeClusterVersionCodec {
         clientMessage.setOperationName("MC.ChangeClusterVersion");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeByte(initialFrame.content, REQUEST_MAJOR_VERSION_FIELD_OFFSET, majorVersion);
         encodeByte(initialFrame.content, REQUEST_MINOR_VERSION_FIELD_OFFSET, minorVersion);
         clientMessage.add(initialFrame);

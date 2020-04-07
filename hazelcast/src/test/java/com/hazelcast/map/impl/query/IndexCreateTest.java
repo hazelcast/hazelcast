@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -161,12 +161,20 @@ public class IndexCreateTest extends HazelcastTestSupport {
 
     @Test
     public void testMultipleAttributes() {
-        checkIndex(createConfig("col1, this.col2"));
+        if (type == IndexType.BITMAP) {
+            thrown.expect(IllegalArgumentException.class);
+            thrown.expectMessage(startsWith("Composite bitmap indexes are not supported:"));
+        }
+        checkIndex(createConfig("col1", "this.col2"));
     }
 
     @Test
     public void testMultipleAttributesWithName() {
-        checkIndex(createNamedConfig("index", "col1, this.col2"));
+        if (type == IndexType.BITMAP) {
+            thrown.expect(IllegalArgumentException.class);
+            thrown.expectMessage(startsWith("Composite bitmap indexes are not supported:"));
+        }
+        checkIndex(createNamedConfig("index", "col1", "this.col2"));
     }
 
     private void checkIndex(IndexConfig... indexConfigs) {
@@ -237,8 +245,12 @@ public class IndexCreateTest extends HazelcastTestSupport {
 
         if (config.getType() == IndexType.SORTED) {
             res.append("sorted");
-        } else {
+        } else if (config.getType() == IndexType.HASH) {
             res.append("hash");
+        } else if (config.getType() == IndexType.BITMAP) {
+            res.append("bitmap");
+        } else {
+            throw new IllegalArgumentException("unexpected index type: " + config.getType());
         }
 
         for (String attribute : config.getAttributes()) {

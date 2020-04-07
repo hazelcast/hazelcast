@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,11 @@ import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.map.EntryProcessor;
@@ -29,6 +32,8 @@ import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.QueryCache;
+import com.hazelcast.map.impl.ComputeIfPresentEntryProcessor;
+import com.hazelcast.map.impl.ComputeIfAbsentEntryProcessor;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.iterator.MapPartitionIterator;
@@ -44,7 +49,6 @@ import com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest;
 import com.hazelcast.map.impl.querycache.subscriber.SubscriberContext;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
@@ -53,6 +57,7 @@ import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.version.Version;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -68,6 +73,8 @@ import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
@@ -448,18 +455,28 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     @Override
     public void putAll(@Nonnull Map<? extends K, ? extends V> map) {
         checkNotNull(map, "Null argument map is not allowed");
-        putAllInternal(map, null);
+        putAllInternal(map, null, true);
     }
 
-    /**
-     * This version does not support batching. Don't mutate the given map until the
-     * future completes.
-     */
-    // used by jet
+    @Override
     public InternalCompletableFuture<Void> putAllAsync(@Nonnull Map<? extends K, ? extends V> map) {
         checkNotNull(map, "Null argument map is not allowed");
         InternalCompletableFuture<Void> future = new InternalCompletableFuture<>();
-        putAllInternal(map, future);
+        putAllInternal(map, future, true);
+        return future;
+    }
+
+    @Override
+    public void setAll(@Nonnull Map<? extends K, ? extends V> map) {
+        checkNotNull(map, "Null argument map is not allowed");
+        putAllInternal(map, null, false);
+    }
+
+    @Override
+    public InternalCompletableFuture<Void> setAllAsync(@Nonnull Map<? extends K, ? extends V> map) {
+        checkNotNull(map, "Null argument map is not allowed");
+        InternalCompletableFuture<Void> future = new InternalCompletableFuture<>();
+        putAllInternal(map, future, false);
         return future;
     }
 
@@ -730,9 +747,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         }
     }
 
-    /**
-     * Async version of {@link #executeOnKeys}.
-     */
+    @Override
     public <R> InternalCompletableFuture<Map<K, R>> submitToKeys(@Nonnull Set<K> keys,
                                                                  @Nonnull EntryProcessor<K, V, R> entryProcessor) {
         checkNotNull(keys, NULL_KEYS_ARE_NOT_ALLOWED);
@@ -831,23 +846,32 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     /**
-     * Returns an iterator for iterating entries in the {@code partitionId}. If {@code prefetchValues} is
-     * {@code true}, values will be sent along with the keys and no additional data will be fetched when
-     * iterating. If {@code false}, only keys will be sent and values will be fetched when calling {@code
-     * Map.Entry.getValue()} lazily.
+     * Returns an iterator for iterating entries in the {@code partitionId}. If
+     * {@code prefetchValues} is {@code true}, values will be sent along with
+     * the keys and no additional data will be fetched when iterating. If
+     * {@code false}, only keys will be sent and values will be fetched when
+     * calling {@code Map.Entry.getValue()} lazily.
      * <p>
-     * The entries are not fetched one-by-one but in batches.
-     * You may control the size of the batch by changing the {@code fetchSize} parameter.
-     * A too small {@code fetchSize} can affect performance since more data will have to be sent to and from the partition owner.
-     * A too high {@code fetchSize} means that more data will be sent which can block other operations from being sent,
-     * including internal operations.
-     * The underlying implementation may send more values in one batch than {@code fetchSize} if it needs to get to
-     * a "safepoint" to resume iteration later.
+     * The values are fetched in batches.
+     * You may control the size of the batch by changing the {@code fetchSize}
+     * parameter.
+     * A too small {@code fetchSize} can affect performance since more data
+     * will have to be sent to and from the partition owner.
+     * A too high {@code fetchSize} means that more data will be sent which
+     * can block other operations from being sent, including internal
+     * operations.
+     * The underlying implementation may send more values in one batch than
+     * {@code fetchSize} if it needs to get to a "safepoint" to later resume
+     * iteration.
      * <p>
      * <b>NOTE</b>
-     * Iterating the map should be done only when the {@link IMap} is not being
-     * mutated and the cluster is stable (there are no migrations or membership changes).
-     * In other cases, the iterator may not return some entries or may return an entry twice.
+     * The iteration may be done when the map is being mutated or when there are
+     * membership changes. The iterator does not reflect the state when it has
+     * been constructed - it may return some entries that were added after the
+     * iteration has started and may not return some entries that were removed
+     * after iteration has started.
+     * The iterator will not, however, skip an entry if it has not been changed
+     * and will not return an entry twice.
      *
      * @param fetchSize      the size of the batches which will be sent when iterating the data
      * @param partitionId    the partition ID which is being iterated
@@ -860,27 +884,36 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     /**
-     * Returns an iterator for iterating the result of the projection on entries in the {@code partitionId} which
-     * satisfy the {@code predicate}.
+     * Returns an iterator for iterating the result of the projection on entries
+     * in the {@code partitionId} which satisfy the {@code predicate}.
      * <p>
-     * The values are not fetched one-by-one but rather in batches.
-     * You may control the size of the batch by changing the {@code fetchSize} parameter.
-     * A too small {@code fetchSize} can affect performance since more data will have to be sent to and from the partition owner.
-     * A too high {@code fetchSize} means that more data will be sent which can block other operations from being sent,
-     * including internal operations.
-     * The underlying implementation may send more values in one batch than {@code fetchSize} if it needs to get to
-     * a "safepoint" to later resume iteration.
+     * The values are fetched in batches.
+     * You may control the size of the batch by changing the {@code fetchSize}
+     * parameter.
+     * A too small {@code fetchSize} can affect performance since more data
+     * will have to be sent to and from the partition owner.
+     * A too high {@code fetchSize} means that more data will be sent which
+     * can block other operations from being sent, including internal
+     * operations.
+     * The underlying implementation may send more values in one batch than
+     * {@code fetchSize} if it needs to get to a "safepoint" to later resume
+     * iteration.
      * Predicates of type {@link PagingPredicate} are not supported.
-     * <p>
      * <b>NOTE</b>
-     * Iterating the map should be done only when the {@link IMap} is not being
-     * mutated and the cluster is stable (there are no migrations or membership changes).
-     * In other cases, the iterator may not return some entries or may return an entry twice.
+     * The iteration may be done when the map is being mutated or when there are
+     * membership changes. The iterator does not reflect the state when it has
+     * been constructed - it may return some entries that were added after the
+     * iteration has started and may not return some entries that were removed
+     * after iteration has started.
+     * The iterator will not, however, skip an entry if it has not been changed
+     * and will not return an entry twice.
      *
      * @param fetchSize   the size of the batches which will be sent when iterating the data
      * @param partitionId the partition ID which is being iterated
-     * @param projection  the projection to apply before returning the value. {@code null} value is not allowed
-     * @param predicate   the predicate which the entries must match. {@code null} value is not allowed
+     * @param projection  the projection to apply before returning the value. {@code null} value
+     *                    is not allowed
+     * @param predicate   the predicate which the entries must match. {@code null} value is not
+     *                    allowed
      * @param <R>         the return type
      * @return the iterator for the projected entries
      * @throws IllegalArgumentException if the predicate is of type {@link PagingPredicate}
@@ -1007,4 +1040,76 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
             throw new IllegalArgumentException("PagingPredicate not supported in " + method + " method");
         }
     }
+
+    @Override
+    public V computeIfPresent(@Nonnull K key,
+                              @Nonnull BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(key, NULL_BIFUNCTION_IS_NOT_ALLOWED);
+        Version clusterVersion = getNodeEngine().getClusterService().getClusterVersion();
+
+        if (SerializationUtil.isClassStaticAndSerializable(remappingFunction)
+                && clusterVersion.isGreaterOrEqual(Versions.V4_1)) {
+            ComputeIfPresentEntryProcessor<K, V> ep = new ComputeIfPresentEntryProcessor<>(remappingFunction);
+            return executeOnKey(key, ep);
+        } else {
+            return computeIfPresentLocally(key, remappingFunction);
+        }
+    }
+
+    private V computeIfPresentLocally(K key,
+                                      BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+
+        while (true) {
+            Data oldValueAsData = toData(getInternal(key));
+            if (oldValueAsData == null) {
+                return null;
+            }
+
+            V oldValueClone = toObject(oldValueAsData);
+            V newValue = remappingFunction.apply(key, oldValueClone);
+            if (newValue != null) {
+                if (replaceInternal(key, oldValueAsData, toData(newValue))) {
+                    return newValue;
+                }
+            } else if (removeInternal(key, oldValueAsData)) {
+                return null;
+            }
+        }
+    }
+
+    @Override
+    public V computeIfAbsent(@Nonnull K key, @Nonnull Function<? super K, ? extends V> mappingFunction) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(mappingFunction, NULL_FUNCTION_IS_NOT_ALLOWED);
+        Version clusterVersion = getNodeEngine().getClusterService().getClusterVersion();
+
+        if (SerializationUtil.isClassStaticAndSerializable(mappingFunction)
+                && clusterVersion.isGreaterOrEqual(Versions.V4_1)) {
+            ComputeIfAbsentEntryProcessor<K, V> ep = new ComputeIfAbsentEntryProcessor<>(mappingFunction);
+            return executeOnKey(key, ep);
+        } else {
+            return computeIfAbsentLocally(key, mappingFunction);
+        }
+    }
+
+    private V computeIfAbsentLocally(K key, Function<? super K, ? extends V> mappingFunction) {
+        V oldValue = toObject(getInternal(key));
+        if (oldValue != null) {
+            return oldValue;
+        }
+
+        V newValue = mappingFunction.apply(key);
+        if (newValue == null) {
+            return null;
+        }
+
+        Data result = putIfAbsentInternal(key, toData(newValue), UNSET, TimeUnit.MILLISECONDS, UNSET, TimeUnit.MILLISECONDS);
+        if (result == null) {
+            return newValue;
+        } else {
+            return toObject(result);
+        }
+    }
+
 }

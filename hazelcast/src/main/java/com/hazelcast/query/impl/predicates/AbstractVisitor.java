@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,16 @@ import com.hazelcast.query.impl.Indexes;
 public abstract class AbstractVisitor implements Visitor {
 
     @Override
+    public Predicate visit(EqualPredicate predicate, Indexes indexes) {
+        return predicate;
+    }
+
+    @Override
+    public Predicate visit(NotEqualPredicate predicate, Indexes indexes) {
+        return predicate;
+    }
+
+    @Override
     public Predicate visit(AndPredicate predicate, Indexes indexes) {
         return predicate;
     }
@@ -37,6 +47,11 @@ public abstract class AbstractVisitor implements Visitor {
 
     @Override
     public Predicate visit(NotPredicate predicate, Indexes indexes) {
+        return predicate;
+    }
+
+    @Override
+    public Predicate visit(InPredicate predicate, Indexes indexes) {
         return predicate;
     }
 

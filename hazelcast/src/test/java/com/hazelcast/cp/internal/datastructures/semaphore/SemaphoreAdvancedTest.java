@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 package com.hazelcast.cp.internal.datastructures.semaphore;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
+import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.RaftGroupId;
@@ -27,11 +27,11 @@ import com.hazelcast.cp.internal.datastructures.spi.blocking.ResourceRegistry;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
 import com.hazelcast.cp.internal.raft.impl.log.LogEntry;
 import com.hazelcast.cp.internal.raftop.snapshot.RestoreSnapshotOp;
+import com.hazelcast.internal.util.RandomPicker;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.internal.util.RandomPicker;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getSnapshotEntry;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
-  ~ Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -106,6 +106,10 @@
         <property name="fileExtensions" value="java"/>
     </module>
 
+    <module name="LineLength">
+        <property name="max" value="130"/>
+    </module>
+
     <module name="TreeWalker">
         <!-- Needed for SuppressWarningsFilter to work -->
         <module name="SuppressWarningsHolder"/>
@@ -158,9 +162,6 @@
 
         <!-- Checks for Size Violations.                    -->
         <!-- See http://checkstyle.sf.net/config_sizes.html -->
-        <module name="LineLength">
-            <property name="max" value="130"/>
-        </module>
         <module name="MethodLength">
             <property name="tokens" value="METHOD_DEF"/>
             <property name="max" value="60"/>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,46 +18,51 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.map.impl.query.Query;
 import com.hazelcast.map.impl.query.QueryRunner;
 import com.hazelcast.map.impl.query.ResultSegment;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 
 /**
- * Fetches by query a batch of {@code fetchSize} items from a single partition ID for a map. The query is run by the query
- * engine which means it supports projections and filtering. The {@code lastTableIndex} denotes the position from which
- * to resume the query on the partition.
- * This is an operation for maps configured with {@link InMemoryFormat#BINARY} or {{@link InMemoryFormat#OBJECT} format.
+ * Fetches by query a batch of {@code fetchSize} items from a single
+ * partition ID for a map. The query is run by the query engine which means
+ * it supports projections and filtering. The {@code pointers} denotes the
+ * iteration state from which to resume the query on the partition.
+ * This is an operation for maps configured with {@link InMemoryFormat#BINARY}
+ * or {{@link InMemoryFormat#OBJECT} format.
  *
- * @see com.hazelcast.map.impl.proxy.MapProxyImpl#iterator(int, int, com.hazelcast.projection.Projection,
- * com.hazelcast.query.Predicate)
+ * @see com.hazelcast.map.impl.proxy.MapProxyImpl#iterator(int, int,
+ * com.hazelcast.projection.Projection, com.hazelcast.query.Predicate)
  * @since 3.9
  */
 public class MapFetchWithQueryOperation extends MapOperation implements ReadonlyOperation {
 
     private Query query;
     private int fetchSize;
-    private int lastTableIndex;
+    private IterationPointer[] pointers;
     private transient ResultSegment response;
 
     public MapFetchWithQueryOperation() {
     }
 
-    public MapFetchWithQueryOperation(String name, int lastTableIndex, int fetchSize, Query query) {
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "This is an internal class")
+    public MapFetchWithQueryOperation(String name, IterationPointer[] pointers, int fetchSize, Query query) {
         super(name);
-        this.lastTableIndex = lastTableIndex;
+        this.pointers = pointers;
         this.fetchSize = fetchSize;
         this.query = query;
     }
 
     @Override
     protected void runInternal() {
-        final QueryRunner runner = mapServiceContext.getMapQueryRunner(query.getMapName());
-        response = runner.runPartitionScanQueryOnPartitionChunk(query, getPartitionId(), lastTableIndex, fetchSize);
+        QueryRunner runner = mapServiceContext.getMapQueryRunner(query.getMapName());
+        response = runner.runPartitionScanQueryOnPartitionChunk(query, getPartitionId(), pointers, fetchSize);
     }
 
     @Override
@@ -69,7 +74,11 @@ public class MapFetchWithQueryOperation extends MapOperation implements Readonly
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         fetchSize = in.readInt();
-        lastTableIndex = in.readInt();
+        int pointersCount = in.readInt();
+        pointers = new IterationPointer[pointersCount];
+        for (int i = 0; i < pointersCount; i++) {
+            pointers[i] = new IterationPointer(in.readInt(), in.readInt());
+        }
         query = in.readObject();
     }
 
@@ -77,7 +86,11 @@ public class MapFetchWithQueryOperation extends MapOperation implements Readonly
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(fetchSize);
-        out.writeInt(lastTableIndex);
+        out.writeInt(pointers.length);
+        for (IterationPointer pointer : pointers) {
+            out.writeInt(pointer.getIndex());
+            out.writeInt(pointer.getSize());
+        }
         out.writeObject(query);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -178,9 +178,9 @@ public class MemberVersionTest {
 
     @Test
     public void testAsSerializationVersion() {
-        Version version = MemberVersion.of(3, 8, 2).asVersion();
+        Version version = MemberVersion.of(4, 0, 2).asVersion();
 
-        assertEquals(Versions.V3_8, version);
+        assertEquals(Versions.V4_0, version);
     }
 
     @Test

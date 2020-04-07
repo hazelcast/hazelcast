@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ public class ClientMessageWriter {
     private boolean writeFrame(ByteBuffer dst, ClientMessage.Frame frame, boolean isLastFrame) {
         // the number of bytes that can be written to the bb
         int bytesWritable = dst.remaining();
-        int frameContentLength = frame.content == null ? 0 : frame.content.length;
+        int frameContentLength = frame.content.length;
 
         //if write offset is -1 put the length and flags byte first
         if (writeOffset == -1) {
@@ -72,7 +72,7 @@ public class ClientMessageWriter {
         }
         bytesWritable = dst.remaining();
 
-        if (frame.content == null) {
+        if (frameContentLength == 0) {
             return true;
         }
 

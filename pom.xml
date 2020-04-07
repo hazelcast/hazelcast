@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@
     <groupId>com.hazelcast</groupId>
     <artifactId>hazelcast-root</artifactId>
     <packaging>pom</packaging>
-    <version>4.0-SNAPSHOT</version>
+    <version>4.1-SNAPSHOT</version>
     <name>Hazelcast Root</name>
     <description>Hazelcast In-Memory DataGrid</description>
     <url>http://www.hazelcast.com/</url>
@@ -67,13 +67,13 @@
         <maven.assembly.plugin.version>2.4</maven.assembly.plugin.version>
         <maven.rar.plugin.version>2.2</maven.rar.plugin.version>
         <maven.bundle.plugin.version>2.4.0</maven.bundle.plugin.version>
-        <maven.shade.plugin.version>3.2.1</maven.shade.plugin.version>
+        <maven.shade.plugin.version>3.2.2</maven.shade.plugin.version>
         <maven.dependency.plugin.version>2.10</maven.dependency.plugin.version>
         <maven.animal.sniffer.plugin.version>1.17</maven.animal.sniffer.plugin.version>
         <maven.git.commit.id.plugin.version>2.1.10</maven.git.commit.id.plugin.version>
 
-        <maven.surefire.plugin.version>2.21.0</maven.surefire.plugin.version>
-        <maven.checkstyle.plugin.version>3.0.0</maven.checkstyle.plugin.version>
+        <maven.surefire.plugin.version>2.22.2</maven.surefire.plugin.version>
+        <maven.checkstyle.plugin.version>3.1.1</maven.checkstyle.plugin.version>
         <maven.spotbugs.plugin.version>3.1.12</maven.spotbugs.plugin.version>
         <maven.sonar.plugin.version>3.3.0.603</maven.sonar.plugin.version>
         <maven.jacoco.plugin.version>0.8.2</maven.jacoco.plugin.version>
@@ -83,8 +83,7 @@
 
         <log4j.version>1.2.17</log4j.version>
 
-        <!--- This is the last log4j2 version working with Java 6 -->
-        <log4j2.version>2.3</log4j2.version>
+        <log4j2.version>2.13.0</log4j2.version>
         <slf4j.api.version>1.7.25</slf4j.api.version>
 
         <jackson.version>2.9.7</jackson.version>
@@ -98,7 +97,7 @@
         <commons-lang3.version>3.4</commons-lang3.version>
         <felix.utils.version>1.10.0</felix.utils.version>
         <findbugs.annotations.version>3.0.0</findbugs.annotations.version>
-        <http.components.version>4.3.1</http.components.version>
+        <http.components.version>4.3.6</http.components.version>
 
         <sonar.jacoco.jar>${basedir}/lib/jacocoagent.jar</sonar.jacoco.jar>
         <!--<sonar.phase>post-integration-test</sonar.phase>-->
@@ -106,7 +105,7 @@
         <sonar.language>java</sonar.language>
         <sonar.verbose>true</sonar.verbose>
 
-        <checkstyle.version>8.19</checkstyle.version>
+        <checkstyle.version>8.29</checkstyle.version>
 
         <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
 
@@ -119,7 +118,7 @@
         <atomikos.version>3.9.3</atomikos.version>
         <!-- Additional JVM system arguments -->
         <extraVmArgs/>
-        <vmHeapSettings>-Xms512m -Xmx2G -XX:MaxPermSize=1024M</vmHeapSettings>
+        <vmHeapSettings>-Xms512m -Xmx2G</vmHeapSettings>
         <!-- Java 9+ module system args to be appended during surefire/failsafe executions. -->
         <javaModuleArgs/>
     </properties>
@@ -467,7 +466,7 @@
         <profile>
             <id>LOCAL</id>
             <properties>
-                <vmHeapSettings>-Xms128m -Xmx1G -XX:MaxPermSize=128M</vmHeapSettings>
+                <vmHeapSettings>-Xms128m -Xmx1G</vmHeapSettings>
             </properties>
             <build>
                 <plugins>
@@ -539,7 +538,7 @@
         <profile>
             <id>test-coverage-Local</id>
             <properties>
-                <vmHeapSettings>-Xms128m -Xmx1G -XX:MaxPermSize=128M</vmHeapSettings>
+                <vmHeapSettings>-Xms128m -Xmx1G</vmHeapSettings>
             </properties>
             <build>
                 <plugins>
@@ -1047,7 +1046,7 @@
             <!-- for compatibility testing -->
             <id>generate-compatibility-samples</id>
             <properties>
-                <vmHeapSettings>-Xms128m -Xmx1G -XX:MaxPermSize=128M</vmHeapSettings>
+                <vmHeapSettings>-Xms128m -Xmx1G</vmHeapSettings>
             </properties>
             <build>
                 <plugins>

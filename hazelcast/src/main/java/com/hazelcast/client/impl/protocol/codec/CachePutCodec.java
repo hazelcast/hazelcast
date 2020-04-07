@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,9 +34,9 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * TODO DOC
+ * Puts the entry with the given key, value and the expiry policy to the cache.
  */
-@Generated("b1851b5aaaa7c72ff77f6cc97911cb77")
+@Generated("004c057eb32f63dcb4f446bd0938b3c0")
 public final class CachePutCodec {
     //hex: 0x131300
     public static final int REQUEST_MESSAGE_TYPE = 1250048;
@@ -45,7 +45,7 @@ public final class CachePutCodec {
     private static final int REQUEST_GET_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_COMPLETION_ID_FIELD_OFFSET = REQUEST_GET_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_COMPLETION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private CachePutCodec() {
     }
@@ -92,6 +92,7 @@ public final class CachePutCodec {
         clientMessage.setOperationName("Cache.Put");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeBoolean(initialFrame.content, REQUEST_GET_FIELD_OFFSET, get);
         encodeInt(initialFrame.content, REQUEST_COMPLETION_ID_FIELD_OFFSET, completionId);
         clientMessage.add(initialFrame);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,17 +39,17 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * (identically equal) value previously put into the map.Time resolution for TTL is seconds. The given TTL value is
  * rounded to the next closest second value.
  */
-@Generated("df78d6f4dbce26c0a386a6e58bf0320b")
+@Generated("f38ca5ba37fcb485bc62ca8ac0168151")
 public final class MapPutWithMaxIdleCodec {
-    //hex: 0x014600
-    public static final int REQUEST_MESSAGE_TYPE = 83456;
-    //hex: 0x014601
-    public static final int RESPONSE_MESSAGE_TYPE = 83457;
+    //hex: 0x014400
+    public static final int REQUEST_MESSAGE_TYPE = 82944;
+    //hex: 0x014401
+    public static final int RESPONSE_MESSAGE_TYPE = 82945;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_TTL_FIELD_OFFSET = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_MAX_IDLE_FIELD_OFFSET = REQUEST_TTL_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_MAX_IDLE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private MapPutWithMaxIdleCodec() {
     }
@@ -95,6 +95,7 @@ public final class MapPutWithMaxIdleCodec {
         clientMessage.setOperationName("Map.PutWithMaxIdle");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeLong(initialFrame.content, REQUEST_THREAD_ID_FIELD_OFFSET, threadId);
         encodeLong(initialFrame.content, REQUEST_TTL_FIELD_OFFSET, ttl);
         encodeLong(initialFrame.content, REQUEST_MAX_IDLE_FIELD_OFFSET, maxIdle);

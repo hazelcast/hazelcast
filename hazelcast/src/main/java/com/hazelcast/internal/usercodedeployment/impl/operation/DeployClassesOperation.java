@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -34,9 +34,9 @@ import java.util.Map;
  */
 public class DeployClassesOperation extends Operation implements IdentifiedDataSerializable {
 
-    private Collection<Map.Entry<String, byte[]>> classDefinitions;
+    private List<Map.Entry<String, byte[]>> classDefinitions;
 
-    public DeployClassesOperation(Collection<Map.Entry<String, byte[]>> classDefinitions) {
+    public DeployClassesOperation(List<Map.Entry<String, byte[]>> classDefinitions) {
         this.classDefinitions = classDefinitions;
     }
 
@@ -46,9 +46,10 @@ public class DeployClassesOperation extends Operation implements IdentifiedDataS
     @Override
     public void run() throws Exception {
         UserCodeDeploymentService service = getService();
-        for (Map.Entry<String, byte[]> classDefinition : classDefinitions) {
-            service.defineClass(classDefinition.getKey(), classDefinition.getValue());
-        }
+//        for (Map.Entry<String, byte[]> classDefinition : classDefinitions) {
+//            service.defineClass(classDefinition.getKey(), classDefinition.getValue());
+//        }
+        service.defineClasses(classDefinitions);
     }
 
     @Override

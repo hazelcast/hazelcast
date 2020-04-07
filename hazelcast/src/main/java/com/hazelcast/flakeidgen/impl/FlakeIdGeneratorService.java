@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.FLAKE_ID_GENERATOR_PREFIX;
 import static com.hazelcast.internal.metrics.impl.ProviderHelper.provide;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 
@@ -112,6 +113,6 @@ public class FlakeIdGeneratorService implements ManagedService, RemoteService,
 
     @Override
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
-        provide(descriptor, context, "flakeIdGenerator", getStats());
+        provide(descriptor, context, FLAKE_ID_GENERATOR_PREFIX, getStats());
     }
 }

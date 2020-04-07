@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ public class MergeOperation
         extends AbstractBackupAwareSchedulerOperation {
 
     private List<ScheduledExecutorMergeTypes> mergingEntries;
-    private SplitBrainMergePolicy<ScheduledTaskDescriptor, ScheduledExecutorMergeTypes> mergePolicy;
+    private SplitBrainMergePolicy<ScheduledTaskDescriptor, ScheduledExecutorMergeTypes, ScheduledTaskDescriptor> mergePolicy;
 
     private transient List<ScheduledTaskDescriptor> mergedTasks;
 
@@ -43,7 +43,8 @@ public class MergeOperation
     }
 
     public MergeOperation(String name, List<ScheduledExecutorMergeTypes> mergingEntries,
-                          SplitBrainMergePolicy<ScheduledTaskDescriptor, ScheduledExecutorMergeTypes> mergePolicy) {
+                          SplitBrainMergePolicy<ScheduledTaskDescriptor, ScheduledExecutorMergeTypes,
+                                  ScheduledTaskDescriptor> mergePolicy) {
         super(name);
         this.mergingEntries = mergingEntries;
         this.mergePolicy = mergePolicy;

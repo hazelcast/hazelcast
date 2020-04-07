@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,14 +36,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns the current list of CP members.
  */
-@Generated("9c0b406eaa8da9ba71e3e1cf7d9793ce")
+@Generated("5d87875e5a8eebd89337a2f645500759")
 public final class MCGetCPMembersCodec {
     //hex: 0x201900
     public static final int REQUEST_MESSAGE_TYPE = 2103552;
     //hex: 0x201901
     public static final int RESPONSE_MESSAGE_TYPE = 2103553;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private MCGetCPMembersCodec() {
     }
@@ -58,6 +58,7 @@ public final class MCGetCPMembersCodec {
         clientMessage.setOperationName("MC.GetCPMembers");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         return clientMessage;
     }
@@ -74,18 +75,19 @@ public final class MCGetCPMembersCodec {
     public static class ResponseParameters {
 
         /**
-         * List of CP members
+         * List of CP member UUIDs. The mapping is from the UUID of the CP member to UUID of that member on the
+         * member list of the cluster service.
          */
-        public java.util.List<java.util.Map.Entry<java.util.UUID, com.hazelcast.cluster.Address>> cpMembers;
+        public java.util.List<java.util.Map.Entry<java.util.UUID, java.util.UUID>> cpMembers;
     }
 
-    public static ClientMessage encodeResponse(java.util.Collection<java.util.Map.Entry<java.util.UUID, com.hazelcast.cluster.Address>> cpMembers) {
+    public static ClientMessage encodeResponse(java.util.Collection<java.util.Map.Entry<java.util.UUID, java.util.UUID>> cpMembers) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        EntryListUUIDAddressCodec.encode(clientMessage, cpMembers);
+        EntryListUUIDUUIDCodec.encode(clientMessage, cpMembers);
         return clientMessage;
     }
 
@@ -94,7 +96,7 @@ public final class MCGetCPMembersCodec {
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.cpMembers = EntryListUUIDAddressCodec.decode(iterator);
+        response.cpMembers = EntryListUUIDUUIDCodec.decode(iterator);
         return response;
     }
 

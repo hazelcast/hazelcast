@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.nio.tcp.TcpIpNetworkingService;
+import com.hazelcast.internal.nio.server.ServerNetworkingService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -36,6 +36,8 @@ import static com.hazelcast.core.Hazelcast.newHazelcastInstance;
 import static com.hazelcast.spi.properties.ClusterProperty.MERGE_FIRST_RUN_DELAY_SECONDS;
 import static com.hazelcast.spi.properties.ClusterProperty.MERGE_NEXT_RUN_DELAY_SECONDS;
 import static com.hazelcast.spi.properties.ClusterProperty.WAIT_SECONDS_BEFORE_JOIN;
+import static com.hazelcast.test.Accessors.getAddress;
+import static com.hazelcast.test.Accessors.getNode;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -56,7 +58,7 @@ public class NioChannelMemoryLeakTest extends HazelcastTestSupport {
         config.setProperty(MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "1");
 
         HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
-        TcpIpNetworkingService networkingService = (TcpIpNetworkingService) getNode(instance).getNetworkingService();
+        ServerNetworkingService networkingService = (ServerNetworkingService) getNode(instance).getNetworkingService();
         final NioNetworking networking = (NioNetworking) networkingService.getNetworking();
 
         assertTrueEventually(() -> assertThat(networking.getChannels(), Matchers.empty()));

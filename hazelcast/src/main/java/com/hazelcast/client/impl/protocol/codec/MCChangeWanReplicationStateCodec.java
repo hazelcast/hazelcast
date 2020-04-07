@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Stop, pause or resume WAN replication for the given WAN replication and publisher
  */
-@Generated("0471e5b8371b43807dccc3b648c6b04b")
+@Generated("81a5b2b1a63f6f95b152abdd32468aa4")
 public final class MCChangeWanReplicationStateCodec {
     //hex: 0x201300
     public static final int REQUEST_MESSAGE_TYPE = 2102016;
@@ -44,7 +44,7 @@ public final class MCChangeWanReplicationStateCodec {
     public static final int RESPONSE_MESSAGE_TYPE = 2102017;
     private static final int REQUEST_NEW_STATE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_NEW_STATE_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private MCChangeWanReplicationStateCodec() {
     }
@@ -77,6 +77,7 @@ public final class MCChangeWanReplicationStateCodec {
         clientMessage.setOperationName("MC.ChangeWanReplicationState");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeByte(initialFrame.content, REQUEST_NEW_STATE_FIELD_OFFSET, newState);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, wanReplicationName);

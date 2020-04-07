@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,14 +39,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * null does not necessarily indicate that the map contained no mapping for the key; it's also possible that the map
  * explicitly mapped the key to null. The map will not contain a mapping for the specified key once the call returns.
  */
-@Generated("2f191edf8d04c36bc7efbce1fee63a44")
+@Generated("cee846d6517f3d0f2915be111394dab9")
 public final class ReplicatedMapRemoveCodec {
     //hex: 0x0D0700
     public static final int REQUEST_MESSAGE_TYPE = 853760;
     //hex: 0x0D0701
     public static final int RESPONSE_MESSAGE_TYPE = 853761;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private ReplicatedMapRemoveCodec() {
     }
@@ -71,6 +71,7 @@ public final class ReplicatedMapRemoveCodec {
         clientMessage.setOperationName("ReplicatedMap.Remove");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         DataCodec.encode(clientMessage, key);

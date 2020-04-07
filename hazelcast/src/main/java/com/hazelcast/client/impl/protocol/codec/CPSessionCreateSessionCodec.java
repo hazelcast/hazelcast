@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,14 +36,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Creates a session for the caller on the given CP group.
  */
-@Generated("638727a006abcb1997502c8281acd621")
+@Generated("17bd6e68119468fae06c47696b32e26f")
 public final class CPSessionCreateSessionCodec {
     //hex: 0x1F0100
     public static final int REQUEST_MESSAGE_TYPE = 2031872;
     //hex: 0x1F0101
     public static final int RESPONSE_MESSAGE_TYPE = 2031873;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_SESSION_ID_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_SESSION_ID_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_TTL_MILLIS_FIELD_OFFSET = RESPONSE_SESSION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_HEARTBEAT_MILLIS_FIELD_OFFSET = RESPONSE_TTL_MILLIS_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_HEARTBEAT_MILLIS_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -71,6 +71,7 @@ public final class CPSessionCreateSessionCodec {
         clientMessage.setOperationName("CPSession.CreateSession");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         RaftGroupIdCodec.encode(clientMessage, groupId);
         StringCodec.encode(clientMessage, endpointName);
@@ -91,17 +92,17 @@ public final class CPSessionCreateSessionCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * Id of the session.
          */
         public long sessionId;
 
         /**
-         * TODO DOC
+         * Time to live value in milliseconds that must be respected by the caller.
          */
         public long ttlMillis;
 
         /**
-         * TODO DOC
+         * Time between heartbeats in milliseconds that must be respected by the caller.
          */
         public long heartbeatMillis;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,13 @@
 package com.hazelcast.client.map.impl.nearcache;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.impl.proxy.NearCachedClientMapProxy;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
 import com.hazelcast.internal.nearcache.NearCache;
+import com.hazelcast.map.IMap;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -35,7 +34,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
-import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
+import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.getBaseConfig;
 import static com.hazelcast.spi.properties.ClusterProperty.MAP_INVALIDATION_MESSAGE_BATCH_ENABLED;
 import static com.hazelcast.spi.properties.ClusterProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
 import static com.hazelcast.spi.properties.ClusterProperty.MAP_INVALIDATION_MESSAGE_BATCH_SIZE;

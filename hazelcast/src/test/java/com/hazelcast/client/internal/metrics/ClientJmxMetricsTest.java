@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,6 +62,11 @@ public class ClientJmxMetricsTest extends HazelcastTestSupport {
         assertTrueEventually(() -> helper.assertMBeanContains(expectedObjectName));
 
         client.shutdown();
+        // if failing, grep for "test-jvm"
+        // there should be a Metric[com.hazelcast:type=Metrics,instance=$CLIENT_NAME,prefix=test-jvm-$JVM_NAME] metric if the
+        // client was created with TestHazelcastFactory
+        // $JVM_NAME contains the PID, so $CLIENT_NAME + $JVM_NAME together helps identifying the test left the given metric
+        // around
         helper.assertNoMBeans();
     }
 }

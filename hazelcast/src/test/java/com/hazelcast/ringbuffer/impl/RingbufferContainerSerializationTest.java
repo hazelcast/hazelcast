@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,10 @@ package com.hazelcast.ringbuffer.impl;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -38,6 +38,8 @@ import java.io.IOException;
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
+import static com.hazelcast.test.Accessors.getSerializationService;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;

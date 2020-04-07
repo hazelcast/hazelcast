@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,16 +34,16 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * TODO DOC
+ * Makes the query cache with the given name for a specific map publishable.
  */
-@Generated("989432e2dfab6e459822600dae542b54")
+@Generated("8dabbe564b3692388f3f82327991afc8")
 public final class ContinuousQueryMadePublishableCodec {
     //hex: 0x160300
     public static final int REQUEST_MESSAGE_TYPE = 1442560;
     //hex: 0x160301
     public static final int RESPONSE_MESSAGE_TYPE = 1442561;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
 
     private ContinuousQueryMadePublishableCodec() {
@@ -69,6 +69,7 @@ public final class ContinuousQueryMadePublishableCodec {
         clientMessage.setOperationName("ContinuousQuery.MadePublishable");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, mapName);
         StringCodec.encode(clientMessage, cacheName);

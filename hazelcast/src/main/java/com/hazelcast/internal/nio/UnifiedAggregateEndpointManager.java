@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ package com.hazelcast.internal.nio;
 
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.networking.NetworkStats;
-import com.hazelcast.internal.nio.tcp.TcpIpConnection;
-import com.hazelcast.internal.nio.tcp.TcpIpEndpointManager;
+import com.hazelcast.internal.nio.server.ServerConnection;
+import com.hazelcast.internal.nio.server.ServerEndpointManager;
 
 import java.util.Collection;
 import java.util.Map;
@@ -29,26 +29,26 @@ import static java.util.Collections.emptyMap;
 public class UnifiedAggregateEndpointManager
         implements AggregateEndpointManager {
 
-    private final TcpIpEndpointManager unified;
-    private final Map<EndpointQualifier, EndpointManager<TcpIpConnection>> views;
+    private final ServerEndpointManager unified;
+    private final Map<EndpointQualifier, EndpointManager<ServerConnection>> views;
 
-    public UnifiedAggregateEndpointManager(TcpIpEndpointManager unified,
-                                           Map<EndpointQualifier, EndpointManager<TcpIpConnection>> views) {
+    public UnifiedAggregateEndpointManager(ServerEndpointManager unified,
+                                           Map<EndpointQualifier, EndpointManager<ServerConnection>> views) {
         this.unified = unified;
         this.views = views;
     }
 
     @Override
-    public Collection<TcpIpConnection> getActiveConnections() {
+    public Collection<ServerConnection> getActiveConnections() {
         return unified.getActiveConnections();
     }
 
     @Override
-    public Collection<TcpIpConnection> getConnections() {
+    public Collection<ServerConnection> getConnections() {
         return unified.getConnections();
     }
 
-    public EndpointManager<TcpIpConnection> getEndpointManager(EndpointQualifier qualifier) {
+    public EndpointManager<ServerConnection> getEndpointManager(EndpointQualifier qualifier) {
         return views.get(qualifier);
     }
 

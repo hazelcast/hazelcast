@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,9 +34,9 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * TODO DOC
+ * Commits the transaction with the given id.
  */
-@Generated("9f2ff533eb59b1dcc28c6a38f7cc92a3")
+@Generated("9195c05e12c5f1585e149e8f7512b589")
 public final class TransactionCommitCodec {
     //hex: 0x150100
     public static final int REQUEST_MESSAGE_TYPE = 1376512;
@@ -45,7 +45,7 @@ public final class TransactionCommitCodec {
     private static final int REQUEST_TRANSACTION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = REQUEST_TRANSACTION_ID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private TransactionCommitCodec() {
     }
@@ -70,6 +70,7 @@ public final class TransactionCommitCodec {
         clientMessage.setOperationName("Transaction.Commit");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeUUID(initialFrame.content, REQUEST_TRANSACTION_ID_FIELD_OFFSET, transactionId);
         encodeLong(initialFrame.content, REQUEST_THREAD_ID_FIELD_OFFSET, threadId);
         clientMessage.add(initialFrame);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapEntries;
+import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.map.impl.query.Query;
 import com.hazelcast.map.impl.query.QueryOperation;
 import com.hazelcast.map.impl.query.QueryPartitionOperation;
@@ -214,8 +215,8 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
     }
 
     @Override
-    public MapOperation createMergeOperation(String name, MapMergeTypes mergingValue,
-                                             SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy,
+    public MapOperation createMergeOperation(String name, MapMergeTypes<Object, Object> mergingValue,
+                                             SplitBrainMergePolicy<Object, MapMergeTypes<Object, Object>, Object> mergePolicy,
                                              boolean disableWanReplicationEvent) {
         return new MergeOperation(name, singletonList(mergingValue), mergePolicy, disableWanReplicationEvent);
     }
@@ -264,18 +265,21 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
     }
 
     @Override
-    public MapOperation createPutAllOperation(String name, MapEntries mapEntries) {
-        return new PutAllOperation(name, mapEntries);
+    public MapOperation createPutAllOperation(String name, MapEntries mapEntries, boolean triggerMapLoader) {
+        return new PutAllOperation(name, mapEntries, triggerMapLoader);
     }
 
     @Override
-    public OperationFactory createPutAllOperationFactory(String name, int[] partitions, MapEntries[] mapEntries) {
-        return new PutAllPartitionAwareOperationFactory(name, partitions, mapEntries);
+    public OperationFactory createPutAllOperationFactory(String name, int[] partitions,
+                                                         MapEntries[] mapEntries, boolean triggerMapLoader) {
+        return new PutAllPartitionAwareOperationFactory(name, partitions, mapEntries, triggerMapLoader);
     }
 
     @Override
-    public OperationFactory createMergeOperationFactory(String name, int[] partitions, List<MapMergeTypes>[] mergingEntries,
-                                                        SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy) {
+    public OperationFactory createMergeOperationFactory(String name, int[] partitions,
+                                                        List<MapMergeTypes<Object, Object>>[] mergingEntries,
+                                                        SplitBrainMergePolicy<Object, MapMergeTypes<Object, Object>,
+                                                                Object> mergePolicy) {
         return new MergeOperationFactory(name, partitions, mergingEntries, mergePolicy);
     }
 
@@ -285,17 +289,18 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
     }
 
     @Override
-    public MapOperation createFetchKeysOperation(String name, int lastTableIndex, int fetchSize) {
-        return new MapFetchKeysOperation(name, lastTableIndex, fetchSize);
+    public MapOperation createFetchKeysOperation(String name, IterationPointer[] pointers, int fetchSize) {
+        return new MapFetchKeysOperation(name, pointers, fetchSize);
     }
 
     @Override
-    public MapOperation createFetchEntriesOperation(String name, int lastTableIndex, int fetchSize) {
-        return new MapFetchEntriesOperation(name, lastTableIndex, fetchSize);
+    public MapOperation createFetchEntriesOperation(String name, IterationPointer[] pointers, int fetchSize) {
+        return new MapFetchEntriesOperation(name, pointers, fetchSize);
     }
 
     @Override
-    public MapOperation createFetchWithQueryOperation(String name, int lastTableIndex, int fetchSize, Query query) {
-        return new MapFetchWithQueryOperation(name, lastTableIndex, fetchSize, query);
+    public MapOperation createFetchWithQueryOperation(String name, IterationPointer[] pointers, int fetchSize,
+                                                      Query query) {
+        return new MapFetchWithQueryOperation(name, pointers, fetchSize, query);
     }
 }

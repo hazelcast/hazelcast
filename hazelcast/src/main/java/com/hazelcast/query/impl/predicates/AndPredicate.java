@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package com.hazelcast.query.impl.predicates;
 
+import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.AndResultSet;
@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICATE_DS_FACTORY_ID;
+import static com.hazelcast.query.impl.Indexes.SKIP_PARTITIONS_COUNT_CHECK;
 import static com.hazelcast.query.impl.predicates.PredicateUtils.estimatedSizeOf;
 
 /**
@@ -74,7 +75,14 @@ public final class AndPredicate
 
         for (Predicate predicate : predicates) {
             if (isIndexedPredicate(predicate, queryContext)) {
+                // Avoid checking indexed partitions count twice to avoid
+                // scenario when the owner partitions count changes concurrently and null
+                // value from the filter method may indicate that the index is under
+                // construction.
+                int ownedPartitionsCount = queryContext.getOwnedPartitionCount();
+                queryContext.setOwnedPartitionCount(SKIP_PARTITIONS_COUNT_CHECK);
                 Set<QueryableEntry> currentResultSet = ((IndexAwarePredicate) predicate).filter(queryContext);
+                queryContext.setOwnedPartitionCount(ownedPartitionsCount);
                 if (smallestResultSet == null) {
                     smallestResultSet = currentResultSet;
                 } else if (estimatedSizeOf(currentResultSet) < estimatedSizeOf(smallestResultSet)) {
@@ -98,7 +106,8 @@ public final class AndPredicate
     }
 
     private static boolean isIndexedPredicate(Predicate predicate, QueryContext queryContext) {
-        return predicate instanceof IndexAwarePredicate && ((IndexAwarePredicate) predicate).isIndexed(queryContext);
+        return predicate instanceof IndexAwarePredicate
+                && ((IndexAwarePredicate) predicate).isIndexed(queryContext);
     }
 
     private static <T> List<T> initOrGetListOf(List<T> list) {

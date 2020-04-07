@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.RingbufferMergeTypes;
 
 class RingbufferRemoveValuesMergePolicy
-        implements SplitBrainMergePolicy<RingbufferMergeData, RingbufferMergeTypes> {
+        implements SplitBrainMergePolicy<RingbufferMergeData, RingbufferMergeTypes, RingbufferMergeData> {
 
     @Override
     public RingbufferMergeData merge(RingbufferMergeTypes mergingValue, RingbufferMergeTypes existingValue) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,13 +20,16 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.PredicateBuilder.EntryObject;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleTestObjects.Employee;
 import com.hazelcast.query.SampleTestObjects.Value;
+import com.hazelcast.query.impl.QueryContext.IndexMatchHint;
 import com.hazelcast.query.impl.getters.Extractors;
+import com.hazelcast.query.impl.predicates.EqualPredicate;
+import com.hazelcast.query.impl.predicates.GreaterLessPredicate;
+import com.hazelcast.query.impl.predicates.SqlPredicate;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -43,6 +46,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static com.hazelcast.instance.impl.TestUtil.toData;
+import static com.hazelcast.query.impl.Indexes.SKIP_PARTITIONS_COUNT_CHECK;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -87,7 +91,7 @@ public class IndexesTest {
         EntryObject entryObject = Predicates.newPredicateBuilder().getEntryObject();
         PredicateBuilder predicate =
                 entryObject.get("name").equal("0Name").and(entryObject.get("age").in(ages.toArray(new String[0])));
-        Set<QueryableEntry> results = indexes.query(predicate);
+        Set<QueryableEntry> results = indexes.query(predicate, SKIP_PARTITIONS_COUNT_CHECK);
         assertEquals(1, results.size());
     }
 
@@ -104,8 +108,8 @@ public class IndexesTest {
         }
 
         for (int i = 0; i < 10; i++) {
-            Predicate predicate = Predicates.sql("salary=161 and age >20 and age <23");
-            Set<QueryableEntry> results = new HashSet<>(indexes.query(predicate));
+            SqlPredicate predicate = new SqlPredicate("salary=161 and age >20 and age <23");
+            Set<QueryableEntry> results = new HashSet<QueryableEntry>(indexes.query(predicate, SKIP_PARTITIONS_COUNT_CHECK));
             assertEquals(5, results.size());
         }
     }
@@ -132,7 +136,7 @@ public class IndexesTest {
                 Index.OperationSource.USER);
         indexes.putEntry(new QueryEntry(serializationService, toData(9), new Value("qwx"), newExtractor()), null,
                 Index.OperationSource.USER);
-        assertEquals(8, new HashSet<>(indexes.query(Predicates.sql("name > 'aac'"))).size());
+        assertEquals(8, new HashSet<QueryableEntry>(indexes.query(new SqlPredicate("name > 'aac'"), SKIP_PARTITIONS_COUNT_CHECK)).size());
     }
 
     protected Extractors newExtractor() {
@@ -166,7 +170,7 @@ public class IndexesTest {
                     Index.OperationSource.USER);
         }
 
-        Set<QueryableEntry> query = indexes.query(Predicates.sql("__key > 10 "));
+        Set<QueryableEntry> query = indexes.query(new SqlPredicate("__key > 10 "), SKIP_PARTITIONS_COUNT_CHECK);
 
         assertNull("There should be no result", query);
     }
@@ -182,7 +186,7 @@ public class IndexesTest {
                     Index.OperationSource.USER);
         }
 
-        Set<QueryableEntry> query = indexes.query(Predicates.sql("__key > 10 "));
+        Set<QueryableEntry> query = indexes.query(new SqlPredicate("__key > 10 "), SKIP_PARTITIONS_COUNT_CHECK);
 
         assertEquals(89, query.size());
     }
@@ -203,4 +207,34 @@ public class IndexesTest {
         assertNotNull(index);
         assertSame(index, indexes.addOrGetIndex(config2, null));
     }
+
+    @Test
+    public void testEvaluateOnlyIndexesMatching() {
+        Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior).build();
+
+        Index hashIndex = indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "a"), null);
+        Index matched = indexes.matchIndex("a", IndexMatchHint.NONE, SKIP_PARTITIONS_COUNT_CHECK);
+        assertSame(hashIndex, matched);
+        matched = indexes.matchIndex("a", EqualPredicate.class, IndexMatchHint.NONE, SKIP_PARTITIONS_COUNT_CHECK);
+        assertNull(matched);
+
+        Index bitmapIndex = indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.BITMAP, "a"), null);
+        matched = indexes.matchIndex("a", IndexMatchHint.NONE, SKIP_PARTITIONS_COUNT_CHECK);
+        assertSame(hashIndex, matched);
+        matched = indexes.matchIndex("a", EqualPredicate.class, IndexMatchHint.NONE, SKIP_PARTITIONS_COUNT_CHECK);
+        assertSame(bitmapIndex, matched);
+
+        matched = indexes.matchIndex(hashIndex.getName(), IndexMatchHint.EXACT_NAME, SKIP_PARTITIONS_COUNT_CHECK);
+        assertSame(hashIndex, matched);
+        matched = indexes.matchIndex(bitmapIndex.getName(), IndexMatchHint.EXACT_NAME, SKIP_PARTITIONS_COUNT_CHECK);
+        assertSame(bitmapIndex, matched);
+
+        matched = indexes.matchIndex(bitmapIndex.getName(), EqualPredicate.class, IndexMatchHint.EXACT_NAME,
+                SKIP_PARTITIONS_COUNT_CHECK);
+        assertSame(bitmapIndex, matched);
+        matched = indexes.matchIndex(bitmapIndex.getName(), GreaterLessPredicate.class, IndexMatchHint.EXACT_NAME,
+                SKIP_PARTITIONS_COUNT_CHECK);
+        assertNull(matched);
+    }
+
 }

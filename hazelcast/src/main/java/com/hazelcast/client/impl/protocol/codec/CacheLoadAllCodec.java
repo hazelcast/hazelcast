@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,9 +34,9 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * TODO DOC
+ * Loads all the keys into the CacheRecordStore in batch.
  */
-@Generated("a72793c72b15e1c3ea8ed372096affad")
+@Generated("e81c25247a394cf761c3de9d35d58734")
 public final class CacheLoadAllCodec {
     //hex: 0x131000
     public static final int REQUEST_MESSAGE_TYPE = 1249280;
@@ -44,7 +44,7 @@ public final class CacheLoadAllCodec {
     public static final int RESPONSE_MESSAGE_TYPE = 1249281;
     private static final int REQUEST_REPLACE_EXISTING_VALUES_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_REPLACE_EXISTING_VALUES_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private CacheLoadAllCodec() {
     }
@@ -75,6 +75,7 @@ public final class CacheLoadAllCodec {
         clientMessage.setOperationName("Cache.LoadAll");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeBoolean(initialFrame.content, REQUEST_REPLACE_EXISTING_VALUES_FIELD_OFFSET, replaceExistingValues);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);

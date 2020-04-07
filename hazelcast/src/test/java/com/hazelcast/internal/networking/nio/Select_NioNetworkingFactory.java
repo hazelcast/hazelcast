@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,9 @@ package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.internal.nio.tcp.MockIOService;
-import com.hazelcast.internal.nio.tcp.NetworkingFactory;
-import com.hazelcast.internal.nio.tcp.TcpIpConnectionChannelErrorHandler;
+import com.hazelcast.internal.nio.server.MockIOService;
+import com.hazelcast.internal.nio.server.NetworkingFactory;
+import com.hazelcast.internal.nio.server.ServerConnectionChannelErrorHandler;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import static com.hazelcast.spi.properties.ClusterProperty.IO_BALANCER_INTERVAL_SECONDS;
@@ -39,8 +39,8 @@ public class Select_NioNetworkingFactory implements NetworkingFactory {
                         .metricsRegistry(metricsRegistry)
                         .threadNamePrefix(ioService.getHazelcastName())
                         .errorHandler(
-                                new TcpIpConnectionChannelErrorHandler(
-                                        loggingService.getLogger(TcpIpConnectionChannelErrorHandler.class)))
+                                new ServerConnectionChannelErrorHandler(
+                                        loggingService.getLogger(ServerConnectionChannelErrorHandler.class)))
                         .inputThreadCount(properties.getInteger(IO_INPUT_THREAD_COUNT))
                         .outputThreadCount(properties.getInteger(IO_OUTPUT_THREAD_COUNT))
                         .balancerIntervalSeconds(properties.getInteger(IO_BALANCER_INTERVAL_SECONDS))

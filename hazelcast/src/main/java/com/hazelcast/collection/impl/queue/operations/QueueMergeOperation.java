@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,8 +41,8 @@ import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
  */
 public class QueueMergeOperation extends QueueBackupAwareOperation implements MutatingOperation {
 
-    private SplitBrainMergePolicy<Collection<Object>, QueueMergeTypes> mergePolicy;
-    private QueueMergeTypes mergingValue;
+    private SplitBrainMergePolicy<Collection<Object>, QueueMergeTypes<Object>, Collection<Object>> mergePolicy;
+    private QueueMergeTypes<Object> mergingValue;
 
     private transient Collection<QueueItem> backupCollection;
     private transient boolean shouldBackup;
@@ -50,8 +50,9 @@ public class QueueMergeOperation extends QueueBackupAwareOperation implements Mu
     public QueueMergeOperation() {
     }
 
-    public QueueMergeOperation(String name, SplitBrainMergePolicy<Collection<Object>, QueueMergeTypes> mergePolicy,
-                               QueueMergeTypes mergingValue) {
+    public QueueMergeOperation(String name,
+                               SplitBrainMergePolicy<Collection<Object>, QueueMergeTypes<Object>, Collection<Object>> mergePolicy,
+                               QueueMergeTypes<Object> mergingValue) {
         super(name);
         this.mergePolicy = mergePolicy;
         this.mergingValue = mergingValue;
@@ -67,14 +68,15 @@ public class QueueMergeOperation extends QueueBackupAwareOperation implements Mu
         shouldBackup = currentCollectionIsEmpty != backupCollection.isEmpty() || currentItemId != container.getCurrentId();
     }
 
-    private Queue<QueueItem> merge(QueueContainer container, QueueMergeTypes mergingValue,
-                                   SplitBrainMergePolicy<Collection<Object>, QueueMergeTypes> mergePolicy) {
+    private Queue<QueueItem> merge(QueueContainer container, QueueMergeTypes<Object> mergingValue,
+                                   SplitBrainMergePolicy<Collection<Object>, QueueMergeTypes<Object>,
+                                           Collection<Object>> mergePolicy) {
         SerializationService serializationService = getNodeEngine().getSerializationService();
         serializationService.getManagedContext().initialize(mergingValue);
         serializationService.getManagedContext().initialize(mergePolicy);
 
         Queue<QueueItem> existingItems = container.getItemQueue();
-        QueueMergeTypes existingValue = createMergingValueOrNull(serializationService, existingItems);
+        QueueMergeTypes<Object> existingValue = createMergingValueOrNull(serializationService, existingItems);
         Collection<Object> newValues = mergePolicy.merge(mergingValue, existingValue);
 
         if (isEmpty(newValues)) {
@@ -84,14 +86,15 @@ public class QueueMergeOperation extends QueueBackupAwareOperation implements Mu
             getQueueService().destroyDistributedObject(name);
         } else if (existingValue == null) {
             createNewQueueItems(container, newValues, serializationService);
-        } else if (!newValues.equals(existingValue.getValue())) {
+        } else if (!newValues.equals(existingValue.getRawValue())) {
             container.clear();
             createNewQueueItems(container, newValues, serializationService);
         }
         return existingItems;
     }
 
-    private QueueMergeTypes createMergingValueOrNull(SerializationService serializationService, Queue<QueueItem> existingItems) {
+    private QueueMergeTypes<Object> createMergingValueOrNull(SerializationService serializationService,
+                                                             Queue<QueueItem> existingItems) {
         return existingItems.isEmpty() ? null : createMergingValue(serializationService, existingItems);
     }
 

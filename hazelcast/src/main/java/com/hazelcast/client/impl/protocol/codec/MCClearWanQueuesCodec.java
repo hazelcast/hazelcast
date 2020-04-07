@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,14 +36,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Clear WAN replication queues for the given wan replication and publisher
  */
-@Generated("6507cb101970c688f23ac3583e9e9fe0")
+@Generated("34512e5eadddf96c8d9edd5182d7effd")
 public final class MCClearWanQueuesCodec {
     //hex: 0x201400
     public static final int REQUEST_MESSAGE_TYPE = 2102272;
     //hex: 0x201401
     public static final int RESPONSE_MESSAGE_TYPE = 2102273;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private MCClearWanQueuesCodec() {
     }
@@ -68,6 +68,7 @@ public final class MCClearWanQueuesCodec {
         clientMessage.setOperationName("MC.ClearWanQueues");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, wanReplicationName);
         StringCodec.encode(clientMessage, wanPublisherId);

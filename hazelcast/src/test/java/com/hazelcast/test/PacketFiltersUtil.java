@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,9 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.cluster.Address;
-import com.hazelcast.internal.nio.tcp.FirewallingNetworkingService.FirewallingEndpointManager;
-import com.hazelcast.internal.nio.tcp.OperationPacketFilter;
-import com.hazelcast.internal.nio.tcp.PacketFilter;
+import com.hazelcast.internal.nio.server.FirewallingNetworkingService.FirewallingEndpointManager;
+import com.hazelcast.internal.nio.server.OperationPacketFilter;
+import com.hazelcast.internal.nio.server.PacketFilter;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.internal.util.collection.IntHashSet;
 
@@ -32,8 +32,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static com.hazelcast.test.HazelcastTestSupport.getAddress;
-import static com.hazelcast.test.HazelcastTestSupport.getNode;
+import static com.hazelcast.test.Accessors.getAddress;
+import static com.hazelcast.test.Accessors.getNode;
 import static java.util.Collections.singleton;
 
 @SuppressWarnings("unused")

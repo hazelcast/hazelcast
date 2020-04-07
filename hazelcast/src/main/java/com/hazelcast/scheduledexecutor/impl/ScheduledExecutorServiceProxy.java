@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,6 +47,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -438,8 +439,8 @@ public class ScheduledExecutorServiceProxy
     }
 
     private @Nonnull
-    <V> IScheduledFuture<V> createFutureProxy(Address address, String taskName) {
-        ScheduledFutureProxy proxy = new ScheduledFutureProxy(ScheduledTaskHandlerImpl.of(address, getName(), taskName), this);
+    <V> IScheduledFuture<V> createFutureProxy(UUID uuid, String taskName) {
+        ScheduledFutureProxy proxy = new ScheduledFutureProxy(ScheduledTaskHandlerImpl.of(uuid, getName(), taskName), this);
         proxy.setHazelcastInstance(getNodeEngine().getHazelcastInstance());
         return proxy;
     }
@@ -488,9 +489,10 @@ public class ScheduledExecutorServiceProxy
 
     private @Nonnull
     <V> IScheduledFuture<V> submitOnMemberSync(String taskName, Operation op, Member member) {
+        UUID uuid = member.getUuid();
         Address address = member.getAddress();
         getOperationService().invokeOnTarget(getServiceName(), op, address).joinInternal();
-        return createFutureProxy(address, taskName);
+        return createFutureProxy(uuid, taskName);
     }
 
     private void initializeManagedContext(Object object) {

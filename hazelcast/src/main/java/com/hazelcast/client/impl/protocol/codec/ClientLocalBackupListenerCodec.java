@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,19 +37,19 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds listener for backup acks
  */
-@Generated("41b9f6797b45e8367a3bbbf7fe64b020")
+@Generated("265faf35e3ad5b60b2b1ee500f1f6831")
 public final class ClientLocalBackupListenerCodec {
-    //hex: 0x001100
-    public static final int REQUEST_MESSAGE_TYPE = 4352;
-    //hex: 0x001101
-    public static final int RESPONSE_MESSAGE_TYPE = 4353;
+    //hex: 0x000F00
+    public static final int REQUEST_MESSAGE_TYPE = 3840;
+    //hex: 0x000F01
+    public static final int RESPONSE_MESSAGE_TYPE = 3841;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int EVENT_BACKUP_SOURCE_INVOCATION_CORRELATION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_BACKUP_INITIAL_FRAME_SIZE = EVENT_BACKUP_SOURCE_INVOCATION_CORRELATION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    //hex: 0x001102
-    private static final int EVENT_BACKUP_MESSAGE_TYPE = 4354;
+    //hex: 0x000F02
+    private static final int EVENT_BACKUP_MESSAGE_TYPE = 3842;
 
     private ClientLocalBackupListenerCodec() {
     }
@@ -64,6 +64,7 @@ public final class ClientLocalBackupListenerCodec {
         clientMessage.setOperationName("Client.LocalBackupListener");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         return clientMessage;
     }
@@ -108,6 +109,7 @@ public final class ClientLocalBackupListenerCodec {
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_BACKUP_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, EVENT_BACKUP_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeLong(initialFrame.content, EVENT_BACKUP_SOURCE_INVOCATION_CORRELATION_ID_FIELD_OFFSET, sourceInvocationCorrelationId);
         clientMessage.add(initialFrame);
 
@@ -127,6 +129,10 @@ public final class ClientLocalBackupListenerCodec {
             }
             Logger.getLogger(super.getClass()).finest("Unknown message type received on event handler :" + messageType);
         }
+
+        /**
+         * @param sourceInvocationCorrelationId correlation id of the invocation that backup acks belong to
+        */
         public abstract void handleBackupEvent(long sourceInvocationCorrelationId);
     }
 }

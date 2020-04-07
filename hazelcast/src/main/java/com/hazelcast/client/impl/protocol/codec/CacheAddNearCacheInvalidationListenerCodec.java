@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds listener to cache. This listener will be used to listen near cache invalidation events.
  */
-@Generated("322ceb3db2418070cc25c5a38010f7a1")
+@Generated("3b2c7acffe2355cd04fb710d590a0a93")
 public final class CacheAddNearCacheInvalidationListenerCodec {
     //hex: 0x131D00
     public static final int REQUEST_MESSAGE_TYPE = 1252608;
@@ -45,7 +45,7 @@ public final class CacheAddNearCacheInvalidationListenerCodec {
     public static final int RESPONSE_MESSAGE_TYPE = 1252609;
     private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int EVENT_CACHE_INVALIDATION_SOURCE_UUID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_CACHE_INVALIDATION_PARTITION_UUID_FIELD_OFFSET = EVENT_CACHE_INVALIDATION_SOURCE_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
@@ -80,6 +80,7 @@ public final class CacheAddNearCacheInvalidationListenerCodec {
         clientMessage.setOperationName("Cache.AddNearCacheInvalidationListener");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeBoolean(initialFrame.content, REQUEST_LOCAL_ONLY_FIELD_OFFSET, localOnly);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
@@ -127,6 +128,7 @@ public final class CacheAddNearCacheInvalidationListenerCodec {
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_CACHE_INVALIDATION_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, EVENT_CACHE_INVALIDATION_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeUUID(initialFrame.content, EVENT_CACHE_INVALIDATION_SOURCE_UUID_FIELD_OFFSET, sourceUuid);
         encodeUUID(initialFrame.content, EVENT_CACHE_INVALIDATION_PARTITION_UUID_FIELD_OFFSET, partitionUuid);
         encodeLong(initialFrame.content, EVENT_CACHE_INVALIDATION_SEQUENCE_FIELD_OFFSET, sequence);
@@ -141,6 +143,7 @@ public final class CacheAddNearCacheInvalidationListenerCodec {
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_CACHE_BATCH_INVALIDATION_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, EVENT_CACHE_BATCH_INVALIDATION_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
 
         StringCodec.encode(clientMessage, name);
@@ -179,7 +182,23 @@ public final class CacheAddNearCacheInvalidationListenerCodec {
             }
             Logger.getLogger(super.getClass()).finest("Unknown message type received on event handler :" + messageType);
         }
+
+        /**
+         * @param name Name of the cache.
+         * @param key The key of the invalidated entry.
+         * @param sourceUuid UUID of the member who fired this event.
+         * @param partitionUuid UUID of the source partition that invalidated entry belongs to.
+         * @param sequence Sequence number of the invalidation event.
+        */
         public abstract void handleCacheInvalidationEvent(java.lang.String name, @Nullable com.hazelcast.internal.serialization.Data key, @Nullable java.util.UUID sourceUuid, java.util.UUID partitionUuid, long sequence);
+
+        /**
+         * @param name Name of the cache.
+         * @param keys List of the keys of the invalidated entries.
+         * @param sourceUuids List of UUIDs of the members who fired these events.
+         * @param partitionUuids List of UUIDs of the source partitions that invalidated entries belong to.
+         * @param sequences List of sequence numbers of the invalidation events.
+        */
         public abstract void handleCacheBatchInvalidationEvent(java.lang.String name, java.util.Collection<com.hazelcast.internal.serialization.Data> keys, java.util.Collection<java.util.UUID> sourceUuids, java.util.Collection<java.util.UUID> partitionUuids, java.util.Collection<java.lang.Long> sequences);
     }
 }

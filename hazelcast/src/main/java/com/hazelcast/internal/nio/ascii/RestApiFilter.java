@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package com.hazelcast.internal.nio.ascii;
 import com.hazelcast.config.RestApiConfig;
 import com.hazelcast.config.RestEndpointGroup;
 import com.hazelcast.internal.ascii.rest.HttpCommandProcessor;
-import com.hazelcast.internal.nio.tcp.TcpIpConnection;
+import com.hazelcast.internal.nio.server.ServerConnection;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 
@@ -42,7 +42,7 @@ public class RestApiFilter implements TextProtocolFilter {
     }
 
     @Override
-    public void filterConnection(String commandLine, TcpIpConnection connection) {
+    public void filterConnection(String commandLine, ServerConnection connection) {
         RestEndpointGroup restEndpointGroup = getEndpointGroup(commandLine);
         if (restEndpointGroup != null) {
             if (!restApiConfig.isGroupEnabled(restEndpointGroup)) {

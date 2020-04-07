@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.querycache;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.RandomPicker;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.impl.MapService;
@@ -44,7 +45,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.internal.util.RandomPicker;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -58,6 +58,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 

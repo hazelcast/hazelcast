@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -112,7 +112,7 @@ class MetricsCollectionCycle {
                 MetricDescriptor descriptorCopy = descriptor
                         .copy()
                         .withUnit(methodProbe.probe.unit())
-                        .withMetric(methodProbe.getProbeOrMethodName())
+                        .withMetric(methodProbe.getProbeName())
                         .withExcludedTargets(extractExcludedTargets(methodProbe));
 
                 lookupMetricValueCatcher(descriptorCopy).catchMetricValue(collectionId, source, methodProbe);
@@ -125,7 +125,7 @@ class MetricsCollectionCycle {
                 MetricDescriptor descriptorCopy = descriptor
                         .copy()
                         .withUnit(fieldProbe.probe.unit())
-                        .withMetric(fieldProbe.getProbeOrFieldName())
+                        .withMetric(fieldProbe.getProbeName())
                         .withExcludedTargets(extractExcludedTargets(fieldProbe));
 
                 lookupMetricValueCatcher(descriptorCopy).catchMetricValue(collectionId, source, fieldProbe);

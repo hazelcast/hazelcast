@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.starter.HazelcastAPIDelegatingClassloader;
 import com.hazelcast.test.starter.HazelcastProxyFactory;
 import com.hazelcast.test.starter.HazelcastStarter;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -64,10 +63,9 @@ public class HazelcastProxyFactoryTest {
     }
 
     @Test
-    @Ignore("To be enabled with 4.x instances - see https://github.com/hazelcast/hazelcast/issues/15457")
     public void testProxyHazelcastInstanceClasses_ofSameVersion_areSame() {
-        HazelcastInstance hz1 = HazelcastStarter.newHazelcastInstance("3.8");
-        HazelcastInstance hz2 = HazelcastStarter.newHazelcastInstance("3.8");
+        HazelcastInstance hz1 = HazelcastStarter.newHazelcastInstance("4.0");
+        HazelcastInstance hz2 = HazelcastStarter.newHazelcastInstance("4.0");
         try {
             assertEquals(hz1.getClass(), hz2.getClass());
         } finally {

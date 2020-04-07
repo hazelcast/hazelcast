@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,15 +19,14 @@ package com.hazelcast.client.txn;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.transaction.TransactionalQueue;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationparker.impl.OperationParkerImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
+import com.hazelcast.transaction.TransactionalQueue;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -37,6 +36,7 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.Callable;
 
+import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static com.hazelcast.test.HazelcastTestSupport.spawn;
@@ -63,7 +63,7 @@ public class ClientTxnDisconnectionTest {
         Config config = new Config();
         config.getQueueConfig(BOUNDED_QUEUE_PREFIX).setMaxSize(1);
         HazelcastInstance instance = hazelcastFactory.newHazelcastInstance(config);
-        NodeEngineImpl nodeEngine = HazelcastTestSupport.getNode(instance).nodeEngine;
+        NodeEngineImpl nodeEngine = getNode(instance).nodeEngine;
         waitNotifyService = (OperationParkerImpl) nodeEngine.getOperationParker();
         client = hazelcastFactory.newHazelcastClient();
     }

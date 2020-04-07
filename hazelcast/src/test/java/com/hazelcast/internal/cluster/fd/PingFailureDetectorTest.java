@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,21 +41,21 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class PingFailureDetectorTest {
 
-    private PingFailureDetector failureDetector;
+    private PingFailureDetector<Member> failureDetector;
 
     @Before
     public void setup() {
-        failureDetector = new PingFailureDetector(3);
+        failureDetector = new PingFailureDetector<>(3);
     }
 
     @Test
-    public void member_isNotAlive_whenNoHeartbeat() throws Exception {
+    public void member_isNotAlive_whenNoHeartbeat() {
         Member member = newMember(5000);
         assertFalse(failureDetector.isAlive(member));
     }
 
     @Test
-    public void member_isNotAlive_afterThreeAttempts() throws Exception {
+    public void member_isNotAlive_afterThreeAttempts() {
         Member member = newMember(5000);
         failureDetector.logAttempt(member);
         failureDetector.logAttempt(member);
@@ -64,7 +64,7 @@ public class PingFailureDetectorTest {
     }
 
     @Test
-    public void member_isAlive_afterThreeAttempts_afterHeartbeat() throws Exception {
+    public void member_isAlive_afterThreeAttempts_afterHeartbeat() {
         Member member = newMember(5000);
         failureDetector.logAttempt(member);
         failureDetector.logAttempt(member);
@@ -74,28 +74,28 @@ public class PingFailureDetectorTest {
     }
 
     @Test
-    public void member_isAlive_whenHeartbeat() throws Exception {
+    public void member_isAlive_whenHeartbeat() {
         Member member = newMember(5000);
         failureDetector.heartbeat(member);
         assertTrue(failureDetector.isAlive(member));
     }
 
     @Test
-    public void member_isAlive_beforeHeartbeatTimeout() throws Exception {
+    public void member_isAlive_beforeHeartbeatTimeout() {
         Member member = newMember(5000);
         failureDetector.heartbeat(member);
         assertTrue(failureDetector.isAlive(member));
     }
 
     @Test
-    public void remove_whenNoHeartbeat() throws Exception {
+    public void remove_whenNoHeartbeat() {
         Member member = newMember(5000);
         failureDetector.remove(member);
         assertFalse(failureDetector.isAlive(member));
     }
 
     @Test
-    public void remove_afterHeartbeat() throws Exception {
+    public void remove_afterHeartbeat() {
         Member member = newMember(5000);
         failureDetector.heartbeat(member);
 
@@ -104,14 +104,14 @@ public class PingFailureDetectorTest {
     }
 
     @Test
-    public void reset_whenNoHeartbeat() throws Exception {
+    public void reset_whenNoHeartbeat() {
         Member member = newMember(5000);
         failureDetector.reset();
         assertFalse(failureDetector.isAlive(member));
     }
 
     @Test
-    public void reset_afterHeartbeat() throws Exception {
+    public void reset_afterHeartbeat() {
         Member member = newMember(5000);
         failureDetector.heartbeat(member);
 

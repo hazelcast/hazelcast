@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,10 +24,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("e999d835cca0d67db67c1b3997c32742")
+@Generated("3d4ca8289994b4baea8697c3f7eeb415")
 public final class IndexConfigCodec {
     private static final int TYPE_FIELD_OFFSET = 0;
-    private static final int INITIAL_FRAME_SIZE = TYPE_FIELD_OFFSET + ENUM_SIZE_IN_BYTES;
+    private static final int INITIAL_FRAME_SIZE = TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private IndexConfigCodec() {
     }
@@ -36,11 +36,12 @@ public final class IndexConfigCodec {
         clientMessage.add(BEGIN_FRAME.copy());
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
-        encodeEnum(initialFrame.content, TYPE_FIELD_OFFSET, indexConfig.getType());
+        encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, indexConfig.getType());
         clientMessage.add(initialFrame);
 
         CodecUtil.encodeNullable(clientMessage, indexConfig.getName(), StringCodec::encode);
         ListMultiFrameCodec.encode(clientMessage, indexConfig.getAttributes(), StringCodec::encode);
+        CodecUtil.encodeNullable(clientMessage, indexConfig.getBitmapIndexOptions(), BitmapIndexOptionsCodec::encode);
 
         clientMessage.add(END_FRAME.copy());
     }
@@ -50,13 +51,14 @@ public final class IndexConfigCodec {
         iterator.next();
 
         ClientMessage.Frame initialFrame = iterator.next();
-        int type = decodeEnum(initialFrame.content, TYPE_FIELD_OFFSET);
+        int type = decodeInt(initialFrame.content, TYPE_FIELD_OFFSET);
 
         java.lang.String name = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         java.util.List<java.lang.String> attributes = ListMultiFrameCodec.decode(iterator, StringCodec::decode);
+        com.hazelcast.config.BitmapIndexOptions bitmapIndexOptions = CodecUtil.decodeNullable(iterator, BitmapIndexOptionsCodec::decode);
 
         fastForwardToEndFrame(iterator);
 
-        return CustomTypeFactory.createIndexConfig(name, type, attributes);
+        return CustomTypeFactory.createIndexConfig(name, type, attributes, bitmapIndexOptions);
     }
 }

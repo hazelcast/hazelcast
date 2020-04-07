@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,12 @@
 package com.hazelcast.client.impl.spi.impl;
 
 import com.hazelcast.client.Client;
-import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.ClientImpl;
-import com.hazelcast.client.impl.MemberImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.client.impl.spi.ClientPartitionService;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.InitialMembershipEvent;
 import com.hazelcast.cluster.InitialMembershipListener;
@@ -33,16 +30,14 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MemberSelector;
 import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.MembershipListener;
-import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.MemberSelectingCollection;
-import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 
 import javax.annotation.Nonnull;
@@ -50,6 +45,7 @@ import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.EventListener;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -77,17 +73,18 @@ public class ClientClusterServiceImpl implements ClientClusterService {
 
     private final AtomicReference<MemberListSnapshot> memberListSnapshot = new AtomicReference<>(EMPTY_SNAPSHOT);
     private final ConcurrentMap<UUID, MembershipListener> listeners = new ConcurrentHashMap<>();
-    private final Object clusterViewLock = new Object();
     private final Set<String> labels;
     private final ILogger logger;
     private final ClientConnectionManager connectionManager;
-    private volatile CountDownLatch initialListFetchedLatch = new CountDownLatch(1);
+    private final Object clusterViewLock = new Object();
+    //read and written under clusterViewLock
+    private CountDownLatch initialListFetchedLatch = new CountDownLatch(1);
 
     private static final class MemberListSnapshot {
         private final int version;
-        private final LinkedHashMap<Address, Member> members;
+        private final LinkedHashMap<UUID, Member> members;
 
-        private MemberListSnapshot(int version, LinkedHashMap<Address, Member> members) {
+        private MemberListSnapshot(int version, LinkedHashMap<UUID, Member> members) {
             this.version = version;
             this.members = members;
         }
@@ -100,42 +97,10 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         connectionManager = client.getConnectionManager();
     }
 
-    private void handleListenerConfigs() {
-        ClientConfig clientConfig = client.getClientConfig();
-        List<ListenerConfig> listenerConfigs = clientConfig.getListenerConfigs();
-        for (ListenerConfig listenerConfig : listenerConfigs) {
-            EventListener listener = listenerConfig.getImplementation();
-            if (listener == null) {
-                try {
-                    listener = ClassLoaderUtil.newInstance(clientConfig.getClassLoader(), listenerConfig.getClassName());
-                } catch (Exception e) {
-                    logger.severe(e);
-                }
-            }
-            if (listener instanceof MembershipListener) {
-                addMembershipListenerWithoutInit((MembershipListener) listener);
-            }
-            if (listener instanceof PartitionLostListener) {
-                client.getPartitionService().addPartitionLostListener((PartitionLostListener) listener);
-            }
-        }
-    }
-
-    @Override
-    public Member getMember(Address address) {
-        return memberListSnapshot.get().members.get(address);
-    }
-
     @Override
     public Member getMember(@Nonnull UUID uuid) {
         checkNotNull(uuid, "UUID must not be null");
-        final Collection<Member> memberList = getMemberList();
-        for (Member member : memberList) {
-            if (uuid.equals(member.getUuid())) {
-                return member;
-            }
-        }
-        return null;
+        return memberListSnapshot.get().members.get(uuid);
     }
 
     @Override
@@ -150,9 +115,13 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     @Override
-    public Address getMasterAddress() {
+    public Member getMasterMember() {
         final Collection<Member> memberList = getMemberList();
-        return !memberList.isEmpty() ? new Address(memberList.iterator().next().getSocketAddress()) : null;
+        Iterator<Member> iterator = memberList.iterator();
+        if (iterator.hasNext()) {
+            return iterator.next();
+        }
+        return null;
     }
 
     @Override
@@ -207,8 +176,9 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         return listeners.remove(registrationId) != null;
     }
 
-    public void start() {
-        handleListenerConfigs();
+    public void start(Collection<EventListener> configuredListeners) {
+        configuredListeners.stream().filter(listener -> listener instanceof MembershipListener)
+                           .forEach(listener -> addMembershipListener((MembershipListener) listener));
     }
 
     public void waitInitialMemberListFetched() {
@@ -261,11 +231,14 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     private MemberListSnapshot createSnapshot(int memberListVersion, Collection<MemberInfo> memberInfos) {
-        LinkedHashMap<Address, Member> newMembers = new LinkedHashMap<>();
+        LinkedHashMap<UUID, Member> newMembers = new LinkedHashMap<>();
         for (MemberInfo memberInfo : memberInfos) {
-            Address address = memberInfo.getAddress();
-            newMembers.put(address, new MemberImpl(address, memberInfo.getVersion(), memberInfo.getUuid(),
-                    memberInfo.getAttributes(), memberInfo.isLiteMember()));
+            MemberImpl member = new MemberImpl.Builder(memberInfo.getAddress()).version(memberInfo.getVersion())
+                    .uuid(memberInfo.getUuid())
+                    .attributes(memberInfo.getAttributes())
+                    .liteMember(memberInfo.isLiteMember())
+                    .memberListJoinVersion(memberInfo.getMemberListJoinVersion()).build();
+            newMembers.put(memberInfo.getUuid(), member);
         }
         return new MemberListSnapshot(memberListVersion, newMembers);
     }
@@ -288,14 +261,11 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         // removal events should be added before added events
         for (Member member : deadMembers) {
             events.add(new MembershipEvent(client.getCluster(), member, MembershipEvent.MEMBER_REMOVED, currentMembers));
-            Address address = member.getAddress();
-            if (getMember(address) == null) {
-                Connection connection = connectionManager.getConnection(address);
-                if (connection != null) {
-                    connection.close(null,
-                            new TargetDisconnectedException("The client has closed the connection to this member,"
-                                    + " after receiving a member left event from the cluster. " + connection));
-                }
+            Connection connection = connectionManager.getConnection(member.getUuid());
+            if (connection != null) {
+                connection.close(null,
+                        new TargetDisconnectedException("The client has closed the connection to this member,"
+                                + " after receiving a member left event from the cluster. " + connection));
             }
         }
         for (Member member : newMembers) {
@@ -329,7 +299,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
             logger.finest("Handling new snapshot with membership version: " + memberListVersion + ", membersString "
                     + membersString(snapshot));
         }
-        MemberListSnapshot  clusterViewSnapshot = memberListSnapshot.get();
+        MemberListSnapshot clusterViewSnapshot = memberListSnapshot.get();
         if (clusterViewSnapshot == EMPTY_SNAPSHOT) {
             synchronized (clusterViewLock) {
                 clusterViewSnapshot = memberListSnapshot.get();

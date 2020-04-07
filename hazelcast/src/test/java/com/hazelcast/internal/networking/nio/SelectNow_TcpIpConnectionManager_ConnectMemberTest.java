@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.networking.nio;
 
-import com.hazelcast.internal.nio.tcp.TcpIpEndpointManager_AbstractConnectMemberTest;
+import com.hazelcast.internal.nio.server.ServerEndpointManager_AbstractConnectMemberTest;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Before;
@@ -25,7 +25,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
-public class SelectNow_TcpIpConnectionManager_ConnectMemberTest extends TcpIpEndpointManager_AbstractConnectMemberTest {
+public class SelectNow_TcpIpConnectionManager_ConnectMemberTest extends ServerEndpointManager_AbstractConnectMemberTest {
 
     @Before
     public void setup() throws Exception {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.protocol.task.crdt.pncounter;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.PNCounterGetCodec;
 import com.hazelcast.client.impl.protocol.codec.PNCounterGetCodec.RequestParameters;
-import com.hazelcast.client.impl.protocol.task.AbstractAddressMessageTask;
+import com.hazelcast.client.impl.protocol.task.AbstractTargetMessageTask;
 import com.hazelcast.cluster.impl.VectorClock;
 import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.crdt.pncounter.PNCounter;
@@ -27,7 +27,6 @@ import com.hazelcast.internal.crdt.pncounter.PNCounterService;
 import com.hazelcast.internal.crdt.pncounter.operations.CRDTTimestampedLong;
 import com.hazelcast.internal.crdt.pncounter.operations.GetOperation;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.PNCounterPermission;
@@ -43,15 +42,15 @@ import java.util.UUID;
  * If this message was sent from a client with smart routing disabled, the
  * member may forward the request to a different target member.
  */
-public class PNCounterGetMessageTask extends AbstractAddressMessageTask<RequestParameters> {
+public class PNCounterGetMessageTask extends AbstractTargetMessageTask<RequestParameters> {
 
     public PNCounterGetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected Address getAddress() {
-        return parameters.targetReplica;
+    protected UUID getTargetUuid() {
+        return parameters.targetReplicaUUID;
     }
 
     @Override
@@ -67,9 +66,7 @@ public class PNCounterGetMessageTask extends AbstractAddressMessageTask<RequestP
 
     @Override
     protected PNCounterGetCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        parameters = PNCounterGetCodec.decodeRequest(clientMessage);
-        parameters.targetReplica = clientEngine.memberAddressOf(parameters.targetReplica);
-        return parameters;
+        return PNCounterGetCodec.decodeRequest(clientMessage);
     }
 
     @Override

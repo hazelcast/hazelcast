@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,9 +35,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * TODO DOC
+ * Adds an entry listener for this cache. For the types of events that the listener
+ * will be notified for, see the documentation of the type field of the Cache event below.
  */
-@Generated("62de91f5fca2f53f7da9ae9280c348b8")
+@Generated("38e9a0b8b11aaf0dc00697daff457bf1")
 public final class CacheAddEntryListenerCodec {
     //hex: 0x130100
     public static final int REQUEST_MESSAGE_TYPE = 1245440;
@@ -45,7 +46,7 @@ public final class CacheAddEntryListenerCodec {
     public static final int RESPONSE_MESSAGE_TYPE = 1245441;
     private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int EVENT_CACHE_TYPE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_CACHE_COMPLETION_ID_FIELD_OFFSET = EVENT_CACHE_TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -65,7 +66,7 @@ public final class CacheAddEntryListenerCodec {
         public java.lang.String name;
 
         /**
-         * if true fires events that originated from this node only, otherwise fires all events
+         * If true fires events that originated from this node only, otherwise fires all events
          */
         public boolean localOnly;
     }
@@ -76,6 +77,7 @@ public final class CacheAddEntryListenerCodec {
         clientMessage.setOperationName("Cache.AddEntryListener");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeBoolean(initialFrame.content, REQUEST_LOCAL_ONLY_FIELD_OFFSET, localOnly);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
@@ -123,6 +125,7 @@ public final class CacheAddEntryListenerCodec {
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_CACHE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         initialFrame.flags |= ClientMessage.IS_EVENT_FLAG;
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, EVENT_CACHE_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeInt(initialFrame.content, EVENT_CACHE_TYPE_FIELD_OFFSET, type);
         encodeInt(initialFrame.content, EVENT_CACHE_COMPLETION_ID_FIELD_OFFSET, completionId);
         clientMessage.add(initialFrame);
@@ -146,6 +149,22 @@ public final class CacheAddEntryListenerCodec {
             }
             Logger.getLogger(super.getClass()).finest("Unknown message type received on event handler :" + messageType);
         }
+
+        /**
+         * @param type The type of the event. Possible values for the event are:
+         *             CREATED(1): An event type indicating that the cache entry was created.
+         *             UPDATED(2): An event type indicating that the cache entry was updated, i.e. a previous mapping existed.
+         *             REMOVED(3): An event type indicating that the cache entry was removed.
+         *             EXPIRED(4): An event type indicating that the cache entry has expired.
+         *             EVICTED(5): An event type indicating that the cache entry has evicted.
+         *             INVALIDATED(6): An event type indicating that the cache entry has invalidated for near cache invalidation.
+         *             COMPLETED(7): An event type indicating that the cache operation has completed.
+         *             EXPIRATION_TIME_UPDATED(8): An event type indicating that the expiration time of cache record has been updated
+         *             PARTITION_LOST(9): An event type indicating that partition loss is detected in given cache with name
+         * @param keys The keys of the entries in the cache.
+         * @param completionId User generated id which shall be received as a field of the cache event upon completion of the
+         *                     request in the cluster.
+        */
         public abstract void handleCacheEvent(int type, java.util.Collection<com.hazelcast.cache.impl.CacheEventData> keys, int completionId);
     }
 }

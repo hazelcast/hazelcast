@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,26 +43,26 @@ public class PhiAccrualFailureDetectorTest {
             acceptableHeartbeatPause, minStdDev);
 
     @Test
-    public void member_isAssumedAlive_beforeFirstHeartbeat() throws Exception {
+    public void member_isAssumedAlive_beforeFirstHeartbeat() {
         assertTrue(failureDetector.isAlive(Clock.currentTimeMillis()));
     }
 
     @Test
-    public void member_isAlive_whenHeartbeat() throws Exception {
+    public void member_isAlive_whenHeartbeat() {
         long timestamp = Clock.currentTimeMillis();
         failureDetector.heartbeat(timestamp);
         assertTrue(failureDetector.isAlive(timestamp));
     }
 
     @Test
-    public void member_isAlive_beforeHeartbeatTimeout() throws Exception {
+    public void member_isAlive_beforeHeartbeatTimeout() {
         long timestamp = Clock.currentTimeMillis();
         failureDetector.heartbeat(timestamp);
         assertTrue(failureDetector.isAlive(timestamp + acceptableHeartbeatPause / 2));
     }
 
     @Test
-    public void member_isNotAlive_afterHeartbeatTimeout() throws Exception {
+    public void member_isNotAlive_afterHeartbeatTimeout() {
         long timestamp = Clock.currentTimeMillis();
         failureDetector.heartbeat(timestamp);
 
@@ -71,13 +71,13 @@ public class PhiAccrualFailureDetectorTest {
     }
 
     @Test
-    public void lastHeartbeat_whenNoHeartbeat() throws Exception {
+    public void lastHeartbeat_whenNoHeartbeat() {
         long lastHeartbeat = failureDetector.lastHeartbeat();
         assertEquals(PhiAccrualFailureDetector.NO_HEARTBEAT_TIMESTAMP, lastHeartbeat);
     }
 
     @Test
-    public void lastHeartbeat() throws Exception {
+    public void lastHeartbeat() {
         long timestamp = Clock.currentTimeMillis();
         failureDetector.heartbeat(timestamp);
 
@@ -86,14 +86,14 @@ public class PhiAccrualFailureDetectorTest {
     }
 
     @Test
-    public void nonSuspected_beforeFirstHeartbeat() throws Exception {
+    public void nonSuspected_beforeFirstHeartbeat() {
         double suspicionLevel = failureDetector.suspicionLevel(Clock.currentTimeMillis());
 
         assertEquals(0, suspicionLevel, 0d);
     }
 
     @Test
-    public void suspicionLevel_whenHeartbeat() throws Exception {
+    public void suspicionLevel_whenHeartbeat() {
         long timestamp = Clock.currentTimeMillis();
         failureDetector.heartbeat(timestamp);
 
@@ -102,7 +102,7 @@ public class PhiAccrualFailureDetectorTest {
     }
 
     @Test
-    public void suspicionLevel_beforeHeartbeatTimeout() throws Exception {
+    public void suspicionLevel_beforeHeartbeatTimeout() {
         long timestamp = Clock.currentTimeMillis();
         failureDetector.heartbeat(timestamp);
 
@@ -112,7 +112,7 @@ public class PhiAccrualFailureDetectorTest {
     }
 
     @Test
-    public void suspicionLevel_afterHeartbeatTimeout() throws Exception {
+    public void suspicionLevel_afterHeartbeatTimeout() {
         long timestamp = Clock.currentTimeMillis();
         failureDetector.heartbeat(timestamp);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.spi.merge.MergingExpirationTime;
 import com.hazelcast.spi.merge.MergingLastStoredTime;
 import com.hazelcast.spi.merge.MergingValue;
+import com.hazelcast.spi.merge.MergingView;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
@@ -176,8 +177,8 @@ public final class MergePolicyValidator {
 
     private static void checkRequiredMergeTypeClass(List<Class> requiredMergeTypes, Class providedMergeTypes,
                                                     String mergePolicyClassName, Class<?> requiredMergeTypeClass) {
-        if (!MergingValue.class.isAssignableFrom(requiredMergeTypeClass)) {
-            // just check types, which inherit from MergingValue
+        if (!MergingView.class.isAssignableFrom(requiredMergeTypeClass)) {
+            // just check types, which inherit from MergingView
             return;
         }
         if (!requiredMergeTypeClass.isAssignableFrom(providedMergeTypes)) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import java.io.PrintWriter;
 import java.lang.reflect.Field;
 
 import static com.hazelcast.internal.nio.IOUtil.deleteQuietly;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 
 public class AbstractDiagnosticsPluginTest extends HazelcastTestSupport {
 

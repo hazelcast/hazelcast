@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static com.hazelcast.instance.impl.TestUtil.terminateInstance;
 import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
 import static com.hazelcast.internal.partition.InternalPartition.MAX_REPLICA_COUNT;
+import static com.hazelcast.test.Accessors.getNode;
 import static org.hamcrest.Matchers.empty;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
@@ -66,14 +67,14 @@ public class NoMigrationClusterStateTest extends HazelcastTestSupport {
         changeClusterStateEventually(instances[1], ClusterState.NO_MIGRATION);
         terminateInstance(instances[0]);
 
-        final HazelcastInstance hz = factory.newHazelcastInstance(config);
+        HazelcastInstance hz = factory.newHazelcastInstance(config);
 
         assertTrueAllTheTime(new AssertTask() {
-            final Node node = getNode(hz);
-            final InternalPartitionService partitionService = node.getPartitionService();
+            Node node = getNode(hz);
+            InternalPartitionService partitionService = node.getPartitionService();
 
             @Override
-            public void run() throws Exception {
+            public void run() {
                 List<Integer> memberPartitions = partitionService.getMemberPartitions(node.getThisAddress());
                 assertThat(memberPartitions, empty());
                 service.assertNoReplication();
@@ -168,20 +169,17 @@ public class NoMigrationClusterStateTest extends HazelcastTestSupport {
         }
     }
 
-    private static void assertAllPartitionsAreAssigned(HazelcastInstance instance, final int replicaCount) {
-        final ClusterServiceImpl clusterService = getNode(instance).getClusterService();
-        final InternalPartitionService partitionService = getNode(instance).getPartitionService();
+    private static void assertAllPartitionsAreAssigned(HazelcastInstance instance, int replicaCount) {
+        ClusterServiceImpl clusterService = getNode(instance).getClusterService();
+        InternalPartitionService partitionService = getNode(instance).getPartitionService();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                InternalPartition[] partitions = partitionService.getInternalPartitions();
-                for (InternalPartition partition : partitions) {
-                    for (int i = 0; i < replicaCount; i++) {
-                        Address owner = partition.getReplicaAddress(i);
-                        assertNotNull(i + "th replica owner is null: " + partition, owner);
-                        assertNotNull("No member for: " + owner, clusterService.getMember(owner));
-                    }
+        assertTrueEventually(() -> {
+            InternalPartition[] partitions = partitionService.getInternalPartitions();
+            for (InternalPartition partition : partitions) {
+                for (int i = 0; i < replicaCount; i++) {
+                    Address owner = partition.getReplicaAddress(i);
+                    assertNotNull(i + "th replica owner is null: " + partition, owner);
+                    assertNotNull("No member for: " + owner, clusterService.getMember(owner));
                 }
             }
         });
@@ -200,12 +198,7 @@ public class NoMigrationClusterStateTest extends HazelcastTestSupport {
 
         assertClusterSizeEventually(2, instances[1], instances[2]);
 
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                service.assertNoReplication();
-            }
-        }, 10);
+        assertTrueAllTheTime(service::assertNoReplication, 10);
     }
 
     @Test
@@ -239,12 +232,7 @@ public class NoMigrationClusterStateTest extends HazelcastTestSupport {
 
         changeClusterStateEventually(instances[1], ClusterState.FROZEN);
 
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                service.assertNoReplication();
-            }
-        }, 10);
+        assertTrueAllTheTime(service::assertNoReplication, 10);
     }
 
     private Config newConfigWithMigrationAwareService() {

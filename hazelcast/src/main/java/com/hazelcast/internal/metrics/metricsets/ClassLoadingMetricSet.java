@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,9 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import java.lang.management.ClassLoadingMXBean;
 import java.lang.management.ManagementFactory;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLASSLOADING_FULL_METRIC_LOADED_CLASSES_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLASSLOADING_FULL_METRIC_TOTAL_LOADED_CLASSES_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLASSLOADING_FULL_METRIC_UNLOADED_CLASSES_COUNT;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
@@ -42,13 +45,13 @@ public final class ClassLoadingMetricSet {
 
         ClassLoadingMXBean mxBean = ManagementFactory.getClassLoadingMXBean();
 
-        metricsRegistry.registerStaticProbe(mxBean, "classloading.loadedClassesCount", MANDATORY,
+        metricsRegistry.registerStaticProbe(mxBean, CLASSLOADING_FULL_METRIC_LOADED_CLASSES_COUNT, MANDATORY,
                 ClassLoadingMXBean::getLoadedClassCount);
 
-        metricsRegistry.registerStaticProbe(mxBean, "classloading.totalLoadedClassesCount", MANDATORY,
+        metricsRegistry.registerStaticProbe(mxBean, CLASSLOADING_FULL_METRIC_TOTAL_LOADED_CLASSES_COUNT, MANDATORY,
                 ClassLoadingMXBean::getTotalLoadedClassCount);
 
-        metricsRegistry.registerStaticProbe(mxBean, "classloading.unloadedClassCount", MANDATORY,
+        metricsRegistry.registerStaticProbe(mxBean, CLASSLOADING_FULL_METRIC_UNLOADED_CLASSES_COUNT, MANDATORY,
                 ClassLoadingMXBean::getUnloadedClassCount);
     }
 }

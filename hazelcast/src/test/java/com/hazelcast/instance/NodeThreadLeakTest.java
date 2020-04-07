@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.impl.DefaultNodeContext;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.internal.nio.tcp.TcpIpNetworkingService;
+import com.hazelcast.internal.nio.server.ServerNetworkingService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.executionservice.impl.ExecutionServiceImpl;
@@ -54,7 +54,7 @@ public class NodeThreadLeakTest extends HazelcastTestSupport {
 
     @Test
     public void testLeakWhenCreatingConnectionManager() throws Exception {
-        mockConstructorAndTest(TcpIpNetworkingService.class);
+        mockConstructorAndTest(ServerNetworkingService.class);
     }
 
     @Test

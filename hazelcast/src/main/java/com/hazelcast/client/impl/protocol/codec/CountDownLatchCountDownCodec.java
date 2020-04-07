@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * re-enabled for thread scheduling purposes, and Countdown owner is set to
  * null. If the current count equals zero, then nothing happens.
  */
-@Generated("93dc3f4692b78907ff1c7fa455afbf31")
+@Generated("9cccb81e97441e5f2b5374a841307ff0")
 public final class CountDownLatchCountDownCodec {
     //hex: 0x0B0300
     public static final int REQUEST_MESSAGE_TYPE = 721664;
@@ -49,7 +49,7 @@ public final class CountDownLatchCountDownCodec {
     private static final int REQUEST_INVOCATION_UID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_EXPECTED_ROUND_FIELD_OFFSET = REQUEST_INVOCATION_UID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_EXPECTED_ROUND_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private CountDownLatchCountDownCodec() {
     }
@@ -84,6 +84,7 @@ public final class CountDownLatchCountDownCodec {
         clientMessage.setOperationName("CountDownLatch.CountDown");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeUUID(initialFrame.content, REQUEST_INVOCATION_UID_FIELD_OFFSET, invocationUid);
         encodeInt(initialFrame.content, REQUEST_EXPECTED_ROUND_FIELD_OFFSET, expectedRound);
         clientMessage.add(initialFrame);

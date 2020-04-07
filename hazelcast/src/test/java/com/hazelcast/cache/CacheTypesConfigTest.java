@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,8 +43,8 @@ import javax.cache.spi.CachingProvider;
 import java.util.Arrays;
 import java.util.List;
 
-import static com.hazelcast.cache.HazelcastCachingProvider.propertiesByInstanceItself;
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
+import static com.hazelcast.cache.HazelcastCachingProvider.propertiesByInstanceItself;
 import static com.hazelcast.config.UserCodeDeploymentConfig.ClassCacheMode.OFF;
 import static org.junit.Assert.assertNotNull;
 
@@ -159,8 +159,8 @@ public class CacheTypesConfigTest extends HazelcastTestSupport {
 
     // overridden in another context
     CacheConfig<String, Person> createCacheConfig() {
-        CacheConfig<String, Person> cacheConfig = new CacheConfig<String, Person>();
-        cacheConfig.setTypes(String.class, Person.class).setManagementEnabled(true);
+        CacheConfig<String, Person> cacheConfig = new CacheConfig<>();
+        cacheConfig.setTypes(String.class, Person.class);
         return cacheConfig;
     }
 

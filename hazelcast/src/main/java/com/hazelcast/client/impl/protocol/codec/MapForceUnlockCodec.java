@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Releases the lock for the specified key regardless of the lock owner.It always successfully unlocks the key,
  * never blocks,and returns immediately.
  */
-@Generated("4daee0c69dac5253aa4f7068c7a8ea75")
+@Generated("bef3fd76c989f0ea576907d1d0c18927")
 public final class MapForceUnlockCodec {
     //hex: 0x013300
     public static final int REQUEST_MESSAGE_TYPE = 78592;
@@ -45,7 +45,7 @@ public final class MapForceUnlockCodec {
     public static final int RESPONSE_MESSAGE_TYPE = 78593;
     private static final int REQUEST_REFERENCE_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_REFERENCE_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private MapForceUnlockCodec() {
     }
@@ -75,6 +75,7 @@ public final class MapForceUnlockCodec {
         clientMessage.setOperationName("Map.ForceUnlock");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeLong(initialFrame.content, REQUEST_REFERENCE_ID_FIELD_OFFSET, referenceId);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,6 +65,10 @@ public class PermissionConfig implements IdentifiedDataSerializable {
      * Type of permission
      */
     public enum PermissionType {
+        /**
+         * All
+         */
+        ALL("all-permissions"),
         /**
          * Map
          */
@@ -142,18 +146,21 @@ public class PermissionConfig implements IdentifiedDataSerializable {
          */
         USER_CODE_DEPLOYMENT("user-code-deployment-permission"),
         /**
-         * All
-         */
-        ALL("all-permissions"),
-        /**
          * Configuration permission
          */
         CONFIG("config-permission"),
         /**
          * CRDT PN Counter
          */
-        PN_COUNTER("pn-counter-permission");
-
+        PN_COUNTER("pn-counter-permission"),
+        /**
+         * RingBuffer
+         */
+        RING_BUFFER("ring-buffer-permission"),
+        /**
+         * ReliableTopic
+         */
+        RELIABLE_TOPIC("reliable-topic-permission");
         private final String nodeName;
 
         PermissionType(String nodeName) {

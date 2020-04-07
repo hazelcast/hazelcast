@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,10 +43,14 @@ public class ChangeWanReplicationStateMessageTask extends AbstractInvocationMess
 
     @Override
     protected Operation prepareOperation() {
+        WanPublisherState state = WanPublisherState.getByType(parameters.newState);
+        if (state == null) {
+            throw new IllegalArgumentException("Unexpected WAN publisher state = [" + parameters.newState + "]");
+        }
         return new ChangeWanStateOperation(
                 parameters.wanReplicationName,
                 parameters.wanPublisherId,
-                WanPublisherState.getByType(parameters.newState));
+                state);
     }
 
     @Override
@@ -82,5 +86,10 @@ public class ChangeWanReplicationStateMessageTask extends AbstractInvocationMess
     @Override
     public Object[] getParameters() {
         return new Object[] {parameters.wanReplicationName, parameters.wanPublisherId, parameters.newState};
+    }
+
+    @Override
+    public boolean isManagementTask() {
+        return true;
     }
 }

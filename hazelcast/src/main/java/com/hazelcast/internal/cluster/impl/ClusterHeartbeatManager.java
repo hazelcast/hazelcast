@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,12 @@
 
 package com.hazelcast.internal.cluster.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.impl.MemberImpl;
-import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.config.IcmpFailureDetectorConfig;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.fd.ClusterFailureDetector;
 import com.hazelcast.internal.cluster.fd.ClusterFailureDetectorType;
 import com.hazelcast.internal.cluster.fd.DeadlineClusterFailureDetector;
@@ -30,9 +31,10 @@ import com.hazelcast.internal.cluster.impl.operations.ExplicitSuspicionOp;
 import com.hazelcast.internal.cluster.impl.operations.HeartbeatComplaintOp;
 import com.hazelcast.internal.cluster.impl.operations.HeartbeatOp;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.ICMPHelper;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -40,26 +42,29 @@ import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.splitbrainprotection.impl.SplitBrainProtectionServiceImpl;
-import com.hazelcast.internal.util.Clock;
-import com.hazelcast.internal.util.ICMPHelper;
 
 import java.io.IOException;
 import java.net.ConnectException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.logging.Level;
 
+import static com.hazelcast.cluster.memberselector.MemberSelectors.NON_LOCAL_MEMBER_SELECTOR;
 import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.CLUSTER_EXECUTOR_NAME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLUSTER_METRIC_HEARTBEAT_MANAGER_LAST_HEARTBEAT;
+import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.StringUtil.timeToString;
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.stream.Collectors.toSet;
 
 /**
  * ClusterHeartbeatManager manages the heartbeat sending and receiving
@@ -100,7 +105,7 @@ public class ClusterHeartbeatManager {
     private final int icmpIntervalMillis;
     private final int icmpMaxAttempts;
 
-    @Probe(name = "lastHeartbeat")
+    @Probe(name = CLUSTER_METRIC_HEARTBEAT_MANAGER_LAST_HEARTBEAT, unit = MS)
     private volatile long lastHeartbeat;
     private volatile long lastClusterTimeDiff;
 
@@ -214,7 +219,8 @@ public class ClusterHeartbeatManager {
         }
     }
 
-    public void handleHeartbeat(MembersViewMetadata senderMembersViewMetadata, UUID receiverUuid, long timestamp) {
+    public void handleHeartbeat(MembersViewMetadata senderMembersViewMetadata, UUID receiverUuid, long timestamp,
+                                Collection<MemberInfo> suspectedMembers) {
         Address senderAddress = senderMembersViewMetadata.getMemberAddress();
         try {
             long timeout = Math.min(TimeUnit.SECONDS.toMillis(1), heartbeatIntervalMillis / 2);
@@ -247,7 +253,11 @@ public class ClusterHeartbeatManager {
             MemberImpl member = membershipManager.getMember(senderAddress, senderMembersViewMetadata.getMemberUuid());
             if (member != null) {
                 if (clusterService.getThisUuid().equals(receiverUuid)) {
-                    onHeartbeat(member, timestamp);
+                    if (onHeartbeat(member, timestamp)) {
+                        // local timestamp is used on purpose here
+                        membershipManager.handleReceivedSuspectedMembers(member, clusterClock.getClusterTime(), suspectedMembers);
+                    }
+
                     return;
                 }
 
@@ -272,14 +282,14 @@ public class ClusterHeartbeatManager {
                 clusterService.sendExplicitSuspicion(senderMembersViewMetadata);
             }
         } else {
-            Address masterAddress = clusterService.getMasterAddress();
-            if (clusterService.getMembershipManager().isMemberSuspected(masterAddress)) {
+            MemberImpl master = clusterService.getMember(clusterService.getMasterAddress());
+            if (clusterService.getMembershipManager().isMemberSuspected(master)) {
                 logger.fine("Not sending heartbeat complaint for " + senderMembersViewMetadata
-                        + " to suspected master: " + masterAddress);
+                        + " to suspected master: " + master.getAddress());
                 return;
             }
 
-            logger.fine("Sending heartbeat complaint to master " + masterAddress + " for heartbeat "
+            logger.fine("Sending heartbeat complaint to master " + master.getAddress() + " for heartbeat "
                     + senderMembersViewMetadata + ", because it is not a member of this cluster"
                     + " or its heartbeat cannot be validated!");
             sendHeartbeatComplaintToMaster(senderMembersViewMetadata);
@@ -368,10 +378,11 @@ public class ClusterHeartbeatManager {
      *
      * @param member    the member sending the heartbeat
      * @param timestamp the timestamp when the heartbeat was created
+     * @return          true if the heartbeat is processed, false if it is ignored.
      */
-    public void onHeartbeat(MemberImpl member, long timestamp) {
+    public boolean onHeartbeat(MemberImpl member, long timestamp) {
         if (member == null) {
-            return;
+            return false;
         }
         long clusterTime = clusterClock.getClusterTime();
         if (logger.isFineEnabled()) {
@@ -382,7 +393,7 @@ public class ClusterHeartbeatManager {
         if (clusterTime - timestamp > maxNoHeartbeatMillis / 2) {
             logger.warning(format("Ignoring heartbeat from %s since it is expired (now: %s, timestamp: %s)", member,
                     timeToString(clusterTime), timeToString(timestamp)));
-            return;
+            return false;
         }
 
         if (isMaster(member)) {
@@ -391,8 +402,10 @@ public class ClusterHeartbeatManager {
         heartbeatFailureDetector.heartbeat(member, clusterClock.getClusterTime());
 
         MembershipManager membershipManager = clusterService.getMembershipManager();
-        membershipManager.clearMemberSuspicion(member.getAddress(), "Valid heartbeat");
+        membershipManager.clearMemberSuspicion(member, "Valid heartbeat");
         nodeEngine.getSplitBrainProtectionService().onHeartbeat(member, timestamp);
+
+        return true;
     }
 
     /**
@@ -474,22 +487,21 @@ public class ClusterHeartbeatManager {
      * @param now the current cluster clock time
      */
     private void heartbeatWhenMaster(long now) {
-        Collection<MemberImpl> members = clusterService.getMemberImpls();
-        for (MemberImpl member : members) {
-            if (!member.localMember()) {
-                try {
-                    logIfConnectionToEndpointIsMissing(now, member);
-                    if (suspectMemberIfNotHeartBeating(now, member)) {
-                        continue;
-                    }
-
-                    pingMemberIfRequired(now, member);
-                    sendHeartbeat(member);
-                } catch (Throwable e) {
-                    logger.severe(e);
+        for (Member member : clusterService.getMembers(NON_LOCAL_MEMBER_SELECTOR)) {
+            try {
+                logIfConnectionToEndpointIsMissing(now, member);
+                if (suspectMemberIfNotHeartBeating(now, member)) {
+                    continue;
                 }
+
+                pingMemberIfRequired(now, member);
+                sendHeartbeat(member);
+            } catch (Throwable t) {
+                logger.severe(t);
             }
         }
+
+        clusterService.getMembershipManager().checkPartialDisconnectivity(now);
     }
 
     /**
@@ -501,7 +513,7 @@ public class ClusterHeartbeatManager {
      * @return if the member has been removed
      */
     private boolean suspectMemberIfNotHeartBeating(long now, Member member) {
-        if (clusterService.getMembershipManager().isMemberSuspected(member.getAddress())) {
+        if (clusterService.getMembershipManager().isMemberSuspected((MemberImpl) member)) {
             return true;
         }
 
@@ -532,9 +544,8 @@ public class ClusterHeartbeatManager {
      */
     private void heartbeatWhenSlave(long now) {
         MembershipManager membershipManager = clusterService.getMembershipManager();
-        Collection<Member> members = clusterService.getMembers(MemberSelectors.NON_LOCAL_MEMBER_SELECTOR);
 
-        for (Member member : members) {
+        for (Member member : clusterService.getMembers(NON_LOCAL_MEMBER_SELECTOR)) {
             try {
                 logIfConnectionToEndpointIsMissing(now, member);
 
@@ -542,7 +553,7 @@ public class ClusterHeartbeatManager {
                     continue;
                 }
 
-                if (membershipManager.isMemberSuspected(member.getAddress())) {
+                if (membershipManager.isMemberSuspected((MemberImpl) member)) {
                     continue;
                 }
 
@@ -575,7 +586,7 @@ public class ClusterHeartbeatManager {
 
     private void startPeriodicPinger() {
         nodeEngine.getExecutionService().scheduleWithRepetition(CLUSTER_EXECUTOR_NAME, () -> {
-            Collection<Member> members = clusterService.getMembers(MemberSelectors.NON_LOCAL_MEMBER_SELECTOR);
+            Collection<Member> members = clusterService.getMembers(NON_LOCAL_MEMBER_SELECTOR);
 
             for (Member member : members) {
                 try {
@@ -608,7 +619,18 @@ public class ClusterHeartbeatManager {
         }
         try {
             MembersViewMetadata membersViewMetadata = clusterService.getMembershipManager().createLocalMembersViewMetadata();
-            Operation op = new HeartbeatOp(membersViewMetadata, target.getUuid(), clusterClock.getClusterTime());
+            Collection<MemberInfo> suspectedMembers = Collections.emptySet();
+            if (clusterService.getMembershipManager().isPartialDisconnectionDetectionEnabled()
+                    && !clusterService.isMaster() && target.getAddress().equals(clusterService.getMasterAddress())) {
+                suspectedMembers = clusterService.getMembershipManager()
+                                                 .getSuspectedMembers()
+                                                 .stream()
+                                                 .map(MemberInfo::new)
+                                                 .collect(toSet());
+            }
+
+            long clusterTime = clusterClock.getClusterTime();
+            Operation op = new HeartbeatOp(membersViewMetadata, target.getUuid(), clusterTime, suspectedMembers);
             op.setCallerUuid(clusterService.getThisUuid());
             node.nodeEngine.getOperationService().send(op, target.getAddress());
         } catch (Exception e) {

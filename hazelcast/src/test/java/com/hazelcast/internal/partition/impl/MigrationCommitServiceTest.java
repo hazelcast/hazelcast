@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,6 +57,11 @@ import static com.hazelcast.internal.partition.MigrationEndpoint.SOURCE;
 import static com.hazelcast.internal.partition.TestPartitionUtils.getDefaultReplicaVersions;
 import static com.hazelcast.internal.partition.TestPartitionUtils.getPartitionReplicaVersionsView;
 import static com.hazelcast.internal.partition.impl.MigrationCommitTest.resetInternalMigrationListener;
+import static com.hazelcast.test.Accessors.getAddress;
+import static com.hazelcast.test.Accessors.getNode;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
+import static com.hazelcast.test.Accessors.getOperationService;
+import static com.hazelcast.test.Accessors.getPartitionService;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -373,7 +378,7 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
 
         for (HazelcastInstance instance : instances) {
             TestMigrationAwareService service = getNodeEngineImpl(instance)
-                    .getService(TestMigrationAwareService.SERVICE_NAME);
+                                                         .getService(TestMigrationAwareService.SERVICE_NAME);
 
             service.clearEvents();
         }

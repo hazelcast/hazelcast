@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,13 +21,13 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
-import com.hazelcast.map.LocalIndexStatsTest;
-import com.hazelcast.query.LocalIndexStats;
-import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.internal.monitor.impl.LocalIndexStatsImpl;
 import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.LocalIndexStatsTest;
+import com.hazelcast.map.LocalMapStats;
+import com.hazelcast.query.LocalIndexStats;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
@@ -46,6 +46,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.test.Accessors.getAllIndexes;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ package com.hazelcast.internal.partition;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.impl.MapService;
 import com.hazelcast.internal.services.ServiceNamespace;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -37,6 +37,7 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 import java.util.Collection;
 
 import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_BACKUP_SYNC_INTERVAL;
+import static com.hazelcast.test.Accessors.getPartitionService;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertFalse;
 

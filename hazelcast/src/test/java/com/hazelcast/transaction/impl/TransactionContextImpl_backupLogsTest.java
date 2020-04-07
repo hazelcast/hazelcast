@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -28,7 +29,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalObject;
-import com.hazelcast.internal.util.UuidUtil;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -36,6 +36,7 @@ import org.junit.runner.RunWith;
 
 import java.util.UUID;
 
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 

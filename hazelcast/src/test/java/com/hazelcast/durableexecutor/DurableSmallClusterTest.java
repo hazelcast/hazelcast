@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ public class DurableSmallClusterTest extends ExecutorServiceTestSupport {
 
     @Before
     public void setup() {
-        instances = createHazelcastInstanceFactory(NODE_COUNT).newInstances();
+        instances = createHazelcastInstanceFactory(NODE_COUNT).newInstances(smallInstanceConfig());
     }
 
     @Test
@@ -79,7 +79,7 @@ public class DurableSmallClusterTest extends ExecutorServiceTestSupport {
 
     @Test
     public void submitToKeyOwner_runnable() {
-        NullResponseCountingCallback callback = new NullResponseCountingCallback(instances.length);
+        NullResponseCountingCallback<Object> callback = new NullResponseCountingCallback<>(instances.length);
 
         for (HazelcastInstance instance : instances) {
             DurableExecutorService service = instance.getDurableExecutorService("testSubmitToKeyOwnerRunnable");
@@ -99,26 +99,26 @@ public class DurableSmallClusterTest extends ExecutorServiceTestSupport {
     public void submitToSeveralNodes_callable() throws Exception {
         for (int i = 0; i < instances.length; i++) {
             DurableExecutorService service = instances[i].getDurableExecutorService("testSubmitMultipleNode");
-            Future future = service.submit(new IncrementAtomicLongCallable("testSubmitMultipleNode"));
-            assertEquals((long) (i + 1), future.get());
+            Future<Long> future = service.submit(new IncrementAtomicLongCallable("testSubmitMultipleNode"));
+            assertEquals(i + 1, (long) future.get());
         }
     }
 
     @Test(timeout = TEST_TIMEOUT)
     public void submitToKeyOwner_callable() throws Exception {
-        List<Future> futures = new ArrayList<>();
+        List<Future<Boolean>> futures = new ArrayList<>();
 
         for (HazelcastInstance instance : instances) {
             DurableExecutorService service = instance.getDurableExecutorService("testSubmitToKeyOwnerCallable");
             Member localMember = instance.getCluster().getLocalMember();
             int key = findNextKeyForMember(instance, localMember);
 
-            Future future = service.submitToKeyOwner(new MemberUUIDCheckCallable(localMember.getUuid()), key);
+            Future<Boolean> future = service.submitToKeyOwner(new MemberUUIDCheckCallable(localMember.getUuid()), key);
             futures.add(future);
         }
 
-        for (Future future : futures) {
-            assertTrue((Boolean) future.get(60, TimeUnit.SECONDS));
+        for (Future<Boolean> future : futures) {
+            assertTrue(future.get(60, TimeUnit.SECONDS));
         }
     }
 

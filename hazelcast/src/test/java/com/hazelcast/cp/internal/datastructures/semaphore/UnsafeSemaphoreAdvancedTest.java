@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 package com.hazelcast.cp.internal.datastructures.semaphore;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
+import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.RaftGroupId;
@@ -31,6 +31,8 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})

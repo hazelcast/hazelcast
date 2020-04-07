@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,8 @@ import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import java.security.Permission;
 import java.util.Map;
 
+import static com.hazelcast.internal.util.MapUtil.toIntSize;
+
 /**
  * This client request specifically calls {@link CacheSizeOperationFactory} on the server side.
  *
@@ -50,13 +52,13 @@ public class CacheSizeMessageTask
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
-        int total = 0;
+        long total = 0;
         CacheService service = getService(getServiceName());
         for (Object result : map.values()) {
             Integer size = (Integer) service.toObject(result);
             total += size;
         }
-        return total;
+        return toIntSize(total);
     }
 
     @Override

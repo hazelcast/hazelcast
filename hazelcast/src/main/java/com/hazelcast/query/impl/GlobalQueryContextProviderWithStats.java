@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,9 +29,9 @@ public class GlobalQueryContextProviderWithStats implements QueryContextProvider
     };
 
     @Override
-    public QueryContext obtainContextFor(Indexes indexes) {
+    public QueryContext obtainContextFor(Indexes indexes, int ownedPartitionCount) {
         GlobalQueryContextWithStats queryContext = QUERY_CONTEXT.get();
-        queryContext.attachTo(indexes);
+        queryContext.attachTo(indexes, ownedPartitionCount);
         return queryContext;
     }
 

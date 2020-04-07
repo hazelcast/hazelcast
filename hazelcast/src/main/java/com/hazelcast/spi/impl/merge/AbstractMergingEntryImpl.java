@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceAware;
 
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * Implementation of {@link MergingEntry}.
@@ -50,12 +51,12 @@ public abstract class AbstractMergingEntryImpl<K, V, T extends AbstractMergingEn
     }
 
     @Override
-    public K getKey() {
+    public K getRawKey() {
         return key;
     }
 
     @Override
-    public Object getDeserializedKey() {
+    public K getKey() {
         return serializationService.toObject(key);
     }
 
@@ -65,12 +66,12 @@ public abstract class AbstractMergingEntryImpl<K, V, T extends AbstractMergingEn
     }
 
     @Override
-    public V getValue() {
+    public V getRawValue() {
         return value;
     }
 
     @Override
-    public Object getDeserializedValue() {
+    public V getValue() {
         return serializationService.toObject(value);
     }
 
@@ -111,10 +112,10 @@ public abstract class AbstractMergingEntryImpl<K, V, T extends AbstractMergingEn
         }
 
         AbstractMergingEntryImpl<?, ?, ?> that = (AbstractMergingEntryImpl<?, ?, ?>) o;
-        if (key != null ? !key.equals(that.key) : that.key != null) {
+        if (!Objects.equals(key, that.key)) {
             return false;
         }
-        return value != null ? value.equals(that.value) : that.value == null;
+        return Objects.equals(value, that.value);
     }
 
     @Override

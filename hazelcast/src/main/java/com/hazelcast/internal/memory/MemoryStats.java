@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,20 @@ package com.hazelcast.internal.memory;
 
 import com.hazelcast.internal.metrics.Probe;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MEMORY_METRIC_COMMITTED_HEAP;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MEMORY_METRIC_COMMITTED_NATIVE;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MEMORY_METRIC_FREE_HEAP;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MEMORY_METRIC_FREE_NATIVE;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MEMORY_METRIC_FREE_PHYSICAL;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MEMORY_METRIC_MAX_HEAP;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MEMORY_METRIC_MAX_METADATA;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MEMORY_METRIC_MAX_NATIVE;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MEMORY_METRIC_TOTAL_PHYSICAL;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MEMORY_METRIC_USED_HEAP;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MEMORY_METRIC_USED_METADATA;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MEMORY_METRIC_USED_NATIVE;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
+import static com.hazelcast.internal.metrics.ProbeUnit.BYTES;
 
 /**
  * Memory statistics for the JVM which current HazelcastInstance belongs to.
@@ -35,7 +48,7 @@ public interface MemoryStats {
      *
      * @return total physical memory in bytes.
      */
-    @Probe(level = MANDATORY)
+    @Probe(name = MEMORY_METRIC_TOTAL_PHYSICAL, level = MANDATORY, unit = BYTES)
     long getTotalPhysical();
 
     /**
@@ -47,7 +60,7 @@ public interface MemoryStats {
      *
      * @return free physical memory in bytes.
      */
-    @Probe(level = MANDATORY)
+    @Probe(name = MEMORY_METRIC_FREE_PHYSICAL, level = MANDATORY, unit = BYTES)
     long getFreePhysical();
 
     /**
@@ -56,7 +69,7 @@ public interface MemoryStats {
      * @return the maximum amount of memory in bytes.
      * @see Runtime#maxMemory()
      */
-    @Probe(level = MANDATORY)
+    @Probe(name = MEMORY_METRIC_MAX_HEAP, level = MANDATORY, unit = BYTES)
     long getMaxHeap();
 
     /**
@@ -67,7 +80,7 @@ public interface MemoryStats {
      * @see Runtime#totalMemory()
      * @see java.lang.management.MemoryUsage#getCommitted()
      */
-    @Probe(level = MANDATORY)
+    @Probe(name = MEMORY_METRIC_COMMITTED_HEAP, level = MANDATORY, unit = BYTES)
     long getCommittedHeap();
 
     /**
@@ -76,7 +89,7 @@ public interface MemoryStats {
      * @return the amount of used memory in bytes
      * @see java.lang.management.MemoryUsage#getUsed()
      */
-    @Probe(level = MANDATORY)
+    @Probe(name = MEMORY_METRIC_USED_HEAP, level = MANDATORY, unit = BYTES)
     long getUsedHeap();
 
     /**
@@ -85,7 +98,7 @@ public interface MemoryStats {
      * @return the amount of free memory in bytes
      * @see Runtime#freeMemory()
      */
-    @Probe(level = MANDATORY)
+    @Probe(name = MEMORY_METRIC_FREE_HEAP, level = MANDATORY, unit = BYTES)
     long getFreeHeap();
 
     /**
@@ -94,7 +107,7 @@ public interface MemoryStats {
      *
      * @return the maximum amount of native memory in bytes.
      */
-    @Probe(level = MANDATORY)
+    @Probe(name = MEMORY_METRIC_MAX_NATIVE, level = MANDATORY, unit = BYTES)
     long getMaxNative();
 
     /**
@@ -103,7 +116,7 @@ public interface MemoryStats {
      *
      * @return the amount of committed native memory in bytes.
      */
-    @Probe(level = MANDATORY)
+    @Probe(name = MEMORY_METRIC_COMMITTED_NATIVE, level = MANDATORY, unit = BYTES)
     long getCommittedNative();
 
     /**
@@ -111,7 +124,7 @@ public interface MemoryStats {
      *
      * @return the amount of used native memory in bytes
      */
-    @Probe(level = MANDATORY)
+    @Probe(name = MEMORY_METRIC_USED_NATIVE, level = MANDATORY, unit = BYTES)
     long getUsedNative();
 
     /**
@@ -119,20 +132,20 @@ public interface MemoryStats {
      *
      * @return the amount of free native memory in bytes
      */
-    @Probe(level = MANDATORY)
+    @Probe(name = MEMORY_METRIC_FREE_NATIVE, level = MANDATORY, unit = BYTES)
     long getFreeNative();
 
     /**
      * Returns the amount of native memory reserved for metadata. This memory
      * is separate and not accounted for by the {@code ...NativeMemory} statistics.
      */
-    @Probe(level = MANDATORY)
+    @Probe(name = MEMORY_METRIC_MAX_METADATA, level = MANDATORY, unit = BYTES)
     long getMaxMetadata();
 
     /**
      * @return amount of used metadata memory
      */
-    @Probe(level = MANDATORY)
+    @Probe(name = MEMORY_METRIC_USED_METADATA, level = MANDATORY, unit = BYTES)
     long getUsedMetadata();
 
     /**

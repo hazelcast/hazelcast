@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,6 +77,10 @@ import java.util.concurrent.locks.ReentrantLock;
 import static com.hazelcast.cluster.impl.MemberImpl.NA_MEMBER_LIST_JOIN_VERSION;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.NON_LOCAL_MEMBER_SELECTOR;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLUSTER_METRIC_CLUSTER_SERVICE_SIZE;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLUSTER_PREFIX;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLUSTER_PREFIX_CLOCK;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLUSTER_PREFIX_HEARTBEAT;
 import static com.hazelcast.internal.util.Preconditions.checkFalse;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
@@ -140,9 +144,9 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     private void registerMetrics() {
         MetricsRegistry metricsRegistry = node.nodeEngine.getMetricsRegistry();
-        metricsRegistry.registerStaticMetrics(clusterClock, "cluster.clock");
-        metricsRegistry.registerStaticMetrics(clusterHeartbeatManager, "cluster.heartbeat");
-        metricsRegistry.registerStaticMetrics(this, "cluster");
+        metricsRegistry.registerStaticMetrics(clusterClock, CLUSTER_PREFIX_CLOCK);
+        metricsRegistry.registerStaticMetrics(clusterHeartbeatManager, CLUSTER_PREFIX_HEARTBEAT);
+        metricsRegistry.registerStaticMetrics(this, CLUSTER_PREFIX);
     }
 
     @Override
@@ -261,7 +265,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
                 throw new RetryableHazelcastException(message);
             }
 
-            if (!membershipManager.clearMemberSuspicion(candidateAddress, "Mastership claim")) {
+            if (!membershipManager.clearMemberSuspicion(masterCandidate, "Mastership claim")) {
                 throw new IllegalStateException("Cannot accept mastership claim of " + candidateAddress + ". "
                         + getMasterAddress() + " is already master.");
             }
@@ -283,7 +287,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     private boolean shouldAcceptMastership(MemberMap memberMap, MemberImpl candidate) {
         assert lock.isHeldByCurrentThread() : "Called without holding cluster service lock!";
         for (MemberImpl member : memberMap.headMemberSet(candidate, false)) {
-            if (!membershipManager.isMemberSuspected(member.getAddress())) {
+            if (!membershipManager.isMemberSuspected(member)) {
                 if (logger.isFineEnabled()) {
                     logger.fine("Should not accept mastership claim of " + candidate + ", because " + member
                             + " is not suspected at the moment and is before than " + candidate + " in the member list.");
@@ -663,7 +667,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         return joined.get();
     }
 
-    @Probe
+    @Probe(name = CLUSTER_METRIC_CLUSTER_SERVICE_SIZE)
     @Override
     public int getSize() {
         return membershipManager.getMemberMap().size();

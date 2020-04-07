@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,10 @@ public final class MetadataRaftGroupSnapshot implements IdentifiedDataSerializab
     private Set<Long> initializationCommitIndices = new HashSet<>();
 
     public void setGroups(Collection<CPGroupInfo> groups) {
-        this.groups.addAll(groups);
+        for (CPGroupInfo group : groups) {
+            // Deep copy CPGroupInfo, because it's a mutable object.
+            this.groups.add(new CPGroupInfo(group));
+        }
     }
 
     public void setMembers(Collection<CPMemberInfo> members) {

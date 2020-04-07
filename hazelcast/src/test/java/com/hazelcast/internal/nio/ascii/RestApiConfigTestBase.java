@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ import static com.hazelcast.config.RestEndpointGroup.HEALTH_CHECK;
 import static com.hazelcast.config.RestEndpointGroup.HOT_RESTART;
 import static com.hazelcast.config.RestEndpointGroup.WAN;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
-import static com.hazelcast.test.HazelcastTestSupport.getAddress;
+import static com.hazelcast.test.Accessors.getAddress;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 

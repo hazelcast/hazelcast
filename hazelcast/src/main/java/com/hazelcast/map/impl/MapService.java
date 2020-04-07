@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import com.hazelcast.internal.partition.IPartitionLostEvent;
 import com.hazelcast.internal.partition.PartitionAwareService;
 import com.hazelcast.internal.partition.PartitionMigrationEvent;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.services.ClientAwareService;
 import com.hazelcast.internal.services.DistributedObjectNamespace;
 import com.hazelcast.internal.services.LockInterceptorService;
@@ -36,17 +37,16 @@ import com.hazelcast.internal.services.NotifiableEventListener;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.services.PostJoinAwareService;
 import com.hazelcast.internal.services.RemoteService;
-import com.hazelcast.internal.services.WanSupportingService;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.internal.services.SplitBrainHandlerService;
 import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
 import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.internal.services.TransactionalService;
+import com.hazelcast.internal.services.WanSupportingService;
 import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.map.impl.event.MapEventPublishingService;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nearcache.NearCacheStats;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.LocalIndexStats;
 import com.hazelcast.spi.impl.CountingMigrationAwareService;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -58,7 +58,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.wan.WanEvent;
+import com.hazelcast.wan.impl.InternalWanEvent;
 
 import java.util.Collection;
 import java.util.Map;
@@ -66,6 +66,11 @@ import java.util.Properties;
 import java.util.UUID;
 
 import static com.hazelcast.core.EntryEventType.INVALIDATION;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_DISCRIMINATOR_NAME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_PREFIX;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_PREFIX_INDEX;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_PREFIX_NEARCACHE;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_TAG_INDEX;
 
 /**
  * Defines map service behavior.
@@ -188,7 +193,7 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
     }
 
     @Override
-    public void onReplicationEvent(WanEvent event, WanAcknowledgeType acknowledgeType) {
+    public void onReplicationEvent(InternalWanEvent event, WanAcknowledgeType acknowledgeType) {
         wanSupportingService.onReplicationEvent(event, acknowledgeType);
     }
 
@@ -291,19 +296,19 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
 
             // map
             MetricDescriptor dsDescriptor = descriptor
-                .copy()
-                .withPrefix("map")
-                .withDiscriminator("name", mapName);
+                    .copy()
+                    .withPrefix(MAP_PREFIX)
+                    .withDiscriminator(MAP_DISCRIMINATOR_NAME, mapName);
             context.collect(dsDescriptor, localInstanceStats);
 
             // index
             Map<String, LocalIndexStats> indexStats = localInstanceStats.getIndexStats();
             for (Map.Entry<String, LocalIndexStats> indexEntry : indexStats.entrySet()) {
                 MetricDescriptor indexDescriptor = descriptor
-                    .copy()
-                    .withPrefix("map.index")
-                    .withDiscriminator("name", mapName)
-                    .withTag("index", indexEntry.getKey());
+                        .copy()
+                        .withPrefix(MAP_PREFIX_INDEX)
+                        .withDiscriminator(MAP_DISCRIMINATOR_NAME, mapName)
+                        .withTag(MAP_TAG_INDEX, indexEntry.getKey());
                 context.collect(indexDescriptor, indexEntry.getValue());
             }
 
@@ -311,9 +316,9 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
             NearCacheStats nearCacheStats = localInstanceStats.getNearCacheStats();
             if (nearCacheStats != null) {
                 MetricDescriptor nearCacheDescriptor = descriptor
-                    .copy()
-                    .withPrefix("map.nearcache")
-                    .withDiscriminator("name", mapName);
+                        .copy()
+                        .withPrefix(MAP_PREFIX_NEARCACHE)
+                        .withDiscriminator(MAP_DISCRIMINATOR_NAME, mapName);
                 context.collect(nearCacheDescriptor, nearCacheStats);
             }
         }

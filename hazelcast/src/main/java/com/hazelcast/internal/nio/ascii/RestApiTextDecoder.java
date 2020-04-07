@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import com.hazelcast.internal.ascii.rest.HttpGetCommandParser;
 import com.hazelcast.internal.ascii.rest.HttpHeadCommandParser;
 import com.hazelcast.internal.ascii.rest.HttpPostCommandParser;
 import com.hazelcast.internal.nio.IOService;
-import com.hazelcast.internal.nio.tcp.TcpIpConnection;
+import com.hazelcast.internal.nio.server.ServerConnection;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -41,11 +41,11 @@ public class RestApiTextDecoder extends TextDecoder {
         TEXT_PARSERS = new TextParsers(parsers);
     }
 
-    public RestApiTextDecoder(TcpIpConnection connection, TextEncoder encoder, boolean rootDecoder) {
+    public RestApiTextDecoder(ServerConnection connection, TextEncoder encoder, boolean rootDecoder) {
         super(connection, encoder, createFilter(connection), TEXT_PARSERS, rootDecoder);
     }
 
-    private static RestApiFilter createFilter(TcpIpConnection connection) {
+    private static RestApiFilter createFilter(ServerConnection connection) {
         IOService ioService = connection.getEndpointManager().getNetworkingService().getIoService();
         return new RestApiFilter(ioService.getLoggingService(), ioService.getRestApiConfig(), TEXT_PARSERS);
     }

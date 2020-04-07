@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -97,7 +97,7 @@ public final class ClientConfigXmlGenerator {
         gen.open("hazelcast-client", "xmlns", "http://www.hazelcast.com/schema/client-config",
                 "xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance",
                 "xsi:schemaLocation", "http://www.hazelcast.com/schema/client-config "
-                        + "http://www.hazelcast.com/schema/client-config/hazelcast-client-config-4.0.xsd");
+                        + "http://www.hazelcast.com/schema/client-config/hazelcast-client-config-4.1.xsd");
 
         //InstanceName
         gen.node("instance-name", clientConfig.getInstanceName());

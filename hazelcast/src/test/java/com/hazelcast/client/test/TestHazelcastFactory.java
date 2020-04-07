@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,16 +31,21 @@ import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
+import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.TestEnvironment;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 
+import java.lang.management.ManagementFactory;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.client.HazelcastClientUtil.getInstanceName;
+
 public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
 
+    public static final String TEST_JVM_PREFIX = "test-jvm-";
     private final boolean mockNetwork = TestEnvironment.isMockNetwork();
     private final ConcurrentMap<String, HazelcastClientInstanceImpl> clients = new ConcurrentHashMap<>(10);
     private final TestClientRegistry clientRegistry = new TestClientRegistry(getRegistry());
@@ -62,8 +67,14 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
     }
 
     public HazelcastInstance newHazelcastClient(ClientConfig config) {
+        return newHazelcastClient(config, null);
+    }
+
+    public HazelcastInstance newHazelcastClient(ClientConfig config, String sourceIp) {
         if (!mockNetwork) {
-            return HazelcastClient.newHazelcastClient(config);
+            HazelcastInstance client = HazelcastClient.newHazelcastClient(config);
+            registerJvmNameAndPidMetric((HazelcastClientInstanceImpl) client);
+            return client;
         }
 
         if (config == null) {
@@ -76,8 +87,9 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
             if (tccl == ClassLoader.getSystemClassLoader()) {
                 currentThread.setContextClassLoader(HazelcastClient.class.getClassLoader());
             }
-            HazelcastClientInstanceImpl client = new HazelcastClientInstanceImpl(config, null,
-                    clientRegistry.createClientServiceFactory(), createAddressProvider(config));
+            HazelcastClientInstanceImpl client = new HazelcastClientInstanceImpl(getInstanceName(config), config,
+                    null, clientRegistry.createClientServiceFactory(sourceIp), createAddressProvider(config));
+            registerJvmNameAndPidMetric(client);
             client.start();
             if (clients.putIfAbsent(client.getName(), client) != null) {
                 throw new InvalidConfigurationException("HazelcastClientInstance with name '" + client.getName()
@@ -91,10 +103,18 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
         }
     }
 
+    private void registerJvmNameAndPidMetric(HazelcastClientInstanceImpl client) {
+        String jvmName = ManagementFactory.getRuntimeMXBean().getName();
+        int pid = Integer.valueOf(jvmName.substring(0, jvmName.indexOf("@")));
+        MetricsRegistryImpl metricsRegistry = client.getMetricsRegistry();
+        metricsRegistry.registerDynamicMetricsProvider(
+                (descriptor, context) -> context
+                        .collect(descriptor.withPrefix(TEST_JVM_PREFIX + jvmName).withMetric("pid"), pid));
+    }
+
     // used by MC tests
     public HazelcastInstance getHazelcastClientByName(String clientName) {
-        return clients.values().stream()
-                .filter(client -> client.getName().equals(clientName)).findFirst().orElse(null);
+        return clients.get(clientName);
     }
 
     private AddressProvider createAddressProvider(ClientConfig config) {

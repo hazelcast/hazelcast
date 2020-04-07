@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,10 @@ import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.internal.nearcache.NearCache;
+import com.hazelcast.internal.nearcache.impl.DefaultNearCache;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
+import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -53,22 +56,34 @@ public class ClientCacheNearCacheCacheOnUpdateTest extends ClientNearCacheTestSu
     public void with_cacheOnUpdate_policy_concurrently_updated_near_cache_does_not_cause_any_miss()
             throws InterruptedException {
         ICache<Integer, Integer> nearCachedClientCache = newNearCachedCache(CACHE_ON_UPDATE);
+        checkNearCacheInstance(nearCachedClientCache);
 
         runTest(nearCachedClientCache, CACHE_ON_UPDATE);
 
-        assertEquals(0, nearCachedClientCache.getLocalCacheStatistics()
-                .getNearCacheStatistics().getMisses());
+        NearCache nearCache = ((NearCachedClientCacheProxy) nearCachedClientCache).getNearCache();
+        int size = nearCache.size();
+        NearCacheStats nearCacheStatistics = nearCachedClientCache.getLocalCacheStatistics()
+                .getNearCacheStatistics();
+        assertEquals(size + ", " + nearCacheStatistics.toString()
+                + ", " + nearCache.getNearCacheConfig(), 0, nearCacheStatistics.getMisses());
+    }
+
+    protected void checkNearCacheInstance(ICache iCacheOnClient) {
+        NearCache nearCache = ((NearCachedClientCacheProxy<Object, Object>) iCacheOnClient).getNearCache();
+        assertInstanceOf(DefaultNearCache.class, nearCache);
     }
 
     @Test
     public void with_invalidate_policy_concurrently_updated_near_cache_causes_misses()
             throws InterruptedException {
         ICache<Integer, Integer> nearCachedClientCache = newNearCachedCache(INVALIDATE);
+        checkNearCacheInstance(nearCachedClientCache);
 
         runTest(nearCachedClientCache, INVALIDATE);
 
-        assertTrue(nearCachedClientCache.getLocalCacheStatistics()
-                .getNearCacheStatistics().getMisses() > NUM_OF_KEYS);
+        NearCacheStats nearCacheStatistics = nearCachedClientCache.getLocalCacheStatistics()
+                .getNearCacheStatistics();
+        assertTrue(nearCacheStatistics.toString(), nearCacheStatistics.getMisses() > 0);
     }
 
     private static void runTest(ICache<Integer, Integer> icacheOnClient,
@@ -81,6 +96,8 @@ public class ClientCacheNearCacheCacheOnUpdateTest extends ClientNearCacheTestSu
                 icacheOnClient.get(i);
             }
         }
+
+        assertEquals(NUM_OF_KEYS, ((NearCachedClientCacheProxy) icacheOnClient).getNearCache().size());
 
         AtomicBoolean stop = new AtomicBoolean();
 
@@ -136,8 +153,12 @@ public class ClientCacheNearCacheCacheOnUpdateTest extends ClientNearCacheTestSu
     protected NearCacheConfig getNearCacheConfig(NearCacheConfig.LocalUpdatePolicy localUpdatePolicy) {
         return new NearCacheConfig()
                 .setName(DEFAULT_CACHE_NAME)
-                .setInMemoryFormat(InMemoryFormat.BINARY)
+                .setInMemoryFormat(nearCacheInMemoryFormat())
                 .setLocalUpdatePolicy(localUpdatePolicy);
+    }
+
+    protected InMemoryFormat nearCacheInMemoryFormat() {
+        return InMemoryFormat.BINARY;
     }
 
     private static <K, V> CacheConfig<K, V> newCacheConfig(InMemoryFormat inMemoryFormat) {

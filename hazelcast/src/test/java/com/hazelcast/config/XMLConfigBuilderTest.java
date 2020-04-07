@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -407,6 +407,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "            <eureka enabled=\"true\">\n"
                 + "                <use-public-ip>true</use-public-ip>\n"
                 + "                <namespace>hazelcast</namespace>\n"
+                + "                <shouldUseDns>false</shouldUseDns>\n"
+                + "                <serviceUrl.default>http://localhost:8082/eureka</serviceUrl.default>\n"
                 + "            </eureka>\n"
                 + "        </join>\n"
                 + "    </network>"
@@ -419,6 +421,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertTrue(eurekaConfig.isEnabled());
         assertTrue(eurekaConfig.isUsePublicIp());
         assertEquals("hazelcast", eurekaConfig.getProperty("namespace"));
+        assertEquals("false", eurekaConfig.getProperty("shouldUseDns"));
+        assertEquals("http://localhost:8082/eureka", eurekaConfig.getProperty("serviceUrl.default"));
     }
 
     @Override
@@ -783,13 +787,20 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Test
     public void testManagementCenterConfig() {
         String xml = HAZELCAST_START_TAG
-                + "<management-center scripting-enabled='false' />"
+                + "<management-center scripting-enabled='true'>"
+                + "  <trusted-interfaces>\n"
+                + "    <interface>127.0.0.1</interface>\n"
+                + "    <interface>192.168.1.*</interface>\n"
+                + "  </trusted-interfaces>\n"
+                + "</management-center>"
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
         ManagementCenterConfig mcConfig = config.getManagementCenterConfig();
 
-        assertFalse(mcConfig.isScriptingEnabled());
+        assertTrue(mcConfig.isScriptingEnabled());
+        assertEquals(2, mcConfig.getTrustedInterfaces().size());
+        assertTrue(mcConfig.getTrustedInterfaces().containsAll(ImmutableSet.of("127.0.0.1", "192.168.1.*")));
     }
 
     @Override
@@ -803,7 +814,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         Config config = buildConfig(xml);
         ManagementCenterConfig mcConfig = config.getManagementCenterConfig();
 
-        assertTrue(mcConfig.isScriptingEnabled());
+        assertFalse(mcConfig.isScriptingEnabled());
     }
 
     @Override
@@ -814,7 +825,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         Config config = buildConfig(xml);
         ManagementCenterConfig mcConfig = config.getManagementCenterConfig();
 
-        assertTrue(mcConfig.isScriptingEnabled());
+        assertFalse(mcConfig.isScriptingEnabled());
     }
 
     @Override
@@ -1195,7 +1206,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xml = HAZELCAST_START_TAG
                 + "  <map name=\"" + mapName + "\">\n"
                 + "    <wan-replication-ref name=\"test\">\n"
-                + "      <merge-policy>TestMergePolicy</merge-policy>\n"
+                + "      <merge-policy-class-name>TestMergePolicy</merge-policy-class-name>\n"
                 + "      <filters>\n"
                 + "        <filter-impl>com.example.SampleFilter</filter-impl>\n"
                 + "      </filters>\n"
@@ -1208,7 +1219,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         WanReplicationRef wanRef = mapConfig.getWanReplicationRef();
 
         assertEquals(refName, wanRef.getName());
-        assertEquals(mergePolicy, wanRef.getMergePolicy());
+        assertEquals(mergePolicy, wanRef.getMergePolicyClassName());
         assertTrue(wanRef.isRepublishingEnabled());
         assertEquals(1, wanRef.getFilters().size());
         assertEquals("com.example.SampleFilter", wanRef.getFilters().get(0));
@@ -1370,8 +1381,11 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "<flake-id-generator name='gen'>"
                 + "  <prefetch-count>3</prefetch-count>"
                 + "  <prefetch-validity-millis>10</prefetch-validity-millis>"
-                + "  <id-offset>20</id-offset>"
+                + "  <epoch-start>1514764800001</epoch-start>"
                 + "  <node-id-offset>30</node-id-offset>"
+                + "  <bits-sequence>22</bits-sequence>"
+                + "  <bits-node-id>33</bits-node-id>"
+                + "  <allowed-future-millis>20000</allowed-future-millis>"
                 + "  <statistics-enabled>false</statistics-enabled>"
                 + "</flake-id-generator>"
                 + HAZELCAST_END_TAG;
@@ -1380,8 +1394,11 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals("gen", fConfig.getName());
         assertEquals(3, fConfig.getPrefetchCount());
         assertEquals(10L, fConfig.getPrefetchValidityMillis());
-        assertEquals(20L, fConfig.getIdOffset());
+        assertEquals(1514764800001L, fConfig.getEpochStart());
         assertEquals(30L, fConfig.getNodeIdOffset());
+        assertEquals(22, fConfig.getBitsSequence());
+        assertEquals(33, fConfig.getBitsNodeId());
+        assertEquals(20000L, fConfig.getAllowedFutureMillis());
         assertFalse(fConfig.isStatisticsEnabled());
     }
 
@@ -2210,7 +2227,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "            <eviction size=\"1000\" max-size-policy=\"ENTRY_COUNT\" eviction-policy=\"LFU\"/>\n"
                 + "          </near-cache>"
                 + "        <wan-replication-ref name=\"my-wan-cluster-batch\">\n"
-                + "            <merge-policy>PassThroughMergePolicy</merge-policy>\n"
+                + "            <merge-policy-class-name>PassThroughMergePolicy</merge-policy-class-name>\n"
                 + "            <filters>\n"
                 + "                <filter-impl>com.example.SampleFilter</filter-impl>\n"
                 + "            </filters>\n"
@@ -2299,7 +2316,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         WanReplicationRef wanReplicationRef = mapConfig.getWanReplicationRef();
         assertNotNull(wanReplicationRef);
         assertFalse(wanReplicationRef.isRepublishingEnabled());
-        assertEquals("PassThroughMergePolicy", wanReplicationRef.getMergePolicy());
+        assertEquals("PassThroughMergePolicy", wanReplicationRef.getMergePolicyClassName());
         assertEquals(1, wanReplicationRef.getFilters().size());
         assertEquals("com.example.SampleFilter".toLowerCase(), wanReplicationRef.getFilters().get(0).toLowerCase());
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -102,5 +102,10 @@ public class AddWanBatchPublisherConfigMessageTask extends AbstractCallableMessa
                 parameters.name, parameters.targetCluster, parameters.publisherId, parameters.endpoints,
                 parameters.queueCapacity, parameters.batchSize, parameters.batchMaxDelayMillis,
                 parameters.responseTimeoutMillis, parameters.ackType, parameters.queueFullBehavior};
+    }
+
+    @Override
+    public boolean isManagementTask() {
+        return true;
     }
 }

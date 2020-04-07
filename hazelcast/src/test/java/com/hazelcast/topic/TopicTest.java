@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,13 @@
 
 package com.hazelcast.topic;
 
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.cluster.Member;
-import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.internal.monitor.impl.LocalTopicStatsImpl;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -32,9 +33,7 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.Repeat;
 import com.hazelcast.topic.impl.TopicService;
-import com.hazelcast.internal.util.UuidUtil;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -53,6 +52,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.test.Accessors.getNode;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -407,7 +407,6 @@ public class TopicTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Repeat(10)
     public void removeMessageListener() throws InterruptedException {
         String topicName = "removeMessageListener" + generateRandomString(5);
 

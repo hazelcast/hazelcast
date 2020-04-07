@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,14 +38,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * are NOT reflected in the set, and vice-versa. This method is always executed by a distributed query, so it may
  * throw a QueryResultSizeExceededException if query result size limit is configured.
  */
-@Generated("c2783069e2f36cdf9823169184e2e833")
+@Generated("cbbfff95ceab414b083f50ba8bb2f48a")
 public final class MapKeySetCodec {
     //hex: 0x012200
     public static final int REQUEST_MESSAGE_TYPE = 74240;
     //hex: 0x012201
     public static final int RESPONSE_MESSAGE_TYPE = 74241;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private MapKeySetCodec() {
     }
@@ -65,6 +65,7 @@ public final class MapKeySetCodec {
         clientMessage.setOperationName("Map.KeySet");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         return clientMessage;

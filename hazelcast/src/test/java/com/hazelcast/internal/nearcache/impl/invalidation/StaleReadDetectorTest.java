@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 
 package com.hazelcast.internal.nearcache.impl.invalidation;
-
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
@@ -38,6 +37,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 

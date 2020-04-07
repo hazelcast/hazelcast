@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,6 @@ import com.hazelcast.client.impl.protocol.codec.CPSessionHeartbeatSessionCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheAddEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheAddNearCacheInvalidationListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheAddPartitionLostListenerCodec;
-import com.hazelcast.client.impl.protocol.codec.CacheAssignAndGetUuidsCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheClearCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheContainsKeyCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheCreateConfigCodec;
@@ -80,13 +79,12 @@ import com.hazelcast.client.impl.protocol.codec.ClientCreateProxyCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientDeployClassesCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientDestroyProxyCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectsCodec;
-import com.hazelcast.client.impl.protocol.codec.ClientIsFailoverSupportedCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientLocalBackupListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientPingCodec;
-import com.hazelcast.client.impl.protocol.codec.ClientRemoveAllListenersCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientRemoveDistributedObjectListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientRemovePartitionLostListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientStatisticsCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientTriggerPartitionAssignmentCodec;
 import com.hazelcast.client.impl.protocol.codec.ContinuousQueryAddListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ContinuousQueryDestroyCacheCodec;
 import com.hazelcast.client.impl.protocol.codec.ContinuousQueryMadePublishableCodec;
@@ -120,11 +118,11 @@ import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddRingbufferConfig
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddScheduledExecutorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddSetConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddTopicConfigCodec;
-import com.hazelcast.client.impl.protocol.codec.ExecutorServiceCancelOnAddressCodec;
+import com.hazelcast.client.impl.protocol.codec.ExecutorServiceCancelOnMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.ExecutorServiceCancelOnPartitionCodec;
 import com.hazelcast.client.impl.protocol.codec.ExecutorServiceIsShutdownCodec;
 import com.hazelcast.client.impl.protocol.codec.ExecutorServiceShutdownCodec;
-import com.hazelcast.client.impl.protocol.codec.ExecutorServiceSubmitToAddressCodec;
+import com.hazelcast.client.impl.protocol.codec.ExecutorServiceSubmitToMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.ExecutorServiceSubmitToPartitionCodec;
 import com.hazelcast.client.impl.protocol.codec.FencedLockGetLockOwnershipCodec;
 import com.hazelcast.client.impl.protocol.codec.FencedLockLockCodec;
@@ -177,9 +175,9 @@ import com.hazelcast.client.impl.protocol.codec.MCRunGcCodec;
 import com.hazelcast.client.impl.protocol.codec.MCRunScriptCodec;
 import com.hazelcast.client.impl.protocol.codec.MCShutdownClusterCodec;
 import com.hazelcast.client.impl.protocol.codec.MCShutdownMemberCodec;
-import com.hazelcast.client.impl.protocol.codec.MCTriggerPartialStartCodec;
 import com.hazelcast.client.impl.protocol.codec.MCTriggerForceStartCodec;
 import com.hazelcast.client.impl.protocol.codec.MCTriggerHotRestartBackupCodec;
+import com.hazelcast.client.impl.protocol.codec.MCTriggerPartialStartCodec;
 import com.hazelcast.client.impl.protocol.codec.MCUpdateMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerToKeyCodec;
@@ -191,7 +189,6 @@ import com.hazelcast.client.impl.protocol.codec.MapAddNearCacheInvalidationListe
 import com.hazelcast.client.impl.protocol.codec.MapAddPartitionLostListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MapAggregateCodec;
 import com.hazelcast.client.impl.protocol.codec.MapAggregateWithPredicateCodec;
-import com.hazelcast.client.impl.protocol.codec.MapAssignAndGetUuidsCodec;
 import com.hazelcast.client.impl.protocol.codec.MapClearCodec;
 import com.hazelcast.client.impl.protocol.codec.MapContainsKeyCodec;
 import com.hazelcast.client.impl.protocol.codec.MapContainsValueCodec;
@@ -325,23 +322,23 @@ import com.hazelcast.client.impl.protocol.codec.RingbufferReadOneCodec;
 import com.hazelcast.client.impl.protocol.codec.RingbufferRemainingCapacityCodec;
 import com.hazelcast.client.impl.protocol.codec.RingbufferSizeCodec;
 import com.hazelcast.client.impl.protocol.codec.RingbufferTailSequenceCodec;
-import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorCancelFromAddressCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorCancelFromMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorCancelFromPartitionCodec;
-import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorDisposeFromAddressCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorDisposeFromMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorDisposeFromPartitionCodec;
 import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetAllScheduledFuturesCodec;
-import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetDelayFromAddressCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetDelayFromMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetDelayFromPartitionCodec;
-import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetResultFromAddressCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetResultFromMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetResultFromPartitionCodec;
-import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetStatsFromAddressCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetStatsFromMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetStatsFromPartitionCodec;
-import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorIsCancelledFromAddressCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorIsCancelledFromMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorIsCancelledFromPartitionCodec;
-import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorIsDoneFromAddressCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorIsDoneFromMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorIsDoneFromPartitionCodec;
 import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorShutdownCodec;
-import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorSubmitToAddressCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorSubmitToMemberCodec;
 import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorSubmitToPartitionCodec;
 import com.hazelcast.client.impl.protocol.codec.SemaphoreAcquireCodec;
 import com.hazelcast.client.impl.protocol.codec.SemaphoreAvailablePermitsCodec;
@@ -422,15 +419,13 @@ import com.hazelcast.client.impl.protocol.task.CreateProxyMessageTask;
 import com.hazelcast.client.impl.protocol.task.DeployClassesMessageTask;
 import com.hazelcast.client.impl.protocol.task.DestroyProxyMessageTask;
 import com.hazelcast.client.impl.protocol.task.GetDistributedObjectsMessageTask;
-import com.hazelcast.client.impl.protocol.task.IsFailoverSupportedMessageTask;
 import com.hazelcast.client.impl.protocol.task.PingMessageTask;
-import com.hazelcast.client.impl.protocol.task.RemoveAllListenersMessageTask;
 import com.hazelcast.client.impl.protocol.task.RemoveDistributedObjectListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.RemovePartitionLostListenerMessageTask;
+import com.hazelcast.client.impl.protocol.task.TriggerPartitionAssignmentMessageTask;
 import com.hazelcast.client.impl.protocol.task.cache.CacheAddEntryListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.cache.CacheAddNearCacheInvalidationListenerTask;
 import com.hazelcast.client.impl.protocol.task.cache.CacheAddPartitionLostListenerMessageTask;
-import com.hazelcast.client.impl.protocol.task.cache.CacheAssignAndGetUuidsMessageTask;
 import com.hazelcast.client.impl.protocol.task.cache.CacheClearMessageTask;
 import com.hazelcast.client.impl.protocol.task.cache.CacheContainsKeyMessageTask;
 import com.hazelcast.client.impl.protocol.task.cache.CacheCreateConfigMessageTask;
@@ -559,7 +554,6 @@ import com.hazelcast.client.impl.protocol.task.map.MapAddNearCacheInvalidationLi
 import com.hazelcast.client.impl.protocol.task.map.MapAddPartitionLostListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapAggregateMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapAggregateWithPredicateMessageTask;
-import com.hazelcast.client.impl.protocol.task.map.MapAssignAndGetUuidsMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapClearMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapContainsKeyMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapContainsValueMessageTask;
@@ -698,22 +692,22 @@ import com.hazelcast.client.impl.protocol.task.ringbuffer.RingbufferSizeMessageT
 import com.hazelcast.client.impl.protocol.task.ringbuffer.RingbufferTailSequenceMessageTask;
 import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorGetAllScheduledMessageTask;
 import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorShutdownMessageTask;
-import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorSubmitToAddressMessageTask;
 import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorSubmitToPartitionMessageTask;
-import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskCancelFromAddressMessageTask;
+import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorSubmitToTargetMessageTask;
 import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskCancelFromPartitionMessageTask;
-import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskDisposeFromAddressMessageTask;
+import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskCancelFromTargetMessageTask;
 import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskDisposeFromPartitionMessageTask;
-import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskGetDelayFromAddressMessageTask;
+import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskDisposeFromTargetMessageTask;
 import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskGetDelayFromPartitionMessageTask;
-import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskGetResultFromAddressMessageTask;
+import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskGetDelayFromTargetMessageTask;
 import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskGetResultFromPartitionMessageTask;
-import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskGetStatisticsFromAddressMessageTask;
+import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskGetResultFromTargetMessageTask;
 import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskGetStatisticsFromPartitionMessageTask;
-import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskIsCancelledFromAddressMessageTask;
+import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskGetStatisticsFromTargetMessageTask;
 import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskIsCancelledFromPartitionMessageTask;
-import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskIsDoneFromAddressMessageTask;
+import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskIsCancelledFromTargetMessageTask;
 import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskIsDoneFromPartitionMessageTask;
+import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskIsDoneFromTargetMessageTask;
 import com.hazelcast.client.impl.protocol.task.set.SetAddAllMessageTask;
 import com.hazelcast.client.impl.protocol.task.set.SetAddListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.set.SetAddMessageTask;
@@ -830,10 +824,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import static com.hazelcast.internal.util.MapUtil.createInt2ObjectHashMap;
 
-/**
- * DO NOT EDIT THIS FILE.
- * EDITING THIS FILE CAN POTENTIALLY BREAK PROTOCOL
- */
 public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProvider {
     private static final int MESSAGE_TASK_PROVIDER_INITIAL_CAPACITY = 500;
 
@@ -848,7 +838,41 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
     }
 
     public void initFactories() {
-//region ----------  REGISTRATION FOR com.hazelcast.client.impl.protocol.task.set
+        initializeSetTaskFactories();
+        initializeRingBufferTaskFactories();
+        initializeCacheTaskFactories();
+        initializeReplicatedMapTaskFactories();
+        initializeLongRegisterClientTaskFactories();
+        initializeTransactionalListTaskFactories();
+        initializeTransactionalMultiMapTaskFactories();
+        initializeListTaskFactories();
+        initializeTransactionalQueueTaskFactories();
+        initializeMultiMapTaskFactories();
+        initializeTopicTaskFactories();
+        initializeTransactionalMapTaskFactories();
+        initializeExecutorServiceTaskFactories();
+        initializeDurableExecutorTaskFactories();
+        initializeTransactionTaskFactories();
+        initializeTransactionalSetTaskFactories();
+        initializeMapTaskFactories();
+        initializeGeneralTaskFactories();
+        initializeQueueTaskFactories();
+        initializeCardinalityTaskFactories();
+        initializeScheduledExecutorTaskFactories();
+        initializeContinuousMapQueryOperations();
+        initializeDynamicConfigTaskFactories();
+        initializeFlakeIdGeneratorTaskFactories();
+        initializePnCounterTaskFactories();
+        initializeCPGroupTaskFactories();
+        initializeAtomicLongTaskFactories();
+        initializeAtomicReferenceTaskFactories();
+        initializeCountDownLatchTaskFactories();
+        initializeFencedLockTaskFactories();
+        initializeSemaphoreTaskFactories();
+        initializeManagementCenterTaskFactories();
+    }
+
+    private void initializeSetTaskFactories() {
         factories.put(SetRemoveListenerCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new SetRemoveListenerMessageTask(cm, node, con));
         factories.put(SetClearCodec.REQUEST_MESSAGE_TYPE,
@@ -875,8 +899,9 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new SetContainsMessageTask(cm, node, con));
         factories.put(SetSizeCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new SetSizeMessageTask(cm, node, con));
-//endregion
-//region ----------  REGISTRATION FOR com.hazelcast.client.impl.protocol.task.ringbuffer
+    }
+
+    private void initializeRingBufferTaskFactories() {
         factories.put(RingbufferReadOneCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new RingbufferReadOneMessageTask(cm, node, con));
         factories.put(RingbufferAddAllCodec.REQUEST_MESSAGE_TYPE,
@@ -895,12 +920,11 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new RingbufferHeadSequenceMessageTask(cm, node, con));
         factories.put(RingbufferSizeCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new RingbufferSizeMessageTask(cm, node, con));
-//endregion
-//region ----------  REGISTRATION FOR com.hazelcast.client.impl.protocol.task.cache
+    }
+
+    private void initializeCacheTaskFactories() {
         factories.put(CacheClearCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new CacheClearMessageTask(cm, node, con));
-        factories.put(CacheAssignAndGetUuidsCodec.REQUEST_MESSAGE_TYPE,
-                (cm, con) -> new CacheAssignAndGetUuidsMessageTask(cm, node, con));
         factories.put(CacheFetchNearCacheInvalidationMetadataCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new CacheFetchNearCacheInvalidationMetadataTask(cm, node, con));
         factories.put(CacheReplaceCodec.REQUEST_MESSAGE_TYPE,
@@ -964,10 +988,10 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
         factories.put(CacheEventJournalSubscribeCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new CacheEventJournalSubscribeTask(cm, node, con));
         factories.put(CacheEventJournalReadCodec.REQUEST_MESSAGE_TYPE,
-                (cm, con) -> new CacheEventJournalReadTask<Object, Object, Object>(cm, node, con));
+                (cm, con) -> new CacheEventJournalReadTask<>(cm, node, con));
+    }
 
-//endregion
-//region ----------  REGISTRATION FOR com.hazelcast.client.impl.protocol.task.replicatedmap
+    private void initializeReplicatedMapTaskFactories() {
         factories.put(ReplicatedMapSizeCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new ReplicatedMapSizeMessageTask(cm, node, con));
         factories.put(ReplicatedMapRemoveEntryListenerCodec.REQUEST_MESSAGE_TYPE,
@@ -1004,8 +1028,9 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new ReplicatedMapAddEntryListenerMessageTask(cm, node, con));
         factories.put(ReplicatedMapKeySetCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new ReplicatedMapKeySetMessageTask(cm, node, con));
-//endregion
-//region ----------  REGISTRATION FOR com.hazelcast.internal.longregister.client.task
+    }
+
+    private void initializeLongRegisterClientTaskFactories() {
         factories.put(LongRegisterDecrementAndGetCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new LongRegisterDecrementAndGetMessageTask(cm, node, con));
         factories.put(LongRegisterGetAndAddCodec.REQUEST_MESSAGE_TYPE,
@@ -1022,16 +1047,18 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new LongRegisterGetAndSetMessageTask(cm, node, con));
         factories.put(LongRegisterGetAndIncrementCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new LongRegisterGetAndIncrementMessageTask(cm, node, con));
-//endregion
-//region ----------  REGISTRATION FOR com.hazelcast.client.impl.protocol.task.transactionallist
+    }
+
+    private void initializeTransactionalListTaskFactories() {
         factories.put(TransactionalListSizeCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new TransactionalListSizeMessageTask(cm, node, con));
         factories.put(TransactionalListRemoveCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new TransactionalListRemoveMessageTask(cm, node, con));
         factories.put(TransactionalListAddCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new TransactionalListAddMessageTask(cm, node, con));
-//endregion
-//region ----------  REGISTRATION FOR com.hazelcast.client.impl.protocol.task.transactionalmultimap
+    }
+
+    private void initializeTransactionalMultiMapTaskFactories() {
         factories.put(TransactionalMultiMapPutCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new TransactionalMultiMapPutMessageTask(cm, node, con));
         factories.put(TransactionalMultiMapRemoveEntryCodec.REQUEST_MESSAGE_TYPE,
@@ -1044,8 +1071,9 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new TransactionalMultiMapSizeMessageTask(cm, node, con));
         factories.put(TransactionalMultiMapValueCountCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new TransactionalMultiMapValueCountMessageTask(cm, node, con));
-//endregion
-//region ----------  REGISTRATION FOR com.hazelcast.client.impl.protocol.task.list
+    }
+
+    private void initializeListTaskFactories() {
         factories.put(ListGetAllCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new ListGetAllMessageTask(cm, node, con));
         factories.put(ListListIteratorCodec.REQUEST_MESSAGE_TYPE,
@@ -1092,8 +1120,9 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new ListIsEmptyMessageTask(cm, node, con));
         factories.put(ListCompareAndRetainAllCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new ListCompareAndRetainAllMessageTask(cm, node, con));
-//endregion
-//region ----------  REGISTRATION FOR com.hazelcast.client.impl.protocol.task.transactionalqueue
+    }
+
+    private void initializeTransactionalQueueTaskFactories() {
         factories.put(TransactionalQueueSizeCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new TransactionalQueueSizeMessageTask(cm, node, con));
         factories.put(TransactionalQueueOfferCodec.REQUEST_MESSAGE_TYPE,
@@ -1104,8 +1133,9 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new TransactionalQueuePollMessageTask(cm, node, con));
         factories.put(TransactionalQueueTakeCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new TransactionalQueueTakeMessageTask(cm, node, con));
-//endregion
-//region ----------  REGISTRATION FOR com.hazelcast.client.impl.protocol.task.multimap
+    }
+
+    private void initializeMultiMapTaskFactories() {
         factories.put(MultiMapClearCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new MultiMapClearMessageTask(cm, node, con));
         factories.put(MultiMapGetCodec.REQUEST_MESSAGE_TYPE,
@@ -1150,16 +1180,18 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new MultiMapValuesMessageTask(cm, node, con));
         factories.put(MultiMapDeleteCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new MultiMapDeleteMessageTask(cm, node, con));
-//endregion
-//region ----------  REGISTRATION FOR com.hazelcast.client.impl.protocol.task.topic
+    }
+
+    private void initializeTopicTaskFactories() {
         factories.put(TopicPublishCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new TopicPublishMessageTask(cm, node, con));
         factories.put(TopicAddMessageListenerCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new TopicAddMessageListenerMessageTask(cm, node, con));
         factories.put(TopicRemoveMessageListenerCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new TopicRemoveMessageListenerMessageTask(cm, node, con));
-//endregion
-//region ----------  REGISTRATION FOR com.hazelcast.client.impl.protocol.task.transactionalmap
+    }
+
+    private void initializeTransactionalMapTaskFactories() {
         factories.put(TransactionalMapValuesCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new TransactionalMapValuesMessageTask(cm, node, con));
         factories.put(TransactionalMapSizeCodec.REQUEST_MESSAGE_TYPE,
@@ -1194,22 +1226,24 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new TransactionalMapDeleteMessageTask(cm, node, con));
         factories.put(TransactionalMapValuesWithPredicateCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new TransactionalMapValuesWithPredicateMessageTask(cm, node, con));
-//endregion
-//region ----------  REGISTRATION FOR com.hazelcast.client.impl.protocol.task.executorservice
+    }
+
+    private void initializeExecutorServiceTaskFactories() {
         factories.put(ExecutorServiceCancelOnPartitionCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new ExecutorServiceCancelOnPartitionMessageTask(cm, node, con));
         factories.put(ExecutorServiceSubmitToPartitionCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new ExecutorServiceSubmitToPartitionMessageTask(cm, node, con));
-        factories.put(ExecutorServiceCancelOnAddressCodec.REQUEST_MESSAGE_TYPE,
+        factories.put(ExecutorServiceCancelOnMemberCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new ExecutorServiceCancelOnAddressMessageTask(cm, node, con));
         factories.put(ExecutorServiceIsShutdownCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new ExecutorServiceIsShutdownMessageTask(cm, node, con));
         factories.put(ExecutorServiceShutdownCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new ExecutorServiceShutdownMessageTask(cm, node, con));
-        factories.put(ExecutorServiceSubmitToAddressCodec.REQUEST_MESSAGE_TYPE,
+        factories.put(ExecutorServiceSubmitToMemberCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new ExecutorServiceSubmitToAddressMessageTask(cm, node, con));
-//endregion
-//region ----------  REGISTRATION FOR com.hazelcast.client.impl.protocol.task.durableexecutor
+    }
+
+    private void initializeDurableExecutorTaskFactories() {
         factories.put(DurableExecutorSubmitToPartitionCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new DurableExecutorSubmitToPartitionMessageTask(cm, node, con));
         factories.put(DurableExecutorIsShutdownCodec.REQUEST_MESSAGE_TYPE,
@@ -1222,8 +1256,9 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new DurableExecutorDisposeResultMessageTask(cm, node, con));
         factories.put(DurableExecutorRetrieveAndDisposeResultCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new DurableExecutorRetrieveAndDisposeResultMessageTask(cm, node, con));
-//endregion
-//region ----------  REGISTRATION FOR com.hazelcast.client.impl.protocol.task.transaction
+    }
+
+    private void initializeTransactionTaskFactories() {
         factories.put(TransactionCreateCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new TransactionCreateMessageTask(cm, node, con));
         factories.put(XATransactionClearRemoteCodec.REQUEST_MESSAGE_TYPE,
@@ -1244,22 +1279,22 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new XATransactionCommitMessageTask(cm, node, con));
         factories.put(XATransactionRollbackCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new XATransactionRollbackMessageTask(cm, node, con));
-//endregion
-//region ----------  REGISTRATION FOR com.hazelcast.client.impl.protocol.task.transactionalset
+    }
+
+    private void initializeTransactionalSetTaskFactories() {
         factories.put(TransactionalSetSizeCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new TransactionalSetSizeMessageTask(cm, node, con));
         factories.put(TransactionalSetAddCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new TransactionalSetAddMessageTask(cm, node, con));
         factories.put(TransactionalSetRemoveCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new TransactionalSetRemoveMessageTask(cm, node, con));
-//endregion
-//region ----------  REGISTRATION FOR com.hazelcast.client.impl.protocol.task.map
+    }
+
+    private void initializeMapTaskFactories() {
         factories.put(MapEntriesWithPagingPredicateCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new MapEntriesWithPagingPredicateMessageTask(cm, node, con));
         factories.put(MapAddEntryListenerCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new MapAddEntryListenerMessageTask(cm, node, con));
-        factories.put(MapAssignAndGetUuidsCodec.REQUEST_MESSAGE_TYPE,
-                (cm, con) -> new MapAssignAndGetUuidsMessageTask(cm, node, con));
         factories.put(MapFetchNearCacheInvalidationMetadataCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new MapFetchNearCacheInvalidationMetadataTask(cm, node, con));
         factories.put(MapRemoveIfSameCodec.REQUEST_MESSAGE_TYPE,
@@ -1387,7 +1422,7 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
         factories.put(MapEventJournalSubscribeCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new MapEventJournalSubscribeTask(cm, node, con));
         factories.put(MapEventJournalReadCodec.REQUEST_MESSAGE_TYPE,
-                (cm, con) -> new MapEventJournalReadTask<Object, Object, Object>(cm, node, con));
+                (cm, con) -> new MapEventJournalReadTask<>(cm, node, con));
         factories.put(MapSetTtlCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new MapSetTtlMessageTask(cm, node, con));
         factories.put(MapSetWithMaxIdleCodec.REQUEST_MESSAGE_TYPE,
@@ -1398,8 +1433,9 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new MapPutIfAbsentWithMaxIdleMessageTask(cm, node, con));
         factories.put(MapPutTransientWithMaxIdleCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new MapPutTransientWithMaxIdleMessageTask(cm, node, con));
-//endregion
-//region ----------  REGISTRATION FOR com.hazelcast.client.impl.protocol.task
+    }
+
+    private void initializeGeneralTaskFactories() {
         factories.put(ClientAddPartitionLostListenerCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new AddPartitionLostListenerMessageTask(cm, node, con));
         factories.put(ClientRemovePartitionLostListenerCodec.REQUEST_MESSAGE_TYPE,
@@ -1418,8 +1454,6 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new AddClusterViewListenerMessageTask(cm, node, con));
         factories.put(ClientAuthenticationCustomCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new AuthenticationCustomCredentialsMessageTask(cm, node, con));
-        factories.put(ClientRemoveAllListenersCodec.REQUEST_MESSAGE_TYPE,
-                (cm, con) -> new RemoveAllListenersMessageTask(cm, node, con));
         factories.put(ClientRemoveDistributedObjectListenerCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new RemoveDistributedObjectListenerMessageTask(cm, node, con));
         factories.put(ClientAuthenticationCodec.REQUEST_MESSAGE_TYPE,
@@ -1430,13 +1464,13 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new DeployClassesMessageTask(cm, node, con));
         factories.put(ClientCreateProxiesCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new CreateProxiesMessageTask(cm, node, con));
-        factories.put(ClientIsFailoverSupportedCodec.REQUEST_MESSAGE_TYPE,
-                (cm, con) -> new IsFailoverSupportedMessageTask(cm, node, con));
         factories.put(ClientLocalBackupListenerCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new AddBackupListenerMessageTask(cm, node, con));
+        factories.put(ClientTriggerPartitionAssignmentCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new TriggerPartitionAssignmentMessageTask(cm, node, con));
+    }
 
-//endregion
-//region ----------  REGISTRATION FOR com.hazelcast.client.impl.protocol.task.queue
+    private void initializeQueueTaskFactories() {
         factories.put(QueueCompareAndRemoveAllCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new QueueCompareAndRemoveAllMessageTask(cm, node, con));
         factories.put(QueueContainsAllCodec.REQUEST_MESSAGE_TYPE,
@@ -1477,52 +1511,55 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new QueueClearMessageTask(cm, node, con));
         factories.put(QueueDrainToMaxSizeCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new QueueDrainMaxSizeMessageTask(cm, node, con));
-//endregion
-//region ----------  REGISTRATION FOR com.hazelcast.client.impl.protocol.task.cardinality
+    }
+
+    private void initializeCardinalityTaskFactories() {
         factories.put(CardinalityEstimatorAddCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new CardinalityEstimatorAddMessageTask(cm, node, con));
         factories.put(CardinalityEstimatorEstimateCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new CardinalityEstimatorEstimateMessageTask(cm, node, con));
-//endregion
-//region ----------  REGISTRATION FOR com.hazelcast.client.impl.protocol.task.scheduledexecutor
+    }
+
+    private void initializeScheduledExecutorTaskFactories() {
         factories.put(ScheduledExecutorSubmitToPartitionCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new ScheduledExecutorSubmitToPartitionMessageTask(cm, node, con));
-        factories.put(ScheduledExecutorSubmitToAddressCodec.REQUEST_MESSAGE_TYPE,
-                (cm, con) -> new ScheduledExecutorSubmitToAddressMessageTask(cm, node, con));
+        factories.put(ScheduledExecutorSubmitToMemberCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new ScheduledExecutorSubmitToTargetMessageTask(cm, node, con));
         factories.put(ScheduledExecutorShutdownCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new ScheduledExecutorShutdownMessageTask(cm, node, con));
         factories.put(ScheduledExecutorDisposeFromPartitionCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new ScheduledExecutorTaskDisposeFromPartitionMessageTask(cm, node, con));
-        factories.put(ScheduledExecutorDisposeFromAddressCodec.REQUEST_MESSAGE_TYPE,
-                (cm, con) -> new ScheduledExecutorTaskDisposeFromAddressMessageTask(cm, node, con));
+        factories.put(ScheduledExecutorDisposeFromMemberCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new ScheduledExecutorTaskDisposeFromTargetMessageTask(cm, node, con));
         factories.put(ScheduledExecutorCancelFromPartitionCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new ScheduledExecutorTaskCancelFromPartitionMessageTask(cm, node, con));
-        factories.put(ScheduledExecutorCancelFromAddressCodec.REQUEST_MESSAGE_TYPE,
-                (cm, con) -> new ScheduledExecutorTaskCancelFromAddressMessageTask(cm, node, con));
+        factories.put(ScheduledExecutorCancelFromMemberCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new ScheduledExecutorTaskCancelFromTargetMessageTask(cm, node, con));
         factories.put(ScheduledExecutorIsDoneFromPartitionCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new ScheduledExecutorTaskIsDoneFromPartitionMessageTask(cm, node, con));
-        factories.put(ScheduledExecutorIsDoneFromAddressCodec.REQUEST_MESSAGE_TYPE,
-                (cm, con) -> new ScheduledExecutorTaskIsDoneFromAddressMessageTask(cm, node, con));
+        factories.put(ScheduledExecutorIsDoneFromMemberCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new ScheduledExecutorTaskIsDoneFromTargetMessageTask(cm, node, con));
         factories.put(ScheduledExecutorGetDelayFromPartitionCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new ScheduledExecutorTaskGetDelayFromPartitionMessageTask(cm, node, con));
-        factories.put(ScheduledExecutorGetDelayFromAddressCodec.REQUEST_MESSAGE_TYPE,
-                (cm, con) -> new ScheduledExecutorTaskGetDelayFromAddressMessageTask(cm, node, con));
+        factories.put(ScheduledExecutorGetDelayFromMemberCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new ScheduledExecutorTaskGetDelayFromTargetMessageTask(cm, node, con));
         factories.put(ScheduledExecutorGetStatsFromPartitionCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new ScheduledExecutorTaskGetStatisticsFromPartitionMessageTask(cm, node, con));
-        factories.put(ScheduledExecutorGetStatsFromAddressCodec.REQUEST_MESSAGE_TYPE,
-                (cm, con) -> new ScheduledExecutorTaskGetStatisticsFromAddressMessageTask(cm, node, con));
+        factories.put(ScheduledExecutorGetStatsFromMemberCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new ScheduledExecutorTaskGetStatisticsFromTargetMessageTask(cm, node, con));
         factories.put(ScheduledExecutorGetResultFromPartitionCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new ScheduledExecutorTaskGetResultFromPartitionMessageTask(cm, node, con));
-        factories.put(ScheduledExecutorGetResultFromAddressCodec.REQUEST_MESSAGE_TYPE,
-                (cm, con) -> new ScheduledExecutorTaskGetResultFromAddressMessageTask(cm, node, con));
+        factories.put(ScheduledExecutorGetResultFromMemberCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new ScheduledExecutorTaskGetResultFromTargetMessageTask(cm, node, con));
         factories.put(ScheduledExecutorGetAllScheduledFuturesCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new ScheduledExecutorGetAllScheduledMessageTask(cm, node, con));
         factories.put(ScheduledExecutorIsCancelledFromPartitionCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new ScheduledExecutorTaskIsCancelledFromPartitionMessageTask(cm, node, con));
-        factories.put(ScheduledExecutorIsCancelledFromAddressCodec.REQUEST_MESSAGE_TYPE,
-                (cm, con) -> new ScheduledExecutorTaskIsCancelledFromAddressMessageTask(cm, node, con));
-//endregion
-//region ----------  REGISTRATION FOR continuous query operations of com.hazelcast.client.impl.protocol.task.map
+        factories.put(ScheduledExecutorIsCancelledFromMemberCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new ScheduledExecutorTaskIsCancelledFromTargetMessageTask(cm, node, con));
+    }
+
+    private void initializeContinuousMapQueryOperations() {
         factories.put(ContinuousQueryDestroyCacheCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new MapDestroyCacheMessageTask(cm, node, con));
         factories.put(ContinuousQueryPublisherCreateCodec.REQUEST_MESSAGE_TYPE,
@@ -1535,8 +1572,9 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new MapMadePublishableMessageTask(cm, node, con));
         factories.put(ContinuousQueryPublisherCreateWithValueCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new MapPublisherCreateWithValueMessageTask(cm, node, con));
-//endregion
-//region ----------  REGISTRATION FOR dynamic config configuration
+    }
+
+    private void initializeDynamicConfigTaskFactories() {
         factories.put(DynamicConfigAddMultiMapConfigCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new AddMultiMapConfigMessageTask(cm, node, con));
         factories.put(DynamicConfigAddCardinalityEstimatorConfigCodec.REQUEST_MESSAGE_TYPE,
@@ -1569,20 +1607,23 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new AddFlakeIdGeneratorConfigMessageTask(cm, node, con));
         factories.put(DynamicConfigAddPNCounterConfigCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new AddPNCounterConfigMessageTask(cm, node, con));
-//endregion
-// region ----------- REGISTRATION FOR flake id generator
+    }
+
+    private void initializeFlakeIdGeneratorTaskFactories() {
         factories.put(FlakeIdGeneratorNewIdBatchCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new NewIdBatchMessageTask(cm, node, con));
-//endregion
-//region ----------  REGISTRATION FOR com.hazelcast.client.impl.protocol.task.crdt.pncounter
+    }
+
+    private void initializePnCounterTaskFactories() {
         factories.put(PNCounterGetCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new PNCounterGetMessageTask(cm, node, con));
         factories.put(PNCounterAddCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new PNCounterAddMessageTask(cm, node, con));
         factories.put(PNCounterGetConfiguredReplicaCountCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new PNCounterGetConfiguredReplicaCountMessageTask(cm, node, con));
-//endregion
+    }
 
+    private void initializeCPGroupTaskFactories() {
         factories.put(CPGroupCreateCPGroupCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new CreateRaftGroupMessageTask(cm, node, con));
         factories.put(CPGroupDestroyCPObjectCodec.REQUEST_MESSAGE_TYPE,
@@ -1596,7 +1637,9 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new CloseSessionMessageTask(cm, node, con));
         factories.put(CPSessionGenerateThreadIdCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new GenerateThreadIdMessageTask(cm, node, con));
+    }
 
+    private void initializeAtomicLongTaskFactories() {
         factories.put(AtomicLongAddAndGetCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new AddAndGetMessageTask(cm, node, con));
         factories.put(AtomicLongCompareAndSetCodec.REQUEST_MESSAGE_TYPE,
@@ -1611,7 +1654,9 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new ApplyMessageTask(cm, node, con));
         factories.put(AtomicLongAlterCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new AlterMessageTask(cm, node, con));
+    }
 
+    private void initializeAtomicReferenceTaskFactories() {
         factories.put(AtomicRefApplyCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new com.hazelcast.cp.internal.datastructures.atomicref.client.ApplyMessageTask(cm, node, con));
         factories.put(AtomicRefSetCodec.REQUEST_MESSAGE_TYPE,
@@ -1622,7 +1667,9 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new com.hazelcast.cp.internal.datastructures.atomicref.client.GetMessageTask(cm, node, con));
         factories.put(AtomicRefCompareAndSetCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new com.hazelcast.cp.internal.datastructures.atomicref.client.CompareAndSetMessageTask(cm, node, con));
+    }
 
+    private void initializeCountDownLatchTaskFactories() {
         factories.put(CountDownLatchAwaitCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new AwaitMessageTask(cm, node, con));
         factories.put(CountDownLatchCountDownCodec.REQUEST_MESSAGE_TYPE,
@@ -1633,7 +1680,9 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new GetRoundMessageTask(cm, node, con));
         factories.put(CountDownLatchTrySetCountCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new TrySetCountMessageTask(cm, node, con));
+    }
 
+    private void initializeFencedLockTaskFactories() {
         factories.put(FencedLockLockCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new LockMessageTask(cm, node, con));
         factories.put(FencedLockTryLockCodec.REQUEST_MESSAGE_TYPE,
@@ -1642,7 +1691,9 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new UnlockMessageTask(cm, node, con));
         factories.put(FencedLockGetLockOwnershipCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new GetLockOwnershipStateMessageTask(cm, node, con));
+    }
 
+    private void initializeSemaphoreTaskFactories() {
         factories.put(SemaphoreAcquireCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new AcquirePermitsMessageTask(cm, node, con));
         factories.put(SemaphoreAvailablePermitsCodec.REQUEST_MESSAGE_TYPE,
@@ -1657,6 +1708,9 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new InitSemaphoreMessageTask(cm, node, con));
         factories.put(SemaphoreReleaseCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new ReleasePermitsMessageTask(cm, node, con));
+    }
+
+    private void initializeManagementCenterTaskFactories() {
         factories.put(MCReadMetricsCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new ReadMetricsMessageTask(cm, node, con));
         factories.put(MCChangeClusterStateCodec.REQUEST_MESSAGE_TYPE,

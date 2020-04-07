@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,9 @@ import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.ConstructorFunction;
 
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -40,7 +41,7 @@ public class CachePartitionSegment implements ConstructorFunction<String, ICache
     protected final int partitionId;
     protected final Object mutex = new Object();
     protected final AbstractCacheService cacheService;
-    protected final ConcurrentMap<String, ICacheRecordStore> recordStores = new ConcurrentHashMap<String, ICacheRecordStore>();
+    protected final ConcurrentMap<String, ICacheRecordStore> recordStores = new ConcurrentHashMap<>();
     private boolean runningCleanupOperation;
 
     private volatile long lastCleanupTime;
@@ -186,9 +187,16 @@ public class CachePartitionSegment implements ConstructorFunction<String, ICache
     }
 
     public Collection<ServiceNamespace> getAllNamespaces(int replicaIndex) {
-        Collection<ServiceNamespace> namespaces = new HashSet<ServiceNamespace>();
+        if (recordStores.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        Collection<ServiceNamespace> namespaces = Collections.EMPTY_LIST;
         for (ICacheRecordStore recordStore : recordStores.values()) {
             if (recordStore.getConfig().getTotalBackupCount() >= replicaIndex) {
+                if (namespaces == Collections.EMPTY_LIST) {
+                    namespaces = new LinkedList<>();
+                }
                 namespaces.add(recordStore.getObjectNamespace());
             }
         }

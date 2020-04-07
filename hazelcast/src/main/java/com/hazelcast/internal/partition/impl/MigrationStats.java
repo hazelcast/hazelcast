@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.partition.MigrationStateImpl;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.partition.MigrationState;
 
 import java.util.Date;
@@ -26,39 +26,52 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MIGRATION_METRIC_COMPLETED_MIGRATIONS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MIGRATION_METRIC_ELAPSED_DESTINATION_COMMIT_TIME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MIGRATION_METRIC_ELAPSED_MIGRATION_OPERATION_TIME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MIGRATION_METRIC_ELAPSED_MIGRATION_TIME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MIGRATION_METRIC_LAST_REPARTITION_TIME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MIGRATION_METRIC_PLANNED_MIGRATIONS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MIGRATION_METRIC_TOTAL_COMPLETED_MIGRATIONS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MIGRATION_METRIC_TOTAL_ELAPSED_DESTINATION_COMMIT_TIME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MIGRATION_METRIC_TOTAL_ELAPSED_MIGRATION_OPERATION_TIME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MIGRATION_METRIC_TOTAL_ELAPSED_MIGRATION_TIME;
+import static com.hazelcast.internal.metrics.ProbeUnit.MS;
+import static com.hazelcast.internal.metrics.ProbeUnit.NS;
+
 /**
  * Collection of stats for partition migration tasks.
  */
 public class MigrationStats {
 
-    @Probe
+    @Probe(name = MIGRATION_METRIC_LAST_REPARTITION_TIME, unit = MS)
     private final AtomicLong lastRepartitionTime = new AtomicLong();
 
-    @Probe
+    @Probe(name = MIGRATION_METRIC_PLANNED_MIGRATIONS)
     private volatile int plannedMigrations;
 
-    @Probe
+    @Probe(name = MIGRATION_METRIC_COMPLETED_MIGRATIONS)
     private final AtomicInteger completedMigrations = new AtomicInteger();
 
-    @Probe
+    @Probe(name = MIGRATION_METRIC_TOTAL_COMPLETED_MIGRATIONS)
     private final AtomicInteger totalCompletedMigrations = new AtomicInteger();
 
-    @Probe
+    @Probe(name = MIGRATION_METRIC_ELAPSED_MIGRATION_OPERATION_TIME, unit = NS)
     private final AtomicLong elapsedMigrationOperationTime = new AtomicLong();
 
-    @Probe
+    @Probe(name = MIGRATION_METRIC_ELAPSED_DESTINATION_COMMIT_TIME, unit = NS)
     private final AtomicLong elapsedDestinationCommitTime = new AtomicLong();
 
-    @Probe
+    @Probe(name = MIGRATION_METRIC_ELAPSED_MIGRATION_TIME, unit = NS)
     private final AtomicLong elapsedMigrationTime = new AtomicLong();
 
-    @Probe
+    @Probe(name = MIGRATION_METRIC_TOTAL_ELAPSED_MIGRATION_OPERATION_TIME, unit = NS)
     private final AtomicLong totalElapsedMigrationOperationTime = new AtomicLong();
 
-    @Probe
+    @Probe(name = MIGRATION_METRIC_TOTAL_ELAPSED_DESTINATION_COMMIT_TIME, unit = NS)
     private final AtomicLong totalElapsedDestinationCommitTime = new AtomicLong();
 
-    @Probe
+    @Probe(name = MIGRATION_METRIC_TOTAL_ELAPSED_MIGRATION_TIME, unit = NS)
     private final AtomicLong totalElapsedMigrationTime = new AtomicLong();
 
     /**

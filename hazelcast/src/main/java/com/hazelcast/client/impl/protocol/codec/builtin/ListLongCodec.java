@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ public final class ListLongCodec {
     }
 
     public static List<Long> decode(ClientMessage.Frame frame) {
-        int itemCount = frame.content == null ? 0 : frame.content.length / LONG_SIZE_IN_BYTES;
+        int itemCount = frame.content.length / LONG_SIZE_IN_BYTES;
         List<Long> result = new ArrayList<>(itemCount);
         for (int i = 0; i < itemCount; i++) {
             result.add(decodeLong(frame.content, i * LONG_SIZE_IN_BYTES));

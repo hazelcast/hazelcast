@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,10 @@ import com.hazelcast.config.WanReplicationConfig;
  * Network (WAN).
  * The publisher may implement {@link com.hazelcast.core.HazelcastInstanceAware}
  * if it needs a reference to the instance on which it is being run.
+ *
+ * @param <T> type of event data that the publisher will publish
  */
-public interface WanPublisher {
+public interface WanPublisher<T> {
     /**
      * Initializes the publisher.
      *
@@ -62,12 +64,12 @@ public interface WanPublisher {
      *
      * @param eventObject the replication event
      */
-    void publishReplicationEvent(WanEvent eventObject);
+    void publishReplicationEvent(WanEvent<T> eventObject);
 
     /**
      * Publish the {@code eventObject} WAN replication event backup.
      *
      * @param eventObject the replication backup event
      */
-    void publishReplicationEventBackup(WanEvent eventObject);
+    void publishReplicationEventBackup(WanEvent<T> eventObject);
 }

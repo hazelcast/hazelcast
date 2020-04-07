@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,14 +36,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Applies the aggregation logic on all map entries and returns the result
  */
-@Generated("30c6450693ed7ca601f0bc1c81635ed5")
+@Generated("d38fd3fc1ea770f1fc90097f547d6fc7")
 public final class MapAggregateCodec {
-    //hex: 0x013A00
-    public static final int REQUEST_MESSAGE_TYPE = 80384;
-    //hex: 0x013A01
-    public static final int RESPONSE_MESSAGE_TYPE = 80385;
+    //hex: 0x013900
+    public static final int REQUEST_MESSAGE_TYPE = 80128;
+    //hex: 0x013901
+    public static final int RESPONSE_MESSAGE_TYPE = 80129;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private MapAggregateCodec() {
     }
@@ -68,6 +68,7 @@ public final class MapAggregateCodec {
         clientMessage.setOperationName("Map.Aggregate");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         DataCodec.encode(clientMessage, aggregator);

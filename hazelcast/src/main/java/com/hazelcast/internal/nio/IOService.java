@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,13 @@ package com.hazelcast.internal.nio;
 import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.config.MemcacheProtocolConfig;
 import com.hazelcast.config.RestApiConfig;
-import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.auditlog.AuditlogService;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
-import com.hazelcast.internal.nio.tcp.TcpIpConnection;
+import com.hazelcast.internal.nio.server.ServerConnection;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.cluster.Address;
@@ -38,6 +37,7 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.Collection;
 import java.util.Map;
+import java.util.UUID;
 
 @SuppressWarnings({"checkstyle:methodcount"})
 public interface IOService {
@@ -75,8 +75,6 @@ public interface IOService {
      */
     MemcacheProtocolConfig getMemcacheProtocolConfig();
 
-    SSLConfig getSSLConfig(EndpointQualifier endpointQualifier);
-
     ClientEngine getClientEngine();
 
     TextCommandService getTextCommandService();
@@ -88,10 +86,6 @@ public interface IOService {
     void onFailedConnection(Address address);
 
     void shouldConnectTo(Address address);
-
-    boolean isSocketBind();
-
-    boolean isSocketBindAny();
 
     void interceptSocket(EndpointQualifier endpointQualifier, Socket socket, boolean onAccept) throws IOException;
 
@@ -115,9 +109,16 @@ public interface IOService {
 
     MemberSocketInterceptor getSocketInterceptor(EndpointQualifier endpointQualifier);
 
-    InboundHandler[] createInboundHandlers(EndpointQualifier qualifier, TcpIpConnection connection);
+    InboundHandler[] createInboundHandlers(EndpointQualifier qualifier, ServerConnection connection);
 
-    OutboundHandler[] createOutboundHandlers(EndpointQualifier qualifier, TcpIpConnection connection);
+    OutboundHandler[] createOutboundHandlers(EndpointQualifier qualifier, ServerConnection connection);
 
     AuditlogService getAuditLogService();
+
+    /**
+     * Returns UUID of the local member.
+     *
+     * @return member UUID
+     */
+    UUID getUuid();
 }

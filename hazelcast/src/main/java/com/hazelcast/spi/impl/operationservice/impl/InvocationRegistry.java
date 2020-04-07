@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.HazelcastOverloadException;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.sequence.CallIdSequence;
@@ -32,7 +32,12 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_INVOCATION_REGISTRY_INVOCATIONS_LAST_CALL_ID;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_INVOCATION_REGISTRY_INVOCATIONS_PENDING;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_INVOCATION_REGISTRY_INVOCATIONS_USED_PERCENTAGE;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_PREFIX;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
+import static com.hazelcast.internal.metrics.ProbeUnit.PERCENT;
 import static com.hazelcast.spi.impl.operationservice.OperationAccessor.deactivate;
 import static com.hazelcast.spi.impl.operationservice.OperationAccessor.setCallId;
 
@@ -64,7 +69,7 @@ public class InvocationRegistry implements Iterable<Invocation>, StaticMetricsPr
     private static final float LOAD_FACTOR = 0.75f;
     private static final double HUNDRED_PERCENT = 100d;
 
-    @Probe(name = "invocations.pending", level = MANDATORY)
+    @Probe(name = OPERATION_METRIC_INVOCATION_REGISTRY_INVOCATIONS_PENDING, level = MANDATORY)
     private final ConcurrentMap<Long, Invocation> invocations;
     private final ILogger logger;
     private final CallIdSequence callIdSequence;
@@ -84,10 +89,10 @@ public class InvocationRegistry implements Iterable<Invocation>, StaticMetricsPr
 
     @Override
     public void provideStaticMetrics(MetricsRegistry registry) {
-        registry.registerStaticMetrics(this, "operation");
+        registry.registerStaticMetrics(this, OPERATION_PREFIX);
     }
 
-    @Probe(name = "invocations.usedPercentage")
+    @Probe(name = OPERATION_METRIC_INVOCATION_REGISTRY_INVOCATIONS_USED_PERCENTAGE, unit = PERCENT)
     private double invocationsUsedPercentage() {
         int maxConcurrentInvocations = callIdSequence.getMaxConcurrentInvocations();
         if (maxConcurrentInvocations == Integer.MAX_VALUE) {
@@ -97,7 +102,7 @@ public class InvocationRegistry implements Iterable<Invocation>, StaticMetricsPr
         return (HUNDRED_PERCENT * invocations.size()) / maxConcurrentInvocations;
     }
 
-    @Probe(name = "invocations.lastCallId")
+    @Probe(name = OPERATION_METRIC_INVOCATION_REGISTRY_INVOCATIONS_LAST_CALL_ID)
     long getLastCallId() {
         return callIdSequence.getLastCallId();
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,9 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.UuidUtil;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -41,6 +41,8 @@ import java.util.Map;
 import java.util.UUID;
 
 import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
+import static com.hazelcast.test.Accessors.getHazelcastInstanceImpl;
+import static com.hazelcast.test.Accessors.getSerializationService;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;

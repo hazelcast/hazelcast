@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,15 +19,16 @@ package com.hazelcast.internal.crdt.pncounter;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.internal.monitor.LocalPNCounterStats;
+import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.internal.util.FutureUtil;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 
 /**

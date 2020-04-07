@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,14 +36,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns statistics of the task
  */
-@Generated("81d6e60c25f81907c879c1bf5d8d5c86")
+@Generated("dec656ae5da66e295d9ec6c2920407f2")
 public final class ScheduledExecutorGetStatsFromPartitionCodec {
     //hex: 0x1A0500
     public static final int REQUEST_MESSAGE_TYPE = 1705216;
     //hex: 0x1A0501
     public static final int RESPONSE_MESSAGE_TYPE = 1705217;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_LAST_IDLE_TIME_NANOS_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_LAST_IDLE_TIME_NANOS_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_TOTAL_IDLE_TIME_NANOS_FIELD_OFFSET = RESPONSE_LAST_IDLE_TIME_NANOS_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_TOTAL_RUNS_FIELD_OFFSET = RESPONSE_TOTAL_IDLE_TIME_NANOS_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_TOTAL_RUN_TIME_NANOS_FIELD_OFFSET = RESPONSE_TOTAL_RUNS_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -73,6 +73,7 @@ public final class ScheduledExecutorGetStatsFromPartitionCodec {
         clientMessage.setOperationName("ScheduledExecutor.GetStatsFromPartition");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, schedulerName);
         StringCodec.encode(clientMessage, taskName);
@@ -93,27 +94,27 @@ public final class ScheduledExecutorGetStatsFromPartitionCodec {
     public static class ResponseParameters {
 
         /**
-         * TODO DOC
+         * Last period of time the task was idle, waiting to get scheduled.
          */
         public long lastIdleTimeNanos;
 
         /**
-         * TODO DOC
+         * Total amount of time the task was idle, waiting to get scheduled in.
          */
         public long totalIdleTimeNanos;
 
         /**
-         * TODO DOC
+         * How many times the task was ran/called.
          */
         public long totalRuns;
 
         /**
-         * TODO DOC
+         * The total amount of time the task spent while scheduled in.
          */
         public long totalRunTimeNanos;
 
         /**
-         * TODO DOC
+         * The duration of the task's last execution.
          */
         public long lastRunDurationNanos;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("8629644303b63ded181a2ecede9b644e")
+@Generated("c551c2693fc4b86be41806caf438dc38")
 public final class WanReplicationRefCodec {
     private static final int REPUBLISHING_ENABLED_FIELD_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = REPUBLISHING_ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -40,7 +40,7 @@ public final class WanReplicationRefCodec {
         clientMessage.add(initialFrame);
 
         StringCodec.encode(clientMessage, wanReplicationRef.getName());
-        StringCodec.encode(clientMessage, wanReplicationRef.getMergePolicy());
+        StringCodec.encode(clientMessage, wanReplicationRef.getMergePolicyClassName());
         ListMultiFrameCodec.encodeNullable(clientMessage, wanReplicationRef.getFilters(), StringCodec::encode);
 
         clientMessage.add(END_FRAME.copy());
@@ -54,11 +54,11 @@ public final class WanReplicationRefCodec {
         boolean republishingEnabled = decodeBoolean(initialFrame.content, REPUBLISHING_ENABLED_FIELD_OFFSET);
 
         java.lang.String name = StringCodec.decode(iterator);
-        java.lang.String mergePolicy = StringCodec.decode(iterator);
+        java.lang.String mergePolicyClassName = StringCodec.decode(iterator);
         java.util.List<java.lang.String> filters = ListMultiFrameCodec.decodeNullable(iterator, StringCodec::decode);
 
         fastForwardToEndFrame(iterator);
 
-        return new com.hazelcast.config.WanReplicationRef(name, mergePolicy, filters, republishingEnabled);
+        return new com.hazelcast.config.WanReplicationRef(name, mergePolicyClassName, filters, republishingEnabled);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,14 +37,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Fetches the result of the task ({@link java.util.concurrent.Callable})
  * The call will blocking until the result is ready.
  */
-@Generated("00fe841c1de73b77b669ab0f6c69e453")
+@Generated("1acb14385f2b7df23149876df7e17862")
 public final class ScheduledExecutorGetResultFromPartitionCodec {
     //hex: 0x1A0F00
     public static final int REQUEST_MESSAGE_TYPE = 1707776;
     //hex: 0x1A0F01
     public static final int RESPONSE_MESSAGE_TYPE = 1707777;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private ScheduledExecutorGetResultFromPartitionCodec() {
     }
@@ -69,6 +69,7 @@ public final class ScheduledExecutorGetResultFromPartitionCodec {
         clientMessage.setOperationName("ScheduledExecutor.GetResultFromPartition");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, schedulerName);
         StringCodec.encode(clientMessage, taskName);

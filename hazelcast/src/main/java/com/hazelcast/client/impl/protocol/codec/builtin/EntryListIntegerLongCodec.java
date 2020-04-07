@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@ package com.hazelcast.client.impl.protocol.codec.builtin;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 
 import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -54,7 +54,7 @@ public final class EntryListIntegerLongCodec {
     public static List<Map.Entry<Integer, Long>> decode(ClientMessage.ForwardFrameIterator iterator) {
         ClientMessage.Frame frame = iterator.next();
         int itemCount = frame.content.length / ENTRY_SIZE_IN_BYTES;
-        List<Map.Entry<Integer, Long>> result = new LinkedList<>();
+        List<Map.Entry<Integer, Long>> result = new ArrayList<>(itemCount);
         for (int i = 0; i < itemCount; i++) {
             int key = decodeInteger(frame.content, i * ENTRY_SIZE_IN_BYTES);
             long value = decodeLong(frame.content, i * ENTRY_SIZE_IN_BYTES + INT_SIZE_IN_BYTES);

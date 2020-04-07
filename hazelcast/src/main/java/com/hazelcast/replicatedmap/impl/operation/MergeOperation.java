@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,16 +35,16 @@ import java.util.List;
 public class MergeOperation extends AbstractNamedSerializableOperation {
 
     private String name;
-    private List<ReplicatedMapMergeTypes> mergingEntries;
-    private SplitBrainMergePolicy<Object, ReplicatedMapMergeTypes> mergePolicy;
+    private List<ReplicatedMapMergeTypes<Object, Object>> mergingEntries;
+    private SplitBrainMergePolicy<Object, ReplicatedMapMergeTypes<Object, Object>, Object> mergePolicy;
 
     private transient boolean hasMergedValues;
 
     public MergeOperation() {
     }
 
-    MergeOperation(String name, List<ReplicatedMapMergeTypes> mergingEntries,
-                   SplitBrainMergePolicy<Object, ReplicatedMapMergeTypes> mergePolicy) {
+    MergeOperation(String name, List<ReplicatedMapMergeTypes<Object, Object>> mergingEntries,
+                   SplitBrainMergePolicy<Object, ReplicatedMapMergeTypes<Object, Object>, Object> mergePolicy) {
         this.name = name;
         this.mergingEntries = mergingEntries;
         this.mergePolicy = mergePolicy;
@@ -60,7 +60,7 @@ public class MergeOperation extends AbstractNamedSerializableOperation {
         ReplicatedMapService service = getService();
         ReplicatedRecordStore recordStore = service.getReplicatedRecordStore(name, true, getPartitionId());
 
-        for (ReplicatedMapMergeTypes mergingEntry : mergingEntries) {
+        for (ReplicatedMapMergeTypes<Object, Object> mergingEntry : mergingEntries) {
             if (recordStore.merge(mergingEntry, mergePolicy)) {
                 hasMergedValues = true;
             }

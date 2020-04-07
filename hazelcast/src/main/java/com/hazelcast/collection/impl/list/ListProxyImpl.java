@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,17 @@
 
 package com.hazelcast.collection.impl.list;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
+
+import javax.annotation.Nonnull;
+
+import com.hazelcast.collection.IList;
+import com.hazelcast.collection.LocalListStats;
 import com.hazelcast.collection.impl.collection.AbstractCollectionProxyImpl;
 import com.hazelcast.collection.impl.list.operations.ListAddAllOperation;
 import com.hazelcast.collection.impl.list.operations.ListAddOperation;
@@ -25,19 +36,11 @@ import com.hazelcast.collection.impl.list.operations.ListRemoveOperation;
 import com.hazelcast.collection.impl.list.operations.ListSetOperation;
 import com.hazelcast.collection.impl.list.operations.ListSubOperation;
 import com.hazelcast.config.CollectionConfig;
-import com.hazelcast.collection.IList;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.SerializableList;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
-import com.hazelcast.internal.serialization.SerializationService;
-
-import javax.annotation.Nonnull;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
@@ -164,4 +167,20 @@ public class ListProxyImpl<E> extends AbstractCollectionProxyImpl<ListService, E
         return ListService.SERVICE_NAME;
     }
 
+    @Override
+    public LocalListStats getLocalListStats() {
+        return getService().getLocalCollectionStats(name);
+    }
+
+    // used by jet
+    public Iterator<Data> dataIterator() {
+        return dataSubList(-1, -1).listIterator();
+    }
+
+    // used by jet
+    public List<Data> dataSubList(int fromIndex, int toIndex) {
+        ListSubOperation operation = new ListSubOperation(name, fromIndex, toIndex);
+        SerializableList result = invoke(operation);
+        return Collections.unmodifiableList(result.getCollection());
+    }
 }

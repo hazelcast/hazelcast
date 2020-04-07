@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,12 @@
 
 package com.hazelcast.map.impl.event;
 
-import com.hazelcast.core.EntryEventType;
-import com.hazelcast.core.EntryView;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.core.EntryEventType;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.map.impl.wan.WanMapEntryView;
+
+import javax.annotation.Nonnull;
 
 /**
  * Helper methods for publishing events related to map
@@ -39,7 +41,9 @@ public interface MapEventPublisher {
      *                          update is a load from map-loader, otherwise
      *                          set {@code false}
      */
-    void publishWanUpdate(String mapName, EntryView<Data, Data> entryView, boolean hasLoadProvenance);
+    void publishWanUpdate(@Nonnull String mapName,
+                          @Nonnull WanMapEntryView<Object, Object> entryView,
+                          boolean hasLoadProvenance);
 
     /**
      * Notifies the WAN subsystem of a map entry removal on a replica owner.
@@ -47,7 +51,7 @@ public interface MapEventPublisher {
      * @param mapName the map name
      * @param key     the key of the removed entry
      */
-    void publishWanRemove(String mapName, Data key);
+    void publishWanRemove(@Nonnull String mapName, @Nonnull Data key);
 
     void publishMapEvent(Address caller, String mapName,
                          EntryEventType eventType, int numberOfEntriesAffected);

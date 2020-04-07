@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>4.0-SNAPSHOT</version>
+        <version>4.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -152,12 +152,12 @@
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-aws</artifactId>
-            <version>3.0</version>
+            <version>3.1</version>
         </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-kubernetes</artifactId>
-            <version>2.0</version>
+            <version>2.0.1</version>
         </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
@@ -167,7 +167,7 @@
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-hibernate5</artifactId>
-            <version>1.4.0-SNAPSHOT</version>
+            <version>2.0.0</version>
         </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
@@ -177,7 +177,7 @@
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-wm</artifactId>
-            <version>3.8.3</version>
+            <version>4.0</version>
         </dependency>
 
         <dependency>

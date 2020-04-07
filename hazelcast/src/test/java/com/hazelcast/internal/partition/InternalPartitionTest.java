@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package com.hazelcast.internal.partition;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -27,6 +27,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 

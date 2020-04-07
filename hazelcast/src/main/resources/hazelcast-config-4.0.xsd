@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -512,7 +512,7 @@
             <xs:element name="wan-replication-ref" type="wan-replication-ref" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Wan replication configuration for cache.
+                        WAN replication configuration for cache.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -2342,7 +2342,7 @@
             <xs:element name="class-name" type="xs:string" minOccurs="1" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
-                        Fully qualified class name of WAN Replication implementation WanReplicationPublisher.
+                        Fully qualified class name of WAN Replication implementation WanPublisher.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -2384,7 +2384,7 @@
                 <xs:annotation>
                     <xs:documentation>
                         Sets the fully qualified class name of the class implementing
-                        a custom WAN consumer (WanReplicationConsumer).
+                        a custom WAN consumer (WanConsumer).
                         If you don't define a class name, the default processing logic for
                         incoming WAN events will be used.
                     </xs:documentation>
@@ -2480,6 +2480,7 @@
     <xs:complexType name="index">
         <xs:all>
             <xs:element name="attributes" type="index-attributes"/>
+            <xs:element name="bitmap-index-options" type="bitmap-index-options" minOccurs="0"/>
         </xs:all>
         <xs:attribute name="name"/>
         <xs:attribute name="type" type="index-type" default="SORTED"/>
@@ -2493,6 +2494,21 @@
         <xs:restriction base="non-space-string">
             <xs:enumeration value="SORTED"/>
             <xs:enumeration value="HASH"/>
+            <xs:enumeration value="BITMAP"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:complexType name="bitmap-index-options">
+        <xs:all>
+            <xs:element name="unique-key" type="xs:string" default="__key" minOccurs="0"/>
+            <xs:element name="unique-key-transformation" type="bitmap-index-unique-key-transformation"
+                        default="OBJECT" minOccurs="0"/>
+        </xs:all>
+    </xs:complexType>
+    <xs:simpleType name="bitmap-index-unique-key-transformation">
+        <xs:restriction base="non-space-string">
+            <xs:enumeration value="OBJECT"/>
+            <xs:enumeration value="LONG"/>
+            <xs:enumeration value="RAW"/>
         </xs:restriction>
     </xs:simpleType>
     <xs:complexType name="map-attribute">
@@ -2630,6 +2646,8 @@
             <xs:element name="cache-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="user-code-deployment-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="config-permission" type="base-permission" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="ring-buffer-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="reliable-topic-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
         </xs:choice>
         <xs:attribute name="on-join-operation" type="permission-on-join-operation" use="optional" default="RECEIVE"/>
     </xs:complexType>
@@ -3227,11 +3245,13 @@
 
     <xs:complexType name="wan-replication-ref">
         <xs:all>
-            <xs:element name="merge-policy" type="xs:string" minOccurs="0">
+            <xs:element name="merge-policy-class-name" type="xs:string" minOccurs="0"
+                        default="com.hazelcast.spi.merge.PassThroughMergePolicy">
                 <xs:annotation>
                     <xs:documentation>
-                        Resolve conflicts that occurred when target cluster already has the replicated
-                        entry key.
+                        Sets the merge policy sent to the WAN replication target to merge
+                        replicated entries with existing target entries.
+                        The default merge policy is com.hazelcast.spi.merge.PassThroughMergePolicy.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -3921,25 +3941,15 @@
                 </xs:annotation>
             </xs:element>
 
-            <xs:element name="id-offset" type="xs:long" minOccurs="0" default="0">
+            <xs:element name="epoch-start" type="xs:long" minOccurs="0" default="1514764800000">
                 <xs:annotation>
                     <xs:documentation>
-                        Sets the offset that will be added to the returned IDs. Default value is 0. Setting might be
-                        useful when migrating from IdGenerator, default value works for all green-field projects.
-
-                        For example: Largest ID returned from IdGenerator is 150. FlakeIdGenerator now returns
-                        100. If you configure idOffset of 50 and stop using the IdGenerator, the next ID from
-                        FlakeIdGenerator will be 151 or larger and no duplicate IDs will be generated. In real-life,
-                        the IDs are much larger. You also need to add a reserve to the offset because the IDs
-                        from FlakeIdGenerator are only roughly ordered. Recommended reserve is 2^38, that is
-                        274877906944.
-
-                        Negative values are allowed to increase the lifespan of the generator, however keep in
-                        mind that the generated IDs might also be negative.
+                        Sets the offset of timestamp component. Time unit is milliseconds, default is 1514764800000
+                        (1.1.2018 0:00 UTC).
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-
+            
             <xs:element name="node-id-offset" type="xs:long" minOccurs="0" default="0">
                 <xs:annotation>
                     <xs:documentation>
@@ -3950,7 +3960,47 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            
+            <xs:element name="bits-sequence" minOccurs="0" default="6">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the bit-length of the sequence component, default is 6 bits.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:int">
+                        <xs:minInclusive value="0" />
+                        <xs:maxInclusive value="63"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
 
+            <xs:element name="bits-node-id" minOccurs="0" default="16">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the bit-length of node id component. Default value is 16 bits.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:int">
+                        <xs:minInclusive value="0" />
+                        <xs:maxInclusive value="63"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+
+            <xs:element name="allowed-future-millis" minOccurs="0" default="15000">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets how far to the future is the generator allowed to go to generate IDs without blocking, default is 15 seconds.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:long">
+                        <xs:minInclusive value="0"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
 
             <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
                 <xs:annotation>

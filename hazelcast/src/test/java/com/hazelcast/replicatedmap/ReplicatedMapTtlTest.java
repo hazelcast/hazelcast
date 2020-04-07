@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.replicatedmap;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.scheduler.SecondsBasedEntryTaskScheduler;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapProxy;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.AbstractBaseReplicatedRecordStore;
@@ -24,7 +25,6 @@ import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.SlowTest;
-import com.hazelcast.internal.util.scheduler.SecondsBasedEntryTaskScheduler;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static junit.framework.TestCase.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)

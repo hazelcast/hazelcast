@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.IOService;
-import com.hazelcast.internal.nio.tcp.TcpIpConnection;
+import com.hazelcast.internal.nio.server.ServerConnection;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.ByteArrayProcessor;
 import com.hazelcast.nio.MemberSocketInterceptor;
@@ -142,7 +142,7 @@ public interface NodeExtension {
      * @param ioService  IOService
      * @return the created InboundHandler.
      */
-    InboundHandler[] createInboundHandlers(EndpointQualifier qualifier, TcpIpConnection connection, IOService ioService);
+    InboundHandler[] createInboundHandlers(EndpointQualifier qualifier, ServerConnection connection, IOService ioService);
 
     /**
      * Creates a <tt>OutboundHandler</tt> for given <tt>Connection</tt> instance.
@@ -151,7 +151,7 @@ public interface NodeExtension {
      * @param ioService  IOService
      * @return the created OutboundHandler
      */
-    OutboundHandler[] createOutboundHandlers(EndpointQualifier qualifier, TcpIpConnection connection, IOService ioService);
+    OutboundHandler[] createOutboundHandlers(EndpointQualifier qualifier, ServerConnection connection, IOService ioService);
 
 
     /**

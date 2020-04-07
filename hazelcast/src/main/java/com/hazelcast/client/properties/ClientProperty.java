@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -107,7 +107,7 @@ public final class ClientProperty {
             = new HazelcastProperty("hazelcast.client.invocation.backoff.timeout.millis", -1, MILLISECONDS);
 
     /**
-     * <p>Enables the Discovery SPI/p>
+     * <p>Enables the Discovery SPI</p>
      * <p>Discovery SPI is <b>disabled</b> by default</p>
      */
     public static final HazelcastProperty DISCOVERY_SPI_ENABLED
@@ -123,7 +123,7 @@ public final class ClientProperty {
     /**
      * Controls the number of IO input threads. Defaults to -1, so the system will decide.
      *
-     * If client is a smart client, it will default to 3 otherwise it will default to 1.
+     * If client is a smart client and processor count larger than 8, it will default to 3 otherwise it will default to 1.
      */
     public static final HazelcastProperty IO_INPUT_THREAD_COUNT
             = new HazelcastProperty("hazelcast.client.io.input.thread.count", -1);
@@ -131,7 +131,7 @@ public final class ClientProperty {
     /**
      * Controls the number of IO output threads. Defaults to -1, so the system will decide.
      *
-     * If client is a smart client, it will default to 3 otherwise it will default to 1.
+     * If client is a smart client and processor count larger than 8 , it will default to 3 otherwise it will default to 1.
      */
     public static final HazelcastProperty IO_OUTPUT_THREAD_COUNT
             = new HazelcastProperty("hazelcast.client.io.output.thread.count", -1);
@@ -240,9 +240,9 @@ public final class ClientProperty {
     /**
      * Enables/disables metrics collection altogether. This is a master
      * switch for all metrics related functionality.
-     * <p/>
+     * <p>
      * NOTE: This property overrides {@link ClientMetricsConfig#isEnabled()}.
-     * <p/>
+     * <p>
      * Using {@link ClientMetricsConfig#setEnabled(boolean)} and the declarative
      * counterparts are preferred over using this property. The main purpose
      * of making metrics collection configurable from properties too is
@@ -255,9 +255,9 @@ public final class ClientProperty {
 
     /**
      * Enables/disables exposing metrics on JMX.
-     * <p/>
+     * <p>
      * NOTE: This property overrides {@link MetricsJmxConfig#isEnabled()}.
-     * <p/>
+     * <p>
      * Using {@link MetricsJmxConfig#setEnabled(boolean)} and the declarative
      * counterparts are preferred over using this property. The main purpose
      * of making metrics collection configurable from properties too is
@@ -277,9 +277,9 @@ public final class ClientProperty {
 
     /**
      * Sets the metrics collection frequency in seconds.
-     * <p/>
+     * <p>
      * NOTE: This property overrides {@link ClientMetricsConfig#getCollectionFrequencySeconds()}.
-     * <p/>
+     * <p>
      * Using {@link ClientMetricsConfig#setCollectionFrequencySeconds(int)} and the declarative
      * counterparts are preferred over using this property. The main purpose
      * of making metrics collection configurable from properties too is

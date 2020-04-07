@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -105,5 +105,6 @@ public interface ReplicatedRecordStore {
      * @param mergePolicy  the {@link SplitBrainMergePolicy} instance to apply
      * @return {@code true} if merge is applied, otherwise {@code false}
      */
-    boolean merge(ReplicatedMapMergeTypes mergingEntry, SplitBrainMergePolicy<Object, ReplicatedMapMergeTypes> mergePolicy);
+    boolean merge(ReplicatedMapMergeTypes<Object, Object> mergingEntry,
+                  SplitBrainMergePolicy<Object, ReplicatedMapMergeTypes<Object, Object>, Object> mergePolicy);
 }

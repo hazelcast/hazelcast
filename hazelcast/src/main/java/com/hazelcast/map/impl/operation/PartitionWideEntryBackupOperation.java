@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,23 +74,22 @@ public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryBack
             }
         }, true);
 
-        if (outComes != null) {
-            // This iteration is needed to work around an issue related with binary elastic hash map (BEHM).
-            // Removal via map#remove() while iterating on BEHM distorts it and we can see some entries remain
-            // in the map even we know that iteration is finished. Because in this case, iteration can miss some entries.
-            do {
-                Data dataKey = (Data) outComes.poll();
-                Object oldValue = outComes.poll();
-                Object newValue = outComes.poll();
-                EntryEventType eventType = (EntryEventType) outComes.poll();
+        // This iteration is needed to work around an issue
+        // related with binary elastic hash map (BEHM). Removal
+        // via map#remove() while iterating on BEHM distorts
+        // it and we can see some entries remain in the map
+        // even we know that iteration is finished. Because
+        // in this case, iteration can miss some entries.
+        while (!outComes.isEmpty()) {
+            Data dataKey = (Data) outComes.poll();
+            Object oldValue = outComes.poll();
+            Object newValue = outComes.poll();
+            EntryEventType eventType = (EntryEventType) outComes.poll();
 
-                operator.init(dataKey, oldValue, newValue, null, eventType, null)
-                        .doPostOperateOps();
-
-            } while (!outComes.isEmpty());
+            operator.init(dataKey, oldValue, newValue, null, eventType, null)
+                    .doPostOperateOps();
         }
     }
-
 
     @Override
     public Object getResponse() {
@@ -98,13 +97,15 @@ public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryBack
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in) throws
+            IOException {
         super.readInternal(in);
         backupProcessor = in.readObject();
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws
+            IOException {
         super.writeInternal(out);
         out.writeObject(backupProcessor);
     }

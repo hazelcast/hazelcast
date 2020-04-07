@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import com.hazelcast.internal.networking.nio.NioNetworking;
 import com.hazelcast.internal.networking.nio.NioThread;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.internal.nio.NetworkingService;
-import com.hazelcast.internal.nio.tcp.TcpIpNetworkingService;
+import com.hazelcast.internal.nio.server.ServerNetworkingService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
@@ -70,10 +70,10 @@ public class NetworkingImbalancePlugin extends DiagnosticsPlugin {
 
     private static Networking getThreadingModel(NodeEngineImpl nodeEngine) {
         NetworkingService networkingService = nodeEngine.getNode().getNetworkingService();
-        if (!(networkingService instanceof TcpIpNetworkingService)) {
+        if (!(networkingService instanceof ServerNetworkingService)) {
             return null;
         }
-        return ((TcpIpNetworkingService) networkingService).getNetworking();
+        return ((ServerNetworkingService) networkingService).getNetworking();
     }
 
     @Override

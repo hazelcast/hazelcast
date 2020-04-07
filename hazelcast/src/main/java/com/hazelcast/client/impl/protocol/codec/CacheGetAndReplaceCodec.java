@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * write-through operation mode, the underlying configured javax.cache.integration.CacheWriter might be called to
  * store the value of the key to any kind of external resource.
  */
-@Generated("d76ef338875ca52b2837a5a59c0b2e74")
+@Generated("c844c7fca9ca4404f425da6c74719d6d")
 public final class CacheGetAndReplaceCodec {
     //hex: 0x130B00
     public static final int REQUEST_MESSAGE_TYPE = 1248000;
@@ -47,7 +47,7 @@ public final class CacheGetAndReplaceCodec {
     public static final int RESPONSE_MESSAGE_TYPE = 1248001;
     private static final int REQUEST_COMPLETION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_COMPLETION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private CacheGetAndReplaceCodec() {
     }
@@ -89,6 +89,7 @@ public final class CacheGetAndReplaceCodec {
         clientMessage.setOperationName("Cache.GetAndReplace");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeInt(initialFrame.content, REQUEST_COMPLETION_ID_FIELD_OFFSET, completionId);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);

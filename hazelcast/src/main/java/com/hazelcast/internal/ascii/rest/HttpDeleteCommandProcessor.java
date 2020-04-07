@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.internal.ascii.rest;
 
 import com.hazelcast.internal.ascii.TextCommandService;
+import com.hazelcast.internal.util.StringUtil;
 
 public class HttpDeleteCommandProcessor extends HttpCommandProcessor<HttpDeleteCommand> {
 
@@ -53,6 +54,7 @@ public class HttpDeleteCommandProcessor extends HttpCommandProcessor<HttpDeleteC
         } else {
             String mapName = uri.substring(URI_MAPS.length(), indexEnd);
             String key = uri.substring(indexEnd + 1);
+            key = StringUtil.stripTrailingSlash(key);
             textCommandService.delete(mapName, key);
             command.send200();
         }

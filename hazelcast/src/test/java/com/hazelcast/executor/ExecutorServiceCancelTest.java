@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,9 @@ package com.hazelcast.executor;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.core.IExecutorService;
+import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.partition.PartitionAware;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -35,7 +34,6 @@ import org.junit.runner.RunWith;
 import java.io.Serializable;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -54,15 +52,15 @@ public class ExecutorServiceCancelTest extends ExecutorServiceTestSupport {
     @Before
     public void setup() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        localHz = factory.newHazelcastInstance();
-        remoteHz = factory.newHazelcastInstance();
+        localHz = factory.newHazelcastInstance(smallInstanceConfig());
+        remoteHz = factory.newHazelcastInstance(smallInstanceConfig());
         taskStartedLatchName = randomName();
         taskStartedLatch = localHz.getCPSubsystem().getCountDownLatch(taskStartedLatchName);
         taskStartedLatch.trySetCount(1);
     }
 
     @Test
-    public void testCancel_submitRandom() throws Exception {
+    public void testCancel_submitRandom() {
         IExecutorService executorService = localHz.getExecutorService(randomString());
         Future<Boolean> future = executorService.submit(new SleepingTask(Integer.MAX_VALUE, taskStartedLatchName));
         awaitTaskStart();
@@ -73,12 +71,7 @@ public class ExecutorServiceCancelTest extends ExecutorServiceTestSupport {
     }
 
     public void awaitTaskStart() {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(0, taskStartedLatch.getCount());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(0, taskStartedLatch.getCount()));
     }
 
     @Test(expected = CancellationException.class)
@@ -93,12 +86,12 @@ public class ExecutorServiceCancelTest extends ExecutorServiceTestSupport {
     }
 
     @Test
-    public void testCancel_submitToLocalMember() throws Exception {
+    public void testCancel_submitToLocalMember() {
         testCancel_submitToMember(localHz, localHz.getCluster().getLocalMember());
     }
 
     @Test
-    public void testCancel_submitToRemoteMember() throws Exception {
+    public void testCancel_submitToRemoteMember() {
         testCancel_submitToMember(localHz, remoteHz.getCluster().getLocalMember());
     }
 
@@ -112,7 +105,7 @@ public class ExecutorServiceCancelTest extends ExecutorServiceTestSupport {
         testGetValueAfterCancel_submitToMember(localHz, remoteHz.getCluster().getLocalMember());
     }
 
-    private void testCancel_submitToMember(HazelcastInstance instance, Member member) throws Exception {
+    private void testCancel_submitToMember(HazelcastInstance instance, Member member) {
         IExecutorService executorService = instance.getExecutorService(randomString());
         Future<Boolean> future
                 = executorService.submitToMember(new SleepingTask(Integer.MAX_VALUE, taskStartedLatchName), member);
@@ -132,7 +125,7 @@ public class ExecutorServiceCancelTest extends ExecutorServiceTestSupport {
     }
 
     @Test
-    public void testCancel_submitToKeyOwner() throws ExecutionException, InterruptedException {
+    public void testCancel_submitToKeyOwner() {
         IExecutorService executorService = localHz.getExecutorService(randomString());
         Future<Boolean> future
                 = executorService.submitToKeyOwner(new SleepingTask(Integer.MAX_VALUE, taskStartedLatchName), randomString());
@@ -154,7 +147,7 @@ public class ExecutorServiceCancelTest extends ExecutorServiceTestSupport {
         future.get(10, TimeUnit.SECONDS);
     }
 
-    static class SleepingTask implements Callable<Boolean>, Serializable, PartitionAware, HazelcastInstanceAware {
+    static class SleepingTask implements Callable<Boolean>, Serializable, PartitionAware<String>, HazelcastInstanceAware {
         private final String taskStartedLatchName;
         private long sleepSeconds;
         private HazelcastInstance hz;
@@ -178,7 +171,7 @@ public class ExecutorServiceCancelTest extends ExecutorServiceTestSupport {
         }
 
         @Override
-        public Object getPartitionKey() {
+        public String getPartitionKey() {
             return "key";
         }
     }

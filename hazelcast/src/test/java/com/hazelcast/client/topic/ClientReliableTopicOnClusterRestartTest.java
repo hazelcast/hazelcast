@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,14 +21,12 @@ import com.hazelcast.client.impl.proxy.ClientReliableTopicProxy;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.topic.ITopic;
-import com.hazelcast.topic.Message;
-import com.hazelcast.topic.MessageListener;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.topic.impl.reliable.DurableSubscriptionTest;
+import com.hazelcast.topic.ITopic;
+import com.hazelcast.topic.Message;
+import com.hazelcast.topic.impl.reliable.DurableSubscriptionTest.DurableMessageListener;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -38,9 +36,11 @@ import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
+import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertFalse;
@@ -61,29 +61,24 @@ public class ClientReliableTopicOnClusterRestartTest {
      */
     @Test
     public void serverRestartWhenReliableTopicListenerRegistered() {
-        HazelcastInstance server = hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance server = hazelcastFactory.newHazelcastInstance(smallInstanceConfig());
         String topicName = "topic";
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         HazelcastInstance hazelcastClient = hazelcastFactory.newHazelcastClient(clientConfig);
         HazelcastInstance hazelcastClient2 = hazelcastFactory.newHazelcastClient(clientConfig);
         ITopic<Integer> topic = hazelcastClient.getReliableTopic(topicName);
-        final ITopic<Integer> topic2 = hazelcastClient2.getReliableTopic(topicName);
+        ITopic<Integer> topic2 = hazelcastClient2.getReliableTopic(topicName);
 
-        final CountDownLatch listenerLatch = new CountDownLatch(1);
+        CountDownLatch listenerLatch = new CountDownLatch(1);
 
         // Add listener using the first client
-        topic.addMessageListener(new MessageListener<Integer>() {
-            @Override
-            public void onMessage(Message<Integer> message) {
-                listenerLatch.countDown();
-            }
-        });
+        topic.addMessageListener(message -> listenerLatch.countDown());
 
         // restart the server
         server.getLifecycleService().terminate();
 
-        hazelcastFactory.newHazelcastInstance();
+        hazelcastFactory.newHazelcastInstance(smallInstanceConfig());
 
         // publish some data
         topic2.publish(5);
@@ -93,7 +88,7 @@ public class ClientReliableTopicOnClusterRestartTest {
 
     @Test
     public void shouldContinue_OnClusterRestart_afterInvocationTimeout() throws InterruptedException {
-        HazelcastInstance member = hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance member = hazelcastFactory.newHazelcastInstance(smallInstanceConfig());
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         int invocationTimeoutSeconds = 2;
@@ -103,34 +98,64 @@ public class ClientReliableTopicOnClusterRestartTest {
         final CountDownLatch messageArrived = new CountDownLatch(1);
         String topicName = "topic";
         ITopic<String> topic = client.getReliableTopic(topicName);
-        UUID registrationId = topic.addMessageListener(new DurableSubscriptionTest.DurableMessageListener<String>() {
-            @Override
-            public void onMessage(Message<String> message) {
-                messageArrived.countDown();
-            }
-
-            @Override
-            public boolean isLossTolerant() {
-                return true;
-            }
-        });
+        UUID registrationId = topic.addMessageListener(createListener(true, m -> messageArrived.countDown()));
 
         member.shutdown();
         // wait for the topic operation to timeout
         Thread.sleep(TimeUnit.SECONDS.toMillis(invocationTimeoutSeconds));
 
-        member = hazelcastFactory.newHazelcastInstance();
+        member = hazelcastFactory.newHazelcastInstance(smallInstanceConfig());
         member.getReliableTopic(topicName).publish("message");
         assertOpenEventually(messageArrived);
 
-        ClientReliableTopicProxy proxy = (ClientReliableTopicProxy) topic;
+        ClientReliableTopicProxy<?> proxy = (ClientReliableTopicProxy<?>) topic;
         assertFalse(proxy.isListenerCancelled(registrationId));
     }
 
 
     @Test
     public void shouldContinue_OnClusterRestart_whenDataLoss_LossTolerant_afterInvocationTimeout() throws InterruptedException {
-        HazelcastInstance member = hazelcastFactory.newHazelcastInstance();
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
+        int invocationTimeoutSeconds = 2;
+        clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), String.valueOf(invocationTimeoutSeconds));
+
+        final HazelcastInstance member = hazelcastFactory.newHazelcastInstance(smallInstanceConfig());
+        final HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+
+        AtomicLong messageCount = new AtomicLong();
+        CountDownLatch messageArrived = new CountDownLatch(1);
+        String topicName = "topic";
+
+        member.getReliableTopic(topicName).publish("message");
+        member.getReliableTopic(topicName).publish("message");
+
+        ClientReliableTopicProxy<?> topic = (ClientReliableTopicProxy<?>) client.getReliableTopic(topicName);
+        UUID registrationId = topic.addMessageListener(createListener(true, m -> {
+            messageCount.incrementAndGet();
+            messageArrived.countDown();
+        }));
+
+        member.shutdown();
+
+        final HazelcastInstance restartedMember = hazelcastFactory.newHazelcastInstance(smallInstanceConfig());
+
+        // wait some time for subscription
+        Thread.sleep(TimeUnit.SECONDS.toMillis(invocationTimeoutSeconds));
+
+        assertTrueEventually(() -> {
+            String item = "newItem " + UUID.randomUUID();
+            restartedMember.getReliableTopic(topicName).publish(item);
+            assertOpenEventually(messageArrived, 5);
+        });
+
+        assertFalse(topic.isListenerCancelled(registrationId));
+        assertTrue(messageCount.get() >= 1);
+    }
+
+    @Test
+    public void shouldFail_OnClusterRestart_whenDataLoss_notLossTolerant() throws InterruptedException {
+        HazelcastInstance member = hazelcastFactory.newHazelcastInstance(smallInstanceConfig());
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         int invocationTimeoutSeconds = 2;
@@ -138,76 +163,44 @@ public class ClientReliableTopicOnClusterRestartTest {
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         final AtomicLong messageCount = new AtomicLong();
-        final CountDownLatch messageArrived = new CountDownLatch(1);
         String topicName = "topic";
 
         member.getReliableTopic(topicName).publish("message");
         member.getReliableTopic(topicName).publish("message");
 
         final ITopic<String> topic = client.getReliableTopic(topicName);
-        final UUID registrationId = topic.addMessageListener(new DurableSubscriptionTest.DurableMessageListener<String>() {
-            @Override
-            public void onMessage(Message<String> message) {
-                messageCount.incrementAndGet();
-                messageArrived.countDown();
-            }
 
-            @Override
-            public boolean isLossTolerant() {
-                return true;
-            }
-        });
+        final UUID registrationId = topic.addMessageListener(createListener(false, m -> messageCount.incrementAndGet()));
 
         member.shutdown();
-        // wait for the topic operation to timeout
+
+        member = hazelcastFactory.newHazelcastInstance(smallInstanceConfig());
+
+        // wait some time for re-subscription
         Thread.sleep(TimeUnit.SECONDS.toMillis(invocationTimeoutSeconds));
 
-        member = hazelcastFactory.newHazelcastInstance();
+        // we require at least one new message to detect that the ringbuffer was recreated
         member.getReliableTopic(topicName).publish("message");
 
-        assertOpenEventually(messageArrived);
-
-        ClientReliableTopicProxy proxy = (ClientReliableTopicProxy) topic;
-        assertFalse(proxy.isListenerCancelled(registrationId));
-        assertEquals(1, messageCount.get());
+        assertTrueEventually(() -> {
+            ClientReliableTopicProxy<?> proxy = (ClientReliableTopicProxy<?>) topic;
+            assertTrue(proxy.isListenerCancelled(registrationId));
+        }, 10);
+        assertEquals(0, messageCount.get());
     }
 
-    @Test
-    public void shouldFail_OnClusterRestart_whenDataLoss_notLossTolerant() {
-        HazelcastInstance member = hazelcastFactory.newHazelcastInstance();
-        ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
-
-        final AtomicLong messageCount = new AtomicLong();
-        String topicName = "topic";
-
-        member.getReliableTopic(topicName).publish("message");
-        member.getReliableTopic(topicName).publish("message");
-
-        final ITopic<String> topic = client.getReliableTopic(topicName);
-        final UUID registrationId = topic.addMessageListener(new DurableSubscriptionTest.DurableMessageListener<String>() {
+    private <T> DurableMessageListener<T> createListener(boolean lossTolerant,
+                                                         Consumer<Message<T>> messageListener) {
+        return new DurableMessageListener<T>() {
             @Override
-            public void onMessage(Message<String> message) {
-                messageCount.incrementAndGet();
+            public void onMessage(Message<T> message) {
+                messageListener.accept(message);
             }
 
             @Override
             public boolean isLossTolerant() {
-                return false;
+                return lossTolerant;
             }
-        });
-
-        member.shutdown();
-
-        hazelcastFactory.newHazelcastInstance();
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                ClientReliableTopicProxy proxy = (ClientReliableTopicProxy) topic;
-                assertTrue(proxy.isListenerCancelled(registrationId));
-            }
-        });
-        assertEquals(0, messageCount.get());
+        };
     }
 }

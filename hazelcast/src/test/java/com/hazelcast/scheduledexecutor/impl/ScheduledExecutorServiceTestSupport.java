@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -116,25 +116,23 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
 
     static class ICountdownLatchCallableTask implements Callable<Double>, Serializable, HazelcastInstanceAware {
 
-        final String runLatchName;
-        final int sleepPeriod;
+        final String initLatchName;
+        final String waitLatchName;
+        final String doneLatchName;
 
         transient HazelcastInstance instance;
 
-        ICountdownLatchCallableTask(String runLatchName, int sleepPeriod) {
-            this.runLatchName = runLatchName;
-            this.sleepPeriod = sleepPeriod;
+        ICountdownLatchCallableTask(String initLatchName, String waitLatchName, String doneLatchName) {
+            this.initLatchName = initLatchName;
+            this.waitLatchName = waitLatchName;
+            this.doneLatchName = doneLatchName;
         }
 
         @Override
         public Double call() {
-            try {
-                sleep(sleepPeriod);
-            } catch (InterruptedException e) {
-                Thread.interrupted();
-            }
-
-            instance.getCPSubsystem().getCountDownLatch(runLatchName).countDown();
+            instance.getCPSubsystem().getCountDownLatch(initLatchName).countDown();
+            assertOpenEventually(instance.getCPSubsystem().getCountDownLatch(waitLatchName));
+            instance.getCPSubsystem().getCountDownLatch(doneLatchName).countDown();
             return 77 * 2.2;
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,6 +69,7 @@ import static com.hazelcast.config.EvictionPolicy.RANDOM;
 import static com.hazelcast.map.EvictionMaxSizePolicyTest.setMockRuntimeMemoryInfoAccessor;
 import static com.hazelcast.map.impl.eviction.MapClearExpiredRecordsTask.PROP_TASK_PERIOD_SECONDS;
 import static com.hazelcast.query.SampleTestObjects.Employee;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.test.OverridePropertyRule.set;
 import static java.lang.Integer.MAX_VALUE;
 import static java.lang.Math.max;
@@ -176,15 +177,20 @@ public class EvictionTest extends HazelcastTestSupport {
 
     @Test
     public void testMaxIdle_readThroughOrderedIndex() {
-        testMaxIdle_readThroughIndex(true);
+        testMaxIdle_readThroughIndex(IndexType.SORTED);
     }
 
     @Test
     public void testMaxIdle_readThroughUnorderedIndex() {
-        testMaxIdle_readThroughIndex(false);
+        testMaxIdle_readThroughIndex(IndexType.HASH);
     }
 
-    private void testMaxIdle_readThroughIndex(boolean ordered) {
+    @Test
+    public void testMaxIdle_readThroughBitmapIndex() {
+        testMaxIdle_readThroughIndex(IndexType.BITMAP);
+    }
+
+    private void testMaxIdle_readThroughIndex(IndexType type) {
         String mapName = randomMapName();
 
         Config config = getConfig();
@@ -193,7 +199,7 @@ public class EvictionTest extends HazelcastTestSupport {
 
         HazelcastInstance node = createHazelcastInstance(config);
         IMap<Integer, Employee> map = node.getMap(mapName);
-        map.addIndex(ordered ? IndexType.SORTED : IndexType.HASH, "city");
+        map.addIndex(type, "city");
 
         int entries = 5;
         Map<Integer, Long> lastAccessTimes = new HashMap<>();

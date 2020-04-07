@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,13 @@
 
 package com.hazelcast.internal.metrics.jmx;
 
+import com.hazelcast.internal.metrics.jmx.MetricsMBean.Type;
 import com.hazelcast.internal.util.BiTuple;
+import com.hazelcast.internal.util.TriTuple;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
+import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanServer;
 import javax.management.ObjectInstance;
 import javax.management.ObjectName;
@@ -38,6 +43,7 @@ public class JmxPublisherTestHelper {
     private final MBeanServer platformMBeanServer;
     private final ObjectName objectNameNoModule;
     private final ObjectName objectNameWithModule;
+    private final ILogger logger = Logger.getLogger(JmxPublisherTestHelper.class);
 
     public JmxPublisherTestHelper(String domainPrefix) throws Exception {
         objectNameNoModule = new ObjectName(domainPrefix + ":*");
@@ -47,6 +53,10 @@ public class JmxPublisherTestHelper {
 
     public void assertNoMBeans() {
         Set<ObjectInstance> instances = queryOurInstances();
+        if (instances.size() > 0) {
+            String jvmName = ManagementFactory.getRuntimeMXBean().getName();
+            logger.info("Dangling metrics MBeans created by " + jvmName + ": " + instances);
+        }
         assertEquals(0, instances.size());
     }
 
@@ -61,19 +71,29 @@ public class JmxPublisherTestHelper {
         }
     }
 
-    public void assertMBeans(List<BiTuple<String, List<Map.Entry<String, Number>>>> expected) throws Exception {
+    public void assertMBeans(List<BiTuple<String, List<TriTuple<String, Number, Type>>>> expected) throws Exception {
         Set<ObjectInstance> instances = queryOurInstances();
         Map<ObjectName, ObjectInstance> instanceMap =
                 instances.stream().collect(Collectors.toMap(ObjectInstance::getObjectName, Function.identity()));
 
         assertEquals("actual: " + instances, expected.size(), instances.size());
 
-        for (BiTuple<String, List<Map.Entry<String, Number>>> entry : expected) {
+        for (BiTuple<String, List<TriTuple<String, Number, Type>>> entry : expected) {
             ObjectName on = new ObjectName(entry.element1);
             assertTrue("name: " + on + " not in instances " + instances, instanceMap.containsKey(on));
-            for (Map.Entry<String, Number> attribute : entry.element2) {
-                assertEquals("Attribute '" + attribute.getKey() + "' of '" + on + "' doesn't match",
-                        attribute.getValue(), platformMBeanServer.getAttribute(on, attribute.getKey()));
+            for (TriTuple<String, Number, Type> attribute : entry.element2) {
+                assertEquals("Attribute '" + attribute.element1 + "' of '" + on + "' doesn't match",
+                        attribute.element2, platformMBeanServer.getAttribute(on, attribute.element1));
+                MBeanAttributeInfo[] mbeanInfos = platformMBeanServer.getMBeanInfo(on).getAttributes();
+                boolean match = false;
+                for (int i = 0; i < mbeanInfos.length && !match; i++) {
+                    if (attribute.element1.equals(mbeanInfos[i].getName())) {
+                        assertEquals("Attribute type '" + attribute.element1 + "' of '" + on + "' doesn't match",
+                                attribute.element3, Type.of(mbeanInfos[i].getType()));
+                        match = true;
+                    }
+                }
+                assertTrue("No matching MBean attribute type for checking the type of '" + on + "'", match);
             }
         }
     }

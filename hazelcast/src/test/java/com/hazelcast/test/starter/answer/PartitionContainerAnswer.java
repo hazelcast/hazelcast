@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ class PartitionContainerAnswer extends AbstractAnswer {
         if (arguments.length == 1 && methodName.equals("getExistingRecordStore")) {
             // PartitionContainer
             return getRecordStore(methodName, arguments);
-        } else if (arguments.length == 1 && methodName.equals("getMultiMapContainer")) {
+        } else if (arguments.length == 2 && methodName.equals("getMultiMapContainer")) {
             // MultiMapPartitionContainer
             return invoke(invocation, arguments);
         } else if (arguments.length == 0) {

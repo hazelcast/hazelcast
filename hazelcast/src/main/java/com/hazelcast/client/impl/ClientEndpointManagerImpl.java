@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.client.impl.ClientEngineImpl.SERVICE_NAME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_METRIC_ENDPOINT_MANAGER_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_METRIC_ENDPOINT_MANAGER_TOTAL_REGISTRATIONS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_PREFIX_ENDPOINT;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
@@ -50,18 +53,18 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager, Dynamic
     private final ILogger logger;
     private final EventService eventService;
 
-    @Probe(name = "count", level = MANDATORY)
+    @Probe(name = CLIENT_METRIC_ENDPOINT_MANAGER_COUNT, level = MANDATORY)
     private final ConcurrentMap<Connection, ClientEndpoint> endpoints =
             new ConcurrentHashMap<>();
 
-    @Probe(name = "totalRegistrations", level = MANDATORY)
+    @Probe(name = CLIENT_METRIC_ENDPOINT_MANAGER_TOTAL_REGISTRATIONS, level = MANDATORY)
     private final MwCounter totalRegistrations = newMwCounter();
 
     public ClientEndpointManagerImpl(NodeEngine nodeEngine) {
         this.logger = nodeEngine.getLogger(ClientEndpointManager.class);
         this.eventService = nodeEngine.getEventService();
         MetricsRegistry metricsRegistry = ((NodeEngineImpl) nodeEngine).getMetricsRegistry();
-        metricsRegistry.registerStaticMetrics(this, "client.endpoint");
+        metricsRegistry.registerStaticMetrics(this, CLIENT_PREFIX_ENDPOINT);
         metricsRegistry.registerDynamicMetricsProvider(this);
     }
 

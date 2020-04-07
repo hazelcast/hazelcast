@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -394,10 +394,10 @@ public class MetricsServiceTest extends HazelcastTestSupport {
     }
 
     private static class TestProbeSource {
-        @Probe
+        @Probe(name = "longValue")
         private long longValue;
 
-        @Probe
+        @Probe(name = "doubleValue")
         private double doubleValue;
 
         private void update(long longValue, double doubleValue) {
@@ -408,16 +408,16 @@ public class MetricsServiceTest extends HazelcastTestSupport {
     }
 
     private static class ExclusionProbeSource {
-        @Probe
+        @Probe(name = "notExcludedLong")
         private long notExcludedLong;
 
-        @Probe(excludedTargets = MANAGEMENT_CENTER)
+        @Probe(name = "excludedLong", excludedTargets = MANAGEMENT_CENTER)
         private long excludedLong;
 
-        @Probe
+        @Probe(name = "notExcludedDouble")
         private double notExcludedDouble;
 
-        @Probe(excludedTargets = MANAGEMENT_CENTER)
+        @Probe(name = "excludedDouble", excludedTargets = MANAGEMENT_CENTER)
         private double excludedDouble;
 
         private void update(long notExcludedLong, long excludedLong, double notExcludedDouble, double excludedDouble) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -122,7 +122,6 @@ public class CPSessionInfo implements CPSession, IdentifiedDataSerializable {
     }
 
     @Override
-    @SuppressWarnings("checkstyle:npathcomplexity")
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -132,33 +131,13 @@ public class CPSessionInfo implements CPSession, IdentifiedDataSerializable {
         }
 
         CPSessionInfo that = (CPSessionInfo) o;
-
-        if (id != that.id) {
-            return false;
-        }
-        if (version != that.version) {
-            return false;
-        }
-        if (creationTime != that.creationTime) {
-            return false;
-        }
-        if (!endpoint.equals(that.endpoint)) {
-            return false;
-        }
-        if (!endpointName.equals(that.endpointName)) {
-            return false;
-        }
-        return endpointType == that.endpointType;
+        return id == that.id && version == that.version;
     }
 
     @Override
     public int hashCode() {
         int result = (int) (id ^ (id >>> 32));
         result = 31 * result + (int) (version ^ (version >>> 32));
-        result = 31 * result + endpoint.hashCode();
-        result = 31 * result + endpointName.hashCode();
-        result = 31 * result + endpointType.hashCode();
-        result = 31 * result + (int) (creationTime ^ (creationTime >>> 32));
         return result;
     }
 

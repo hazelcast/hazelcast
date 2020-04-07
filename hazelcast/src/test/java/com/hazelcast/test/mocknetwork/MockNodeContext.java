@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import com.hazelcast.internal.networking.ServerSocketRegistry;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.NetworkingService;
 import com.hazelcast.internal.nio.NodeIOService;
-import com.hazelcast.internal.nio.tcp.FirewallingNetworkingService;
+import com.hazelcast.internal.nio.server.FirewallingNetworkingService;
 import com.hazelcast.test.TestEnvironment;
 import com.hazelcast.test.compatibility.SamplingNodeExtension;
 

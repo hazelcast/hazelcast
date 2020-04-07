@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.metrics.jmx;
 
-import com.hazelcast.internal.util.BiTuple;
+import com.hazelcast.internal.util.TriTuple;
 
 import javax.annotation.Nonnull;
 import javax.management.Attribute;
@@ -32,22 +32,22 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.internal.util.BiTuple.of;
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.TriTuple.of;
 import static java.util.stream.Collectors.toCollection;
 
 public class MetricsMBean implements DynamicMBean {
 
     // we add attributes here while they might be read in parallel by JMX client
-    private final ConcurrentMap<String, BiTuple<String, AtomicReference<Number>>> metrics = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, TriTuple<String, AtomicReference<Number>, Type>> metrics = new ConcurrentHashMap<>();
 
     /**
      * Adds a metric if necessary and sets its value.
      */
-    void setMetricValue(String name, String unit, Number value) {
-        BiTuple<String, AtomicReference<Number>> metricTuple = metrics.get(name);
+    void setMetricValue(String name, String unit, Number value, Type type) {
+        TriTuple<String, AtomicReference<Number>, Type> metricTuple = metrics.get(name);
         if (metricTuple == null) {
-            metricTuple = of(unit, new AtomicReference<>());
+            metricTuple = of(unit, new AtomicReference<>(), type);
             metrics.put(name, metricTuple);
         }
         metricTuple.element2.lazySet(value);
@@ -59,7 +59,7 @@ public class MetricsMBean implements DynamicMBean {
 
     @Override
     public Object getAttribute(String attributeName) throws AttributeNotFoundException {
-        BiTuple<String, AtomicReference<Number>> attribute = metrics.get(attributeName);
+        TriTuple<String, AtomicReference<Number>, Type> attribute = metrics.get(attributeName);
         if (attribute == null) {
             throw new AttributeNotFoundException(attributeName);
         }
@@ -93,8 +93,9 @@ public class MetricsMBean implements DynamicMBean {
     public MBeanInfo getMBeanInfo() {
         MBeanAttributeInfo[] array = new MBeanAttributeInfo[metrics.size()];
         int i = 0;
-        for (Entry<String, BiTuple<String, AtomicReference<Number>>> entry : metrics.entrySet()) {
-            array[i++] = new MBeanAttributeInfo(entry.getKey(), "", "Unit: " + entry.getValue().element1,
+        for (Entry<String, TriTuple<String, AtomicReference<Number>, Type>> entry : metrics.entrySet()) {
+            array[i++] = new MBeanAttributeInfo(entry.getKey(), entry.getValue().element3.type,
+                    "Unit: " + entry.getValue().element1,
                     true, false, false);
         }
 
@@ -113,4 +114,23 @@ public class MetricsMBean implements DynamicMBean {
         }
     }
 
+    public enum Type {
+        LONG("long"),
+        DOUBLE("double");
+
+        private final String type;
+
+        Type(String type) {
+            this.type = type;
+        }
+
+        static Type of(String strType) {
+            for (Type value : values()) {
+                if (strType.equals(value.type)) {
+                    return value;
+                }
+            }
+            return null;
+        }
+    }
 }

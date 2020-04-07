@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,7 +67,7 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
         }
     };
 
-    private final AbstractClientInvocationService invocationService;
+    private final ClientInvocationServiceImpl invocationService;
     private final ResponseThread[] responseThreads;
     private final HazelcastClientInstanceImpl client;
 
@@ -76,7 +76,7 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
     private final boolean responseThreadsDynamic;
     private final ConcurrencyDetection concurrencyDetection;
 
-    public ClientResponseHandlerSupplier(AbstractClientInvocationService invocationService,
+    public ClientResponseHandlerSupplier(ClientInvocationServiceImpl invocationService,
                                          ConcurrencyDetection concurrencyDetection) {
         this.invocationService = invocationService;
         this.concurrencyDetection = concurrencyDetection;

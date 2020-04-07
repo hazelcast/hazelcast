@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,10 +39,12 @@ public final class ClassSource extends ClassLoader {
 
     private final Map<String, Class> classes = new ConcurrentHashMap<String, Class>();
     private final Map<String, byte[]> classDefinitions = new ConcurrentHashMap<String, byte[]>();
+    private final Map<String, byte[]> bundledClassDefinitions;
     private final ClassLocator classLocator;
 
-    public ClassSource(ClassLoader parent, ClassLocator classLocator) {
+    public ClassSource(ClassLoader parent, ClassLocator classLocator, Map<String, byte[]> bundledClassDefinitions) {
         super(parent);
+        this.bundledClassDefinitions = bundledClassDefinitions;
         this.classLocator = classLocator;
     }
 
@@ -51,6 +53,16 @@ public final class ClassSource extends ClassLoader {
         classDefinitions.put(name, bytecode);
         classes.put(name, clazz);
         return clazz;
+    }
+
+    @Override
+    protected Class<?> findClass(String name) throws ClassNotFoundException {
+        byte[] classDefinition = bundledClassDefinitions.get(name);
+        if (classDefinition != null) {
+            return classLocator.defineClassFromClient(name, classDefinition, bundledClassDefinitions);
+        } else {
+            return super.findClass(name);
+        }
     }
 
     @Override

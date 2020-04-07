@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.flakeidgen.impl.FlakeIdGeneratorProxy.ALLOWED_FUTURE_MILLIS;
-import static com.hazelcast.flakeidgen.impl.FlakeIdGeneratorProxy.BITS_SEQUENCE;
+import static com.hazelcast.config.FlakeIdGeneratorConfig.DEFAULT_ALLOWED_FUTURE_MILLIS;
+import static com.hazelcast.config.FlakeIdGeneratorConfig.DEFAULT_BITS_SEQUENCE;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static org.junit.Assert.assertTrue;
 
@@ -49,7 +49,7 @@ public abstract class FlakeIdGenerator_AbstractBackpressureTest {
         for (int i = 1; i <= 15; i++) {
             generator.newId();
             long elapsedMs = NANOSECONDS.toMillis(System.nanoTime() - testStart);
-            long minimumRequiredMs = Math.max(0, (i * BATCH_SIZE >> BITS_SEQUENCE) - ALLOWED_FUTURE_MILLIS - CTM_IMPRECISION);
+            long minimumRequiredMs = Math.max(0, (i * BATCH_SIZE >> DEFAULT_BITS_SEQUENCE) - DEFAULT_ALLOWED_FUTURE_MILLIS - CTM_IMPRECISION);
             long maximumAllowedMs = minimumRequiredMs + allowedHiccupMillis;
             String msg = "Iteration " + i + ", elapsed: " + NANOSECONDS.toMillis(System.nanoTime() - testStart) + "ms, "
                     + "minimum: " + minimumRequiredMs + ", maximum: " + maximumAllowedMs;

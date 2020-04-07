@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,8 @@ public class MapPutAllMessageTask
     protected Operation prepareOperation() {
         MapEntries mapEntries = new MapEntries(parameters.entries);
         MapOperationProvider operationProvider = getMapOperationProvider(parameters.name);
-        return operationProvider.createPutAllOperation(parameters.name, mapEntries);
+        boolean triggerMapLoader = !parameters.isTriggerMapLoaderExists || parameters.triggerMapLoader;
+        return operationProvider.createPutAllOperation(parameters.name, mapEntries, triggerMapLoader);
     }
 
     @Override

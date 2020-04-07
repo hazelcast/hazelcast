@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,10 @@
 
 package com.hazelcast.scheduledexecutor;
 
-import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl;
+
+import java.util.UUID;
 
 /**
  * Resource handler pointing to a {@link IScheduledFuture}. The handler is used to interact with the <code>ScheduledFuture</code>
@@ -31,13 +32,13 @@ public abstract class ScheduledTaskHandler
         implements IdentifiedDataSerializable {
 
     /**
-     * Returns the address of the member the task is associated with.
+     * Returns the uuid of the member the task is associated with.
      *
-     * <p>The address will be {@code null}, if the task was scheduled to particular partition.
+     * <p>The uuid will be {@code null}, if the task was scheduled to particular partition.
      *
-     * @return The address of the member
+     * @return The uuid of the member
      */
-    public abstract Address getAddress();
+    public abstract UUID getUuid();
 
     /**
      * Returns the partition ID the task is associated with.

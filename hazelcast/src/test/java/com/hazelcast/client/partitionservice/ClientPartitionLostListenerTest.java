@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.client.partitionservice;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.partition.PartitionLostEventImpl;
@@ -42,7 +43,7 @@ import java.util.UUID;
 import static com.hazelcast.internal.partition.InternalPartitionService.PARTITION_LOST_EVENT_TOPIC;
 import static com.hazelcast.internal.partition.InternalPartitionService.SERVICE_NAME;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
-import static com.hazelcast.test.HazelcastTestSupport.getNode;
+import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.HazelcastTestSupport.warmUpPartitions;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -109,7 +110,8 @@ public class ClientPartitionLostListenerTest {
 
         final InternalPartitionServiceImpl partitionService = getNode(instance).getNodeEngine().getService(SERVICE_NAME);
         final int partitionId = 5;
-        partitionService.onPartitionLost(new PartitionLostEventImpl(partitionId, 0, null));
+        Address address = instance.getCluster().getLocalMember().getAddress();
+        partitionService.onPartitionLost(new PartitionLostEventImpl(partitionId, 0, address));
 
         assertPartitionLostEventEventually(listener, partitionId);
     }
@@ -129,7 +131,8 @@ public class ClientPartitionLostListenerTest {
 
         final InternalPartitionServiceImpl partitionService = getNode(instance).getNodeEngine().getService(SERVICE_NAME);
         final int partitionId = 5;
-        partitionService.onPartitionLost(new PartitionLostEventImpl(partitionId, 0, null));
+        Address address = instance.getCluster().getLocalMember().getAddress();
+        partitionService.onPartitionLost(new PartitionLostEventImpl(partitionId, 0, address));
 
         assertPartitionLostEventEventually(listener, partitionId);
     }
@@ -152,7 +155,8 @@ public class ClientPartitionLostListenerTest {
 
         final InternalPartitionServiceImpl partitionService = getNode(instance2).getNodeEngine().getService(SERVICE_NAME);
         final int partitionId = 5;
-        partitionService.onPartitionLost(new PartitionLostEventImpl(partitionId, 0, null));
+        Address address = instance1.getCluster().getLocalMember().getAddress();
+        partitionService.onPartitionLost(new PartitionLostEventImpl(partitionId, 0, address));
 
         assertPartitionLostEventEventually(listener, partitionId);
     }

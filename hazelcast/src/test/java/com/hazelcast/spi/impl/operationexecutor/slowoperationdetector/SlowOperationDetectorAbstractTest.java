@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,13 @@ package com.hazelcast.spi.impl.operationexecutor.slowoperationdetector;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.monitor.LocalOperationStats;
-import com.hazelcast.json.internal.JsonSerializable;
-import com.hazelcast.map.IMap;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
+import com.hazelcast.internal.monitor.LocalOperationStats;
+import com.hazelcast.json.internal.JsonSerializable;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.IMap;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -38,6 +38,8 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.test.Accessors.getHazelcastInstanceImpl;
+import static com.hazelcast.test.Accessors.getOperationService;
 import static java.lang.String.format;
 import static java.lang.String.valueOf;
 import static org.junit.Assert.assertFalse;

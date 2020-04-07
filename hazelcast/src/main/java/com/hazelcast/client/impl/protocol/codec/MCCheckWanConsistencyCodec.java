@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,14 +36,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Initiate WAN consistency check for a specific map
  */
-@Generated("cc961ed6e8e1461c98de24e264adcc3c")
+@Generated("df92f134b5fc59ac18ffb95729240a31")
 public final class MCCheckWanConsistencyCodec {
     //hex: 0x201700
     public static final int REQUEST_MESSAGE_TYPE = 2103040;
     //hex: 0x201701
     public static final int RESPONSE_MESSAGE_TYPE = 2103041;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_UUID_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_UUID_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
 
     private MCCheckWanConsistencyCodec() {
@@ -74,6 +74,7 @@ public final class MCCheckWanConsistencyCodec {
         clientMessage.setOperationName("MC.CheckWanConsistency");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, wanReplicationName);
         StringCodec.encode(clientMessage, wanPublisherId);

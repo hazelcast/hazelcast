@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package com.hazelcast.client.map.impl.nearcache;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapAddNearCacheInvalidationListenerCodec;
-import com.hazelcast.client.impl.proxy.NearCachedClientMapProxy;
 import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
@@ -31,11 +30,12 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nearcache.NearCache;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapStoreAdapter;
 import com.hazelcast.map.impl.nearcache.NearCacheTestSupport;
 import com.hazelcast.nearcache.NearCacheStats;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -50,14 +50,19 @@ import org.junit.runner.RunWith;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
-import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
+import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.getBaseConfig;
+import static com.hazelcast.test.Accessors.getSerializationService;
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -554,6 +559,26 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
                 assertThatOwnedEntryCountEquals(clientMap, 0);
             }
         });
+    }
+
+    @Test
+    public void testMemberSetAll_invalidates_clientNearCache() {
+        int mapSize = 1000;
+        String mapName = randomMapName();
+        HazelcastInstance member = hazelcastFactory.newHazelcastInstance(newConfig());
+        HazelcastInstance client = getClient(hazelcastFactory, newInvalidationOnChangeEnabledNearCacheConfig(mapName));
+
+        Map<Integer, Integer> hashMap = IntStream.range(0, mapSize).boxed()
+            .collect(Collectors.toMap(Function.identity(), Function.identity()));
+
+        IMap<Integer, Integer> clientMap = client.getMap(mapName);
+        hashMap.forEach(clientMap::put);
+        hashMap.keySet().forEach(clientMap::get);
+
+        IMap<Integer, Integer> memberMap = member.getMap(mapName);
+        memberMap.setAll(hashMap);
+
+        assertTrueEventually(() -> assertThatOwnedEntryCountEquals(clientMap, 0));
     }
 
     @Test
@@ -1096,7 +1121,8 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
                 .setImplementation(new SimpleMapStore());
 
         // populate Near Cache
-        final IMap<Integer, Integer> clientMap = getNearCachedMapFromClient(config, newNearCacheConfig(), 2);
+        NearCacheConfig nearCacheConfig = newNearCacheConfig();
+        final IMap<Integer, Integer> clientMap = getNearCachedMapFromClient(config, nearCacheConfig, 2);
         populateMap(clientMap, 1000);
         populateNearCache(clientMap, 1000);
 
@@ -1105,12 +1131,18 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         IMap<Object, Object> anotherClientMap = anotherClient.getMap(clientMap.getName());
         anotherClientMap.loadAll(true);
 
+        InternalSerializationService serializationService =
+                getSerializationService(hazelcastFactory.getAllHazelcastInstances().iterator().next());
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
                 NearCache<Object, Object> nearCache = ((NearCachedClientMapProxy<Integer, Integer>) clientMap).getNearCache();
                 for (int i = 0; i < 1000; i++) {
-                    assertNull("Near Cache should be empty", nearCache.get(i));
+                    Object key = i;
+                    if (nearCacheConfig.isSerializeKeys()) {
+                        key = serializationService.toData(i);
+                    }
+                    assertNull("Near Cache should be empty", nearCache.get(key));
                 }
             }
         });
@@ -1125,21 +1157,26 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
                 .setImplementation(new SimpleMapStore());
 
         // populate Near Cache
-        final IMap<Integer, Integer> clientMap = getNearCachedMapFromClient(config, newNearCacheConfig(), 2);
+        NearCacheConfig nearCacheConfig = newNearCacheConfig();
+        final IMap<Integer, Integer> clientMap = getNearCachedMapFromClient(config, nearCacheConfig, 2);
         populateMap(clientMap, 1000);
         populateNearCache(clientMap, 1000);
 
-        // create a new client to send events
         HazelcastInstance member = hazelcastFactory.getAllHazelcastInstances().iterator().next();
         IMap<Object, Object> memberMap = member.getMap(clientMap.getName());
         memberMap.loadAll(true);
 
+        InternalSerializationService serializationService = getSerializationService(member);
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
                 NearCache<Object, Object> nearCache = ((NearCachedClientMapProxy<Integer, Integer>) clientMap).getNearCache();
                 for (int i = 0; i < 1000; i++) {
-                    assertNull("Near Cache should be empty", nearCache.get(i));
+                    Object key = i;
+                    if (nearCacheConfig.isSerializeKeys()) {
+                        key = serializationService.toData(i);
+                    }
+                    assertNull("Near Cache should be empty", nearCache.get(key));
                 }
             }
         });
@@ -1340,7 +1377,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
 
         @Override
         public void handleIMapBatchInvalidationEvent(Collection<Data> keys, Collection<UUID> sourceUuids,
-                                                        Collection<UUID> partitionUuids, Collection<Long> sequences) {
+                                                     Collection<UUID> partitionUuids, Collection<Long> sequences) {
 
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * readers or it can be read multiple times by the same reader. Currently it isn't possible to control how long this
  * call is going to block. In the future we could add e.g. tryReadOne(long sequence, long timeout, TimeUnit unit).
  */
-@Generated("d1451dbab78833bc6d8f60f198fb3aa0")
+@Generated("8d87ebc51e2744508baff0c2d2aa761e")
 public final class RingbufferReadOneCodec {
     //hex: 0x170700
     public static final int REQUEST_MESSAGE_TYPE = 1509120;
@@ -47,7 +47,7 @@ public final class RingbufferReadOneCodec {
     public static final int RESPONSE_MESSAGE_TYPE = 1509121;
     private static final int REQUEST_SEQUENCE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_SEQUENCE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private RingbufferReadOneCodec() {
     }
@@ -72,6 +72,7 @@ public final class RingbufferReadOneCodec {
         clientMessage.setOperationName("Ringbuffer.ReadOne");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeLong(initialFrame.content, REQUEST_SEQUENCE_FIELD_OFFSET, sequence);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl.nearcache;
 
-import com.hazelcast.client.impl.proxy.NearCachedClientMapProxy;
+import com.hazelcast.client.map.impl.nearcache.NearCachedClientMapProxy;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
@@ -52,6 +52,7 @@ import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.spi.properties.ClusterProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
 import static com.hazelcast.spi.properties.ClusterProperty.MAP_INVALIDATION_MESSAGE_BATCH_SIZE;
 import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
+import static com.hazelcast.test.Accessors.getNode;
 import static java.lang.String.format;
 import static java.util.concurrent.Executors.newFixedThreadPool;
 import static org.junit.Assert.assertEquals;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,12 +44,16 @@ public class ClientLoggingService implements LoggingService {
     private final LoggerFactory loggerFactory;
     private final BuildInfo buildInfo;
     private final String instanceName;
+    private final boolean detailsEnabled;
     private volatile String versionMessage;
 
-    public ClientLoggingService(String clusterName, String loggingType, BuildInfo buildInfo, String instanceName) {
+    public ClientLoggingService(
+            String clusterName, String loggingType, BuildInfo buildInfo, String instanceName, boolean detailsEnabled
+    ) {
         this.loggerFactory = Logger.newLoggerFactory(loggingType);
         this.buildInfo = buildInfo;
         this.instanceName = instanceName;
+        this.detailsEnabled = detailsEnabled;
         updateClusterName(clusterName);
     }
 
@@ -100,7 +104,7 @@ public class ClientLoggingService implements LoggingService {
         @Override
         public void log(Level level, String message, Throwable thrown) {
             if (logger.isLoggable(level)) {
-                String logMessage = versionMessage + message;
+                String logMessage = detailsEnabled ? versionMessage + message : message;
                 logger.log(level, logMessage, thrown);
             }
         }

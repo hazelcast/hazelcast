@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package com.hazelcast.transaction.impl;
 
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
@@ -32,6 +32,7 @@ import org.junit.runner.RunWith;
 
 import java.util.UUID;
 
+import static com.hazelcast.test.Accessors.getOperationService;
 import static com.hazelcast.transaction.TransactionOptions.TransactionType.ONE_PHASE;
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;

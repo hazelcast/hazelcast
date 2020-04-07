@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
 import com.hazelcast.client.impl.protocol.codec.custom.*;
 
+import javax.annotation.Nullable;
+
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
@@ -34,14 +36,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Atomically increments the current value by one.
  */
-@Generated("af9d98a2d2c7700292c26f81d24d4325")
+@Generated("5c2d18c80266a065c81468df2669822c")
 public final class LongRegisterGetAndIncrementCodec {
-    //hex: 0xFF0800
-    public static final int REQUEST_MESSAGE_TYPE = 16713728;
-    //hex: 0xFF0801
-    public static final int RESPONSE_MESSAGE_TYPE = 16713729;
+    //hex: 0xFF0700
+    public static final int REQUEST_MESSAGE_TYPE = 16713472;
+    //hex: 0xFF0701
+    public static final int RESPONSE_MESSAGE_TYPE = 16713473;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
     private LongRegisterGetAndIncrementCodec() {
@@ -53,23 +55,22 @@ public final class LongRegisterGetAndIncrementCodec {
         /**
          * The name of this IAtomicLong instance.
          */
-        public java.lang.String name;
+        public String name;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name) {
+    public static ClientMessage encodeRequest(String name) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setAcquiresResource(false);
         clientMessage.setOperationName("LongRegister.GetAndIncrement");
-        ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
+        Frame initialFrame = new Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         return clientMessage;
     }
 
-    public static LongRegisterGetAndIncrementCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
+    public static RequestParameters decodeRequest(ClientMessage clientMessage) {
+        ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
@@ -88,7 +89,7 @@ public final class LongRegisterGetAndIncrementCodec {
 
     public static ClientMessage encodeResponse(long response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
-        ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
+        Frame initialFrame = new Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         encodeLong(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET, response);
         clientMessage.add(initialFrame);
@@ -96,10 +97,10 @@ public final class LongRegisterGetAndIncrementCodec {
         return clientMessage;
     }
 
-    public static LongRegisterGetAndIncrementCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
+    public static ResponseParameters decodeResponse(ClientMessage clientMessage) {
+        ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
-        ClientMessage.Frame initialFrame = iterator.next();
+        Frame initialFrame = iterator.next();
         response.response = decodeLong(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
         return response;
     }

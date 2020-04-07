@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ package com.hazelcast.internal.eviction;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IFunction;
-import com.hazelcast.map.IMap;
 import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
@@ -38,6 +38,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import static com.hazelcast.map.impl.eviction.MapClearExpiredRecordsTask.PROP_TASK_PERIOD_SECONDS;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.test.OverridePropertyRule.set;
 
 @RunWith(HazelcastSerialClassRunner.class)

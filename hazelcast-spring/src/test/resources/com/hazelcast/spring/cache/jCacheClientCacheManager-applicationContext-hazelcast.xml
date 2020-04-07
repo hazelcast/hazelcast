@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@
         http://www.springframework.org/schema/cache
         http://www.springframework.org/schema/cache/spring-cache.xsd
         http://www.hazelcast.com/schema/spring
-        http://www.hazelcast.com/schema/spring/hazelcast-spring-4.0.xsd">
+        http://www.hazelcast.com/schema/spring/hazelcast-spring-4.1.xsd">
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
           p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE">

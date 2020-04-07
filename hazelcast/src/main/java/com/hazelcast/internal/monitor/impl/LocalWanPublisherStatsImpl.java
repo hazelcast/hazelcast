@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,9 @@ import com.hazelcast.wan.impl.WanSyncStats;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.WAN_METRIC_OUTBOUND_QUEUE_SIZE;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.WAN_METRIC_TOTAL_PUBLISHED_EVENT_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.WAN_METRIC_TOTAL_PUBLISH_LATENCY;
 import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.util.JsonUtil.getBoolean;
 import static com.hazelcast.internal.util.JsonUtil.getInt;
@@ -44,11 +47,11 @@ public class LocalWanPublisherStatsImpl implements LocalWanPublisherStats {
 
     private volatile boolean connected;
     private volatile WanPublisherState state;
-    @Probe
+    @Probe(name = WAN_METRIC_OUTBOUND_QUEUE_SIZE)
     private volatile int outboundQueueSize;
-    @Probe(unit = MS)
+    @Probe(name = WAN_METRIC_TOTAL_PUBLISH_LATENCY, unit = MS)
     private volatile long totalPublishLatency;
-    @Probe(unit = MS)
+    @Probe(name = WAN_METRIC_TOTAL_PUBLISHED_EVENT_COUNT)
     private volatile long totalPublishedEventCount;
     private volatile Map<String, DistributedObjectWanEventCounters> sentMapEventCounter;
     private volatile Map<String, DistributedObjectWanEventCounters> sentCacheEventCounter;

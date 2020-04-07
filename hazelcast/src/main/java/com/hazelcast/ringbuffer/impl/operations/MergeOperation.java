@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,7 +60,7 @@ public class MergeOperation extends Operation
         implements IdentifiedDataSerializable, BackupAwareOperation, ServiceNamespaceAware {
 
     private ObjectNamespace namespace;
-    private SplitBrainMergePolicy<RingbufferMergeData, RingbufferMergeTypes> mergePolicy;
+    private SplitBrainMergePolicy<RingbufferMergeData, RingbufferMergeTypes, RingbufferMergeData> mergePolicy;
     private Ringbuffer<Object> mergingRingbuffer;
 
     private transient Ringbuffer<Object> resultRingbuffer;
@@ -72,7 +72,7 @@ public class MergeOperation extends Operation
     }
 
     public MergeOperation(ObjectNamespace namespace,
-                          SplitBrainMergePolicy<RingbufferMergeData, RingbufferMergeTypes> mergePolicy,
+                          SplitBrainMergePolicy<RingbufferMergeData, RingbufferMergeTypes, RingbufferMergeData> mergePolicy,
                           Ringbuffer<Object> mergingRingbuffer) {
         this.namespace = namespace;
         this.mergePolicy = mergePolicy;

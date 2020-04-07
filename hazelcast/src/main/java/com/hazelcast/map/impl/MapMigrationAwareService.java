@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,10 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataGenerator;
+import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
+import com.hazelcast.internal.partition.MigrationEndpoint;
+import com.hazelcast.internal.partition.PartitionMigrationEvent;
+import com.hazelcast.internal.partition.PartitionReplicationEvent;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.services.ServiceNamespace;
@@ -33,19 +37,15 @@ import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
-import com.hazelcast.internal.partition.MigrationEndpoint;
-import com.hazelcast.internal.partition.PartitionMigrationEvent;
-import com.hazelcast.internal.partition.PartitionReplicationEvent;
 
 import java.util.Collection;
 import java.util.function.Predicate;
 
+import static com.hazelcast.internal.partition.MigrationEndpoint.DESTINATION;
+import static com.hazelcast.internal.partition.MigrationEndpoint.SOURCE;
 import static com.hazelcast.map.impl.querycache.publisher.AccumulatorSweeper.flushAccumulator;
 import static com.hazelcast.map.impl.querycache.publisher.AccumulatorSweeper.removeAccumulator;
 import static com.hazelcast.map.impl.querycache.publisher.AccumulatorSweeper.sendEndOfSequenceEvents;
-import static com.hazelcast.internal.partition.MigrationEndpoint.DESTINATION;
-import static com.hazelcast.internal.partition.MigrationEndpoint.SOURCE;
 
 /**
  * Defines migration behavior of map service.
@@ -115,14 +115,8 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
 
     @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
-        int partitionId = event.getPartitionId();
-
-        Operation operation = new MapReplicationOperation(containers[partitionId],
-                partitionId, event.getReplicaIndex());
-        operation.setService(mapServiceContext.getService());
-        operation.setNodeEngine(mapServiceContext.getNodeEngine());
-
-        return operation;
+        return prepareReplicationOperation(event,
+                containers[event.getPartitionId()].getAllNamespaces(event.getReplicaIndex()));
     }
 
     @Override

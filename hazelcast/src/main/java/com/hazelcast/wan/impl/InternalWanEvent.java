@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,18 @@ package com.hazelcast.wan.impl;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.wan.WanEvent;
+import com.hazelcast.wan.WanEventCounters;
 
 import javax.annotation.Nonnull;
 import java.util.Set;
 
 /**
- * Private API for WAN replication events
+ * Private API for WAN replication events. Adds methods for internal use by
+ * our built-in WAN replication implementation.
+ *
+ * @param <T> type of object on which the event occurred
  */
-public interface InternalWanEvent extends WanEvent {
+public interface InternalWanEvent<T> extends WanEvent<T> {
     /**
      * Returns the key for the entry on which the event occurred.
      */
@@ -51,4 +55,11 @@ public interface InternalWanEvent extends WanEvent {
      * @see Clock#currentTimeMillis()
      */
     long getCreationTime();
+
+    /**
+     * Increments the count for the related event in the {@code counters}
+     *
+     * @param counters the WAN event counter
+     */
+    void incrementEventCount(@Nonnull WanEventCounters counters);
 }

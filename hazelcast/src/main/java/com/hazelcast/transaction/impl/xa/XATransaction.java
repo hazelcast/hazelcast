@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,15 @@
 
 package com.hazelcast.transaction.impl.xa;
 
+import com.hazelcast.internal.partition.IPartitionService;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.FutureUtil;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions.TransactionType;
@@ -28,10 +32,6 @@ import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.TransactionLog;
 import com.hazelcast.transaction.impl.TransactionLogRecord;
 import com.hazelcast.transaction.impl.xa.operations.PutRemoteTransactionOperation;
-import com.hazelcast.internal.util.Clock;
-import com.hazelcast.internal.util.ExceptionUtil;
-import com.hazelcast.internal.util.FutureUtil;
-import com.hazelcast.internal.util.UuidUtil;
 
 import javax.transaction.xa.XAException;
 import javax.transaction.xa.Xid;
@@ -43,6 +43,9 @@ import java.util.concurrent.Future;
 import java.util.function.BiConsumer;
 import java.util.logging.Level;
 
+import static com.hazelcast.internal.util.FutureUtil.RETHROW_TRANSACTION_EXCEPTION;
+import static com.hazelcast.internal.util.FutureUtil.logAllExceptions;
+import static com.hazelcast.internal.util.FutureUtil.waitWithDeadline;
 import static com.hazelcast.transaction.impl.Transaction.State.ACTIVE;
 import static com.hazelcast.transaction.impl.Transaction.State.COMMITTED;
 import static com.hazelcast.transaction.impl.Transaction.State.COMMITTING;
@@ -53,9 +56,6 @@ import static com.hazelcast.transaction.impl.Transaction.State.PREPARING;
 import static com.hazelcast.transaction.impl.Transaction.State.ROLLED_BACK;
 import static com.hazelcast.transaction.impl.Transaction.State.ROLLING_BACK;
 import static com.hazelcast.transaction.impl.xa.XAService.SERVICE_NAME;
-import static com.hazelcast.internal.util.FutureUtil.RETHROW_TRANSACTION_EXCEPTION;
-import static com.hazelcast.internal.util.FutureUtil.logAllExceptions;
-import static com.hazelcast.internal.util.FutureUtil.waitWithDeadline;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -170,8 +170,10 @@ public final class XATransaction implements Transaction {
             waitWithDeadline(futures, COMMIT_TIMEOUT_MINUTES, MINUTES, commitExceptionHandler);
 
             state = COMMITTED;
+            transactionLog.onCommitSuccess();
         } catch (Throwable e) {
             state = COMMIT_FAILED;
+            transactionLog.onCommitFailure();
             throw ExceptionUtil.rethrow(e, TransactionException.class);
         }
     }
@@ -182,7 +184,20 @@ public final class XATransaction implements Transaction {
         }
         checkTimeout();
         state = COMMITTING;
-        transactionLog.commitAsync(nodeEngine, callback);
+
+        BiConsumer wrappedCallback = (input, throwable) -> {
+            try {
+                callback.accept(input, throwable);
+            } finally {
+                if (throwable != null) {
+                    transactionLog.onCommitFailure();
+                } else {
+                    transactionLog.onCommitSuccess();
+                }
+            }
+        };
+
+        transactionLog.commitAsync(nodeEngine, wrappedCallback);
         // We should rethrow exception if transaction is not TWO_PHASE
 
         state = COMMITTED;

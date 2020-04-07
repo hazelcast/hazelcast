@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@
 
 package com.hazelcast.collection.impl.queue;
 
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.collection.QueueStore;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.collection.IQueue;
-import com.hazelcast.collection.QueueStore;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -42,6 +42,7 @@ import java.util.Random;
 import java.util.Set;
 
 import static com.hazelcast.internal.nio.IOUtil.deleteQuietly;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.test.TestStringUtils.fileAsText;
 
 @RunWith(HazelcastParallelClassRunner.class)

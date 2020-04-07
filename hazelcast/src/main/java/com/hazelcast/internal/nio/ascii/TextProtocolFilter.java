@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@
 
 package com.hazelcast.internal.nio.ascii;
 
-import com.hazelcast.internal.nio.tcp.TcpIpConnection;
+import com.hazelcast.internal.nio.server.ServerConnection;
 
 /**
  * This interface is a text protocols policy enforcement point. It checks incoming command lines and validates if the command
  * can be processed. If the command is unknown or not allowed the connection is closed.
  */
 interface TextProtocolFilter {
-    void filterConnection(String commandLine, TcpIpConnection connection);
+    void filterConnection(String commandLine, ServerConnection connection);
 }

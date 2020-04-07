@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
+
+import static com.hazelcast.internal.util.MapUtil.toIntSize;
 
 public abstract class MultiMapProxySupport extends AbstractDistributedObject<MultiMapService> {
 
@@ -197,7 +199,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
                             MultiMapService.SERVICE_NAME,
                             new MultiMapOperationFactory(name, OperationFactoryType.SIZE)
                     );
-            int size = 0;
+            long size = 0;
             for (Object obj : results.values()) {
                 if (obj == null) {
                     continue;
@@ -205,7 +207,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
                 Integer result = nodeEngine.toObject(obj);
                 size += result;
             }
-            return size;
+            return toIntSize(size);
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrow(throwable);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,6 +58,10 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TRANSACTIONS_METRIC_COMMIT_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TRANSACTIONS_METRIC_ROLLBACK_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TRANSACTIONS_METRIC_START_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TRANSACTIONS_PREFIX;
 import static com.hazelcast.internal.util.FutureUtil.ExceptionHandler;
 import static com.hazelcast.internal.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.internal.util.FutureUtil.waitWithDeadline;
@@ -78,11 +82,11 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
     final ConcurrentMap<UUID, TxBackupLog> txBackupLogs = new ConcurrentHashMap<>();
 
     // Due to mocking; the probes can't be made final.
-    @Probe(level = ProbeLevel.MANDATORY)
+    @Probe(name = TRANSACTIONS_METRIC_START_COUNT, level = ProbeLevel.MANDATORY)
     Counter startCount = MwCounter.newMwCounter();
-    @Probe(level = ProbeLevel.MANDATORY)
+    @Probe(name = TRANSACTIONS_METRIC_ROLLBACK_COUNT, level = ProbeLevel.MANDATORY)
     Counter rollbackCount = MwCounter.newMwCounter();
-    @Probe(level = ProbeLevel.MANDATORY)
+    @Probe(name = TRANSACTIONS_METRIC_COMMIT_COUNT, level = ProbeLevel.MANDATORY)
     Counter commitCount = MwCounter.newMwCounter();
 
     private final ExceptionHandler finalizeExceptionHandler;
@@ -96,7 +100,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         this.logger = nodeEngine.getLogger(TransactionManagerService.class);
         this.finalizeExceptionHandler = logAllExceptions(logger, "Error while rolling-back tx!", Level.WARNING);
 
-        nodeEngine.getMetricsRegistry().registerStaticMetrics(this, "transactions");
+        nodeEngine.getMetricsRegistry().registerStaticMetrics(this, TRANSACTIONS_PREFIX);
     }
 
     public String getClusterName() {

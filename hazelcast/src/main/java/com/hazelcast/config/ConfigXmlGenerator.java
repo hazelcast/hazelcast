@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -125,7 +125,7 @@ public class ConfigXmlGenerator {
                 .append("xmlns=\"http://www.hazelcast.com/schema/config\"\n")
                 .append("xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n")
                 .append("xsi:schemaLocation=\"http://www.hazelcast.com/schema/config ")
-                .append("http://www.hazelcast.com/schema/config/hazelcast-config-4.0.xsd\">");
+                .append("http://www.hazelcast.com/schema/config/hazelcast-config-4.1.xsd\">");
         gen.node("license-key", getOrMaskValue(config.getLicenseKey()))
                 .node("instance-name", config.getInstanceName())
                 .node("cluster-name", config.getClusterName())
@@ -175,10 +175,11 @@ public class ConfigXmlGenerator {
     }
 
     private void managementCenterXmlGenerator(XmlGenerator gen, Config config) {
-        if (config.getManagementCenterConfig() != null) {
-            ManagementCenterConfig mcConfig = config.getManagementCenterConfig();
+        ManagementCenterConfig mcConfig = config.getManagementCenterConfig();
+        if (mcConfig != null) {
             gen.open("management-center",
                     "scripting-enabled", mcConfig.isScriptingEnabled());
+            trustedInterfacesXmlGenerator(gen, mcConfig.getTrustedInterfaces());
             gen.close();
         }
     }
@@ -1137,9 +1138,9 @@ public class ConfigXmlGenerator {
         if (wan != null) {
             gen.open("wan-replication-ref", "name", wan.getName());
 
-            String mergePolicy = wan.getMergePolicy();
+            String mergePolicy = wan.getMergePolicyClassName();
             if (!isNullOrEmpty(mergePolicy)) {
-                gen.node("merge-policy", mergePolicy);
+                gen.node("merge-policy-class-name", mergePolicy);
             }
 
             List<String> filters = wan.getFilters();
@@ -1216,14 +1217,18 @@ public class ConfigXmlGenerator {
                 .node("multicast-timeout-seconds", mcConfig.getMulticastTimeoutSeconds())
                 .node("multicast-time-to-live", mcConfig.getMulticastTimeToLive());
 
-        if (!mcConfig.getTrustedInterfaces().isEmpty()) {
+        trustedInterfacesXmlGenerator(gen, mcConfig.getTrustedInterfaces());
+        gen.close();
+    }
+
+    private static void trustedInterfacesXmlGenerator(XmlGenerator gen, Set<String> trustedInterfaces) {
+        if (!trustedInterfaces.isEmpty()) {
             gen.open("trusted-interfaces");
-            for (String trustedInterface : mcConfig.getTrustedInterfaces()) {
+            for (String trustedInterface : trustedInterfaces) {
                 gen.node("interface", trustedInterface);
             }
             gen.close();
         }
-        gen.close();
     }
 
     private static void tcpConfigXmlGenerator(XmlGenerator gen, JoinConfig join) {
@@ -1439,8 +1444,11 @@ public class ConfigXmlGenerator {
             gen.open("flake-id-generator", "name", m.getName())
                     .node("prefetch-count", m.getPrefetchCount())
                     .node("prefetch-validity-millis", m.getPrefetchValidityMillis())
-                    .node("id-offset", m.getIdOffset())
+                    .node("epoch-start", m.getEpochStart())
                     .node("node-id-offset", m.getNodeIdOffset())
+                    .node("bits-sequence", m.getBitsSequence())
+                    .node("bits-node-id", m.getBitsNodeId())
+                    .node("allowed-future-millis", m.getAllowedFutureMillis())
                     .node("statistics-enabled", m.isStatisticsEnabled());
             gen.close();
         }

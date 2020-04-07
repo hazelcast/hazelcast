@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,8 @@ import org.junit.runner.RunWith;
 import static com.hazelcast.internal.partition.InternalPartition.MAX_BACKUP_COUNT;
 import static com.hazelcast.spi.impl.operationservice.OperationAccessor.setCallerAddress;
 import static com.hazelcast.spi.impl.operationservice.impl.DummyBackupAwareOperation.backupCompletedMap;
+import static com.hazelcast.test.Accessors.getAddress;
+import static com.hazelcast.test.Accessors.getOperationService;
 import static java.lang.Math.min;
 import static java.util.UUID.randomUUID;
 import static org.junit.Assert.assertEquals;

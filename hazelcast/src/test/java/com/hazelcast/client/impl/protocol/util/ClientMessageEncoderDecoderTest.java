@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.impl.protocol.util;
 
-import com.hazelcast.client.impl.MemberImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.ClientMessage.Frame;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
@@ -24,10 +23,11 @@ import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MapPutCodec;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.internal.networking.HandlerStatus;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.util.counters.SwCounter;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -183,15 +183,15 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
     public void testAuthenticationResponse() throws UnknownHostException {
         Collection<Member> members = new LinkedList<>();
         Address address1 = new Address("127.0.0.1", 5702);
-        members.add(new MemberImpl(address1, MemberVersion.of("3.12"), UUID.randomUUID()));
+        members.add(new MemberImpl(address1, MemberVersion.of("3.12"), false, UUID.randomUUID()));
         Address address2 = new Address("127.0.0.1", 5703);
-        members.add(new MemberImpl(address2, MemberVersion.of("3.12"), UUID.randomUUID()));
+        members.add(new MemberImpl(address2, MemberVersion.of("3.12"), false, UUID.randomUUID()));
         UUID uuid = UUID.randomUUID();
         UUID ownerUuid = UUID.randomUUID();
         UUID clusterId = UUID.randomUUID();
 
         ClientMessage message = ClientAuthenticationCodec.encodeResponse((byte) 2, new Address("127.0.0.1", 5701),
-                uuid, (byte) 1, "3.12", 271, clusterId);
+                uuid, (byte) 1, "3.12", 271, clusterId, true);
         AtomicReference<ClientMessage> reference = new AtomicReference<>(message);
 
 
@@ -224,11 +224,12 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
 
         assertEquals(2, parameters.status);
         assertEquals(new Address("127.0.0.1", 5701), parameters.address);
-        assertEquals(uuid, parameters.uuid);
+        assertEquals(uuid, parameters.memberUuid);
         assertEquals(1, parameters.serializationVersion);
         assertEquals("3.12", parameters.serverHazelcastVersion);
         assertEquals(271, parameters.partitionCount);
         assertEquals(clusterId, parameters.clusterId);
+        assertEquals(true, parameters.failoverSupported);
     }
 
     class EventHandler extends MapAddEntryListenerCodec.AbstractEventHandler {

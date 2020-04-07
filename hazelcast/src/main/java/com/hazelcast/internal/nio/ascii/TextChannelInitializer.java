@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,9 @@ import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.nio.IOService;
-import com.hazelcast.internal.nio.tcp.AbstractChannelInitializer;
-import com.hazelcast.internal.nio.tcp.TcpIpConnection;
-import com.hazelcast.internal.nio.tcp.TextHandshakeDecoder;
+import com.hazelcast.internal.nio.server.AbstractChannelInitializer;
+import com.hazelcast.internal.nio.server.ServerConnection;
+import com.hazelcast.internal.nio.server.TextHandshakeDecoder;
 
 public class TextChannelInitializer
         extends AbstractChannelInitializer {
@@ -37,7 +37,7 @@ public class TextChannelInitializer
 
     @Override
     public void initChannel(Channel channel) {
-        TcpIpConnection connection = (TcpIpConnection) channel.attributeMap().get(TcpIpConnection.class);
+        ServerConnection connection = (ServerConnection) channel.attributeMap().get(ServerConnection.class);
         TextEncoder encoder = new TextEncoder(connection);
 
         InboundHandler decoder = rest

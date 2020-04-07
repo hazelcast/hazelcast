@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl.querycache;
 
-import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.concurrent.Future;
@@ -30,7 +30,7 @@ public interface InvokerWrapper {
 
     Object invokeOnAllPartitions(Object request, boolean urgent) throws Exception;
 
-    Future invokeOnTarget(Object operation, Address address);
+    Future invokeOnTarget(Object operation, Member member);
 
     Object invoke(Object operation, boolean urgent);
 

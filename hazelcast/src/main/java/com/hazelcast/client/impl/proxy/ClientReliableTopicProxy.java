@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -162,10 +162,9 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
     }
 
     //for testing
-    public boolean isListenerCancelled(UUID registrationID) {
+    public boolean isListenerCancelled(@Nonnull UUID registrationID) {
         checkNotNull(registrationID, "registrationId can't be null");
-
-        MessageRunner runner = runnersMap.get(registrationID);
+        MessageRunner<?> runner = runnersMap.get(registrationID);
         if (runner == null) {
             return true;
         }

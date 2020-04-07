@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,13 @@
 
 package com.hazelcast.multimap;
 
-import com.hazelcast.internal.locksupport.LockSupportService;
-import com.hazelcast.internal.locksupport.LockSupportServiceImpl;
-import com.hazelcast.internal.locksupport.LockStoreContainer;
-import com.hazelcast.internal.locksupport.LockStoreImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.locksupport.LockStoreContainer;
+import com.hazelcast.internal.locksupport.LockStoreImpl;
+import com.hazelcast.internal.locksupport.LockSupportService;
+import com.hazelcast.internal.locksupport.LockSupportServiceImpl;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -39,6 +39,7 @@ import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;

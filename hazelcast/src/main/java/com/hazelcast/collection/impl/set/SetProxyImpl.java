@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,10 @@
 
 package com.hazelcast.collection.impl.set;
 
+import com.hazelcast.collection.ISet;
+import com.hazelcast.collection.LocalSetStats;
 import com.hazelcast.collection.impl.collection.AbstractCollectionProxyImpl;
 import com.hazelcast.config.CollectionConfig;
-import com.hazelcast.collection.ISet;
 import com.hazelcast.spi.impl.NodeEngine;
 
 public class SetProxyImpl<E> extends AbstractCollectionProxyImpl<SetService, E> implements ISet<E> {
@@ -37,4 +38,8 @@ public class SetProxyImpl<E> extends AbstractCollectionProxyImpl<SetService, E> 
         return SetService.SERVICE_NAME;
     }
 
+    @Override
+    public LocalSetStats getLocalSetStats() {
+        return getService().getLocalCollectionStats(name);
+    }
 }

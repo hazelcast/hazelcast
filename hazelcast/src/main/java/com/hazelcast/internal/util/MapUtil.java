@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -102,4 +102,16 @@ public final class MapUtil {
         return new SimpleImmutableEntry<>(k, v);
     }
 
+    /**
+     * Converts <code>long</code> map size to <code>int</code>.
+     * If <code>size</code> is greater than <code>Integer.MAX_VALUE</code>
+     * then <code>Integer.MAX_VALUE</code> is returned.
+     *
+     * @param size map size
+     * @return map size in <code>int</code> type
+     */
+    public static int toIntSize(long size) {
+        assert size >= 0 : "Invalid size value: " + size;
+        return size > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) size;
+    }
 }

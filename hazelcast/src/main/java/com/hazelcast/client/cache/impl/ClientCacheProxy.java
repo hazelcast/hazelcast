@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -98,7 +98,7 @@ public class ClientCacheProxy<K, V> extends ClientCacheProxySupport<K, V>
     private ClientMessageDecoder eventJournalSubscribeResponseDecoder;
 
 
-    ClientCacheProxy(CacheConfig<K, V> cacheConfig, ClientContext context) {
+    public ClientCacheProxy(CacheConfig<K, V> cacheConfig, ClientContext context) {
         super(cacheConfig, context);
     }
 
@@ -348,13 +348,13 @@ public class ClientCacheProxy<K, V> extends ClientCacheProxySupport<K, V>
     @Override
     public Iterator<Entry<K, V>> iterator() {
         ensureOpen();
-        return new ClientClusterWideIterator<>(this, getContext(), false);
+        return new ClientCachePartitionsIterator<>(this, getContext(), false);
     }
 
     @Override
     public Iterator<Entry<K, V>> iterator(int fetchSize) {
         ensureOpen();
-        return new ClientClusterWideIterator<>(this, getContext(), fetchSize, false);
+        return new ClientCachePartitionsIterator<>(this, getContext(), fetchSize, false);
     }
 
     @Override
@@ -405,12 +405,12 @@ public class ClientCacheProxy<K, V> extends ClientCacheProxySupport<K, V>
     }
 
     @Override
-    public InternalCompletableFuture<V> getAsync(K key) {
+    public CompletableFuture<V> getAsync(K key) {
         return getAsync(key, null);
     }
 
     @Override
-    public InternalCompletableFuture<V> getAsync(K key, ExpiryPolicy expiryPolicy) {
+    public CompletableFuture<V> getAsync(K key, ExpiryPolicy expiryPolicy) {
         ensureOpen();
         validateNotNull(key);
 

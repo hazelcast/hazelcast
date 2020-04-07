@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,10 @@ import org.junit.runner.RunWith;
 import java.io.File;
 
 import static com.google.common.io.Files.toByteArray;
+import static com.hazelcast.test.starter.HazelcastVersionLocator.HAZELCAST_EE_JAR_INDEX;
+import static com.hazelcast.test.starter.HazelcastVersionLocator.HAZELCAST_EE_TESTS_JAR_INDEX;
+import static com.hazelcast.test.starter.HazelcastVersionLocator.HAZELCAST_JAR_INDEX;
+import static com.hazelcast.test.starter.HazelcastVersionLocator.HAZELCAST_TESTS_JAR_INDEX;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -45,19 +49,15 @@ public class HazelcastVersionLocatorTest {
 
     @Test
     public void testDownloadVersion() throws Exception {
-        File[] files = HazelcastVersionLocator.locateVersion("3.6", folder.getRoot(), true);
+        File[] files = HazelcastVersionLocator.locateVersion("4.0", folder.getRoot(), true);
 
-        assertHash(files[0], "89563f7dab02bd5f592082697c24d167", "OS member");
+        assertHash(files[HAZELCAST_JAR_INDEX], "bc409b12b96ece6d05c3bd1e99b202bb", "OS");
 
-        assertHash(files[1], "66615c68c2708036a6030114a1b87f2b", "OS member tests");
+        assertHash(files[HAZELCAST_TESTS_JAR_INDEX], "220509ece9fc152525c91ba7c75ce600", "OS tests");
 
-        assertHash(files[2], "fd6022e35908b42d24fe10a9c9fdaad5", "OS client");
+        assertHash(files[HAZELCAST_EE_JAR_INDEX], "765816e628ca4ca57d5bd7387e761eaa", "EE");
 
-        assertHash(files[3], "c5718ba5c280339fff9b54ecb5e61549", "EE member");
-
-        assertHash(files[4], "c5df750fdab71a650fb56c41742806ff", "EE member tests");
-
-        assertHash(files[5], "b1cf93ec4bb9bcda8809b81349f48cb3", "EE client");
+        assertHash(files[HAZELCAST_EE_TESTS_JAR_INDEX], "162bcb2412570845e6fd91ee61b54f94", "EE tests");
     }
 
     private void assertHash(File file, String expectedHash, String label) throws Exception {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,24 +33,22 @@ import com.hazelcast.client.impl.protocol.task.map.AbstractMapQueryMessageTask;
 import com.hazelcast.client.impl.statistics.ClientStatistics;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.cluster.AddressChecker;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.impl.AddressCheckerImpl;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.internal.nio.ConnectionType;
-import com.hazelcast.internal.nio.tcp.TcpIpConnection;
+import com.hazelcast.internal.nio.server.ServerConnection;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.services.CoreService;
 import com.hazelcast.internal.services.ManagedService;
-import com.hazelcast.internal.services.MembershipAwareService;
-import com.hazelcast.internal.services.MembershipServiceEvent;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.internal.util.executor.ExecutorType;
 import com.hazelcast.internal.util.executor.UnblockablePoolExecutorThreadFactory;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.SecurityContext;
-import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.EventPublishingService;
@@ -65,6 +63,7 @@ import com.hazelcast.transaction.TransactionManagerService;
 
 import javax.annotation.Nonnull;
 import javax.security.auth.login.LoginException;
+
 import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.HashMap;
@@ -78,7 +77,6 @@ import java.util.concurrent.Future;
 import java.util.function.Consumer;
 
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
-import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
@@ -88,7 +86,7 @@ import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
  */
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
 public class ClientEngineImpl implements ClientEngine, CoreService,
-        ManagedService, MembershipAwareService, EventPublishingService<ClientEvent, ClientListener> {
+        ManagedService, EventPublishingService<ClientEvent, ClientListener> {
 
     /**
      * Service name to be used in requests.
@@ -104,9 +102,6 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     private final Executor blockingExecutor;
     private final Executor queryExecutor;
 
-    // client Address -> member Address, only used when advanced network config is enabled
-    private final Map<Address, Address> clientMemberAddressMap = new ConcurrentHashMap<Address, Address>();
-
     private volatile ClientSelector clientSelector = ClientSelectors.any();
 
     private final ClientEndpointManagerImpl endpointManager;
@@ -119,6 +114,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     private final boolean advancedNetworkConfigEnabled;
     private final ClientLifecycleMonitor lifecycleMonitor;
     private final Map<UUID, Consumer<Long>> backupListeners = new ConcurrentHashMap<>();
+    private final AddressChecker addressChecker;
 
     public ClientEngineImpl(Node node) {
         this.logger = node.getLogger(ClientEngine.class);
@@ -134,6 +130,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         this.advancedNetworkConfigEnabled = node.getConfig().getAdvancedNetworkConfig().isEnabled();
         this.lifecycleMonitor = new ClientLifecycleMonitor(endpointManager, this, logger, nodeEngine,
                 nodeEngine.getExecutionService(), node.getProperties());
+        Set<String> trustedInterfaces = node.getConfig().getManagementCenterConfig().getTrustedInterfaces();
+        this.addressChecker = new AddressCheckerImpl(trustedInterfaces, logger);
     }
 
     private ClientExceptions initClientExceptionFactory() {
@@ -299,12 +297,12 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         endpointManager.registerEndpoint(endpoint);
 
         Connection conn = endpoint.getConnection();
-        if (conn instanceof TcpIpConnection) {
+        if (conn instanceof ServerConnection) {
             InetSocketAddress socketAddress = conn.getRemoteSocketAddress();
             //socket address can be null if connection closed before bind
             if (socketAddress != null) {
                 Address address = new Address(socketAddress);
-                ((TcpIpConnection) conn).setEndPoint(address);
+                ((ServerConnection) conn).setEndPoint(address);
             }
         }
 
@@ -335,32 +333,6 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
             listener.clientConnected(event);
         } else {
             listener.clientDisconnected(event);
-        }
-    }
-
-    @Override
-    public void memberAdded(MembershipServiceEvent event) {
-        if (advancedNetworkConfigEnabled) {
-            final Map<EndpointQualifier, Address> newMemberAddressMap = event.getMember().getAddressMap();
-            final Address memberAddress = newMemberAddressMap.get(MEMBER);
-            final Address clientAddress = newMemberAddressMap.get(CLIENT);
-            if (clientAddress != null) {
-                clientMemberAddressMap.put(clientAddress, memberAddress);
-            }
-        }
-    }
-
-    @Override
-    public void memberRemoved(MembershipServiceEvent event) {
-        if (event.getMember().localMember()) {
-            return;
-        }
-
-        if (advancedNetworkConfigEnabled) {
-            final Address clientAddress = event.getMember().getAddressMap().get(CLIENT);
-            if (clientAddress != null) {
-                clientMemberAddressMap.remove(clientAddress);
-            }
         }
     }
 
@@ -505,42 +477,6 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     }
 
     @Override
-    public Address memberAddressOf(Address clientAddress) {
-        if (!advancedNetworkConfigEnabled) {
-            return clientAddress;
-        }
-
-        // clientMemberAddressMap is maintained in memberAdded/Removed
-        Address memberAddress = clientMemberAddressMap.get(clientAddress);
-        if (memberAddress != null) {
-            return memberAddress;
-        }
-
-        // lookup all members in membership manager
-        Set<Member> clusterMembers = node.getClusterService().getMembers();
-        for (Member member : clusterMembers) {
-            if (member.getAddressMap().get(CLIENT).equals(clientAddress)) {
-                memberAddress = member.getAddress();
-                clientMemberAddressMap.put(clientAddress, memberAddress);
-                return memberAddress;
-            }
-        }
-        throw new TargetNotMemberException("Could not locate member with client address " + clientAddress);
-    }
-
-    @Override
-    public Address clientAddressOf(Address memberAddress) {
-        if (!advancedNetworkConfigEnabled) {
-            return memberAddress;
-        }
-        Member member = node.getClusterService().getMember(memberAddress);
-        if (member != null) {
-            return member.getAddressMap().get(CLIENT);
-        }
-        throw new TargetNotMemberException("Could not locate member with member address " + memberAddress);
-    }
-
-    @Override
     public void onClientAcquiredResource(UUID uuid) {
         lifecycleMonitor.addClientToMonitor(uuid);
     }
@@ -565,5 +501,10 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
 
     public Map<UUID, Consumer<Long>> getBackupListeners() {
         return backupListeners;
+    }
+
+    @Override
+    public AddressChecker getManagementTasksChecker() {
+        return addressChecker;
     }
 }

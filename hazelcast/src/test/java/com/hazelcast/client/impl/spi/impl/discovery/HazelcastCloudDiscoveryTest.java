@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,10 @@
 package com.hazelcast.client.impl.spi.impl.discovery;
 
 import com.hazelcast.client.test.ClientTestSupport;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.json.Json;
+import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.sun.net.httpserver.HttpExchange;
@@ -118,4 +120,27 @@ public class HazelcastCloudDiscoveryTest extends ClientTestSupport {
         HazelcastCloudDiscovery cloudDiscovery = new HazelcastCloudDiscovery(urlEndpoint, Integer.MAX_VALUE);
         cloudDiscovery.discoverNodes();
     }
+
+    @Test
+    public void testJsonResponseParse_withDifferentPortOnPrivateAddress() throws IOException {
+        JsonValue jsonResponse = Json.parse(
+                " [{\"private-address\":\"100.96.5.1:5701\",\"public-address\":\"10.113.44.139:31115\"},"
+                        + "{\"private-address\":\"100.96.4.2:5701\",\"public-address\":\"10.113.44.130:31115\"} ]");
+        Map<Address, Address> privatePublicMap = HazelcastCloudDiscovery.parseJsonResponse(jsonResponse);
+        assertEquals(2, privatePublicMap.size());
+        assertEquals(new Address("10.113.44.139", 31115), privatePublicMap.get(new Address("100.96.5.1", 5701)));
+        assertEquals(new Address("10.113.44.130", 31115), privatePublicMap.get(new Address("100.96.4.2", 5701)));
+    }
+
+    @Test
+    public void testJsonResponseParse() throws IOException {
+        JsonValue jsonResponse = Json.parse(
+                "[{\"private-address\":\"100.96.5.1\",\"public-address\":\"10.113.44.139:31115\"},"
+                        + "{\"private-address\":\"100.96.4.2\",\"public-address\":\"10.113.44.130:31115\"} ]");
+        Map<Address, Address> privatePublicMap = HazelcastCloudDiscovery.parseJsonResponse(jsonResponse);
+        assertEquals(2, privatePublicMap.size());
+        assertEquals(new Address("10.113.44.139", 31115), privatePublicMap.get(new Address("100.96.5.1", 31115)));
+        assertEquals(new Address("10.113.44.130", 31115), privatePublicMap.get(new Address("100.96.4.2", 31115)));
+    }
+
 }

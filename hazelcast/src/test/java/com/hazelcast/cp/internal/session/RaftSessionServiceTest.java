@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,22 @@
 
 package com.hazelcast.cp.internal.session;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.HazelcastRaftTestSupport;
 import com.hazelcast.cp.internal.RaftInvocationManager;
 import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.RaftServiceDataSerializerHook;
 import com.hazelcast.cp.internal.RaftTestApplyOp;
+import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
 import com.hazelcast.cp.internal.session.operation.CloseSessionOp;
 import com.hazelcast.cp.internal.session.operation.CreateSessionOp;
 import com.hazelcast.cp.internal.session.operation.HeartbeatSessionOp;
 import com.hazelcast.cp.session.CPSession;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -49,9 +49,10 @@ import java.util.concurrent.ExecutionException;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getLeaderMember;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getSnapshotEntry;
 import static com.hazelcast.cp.session.CPSession.CPSessionOwnerType.SERVER;
+import static com.hazelcast.test.Accessors.getNode;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.test.PacketFiltersUtil.dropOperationsBetween;
 import static com.hazelcast.test.PacketFiltersUtil.resetPacketFiltersFrom;
-import static java.lang.System.currentTimeMillis;
 import static java.util.Arrays.asList;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasItem;
@@ -328,6 +329,6 @@ public class RaftSessionServiceTest extends HazelcastRaftTestSupport {
     }
 
     private CreateSessionOp newCreateSessionOp() throws UnknownHostException {
-        return new CreateSessionOp(new Address("localhost", 1111), "server1", SERVER, currentTimeMillis());
+        return new CreateSessionOp(new Address("localhost", 1111), "server1", SERVER);
     }
 }

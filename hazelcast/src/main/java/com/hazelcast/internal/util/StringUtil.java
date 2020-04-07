@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -387,5 +387,21 @@ public final class StringUtil {
         return (str1 == null || str2 == null)
                 ? false
                 : (str1 == str2 || lowerCaseInternal(str1).equals(lowerCaseInternal(str2)));
+    }
+
+    /**
+     * Strips the trailing slash from the input string, if it is present
+     *
+     * @param str
+     * @return the string with trailing slash removed
+     */
+    public static String stripTrailingSlash(String str) {
+        if (isNullOrEmpty(str)) {
+            return str;
+        }
+        if (str.charAt(str.length() - 1) == '/') {
+            return str.substring(0, str.length() - 1);
+        }
+        return str;
     }
 }

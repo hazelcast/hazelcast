@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -137,7 +137,7 @@ public class ClientCacheHelperTest extends HazelcastTestSupport {
     @Test(expected = IllegalArgumentException.class)
     public void testEnableStatisticManagementOnNodes_sneakyThrowsException() {
         Member member = mock(Member.class);
-        when(member.getAddress()).thenThrow(new IllegalArgumentException("expected"));
+        when(member.getUuid()).thenThrow(new IllegalArgumentException("expected"));
 
         Collection<Member> members = singletonList(member);
         when(exceptionThrowingClient.getClientClusterService().getMemberList()).thenReturn(members);

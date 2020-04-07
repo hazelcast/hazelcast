@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,12 @@
 package com.hazelcast.map.impl.query;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.IMap;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleTestObjects;
 import com.hazelcast.query.impl.predicates.InstanceOfPredicate;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -35,6 +35,7 @@ import org.junit.runner.RunWith;
 import java.util.Collection;
 import java.util.Map;
 
+import static com.hazelcast.test.Accessors.getSerializationService;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;

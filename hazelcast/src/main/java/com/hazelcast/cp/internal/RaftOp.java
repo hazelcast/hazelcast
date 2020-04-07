@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,16 @@
 
 package com.hazelcast.cp.internal;
 
+import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.cp.CPGroupId;
+import com.hazelcast.spi.exception.RetryableException;
+import com.hazelcast.spi.exception.SilentException;
 import com.hazelcast.spi.impl.NodeEngine;
+
+import java.util.logging.Level;
+
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
 
 /**
  * Base operation class for operations to be replicated to and executed on
@@ -69,6 +75,30 @@ public abstract class RaftOp implements DataSerializable {
     }
 
     protected abstract String getServiceName();
+
+    public void logFailure(Throwable e) {
+        ILogger logger = getLogger();
+        if (e instanceof SilentException) {
+            if (logger.isFinestEnabled()) {
+                logger.finest(e.getMessage(), e);
+            }
+        } else if (e instanceof RetryableException) {
+            if (logger.isFineEnabled()) {
+                logger.fine(e.getClass().getName() + ": " + e.getMessage());
+            }
+        } else if (e instanceof OutOfMemoryError) {
+            try {
+                logger.severe(e.getMessage(), e);
+            } catch (Throwable t) {
+                ignore(t);
+            }
+        } else {
+            Level level = nodeEngine != null && nodeEngine.isRunning() ? Level.WARNING : Level.FINE;
+            if (logger.isLoggable(level)) {
+                logger.log(level, e.getMessage(), e);
+            }
+        }
+    }
 
     protected void toString(StringBuilder sb) {
     }

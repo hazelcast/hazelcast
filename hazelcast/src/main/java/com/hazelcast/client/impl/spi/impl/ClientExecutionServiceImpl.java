@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_PREFIX_EXECUTION_SERVICE;
 import static java.lang.Thread.currentThread;
 
 public final class ClientExecutionServiceImpl implements TaskScheduler, StaticMetricsProvider {
@@ -101,6 +102,6 @@ public final class ClientExecutionServiceImpl implements TaskScheduler, StaticMe
 
     @Override
     public void provideStaticMetrics(MetricsRegistry registry) {
-        registry.registerStaticMetrics(this, "executionService");
+        registry.registerStaticMetrics(this, CLIENT_PREFIX_EXECUTION_SERVICE);
     }
 }

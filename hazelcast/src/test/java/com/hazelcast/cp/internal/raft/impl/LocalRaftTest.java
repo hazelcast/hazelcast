@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,9 @@ import java.util.concurrent.TimeoutException;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getCommitIndex;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getLastLogOrSnapshotEntry;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getLeaderMember;
+import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getRole;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getTerm;
+import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getVotedFor;
 import static com.hazelcast.cp.internal.raft.impl.testing.LocalRaftGroup.LocalRaftGroupBuilder.newGroup;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.Assert.assertEquals;
@@ -761,7 +763,7 @@ public class LocalRaftTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void when_thereAreTooManyInflightAppendedEntries_then_newAppendsAreRejected() throws ExecutionException, InterruptedException {
+    public void when_thereAreTooManyInflightAppendedEntries_then_newAppendsAreRejected() {
         int uncommittedEntryCount = 10;
         RaftAlgorithmConfig config = new RaftAlgorithmConfig().setUncommittedEntryCountToRejectNewAppends(uncommittedEntryCount);
         group = newGroup(2, config);
@@ -783,7 +785,7 @@ public class LocalRaftTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void when_leaderStaysInMinority_then_itDemotesItselfToFollower() throws ExecutionException, InterruptedException {
+    public void when_leaderStaysInMinority_then_itDemotesItselfToFollower() {
         group = newGroup(3);
         group.start();
 
@@ -797,6 +799,22 @@ public class LocalRaftTest extends HazelcastTestSupport {
             fail();
         } catch (StaleAppendRequestException ignored) {
         }
+    }
+
+    @Test
+    public void when_leaderDemotesToFollower_then_itShouldNotDeleteItsVote() {
+        group = newGroup(3);
+        group.start();
+
+        RaftNodeImpl leader = group.waitUntilLeaderElected();
+
+        assertEquals(leader.getLocalMember(), getVotedFor(leader));
+
+        group.split(leader.getLocalMember());
+
+        assertTrueEventually(() -> assertEquals(RaftRole.FOLLOWER,  getRole(leader)));
+
+        assertEquals(leader.getLocalMember(), getVotedFor(leader));
     }
 
     private static RaftAlgorithmConfig newRaftConfigWithNoSnapshotting(int maxEntryCount) {

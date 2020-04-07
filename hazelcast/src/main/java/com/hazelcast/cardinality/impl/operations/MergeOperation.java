@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntr
 public class MergeOperation
         extends CardinalityEstimatorBackupAwareOperation {
 
-    private SplitBrainMergePolicy<HyperLogLog, CardinalityEstimatorMergeTypes> mergePolicy;
+    private SplitBrainMergePolicy<HyperLogLog, CardinalityEstimatorMergeTypes, HyperLogLog> mergePolicy;
     private HyperLogLog value;
 
     private transient HyperLogLog backupValue;
@@ -45,7 +45,8 @@ public class MergeOperation
     public MergeOperation() {
     }
 
-    public MergeOperation(String name, SplitBrainMergePolicy<HyperLogLog, CardinalityEstimatorMergeTypes> mergePolicy,
+    public MergeOperation(String name,
+                          SplitBrainMergePolicy<HyperLogLog, CardinalityEstimatorMergeTypes, HyperLogLog> mergePolicy,
                           HyperLogLog value) {
         super(name);
         this.mergePolicy = mergePolicy;

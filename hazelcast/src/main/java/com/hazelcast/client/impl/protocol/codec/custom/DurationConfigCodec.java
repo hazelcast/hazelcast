@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,11 +24,11 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("8d20297504932d681de4e796a0a9739d")
+@Generated("1e81e25643b65eec749a06f2eb0b247c")
 public final class DurationConfigCodec {
     private static final int DURATION_AMOUNT_FIELD_OFFSET = 0;
     private static final int TIME_UNIT_FIELD_OFFSET = DURATION_AMOUNT_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    private static final int INITIAL_FRAME_SIZE = TIME_UNIT_FIELD_OFFSET + ENUM_SIZE_IN_BYTES;
+    private static final int INITIAL_FRAME_SIZE = TIME_UNIT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private DurationConfigCodec() {
     }
@@ -38,7 +38,7 @@ public final class DurationConfigCodec {
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
         encodeLong(initialFrame.content, DURATION_AMOUNT_FIELD_OFFSET, durationConfig.getDurationAmount());
-        encodeEnum(initialFrame.content, TIME_UNIT_FIELD_OFFSET, durationConfig.getTimeUnit());
+        encodeInt(initialFrame.content, TIME_UNIT_FIELD_OFFSET, durationConfig.getTimeUnit());
         clientMessage.add(initialFrame);
 
         clientMessage.add(END_FRAME.copy());
@@ -50,7 +50,7 @@ public final class DurationConfigCodec {
 
         ClientMessage.Frame initialFrame = iterator.next();
         long durationAmount = decodeLong(initialFrame.content, DURATION_AMOUNT_FIELD_OFFSET);
-        int timeUnit = decodeEnum(initialFrame.content, TIME_UNIT_FIELD_OFFSET);
+        int timeUnit = decodeInt(initialFrame.content, TIME_UNIT_FIELD_OFFSET);
 
         fastForwardToEndFrame(iterator);
 

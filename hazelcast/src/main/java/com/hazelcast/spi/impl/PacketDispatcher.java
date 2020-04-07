@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,7 +72,7 @@ public final class PacketDispatcher implements Consumer<Packet> {
                 case EVENT:
                     eventService.accept(packet);
                     break;
-                case BIND:
+                case MEMBER_HANDSHAKE:
                     Connection connection = packet.getConn();
                     EndpointManager endpointManager = connection.getEndpointManager();
                     endpointManager.accept(packet);

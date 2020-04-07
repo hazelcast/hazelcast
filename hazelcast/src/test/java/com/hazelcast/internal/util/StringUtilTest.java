@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -153,6 +153,16 @@ public class StringUtilTest extends HazelcastTestSupport {
         } finally {
             Locale.setDefault(defaultLocale);
         }
+    }
+
+    @Test
+    public void testStripTrailingSlash() throws Exception {
+        assertEquals(null, StringUtil.stripTrailingSlash(null));
+        assertEquals("", StringUtil.stripTrailingSlash(""));
+        assertEquals("a", StringUtil.stripTrailingSlash("a"));
+        assertEquals("a", StringUtil.stripTrailingSlash("a/"));
+        assertEquals("a/a", StringUtil.stripTrailingSlash("a/a"));
+        assertEquals("a/", StringUtil.stripTrailingSlash("a//"));
     }
 
     private String[] arr(String... strings) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import com.hazelcast.config.MemcacheProtocolConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.RestApiConfig;
 import com.hazelcast.config.RestServerEndpointConfig;
-import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.instance.EndpointQualifier;
@@ -36,7 +35,7 @@ import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
-import com.hazelcast.internal.nio.tcp.TcpIpConnection;
+import com.hazelcast.internal.nio.server.ServerConnection;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.AddressUtil;
 import com.hazelcast.logging.LoggingService;
@@ -53,6 +52,7 @@ import java.net.Socket;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
@@ -162,17 +162,6 @@ public class NodeIOService implements IOService {
     }
 
     @Override
-    public SSLConfig getSSLConfig(EndpointQualifier endpointQualifier) {
-        final AdvancedNetworkConfig advancedNetworkConfig = node.getConfig().getAdvancedNetworkConfig();
-        if (advancedNetworkConfig.isEnabled()) {
-            EndpointConfig config = advancedNetworkConfig.getEndpointConfigs().get(endpointQualifier);
-            return config != null ? config.getSSLConfig() : null;
-        }
-
-        return node.getConfig().getNetworkConfig().getSSLConfig();
-    }
-
-    @Override
     public ClientEngine getClientEngine() {
         return node.clientEngine;
     }
@@ -184,12 +173,8 @@ public class NodeIOService implements IOService {
 
     @Override
     public void removeEndpoint(final Address endPoint) {
-        nodeEngine.getExecutionService().execute(ExecutionService.IO_EXECUTOR, new Runnable() {
-            @Override
-            public void run() {
-                node.clusterService.suspectAddressIfNotConnected(endPoint);
-            }
-        });
+        nodeEngine.getExecutionService().execute(ExecutionService.IO_EXECUTOR,
+                () -> node.clusterService.suspectAddressIfNotConnected(endPoint));
     }
 
     @Override
@@ -229,16 +214,6 @@ public class NodeIOService implements IOService {
         if (node.getThisAddress().equals(address)) {
             throw new RuntimeException("Connecting to self! " + address);
         }
-    }
-
-    @Override
-    public boolean isSocketBind() {
-        return node.getProperties().getBoolean(ClusterProperty.SOCKET_CLIENT_BIND);
-    }
-
-    @Override
-    public boolean isSocketBindAny() {
-        return node.getProperties().getBoolean(ClusterProperty.SOCKET_CLIENT_BIND_ANY);
     }
 
     @Override
@@ -309,12 +284,12 @@ public class NodeIOService implements IOService {
     }
 
     @Override
-    public InboundHandler[] createInboundHandlers(EndpointQualifier qualifier, TcpIpConnection connection) {
+    public InboundHandler[] createInboundHandlers(EndpointQualifier qualifier, ServerConnection connection) {
         return node.getNodeExtension().createInboundHandlers(qualifier, connection, this);
     }
 
     @Override
-    public OutboundHandler[] createOutboundHandlers(EndpointQualifier qualifier, TcpIpConnection connection) {
+    public OutboundHandler[] createOutboundHandlers(EndpointQualifier qualifier, ServerConnection connection) {
         return node.getNodeExtension().createOutboundHandlers(qualifier, connection, this);
     }
 
@@ -365,5 +340,10 @@ public class NodeIOService implements IOService {
     @Override
     public AuditlogService getAuditLogService() {
         return node.getNodeExtension().getAuditlogService();
+    }
+
+    @Override
+    public UUID getUuid() {
+        return node.getThisUuid();
     }
 }

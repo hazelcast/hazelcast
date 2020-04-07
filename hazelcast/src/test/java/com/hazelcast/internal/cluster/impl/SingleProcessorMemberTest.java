@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.spi.properties.ClusterProperty.GRACEFUL_SHUTDOWN_MAX_WAIT;
@@ -62,20 +63,15 @@ public class SingleProcessorMemberTest extends HazelcastTestSupport {
         gracefulShutdownTimeoutRule.setOrClearProperty(Integer.toString(Integer.MAX_VALUE));
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
-        final HazelcastInstance[] instances = factory.newInstances(new Config(), 4);
+        HazelcastInstance[] instances = factory.newInstances(new Config(), 4);
         assertClusterSizeEventually(4, instances);
         if (initializePartitions) {
             warmUpPartitions(instances);
         }
 
-        ArrayList<Future> futures = new ArrayList<Future>();
+        List<Future> futures = new ArrayList<>();
         for (final HazelcastInstance instance : instances) {
-            Future future = spawn(new Runnable() {
-                @Override
-                public void run() {
-                    instance.shutdown();
-                }
-            });
+            Future future = spawn(instance::shutdown);
             futures.add(future);
         }
 

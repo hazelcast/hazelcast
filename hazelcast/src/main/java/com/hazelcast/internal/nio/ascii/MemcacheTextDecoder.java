@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import com.hazelcast.internal.ascii.memcache.IncrementCommandParser;
 import com.hazelcast.internal.ascii.memcache.SetCommandParser;
 import com.hazelcast.internal.ascii.memcache.SimpleCommandParser;
 import com.hazelcast.internal.ascii.memcache.TouchCommandParser;
-import com.hazelcast.internal.nio.tcp.TcpIpConnection;
+import com.hazelcast.internal.nio.server.ServerConnection;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -63,7 +63,7 @@ public class MemcacheTextDecoder extends TextDecoder {
         TEXT_PARSERS = new TextParsers(parsers);
     }
 
-    public MemcacheTextDecoder(TcpIpConnection connection, TextEncoder encoder, boolean rootDecoder) {
+    public MemcacheTextDecoder(ServerConnection connection, TextEncoder encoder, boolean rootDecoder) {
         super(connection, encoder, AllowingTextProtocolFilter.INSTANCE, TEXT_PARSERS, rootDecoder);
     }
 }

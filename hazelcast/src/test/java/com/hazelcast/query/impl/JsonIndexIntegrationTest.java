@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,11 +23,11 @@ import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastJsonValue;
-import com.hazelcast.map.IMap;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -47,6 +47,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)

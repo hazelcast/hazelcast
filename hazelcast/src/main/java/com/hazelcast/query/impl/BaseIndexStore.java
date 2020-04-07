@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,14 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.internal.json.NonTerminalJsonValue;
-import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.internal.monitor.impl.IndexOperationStats;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.query.impl.getters.MultiResult;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.map.impl.record.Record;
 
 import java.util.AbstractSet;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -48,7 +44,6 @@ public abstract class BaseIndexStore implements IndexStore {
 
     private final CopyFunctor<Data, QueryableEntry> resultCopyFunctor;
 
-    private boolean multiResultHasToDetectDuplicates;
     /**
      * {@code true} if this index store has at least one candidate entry
      * for expiration (idle or tll), otherwise {@code false}.
@@ -84,33 +79,6 @@ public abstract class BaseIndexStore implements IndexStore {
      */
     abstract Comparable canonicalizeScalarForStorage(Comparable value);
 
-    /**
-     * Associates the given value in this index store with the given record.
-     * <p>
-     * Despite the name the given value acts as a key into this index store. In
-     * other words, it's a value of an attribute this index store is built for.
-     *
-     * @param value  the value of an attribute this index store is built for.
-     * @param record the record to associate with the given value.
-     * @return the record that was associated with the given value before the
-     * operation, if there was any, {@code null} otherwise.
-     */
-    abstract Object insertInternal(Comparable value, QueryableEntry record);
-
-    /**
-     * Removes the association between the given value and a record identified
-     * by the given record key.
-     * <p>
-     * Despite the name the given value acts as a key into this index store. In
-     * other words, it's a value of an attribute this index store is built for.
-     *
-     * @param value     the value of an attribute this index store is built for.
-     * @param recordKey the key of a record to dissociate from the given value.
-     * @return the record that was associated with the given value before the
-     * operation, if there was any, {@code null} otherwise.
-     */
-    abstract Object removeInternal(Comparable value, Data recordKey);
-
     void takeWriteLock() {
         writeLock.lock();
     }
@@ -127,10 +95,6 @@ public abstract class BaseIndexStore implements IndexStore {
         readLock.unlock();
     }
 
-    final MultiResultSet createMultiResultSet() {
-        return multiResultHasToDetectDuplicates ? new DuplicateDetectingMultiResult() : new FastMultiResultSet();
-    }
-
     final void copyToMultiResultSet(MultiResultSet resultSet, Map<Data, QueryableEntry> records) {
         resultSet.addResultSet(resultCopyFunctor.invoke(records));
     }
@@ -140,86 +104,11 @@ public abstract class BaseIndexStore implements IndexStore {
     }
 
     @Override
-    public final void insert(Object value,
-                             QueryableEntry queryableEntry,
-                             IndexOperationStats operationStats) {
-        takeWriteLock();
-        try {
-            unwrapAndInsertToIndex(value, queryableEntry, operationStats);
-        } finally {
-            releaseWriteLock();
-        }
-    }
-
-    @Override
-    public final void update(Object oldValue, Object newValue, QueryableEntry entry, IndexOperationStats operationStats) {
-        takeWriteLock();
-        try {
-            Data indexKey = entry.getKeyData();
-            unwrapAndRemoveFromIndex(oldValue, indexKey, operationStats);
-            unwrapAndInsertToIndex(newValue, entry, operationStats);
-        } finally {
-            releaseWriteLock();
-        }
-    }
-
-    @Override
-    public final void remove(Object value, Data indexKey, IndexOperationStats operationStats) {
-        takeWriteLock();
-        try {
-            unwrapAndRemoveFromIndex(value, indexKey, operationStats);
-        } finally {
-            releaseWriteLock();
-        }
-    }
-
-    @Override
     public void destroy() {
         // nothing to destroy
     }
 
-    @SuppressWarnings("unchecked")
-    private void unwrapAndInsertToIndex(Object newValue,
-                                        QueryableEntry queryableEntry,
-                                        IndexOperationStats operationStats) {
-        if (newValue == NonTerminalJsonValue.INSTANCE) {
-            return;
-        }
-        if (newValue instanceof MultiResult) {
-            multiResultHasToDetectDuplicates = true;
-            List<Object> results = ((MultiResult) newValue).getResults();
-            for (Object o : results) {
-                Comparable sanitizedValue = sanitizeValue(o);
-                Object oldValue = insertInternal(sanitizedValue, queryableEntry);
-                operationStats.onEntryAdded(oldValue, newValue);
-            }
-        } else {
-            Comparable sanitizedValue = sanitizeValue(newValue);
-            Object oldValue = insertInternal(sanitizedValue, queryableEntry);
-            operationStats.onEntryAdded(oldValue, newValue);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private void unwrapAndRemoveFromIndex(Object oldValue, Data indexKey, IndexOperationStats operationStats) {
-        if (oldValue == NonTerminalJsonValue.INSTANCE) {
-            return;
-        }
-        if (oldValue instanceof MultiResult) {
-            List<Object> results = ((MultiResult) oldValue).getResults();
-            for (Object o : results) {
-                Comparable sanitizedValue = sanitizeValue(o);
-                Object removedValue = removeInternal(sanitizedValue, indexKey);
-                operationStats.onEntryRemoved(removedValue);
-            }
-        } else {
-            Comparable sanitizedValue = sanitizeValue(oldValue);
-            Object removedValue = removeInternal(sanitizedValue, indexKey);
-            operationStats.onEntryRemoved(removedValue);
-        }
-    }
-
-    private Comparable sanitizeValue(Object input) {
+    Comparable sanitizeValue(Object input) {
         if (input instanceof CompositeValue) {
             CompositeValue compositeValue = (CompositeValue) input;
             Comparable[] components = compositeValue.getComponents();
@@ -274,7 +163,7 @@ public abstract class BaseIndexStore implements IndexStore {
 
         @Override
         public Map<Data, QueryableEntry> invoke(Map<Data, QueryableEntry> map) {
-            if (isExpirable()) {
+            if (map != null && isExpirable()) {
                 return new ExpirationAwareHashMapDelegate(map);
             }
             return map;
@@ -287,7 +176,7 @@ public abstract class BaseIndexStore implements IndexStore {
         @Override
         public Map<Data, QueryableEntry> invoke(Map<Data, QueryableEntry> map) {
             if (map != null && !map.isEmpty()) {
-                HashMap<Data, QueryableEntry> newMap = new HashMap<Data, QueryableEntry>(map);
+                HashMap<Data, QueryableEntry> newMap = new HashMap<>(map);
                 if (isExpirable()) {
                     return new ExpirationAwareHashMapDelegate(newMap);
                 }
@@ -302,9 +191,8 @@ public abstract class BaseIndexStore implements IndexStore {
      * This delegating Map updates the {@link Record}'s access time on every
      * {@link QueryableEntry} retrieved through the {@link Map#entrySet()},
      * {@link Map#get} or {@link Map#values()}.
-     *
      */
-    private static class ExpirationAwareHashMapDelegate implements Map<Data, QueryableEntry> {
+    protected static final class ExpirationAwareHashMapDelegate implements Map<Data, QueryableEntry> {
 
         private final Map<Data, QueryableEntry> delegateMap;
 
@@ -370,15 +258,13 @@ public abstract class BaseIndexStore implements IndexStore {
         @Override
         public Collection<QueryableEntry> values() {
             long now = Clock.currentTimeMillis();
-            return new ExpirationAwareSet<QueryableEntry>(delegateMap.values(),
-                    queryableEntry -> queryableEntry.getRecord().onAccessSafe(now));
+            return new ExpirationAwareSet<>(delegateMap.values(), queryableEntry -> queryableEntry.getRecord().onAccessSafe(now));
         }
 
         @Override
         public Set<Entry<Data, QueryableEntry>> entrySet() {
             long now = Clock.currentTimeMillis();
-            return new ExpirationAwareSet<Entry<Data, QueryableEntry>>(delegateMap.entrySet(),
-                    entry -> entry.getValue().getRecord().onAccessSafe(now));
+            return new ExpirationAwareSet<>(delegateMap.entrySet(), entry -> entry.getValue().getRecord().onAccessSafe(now));
         }
 
         private static class ExpirationAwareSet<V> extends AbstractSet<V> {

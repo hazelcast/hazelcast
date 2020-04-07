@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -87,6 +87,9 @@ import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MIGRATION_METRIC_MIGRATION_MANAGER_MIGRATION_ACTIVE;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITIONS_PREFIX;
+import static com.hazelcast.internal.metrics.ProbeUnit.BOOLEAN;
 import static com.hazelcast.internal.partition.IPartitionService.SERVICE_NAME;
 
 /**
@@ -144,10 +147,10 @@ public class MigrationManager {
         delayedResumeMigrationTrigger = new CoalescingDelayedTrigger(
                 executionService, migrationPauseDelayMs, 2 * migrationPauseDelayMs, this::resumeMigration);
         this.memberHeartbeatTimeoutMillis = properties.getMillis(ClusterProperty.MAX_NO_HEARTBEAT_SECONDS);
-        nodeEngine.getMetricsRegistry().registerStaticMetrics(stats, "partitions");
+        nodeEngine.getMetricsRegistry().registerStaticMetrics(stats, PARTITIONS_PREFIX);
     }
 
-    @Probe(name = "migrationActive")
+    @Probe(name = MIGRATION_METRIC_MIGRATION_MANAGER_MIGRATION_ACTIVE, unit = BOOLEAN)
     private int migrationActiveProbe() {
         return migrationTasksAllowed.get() ? 1 : 0;
     }
@@ -281,7 +284,7 @@ public class MigrationManager {
         }
     }
 
-    MigrationInfo getActiveMigration() {
+    public MigrationInfo getActiveMigration() {
         return activeMigrationInfo;
     }
 
@@ -598,7 +601,7 @@ public class MigrationManager {
     }
 
     /** Mutates the partition state and applies the migration. */
-    void applyMigration(InternalPartitionImpl partition, MigrationInfo migrationInfo) {
+    static void applyMigration(InternalPartitionImpl partition, MigrationInfo migrationInfo) {
         final PartitionReplica[] members = Arrays.copyOf(partition.getReplicas(), InternalPartition.MAX_REPLICA_COUNT);
         if (migrationInfo.getSourceCurrentReplicaIndex() > -1) {
             members[migrationInfo.getSourceCurrentReplicaIndex()] = null;
@@ -815,10 +818,11 @@ public class MigrationManager {
                 if (migrationCollector.lostPartitionDestination != null) {
                     lostPartitions.put(partitionId, migrationCollector.lostPartitionDestination);
                 }
-                migrations.add(migrationCollector.migrations);
-                migrationCount += migrationCollector.migrations.size();
+                if (!migrationCollector.migrations.isEmpty()) {
+                    migrations.add(migrationCollector.migrations);
+                    migrationCount += migrationCollector.migrations.size();
+                }
             }
-            migrationCount += lostPartitions.size();
 
             stats.markNewRepartition(migrationCount);
             if (migrationCount > 0) {

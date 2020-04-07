@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,9 @@ import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLUSTER_DISCRIMINATOR_ENDPOINT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLUSTER_PREFIX_CONNECTION;
+
 class ClusterConnectionMetricsProvider implements DynamicMetricsProvider {
     private final ClientConnectionManager clientConnectionManager;
 
@@ -33,9 +36,9 @@ class ClusterConnectionMetricsProvider implements DynamicMetricsProvider {
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
         for (ClientConnection connection : clientConnectionManager.getActiveConnections()) {
             context.collect(descriptor
-                    .withPrefix("cluster.connection")
-                    .withDiscriminator("endpoint", connection.getEndPoint().toString()),
-                connection);
+                            .withPrefix(CLUSTER_PREFIX_CONNECTION)
+                            .withDiscriminator(CLUSTER_DISCRIMINATOR_ENDPOINT, connection.getEndPoint().toString()),
+                    connection);
         }
     }
 }

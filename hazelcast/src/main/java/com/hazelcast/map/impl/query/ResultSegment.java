@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,27 +17,30 @@
 package com.hazelcast.map.impl.query;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 
 /**
  * Represents a partial query result on a segment of the map.
- * The remaining query results may be retrieved using
- * the {@link #nextTableIndexToReadFrom} which signifies the next query result.
+ * The remaining query results may be retrieved using the {@link #pointers}
+ * which defines the iteration state.
  */
 public class ResultSegment implements IdentifiedDataSerializable {
     private Result result;
-    private int nextTableIndexToReadFrom;
+    private IterationPointer[] pointers;
 
     public ResultSegment() {
     }
 
-    public ResultSegment(Result result, int nextTableIndexToReadFrom) {
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "This is an internal class")
+    public ResultSegment(Result result, IterationPointer[] pointers) {
         this.result = result;
-        this.nextTableIndexToReadFrom = nextTableIndexToReadFrom;
+        this.pointers = pointers;
     }
 
     public Result getResult() {
@@ -48,12 +51,20 @@ public class ResultSegment implements IdentifiedDataSerializable {
         this.result = result;
     }
 
-    public int getNextTableIndexToReadFrom() {
-        return nextTableIndexToReadFrom;
+    /**
+     * Returns the iteration pointers representing the current iteration state.
+     */
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "This is an internal class")
+    public IterationPointer[] getPointers() {
+        return pointers;
     }
 
-    public void setNextTableIndexToReadFrom(int nextTableIndexToReadFrom) {
-        this.nextTableIndexToReadFrom = nextTableIndexToReadFrom;
+    /**
+     * Sets the iteration pointers representing the current iteration state.
+     */
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "This is an internal class")
+    public void setPointers(IterationPointer[] pointers) {
+        this.pointers = pointers;
     }
 
     @Override
@@ -69,12 +80,20 @@ public class ResultSegment implements IdentifiedDataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(result);
-        out.writeInt(nextTableIndexToReadFrom);
+        out.writeInt(pointers.length);
+        for (IterationPointer pointer : pointers) {
+            out.writeInt(pointer.getIndex());
+            out.writeInt(pointer.getSize());
+        }
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         result = in.readObject();
-        nextTableIndexToReadFrom = in.readInt();
+        int pointersCount = in.readInt();
+        pointers = new IterationPointer[pointersCount];
+        for (int i = 0; i < pointersCount; i++) {
+            pointers[i] = new IterationPointer(in.readInt(), in.readInt());
+        }
     }
 }

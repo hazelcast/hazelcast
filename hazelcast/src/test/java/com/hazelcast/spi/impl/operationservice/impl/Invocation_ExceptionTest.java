@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,8 @@ import org.junit.runners.Parameterized;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
+
+import static com.hazelcast.test.Accessors.getOperationService;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)

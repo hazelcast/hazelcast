@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -35,13 +34,12 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
-import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.util.Collections.synchronizedList;
 import static org.junit.Assert.assertEquals;
 
@@ -62,23 +60,20 @@ public class EventRegistrationTest extends HazelcastTestSupport {
     }
 
     private HazelcastInstance[] startInstances(int nodeCount) {
-        final List<HazelcastInstance> instancesList = synchronizedList(new ArrayList<HazelcastInstance>());
-        final CountDownLatch latch = new CountDownLatch(nodeCount);
-        final TestHazelcastInstanceFactory instanceFactory = createHazelcastInstanceFactory(3);
+        List<HazelcastInstance> instancesList = synchronizedList(new ArrayList<>());
+        CountDownLatch latch = new CountDownLatch(nodeCount);
+        TestHazelcastInstanceFactory instanceFactory = createHazelcastInstanceFactory(3);
 
         for (int i = 0; i < nodeCount; ++i) {
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        Address address = instanceFactory.nextAddress();
-                        HazelcastInstance instance = instanceFactory.newHazelcastInstance(address, new Config());
-                        instancesList.add(instance);
-                    } catch (Throwable e) {
-                        logger.severe(e);
-                    } finally {
-                        latch.countDown();
-                    }
+            new Thread(() -> {
+                try {
+                    Address address = instanceFactory.nextAddress();
+                    HazelcastInstance instance = instanceFactory.newHazelcastInstance(address, new Config());
+                    instancesList.add(instance);
+                } catch (Throwable e) {
+                    logger.severe(e);
+                } finally {
+                    latch.countDown();
                 }
             }, "Start thread for node " + i).start();
         }
@@ -88,16 +83,12 @@ public class EventRegistrationTest extends HazelcastTestSupport {
         return instancesList.toArray(new HazelcastInstance[0]);
     }
 
-    private static void assertEventRegistrations(final int expected, final HazelcastInstance... instances) {
-
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                for (HazelcastInstance instance : instances) {
-                    Collection<EventRegistration> regs = getNodeEngineImpl(instance).getEventService().getRegistrations(
-                            ProxyServiceImpl.SERVICE_NAME, ProxyServiceImpl.SERVICE_NAME);
-                    assertEquals(instance + ": " + regs, expected, regs.size());
-                }
+    private static void assertEventRegistrations(int expected, HazelcastInstance... instances) {
+        assertTrueEventually(() -> {
+            for (HazelcastInstance instance : instances) {
+                Collection<EventRegistration> regs = getNodeEngineImpl(instance).getEventService().getRegistrations(
+                        ProxyServiceImpl.SERVICE_NAME, ProxyServiceImpl.SERVICE_NAME);
+                assertEquals(instance + ": " + regs, expected, regs.size());
             }
         });
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package com.hazelcast.collection;
 
-import com.hazelcast.config.SplitBrainProtectionConfig;
-
 import java.util.List;
+
+import com.hazelcast.config.SplitBrainProtectionConfig;
 
 /**
  * Concurrent, distributed implementation of {@link List}.
@@ -34,4 +34,13 @@ import java.util.List;
  * @see List
  */
 public interface IList<E> extends List<E>, ICollection<E> {
+
+
+    /**
+     * Returns {@link LocalListStats} for this collection.
+     *
+     * @return this collection's local statistics.
+     */
+    LocalListStats getLocalListStats();
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -143,8 +144,8 @@ public class ClientConnectionTest extends ClientTestSupport {
 
         connectionManager.addConnectionListener(listener);
 
-        final Address serverAddress = server.getCluster().getLocalMember().getAddress();
-        final Connection connectionToServer = connectionManager.getConnection(serverAddress);
+        UUID serverUuid = server.getCluster().getLocalMember().getUuid();
+        final Connection connectionToServer = connectionManager.getConnection(serverUuid);
 
         ReconnectListener reconnectListener = new ReconnectListener();
         clientImpl.getLifecycleService().addLifecycleListener(reconnectListener);

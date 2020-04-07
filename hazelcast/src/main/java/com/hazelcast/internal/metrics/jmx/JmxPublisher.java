@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,8 @@ import java.util.function.Function;
 
 import static com.hazelcast.internal.metrics.MetricTarget.JMX;
 import static com.hazelcast.internal.metrics.impl.DefaultMetricDescriptorSupplier.DEFAULT_DESCRIPTOR_SUPPLIER;
+import static com.hazelcast.internal.metrics.jmx.MetricsMBean.Type.DOUBLE;
+import static com.hazelcast.internal.metrics.jmx.MetricsMBean.Type.LONG;
 
 /**
  * Renderer to create, register and unregister mBeans for metrics as they are
@@ -81,15 +83,15 @@ public class JmxPublisher implements MetricsPublisher {
 
     @Override
     public void publishLong(MetricDescriptor descriptor, long value) {
-        publishNumber(descriptor, value);
+        publishNumber(descriptor, value, LONG);
     }
 
     @Override
     public void publishDouble(MetricDescriptor descriptor, double value) {
-        publishNumber(descriptor, value);
+        publishNumber(descriptor, value, DOUBLE);
     }
 
-    private void publishNumber(MetricDescriptor originalDescriptor, Number value) {
+    private void publishNumber(MetricDescriptor originalDescriptor, Number value, MetricsMBean.Type type) {
         if (originalDescriptor.isTargetExcluded(JMX)) {
             return;
         }
@@ -110,7 +112,7 @@ public class JmxPublisher implements MetricsPublisher {
         if (isShutdown) {
             unregisterMBeanIgnoreError(metricData.objectName);
         }
-        mBean.setMetricValue(metricData.metric, metricData.unit, value);
+        mBean.setMetricValue(metricData.metric, metricData.unit, value, type);
     }
 
     private MetricDescriptor copy(MetricDescriptor descriptor) {

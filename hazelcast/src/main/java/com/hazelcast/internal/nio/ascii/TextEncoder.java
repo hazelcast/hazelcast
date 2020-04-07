@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package com.hazelcast.internal.nio.ascii;
 import com.hazelcast.internal.ascii.TextCommand;
 import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.internal.networking.OutboundHandler;
-import com.hazelcast.internal.nio.tcp.TcpIpConnection;
+import com.hazelcast.internal.nio.server.ServerConnection;
 
 import java.nio.ByteBuffer;
 import java.util.Map;
@@ -33,12 +33,12 @@ import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
 public class TextEncoder extends OutboundHandler<Supplier<TextCommand>, ByteBuffer> {
     public static final String TEXT_ENCODER = "textencoder";
 
-    private final TcpIpConnection connection;
+    private final ServerConnection connection;
     private final Map<Long, TextCommand> responses = new ConcurrentHashMap<Long, TextCommand>(100);
     private long currentRequestId;
     private TextCommand command;
 
-    public TextEncoder(TcpIpConnection connection) {
+    public TextEncoder(ServerConnection connection) {
         this.connection = connection;
     }
 

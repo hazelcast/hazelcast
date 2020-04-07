@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,9 +25,9 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceAccessor;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -45,6 +45,9 @@ import javax.cache.expiry.ExpiryPolicy;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.hazelcast.test.Accessors.getMetricsRegistry;
+import static com.hazelcast.test.Accessors.getNode;
+import static com.hazelcast.test.Accessors.getOperationService;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;

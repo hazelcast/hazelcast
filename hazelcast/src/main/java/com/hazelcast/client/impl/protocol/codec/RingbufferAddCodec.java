@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * this id is not the sequence of the item you are about to publish but from a previously published item. So it can't be used
  * to find that item.
  */
-@Generated("fb32b4bc216bcbd65a8201203c2935bb")
+@Generated("47ddc2217e9c7d24a38f3e28c9435793")
 public final class RingbufferAddCodec {
     //hex: 0x170600
     public static final int REQUEST_MESSAGE_TYPE = 1508864;
@@ -54,7 +54,7 @@ public final class RingbufferAddCodec {
     public static final int RESPONSE_MESSAGE_TYPE = 1508865;
     private static final int REQUEST_OVERFLOW_POLICY_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_OVERFLOW_POLICY_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
     private RingbufferAddCodec() {
@@ -85,6 +85,7 @@ public final class RingbufferAddCodec {
         clientMessage.setOperationName("Ringbuffer.Add");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
+        encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeInt(initialFrame.content, REQUEST_OVERFLOW_POLICY_FIELD_OFFSET, overflowPolicy);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);

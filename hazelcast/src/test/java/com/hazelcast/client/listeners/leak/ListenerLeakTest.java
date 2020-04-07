@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,6 +55,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Consumer;
 
+import static com.hazelcast.test.Accessors.getNode;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -262,5 +263,20 @@ public class ListenerLeakTest extends ClientTestSupport {
         client.shutdown();
         Map<UUID, Consumer<Long>> backupListeners = ((ClientEngineImpl) getNode(hazelcast).clientEngine).getBackupListeners();
         assertTrueEventually(() -> assertEquals(0, backupListeners.size()));
+    }
+
+    @Test
+    public void testListenerLeakOnMember_whenClientDestroyed() {
+        Collection<Node> nodes = createNodes();
+
+        for (int i = 0; i < 100; i++) {
+            newHazelcastClient().shutdown();
+        }
+
+        assertTrueEventually(() -> {
+            for (Node node : nodes) {
+                assertEquals(0, node.getClientEngine().getClusterListenerService().getClusterListeningEndpoints().size());
+            }
+        });
     }
 }

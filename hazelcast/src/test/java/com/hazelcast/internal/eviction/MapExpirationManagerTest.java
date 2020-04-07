@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,6 +43,7 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGING;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.eviction.MapClearExpiredRecordsTask.PROP_PRIMARY_DRIVES_BACKUP;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.lang.String.format;
 import static java.lang.System.getProperty;
 import static java.lang.System.setProperty;
@@ -198,7 +199,7 @@ public class MapExpirationManagerTest extends AbstractExpirationManagerTest {
 
     private PartitionContainer[] getPartitionContainers(HazelcastInstance instance) {
         return ((MapService) getNodeEngineImpl(instance)
-                .getService(SERVICE_NAME))
+                                      .getService(SERVICE_NAME))
                 .getMapServiceContext()
                 .getPartitionContainers();
     }

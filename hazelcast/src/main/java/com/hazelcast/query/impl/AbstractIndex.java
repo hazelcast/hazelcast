@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,13 +19,14 @@ package com.hazelcast.query.impl;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.TypeConverter;
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.map.impl.StoreAdapter;
 import com.hazelcast.internal.monitor.impl.IndexOperationStats;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.map.impl.StoreAdapter;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.getters.MultiResult;
 import com.hazelcast.query.impl.predicates.PredicateDataSerializerHook;
@@ -33,9 +34,9 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Set;
 
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
 import static com.hazelcast.query.impl.CompositeValue.NEGATIVE_INFINITY;
 import static com.hazelcast.query.impl.TypeConverters.NULL_CONVERTER;
-import static com.hazelcast.internal.util.SetUtil.createHashSet;
 import static java.util.Collections.emptySet;
 
 /**
@@ -83,11 +84,11 @@ public abstract class AbstractIndex implements InternalIndex {
         this.extractors = extractors;
         this.copyBehavior = copyBehavior;
         this.partitionStoreAdapter = partitionStoreAdapter;
-        this.indexStore = createIndexStore(ordered, stats);
+        this.indexStore = createIndexStore(config, stats);
         this.stats = stats;
     }
 
-    protected abstract IndexStore createIndexStore(boolean ordered, PerIndexStats stats);
+    protected abstract IndexStore createIndexStore(IndexConfig config, PerIndexStats stats);
 
     @Override
     public String getName() {
@@ -152,8 +153,24 @@ public abstract class AbstractIndex implements InternalIndex {
         IndexOperationStats operationStats = stats.createOperationStats();
 
         Object attributeValue = extractAttributeValue(key, value);
-        indexStore.remove(attributeValue, key, operationStats);
+        indexStore.remove(attributeValue, key, value, operationStats);
         stats.onRemove(timestamp, operationStats, operationSource);
+    }
+
+    @Override
+    public boolean isEvaluateOnly() {
+        return indexStore.isEvaluateOnly();
+    }
+
+    @Override
+    public boolean canEvaluate(Class<? extends Predicate> predicateClass) {
+        return indexStore.canEvaluate(predicateClass);
+    }
+
+    @Override
+    public Set<QueryableEntry> evaluate(Predicate predicate) {
+        assert converter != null;
+        return indexStore.evaluate(predicate, converter);
     }
 
     @Override

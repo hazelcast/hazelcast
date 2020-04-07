@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.client.cache.impl.nearcache.invalidation;
 
 import com.hazelcast.cache.ICache;
-import com.hazelcast.client.cache.impl.NearCachedClientCacheProxy;
+import com.hazelcast.client.cache.impl.nearcache.NearCachedClientCacheProxy;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
@@ -44,7 +44,7 @@ import javax.cache.spi.CachingProvider;
 import static com.hazelcast.cache.CacheTestSupport.createClientCachingProvider;
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
-import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
+import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.getBaseConfig;
 import static com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask.MAX_TOLERATED_MISS_COUNT;
 import static com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask.MIN_RECONCILIATION_INTERVAL_SECONDS;
 import static com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask.RECONCILIATION_INTERVAL_SECONDS;

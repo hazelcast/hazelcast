@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,17 @@ import java.util.BitSet;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_EXECUTOR_COMPLETED_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_EXECUTOR_GENERIC_PRIORITY_QUEUE_SIZE;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_EXECUTOR_GENERIC_QUEUE_SIZE;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_EXECUTOR_GENERIC_THREAD_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_EXECUTOR_PARTITION_THREAD_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_EXECUTOR_PRIORITY_QUEUE_SIZE;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_EXECUTOR_QUEUE_SIZE;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_EXECUTOR_RUNNING_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_EXECUTOR_RUNNING_GENERIC_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_EXECUTOR_RUNNING_PARTITION_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_PREFIX;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
@@ -205,7 +216,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
 
     @Override
     public void provideStaticMetrics(MetricsRegistry registry) {
-        registry.registerStaticMetrics(this, "operation");
+        registry.registerStaticMetrics(this, OPERATION_PREFIX);
 
         registry.provideMetrics((Object[]) genericThreads);
         registry.provideMetrics((Object[]) partitionThreads);
@@ -243,18 +254,18 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
         }
     }
 
-    @Probe(name = "runningCount")
+    @Probe(name = OPERATION_METRIC_EXECUTOR_RUNNING_COUNT)
     @Override
     public int getRunningOperationCount() {
         return getRunningPartitionOperationCount() + getRunningGenericOperationCount();
     }
 
-    @Probe(name = "runningPartitionCount")
+    @Probe(name = OPERATION_METRIC_EXECUTOR_RUNNING_PARTITION_COUNT)
     private int getRunningPartitionOperationCount() {
         return getRunningOperationCount(partitionOperationRunners);
     }
 
-    @Probe(name = "runningGenericCount")
+    @Probe(name = OPERATION_METRIC_EXECUTOR_RUNNING_GENERIC_COUNT)
     private int getRunningGenericOperationCount() {
         return getRunningOperationCount(genericOperationRunners);
     }
@@ -270,7 +281,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
     }
 
     @Override
-    @Probe(name = "queueSize", level = MANDATORY)
+    @Probe(name = OPERATION_METRIC_EXECUTOR_QUEUE_SIZE, level = MANDATORY)
     public int getQueueSize() {
         int size = 0;
         for (PartitionOperationThread partitionThread : partitionThreads) {
@@ -281,7 +292,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
     }
 
     @Override
-    @Probe(name = "priorityQueueSize", level = MANDATORY)
+    @Probe(name = OPERATION_METRIC_EXECUTOR_PRIORITY_QUEUE_SIZE, level = MANDATORY)
     public int getPriorityQueueSize() {
         int size = 0;
         for (PartitionOperationThread partitionThread : partitionThreads) {
@@ -291,17 +302,17 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
         return size;
     }
 
-    @Probe
+    @Probe(name = OPERATION_METRIC_EXECUTOR_GENERIC_QUEUE_SIZE)
     private int getGenericQueueSize() {
         return genericQueue.normalSize();
     }
 
-    @Probe
+    @Probe(name = OPERATION_METRIC_EXECUTOR_GENERIC_PRIORITY_QUEUE_SIZE)
     private int getGenericPriorityQueueSize() {
         return genericQueue.prioritySize();
     }
 
-    @Probe(name = "completedCount", level = MANDATORY)
+    @Probe(name = OPERATION_METRIC_EXECUTOR_COMPLETED_COUNT, level = MANDATORY)
     public long getExecutedOperationCount() {
         long result = adHocOperationRunner.executedOperationsCount();
 
@@ -317,13 +328,13 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
     }
 
     @Override
-    @Probe
+    @Probe(name = OPERATION_METRIC_EXECUTOR_PARTITION_THREAD_COUNT)
     public int getPartitionThreadCount() {
         return partitionThreads.length;
     }
 
     @Override
-    @Probe
+    @Probe(name = OPERATION_METRIC_EXECUTOR_GENERIC_THREAD_COUNT)
     public int getGenericThreadCount() {
         return genericThreads.length;
     }
@@ -375,9 +386,10 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
     @Override
     public void executeOnPartitionThreads(Runnable task) {
         checkNotNull(task, "task can't be null");
+        boolean priority = task instanceof UrgentSystemOperation;
 
         for (OperationThread partitionThread : partitionThreads) {
-            partitionThread.queue.add(task, true);
+            partitionThread.queue.add(task, priority);
         }
     }
 
