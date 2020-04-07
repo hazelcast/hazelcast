@@ -167,6 +167,6 @@ public class MapPutAllWrongTargetForPartitionTest extends HazelcastTestSupport {
 
     protected PartitionAwareOperationFactory getPutAllPartitionAwareOperationFactory(String mapName, int[] partitions,
                                                                                      MapEntries[] entries) {
-        return new PutAllPartitionAwareOperationFactory(mapName, partitions, entries);
+        return new PutAllPartitionAwareOperationFactory(mapName, partitions, entries, true);
     }
 }

@@ -160,7 +160,7 @@ abstract class MapProxySupport<K, V>
     private static final int MAX_RETRIES = 100;
 
     /**
-     * Defines the batch size for operations of {@link IMap#putAll(Map)} calls.
+     * Defines the batch size for operations of {@link IMap#putAll(Map)} and {@link IMap#setAll(Map)} calls.
      * <p>
      * A value of {@code 0} disables the batching and will send a single operation per member with all map entries.
      * <p>
@@ -171,9 +171,9 @@ abstract class MapProxySupport<K, V>
             = new HazelcastProperty("hazelcast.map.put.all.batch.size", 0);
 
     /**
-     * Defines the initial size of entry arrays per partition for {@link IMap#putAll(Map)} calls.
+     * Defines the initial size of entry arrays per partition for {@link IMap#putAll(Map)} and {@link IMap#setAll(Map)} calls.
      * <p>
-     * {@link IMap#putAll(Map)} splits up the entries of the user input map per partition,
+     * {@link IMap#putAll(Map)} / {@link IMap#setAll(Map)} splits up the entries of the user input map per partition,
      * to eventually send the entries the correct target nodes.
      * So the method creates multiple arrays with map entries per partition.
      * This value determines how the initial size of these arrays is calculated.
@@ -931,7 +931,9 @@ abstract class MapProxySupport<K, V>
      *               Batching is not supported in async mode
      */
     @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
-    protected void putAllInternal(Map<? extends K, ? extends V> map, @Nullable InternalCompletableFuture<Void> future) {
+    protected void putAllInternal(Map<? extends K, ? extends V> map,
+                                  @Nullable InternalCompletableFuture<Void> future,
+                                  boolean triggerMapLoader) {
         try {
             int mapSize = map.size();
             if (mapSize == 0) {
@@ -983,7 +985,7 @@ abstract class MapProxySupport<K, V>
                     long currentSize = ++counterPerMember[partitionId].value;
                     if (currentSize % putAllBatchSize == 0) {
                         List<Integer> partitions = memberPartitionsMap.get(addresses[partitionId]);
-                        invokePutAllOperation(addresses[partitionId], partitions, entriesPerPartition)
+                        invokePutAllOperation(addresses[partitionId], partitions, entriesPerPartition, triggerMapLoader)
                                 .get();
                     }
                 }
@@ -1005,7 +1007,7 @@ abstract class MapProxySupport<K, V>
                 }
             };
             for (Entry<Address, List<Integer>> entry : memberPartitionsMap.entrySet()) {
-                invokePutAllOperation(entry.getKey(), entry.getValue(), entriesPerPartition)
+                invokePutAllOperation(entry.getKey(), entry.getValue(), entriesPerPartition, triggerMapLoader)
                         .whenCompleteAsync(callback);
             }
             // if executing in sync mode, block for the responses
@@ -1021,7 +1023,8 @@ abstract class MapProxySupport<K, V>
     private InternalCompletableFuture<Void> invokePutAllOperation(
             Address address,
             List<Integer> memberPartitions,
-            MapEntries[] entriesPerPartition
+            MapEntries[] entriesPerPartition,
+            boolean triggerMapLoader
     ) {
         int size = memberPartitions.size();
         int[] partitions = new int[size];
@@ -1054,7 +1057,7 @@ abstract class MapProxySupport<K, V>
             return newCompletedFuture(null);
         }
 
-        OperationFactory factory = operationProvider.createPutAllOperationFactory(name, partitions, entries);
+        OperationFactory factory = operationProvider.createPutAllOperationFactory(name, partitions, entries, triggerMapLoader);
         long startTimeNanos = System.nanoTime();
         CompletableFuture<Map<Integer, Object>> future =
                 operationService.invokeOnPartitionsAsync(SERVICE_NAME, factory, singletonMap(address, asIntegerList(partitions)));

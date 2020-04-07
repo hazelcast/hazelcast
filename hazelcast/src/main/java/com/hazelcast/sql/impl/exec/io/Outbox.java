@@ -78,6 +78,14 @@ public class Outbox extends AbstractMailbox implements OutboundHandler {
         return targetMemberId;
     }
 
+    public int getBatchSize() {
+        return batchSize;
+    }
+
+    public long getRemainingMemory() {
+        return remainingMemory;
+    }
+
     /**
      * Accept a row batch.
      *
@@ -116,7 +124,7 @@ public class Outbox extends AbstractMailbox implements OutboundHandler {
         }
 
         // Adjust the remaining memory.
-        remainingMemory = remainingMemory - acceptedRows * rowWidth;
+        remainingMemory = remainingMemory - (long) acceptedRows * rowWidth;
 
         // This is the very last transmission iff the whole last batch is consumed.
         boolean lastTransmit = last && currentPosition == batch.getRowCount();
@@ -168,7 +176,7 @@ public class Outbox extends AbstractMailbox implements OutboundHandler {
         boolean success = operationChannel.submit(op);
 
         if (!success) {
-            throw HazelcastSqlException.memberLeave(targetMemberId);
+            throw HazelcastSqlException.memberConnection(targetMemberId);
         }
 
         rows = null;

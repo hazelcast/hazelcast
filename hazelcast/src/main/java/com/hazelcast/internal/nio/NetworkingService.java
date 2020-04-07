@@ -51,13 +51,13 @@ public interface NetworkingService<T extends Connection> {
      * as a facade to hide the API differences and maintain common signatures.
      * eg.
      * {@link com.hazelcast.instance.ProtocolType#MEMBER} -&gt;
-     * {@link com.hazelcast.internal.nio.tcp.MemberViewUnifiedEndpointManager}
+     * {@link com.hazelcast.internal.nio.server.MemberViewUnifiedEndpointManager}
      * {@link com.hazelcast.instance.ProtocolType#CLIENT} -&gt;
-     * {@link com.hazelcast.internal.nio.tcp.ClientViewUnifiedEndpointManager}
+     * {@link com.hazelcast.internal.nio.server.ClientViewUnifiedEndpointManager}
      * {@link com.hazelcast.instance.ProtocolType#REST} -&gt;
-     * {@link com.hazelcast.internal.nio.tcp.TextViewUnifiedEndpointManager}
+     * {@link com.hazelcast.internal.nio.server.TextViewUnifiedEndpointManager}
      * {@link com.hazelcast.instance.ProtocolType#MEMCACHE} -&gt;
-     * {@link com.hazelcast.internal.nio.tcp.TextViewUnifiedEndpointManager}
+     * {@link com.hazelcast.internal.nio.server.TextViewUnifiedEndpointManager}
      */
     EndpointManager<T> getEndpointManager(EndpointQualifier qualifier);
 

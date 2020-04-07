@@ -47,6 +47,8 @@ public class ReceiveExec extends AbstractExec {
         InboundBatch batch = inbox.poll();
 
         if (batch == null) {
+            curBatch = null;
+
             return IterationResult.WAIT;
         }
 
@@ -63,5 +65,9 @@ public class ReceiveExec extends AbstractExec {
     @Override
     public boolean canReset() {
         return false;
+    }
+
+    public Inbox getInbox() {
+        return inbox;
     }
 }

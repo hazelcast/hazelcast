@@ -48,7 +48,7 @@ public class AbstractExecTest extends SqlTestSupport {
 
         assertSame(context, exec.propagatedContext);
 
-        // Advance management
+        // Advance management.
         for (IterationResult result : IterationResult.values()) {
             if (result == IterationResult.FETCHED_DONE) {
                 continue;

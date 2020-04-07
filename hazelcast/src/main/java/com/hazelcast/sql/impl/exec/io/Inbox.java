@@ -43,7 +43,7 @@ public class Inbox extends AbstractInbox {
     }
 
     @Override
-    public void onBatch0(InboundBatch batch) {
+    protected void onBatch0(InboundBatch batch) {
         batches.addLast(batch);
     }
 
@@ -57,6 +57,6 @@ public class Inbox extends AbstractInbox {
 
     @Override
     public String toString() {
-        return "SingleInbox {queryId=" + queryId + ", edgeId=" + edgeId + "}";
+        return "Inbox {queryId=" + queryId + ", edgeId=" + edgeId + "}";
     }
 }

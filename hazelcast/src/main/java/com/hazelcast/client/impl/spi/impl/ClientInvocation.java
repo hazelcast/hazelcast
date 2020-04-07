@@ -28,6 +28,7 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.executionservice.TaskScheduler;
 import com.hazelcast.spi.impl.operationservice.impl.BaseInvocation;
 import com.hazelcast.spi.impl.sequence.CallIdSequence;
@@ -37,7 +38,6 @@ import java.util.UUID;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
-import java.util.function.BiFunction;
 
 import static com.hazelcast.internal.util.Clock.currentTimeMillis;
 import static com.hazelcast.internal.util.StringUtil.timeToString;
@@ -74,7 +74,6 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
     private volatile long invocationTimeoutMillis;
     private boolean urgent;
     private boolean allowRetryOnRandom = true;
-    private BiFunction<ClientInvocation, Object, Boolean> invocationMethod;
 
     protected ClientInvocation(HazelcastClientInstanceImpl client,
                                ClientMessage clientMessage,
@@ -345,6 +344,13 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
 
     private boolean shouldRetry(Throwable t) {
         if (isBindToSingleConnection() && (t instanceof IOException || t instanceof TargetDisconnectedException)) {
+            return false;
+        }
+
+        if (uuid != null && t instanceof TargetNotMemberException) {
+            //when invocation send to a specific member
+            //if target is no longer a member, we should not retry
+            //note that this exception could come from the server
             return false;
         }
 

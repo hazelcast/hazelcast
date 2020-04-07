@@ -265,13 +265,14 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
     }
 
     @Override
-    public MapOperation createPutAllOperation(String name, MapEntries mapEntries) {
-        return new PutAllOperation(name, mapEntries);
+    public MapOperation createPutAllOperation(String name, MapEntries mapEntries, boolean triggerMapLoader) {
+        return new PutAllOperation(name, mapEntries, triggerMapLoader);
     }
 
     @Override
-    public OperationFactory createPutAllOperationFactory(String name, int[] partitions, MapEntries[] mapEntries) {
-        return new PutAllPartitionAwareOperationFactory(name, partitions, mapEntries);
+    public OperationFactory createPutAllOperationFactory(String name, int[] partitions,
+                                                         MapEntries[] mapEntries, boolean triggerMapLoader) {
+        return new PutAllPartitionAwareOperationFactory(name, partitions, mapEntries, triggerMapLoader);
     }
 
     @Override

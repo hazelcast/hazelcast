@@ -25,20 +25,20 @@ import com.hazelcast.sql.impl.exec.agg.AggregateExec;
 import com.hazelcast.sql.impl.exec.fetch.FetchExec;
 import com.hazelcast.sql.impl.exec.index.MapIndexScanExec;
 import com.hazelcast.sql.impl.exec.io.BroadcastSendExec;
-import com.hazelcast.sql.impl.exec.io.ReceiveExec;
-import com.hazelcast.sql.impl.exec.io.ReceiveSortMergeExec;
-import com.hazelcast.sql.impl.exec.io.SendExec;
-import com.hazelcast.sql.impl.exec.io.UnicastSendExec;
-import com.hazelcast.sql.impl.exec.join.HashJoinExec;
-import com.hazelcast.sql.impl.exec.join.NestedLoopJoinExec;
-import com.hazelcast.sql.impl.exec.root.RootExec;
 import com.hazelcast.sql.impl.exec.io.InboundHandler;
 import com.hazelcast.sql.impl.exec.io.Inbox;
 import com.hazelcast.sql.impl.exec.io.OutboundHandler;
 import com.hazelcast.sql.impl.exec.io.Outbox;
+import com.hazelcast.sql.impl.exec.io.ReceiveExec;
+import com.hazelcast.sql.impl.exec.io.ReceiveSortMergeExec;
+import com.hazelcast.sql.impl.exec.io.SendExec;
 import com.hazelcast.sql.impl.exec.io.StripedInbox;
+import com.hazelcast.sql.impl.exec.io.UnicastSendExec;
 import com.hazelcast.sql.impl.exec.io.flowcontrol.FlowControl;
-import com.hazelcast.sql.impl.exec.io.flowcontrol.simple.SimpleFlowControl;
+import com.hazelcast.sql.impl.exec.io.flowcontrol.FlowControlFactory;
+import com.hazelcast.sql.impl.exec.join.HashJoinExec;
+import com.hazelcast.sql.impl.exec.join.NestedLoopJoinExec;
+import com.hazelcast.sql.impl.exec.root.RootExec;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperationFragment;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperationFragmentMapping;
@@ -71,7 +71,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
- /**
+/**
  * Visitor which builds an executor for every observed physical node.
  */
  @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "ClassFanOutComplexity"})
@@ -90,6 +90,9 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
 
     /** Operation. */
     private final QueryExecuteOperation operation;
+
+    /** Factory to create flow control objects. */
+    private final FlowControlFactory flowControlFactory;
 
     /** Partitions owned by this data node. */
     private final PartitionIdSet localParts;
@@ -115,6 +118,7 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
         InternalSerializationService serializationService,
         UUID localMemberId,
         QueryExecuteOperation operation,
+        FlowControlFactory flowControlFactory,
         PartitionIdSet localParts,
         int outboxBatchSize
     ) {
@@ -123,6 +127,7 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
         this.serializationService = serializationService;
         this.localMemberId = localMemberId;
         this.operation = operation;
+        this.flowControlFactory = flowControlFactory;
         this.localParts = localParts;
         this.outboxBatchSize = outboxBatchSize;
     }
@@ -154,7 +159,7 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
             operationHandler,
             operation.getQueryId(),
             edgeId,
-            sendFragment.getNode().getSchema().getEstimatedRowSize(),
+            node.getSchema().getEstimatedRowSize(),
             localMemberId,
             fragmentMemberCount,
             createFlowControl(edgeId)
@@ -272,7 +277,8 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
 
         for (UUID receiveMemberId : receiveFragmentMemberIds) {
             Outbox outbox = new Outbox(
-                operationHandler, operation.getQueryId(),
+                operationHandler,
+                operation.getQueryId(),
                 edgeId,
                 rowWidth,
                 localMemberId,
@@ -502,7 +508,7 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
     }
 
     public Map<Integer, Map<UUID, OutboundHandler>> getOutboxes() {
-         return outboxes;
+        return outboxes;
     }
 
     /**
@@ -520,9 +526,9 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
     }
 
     private FlowControl createFlowControl(int edgeId) {
-        long maxMemory = operation.getEdgeInitialMemoryMap().get(edgeId);
+        long initialMemory = operation.getEdgeInitialMemoryMap().get(edgeId);
 
-        return new SimpleFlowControl(maxMemory);
+        return flowControlFactory.create(initialMemory);
     }
 
     private Collection<UUID> getFragmentMembers(QueryExecuteOperationFragment fragment) {

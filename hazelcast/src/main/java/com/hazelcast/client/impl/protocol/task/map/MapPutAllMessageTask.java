@@ -47,7 +47,8 @@ public class MapPutAllMessageTask
     protected Operation prepareOperation() {
         MapEntries mapEntries = new MapEntries(parameters.entries);
         MapOperationProvider operationProvider = getMapOperationProvider(parameters.name);
-        return operationProvider.createPutAllOperation(parameters.name, mapEntries);
+        boolean triggerMapLoader = !parameters.isTriggerMapLoaderExists || parameters.triggerMapLoader;
+        return operationProvider.createPutAllOperation(parameters.name, mapEntries, triggerMapLoader);
     }
 
     @Override

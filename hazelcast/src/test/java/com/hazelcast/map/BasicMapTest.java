@@ -27,6 +27,7 @@ import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryExpiredListener;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
@@ -69,6 +70,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static java.util.Collections.emptyMap;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -1034,6 +1038,60 @@ public class BasicMapTest extends HazelcastTestSupport {
         for (int i = 0; i < size; i++) {
             assertEquals(i, map.get(i).intValue());
         }
+    }
+
+    @Test
+    public void testSetAll() {
+        int max = 10000;
+        final IMap<Integer, Integer> map = instances[0].getMap(randomString());
+
+        final CountDownLatch latch = new CountDownLatch(max);
+        map.addEntryListener((EntryAddedListener<Integer, Integer>) event -> latch.countDown(), true);
+
+        final Map<Integer, Integer> expected = IntStream.range(0, max).boxed()
+            .collect(Collectors.toMap(Function.identity(), Function.identity()));
+        map.setAll(expected);
+
+        assertEquals(max, map.size());
+        expected.keySet().forEach(i -> assertEquals(i, map.get(i)));
+        assertOpenEventually(latch);
+    }
+
+    @Test
+    public void testSetAll_WhenKeyExists() {
+        int max = 100;
+        final IMap<Integer, Integer> map = instances[0].getMap(randomString());
+        IntStream.range(0, max).forEach(i -> map.put(i, 0));
+        assertEquals(max, map.size());
+
+        final CountDownLatch latch = new CountDownLatch(max);
+        map.addEntryListener((EntryAddedListener<Integer, Integer>) event -> latch.countDown(), true);
+
+        final Map<Integer, Integer> expected = IntStream.range(0, max).boxed()
+            .collect(Collectors.toMap(Function.identity(), Function.identity()));
+        map.setAll(expected);
+
+        assertEquals(max, map.size());
+        expected.keySet().forEach(i -> assertEquals(i, map.get(i)));
+        assertOpenEventually(latch);
+    }
+
+    @Test
+    public void testSetAllAsync() {
+        int max = 100;
+        final IMap<Integer, Integer> map = instances[0].getMap(randomString());
+
+        final CountDownLatch latch = new CountDownLatch(max);
+        map.addEntryListener((EntryAddedListener<Integer, Integer>) event -> latch.countDown(), true);
+
+        final Map<Integer, Integer> expected = IntStream.range(0, max).boxed()
+            .collect(Collectors.toMap(Function.identity(), Function.identity()));
+        final Future<Void> future = map.setAllAsync(expected).toCompletableFuture();
+
+        assertEqualsEventually(future::isDone, true);
+        assertEquals(max, map.size());
+        expected.keySet().forEach(i -> assertEquals(i, map.get(i)));
+        assertOpenEventually(latch);
     }
 
     @Test

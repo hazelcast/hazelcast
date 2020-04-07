@@ -102,4 +102,12 @@ public class RootExec extends AbstractUpstreamAwareExec {
     public boolean canReset() {
         return false;
     }
+
+    public RootResultConsumer getConsumer() {
+        return consumer;
+    }
+
+    public int getBatchSize() {
+        return batchSize;
+    }
 }

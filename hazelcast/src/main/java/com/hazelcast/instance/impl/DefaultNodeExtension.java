@@ -73,10 +73,10 @@ import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.nio.IOService;
-import com.hazelcast.internal.nio.tcp.DefaultChannelInitializerProvider;
-import com.hazelcast.internal.nio.tcp.PacketDecoder;
-import com.hazelcast.internal.nio.tcp.PacketEncoder;
-import com.hazelcast.internal.nio.tcp.TcpIpConnection;
+import com.hazelcast.internal.nio.server.DefaultChannelInitializerProvider;
+import com.hazelcast.internal.nio.server.PacketDecoder;
+import com.hazelcast.internal.nio.server.PacketEncoder;
+import com.hazelcast.internal.nio.server.ServerConnection;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
@@ -302,7 +302,7 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public InboundHandler[] createInboundHandlers(EndpointQualifier qualifier,
-            TcpIpConnection connection, IOService ioService) {
+                                                  ServerConnection connection, IOService ioService) {
         NodeEngineImpl nodeEngine = node.nodeEngine;
         PacketDecoder decoder = new PacketDecoder(connection, nodeEngine.getPacketDispatcher());
         return new InboundHandler[]{decoder};
@@ -310,7 +310,7 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public OutboundHandler[] createOutboundHandlers(EndpointQualifier qualifier,
-            TcpIpConnection connection, IOService ioService) {
+                                                    ServerConnection connection, IOService ioService) {
         return new OutboundHandler[]{new PacketEncoder()};
     }
 

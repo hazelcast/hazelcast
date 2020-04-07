@@ -19,6 +19,8 @@ package com.hazelcast.sql.impl.plan.node.io;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import com.hazelcast.sql.impl.plan.node.PlanNodeVisitor;
 import com.hazelcast.sql.impl.plan.node.ZeroInputPlanNode;
@@ -29,9 +31,9 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Physical node which receives from remote stripes.
+ * Physical node which receives from remote stripes. The node carries the schema (field types).
  */
-public class ReceivePlanNode extends ZeroInputPlanNode implements EdgeAwarePlanNode {
+public class ReceivePlanNode extends ZeroInputPlanNode implements EdgeAwarePlanNode, IdentifiedDataSerializable {
     /** Edge ID. */
     private int edgeId;
 
@@ -65,6 +67,16 @@ public class ReceivePlanNode extends ZeroInputPlanNode implements EdgeAwarePlanN
     }
 
     @Override
+    public int getFactoryId() {
+        return SqlDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return SqlDataSerializerHook.NODE_RECEIVE;
+    }
+
+    @Override
     public PlanNodeSchema getSchema0() {
         return new PlanNodeSchema(fieldTypes);
     }
@@ -83,7 +95,7 @@ public class ReceivePlanNode extends ZeroInputPlanNode implements EdgeAwarePlanN
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, edgeId);
+        return Objects.hash(id, edgeId, fieldTypes);
     }
 
     @Override
@@ -98,11 +110,11 @@ public class ReceivePlanNode extends ZeroInputPlanNode implements EdgeAwarePlanN
 
         ReceivePlanNode that = (ReceivePlanNode) o;
 
-        return id == that.id && edgeId == that.edgeId;
+        return id == that.id && edgeId == that.edgeId && fieldTypes.equals(that.fieldTypes);
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{id=" + id + ", edgeId=" + edgeId + '}';
+        return getClass().getSimpleName() + "{id=" + id + ", edgeId=" + edgeId + ", fieldTypes=" + fieldTypes + '}';
     }
 }

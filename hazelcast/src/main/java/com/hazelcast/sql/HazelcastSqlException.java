@@ -91,6 +91,10 @@ public final class HazelcastSqlException extends HazelcastException {
         return new HazelcastSqlException(code, message, null, originatingMemberId);
     }
 
+    public static HazelcastSqlException memberConnection(UUID memberId) {
+        return error(SqlErrorCode.MEMBER_CONNECTION, "Connection to member is broken: " + memberId);
+    }
+
     public static HazelcastSqlException memberLeave(UUID memberId) {
         return error(SqlErrorCode.MEMBER_LEAVE, "Participating member has left the topology: " + memberId);
     }

@@ -24,8 +24,8 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.TestUtil;
 import com.hazelcast.internal.partition.TestPartitionUtils;
 import com.hazelcast.internal.partition.impl.PartitionServiceState;
-import com.hazelcast.internal.nio.tcp.FirewallingNetworkingService;
-import com.hazelcast.internal.nio.tcp.TcpIpNetworkingService;
+import com.hazelcast.internal.nio.server.FirewallingNetworkingService;
+import com.hazelcast.internal.nio.server.ServerNetworkingService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.SlowTest;
@@ -110,7 +110,7 @@ public class HazelcastStarterTest {
         if (supportsFirewallingConnectionManager) {
             assertInstanceOf(FirewallingNetworkingService.class, node.getNetworkingService());
         } else {
-            assertInstanceOf(TcpIpNetworkingService.class, node.getNetworkingService());
+            assertInstanceOf(ServerNetworkingService.class, node.getNetworkingService());
         }
     }
 

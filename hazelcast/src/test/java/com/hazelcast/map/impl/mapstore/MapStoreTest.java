@@ -1017,6 +1017,26 @@ public class MapStoreTest extends AbstractMapStoreTest {
         });
     }
 
+    @Test
+    public void testMapListener_doesNotContainOldValue_afterSetAll() {
+        Config config = newConfig(new SimpleMapStore<Integer, Integer>());
+
+        HazelcastInstance instance = createHazelcastInstance(config);
+        IMap<Integer, Integer> map = instance.getMap(randomName());
+
+        // 1. first value is 1
+        map.put(1, 1);
+
+        final AtomicReference<Integer> oldValue = new AtomicReference<>();
+        map.addEntryListener((EntryUpdatedListener<Integer, Integer>) event -> oldValue.set(event.getOldValue()), true);
+
+        // 2. second value is 2
+        map.setAll(Collections.singletonMap(1, 2));
+
+        // expect oldValue is null
+        assertTrueEventually(() -> assertNull(oldValue.get()));
+    }
+
     public Config newConfig(Object storeImpl) {
         return newConfig("default", storeImpl, 0, MapStoreConfig.InitialLoadMode.LAZY);
     }

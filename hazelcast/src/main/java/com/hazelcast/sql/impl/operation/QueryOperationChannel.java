@@ -24,7 +24,7 @@ public interface QueryOperationChannel {
      * Submit operation for execution. Order of execution is preserved across invocations.
      *
      * @param operation Operation.
-     * @return {@code True} if operation was submitted for execution successfully, {@code false} if the channel is broken.
+     * @return {@code true} if operation was submitted for execution successfully, {@code false} if the channel is broken.
      */
     boolean submit(QueryOperation operation);
 }

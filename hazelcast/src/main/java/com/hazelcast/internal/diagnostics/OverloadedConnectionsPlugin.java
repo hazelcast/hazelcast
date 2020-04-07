@@ -22,7 +22,7 @@ import com.hazelcast.internal.networking.nio.NioOutboundPipeline;
 import com.hazelcast.internal.nio.AggregateEndpointManager;
 import com.hazelcast.internal.nio.NetworkingService;
 import com.hazelcast.internal.nio.Packet;
-import com.hazelcast.internal.nio.tcp.TcpIpConnection;
+import com.hazelcast.internal.nio.server.ServerConnection;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -116,8 +116,8 @@ public class OverloadedConnectionsPlugin extends DiagnosticsPlugin {
     public void run(DiagnosticsLogWriter writer) {
         writer.startSection("OverloadedConnections");
 
-        Collection<TcpIpConnection> connections = getTcpIpConnections();
-        for (TcpIpConnection connection : connections) {
+        Collection<ServerConnection> connections = getTcpIpConnections();
+        for (ServerConnection connection : connections) {
             clear();
             scan(writer, connection, false);
 
@@ -128,13 +128,13 @@ public class OverloadedConnectionsPlugin extends DiagnosticsPlugin {
         writer.endSection();
     }
 
-    private Collection<TcpIpConnection> getTcpIpConnections() {
+    private Collection<ServerConnection> getTcpIpConnections() {
         NetworkingService networkingService = nodeEngine.getNode().getNetworkingService();
         AggregateEndpointManager endpointManager = networkingService.getAggregateEndpointManager();
         return endpointManager.getActiveConnections();
     }
 
-    private void scan(DiagnosticsLogWriter writer, TcpIpConnection connection, boolean priority) {
+    private void scan(DiagnosticsLogWriter writer, ServerConnection connection, boolean priority) {
         Queue<OutboundFrame> q = getOutboundQueue(connection, priority);
 
         int sampleCount = sample(q);
@@ -145,7 +145,7 @@ public class OverloadedConnectionsPlugin extends DiagnosticsPlugin {
         render(writer, connection, priority, sampleCount);
     }
 
-    private Queue<OutboundFrame> getOutboundQueue(TcpIpConnection connection, boolean priority) {
+    private Queue<OutboundFrame> getOutboundQueue(ServerConnection connection, boolean priority) {
         if (connection.getChannel() instanceof NioChannel) {
             NioChannel nioChannel = (NioChannel) connection.getChannel();
             NioOutboundPipeline outboundPipeline = nioChannel.outboundPipeline();
@@ -155,7 +155,7 @@ public class OverloadedConnectionsPlugin extends DiagnosticsPlugin {
         }
     }
 
-    private void render(DiagnosticsLogWriter writer, TcpIpConnection connection, boolean priority, int sampleCount) {
+    private void render(DiagnosticsLogWriter writer, ServerConnection connection, boolean priority, int sampleCount) {
         writer.startSection(connection.toString());
 
         writer.writeKeyValueEntry(priority ? "urgentPacketCount" : "packetCount", packets.size());

@@ -18,6 +18,7 @@ package com.hazelcast.internal.nio;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.networking.OutboundFrame;
+import com.hazelcast.internal.nio.server.ServerConnection;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -25,7 +26,7 @@ import java.security.cert.Certificate;
 
 /**
  * Represents a 'connection' between two machines. The most important implementation is the
- * {@link com.hazelcast.internal.nio.tcp.TcpIpConnection}.
+ * {@link ServerConnection}.
  */
 public interface Connection {
 
@@ -127,8 +128,9 @@ public interface Connection {
 
     /**
      * Writes an outbound frame so it can be received by the other side of the connection. Frame delivery is ordered
-     * with respect to other calls to this method of the same connection instance. No guarantees are made that the frame
-     * is going to be received on the other side.
+     * with respect to other calls to this method on the same connection instance. No guarantees are made that the frame
+     * is going to be received on the other side. However, if the frame is delivered, then all previous ordered frames
+     * sent through the same connection instance is guaranteed to be delivered.
      * <p>
      * The frame could be stored in an internal queue before it actually is written, so this call
      * does not need to be a synchronous call.

@@ -32,10 +32,7 @@ public abstract class AbstractInbox extends AbstractMailbox implements InboundHa
     /** Remaining active sources. */
     private int remainingStreams;
 
-    /** Parent service. */
     private final QueryOperationHandler operationHandler;
-
-    /** Backpressure control. */
     private final FlowControl flowControl;
 
     protected AbstractInbox(
@@ -102,13 +99,21 @@ public abstract class AbstractInbox extends AbstractMailbox implements InboundHa
     }
 
     /**
-     * @return {@code True} if no more incoming batches are expected.
+     * @return {@code true} if no more incoming batches are expected.
      */
     public boolean closed() {
         return enqueuedBatches == 0 && remainingStreams == 0;
     }
 
+    public int getRemainingStreams() {
+        return remainingStreams;
+    }
+
+    public FlowControl getFlowControl() {
+        return flowControl;
+    }
+
     private long getBatchSize(InboundBatch batch) {
-        return batch.getBatch().getRowCount() * rowWidth;
+        return (long) batch.getBatch().getRowCount() * rowWidth;
     }
 }

@@ -19,7 +19,7 @@ package com.hazelcast.internal.nio.ascii;
 import com.hazelcast.config.RestApiConfig;
 import com.hazelcast.config.RestEndpointGroup;
 import com.hazelcast.internal.ascii.rest.HttpCommandProcessor;
-import com.hazelcast.internal.nio.tcp.TcpIpConnection;
+import com.hazelcast.internal.nio.server.ServerConnection;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 
@@ -42,7 +42,7 @@ public class RestApiFilter implements TextProtocolFilter {
     }
 
     @Override
-    public void filterConnection(String commandLine, TcpIpConnection connection) {
+    public void filterConnection(String commandLine, ServerConnection connection) {
         RestEndpointGroup restEndpointGroup = getEndpointGroup(commandLine);
         if (restEndpointGroup != null) {
             if (!restApiConfig.isGroupEnabled(restEndpointGroup)) {

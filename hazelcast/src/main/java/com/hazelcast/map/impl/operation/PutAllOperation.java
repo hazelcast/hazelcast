@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapEntries;
@@ -24,6 +25,7 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -44,13 +46,14 @@ import static com.hazelcast.map.impl.record.Record.UNSET;
  * local {@link com.hazelcast.map.impl.recordstore.RecordStore}.
  * <p>
  * Used to reduce the number of remote invocations
- * of an {@link IMap#putAll(Map)} call.
+ * of an {@link IMap#putAll(Map)} or {@link IMap#setAll(Map)} call.
  */
 public class PutAllOperation extends MapOperation
-        implements PartitionAwareOperation, BackupAwareOperation, MutatingOperation {
+        implements PartitionAwareOperation, BackupAwareOperation, MutatingOperation, Versioned {
 
     private transient int currentIndex;
     private MapEntries mapEntries;
+    private boolean triggerMapLoader;
 
     private transient boolean hasMapListener;
     private transient boolean hasWanReplication;
@@ -63,9 +66,10 @@ public class PutAllOperation extends MapOperation
     public PutAllOperation() {
     }
 
-    public PutAllOperation(String name, MapEntries mapEntries) {
+    public PutAllOperation(String name, MapEntries mapEntries, boolean triggerMapLoader) {
         super(name);
         this.mapEntries = mapEntries;
+        this.triggerMapLoader = triggerMapLoader;
     }
 
     @Override
@@ -132,11 +136,12 @@ public class PutAllOperation extends MapOperation
     /**
      * The method recordStore.put() tries to fetch the old value from
      * the MapStore, which can lead to a serious performance degradation
-     * if loading from MapStore is expensive. We prevent this by
-     * calling recordStore.set() if no map listeners are registered.
+     * if loading from MapStore is expensive. Only call recordStore.put()
+     * when requested by user and there are map listeners are registered.
+     * Otherwise call recordStore.set()
      */
     private Object putToRecordStore(Data dataKey, Data dataValue) {
-        if (hasMapListener) {
+        if (triggerMapLoader && hasMapListener) {
             return recordStore.put(dataKey, dataValue, UNSET, UNSET);
         }
         recordStore.set(dataKey, dataValue, UNSET, UNSET);
@@ -211,12 +216,20 @@ public class PutAllOperation extends MapOperation
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeObject(mapEntries);
+        if (out.getVersion().isGreaterOrEqual(Versions.V4_1)) {
+            out.writeBoolean(triggerMapLoader);
+        }
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         mapEntries = in.readObject();
+        if (in.getVersion().isGreaterOrEqual(Versions.V4_1)) {
+            triggerMapLoader = in.readBoolean();
+        } else {
+            triggerMapLoader = true;
+        }
     }
 
     @Override

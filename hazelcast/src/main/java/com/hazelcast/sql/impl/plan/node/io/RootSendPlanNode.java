@@ -18,6 +18,8 @@ package com.hazelcast.sql.impl.plan.node.io;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.plan.node.PlanNode;
 import com.hazelcast.sql.impl.plan.node.PlanNodeVisitor;
 import com.hazelcast.sql.impl.plan.node.UniInputPlanNode;
@@ -28,7 +30,7 @@ import java.util.Objects;
 /**
  * Node that sends data to the root fragment.
  */
-public class RootSendPlanNode extends UniInputPlanNode implements EdgeAwarePlanNode {
+public class RootSendPlanNode extends UniInputPlanNode implements EdgeAwarePlanNode, IdentifiedDataSerializable {
     /** Edge ID. */
     private int edgeId;
 
@@ -55,6 +57,16 @@ public class RootSendPlanNode extends UniInputPlanNode implements EdgeAwarePlanN
     @Override
     public void visit0(PlanNodeVisitor visitor) {
         visitor.onRootSendNode(this);
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SqlDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return SqlDataSerializerHook.NODE_ROOT_SEND;
     }
 
     @Override

@@ -41,4 +41,20 @@ public abstract class AbstractMailbox {
         this.rowWidth = rowWidth;
         this.localMemberId = localMemberId;
     }
+
+    public QueryId getQueryId() {
+        return queryId;
+    }
+
+    public int getEdgeId() {
+        return edgeId;
+    }
+
+    public int getRowWidth() {
+        return rowWidth;
+    }
+
+    public UUID getLocalMemberId() {
+        return localMemberId;
+    }
 }

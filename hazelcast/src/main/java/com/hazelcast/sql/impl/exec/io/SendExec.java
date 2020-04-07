@@ -21,7 +21,7 @@ import com.hazelcast.sql.impl.row.RowBatch;
 import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 
 /**
- * Sender which communicates with a single outbox.
+ * Sender that communicates with a single outbox.
  */
 public class SendExec extends AbstractSendExec {
 
@@ -77,6 +77,10 @@ public class SendExec extends AbstractSendExec {
 
             return false;
         }
+    }
+
+    public Outbox getOutbox() {
+        return outbox;
     }
 
     private AlwaysTrueOutboxSendQualifier getOutboxQualifier() {
