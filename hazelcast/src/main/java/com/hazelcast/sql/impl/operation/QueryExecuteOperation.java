@@ -49,7 +49,7 @@ public class QueryExecuteOperation extends QueryAbstractIdAwareOperation {
     /** Inbound edge mapping (from edge ID to owning fragment position). */
     private Map<Integer, Integer> inboundEdgeMap;
 
-    /** Map from edge ID to initial emory assigned to senders. */
+    /** Map from edge ID to initial memory assigned to senders. */
     private Map<Integer, Long> edgeInitialMemoryMap;
 
     private List<Object> arguments;

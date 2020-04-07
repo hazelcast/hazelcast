@@ -43,8 +43,10 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITIONS_METRIC_PARTITION_REPLICA_STATE_MANAGER_ACTIVE_PARTITION_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITIONS_METRIC_PARTITION_REPLICA_STATE_MANAGER_LOCAL_PARTITION_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITIONS_METRIC_PARTITION_REPLICA_STATE_MANAGER_MEMBER_GROUP_SIZE;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITIONS_METRIC_PARTITION_REPLICA_STATE_MANAGER_PARTITION_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITIONS_METRIC_PARTITION_REPLICA_STATE_MANAGER_VERSION;
 
 /**
@@ -56,6 +58,7 @@ public class PartitionStateManager {
     private final ILogger logger;
     private final InternalPartitionServiceImpl partitionService;
 
+    @Probe(name = PARTITIONS_METRIC_PARTITION_REPLICA_STATE_MANAGER_PARTITION_COUNT)
     private final int partitionCount;
     private final InternalPartitionImpl[] partitions;
 
@@ -101,6 +104,11 @@ public class PartitionStateManager {
             }
         }
         return count;
+    }
+
+    @Probe(name = PARTITIONS_METRIC_PARTITION_REPLICA_STATE_MANAGER_ACTIVE_PARTITION_COUNT)
+    private int activePartitionCount() {
+        return partitionService.getMemberPartitionsIfAssigned(node.getThisAddress()).size();
     }
 
     private Collection<MemberGroup> createMemberGroups(final Set<Member> excludedMembers) {

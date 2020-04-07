@@ -111,6 +111,10 @@ public final class HazelcastSqlException extends HazelcastException {
         return error(SqlErrorCode.CANCELLED_BY_USER, "Query was cancelled by user");
     }
 
+    public static HazelcastSqlException memberConnection(UUID memberId) {
+        return error(SqlErrorCode.MEMBER_CONNECTION, "Connection to member is broken: " + memberId);
+    }
+
     /**
      * @return Code of the exception.
      */
