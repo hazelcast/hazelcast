@@ -37,7 +37,7 @@ public class SimpleFlowControl implements FlowControl {
     private final long maxMemory;
 
     /** Low memory threshold in percents. */
-    private final double lwmPercentage;
+    private final double thresholdPercentage;
 
     private QueryId queryId;
     private int edgeId;
@@ -49,9 +49,9 @@ public class SimpleFlowControl implements FlowControl {
     /** Remote streams that should be notified. */
     private HashMap<UUID, SimpleFlowControlStream> pendingStreams;
 
-    public SimpleFlowControl(long maxMemory, double lwmPercentage) {
+    public SimpleFlowControl(long maxMemory, double thresholdPercentage) {
         this.maxMemory = maxMemory;
-        this.lwmPercentage = lwmPercentage;
+        this.thresholdPercentage = thresholdPercentage;
     }
 
     @Override
@@ -145,8 +145,8 @@ public class SimpleFlowControl implements FlowControl {
         return maxMemory;
     }
 
-    public double getLwmPercentage() {
-        return lwmPercentage;
+    public double getThresholdPercentage() {
+        return thresholdPercentage;
     }
 
     /**
@@ -175,6 +175,6 @@ public class SimpleFlowControl implements FlowControl {
      * @return {@code true} if below the watermark.
      */
     private boolean isLowMemory(long availableMemory) {
-        return ((double) availableMemory) / maxMemory <= lwmPercentage;
+        return ((double) availableMemory) / maxMemory <= thresholdPercentage;
     }
 }
