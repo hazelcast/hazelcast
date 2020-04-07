@@ -29,7 +29,7 @@ repositories {
 }
 
 dependencies {
-    compile 'com.hazelcast.azure:hazelcast-azure:${hazelcast-azure-version}'
+    compile 'com.hazelcast:hazelcast-azure:${hazelcast-azure-version}'
 }
 ```
 
@@ -38,7 +38,7 @@ For Maven:
 ```xml
 <dependencies>
     <dependency>
-        <groupId>com.hazelcast.azure</groupId>
+        <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-azure</artifactId>
         <version>${hazelcast-azure-version}</version>
     </dependency>
