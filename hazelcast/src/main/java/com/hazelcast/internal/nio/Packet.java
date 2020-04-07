@@ -308,11 +308,11 @@ public final class Packet extends HeapData implements OutboundFrame {
          */
         MEMBER_HANDSHAKE,
         /**
-         * Unused packet type. Available for future use.
+         * The type of an SQL packet.
          * <p>
          * {@code ordinal = 5}
          */
-        UNDEFINED5,
+        SQL,
         /**
          * Unused packet type. Available for future use.
          * <p>
@@ -324,7 +324,7 @@ public final class Packet extends HeapData implements OutboundFrame {
          * <p>
          * {@code ordinal = 7}
          */
-        SQL;
+        UNDEFINED7;
 
         final char headerEncoding;
 

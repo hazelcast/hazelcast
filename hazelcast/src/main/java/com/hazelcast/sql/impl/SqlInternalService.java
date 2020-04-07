@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl;
 
 import com.hazelcast.config.SqlConfig;
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.client.QueryClientStateRegistry;
 import com.hazelcast.sql.impl.exec.root.BlockingRootResultConsumer;
@@ -44,8 +44,8 @@ public class SqlInternalService {
     /** Default state check frequency. */
     public static final long STATE_CHECK_FREQUENCY = 2000L;
 
-    /** Node engine. */
-    private final NodeEngineImpl nodeEngine;
+    /** Node service provider. */
+    private final NodeServiceProvider nodeServiceProvider;
 
     /** Global memory manager. */
     private final GlobalMemoryReservationManager memoryManager;
@@ -62,10 +62,13 @@ public class SqlInternalService {
     /** State registry updater. */
     private final QueryStateRegistryUpdater stateRegistryUpdater;
 
-    public SqlInternalService(NodeEngineImpl nodeEngine) {
-        this.nodeEngine = nodeEngine;
-
-        SqlConfig config = nodeEngine.getConfig().getSqlConfig();
+    public SqlInternalService(
+        SqlConfig config,
+        String instanceName,
+        NodeServiceProvider nodeServiceProvider,
+        InternalSerializationService serializationService
+    ) {
+        this.nodeServiceProvider = nodeServiceProvider;
 
         // Memory manager is created first.
         memoryManager = new GlobalMemoryReservationManager(config.getMaxMemory());
@@ -76,7 +79,9 @@ public class SqlInternalService {
 
         // Operation handler depends on state registry.
         operationHandler = new QueryOperationHandlerImpl(
-            nodeEngine,
+            instanceName,
+            nodeServiceProvider,
+            serializationService,
             stateRegistry,
             config.getThreadCount(),
             config.getOperationThreadCount()
@@ -84,6 +89,7 @@ public class SqlInternalService {
 
         // State checker depends on state registries and operation handler.
         stateRegistryUpdater = new QueryStateRegistryUpdater(
+            nodeServiceProvider,
             stateRegistry,
             clientStateRegistry,
             operationHandler,
@@ -92,11 +98,7 @@ public class SqlInternalService {
     }
 
     public void start() {
-        UUID localMemberId = nodeEngine.getLocalMember().getUuid();
-
-        stateRegistry.start(localMemberId);
-        stateRegistryUpdater.start(nodeEngine.getClusterService(), nodeEngine.getHazelcastInstance().getClientService());
-        operationHandler.start(localMemberId);
+        stateRegistryUpdater.start();
     }
 
     public void reset() {
@@ -139,6 +141,13 @@ public class SqlInternalService {
             params.set(i, value);
         }
 
+        // Get local member ID and check if it is still part of the plan.
+        UUID localMemberId = nodeServiceProvider.getLocalMemberId();
+
+        if (!plan.getPartitionMap().containsKey(localMemberId)) {
+            throw HazelcastSqlException.memberLeave(localMemberId);
+        }
+
         // Prepare mappings.
         QueryExecuteOperationFactory operationFactory = new QueryExecuteOperationFactory(
             plan,
@@ -151,6 +160,7 @@ public class SqlInternalService {
         BlockingRootResultConsumer consumer = new BlockingRootResultConsumer();
 
         QueryState state = stateRegistry.onInitiatorQueryStarted(
+            localMemberId,
             timeout,
             plan,
             plan.getMetadata(),
@@ -161,26 +171,24 @@ public class SqlInternalService {
 
         try {
             // Start execution on local member.
-            UUID localMemberId = nodeEngine.getLocalMember().getUuid();
-
             QueryExecuteOperation localOp = operationFactory.create(state.getQueryId(), localMemberId);
 
             localOp.setRootConsumer(consumer, pageSize);
 
-            operationHandler.submit(localMemberId, localOp);
+            operationHandler.submitLocal(localMemberId, localOp);
 
             // Start execution on remote members.
             for (int i = 0; i < plan.getDataMemberIds().size(); i++) {
-                UUID memberId = plan.getDataMemberIds().get(i);
+                UUID remoteMemberId = plan.getDataMemberIds().get(i);
 
-                if (memberId.equals(localMemberId)) {
+                if (remoteMemberId.equals(localMemberId)) {
                     continue;
                 }
 
-                QueryExecuteOperation remoteOp = operationFactory.create(state.getQueryId(), memberId);
+                QueryExecuteOperation remoteOp = operationFactory.create(state.getQueryId(), remoteMemberId);
 
-                if (!operationHandler.submit(memberId, remoteOp)) {
-                    throw HazelcastSqlException.memberLeave(memberId);
+                if (!operationHandler.submit(localMemberId, remoteMemberId, remoteOp)) {
+                    throw HazelcastSqlException.memberLeave(remoteMemberId);
                 }
             }
 
@@ -198,6 +206,7 @@ public class SqlInternalService {
         QueryExplainResultProducer rowSource = new QueryExplainResultProducer(explain);
 
         QueryState state = stateRegistry.onInitiatorQueryStarted(
+            nodeServiceProvider.getLocalMemberId(),
             0,
             plan,
             QueryExplain.EXPLAIN_METADATA,

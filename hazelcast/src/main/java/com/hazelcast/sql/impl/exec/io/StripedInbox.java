@@ -37,14 +37,15 @@ public class StripedInbox extends AbstractInbox {
 
     @SuppressWarnings("unchecked")
     public StripedInbox(
+        QueryOperationHandler operationHandler,
         QueryId queryId,
         int edgeId,
         int rowWidth,
-        QueryOperationHandler operationHandler,
+        UUID localMemberId,
         Collection<UUID> senderMemberIds,
         FlowControl flowControl
     ) {
-        super(queryId, edgeId, rowWidth, operationHandler, senderMemberIds.size(), flowControl);
+        super(operationHandler, queryId, edgeId, rowWidth, localMemberId, senderMemberIds.size(), flowControl);
 
         // Build inverse map from the member to its index.
         int memberIdx = 0;

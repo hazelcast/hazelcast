@@ -18,24 +18,28 @@ package com.hazelcast.sql.impl.operation;
 
 import com.hazelcast.internal.nio.Connection;
 
+import java.util.UUID;
+
 /**
  * Default operation channel implementation.
  */
 public class QueryOperationChannelImpl implements QueryOperationChannel {
     private final QueryOperationHandlerImpl operationHandler;
+    private final UUID localMemberId;
     private final Connection connection;
 
-    public QueryOperationChannelImpl(QueryOperationHandlerImpl operationHandler, Connection connection) {
+    public QueryOperationChannelImpl(QueryOperationHandlerImpl operationHandler, UUID localMemberId, Connection connection) {
         this.operationHandler = operationHandler;
+        this.localMemberId = localMemberId;
         this.connection = connection;
     }
 
     @Override
     public boolean submit(QueryOperation operation) {
         if (connection != null) {
-            return operationHandler.submitRemote(connection, operation, true);
+            return operationHandler.submitRemote(localMemberId, connection, operation, true);
         } else {
-            operationHandler.submitLocal(operation);
+            operationHandler.submitLocal(localMemberId, operation);
 
             return true;
         }

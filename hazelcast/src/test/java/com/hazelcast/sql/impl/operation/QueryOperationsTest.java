@@ -66,11 +66,11 @@ public class QueryOperationsTest extends SqlTestSupport {
 
         QueryExecuteOperation restored = serializeDeserialize(original);
         assertEquals(original.getPartition(), restored.getPartition());
-        assertEquals(original.getPartitionMapping(), restored.getPartitionMapping());
+        assertEquals(original.getPartitionMap(), restored.getPartitionMap());
         assertEquals(original.getFragments(), restored.getFragments());
         assertEquals(original.getOutboundEdgeMap(), restored.getOutboundEdgeMap());
         assertEquals(original.getInboundEdgeMap(), restored.getInboundEdgeMap());
-        assertEquals(original.getEdgeCreditMap(), restored.getEdgeCreditMap());
+        assertEquals(original.getEdgeInitialMemoryMap(), restored.getEdgeInitialMemoryMap());
         assertEquals(original.getArguments(), restored.getArguments());
         assertEquals(original.getTimeout(), restored.getTimeout());
 
@@ -222,11 +222,11 @@ public class QueryOperationsTest extends SqlTestSupport {
         );
 
         assertEquals(queryId, res.getQueryId());
-        assertEquals(partitionMapping, res.getPartitionMapping());
+        assertEquals(partitionMapping, res.getPartitionMap());
         assertEquals(fragments, res.getFragments());
         assertEquals(outboundEdgeMap, res.getOutboundEdgeMap());
         assertEquals(inboundEdgeMap, res.getInboundEdgeMap());
-        assertEquals(edgeCreditMap, res.getEdgeCreditMap());
+        assertEquals(edgeCreditMap, res.getEdgeInitialMemoryMap());
         assertEquals(arguments, res.getArguments());
         assertEquals(timeout, res.getTimeout());
 
@@ -249,6 +249,8 @@ public class QueryOperationsTest extends SqlTestSupport {
     }
 
     private QueryBatchExchangeOperation prepareBatch(QueryId queryId, int edgeId) {
+        UUID targetMemberId = UUID.randomUUID();
+
         RowBatch batch = new ListRowBatch(Arrays.asList(
             new HeapRow(new Object[] { new SqlCustomClass(randomInt()), randomUUID()}),
             new HeapRow(new Object[] { new SqlCustomClass(randomInt()), randomUUID()})
@@ -258,12 +260,13 @@ public class QueryOperationsTest extends SqlTestSupport {
         long remainingMemory = randomLong();
 
         QueryBatchExchangeOperation res = withCallerId(
-            new QueryBatchExchangeOperation(queryId, edgeId, batch, last, remainingMemory)
+            new QueryBatchExchangeOperation(queryId, edgeId, targetMemberId, batch, last, remainingMemory)
         );
 
         assertTrue(res.isInbound());
         assertEquals(queryId, res.getQueryId());
         assertEquals(edgeId, res.getEdgeId());
+        assertEquals(targetMemberId, res.getTargetMemberId());
         checkBatches(batch, res.getBatch());
         assertEquals(last, res.isLast());
         assertEquals(remainingMemory, res.getRemainingMemory());

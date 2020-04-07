@@ -25,11 +25,12 @@ public interface QueryOperationHandler {
     /**
      * Submit operation for execution on a member.
      *
-     * @param memberId ID of the member.
+     * @param sourceMemberId Source member ID.
+     * @param targetMemberId Target member ID.
      * @param operation Operation to be executed.
      * @return {@code true} if operation is triggered, {@code false} if target member is not available.
      */
-    boolean submit(UUID memberId, QueryOperation operation);
+    boolean submit(UUID sourceMemberId, UUID targetMemberId, QueryOperation operation);
 
     /**
      * Execute the operation synchronously.
@@ -41,8 +42,9 @@ public interface QueryOperationHandler {
     /**
      * Create a channel for ordered operation scheduling.
      *
-     * @param memberId Member ID.
+     * @param sourceMemberId Source member ID.
+     * @param targetMemberId Target member ID.
      * @return Channel.
      */
-    QueryOperationChannel createChannel(UUID memberId);
+    QueryOperationChannel createChannel(UUID sourceMemberId, UUID targetMemberId);
 }

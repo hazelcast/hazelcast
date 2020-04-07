@@ -14,31 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.exec.io;
-
-import com.hazelcast.sql.impl.QueryId;
+package com.hazelcast.sql.impl;
 
 import java.util.UUID;
 
-/**
- * Base class for inboxes and outboxes.
- */
-public abstract class AbstractMailbox {
-    /** Query ID. */
-    protected final QueryId queryId;
+public class TestLocalMemberIdProvider implements LocalMemberIdProvider {
 
-    /** Edge ID. */
-    protected final int edgeId;
+    private final UUID localMemberId;
 
-    /** Width of a single row in bytes. */
-    protected final int rowWidth;
-
-    protected UUID localMemberId;
-
-    public AbstractMailbox(QueryId queryId, int edgeId, int rowWidth, UUID localMemberId) {
-        this.queryId = queryId;
-        this.edgeId = edgeId;
-        this.rowWidth = rowWidth;
+    public TestLocalMemberIdProvider(UUID localMemberId) {
         this.localMemberId = localMemberId;
+    }
+
+    @Override
+    public UUID getLocalMemberId() {
+        return localMemberId;
     }
 }

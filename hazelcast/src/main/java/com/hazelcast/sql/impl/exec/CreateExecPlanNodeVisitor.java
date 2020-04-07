@@ -20,7 +20,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapProxy;
-import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.sql.impl.NodeServiceProvider;
 import com.hazelcast.sql.impl.exec.agg.AggregateExec;
 import com.hazelcast.sql.impl.exec.fetch.FetchExec;
 import com.hazelcast.sql.impl.exec.index.MapIndexScanExec;
@@ -79,8 +79,14 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
     /** Operation handler. */
     private final QueryOperationHandler operationHandler;
 
-    /** Node engine. */
-    private final NodeEngine nodeEngine;
+    /** Node service provider. */
+    private final NodeServiceProvider nodeServiceProvider;
+
+    /** Serialization service. */
+    private final InternalSerializationService serializationService;
+
+    /** Local member ID. */
+    private final UUID localMemberId;
 
     /** Operation. */
     private final QueryExecuteOperation operation;
@@ -105,13 +111,17 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
 
     public CreateExecPlanNodeVisitor(
         QueryOperationHandler operationHandler,
-        NodeEngine nodeEngine,
+        NodeServiceProvider nodeServiceProvider,
+        InternalSerializationService serializationService,
+        UUID localMemberId,
         QueryExecuteOperation operation,
         PartitionIdSet localParts,
         int outboxBatchSize
     ) {
         this.operationHandler = operationHandler;
-        this.nodeEngine = nodeEngine;
+        this.nodeServiceProvider = nodeServiceProvider;
+        this.serializationService = serializationService;
+        this.localMemberId = localMemberId;
         this.operation = operation;
         this.localParts = localParts;
         this.outboxBatchSize = outboxBatchSize;
@@ -141,10 +151,11 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
 
         // Create and register inbox.
         Inbox inbox = new Inbox(
+            operationHandler,
             operation.getQueryId(),
             edgeId,
             sendFragment.getNode().getSchema().getEstimatedRowSize(),
-            operationHandler,
+            localMemberId,
             fragmentMemberCount,
             createFlowControl(edgeId)
         );
@@ -167,10 +178,11 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
         QueryExecuteOperationFragment sendFragment = operation.getFragments().get(sendFragmentPos);
 
         StripedInbox inbox = new StripedInbox(
+            operationHandler,
             operation.getQueryId(),
             edgeId,
             node.getSchema().getEstimatedRowSize(),
-            operationHandler,
+            localMemberId,
             getFragmentMembers(sendFragment),
             createFlowControl(edgeId)
         );
@@ -211,7 +223,7 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
             for (int outboxIndex = 0; outboxIndex < outboxes.length; outboxIndex++) {
                 final int outboxIndex0 = outboxIndex;
 
-                PartitionIdSet partitions = operation.getPartitionMapping().get(outboxes[outboxIndex0].getTargetMemberId());
+                PartitionIdSet partitions = operation.getPartitionMap().get(outboxes[outboxIndex0].getTargetMemberId());
 
                 partitions.forEach((part) -> partitionOutboxIndexes[part] = outboxIndex0);
             }
@@ -260,13 +272,13 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
 
         for (UUID receiveMemberId : receiveFragmentMemberIds) {
             Outbox outbox = new Outbox(
-                operation.getQueryId(),
-                operationHandler,
+                operationHandler, operation.getQueryId(),
                 edgeId,
                 rowWidth,
+                localMemberId,
                 receiveMemberId,
                 outboxBatchSize,
-                operation.getEdgeCreditMap().get(edgeId)
+                operation.getEdgeInitialMemoryMap().get(edgeId)
             );
 
             edgeOutboxes.put(receiveMemberId, outbox);
@@ -277,22 +289,22 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
         return res;
     }
 
-    @SuppressWarnings("rawtypes")
     @Override
     public void onMapScanNode(MapScanPlanNode node) {
         Exec res;
 
+        // TODO: localParts should never be null. It should return empty partition ID set instread.
         if (localParts == null) {
             res = new EmptyExec(node.getId());
         } else {
             String mapName = node.getMapName();
 
-            MapProxyImpl map = (MapProxyImpl) nodeEngine.getHazelcastInstance().getMap(mapName);
+            MapProxyImpl<?, ?> map = nodeServiceProvider.getMap(mapName);
 
             res = new MapScanExec(
                 node.getId(),
                 map,
-                (InternalSerializationService) nodeEngine.getSerializationService(),
+                serializationService,
                 localParts,
                 node.getFieldNames(),
                 node.getFieldTypes(),
@@ -313,12 +325,12 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
         } else {
             String mapName = node.getMapName();
 
-            MapProxyImpl<?, ?> map = (MapProxyImpl<?, ?>) nodeEngine.getHazelcastInstance().getMap(mapName);
+            MapProxyImpl<?, ?> map = nodeServiceProvider.getMap(mapName);
 
             res = new MapIndexScanExec(
                 node.getId(),
                 map,
-                (InternalSerializationService) nodeEngine.getSerializationService(),
+                serializationService,
                 localParts,
                 node.getFieldNames(),
                 node.getFieldTypes(),
@@ -336,12 +348,12 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
     public void onReplicatedMapScanNode(ReplicatedMapScanPlanNode node) {
         String mapName = node.getMapName();
 
-        ReplicatedMapProxy<?, ?> map = (ReplicatedMapProxy<?, ?>) nodeEngine.getHazelcastInstance().getReplicatedMap(mapName);
+        ReplicatedMapProxy<?, ?> map = nodeServiceProvider.getReplicatedMap(mapName);
 
         Exec res = new ReplicatedMapScanExec(
             node.getId(),
             map,
-            (InternalSerializationService) nodeEngine.getSerializationService(),
+            serializationService,
             node.getFieldNames(),
             node.getFieldTypes(),
             node.getProjects(),
@@ -508,7 +520,7 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
     }
 
     private FlowControl createFlowControl(int edgeId) {
-        long maxMemory = operation.getEdgeCreditMap().get(edgeId);
+        long maxMemory = operation.getEdgeInitialMemoryMap().get(edgeId);
 
         return new SimpleFlowControl(maxMemory);
     }
@@ -520,6 +532,6 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
 
         assert fragment.getMapping() == QueryExecuteOperationFragmentMapping.DATA_MEMBERS;
 
-        return operation.getPartitionMapping().keySet();
+        return operation.getPartitionMap().keySet();
     }
 }

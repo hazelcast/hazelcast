@@ -23,7 +23,9 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.sql.SqlErrorCode;
+import com.hazelcast.sql.impl.LocalMemberIdProvider;
 import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.sql.impl.TestLocalMemberIdProvider;
 import com.hazelcast.sql.impl.operation.QueryBatchExchangeOperation;
 import com.hazelcast.sql.impl.operation.QueryCancelOperation;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
@@ -161,18 +163,18 @@ public class QueryOperationWorkerPoolTest extends HazelcastTestSupport {
 
     @Test
     public void testSubmitRemoteWithDeserializationError() {
-        TestQueryOperationHandler operationHandler = new TestQueryOperationHandler();
-
-        pool = createPool(operationHandler);
-
         UUID localMemberId = UUID.randomUUID();
         UUID remoteMemberId = UUID.randomUUID();
 
-        pool.init(localMemberId);
+        TestQueryOperationHandler operationHandler = new TestQueryOperationHandler();
+        TestLocalMemberIdProvider localMemberIdProvider = new TestLocalMemberIdProvider(localMemberId);
+
+        pool = createPool(operationHandler, localMemberIdProvider);
 
         QueryBatchExchangeOperation badOperation = new QueryBatchExchangeOperation(
             QueryId.create(remoteMemberId),
             1,
+            UUID.randomUUID(),
             new ListRowBatch(Collections.singletonList(new HeapRow(new Object[]{new BadValue()}))),
             false,
             100
@@ -209,9 +211,17 @@ public class QueryOperationWorkerPoolTest extends HazelcastTestSupport {
     }
 
     private QueryOperationWorkerPool createPool(TestQueryOperationHandler operationHandler) {
+        return createPool(operationHandler, new TestLocalMemberIdProvider(UUID.randomUUID()));
+    }
+
+    private QueryOperationWorkerPool createPool(
+        TestQueryOperationHandler operationHandler,
+        LocalMemberIdProvider localMemberIdProvider
+    ) {
         return new QueryOperationWorkerPool(
             "instance",
             THREAD_COUNT,
+            localMemberIdProvider,
             operationHandler,
             new DefaultSerializationServiceBuilder().build(),
             new NoLogFactory().getLogger("logger")
@@ -228,8 +238,8 @@ public class QueryOperationWorkerPoolTest extends HazelcastTestSupport {
         private final LinkedBlockingQueue<ExecuteInfo> executeInfos = new LinkedBlockingQueue<>();
 
         @Override
-        public boolean submit(UUID memberId, QueryOperation operation) {
-            submitInfos.add(new SubmitInfo(memberId, operation));
+        public boolean submit(UUID localMemberId, UUID targetMemberId, QueryOperation operation) {
+            submitInfos.add(new SubmitInfo(targetMemberId, operation));
 
             return true;
         }
@@ -240,7 +250,7 @@ public class QueryOperationWorkerPoolTest extends HazelcastTestSupport {
         }
 
         @Override
-        public QueryOperationChannel createChannel(UUID memberId) {
+        public QueryOperationChannel createChannel(UUID sourceMemberId, UUID targetMemberId) {
             return null;
         }
 

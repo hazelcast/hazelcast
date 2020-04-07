@@ -53,15 +53,16 @@ public class Outbox extends AbstractMailbox implements OutboundHandler {
     private long remainingMemory;
 
     public Outbox(
-        QueryId queryId,
         QueryOperationHandler operationHandler,
+        QueryId queryId,
         int edgeId,
         int rowWidth,
+        UUID localMemberId,
         UUID targetMemberId,
         int batchSize,
         long remainingMemory
     ) {
-        super(queryId, edgeId, rowWidth);
+        super(queryId, edgeId, rowWidth, localMemberId);
 
         this.operationHandler = operationHandler;
         this.targetMemberId = targetMemberId;
@@ -70,7 +71,7 @@ public class Outbox extends AbstractMailbox implements OutboundHandler {
     }
 
     public void setup() {
-        operationChannel = operationHandler.createChannel(targetMemberId);
+        operationChannel = operationHandler.createChannel(localMemberId, targetMemberId);
     }
 
     public UUID getTargetMemberId() {
@@ -155,7 +156,14 @@ public class Outbox extends AbstractMailbox implements OutboundHandler {
 
         assert batch.getRowCount() > 0 || last;
 
-        QueryBatchExchangeOperation op = new QueryBatchExchangeOperation(queryId, edgeId, batch, last, remainingMemory);
+        QueryBatchExchangeOperation op = new QueryBatchExchangeOperation(
+            queryId,
+            edgeId,
+            targetMemberId,
+            batch,
+            last,
+            remainingMemory
+        );
 
         boolean success = operationChannel.submit(op);
 

@@ -167,6 +167,11 @@ public final class QueryState implements QueryStateCallback {
 
     @Override
     public void cancel(Exception error) {
+        // Make sure that this thread changes the state.
+        if (!completionGuard.compareAndSet(false, true)) {
+            return;
+        }
+
         // Wrap into common SQL exception if needed.
         if (!(error instanceof HazelcastSqlException)) {
             error = HazelcastSqlException.error(SqlErrorCode.GENERIC, error.getMessage(), error);
@@ -182,17 +187,23 @@ public final class QueryState implements QueryStateCallback {
         }
 
         // Determine members which should be notified.
-        boolean initiator = queryId.getMemberId().equals(localMemberId);
-        boolean propagate = originatingMemberId.equals(localMemberId) || initiator;
+        Collection<UUID> memberIds;
 
-        Collection<UUID> memberIds = propagate ? initiator
-            ? getParticipantsWithoutInitiator() : Collections.singletonList(queryId.getMemberId()) : Collections.emptyList();
-
-        // Invoke the completion callback.
-        if (!completionGuard.compareAndSet(false, true)) {
-            return;
+        if (isInitiator()) {
+            // Cancel is performed on an initiator. Broadcast to all participants.
+            memberIds = getParticipantsWithoutInitiator();
+        } else {
+            // Cancel is performed on a participant.
+            if (error0.getOriginatingMemberId() == null) {
+                // The cancel was just triggered. Propagate to the initiator.
+                memberIds = Collections.singletonList(queryId.getMemberId());
+            } else {
+                // The cancel was propagated from coordinator. Do not notify again.
+                memberIds = Collections.emptyList();
+            }
         }
 
+        // Invoke the completion callback.
         assert completionCallback != null;
 
         completionCallback.onError(
@@ -205,6 +216,7 @@ public final class QueryState implements QueryStateCallback {
 
         completionError = error0;
 
+        // If this is the initiator
         if (isInitiator()) {
             initiatorState.getResultProducer().onError(error0);
         }
@@ -311,11 +323,10 @@ public final class QueryState implements QueryStateCallback {
      */
     public Set<UUID> getParticipantsWithoutInitiator() {
         assert isInitiator();
-        assert queryId.getMemberId().equals(localMemberId);
 
         Set<UUID> res = new HashSet<>(initiatorState.getPlan().getDataMemberIds());
 
-        res.remove(localMemberId);
+        res.remove(queryId.getMemberId());
 
         return res;
     }

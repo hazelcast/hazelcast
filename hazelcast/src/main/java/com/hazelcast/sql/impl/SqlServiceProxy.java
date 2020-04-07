@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl;
 
 import com.hazelcast.config.SqlConfig;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.HazelcastSqlException;
@@ -147,7 +148,12 @@ public class SqlServiceProxy implements SqlService {
     }
 
     private SqlInternalService createInternalService(NodeEngineImpl nodeEngine) {
-        return new SqlInternalService(nodeEngine);
+        SqlConfig config = nodeEngine.getConfig().getSqlConfig();
+        String instanceName = nodeEngine.getHazelcastInstance().getName();
+        NodeServiceProvider nodeServiceProvider = new NodeServiceProviderImpl(nodeEngine);
+        InternalSerializationService serializationService = (InternalSerializationService) nodeEngine.getSerializationService();
+
+        return new SqlInternalService(config, instanceName, nodeServiceProvider, serializationService);
     }
 
     /**

@@ -46,7 +46,7 @@ public class QueryExecuteOperationFactory {
     private final Plan plan;
     private final List<Object> args;
     private final long timeout;
-    private final Map<Integer, Long> creditMap;
+    private final Map<Integer, Long> edgeInitialMemoryMap;
 
     public QueryExecuteOperationFactory(
         Plan plan,
@@ -58,16 +58,16 @@ public class QueryExecuteOperationFactory {
         this.args = args;
         this.timeout = timeout;
 
-        creditMap = createCreditMap(memoryPressure);
+        edgeInitialMemoryMap = createEdgeInitialMemoryMap(memoryPressure);
     }
 
     public QueryExecuteOperation create(QueryId queryId, UUID targetMemberId) {
-        List<PlanFragment> fragments = plan.getFragments();
+        List<PlanFragment> planFragments = plan.getFragments();
 
         // Prepare descriptors.
-        List<QueryExecuteOperationFragment> descriptors = new ArrayList<>(fragments.size());
+        List<QueryExecuteOperationFragment> fragments = new ArrayList<>(planFragments.size());
 
-        for (PlanFragment fragment : fragments) {
+        for (PlanFragment fragment : planFragments) {
             QueryExecuteOperationFragmentMapping mapping;
             Collection<UUID> memberIds;
             PlanNode node;
@@ -82,22 +82,22 @@ public class QueryExecuteOperationFactory {
                 node = memberIds.contains(targetMemberId) ? fragment.getNode() : null;
             }
 
-            descriptors.add(new QueryExecuteOperationFragment(node, mapping, memberIds));
+            fragments.add(new QueryExecuteOperationFragment(node, mapping, memberIds));
         }
 
         return new QueryExecuteOperation(
             queryId,
             plan.getPartitionMap(),
-            descriptors,
+            fragments,
             plan.getOutboundEdgeMap(),
             plan.getInboundEdgeMap(),
-            creditMap,
+            edgeInitialMemoryMap,
             args,
             timeout
         );
     }
 
-    private Map<Integer, Long> createCreditMap(MemoryPressure memoryPressure) {
+    private Map<Integer, Long> createEdgeInitialMemoryMap(MemoryPressure memoryPressure) {
         Map<Integer, Integer> inboundEdgeMemberCountMap = plan.getInboundEdgeMemberCountMap();
 
         Map<Integer, Long> res = new HashMap<>(inboundEdgeMemberCountMap.size());

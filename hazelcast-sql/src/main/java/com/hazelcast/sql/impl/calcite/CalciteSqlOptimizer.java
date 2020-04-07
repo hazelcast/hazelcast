@@ -103,7 +103,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
         OptimizerStatistics stats = statsEnabled ? new OptimizerStatistics(dur, physicalRuleCallTracker) : null;
 
-        return doCreatePlan(sql, parameterRowType, context, physicalRel, stats);
+        return doCreatePlan(sql, parameterRowType, physicalRel, stats);
     }
 
     /**
@@ -115,7 +115,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     private Plan doCreatePlan(
         String sql,
         RelDataType parameterRowType,
-        OptimizerContext context,
         PhysicalRel rel,
         OptimizerStatistics stats
     ) {
@@ -142,7 +141,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 throw HazelcastSqlException.memberLeave(partMemberId);
             }
 
-            dataMemberIds.add(member.getUuid());
+            dataMemberIds.add(partMemberId);
         }
 
         // Assign IDs to nodes.
