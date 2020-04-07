@@ -30,6 +30,8 @@ import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperationFragment;
 import com.hazelcast.sql.impl.operation.QueryFlowControlExchangeOperation;
 import com.hazelcast.sql.impl.plan.node.RootPlanNode;
+import com.hazelcast.sql.impl.plan.node.io.ReceivePlanNode;
+import com.hazelcast.sql.impl.plan.node.io.RootSendPlanNode;
 import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.JoinRow;
@@ -64,8 +66,10 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int OPERATION_CHECK_RESPONSE = 12;
 
     public static final int NODE_ROOT = 13;
+    public static final int NODE_ROOT_SEND = 14;
+    public static final int NODE_RECEIVE = 15;
 
-    public static final int LEN = NODE_ROOT + 1;
+    public static final int LEN = NODE_RECEIVE + 1;
 
     @Override
     public int getFactoryId() {
@@ -95,6 +99,8 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[OPERATION_CHECK_RESPONSE] = arg -> new QueryCheckResponseOperation();
 
         constructors[NODE_ROOT] = arg -> new RootPlanNode();
+        constructors[NODE_ROOT_SEND] = arg -> new RootSendPlanNode();
+        constructors[NODE_RECEIVE] = arg -> new ReceivePlanNode();
 
         return new ArrayDataSerializableFactory(constructors);
     }

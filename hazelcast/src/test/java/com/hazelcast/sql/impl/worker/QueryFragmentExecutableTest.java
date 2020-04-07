@@ -20,9 +20,9 @@ import com.hazelcast.logging.NoLogFactory;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.exec.AbstractExec;
 import com.hazelcast.sql.impl.exec.IterationResult;
-import com.hazelcast.sql.impl.mailbox.InboundBatch;
-import com.hazelcast.sql.impl.mailbox.InboundHandler;
-import com.hazelcast.sql.impl.mailbox.OutboundHandler;
+import com.hazelcast.sql.impl.exec.io.InboundBatch;
+import com.hazelcast.sql.impl.exec.io.InboundHandler;
+import com.hazelcast.sql.impl.exec.io.OutboundHandler;
 import com.hazelcast.sql.impl.operation.QueryAbstractExchangeOperation;
 import com.hazelcast.sql.impl.operation.QueryBatchExchangeOperation;
 import com.hazelcast.sql.impl.operation.QueryFlowControlExchangeOperation;
@@ -169,7 +169,7 @@ public class QueryFragmentExecutableTest extends HazelcastTestSupport {
             }
 
             @Override
-            public void sendFlowControl() {
+            public void onFragmentExecutionCompleted() {
                 flowControlNotified.set(true);
             }
         };
@@ -224,7 +224,7 @@ public class QueryFragmentExecutableTest extends HazelcastTestSupport {
                 }
 
                 @Override
-                public void sendFlowControl() {
+                public void onFragmentExecutionCompleted() {
                     // No-op.
                 }
             };

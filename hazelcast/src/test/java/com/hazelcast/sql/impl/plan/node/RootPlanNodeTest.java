@@ -25,17 +25,35 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class RootPlanNodeTest extends SqlTestSupport {
+    @Test
+    public void testState() {
+        int id = 1;
+        MockPlanNode upstream = MockPlanNode.create(2);
+
+        RootPlanNode node = new RootPlanNode(id, upstream);
+
+        assertEquals(id, node.getId());
+        assertSame(upstream, node.getUpstream());
+        assertEquals(upstream.getSchema(), node.getSchema());
+    }
+
     @Test
     public void testEquality() {
         MockPlanNode upstream1 = MockPlanNode.create(1);
         MockPlanNode upstream2 = MockPlanNode.create(2);
 
-        checkEquals(new RootPlanNode(3, upstream1), new RootPlanNode(3, upstream1), true);
-        checkEquals(new RootPlanNode(3, upstream1), new RootPlanNode(4, upstream1), false);
-        checkEquals(new RootPlanNode(3, upstream1), new RootPlanNode(3, upstream2), false);
+        int id1 = 3;
+        int id2 = 4;
+
+        checkEquals(new RootPlanNode(id1, upstream1), new RootPlanNode(id1, upstream1), true);
+        checkEquals(new RootPlanNode(id1, upstream1), new RootPlanNode(id2, upstream1), false);
+        checkEquals(new RootPlanNode(id1, upstream1), new RootPlanNode(id1, upstream2), false);
     }
 
     @Test

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.mailbox;
+package com.hazelcast.sql.impl.exec.io;
 
 /**
  * Core interface for outbound message processing.

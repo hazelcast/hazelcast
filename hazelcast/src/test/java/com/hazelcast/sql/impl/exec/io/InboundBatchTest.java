@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.mailbox;
+package com.hazelcast.sql.impl.exec.io;
 
 import com.hazelcast.sql.impl.row.ListRowBatch;
 import com.hazelcast.sql.impl.row.RowBatch;

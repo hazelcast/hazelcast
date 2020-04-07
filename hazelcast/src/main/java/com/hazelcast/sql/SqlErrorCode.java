@@ -26,6 +26,9 @@ public final class SqlErrorCode {
     /** Query completed successfully. */
     public static final int OK = 0;
 
+    /** Member cannot be reached. */
+    public static final int MEMBER_CONNECTION = 1001;
+
     /** An error with data conversion or transformation. */
     public static final int DATA_EXCEPTION = 2000;
 

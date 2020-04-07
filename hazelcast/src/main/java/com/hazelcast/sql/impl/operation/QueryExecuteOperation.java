@@ -50,7 +50,7 @@ public class QueryExecuteOperation extends QueryAbstractIdAwareOperation {
     private Map<Integer, Integer> inboundEdgeMap;
 
     /** Map from edge ID to initial credits assigned to senders. */
-    private Map<Integer, Long> edgeCreditMap;
+    private Map<Integer, Long> edgeInitialMemoryMap;
 
     private List<Object> arguments;
     private long timeout;
@@ -69,7 +69,7 @@ public class QueryExecuteOperation extends QueryAbstractIdAwareOperation {
         List<QueryExecuteOperationFragment> fragments,
         Map<Integer, Integer> outboundEdgeMap,
         Map<Integer, Integer> inboundEdgeMap,
-        Map<Integer, Long> edgeCreditMap,
+        Map<Integer, Long> edgeInitialMemoryMap,
         List<Object> arguments,
         long timeout
     ) {
@@ -80,15 +80,15 @@ public class QueryExecuteOperation extends QueryAbstractIdAwareOperation {
         assert outboundEdgeMap != null;
         assert inboundEdgeMap != null;
         assert inboundEdgeMap.size() == outboundEdgeMap.size();
-        assert edgeCreditMap != null;
-        assert edgeCreditMap.size() == outboundEdgeMap.size();
+        assert edgeInitialMemoryMap != null;
+        assert edgeInitialMemoryMap.size() == outboundEdgeMap.size();
 
         this.queryId = queryId;
         this.partitionMapping = partitionMapping;
         this.fragments = fragments;
         this.outboundEdgeMap = outboundEdgeMap;
         this.inboundEdgeMap = inboundEdgeMap;
-        this.edgeCreditMap = edgeCreditMap;
+        this.edgeInitialMemoryMap = edgeInitialMemoryMap;
         this.arguments = arguments;
         this.timeout = timeout;
     }
@@ -109,8 +109,8 @@ public class QueryExecuteOperation extends QueryAbstractIdAwareOperation {
         return inboundEdgeMap;
     }
 
-    public Map<Integer, Long> getEdgeCreditMap() {
-        return edgeCreditMap;
+    public Map<Integer, Long> getEdgeInitialMemoryMap() {
+        return edgeInitialMemoryMap;
     }
 
     public List<Object> getArguments() {
@@ -173,9 +173,9 @@ public class QueryExecuteOperation extends QueryAbstractIdAwareOperation {
             out.writeInt(entry.getValue());
         }
 
-        out.writeInt(edgeCreditMap.size());
+        out.writeInt(edgeInitialMemoryMap.size());
 
-        for (Map.Entry<Integer, Long> entry : edgeCreditMap.entrySet()) {
+        for (Map.Entry<Integer, Long> entry : edgeInitialMemoryMap.entrySet()) {
             out.writeInt(entry.getKey());
             out.writeLong(entry.getValue());
         }
@@ -239,10 +239,10 @@ public class QueryExecuteOperation extends QueryAbstractIdAwareOperation {
 
         int edgeCreditMapSize = in.readInt();
 
-        edgeCreditMap = new HashMap<>(edgeCreditMapSize);
+        edgeInitialMemoryMap = new HashMap<>(edgeCreditMapSize);
 
         for (int i = 0; i < edgeCreditMapSize; i++) {
-            edgeCreditMap.put(in.readInt(), in.readLong());
+            edgeInitialMemoryMap.put(in.readInt(), in.readLong());
         }
 
         // Read arguments.

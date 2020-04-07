@@ -32,6 +32,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
+import static com.hazelcast.sql.impl.operation.QueryExecuteOperationFragmentMapping.EXPLICIT;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -42,7 +43,7 @@ public class QueryExecuteOperationFragmentTest extends SqlTestSupport {
         PlanNode node = MockPlanNode.create(1, QueryDataType.INT);
         List<UUID> memberIds = Arrays.asList(UUID.randomUUID(), UUID.randomUUID());
 
-        QueryExecuteOperationFragment fragment = new QueryExecuteOperationFragment(node, memberIds);
+        QueryExecuteOperationFragment fragment = new QueryExecuteOperationFragment(node, EXPLICIT, memberIds);
 
         assertEquals(node, fragment.getNode());
         assertEquals(memberIds, fragment.getMemberIds());
@@ -52,12 +53,14 @@ public class QueryExecuteOperationFragmentTest extends SqlTestSupport {
     public void testSerialization() {
         QueryExecuteOperationFragment original = new QueryExecuteOperationFragment(
             MockPlanNode.create(1, QueryDataType.INT),
+            EXPLICIT,
             Arrays.asList(UUID.randomUUID(), UUID.randomUUID())
         );
 
         QueryExecuteOperationFragment restored = serializeAndCheck(original, SqlDataSerializerHook.OPERATION_EXECUTE_FRAGMENT);
 
         assertEquals(original.getNode(), restored.getNode());
+        assertEquals(original.getMapping(), restored.getMapping());
         assertEquals(original.getMemberIds(), restored.getMemberIds());
     }
 }

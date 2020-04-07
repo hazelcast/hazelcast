@@ -14,36 +14,29 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.mailbox;
+package com.hazelcast.sql.impl.plan.node;
 
-import com.hazelcast.sql.impl.row.RowBatch;
+import com.hazelcast.sql.impl.plan.node.io.ReceivePlanNode;
+import com.hazelcast.sql.impl.plan.node.io.RootSendPlanNode;
 
-import java.util.UUID;
-
-/**
- * Mailbox batch received from the remote member.
- */
-public final class InboundBatch {
-
-    private final RowBatch batch;
-    private final boolean last;
-    private final UUID senderId;
-
-    public InboundBatch(RowBatch batch, boolean last, UUID senderId) {
-        this.batch = batch;
-        this.last = last;
-        this.senderId = senderId;
+public abstract class TestPlanNodeVisitorAdapter implements PlanNodeVisitor {
+    @Override
+    public void onRootNode(RootPlanNode node) {
+        // No-op.
     }
 
-    public RowBatch getBatch() {
-        return batch;
+    @Override
+    public void onReceiveNode(ReceivePlanNode node) {
+        // No-op.
     }
 
-    public boolean isLast() {
-        return last;
+    @Override
+    public void onRootSendNode(RootSendPlanNode node) {
+        // No-op.
     }
 
-    public UUID getSenderId() {
-        return senderId;
+    @Override
+    public void onOtherNode(PlanNode node) {
+        // No-op.
     }
 }

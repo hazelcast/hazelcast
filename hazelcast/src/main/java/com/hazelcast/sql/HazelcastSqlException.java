@@ -18,6 +18,8 @@ package com.hazelcast.sql;
 
 import com.hazelcast.core.HazelcastException;
 
+import java.util.UUID;
+
 /**
  * Exception occurred during SQL query execution.
  */
@@ -71,6 +73,10 @@ public final class HazelcastSqlException extends HazelcastException {
      */
     public static HazelcastSqlException error(int code, String message, Throwable cause) {
         return new HazelcastSqlException(code, message, cause);
+    }
+
+    public static HazelcastSqlException memberConnection(UUID memberId) {
+        return error(SqlErrorCode.MEMBER_CONNECTION, "Connection to member is broken: " + memberId);
     }
 
     /**
