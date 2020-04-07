@@ -268,11 +268,7 @@ public final class QueryState implements QueryStateCallback {
         }
 
         if (timeout != null && timeout > 0 && System.currentTimeMillis() > startTime + timeout) {
-            HazelcastSqlException error = HazelcastSqlException.error(
-                SqlErrorCode.TIMEOUT, "Query is cancelled due to timeout (" + timeout + " ms)"
-            );
-
-            cancel(error);
+            cancel(HazelcastSqlException.timeout(timeout));
 
             return true;
         } else {

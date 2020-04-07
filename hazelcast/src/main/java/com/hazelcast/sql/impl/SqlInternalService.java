@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl;
 
-import com.hazelcast.config.SqlConfig;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.client.QueryClientStateRegistry;
@@ -63,15 +62,17 @@ public class SqlInternalService {
     private final QueryStateRegistryUpdater stateRegistryUpdater;
 
     public SqlInternalService(
-        SqlConfig config,
         String instanceName,
         NodeServiceProvider nodeServiceProvider,
-        InternalSerializationService serializationService
+        InternalSerializationService serializationService,
+        int operationThreadCount,
+        int fragmentThreadCount,
+        long maxMemory
     ) {
         this.nodeServiceProvider = nodeServiceProvider;
 
         // Memory manager is created first.
-        memoryManager = new GlobalMemoryReservationManager(config.getMaxMemory());
+        memoryManager = new GlobalMemoryReservationManager(maxMemory);
 
         // Create state registries since they do not depend on anything.
         stateRegistry = new QueryStateRegistry();
@@ -83,8 +84,8 @@ public class SqlInternalService {
             nodeServiceProvider,
             serializationService,
             stateRegistry,
-            config.getThreadCount(),
-            config.getOperationThreadCount()
+            fragmentThreadCount,
+            operationThreadCount
         );
 
         // State checker depends on state registries and operation handler.

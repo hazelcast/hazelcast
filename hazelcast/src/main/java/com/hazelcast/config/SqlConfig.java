@@ -49,7 +49,7 @@ public class SqlConfig {
     }
 
     /**
-     * Sets the number of threads responsible for data processing.
+     * Sets the number of threads responsible for query processing.
      *
      * @param threadCount Number of threads responsible for query processing.
      * @return This instance for chaining.

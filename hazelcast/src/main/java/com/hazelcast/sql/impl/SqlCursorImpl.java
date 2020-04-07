@@ -19,7 +19,6 @@ package com.hazelcast.sql.impl;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlCursor;
-import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.row.Row;
@@ -75,7 +74,7 @@ public class SqlCursorImpl implements SqlCursor {
 
     @Override
     public void close() {
-        closeOnError(HazelcastSqlException.error(SqlErrorCode.CANCELLED, "Query was cancelled by user."));
+        closeOnError(HazelcastSqlException.cancelledByUser());
     }
 
     public void closeOnError(HazelcastSqlException error) {

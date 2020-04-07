@@ -103,6 +103,14 @@ public final class HazelcastSqlException extends HazelcastException {
         return error(SqlErrorCode.CLIENT_LEAVE, "Client has left the topology: " + clientId);
     }
 
+    public static HazelcastSqlException timeout(long timeout) {
+        return error(SqlErrorCode.TIMEOUT, "Query has been cancelled due to timeout (" + timeout + " ms)");
+    }
+
+    public static HazelcastSqlException cancelledByUser() {
+        return error(SqlErrorCode.CANCELLED_BY_USER, "Query was cancelled by user");
+    }
+
     /**
      * @return Code of the exception.
      */

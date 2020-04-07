@@ -50,15 +50,31 @@ public class SqlServiceProxy implements SqlService {
     public SqlServiceProxy(NodeEngineImpl nodeEngine) {
         SqlConfig config = nodeEngine.getConfig().getSqlConfig();
 
-        if (config.getThreadCount() <= 0) {
-            throw new HazelcastException("SqlConfig.threadCount must be positive: " + config.getThreadCount());
-        }
+        int operationThreadCount = config.getOperationThreadCount();
+        int fragmentThreadCount = config.getThreadCount();
+        long maxMemory = config.getMaxMemory();
 
-        if (config.getOperationThreadCount() <= 0) {
+        if (operationThreadCount <= 0) {
             throw new HazelcastException("SqlConfig.operationThreadCount must be positive: " + config.getOperationThreadCount());
         }
 
-        internalService = createInternalService(nodeEngine);
+        if (fragmentThreadCount <= 0) {
+            throw new HazelcastException("SqlConfig.threadCount must be positive: " + config.getThreadCount());
+        }
+
+        String instanceName = nodeEngine.getHazelcastInstance().getName();
+        NodeServiceProvider nodeServiceProvider = new NodeServiceProviderImpl(nodeEngine);
+        InternalSerializationService serializationService = (InternalSerializationService) nodeEngine.getSerializationService();
+
+        internalService = new SqlInternalService(
+            instanceName,
+            nodeServiceProvider,
+            serializationService,
+            operationThreadCount,
+            fragmentThreadCount,
+            maxMemory
+        );
+
         optimizer = createOptimizer(nodeEngine);
         liteMember = nodeEngine.getConfig().isLiteMember();
     }
@@ -145,15 +161,6 @@ public class SqlServiceProxy implements SqlService {
         }
 
         return new SqlCursorImpl(state);
-    }
-
-    private SqlInternalService createInternalService(NodeEngineImpl nodeEngine) {
-        SqlConfig config = nodeEngine.getConfig().getSqlConfig();
-        String instanceName = nodeEngine.getHazelcastInstance().getName();
-        NodeServiceProvider nodeServiceProvider = new NodeServiceProviderImpl(nodeEngine);
-        InternalSerializationService serializationService = (InternalSerializationService) nodeEngine.getSerializationService();
-
-        return new SqlInternalService(config, instanceName, nodeServiceProvider, serializationService);
     }
 
     /**
