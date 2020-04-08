@@ -184,8 +184,10 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
             if (inboundEdges != null) {
                 for (Integer inboundEdge : inboundEdges) {
+                    int count = fragmentMapping.isDataMembers() ? partMap.size() : fragmentMapping.getMemberIds().size();
+
                     inboundEdgeMap.put(inboundEdge, i);
-                    inboundEdgeMemberCountMap.put(inboundEdge, fragmentMapping.getMemberCount());
+                    inboundEdgeMemberCountMap.put(inboundEdge, count);
                 }
             }
         }

@@ -34,15 +34,11 @@ public final class PlanFragmentMapping {
         this.dataMembers = dataMembers;
     }
 
-    public boolean isDataMembers() {
-        return dataMembers;
-    }
-
     public Collection<UUID> getMemberIds() {
         return memberIds;
     }
 
-    public int getMemberCount() {
-        return memberIds.size();
+    public boolean isDataMembers() {
+        return dataMembers;
     }
 }
