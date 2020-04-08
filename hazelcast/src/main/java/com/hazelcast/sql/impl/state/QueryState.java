@@ -262,9 +262,7 @@ public final class QueryState implements QueryStateCallback {
         }
 
         if (timeout != null && timeout > 0 && System.currentTimeMillis() > startTime + timeout) {
-            QueryException error = QueryException.error(
-                SqlErrorCode.TIMEOUT, "Query is cancelled due to timeout (" + timeout + " ms)"
-            );
+            QueryException error = QueryException.timeout(timeout);
 
             cancel(error);
 
