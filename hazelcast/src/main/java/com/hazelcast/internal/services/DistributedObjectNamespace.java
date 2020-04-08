@@ -80,7 +80,6 @@ public final class DistributedObjectNamespace implements ObjectNamespace, Identi
         return SpiDataSerializerHook.DISTRIBUTED_OBJECT_NS;
     }
 
-
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -103,5 +102,13 @@ public final class DistributedObjectNamespace implements ObjectNamespace, Identi
         int result = service.hashCode();
         result = 31 * result + objectName.hashCode();
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return "DistributedObjectNamespace{"
+                + "service='" + service + '\''
+                + ", objectName='" + objectName + '\''
+                + '}';
     }
 }
