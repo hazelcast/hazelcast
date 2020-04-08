@@ -38,6 +38,18 @@ public class QueryStateRegistry {
         this.clockProvider = clockProvider;
     }
 
+    /**
+     * Registers a query on the initiator member before the query is started on participants.
+     *
+     * @param localMemberId Cache local member ID.
+     * @param initiatorTimeout Query timeout.
+     * @param initiatorPlan Query plan.
+     * @param initiatorResultProducer An object that will produce final query results.
+     * @param completionCallback Callback that will be invoked when the query is completed.
+     * @param register Whether th query should be registered. {@code true} for distributed queries, {@code false} for queries
+     *                 that return predefined values, e.g. EXPLAIN.
+     * @return Query state.
+     */
     public QueryState onInitiatorQueryStarted(
         UUID localMemberId,
         long initiatorTimeout,
@@ -65,6 +77,21 @@ public class QueryStateRegistry {
         return state;
     }
 
+    /**
+     * Registers a distributed query in response to query start message or query batch message.
+     * <p>
+     * The method is guaranteed to be invoked after initiator state is created on the initiator member.
+     * <p>
+     * It is possible that the method will be invoked after the query is declared completed. For example. a batch
+     * may arrive from the remote concurrently after query cancellation, because there is no distributed coordination
+     * of these events. This is not a problem, because {@link QueryStateRegistryUpdater} will eventually detect that
+     * the query is not longer active on the initiator member.
+     *
+     * @param localMemberId Cache local member ID.
+     * @param queryId Query ID.
+     * @param completionCallback Callback that will be invoked when the query is completed.
+     * @return Query state or {@code null} if the query with the given ID is guaranteed to be already completed.
+     */
     public QueryState onDistributedQueryStarted(
         UUID localMemberId,
         QueryId queryId,
@@ -100,8 +127,24 @@ public class QueryStateRegistry {
         }
     }
 
-    public void complete(QueryId queryId) {
+    /**
+     * Invoked from the {@link QueryStateCompletionCallback} when the execution of the query is completed.
+     *
+     * @param queryId Query ID.
+     */
+    public void onQueryCompleted(QueryId queryId) {
         states.remove(queryId);
+    }
+
+    /**
+     * Clears the registry. The method is called in case of recovery from the split brain.
+     * <p>
+     *  No additional precautions (such as forceful completion of already running queries) are needed, because a new ID
+     *  is assigned to the local member, and a member with the previous ID is declared dead. As a result,
+     *  {@link QueryStateRegistryUpdater} will detect that old queries have missing members, and will cancel them.
+     */
+    public void reset() {
+        states.clear();
     }
 
     public QueryState getState(QueryId queryId) {
@@ -110,9 +153,5 @@ public class QueryStateRegistry {
 
     public Collection<QueryState> getStates() {
         return states.values();
-    }
-
-    public void reset() {
-        states.clear();
     }
 }

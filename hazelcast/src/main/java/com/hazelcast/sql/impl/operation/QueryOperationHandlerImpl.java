@@ -325,7 +325,7 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
 
     @Override
     public void onCompleted(QueryId queryId) {
-        stateRegistry.complete(queryId);
+        stateRegistry.onQueryCompleted(queryId);
     }
 
     @Override
@@ -341,7 +341,7 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
                 submit(getLocalMemberId(), memberId, operation);
             }
         } finally {
-            stateRegistry.complete(queryId);
+            stateRegistry.onQueryCompleted(queryId);
         }
     }
 
