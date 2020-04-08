@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.exec.io.flowcontrol.simple;
 
-import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.FaultyQueryOperationHandler;
 import com.hazelcast.sql.impl.LoggingQueryOperationHandler;
@@ -149,7 +149,7 @@ public class SimpleFlowControlTest {
 
         try {
             flowControl.onFragmentExecutionCompleted();
-        } catch (HazelcastSqlException e) {
+        } catch (QueryException e) {
             assertEquals(SqlErrorCode.MEMBER_CONNECTION, e.getCode());
         }
     }

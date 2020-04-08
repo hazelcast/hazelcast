@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.exec.root;
 
-import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 
@@ -44,7 +44,7 @@ public class BlockingRootResultConsumer implements RootResultConsumer {
     private boolean done;
 
     /** Error which occurred during query execution. */
-    private HazelcastSqlException doneError;
+    private QueryException doneError;
 
     @Override
     public void setup(QueryFragmentContext context) {
@@ -75,7 +75,7 @@ public class BlockingRootResultConsumer implements RootResultConsumer {
     }
 
     @Override
-    public void onError(HazelcastSqlException error) {
+    public void onError(QueryException error) {
         synchronized (mux) {
             if (!done) {
                 done = true;
@@ -118,7 +118,7 @@ public class BlockingRootResultConsumer implements RootResultConsumer {
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
 
-                    throw HazelcastSqlException.error("Thread was interrupted while waiting for more results.", e);
+                    throw QueryException.error("Thread was interrupted while waiting for more results.", e);
                 }
             }
         }

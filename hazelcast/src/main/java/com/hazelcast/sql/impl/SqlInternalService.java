@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.exec.root.BlockingRootResultConsumer;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperationFactory;
@@ -110,7 +109,7 @@ public class SqlInternalService {
         UUID localMemberId = nodeServiceProvider.getLocalMemberId();
 
         if (!plan.getPartitionMap().containsKey(localMemberId)) {
-            throw HazelcastSqlException.memberLeave(localMemberId);
+            throw QueryException.memberLeave(localMemberId);
         }
 
         // Prepare mappings.
@@ -152,7 +151,7 @@ public class SqlInternalService {
                 QueryExecuteOperation remoteOp = operationFactory.create(state.getQueryId(), remoteMemberId);
 
                 if (!operationHandler.submit(localMemberId, remoteMemberId, remoteOp)) {
-                    throw HazelcastSqlException.memberLeave(remoteMemberId);
+                    throw QueryException.memberLeave(remoteMemberId);
                 }
             }
 

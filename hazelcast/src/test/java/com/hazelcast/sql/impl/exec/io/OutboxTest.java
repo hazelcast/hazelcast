@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.exec.io;
 
-import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.FaultyQueryOperationHandler;
 import com.hazelcast.sql.impl.LoggingQueryOperationHandler;
@@ -112,7 +112,7 @@ public class OutboxTest extends SqlTestSupport {
             outbox.onRowBatch(EmptyRowBatch.INSTANCE, true, 0, AlwaysTrueOutboxSendQualifier.INSTANCE);
 
             fail();
-        } catch (HazelcastSqlException e) {
+        } catch (QueryException e) {
             assertEquals(SqlErrorCode.MEMBER_CONNECTION, e.getCode());
         }
     }

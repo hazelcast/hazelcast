@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql;
+package com.hazelcast.sql.impl;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.sql.SqlErrorCode;
 
 import java.util.Collection;
 import java.util.UUID;
@@ -24,12 +25,12 @@ import java.util.UUID;
 /**
  * Exception occurred during SQL query execution.
  */
-public final class HazelcastSqlException extends HazelcastException {
+public final class QueryException extends HazelcastException {
 
     private int code;
     private UUID originatingMemberId;
 
-    private HazelcastSqlException(int code, String message, Throwable cause, UUID originatingMemberId) {
+    private QueryException(int code, String message, Throwable cause, UUID originatingMemberId) {
         super(message, cause);
 
         this.code = code;
@@ -42,7 +43,7 @@ public final class HazelcastSqlException extends HazelcastException {
      * @param message Error message.
      * @return Exception object.
      */
-    public static HazelcastSqlException error(String message) {
+    public static QueryException error(String message) {
         return error(message, null);
     }
 
@@ -52,7 +53,7 @@ public final class HazelcastSqlException extends HazelcastException {
      * @param message Error message.
      * @return Exception object.
      */
-    public static HazelcastSqlException error(String message, Throwable cause) {
+    public static QueryException error(String message, Throwable cause) {
         return error(SqlErrorCode.GENERIC, message, cause);
     }
 
@@ -63,7 +64,7 @@ public final class HazelcastSqlException extends HazelcastException {
      * @param message Error message.
      * @return Exception object.
      */
-    public static HazelcastSqlException error(int code, String message) {
+    public static QueryException error(int code, String message) {
         return error(code, message, null);
     }
 
@@ -75,8 +76,8 @@ public final class HazelcastSqlException extends HazelcastException {
      * @param cause Cause.
      * @return Exception object.
      */
-    public static HazelcastSqlException error(int code, String message, Throwable cause) {
-        return new HazelcastSqlException(code, message, cause, null);
+    public static QueryException error(int code, String message, Throwable cause) {
+        return new QueryException(code, message, cause, null);
     }
 
     /**
@@ -87,27 +88,27 @@ public final class HazelcastSqlException extends HazelcastException {
      * @param originatingMemberId Originating member ID.
      * @return Exception object.
      */
-    public static HazelcastSqlException remoteError(int code, String message, UUID originatingMemberId) {
-        return new HazelcastSqlException(code, message, null, originatingMemberId);
+    public static QueryException remoteError(int code, String message, UUID originatingMemberId) {
+        return new QueryException(code, message, null, originatingMemberId);
     }
 
-    public static HazelcastSqlException memberConnection(UUID memberId) {
+    public static QueryException memberConnection(UUID memberId) {
         return error(SqlErrorCode.MEMBER_CONNECTION, "Connection to member is broken: " + memberId);
     }
 
-    public static HazelcastSqlException memberLeave(UUID memberId) {
+    public static QueryException memberLeave(UUID memberId) {
         return error(SqlErrorCode.MEMBER_LEAVE, "Participating member has left the topology: " + memberId);
     }
 
-    public static HazelcastSqlException memberLeave(Collection<UUID> memberIds) {
+    public static QueryException memberLeave(Collection<UUID> memberIds) {
         return error(SqlErrorCode.MEMBER_LEAVE, "Participating members has left the topology: " + memberIds);
     }
 
-    public static HazelcastSqlException timeout(long timeout) {
+    public static QueryException timeout(long timeout) {
         return error(SqlErrorCode.TIMEOUT, "Query has been cancelled due to timeout (" + timeout + " ms)");
     }
 
-    public static HazelcastSqlException cancelledByUser() {
+    public static QueryException cancelledByUser() {
         return error(SqlErrorCode.CANCELLED_BY_USER, "Query was cancelled by user");
     }
 
