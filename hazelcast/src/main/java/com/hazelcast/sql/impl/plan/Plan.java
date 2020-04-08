@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.plan;
 
 import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.sql.impl.plan.node.PlanNode;
 
 import java.util.List;
 import java.util.Map;
@@ -33,7 +34,10 @@ public class Plan {
     private final List<UUID> dataMemberIds;
 
     /** Fragment nodes. */
-    private final List<PlanFragment> fragments;
+    private final List<PlanNode> fragments;
+
+    /** Fragment mapping. */
+    private final List<PlanFragmentMapping> fragmentMappings;
 
     /** Outbound edge mapping (from edge ID to owning fragment position). */
     private final Map<Integer, Integer> outboundEdgeMap;
@@ -47,7 +51,8 @@ public class Plan {
     public Plan(
         Map<UUID, PartitionIdSet> partMap,
         List<UUID> dataMemberIds,
-        List<PlanFragment> fragments,
+        List<PlanNode> fragments,
+        List<PlanFragmentMapping> fragmentMappings,
         Map<Integer, Integer> outboundEdgeMap,
         Map<Integer, Integer> inboundEdgeMap,
         Map<Integer, Integer> inboundEdgeMemberCountMap
@@ -55,6 +60,7 @@ public class Plan {
         this.partMap = partMap;
         this.dataMemberIds = dataMemberIds;
         this.fragments = fragments;
+        this.fragmentMappings = fragmentMappings;
         this.outboundEdgeMap = outboundEdgeMap;
         this.inboundEdgeMap = inboundEdgeMap;
         this.inboundEdgeMemberCountMap = inboundEdgeMemberCountMap;
@@ -68,8 +74,16 @@ public class Plan {
         return dataMemberIds;
     }
 
-    public List<PlanFragment> getFragments() {
-        return fragments;
+    public int getFragmentCount() {
+        return fragments.size();
+    }
+
+    public PlanNode getFragment(int index) {
+        return fragments.get(index);
+    }
+
+    public PlanFragmentMapping getFragmentMapping(int index) {
+        return fragmentMappings.get(index);
     }
 
     public Map<Integer, Integer> getOutboundEdgeMap() {

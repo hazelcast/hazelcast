@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.operation;
 
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.plan.Plan;
-import com.hazelcast.sql.impl.plan.PlanFragment;
+import com.hazelcast.sql.impl.plan.PlanFragmentMapping;
 import com.hazelcast.sql.impl.plan.node.PlanNode;
 
 import java.util.ArrayList;
@@ -53,24 +53,26 @@ public class QueryExecuteOperationFactory {
     }
 
     public QueryExecuteOperation create(QueryId queryId, UUID targetMemberId) {
-        List<PlanFragment> planFragments = plan.getFragments();
+        int fragmentCount = plan.getFragmentCount();
 
         // Prepare descriptors.
-        List<QueryExecuteOperationFragment> fragments = new ArrayList<>(planFragments.size());
+        List<QueryExecuteOperationFragment> fragments = new ArrayList<>(fragmentCount);
 
-        for (PlanFragment fragment : planFragments) {
+        for (int i = 0; i < fragmentCount; i++) {
+            PlanFragmentMapping planMapping = plan.getFragmentMapping(i);
+
             QueryExecuteOperationFragmentMapping mapping;
             Collection<UUID> memberIds;
             PlanNode node;
 
-            if (fragment.getMapping().isDataMembers()) {
+            if (planMapping.isDataMembers()) {
                 mapping = DATA_MEMBERS;
                 memberIds = null;
-                node = fragment.getNode();
+                node = plan.getFragment(i);
             } else {
                 mapping = EXPLICIT;
-                memberIds = fragment.getMapping().getMemberIds();
-                node = memberIds.contains(targetMemberId) ? fragment.getNode() : null;
+                memberIds = planMapping.getMemberIds();
+                node = memberIds.contains(targetMemberId) ? plan.getFragment(i) : null;
             }
 
             fragments.add(new QueryExecuteOperationFragment(node, mapping, memberIds));
