@@ -16,8 +16,15 @@
 
 package com.hazelcast.client.config;
 
+import com.hazelcast.client.config.impl.XmlClientFailoverConfigLocator;
+import com.hazelcast.client.config.impl.YamlClientFailoverConfigLocator;
+import com.hazelcast.core.HazelcastException;
+
 import java.util.LinkedList;
 import java.util.List;
+
+import static com.hazelcast.internal.config.DeclarativeConfigUtil.SYSPROP_CLIENT_FAILOVER_CONFIG;
+import static com.hazelcast.internal.config.DeclarativeConfigUtil.validateSuffixInSystemProperty;
 
 /**
  * Config class to configure multiple client configs to be used by single client instance
@@ -32,6 +39,42 @@ public class ClientFailoverConfig {
 
     public ClientFailoverConfig() {
 
+    }
+
+    /**
+     * Populates Hazelcast {@link ClientFailoverConfig} object from an external configuration file.
+     * <p>
+     * It tries to load Hazelcast Failover Client configuration from a list of well-known locations.
+     * When no location contains Hazelcast Failover Client configuration then it returns default.
+     * <p>
+     * Note that the same mechanism is used when calling
+     * {@link com.hazelcast.client.HazelcastClient#newHazelcastFailoverClient()}.
+     *
+     * @return ClientFailoverConfig created from a file when exists, otherwise default.
+     */
+    public static ClientFailoverConfig load() {
+        validateSuffixInSystemProperty(SYSPROP_CLIENT_FAILOVER_CONFIG);
+
+        XmlClientFailoverConfigLocator xmlConfigLocator = new XmlClientFailoverConfigLocator();
+        YamlClientFailoverConfigLocator yamlConfigLocator = new YamlClientFailoverConfigLocator();
+
+        ClientFailoverConfig config;
+        if (xmlConfigLocator.locateFromSystemProperty()) {
+            // 1. Try loading XML config from the configuration provided in system property
+            config = new XmlClientFailoverConfigBuilder(xmlConfigLocator).build();
+        } else if (yamlConfigLocator.locateFromSystemProperty()) {
+            // 2. Try loading YAML config from the configuration provided in system property
+            config = new YamlClientFailoverConfigBuilder(yamlConfigLocator).build();
+        } else if (xmlConfigLocator.locateInWorkDirOrOnClasspath()) {
+            // 3. Try loading XML config from the working directory or from the classpath
+            config = new XmlClientFailoverConfigBuilder(xmlConfigLocator).build();
+        } else if (yamlConfigLocator.locateInWorkDirOrOnClasspath()) {
+            // 4. Try loading YAML config from the working directory or from the classpath
+            config = new YamlClientFailoverConfigBuilder(yamlConfigLocator).build();
+        } else {
+            throw new HazelcastException("Failed to load ClientFailoverConfig");
+        }
+        return config;
     }
 
     public ClientFailoverConfig addClientConfig(ClientConfig clientConfig) {

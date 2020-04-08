@@ -37,6 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -62,6 +63,14 @@ public class ClientConfigTest {
         ClientConfig expected = new ClientConfig();
         ClientConfig actual = new ClientConfig(expected);
         assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testAccessDefaultCluster() {
+        hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+
+        assertNotNull(client.getConfig());
     }
 
     @Test
