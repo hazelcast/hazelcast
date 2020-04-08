@@ -485,9 +485,9 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     public void reset() {
+        sqlService.reset();
         operationParker.reset();
         operationService.reset();
-        sqlService.reset();
     }
 
     @SuppressWarnings("checkstyle:npathcomplexity")
