@@ -73,7 +73,6 @@ public class SqlInternalService {
 
     public SqlInternalService(
         String instanceName,
-        ClockProvider clockProvider,
         NodeServiceProvider nodeServiceProvider,
         InternalSerializationService serializationService,
         int operationThreadCount,
@@ -86,7 +85,7 @@ public class SqlInternalService {
         memoryManager = new GlobalMemoryReservationManager(maxMemory);
 
         // Create state registries since they do not depend on anything.
-        stateRegistry = new QueryStateRegistry(clockProvider);
+        stateRegistry = new QueryStateRegistry(nodeServiceProvider);
         clientStateRegistry = new QueryClientStateRegistry();
 
         // Operation handler depends on state registry.

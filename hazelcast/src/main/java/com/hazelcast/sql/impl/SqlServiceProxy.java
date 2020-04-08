@@ -73,7 +73,6 @@ public class SqlServiceProxy implements SqlService, Consumer<Packet> {
         internalService = new SqlInternalService(
             instanceName,
             nodeServiceProvider,
-            nodeServiceProvider,
             serializationService,
             operationThreadCount,
             fragmentThreadCount,
