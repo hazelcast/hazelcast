@@ -17,7 +17,6 @@
 package com.hazelcast.sql;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.sql.impl.plan.PlanFragment;
 import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.support.ModelGenerator;
 import com.hazelcast.sql.support.SqlTestSupport;
@@ -93,9 +92,6 @@ public class JoinSqlTest extends SqlTestSupport {
             "SELECT p.name, d.title FROM person p INNER JOIN department d ON p.deptId = d.__key"
         );
 
-        PlanFragment fragmentOn = planOn.getFragments().get(0);
-        PlanFragment fragmentWhere = planWhere.getFragments().get(0);
-
-        Assert.assertEquals(fragmentOn.getNode(), fragmentWhere.getNode());
+        Assert.assertEquals(planOn.getFragment(0), planWhere.getFragment(0));
     }
 }

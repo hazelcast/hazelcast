@@ -60,7 +60,6 @@ import com.hazelcast.sql.impl.optimizer.OptimizerStatistics;
 import com.hazelcast.sql.impl.partitioner.AllFieldsRowPartitioner;
 import com.hazelcast.sql.impl.partitioner.FieldsRowPartitioner;
 import com.hazelcast.sql.impl.plan.Plan;
-import com.hazelcast.sql.impl.plan.PlanFragment;
 import com.hazelcast.sql.impl.plan.PlanFragmentMapping;
 import com.hazelcast.sql.impl.plan.node.AggregatePlanNode;
 import com.hazelcast.sql.impl.plan.node.FetchOffsetPlanNodeFieldTypeProvider;
@@ -130,7 +129,16 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     private final OptimizerStatistics stats;
 
     /** Prepared fragments. */
-    private final List<PlanFragment> fragments = new ArrayList<>();
+    private final List<PlanNode> fragments = new ArrayList<>();
+
+    /** Fragment mappings. */
+    private final List<PlanFragmentMapping> fragmentMappings = new ArrayList<>();
+
+    /** Outbound edge of the fragment. */
+    private final List<Integer> fragmentOutboundEdge = new ArrayList<>();
+
+    /** Inbound edges of the fragment. */
+    private final List<List<Integer>> fragmentInboundEdges = new ArrayList<>();
 
     /** Upstream nodes. Normally it is a one node, except of multi-source operations (e.g. joins, sets, subqueries). */
     private final Deque<PlanNode> upstreamNodes = new ArrayDeque<>();
@@ -171,18 +179,18 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         Map<Integer, Integer> inboundEdgeMemberCountMap = new HashMap<>();
 
         for (int i = 0; i < fragments.size(); i++) {
-            PlanFragment fragment = fragments.get(i);
-
-            Integer outboundEdge = fragment.getOutboundEdge();
+            PlanFragmentMapping fragmentMapping = fragmentMappings.get(i);
+            Integer outboundEdge = fragmentOutboundEdge.get(i);
+            List<Integer> inboundEdges = fragmentInboundEdges.get(i);
 
             if (outboundEdge != null) {
                 outboundEdgeMap.put(outboundEdge, i);
             }
 
-            if (fragment.getInboundEdges() != null) {
-                for (Integer inboundEdge : fragment.getInboundEdges()) {
+            if (inboundEdges != null) {
+                for (Integer inboundEdge : inboundEdges) {
                     inboundEdgeMap.put(inboundEdge, i);
-                    inboundEdgeMemberCountMap.put(inboundEdge, fragment.getMapping().getMemberCount());
+                    inboundEdgeMemberCountMap.put(inboundEdge, fragmentMapping.getMemberCount());
                 }
             }
         }
@@ -196,6 +204,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             partMap,
             dataMemberIds,
             fragments,
+            fragmentMappings,
             outboundEdgeMap,
             inboundEdgeMap,
             inboundEdgeMemberCountMap,
@@ -678,17 +687,10 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
         node.visit(edgeVisitor);
 
-        Integer outboundEdge = edgeVisitor.getOutboundEdge();
-        List<Integer> inboundEdges = edgeVisitor.getInboundEdges();
-
-        PlanFragment fragment = new PlanFragment(
-            node,
-            outboundEdge,
-            inboundEdges,
-            mapping
-        );
-
-        fragments.add(fragment);
+        fragments.add(node);
+        fragmentMappings.add(mapping);
+        fragmentOutboundEdge.add(edgeVisitor.getOutboundEdge());
+        fragmentInboundEdges.add(edgeVisitor.getInboundEdges());
     }
 
     private int nextEdge() {
