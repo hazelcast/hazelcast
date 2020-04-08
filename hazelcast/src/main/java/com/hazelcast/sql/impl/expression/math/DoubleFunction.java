@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.expression.math;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.UniExpression;
@@ -49,7 +49,7 @@ public class DoubleFunction extends UniExpression<Double> {
         QueryDataType operandType = operand.getType();
 
         if (!MathFunctionUtils.canConvertToNumber(operandType)) {
-            throw HazelcastSqlException.error("Operand is not numeric: " + operandType);
+            throw QueryException.error("Operand is not numeric: " + operandType);
         }
 
         return new DoubleFunction(operand, type);
@@ -107,7 +107,7 @@ public class DoubleFunction extends UniExpression<Double> {
                 return Math.toRadians(valueDouble);
 
             default:
-                throw HazelcastSqlException.error("Unsupported type: " + type);
+                throw QueryException.error("Unsupported type: " + type);
         }
     }
 

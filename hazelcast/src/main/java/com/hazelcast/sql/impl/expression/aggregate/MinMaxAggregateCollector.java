@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.expression.aggregate;
 
-import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.exec.agg.AggregateCollector;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
@@ -65,7 +65,7 @@ public final class MinMaxAggregateCollector extends AggregateCollector {
         if (val instanceof Comparable) {
             return (Comparable<?>) val;
         } else {
-            throw HazelcastSqlException.error("Value is not comparable: " + val);
+            throw QueryException.error("Value is not comparable: " + val);
         }
     }
 }

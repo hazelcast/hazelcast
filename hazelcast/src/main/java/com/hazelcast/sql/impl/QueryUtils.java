@@ -16,9 +16,13 @@
 
 package com.hazelcast.sql.impl;
 
+import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlColumnType;
+import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.type.QueryDataType;
+
+import java.util.UUID;
 
 import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
 
@@ -38,6 +42,24 @@ public final class QueryUtils {
 
     public static String workerName(String instanceName, String workerType, long index) {
         return instanceName + "-" + workerType + "-worker-" + index;
+    }
+
+    public static HazelcastSqlException toPublicException(Exception e, UUID localMemberId) {
+        assert !(e instanceof HazelcastSqlException) : "Do not wrap multiple times: " + e;
+
+        if (e instanceof QueryException) {
+            QueryException e0 = (QueryException) e;
+
+            UUID originatingMemberId = e0.getOriginatingMemberId();
+
+            if (originatingMemberId == null) {
+                originatingMemberId = localMemberId;
+            }
+
+            return new HazelcastSqlException(originatingMemberId, e0.getCode(), e.getMessage(), e);
+        } else {
+            return new HazelcastSqlException(localMemberId, SqlErrorCode.GENERIC, e.getMessage(), e);
+        }
     }
 
     /**

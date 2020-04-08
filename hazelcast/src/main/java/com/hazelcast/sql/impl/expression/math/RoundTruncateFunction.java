@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.expression.math;
 
-import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.BiExpressionWithType;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -44,7 +44,7 @@ public abstract class RoundTruncateFunction<T> extends BiExpressionWithType<T> {
         QueryDataType resultType = inferReturnType(operand1.getType());
 
         if (operand2 != null && !MathFunctionUtils.canConvertToNumber(operand2.getType())) {
-            throw HazelcastSqlException.error("Operand 2 is not numeric: " + operand2.getType());
+            throw QueryException.error("Operand 2 is not numeric: " + operand2.getType());
         }
 
         if (truncate) {
@@ -93,7 +93,7 @@ public abstract class RoundTruncateFunction<T> extends BiExpressionWithType<T> {
                 return (T) (Double) value.doubleValue();
 
             default:
-                throw HazelcastSqlException.error("Unexpected result type: " + resultType);
+                throw QueryException.error("Unexpected result type: " + resultType);
         }
     }
 
@@ -101,7 +101,7 @@ public abstract class RoundTruncateFunction<T> extends BiExpressionWithType<T> {
 
     private static QueryDataType inferReturnType(QueryDataType operand1Type) {
         if (!MathFunctionUtils.canConvertToNumber(operand1Type)) {
-            throw HazelcastSqlException.error("Operand 1 is not numeric: " + operand1Type);
+            throw QueryException.error("Operand 1 is not numeric: " + operand1Type);
         }
 
         switch (operand1Type.getTypeFamily()) {

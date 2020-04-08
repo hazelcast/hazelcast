@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.exec;
 
-import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.Row;
@@ -98,7 +98,7 @@ public class UpstreamState implements Iterable<Row> {
 
     public RowBatch consumeBatch() {
         if (currentBatchPos != 0) {
-            throw HazelcastSqlException.error("Batch can be consumed only as a whole: " + upstream);
+            throw QueryException.error("Batch can be consumed only as a whole: " + upstream);
         }
 
         RowBatch batch = currentBatch;

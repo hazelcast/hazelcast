@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.expression.string;
 
-import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryException;
 
 import java.util.Objects;
 import java.util.regex.Matcher;
@@ -85,7 +85,7 @@ public class LikeFunctionExecutor {
 
         if (escape != null) {
             if (escape.length() != 1) {
-                throw HazelcastSqlException.error("Escape parameter should be a single character: " + escape);
+                throw QueryException.error("Escape parameter should be a single character: " + escape);
             }
 
             escapeChar = escape.charAt(0);
@@ -108,7 +108,7 @@ public class LikeFunctionExecutor {
 
             if (patternChar == escapeChar) {
                 if (i == (pattern.length() - 1)) {
-                    throw HazelcastSqlException.error("Escape symbol cannot be located at the end of the pattern.");
+                    throw QueryException.error("Escape symbol cannot be located at the end of the pattern.");
                 }
 
                 char nextPatternChar = pattern.charAt(i + 1);
@@ -118,7 +118,7 @@ public class LikeFunctionExecutor {
 
                     i++;
                 } else {
-                    throw HazelcastSqlException.error("Escape should be applied only to '_', '%' or escape symbols.");
+                    throw QueryException.error("Escape should be applied only to '_', '%' or escape symbols.");
                 }
             } else if (patternChar == ONE_SQL) {
                 javaPattern.append(ONE_JAVA);

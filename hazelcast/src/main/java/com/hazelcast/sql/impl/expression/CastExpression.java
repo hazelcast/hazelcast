@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.expression;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
@@ -48,7 +48,7 @@ public class CastExpression<T> extends UniExpression<T> {
         boolean convertible = operand.getType().getConverter().canConvertTo(type.getTypeFamily());
 
         if (!convertible) {
-            throw HazelcastSqlException.error("Cannot convert " + operand.getType() + " to " + type);
+            throw QueryException.error("Cannot convert " + operand.getType() + " to " + type);
         }
 
         return new CastExpression<>(operand, type);

@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.expression.math;
 
-import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.BiExpressionWithType;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -104,7 +104,7 @@ public class MinusFunction<T> extends BiExpressionWithType<T> {
                 return operand1Converter.asDouble(operand1) - operand2Converter.asDouble(operand2);
 
             default:
-                throw HazelcastSqlException.error("Invalid type: " + resultType);
+                throw QueryException.error("Invalid type: " + resultType);
         }
     }
 
@@ -161,7 +161,7 @@ public class MinusFunction<T> extends BiExpressionWithType<T> {
             }
 
             default:
-                throw HazelcastSqlException.error("Unsupported result type: " + resType);
+                throw QueryException.error("Unsupported result type: " + resType);
         }
     }
 

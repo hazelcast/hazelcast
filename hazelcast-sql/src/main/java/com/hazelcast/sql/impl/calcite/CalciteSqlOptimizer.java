@@ -21,7 +21,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.SqlToQueryType;
 import com.hazelcast.sql.impl.plan.Plan;
@@ -138,7 +138,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             MemberImpl member = nodeEngine.getClusterService().getMember(partMemberId);
 
             if (member == null) {
-                throw HazelcastSqlException.memberLeave(partMemberId);
+                throw QueryException.memberLeave(partMemberId);
             }
 
             dataMemberIds.add(partMemberId);

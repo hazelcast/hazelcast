@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.calcite;
 import com.google.common.collect.ImmutableList;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.calcite.cost.CostFactory;
 import com.hazelcast.sql.impl.calcite.cost.metadata.MetadataProvider;
@@ -200,7 +200,7 @@ public final class OptimizerContext {
             // TODO: Get column names through SqlSelect.selectList[i].toString() (and, possibly, origins?)
             return validator.validate(node);
         } catch (Exception e) {
-            throw HazelcastSqlException.error(SqlErrorCode.PARSING, e.getMessage(), e);
+            throw QueryException.error(SqlErrorCode.PARSING, e.getMessage(), e);
         }
     }
 

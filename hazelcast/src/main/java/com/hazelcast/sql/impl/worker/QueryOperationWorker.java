@@ -20,7 +20,7 @@ import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.LocalMemberIdProvider;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryUtils;
@@ -159,7 +159,7 @@ public class QueryOperationWorker implements Runnable {
         UUID targetMemberId = e.getCallerId();
         UUID initiatorMemberId = queryId.getMemberId();
 
-        HazelcastSqlException error = HazelcastSqlException.error("Failed to deserialize " + e.getOperationClassName()
+        QueryException error = QueryException.error("Failed to deserialize " + e.getOperationClassName()
             + " received from " + targetMemberId + ": " + e.getMessage(), e);
 
         QueryCancelOperation cancelOperation =

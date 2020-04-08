@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.exec;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.LoggingQueryOperationHandler;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.exec.io.Inbox;
@@ -413,7 +413,7 @@ public class CreateExecPlanNodeVisitorTest {
         }
 
         @Override
-        public void onError(HazelcastSqlException error) {
+        public void onError(QueryException error) {
             // No-op.
         }
     }

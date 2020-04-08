@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.operation;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.NodeServiceProvider;
 import com.hazelcast.sql.impl.QueryId;
@@ -135,7 +135,7 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
             Connection connection = getConnection(targetMemberId);
 
             if (connection == null) {
-                throw HazelcastSqlException.memberLeave(targetMemberId);
+                throw QueryException.memberLeave(targetMemberId);
             }
 
             return new QueryOperationChannelImpl(this, sourceMemberId, connection);
@@ -264,7 +264,7 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
         // We pass originating member ID here instead if caller ID to preserve the causality:
         // in the "participant1 -> co4ordinator -> participant2" flow, the second participant
         // get the ID of participant1.
-        HazelcastSqlException error = HazelcastSqlException.remoteError(
+        QueryException error = QueryException.remoteError(
             operation.getErrorCode(),
             operation.getErrorMessage(),
             operation.getOriginatingMemberId()
@@ -309,7 +309,7 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
             return;
         }
 
-        HazelcastSqlException error = HazelcastSqlException.remoteError(
+        QueryException error = QueryException.remoteError(
             SqlErrorCode.GENERIC,
             "Query is no longer active on coordinator.",
             operation.getCallerId()
@@ -365,7 +365,7 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
         try {
             return serializationService.toBytes(operation);
         } catch (Exception e) {
-            throw HazelcastSqlException.error(
+            throw QueryException.error(
                 "Failed to serialize " + operation.getClass().getSimpleName() + ": " + e.getMessage(), e);
         }
     }

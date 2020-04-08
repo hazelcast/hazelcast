@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.expression.math;
 
-import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.util.Eval;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -41,7 +41,7 @@ public class RandomFunction extends UniExpression<Double> {
 
     public static RandomFunction create(Expression<?> seedExp) {
         if (seedExp != null && !MathFunctionUtils.canConvertToNumber(seedExp.getType())) {
-            throw HazelcastSqlException.error("Operand is not numeric: " + seedExp.getType());
+            throw QueryException.error("Operand is not numeric: " + seedExp.getType());
         }
 
         return new RandomFunction(seedExp);

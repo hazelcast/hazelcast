@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.expression.math;
 
-import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.BiExpression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.util.Eval;
@@ -38,11 +38,11 @@ public class Atan2Function extends BiExpression<Double> {
 
     public static Atan2Function create(Expression<?> first, Expression<?> second) {
         if (!MathFunctionUtils.canConvertToNumber(first.getType())) {
-            throw HazelcastSqlException.error("Operand 1 is not numeric: " + first.getType());
+            throw QueryException.error("Operand 1 is not numeric: " + first.getType());
         }
 
         if (!MathFunctionUtils.canConvertToNumber(second.getType())) {
-            throw HazelcastSqlException.error("Operand 2 is not numeric: " + second.getType());
+            throw QueryException.error("Operand 2 is not numeric: " + second.getType());
         }
 
         return new Atan2Function(first, second);

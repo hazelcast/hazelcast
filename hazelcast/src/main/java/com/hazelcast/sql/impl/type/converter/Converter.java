@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.type.converter;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
@@ -295,22 +295,22 @@ public abstract class Converter implements Serializable {
 
     public abstract Object convertToSelf(Converter converter, Object val);
 
-    protected final HazelcastSqlException cannotConvert(QueryDataTypeFamily target) {
+    protected final QueryException cannotConvert(QueryDataTypeFamily target) {
         return cannotConvert(target, null);
     }
 
-    protected final HazelcastSqlException cannotConvert(QueryDataTypeFamily target, Object val) {
+    protected final QueryException cannotConvert(QueryDataTypeFamily target, Object val) {
         return cannotConvert(typeFamily, target, val);
     }
 
-    protected final HazelcastSqlException cannotConvert(QueryDataTypeFamily source, QueryDataTypeFamily target, Object val) {
+    protected final QueryException cannotConvert(QueryDataTypeFamily source, QueryDataTypeFamily target, Object val) {
         String message = "Cannot convert " + source + " to " + target;
 
         if (val != null) {
             message += ": " + val;
         }
 
-        return HazelcastSqlException.error(SqlErrorCode.DATA_EXCEPTION, message);
+        return QueryException.error(SqlErrorCode.DATA_EXCEPTION, message);
     }
 
     private static boolean canConvert(Method method) {

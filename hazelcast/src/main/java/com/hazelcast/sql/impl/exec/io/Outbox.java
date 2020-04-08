@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.exec.io;
 
-import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.operation.QueryBatchExchangeOperation;
 import com.hazelcast.sql.impl.operation.QueryOperationChannel;
@@ -176,7 +176,7 @@ public class Outbox extends AbstractMailbox implements OutboundHandler {
         boolean success = operationChannel.submit(op);
 
         if (!success) {
-            throw HazelcastSqlException.memberConnection(targetMemberId);
+            throw QueryException.memberConnection(targetMemberId);
         }
 
         rows = null;

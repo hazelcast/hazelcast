@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.expression.util;
 
-import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
 
 /**
@@ -33,11 +33,11 @@ public final class EnsureConvertible {
      * Ensures that the given expression is convertible to BOOLEAN type.
      *
      * @param expression the expression to ensure the conversion of.
-     * @throws HazelcastSqlException if the expression is not convertible.
+     * @throws QueryException if the expression is not convertible.
      */
     public static void toBoolean(Expression<?> expression) {
         if (!expression.getType().getConverter().canConvertToBit()) {
-            throw HazelcastSqlException.error("Expression cannot be converted to BOOLEAN: " + expression);
+            throw QueryException.error("Expression cannot be converted to BOOLEAN: " + expression);
         }
     }
 
@@ -45,11 +45,11 @@ public final class EnsureConvertible {
      * Ensures that the given expression is convertible to INT type.
      *
      * @param expression the expression to ensure the conversion of.
-     * @throws HazelcastSqlException if the expression is not convertible.
+     * @throws QueryException if the expression is not convertible.
      */
     public static void toInt(Expression<?> expression) {
         if (!expression.getType().getConverter().canConvertToInt()) {
-            throw HazelcastSqlException.error("Expression cannot be converted to INT: " + expression);
+            throw QueryException.error("Expression cannot be converted to INT: " + expression);
         }
     }
 
@@ -57,11 +57,11 @@ public final class EnsureConvertible {
      * Ensures that the given expression is convertible to VARCHAR type.
      *
      * @param expression the expression to ensure the conversion of.
-     * @throws HazelcastSqlException if the expression is not convertible.
+     * @throws QueryException if the expression is not convertible.
      */
     public static void toVarchar(Expression<?> expression) {
         if (!expression.getType().getConverter().canConvertToVarchar()) {
-            throw HazelcastSqlException.error("Expression cannot be converted to VARCHAR: " + expression);
+            throw QueryException.error("Expression cannot be converted to VARCHAR: " + expression);
         }
     }
 
@@ -70,11 +70,11 @@ public final class EnsureConvertible {
      * ZONE type.
      *
      * @param expression the expression to ensure the conversion of.
-     * @throws HazelcastSqlException if the expression is not convertible.
+     * @throws QueryException if the expression is not convertible.
      */
     public static void toTimestampWithTimezone(Expression<?> expression) {
         if (!expression.getType().getConverter().canConvertToVarchar()) {
-            throw HazelcastSqlException.error("Expression cannot be converted to TIMESTAMP WITH TIME ZONE: " + expression);
+            throw QueryException.error("Expression cannot be converted to TIMESTAMP WITH TIME ZONE: " + expression);
         }
     }
 

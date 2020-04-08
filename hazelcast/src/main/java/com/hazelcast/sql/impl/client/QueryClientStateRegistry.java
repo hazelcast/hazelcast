@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.client;
 
-import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlCursorImpl;
@@ -47,7 +47,7 @@ public class QueryClientStateRegistry {
         QueryClientState clientCursor = getClientCursor(clientId, queryId);
 
         if (clientCursor == null) {
-            throw HazelcastSqlException.error("Cursor not found (closed?): " + queryId);
+            throw QueryException.error("Cursor not found (closed?): " + queryId);
         }
 
         Iterator<SqlRow> iterator = clientCursor.getIterator();
@@ -100,7 +100,7 @@ public class QueryClientStateRegistry {
         }
 
         for (QueryClientState victim : victims) {
-            HazelcastSqlException error = HazelcastSqlException.clientLeave(victim.getClientId());
+            QueryException error = QueryException.clientLeave(victim.getClientId());
 
             victim.getCursor().closeOnError(error);
 

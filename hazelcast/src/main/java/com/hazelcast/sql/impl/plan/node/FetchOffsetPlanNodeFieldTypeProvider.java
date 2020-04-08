@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.plan.node;
 
-import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 public final class FetchOffsetPlanNodeFieldTypeProvider implements PlanNodeFieldTypeProvider {
@@ -29,6 +29,6 @@ public final class FetchOffsetPlanNodeFieldTypeProvider implements PlanNodeField
 
     @Override
     public QueryDataType getType(int index) {
-        throw HazelcastSqlException.error("Columns cannot be referenced in LIMIT/OFFSET statements");
+        throw QueryException.error("Columns cannot be referenced in LIMIT/OFFSET statements");
     }
 }

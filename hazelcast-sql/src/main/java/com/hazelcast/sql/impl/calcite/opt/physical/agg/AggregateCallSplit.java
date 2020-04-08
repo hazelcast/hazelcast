@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.opt.physical.agg;
 
-import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.calcite.operators.HazelcastSqlOperatorTable;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.rel.RelCollations;
@@ -62,7 +62,7 @@ public final class AggregateCallSplit {
         for (AggregateCall call : calls) {
             if (call.isDistinct()) {
                 // TODO: Add support for distinct aggregates
-                throw HazelcastSqlException.error("Distinct aggregates are not supported: " + call);
+                throw QueryException.error("Distinct aggregates are not supported: " + call);
             }
 
             SqlKind kind = call.getAggregation().getKind();
@@ -152,7 +152,7 @@ public final class AggregateCallSplit {
                     break;
 
                 default:
-                    throw HazelcastSqlException.error("Unsupported operation: " + kind);
+                    throw QueryException.error("Unsupported operation: " + kind);
             }
         }
 

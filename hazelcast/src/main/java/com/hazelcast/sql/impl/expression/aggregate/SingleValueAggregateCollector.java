@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.expression.aggregate;
 
-import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.exec.agg.AggregateCollector;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
@@ -40,7 +40,7 @@ public class SingleValueAggregateCollector extends AggregateCollector {
             res = operandValue != null ? operandValue : NULL;
         } else {
             // TODO: User need more context here. But how to provide it?
-            throw HazelcastSqlException.error("Multiple values are not allowed for the group.");
+            throw QueryException.error("Multiple values are not allowed for the group.");
         }
     }
 

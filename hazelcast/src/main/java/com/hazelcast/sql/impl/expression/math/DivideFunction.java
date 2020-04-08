@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.expression.math;
 
-import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.BiExpressionWithType;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -111,7 +111,7 @@ public class DivideFunction<T> extends BiExpressionWithType<T> {
             }
 
             default:
-                throw HazelcastSqlException.error("Invalid type: " + resultType);
+                throw QueryException.error("Invalid type: " + resultType);
         }
     }
 
@@ -145,7 +145,7 @@ public class DivideFunction<T> extends BiExpressionWithType<T> {
                     float res = operand1Converter.asReal(operand1) / operand2Converter.asReal(operand2);
 
                     if (Float.isInfinite(res)) {
-                        throw HazelcastSqlException.error("Division by zero.");
+                        throw QueryException.error("Division by zero.");
                     }
 
                     return res;
@@ -155,17 +155,17 @@ public class DivideFunction<T> extends BiExpressionWithType<T> {
                     double res = operand1Converter.asDouble(operand1) / operand2Converter.asDouble(operand2);
 
                     if (Double.isInfinite(res)) {
-                        throw HazelcastSqlException.error("Division by zero.");
+                        throw QueryException.error("Division by zero.");
                     }
 
                     return res;
                 }
 
                 default:
-                    throw HazelcastSqlException.error("Invalid type: " + resultType);
+                    throw QueryException.error("Invalid type: " + resultType);
             }
         } catch (ArithmeticException e) {
-            throw HazelcastSqlException.error("Division by zero.");
+            throw QueryException.error("Division by zero.");
         }
     }
 

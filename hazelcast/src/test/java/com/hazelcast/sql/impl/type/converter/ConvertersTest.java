@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.type.converter;
 
-import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.SqlCustomClass;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
@@ -653,7 +653,7 @@ public class ConvertersTest {
             runnable.run();
 
             fail("Must fail");
-        } catch (HazelcastSqlException e) {
+        } catch (QueryException e) {
             assertEquals(SqlErrorCode.DATA_EXCEPTION, e.getCode());
         }
     }
@@ -952,7 +952,7 @@ public class ConvertersTest {
             }
 
             fail("Must fail: " + typeFamily);
-        } catch (HazelcastSqlException e) {
+        } catch (QueryException e) {
             assertEquals(SqlErrorCode.DATA_EXCEPTION, e.getCode());
         }
     }

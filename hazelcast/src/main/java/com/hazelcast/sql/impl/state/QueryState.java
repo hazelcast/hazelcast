@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.state;
 
-import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryMetadata;
 import com.hazelcast.sql.impl.QueryResultProducer;
@@ -55,7 +55,7 @@ public final class QueryState implements QueryStateCallback {
     private final UUID localMemberId;
 
     /** Error which caused query completion. */
-    private volatile HazelcastSqlException completionError;
+    private volatile QueryException completionError;
 
     /** Whether query check was requested. */
     private volatile boolean queryCheckRequested;
@@ -140,6 +140,10 @@ public final class QueryState implements QueryStateCallback {
         return queryId;
     }
 
+    public UUID getLocalMemberId() {
+        return localMemberId;
+    }
+
     public boolean isInitiator() {
         return initiatorState != null;
     }
@@ -173,11 +177,11 @@ public final class QueryState implements QueryStateCallback {
         }
 
         // Wrap into common SQL exception if needed.
-        if (!(error instanceof HazelcastSqlException)) {
-            error = HazelcastSqlException.error(SqlErrorCode.GENERIC, error.getMessage(), error);
+        if (!(error instanceof QueryException)) {
+            error = QueryException.error(SqlErrorCode.GENERIC, error.getMessage(), error);
         }
 
-        HazelcastSqlException error0 = (HazelcastSqlException) error;
+        QueryException error0 = (QueryException) error;
 
         // Calculate the originating member.
         UUID originatingMemberId = error0.getOriginatingMemberId();
@@ -247,7 +251,7 @@ public final class QueryState implements QueryStateCallback {
             return false;
         }
 
-        HazelcastSqlException error = HazelcastSqlException.memberLeave(missingMemberIds);
+        QueryException error = QueryException.memberLeave(missingMemberIds);
 
         cancel(error);
 
@@ -268,7 +272,7 @@ public final class QueryState implements QueryStateCallback {
         }
 
         if (timeout != null && timeout > 0 && System.currentTimeMillis() > startTime + timeout) {
-            cancel(HazelcastSqlException.timeout(timeout));
+            cancel(QueryException.timeout(timeout));
 
             return true;
         } else {
@@ -305,7 +309,7 @@ public final class QueryState implements QueryStateCallback {
 
     @Override
     public void checkCancelled() {
-        HazelcastSqlException completionError0 = completionError;
+        QueryException completionError0 = completionError;
 
         if (completionError0 != null) {
             throw completionError0;

@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.exec.fetch;
 
-import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.EmptyRowBatch;
@@ -111,7 +111,7 @@ public class Fetch {
         Object val = expression.eval(FetchRow.INSTANCE, context);
 
         if (val == null) {
-            throw HazelcastSqlException.error("Value of " + name + " cannot be null");
+            throw QueryException.error("Value of " + name + " cannot be null");
         }
 
         long val0;
@@ -122,12 +122,12 @@ public class Fetch {
             try {
                 val0 = Converters.getConverter(val.getClass()).asBigint(val);
             } catch (Exception e) {
-                throw HazelcastSqlException.error("Cannot convert " + name + " value to number: " + val, e);
+                throw QueryException.error("Cannot convert " + name + " value to number: " + val, e);
             }
         }
 
         if (val0 < 0L) {
-            throw HazelcastSqlException.error("Value of " + name + " cannot be negative: " + val);
+            throw QueryException.error("Value of " + name + " cannot be negative: " + val);
         }
 
         return val0;

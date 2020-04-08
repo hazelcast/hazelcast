@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.calcite.opt.physical.visitor;
 
 import com.hazelcast.internal.util.collection.PartitionIdSet;
-import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryMetadata;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.calcite.EdgeCollectorPlanNodeVisitor;
@@ -638,7 +638,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
                 );
 
             default:
-                throw HazelcastSqlException.error("Unsupported aggregate call: " + aggFunc.getName());
+                throw QueryException.error("Unsupported aggregate call: " + aggFunc.getName());
         }
     }
 

@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.exec.io.flowcontrol.simple;
 
-import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.exec.io.flowcontrol.FlowControl;
 import com.hazelcast.sql.impl.operation.QueryFlowControlExchangeOperation;
@@ -166,7 +166,7 @@ public class SimpleFlowControl implements FlowControl {
         boolean success = operationHandler.submit(localMemberId, stream.getMemberId(), operation);
 
         if (!success) {
-            throw HazelcastSqlException.memberConnection(stream.getMemberId());
+            throw QueryException.memberConnection(stream.getMemberId());
         }
     }
 

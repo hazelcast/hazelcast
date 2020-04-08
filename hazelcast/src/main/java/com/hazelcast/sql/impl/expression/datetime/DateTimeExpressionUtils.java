@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.expression.datetime;
 
-import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.util.Eval;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -89,7 +89,7 @@ public final class DateTimeExpressionUtils {
                 return new TemporalValue(QueryDataType.TIME, LocalTime.parse(input));
             }
         } catch (DateTimeParseException ignore) {
-            throw HazelcastSqlException.error("Failed to parse a string to DATE/TIME: " + input);
+            throw QueryException.error("Failed to parse a string to DATE/TIME: " + input);
         }
     }
 
@@ -214,7 +214,7 @@ public final class DateTimeExpressionUtils {
                 return dateTime.getSecond();
 
             default:
-                throw HazelcastSqlException.error("Unsupported unit: " + unit);
+                throw QueryException.error("Unsupported unit: " + unit);
         }
     }
 }

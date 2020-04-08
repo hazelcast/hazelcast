@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.expression.string;
 
-import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryException;
 
 import java.util.Locale;
 
@@ -34,7 +34,7 @@ public final class StringExpressionUtils {
         }
 
         if (search.isEmpty()) {
-            throw HazelcastSqlException.error("Invalid operand: search cannot be empty.");
+            throw QueryException.error("Invalid operand: search cannot be empty.");
         }
 
         return source.replace(search, replacement);
@@ -81,7 +81,7 @@ public final class StringExpressionUtils {
         int endPos = startPos + length;
 
         if (endPos < startPos) {
-            throw HazelcastSqlException.error("End position is less than start position.");
+            throw QueryException.error("End position is less than start position.");
         }
 
         if (startPos > sourceLength || endPos < 1) {

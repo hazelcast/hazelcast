@@ -21,7 +21,6 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlCursor;
 import com.hazelcast.sql.SqlQuery;
 import com.hazelcast.sql.SqlService;
@@ -43,6 +42,7 @@ public class SqlServiceProxy implements SqlService {
     private static final String OPTIMIZER_CLASS_PROPERTY_NAME = "hazelcast.sql.optimizerClass";
     private static final String OPTIMIZER_CLASS_DEFAULT = "com.hazelcast.sql.impl.calcite.CalciteSqlOptimizer";
 
+    private final NodeServiceProvider nodeServiceProvider;
     private final SqlInternalService internalService;
     private final SqlOptimizer optimizer;
     private final boolean liteMember;
@@ -62,8 +62,9 @@ public class SqlServiceProxy implements SqlService {
             throw new HazelcastException("SqlConfig.threadCount must be positive: " + config.getThreadCount());
         }
 
+        nodeServiceProvider = new NodeServiceProviderImpl(nodeEngine);
+
         String instanceName = nodeEngine.getHazelcastInstance().getName();
-        NodeServiceProvider nodeServiceProvider = new NodeServiceProviderImpl(nodeEngine);
         InternalSerializationService serializationService = (InternalSerializationService) nodeEngine.getSerializationService();
 
         internalService = new SqlInternalService(
@@ -102,22 +103,20 @@ public class SqlServiceProxy implements SqlService {
     @Override
     public SqlCursor query(SqlQuery query) {
         if (liteMember) {
-            throw HazelcastSqlException.error("SQL queries cannot be executed on lite members.");
+            throw QueryException.error("SQL queries cannot be executed on lite members.");
         }
 
         try {
             return query0(query.getSql(), query.getParameters(), query.getTimeout(), query.getPageSize());
-        } catch (HazelcastSqlException e) {
-            throw e;
         } catch (Exception e) {
-            throw HazelcastSqlException.error("SQL query failed: " + e.getMessage(), e);
+            throw QueryUtils.toPublicException(e, nodeServiceProvider.getLocalMemberId());
         }
     }
 
     private SqlCursor query0(String sql, List<Object> params, long timeout, int pageSize) {
         // Validate and normalize.
         if (sql == null || sql.isEmpty()) {
-            throw HazelcastSqlException.error("SQL statement cannot be empty.");
+            throw QueryException.error("SQL statement cannot be empty.");
         }
 
         List<Object> params0;
@@ -129,11 +128,11 @@ public class SqlServiceProxy implements SqlService {
         }
 
         if (timeout < 0) {
-            throw HazelcastSqlException.error("Timeout cannot be negative: " + pageSize);
+            throw QueryException.error("Timeout cannot be negative: " + pageSize);
         }
 
         if (pageSize <= 0) {
-            throw HazelcastSqlException.error("Page size must be positive: " + pageSize);
+            throw QueryException.error("Page size must be positive: " + pageSize);
         }
 
         // Execute.
@@ -143,7 +142,7 @@ public class SqlServiceProxy implements SqlService {
             String unwrappedSql = QueryUtils.unwrapExplain(sql);
 
             if (unwrappedSql.isEmpty()) {
-                throw HazelcastSqlException.error("SQL statement to be explained cannot be empty");
+                throw QueryException.error("SQL statement to be explained cannot be empty");
             }
 
             Plan plan = optimizer.prepare(unwrappedSql);

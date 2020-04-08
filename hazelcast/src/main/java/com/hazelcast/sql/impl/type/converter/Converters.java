@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.type.converter;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -54,7 +54,7 @@ public final class Converters {
             return CONVERTERS[converterId];
         }
 
-        throw HazelcastSqlException.error("Converter with ID " + converterId + " doesn't exist");
+        throw QueryException.error("Converter with ID " + converterId + " doesn't exist");
     }
 
     /**

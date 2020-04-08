@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.expression;
 
-import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.calcite.operators.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.SqlToQueryType;
 import com.hazelcast.sql.impl.expression.CastExpression;
@@ -98,7 +98,7 @@ public final class RexToExpression {
      *
      * @param call the call to convert.
      * @return the resulting expression.
-     * @throws HazelcastSqlException if the given {@link RexCall} can't be
+     * @throws QueryException if the given {@link RexCall} can't be
      *                               converted.
      */
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:MethodLength", "checkstyle:ReturnCount",
@@ -293,7 +293,7 @@ public final class RexToExpression {
                 break;
         }
 
-        throw HazelcastSqlException.error("Unsupported operator: " + operator);
+        throw QueryException.error("Unsupported operator: " + operator);
     }
 
     /**
@@ -353,7 +353,7 @@ public final class RexToExpression {
                 return ConstantExpression.create(QueryDataType.NULL, null);
 
             default:
-                throw HazelcastSqlException.error("Unsupported literal: " + literal);
+                throw QueryException.error("Unsupported literal: " + literal);
         }
     }
 
@@ -509,13 +509,13 @@ public final class RexToExpression {
                     break;
 
                 default:
-                    throw HazelcastSqlException.error("Unsupported literal symbol: " + literal);
+                    throw QueryException.error("Unsupported literal symbol: " + literal);
             }
 
             return new DatePartUnitConstantExpression(unit);
         }
 
-        throw HazelcastSqlException.error("Unsupported literal symbol: " + literal);
+        throw QueryException.error("Unsupported literal symbol: " + literal);
     }
 
 }

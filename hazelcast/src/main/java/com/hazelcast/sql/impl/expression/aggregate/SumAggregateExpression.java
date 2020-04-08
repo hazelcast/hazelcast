@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.expression.aggregate;
 
-import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 import com.hazelcast.sql.impl.exec.agg.AggregateCollector;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -68,7 +68,7 @@ public class SumAggregateExpression<T> extends AbstractSingleOperandAggregateExp
                 return QueryDataType.DOUBLE;
 
             default:
-                throw HazelcastSqlException.error("Unsupported operand type: " + operandType);
+                throw QueryException.error("Unsupported operand type: " + operandType);
         }
     }
 }
