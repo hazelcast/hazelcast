@@ -578,6 +578,19 @@ performance as this is JMS' way to send messages in batches. Batches are
 created from readily available messages so they incur minimal extra
 latency.
 
+##### Note
+
+The XA transactions are implemented incorrectly in some brokers.
+Specifically a prepared transaction is sometimes rolled back when the
+client disconnects. The issue is tricky because the integration will
+work during normal operation and the problem will only manifest if the
+job crashes in a specific moment. Jet will even not detect it, only some
+messages will be missing from the sink. To test your broker we provide a
+tool, please go to [XA
+tests](https://github.com/hazelcast/hazelcast-jet-contrib/tree/master/xa-test)
+to get more information. This only applies to JMS sink, the source
+doesn't use XA transactions.
+
 #### Connection Handling
 
 The JMS source and sink open one connection to the JMS server for each
@@ -921,6 +934,19 @@ stage.writeTo(Sinks.jdbc("INSERT INTO " + tableName + " VALUES(?, ?)",
          }
  ));
 ```
+
+##### Note
+
+The XA transactions are implemented incorrectly in some databases.
+Specifically a prepared transaction is sometimes rolled back when the
+client disconnects. The issue is tricky because the integration will
+work during normal operation and the problem will only manifest if the
+Jet job crashes in a specific moment. Jet will even not detect it, only
+some records will be missing from the target database. To test your
+broker we provide a tool, please go to [XA
+tests](https://github.com/hazelcast/hazelcast-jet-contrib/tree/master/xa-test)
+to get more information. This only applies to the JDBC sink, the source
+doesn't use XA transactions.
 
 ### MongoDB
 
