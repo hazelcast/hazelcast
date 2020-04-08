@@ -130,27 +130,8 @@ public class SqlInternalService {
      * @return Query state.
      */
     public QueryState execute(Plan plan, List<Object> params, long timeout, int pageSize) {
-
         // Prepare parameters.
-
-        assert params != null;
-        QueryParameterMetadata parameterMetadata = plan.getParameterMetadata();
-        int parameterCount = parameterMetadata.getParameterCount();
-        if (parameterCount != params.size()) {
-            throw QueryException.error(
-                    "Unexpected parameter count: expected " + parameterCount + ", got " + params.size());
-        }
-        for (int i = 0; i < params.size(); ++i) {
-            Object value = params.get(i);
-            if (value == null) {
-                continue;
-            }
-
-            Converter valueConverter = Converters.getConverter(value.getClass());
-            Converter typeConverter = parameterMetadata.getParameterType(i).getConverter();
-            value = typeConverter.convertToSelf(valueConverter, value);
-            params.set(i, value);
-        }
+        params = prepareParameters(plan, params);
 
         // Get local member ID and check if it is still part of the plan.
         UUID localMemberId = nodeServiceProvider.getLocalMemberId();
@@ -210,6 +191,29 @@ public class SqlInternalService {
 
     public void onPacket(Packet packet) {
         operationHandler.onPacket(packet);
+    }
+
+    private List<Object> prepareParameters(Plan plan, List<Object> params) {
+        assert params != null;
+        QueryParameterMetadata parameterMetadata = plan.getParameterMetadata();
+        int parameterCount = parameterMetadata.getParameterCount();
+        if (parameterCount != params.size()) {
+            throw QueryException.error(
+                "Unexpected parameter count: expected " + parameterCount + ", got " + params.size());
+        }
+        for (int i = 0; i < params.size(); ++i) {
+            Object value = params.get(i);
+            if (value == null) {
+                continue;
+            }
+
+            Converter valueConverter = Converters.getConverter(value.getClass());
+            Converter typeConverter = parameterMetadata.getParameterType(i).getConverter();
+            value = typeConverter.convertToSelf(valueConverter, value);
+            params.set(i, value);
+        }
+
+        return params;
     }
 
     private Map<Integer, Long> createEdgeInitialMemoryMapForPlan(Plan plan) {
