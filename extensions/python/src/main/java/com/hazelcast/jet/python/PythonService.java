@@ -16,7 +16,7 @@
 package com.hazelcast.jet.python;
 
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.impl.util.ExceptionUtil;
+import com.hazelcast.jet.grpc.impl.GrpcUtil;
 import com.hazelcast.jet.pipeline.ServiceFactory;
 import com.hazelcast.jet.python.grpc.InputMessage;
 import com.hazelcast.jet.python.grpc.InputMessage.Builder;
@@ -26,8 +26,6 @@ import com.hazelcast.jet.python.grpc.OutputMessage;
 import com.hazelcast.logging.ILogger;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.grpc.ManagedChannel;
-import io.grpc.StatusException;
-import io.grpc.StatusRuntimeException;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.stub.StreamObserver;
 
@@ -131,10 +129,7 @@ final class PythonService {
         @Override
         public void onError(Throwable e) {
             try {
-                if (e instanceof StatusException || e instanceof StatusRuntimeException) {
-                    // not serializable exceptions
-                    e = new JetException(ExceptionUtil.stackTraceToString(e));
-                }
+                e = GrpcUtil.translateGrpcException(e);
 
                 exceptionInOutputObserver = e;
                 for (CompletableFuture<List<String>> future; (future = futureQueue.poll()) != null;) {
