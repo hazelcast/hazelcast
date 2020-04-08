@@ -27,7 +27,7 @@ import com.hazelcast.sql.impl.exec.CreateExecPlanNodeVisitor;
 import com.hazelcast.sql.impl.exec.Exec;
 import com.hazelcast.sql.impl.exec.io.InboundHandler;
 import com.hazelcast.sql.impl.exec.io.OutboundHandler;
-import com.hazelcast.sql.impl.exec.io.flowcontrol.simple.SimpleFlowControlFactory;
+import com.hazelcast.sql.impl.exec.io.flowcontrol.FlowControlFactory;
 import com.hazelcast.sql.impl.state.QueryState;
 import com.hazelcast.sql.impl.state.QueryStateCompletionCallback;
 import com.hazelcast.sql.impl.state.QueryStateRegistry;
@@ -47,26 +47,29 @@ import java.util.UUID;
  */
 public class QueryOperationHandlerImpl implements QueryOperationHandler, QueryStateCompletionCallback {
 
-    // TODO: Understand how to calculate it properly. It should not be hardcoded.
-    private static final int OUTBOX_BATCH_SIZE = 512 * 1024;
-
     private final NodeServiceProvider nodeServiceProvider;
     private final InternalSerializationService serializationService;
     private final QueryStateRegistry stateRegistry;
     private final QueryFragmentWorkerPool fragmentPool;
     private final QueryOperationWorkerPool operationPool;
+    private final int outboxBatchSize;
+    private final FlowControlFactory flowControlFactory;
 
     public QueryOperationHandlerImpl(
         String instanceName,
         NodeServiceProvider nodeServiceProvider,
         InternalSerializationService serializationService,
         QueryStateRegistry stateRegistry,
+        int outboxBatchSize,
+        FlowControlFactory flowControlFactory,
         int threadCount,
         int operationThreadCount
     ) {
         this.nodeServiceProvider = nodeServiceProvider;
         this.serializationService = serializationService;
         this.stateRegistry = stateRegistry;
+        this.outboxBatchSize = outboxBatchSize;
+        this.flowControlFactory = flowControlFactory;
 
         fragmentPool = new QueryFragmentWorkerPool(
             instanceName,
@@ -188,8 +191,8 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
                 this,
                 localMemberId,
                 operation,
-                SimpleFlowControlFactory.INSTANCE,
-                OUTBOX_BATCH_SIZE
+                flowControlFactory,
+                outboxBatchSize
             );
 
             fragmentDescriptor.getNode().visit(visitor);

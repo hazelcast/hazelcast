@@ -21,6 +21,12 @@ import com.hazelcast.sql.impl.QueryId;
 import java.util.Collection;
 import java.util.UUID;
 
+/**
+ * Callback invoked when the query execution is completed. The implementation must clear all resources associated with
+ * the query.
+ * <p>
+ * The interface is used to avoid a cyclic dependency between {@link QueryState} and {@link QueryStateRegistry}.
+ */
 public interface QueryStateCompletionCallback {
     /**
      * Handle query completion.

@@ -23,8 +23,6 @@ import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.EndpointManager;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.map.impl.proxy.MapProxyImpl;
-import com.hazelcast.replicatedmap.impl.ReplicatedMapProxy;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.util.Collection;
@@ -75,16 +73,6 @@ public class NodeServiceProviderImpl implements NodeServiceProvider {
         EndpointManager<Connection> endpointManager = nodeEngine.getNode().getEndpointManager(EndpointQualifier.MEMBER);
 
         return endpointManager.getConnection(member.getAddress());
-    }
-
-    @Override
-    public MapProxyImpl<?, ?> getMap(String name) {
-        return (MapProxyImpl<?, ?>) nodeEngine.getHazelcastInstance().getMap(name);
-    }
-
-    @Override
-    public ReplicatedMapProxy<?, ?> getReplicatedMap(String name) {
-        return (ReplicatedMapProxy<?, ?>) nodeEngine.getHazelcastInstance().getReplicatedMap(name);
     }
 
     @Override

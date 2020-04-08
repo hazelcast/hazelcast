@@ -18,6 +18,8 @@ package com.hazelcast.sql.impl;
 
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.sql.impl.exec.io.flowcontrol.FlowControlFactory;
+import com.hazelcast.sql.impl.exec.io.flowcontrol.simple.SimpleFlowControlFactory;
 import com.hazelcast.sql.impl.exec.root.BlockingRootResultConsumer;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperationFactory;
@@ -41,6 +43,12 @@ public class SqlInternalService {
 
     /** Memory assigned to a single edge mailbox. Will be reworked to dynamic mode when memory manager is implemented. */
     private static final long MEMORY_PER_EDGE_MAILBOX = 512 * 1024;
+
+    /** Outbox batch size in bytes. */
+    private static final int OUTBOX_BATCH_SIZE = 512 * 1024;
+
+    /** Default flow control factory. */
+    private static final FlowControlFactory FLOW_CONTROL_FACTORY = SimpleFlowControlFactory.INSTANCE;
 
     /** Node service provider. */
     private final NodeServiceProvider nodeServiceProvider;
@@ -72,6 +80,8 @@ public class SqlInternalService {
             nodeServiceProvider,
             serializationService,
             stateRegistry,
+            OUTBOX_BATCH_SIZE,
+            FLOW_CONTROL_FACTORY,
             fragmentThreadCount,
             operationThreadCount
         );
