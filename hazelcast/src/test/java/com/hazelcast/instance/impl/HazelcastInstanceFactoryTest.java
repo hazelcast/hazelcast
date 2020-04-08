@@ -109,6 +109,13 @@ public class HazelcastInstanceFactoryTest extends HazelcastTestSupport {
         }
     }
 
+    @Test
+    public void test_NewInstance_configLoaded() {
+        hazelcastInstance = HazelcastInstanceFactory.newHazelcastInstance(null);
+
+        assertNotNull(hazelcastInstance.getConfig());
+    }
+
     @Test(expected = ExpectedRuntimeException.class)
     public void test_NewInstance_failed_beforeNodeStart() throws Exception {
         NodeContext context = new TestNodeContext() {
