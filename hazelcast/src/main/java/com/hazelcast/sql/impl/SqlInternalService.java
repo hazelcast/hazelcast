@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl;
 
+import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.sql.impl.exec.root.BlockingRootResultConsumer;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
@@ -63,7 +64,7 @@ public class SqlInternalService {
         this.nodeServiceProvider = nodeServiceProvider;
 
         // Create state registries since they do not depend on anything.
-        stateRegistry = new QueryStateRegistry();
+        stateRegistry = new QueryStateRegistry(nodeServiceProvider);
 
         // Operation handler depends on state registry.
         operationHandler = new QueryOperationHandlerImpl(
@@ -116,7 +117,6 @@ public class SqlInternalService {
         QueryExecuteOperationFactory operationFactory = new QueryExecuteOperationFactory(
             plan,
             params,
-            timeout,
             createEdgeInitialMemoryMapForPlan(plan)
         );
 
@@ -141,17 +141,15 @@ public class SqlInternalService {
             operationHandler.submitLocal(localMemberId, localOp);
 
             // Start execution on remote members.
-            for (int i = 0; i < plan.getDataMemberIds().size(); i++) {
-                UUID remoteMemberId = plan.getDataMemberIds().get(i);
-
-                if (remoteMemberId.equals(localMemberId)) {
+            for (UUID memberId : plan.getMemberIds()) {
+                if (memberId.equals(localMemberId)) {
                     continue;
                 }
 
-                QueryExecuteOperation remoteOp = operationFactory.create(state.getQueryId(), remoteMemberId);
+                QueryExecuteOperation remoteOp = operationFactory.create(state.getQueryId(), memberId);
 
-                if (!operationHandler.submit(localMemberId, remoteMemberId, remoteOp)) {
-                    throw QueryException.memberLeave(remoteMemberId);
+                if (!operationHandler.submit(localMemberId, memberId, remoteOp)) {
+                    throw QueryException.memberConnection(memberId);
                 }
             }
 
@@ -161,6 +159,10 @@ public class SqlInternalService {
 
             throw e;
         }
+    }
+
+    public void onPacket(Packet packet) {
+        operationHandler.onPacket(packet);
     }
 
     private Map<Integer, Long> createEdgeInitialMemoryMapForPlan(Plan plan) {

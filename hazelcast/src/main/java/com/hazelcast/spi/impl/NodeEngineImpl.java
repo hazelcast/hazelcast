@@ -155,7 +155,7 @@ public class NodeEngineImpl implements NodeEngine {
                 operationService.getInvocationMonitor(),
                 eventService,
                 getJetPacketConsumer(node.getNodeExtension()),
-                sqlService.getInternalService().getOperationHandler()
+                sqlService
             );
             this.splitBrainProtectionService = new SplitBrainProtectionServiceImpl(this);
             this.diagnostics = newDiagnostics();

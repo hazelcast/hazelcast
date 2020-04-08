@@ -16,23 +16,29 @@
 
 package com.hazelcast.sql.impl;
 
+import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+
+import java.util.function.Consumer;
 
 /**
  * Base SQL service implementation which bridges optimizer implementation, public and private APIs.
  */
-public class SqlServiceProxy {
+public class SqlServiceProxy implements Consumer<Packet> {
 
-    private final SqlInternalService internalService;
+    private final NodeServiceProvider nodeServiceProvider;
+
+    private volatile SqlInternalService internalService;
 
     public SqlServiceProxy(NodeEngineImpl nodeEngine) {
         // These two parameters will be taken from the config, when public API is ready.
         int operationThreadCount = Runtime.getRuntime().availableProcessors();
         int fragmentThreadCount = Runtime.getRuntime().availableProcessors();
 
+        nodeServiceProvider = new NodeServiceProviderImpl(nodeEngine);
+
         String instanceName = nodeEngine.getHazelcastInstance().getName();
-        NodeServiceProvider nodeServiceProvider = new NodeServiceProviderImpl(nodeEngine);
         InternalSerializationService serializationService = (InternalSerializationService) nodeEngine.getSerializationService();
 
         internalService = new SqlInternalService(
@@ -58,5 +64,17 @@ public class SqlServiceProxy {
 
     public SqlInternalService getInternalService() {
         return internalService;
+    }
+
+    /**
+     * For testing only.
+     */
+    public void setInternalService(SqlInternalService internalService) {
+        this.internalService = internalService;
+    }
+
+    @Override
+    public void accept(Packet packet) {
+        internalService.onPacket(packet);
     }
 }

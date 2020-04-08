@@ -27,7 +27,7 @@ import java.util.UUID;
 /**
  * A single entry point for all interactions with other member services.
  */
-public interface NodeServiceProvider extends LocalMemberIdProvider {
+public interface NodeServiceProvider extends ClockProvider, LocalMemberIdProvider {
     /**
      * Get IDs of data members known to the member.
      *

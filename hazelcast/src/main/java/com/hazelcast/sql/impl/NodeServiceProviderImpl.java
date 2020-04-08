@@ -44,6 +44,11 @@ public class NodeServiceProviderImpl implements NodeServiceProvider {
     }
 
     @Override
+    public long currentTimeMillis() {
+        return System.currentTimeMillis();
+    }
+
+    @Override
     public UUID getLocalMemberId() {
         return nodeEngine.getClusterService().getLocalMember().getUuid();
     }

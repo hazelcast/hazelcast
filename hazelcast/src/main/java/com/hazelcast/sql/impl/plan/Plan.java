@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.plan;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.sql.impl.plan.node.PlanNode;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -29,9 +30,6 @@ import java.util.UUID;
 public class Plan {
     /** Partition mapping. */
     private final Map<UUID, PartitionIdSet> partMap;
-
-    /** Data member IDs. */
-    private final List<UUID> dataMemberIds;
 
     /** Fragment nodes. */
     private final List<PlanNode> fragments;
@@ -50,7 +48,6 @@ public class Plan {
 
     public Plan(
         Map<UUID, PartitionIdSet> partMap,
-        List<UUID> dataMemberIds,
         List<PlanNode> fragments,
         List<PlanFragmentMapping> fragmentMappings,
         Map<Integer, Integer> outboundEdgeMap,
@@ -58,7 +55,6 @@ public class Plan {
         Map<Integer, Integer> inboundEdgeMemberCountMap
     ) {
         this.partMap = partMap;
-        this.dataMemberIds = dataMemberIds;
         this.fragments = fragments;
         this.fragmentMappings = fragmentMappings;
         this.outboundEdgeMap = outboundEdgeMap;
@@ -70,8 +66,8 @@ public class Plan {
         return partMap;
     }
 
-    public List<UUID> getDataMemberIds() {
-        return dataMemberIds;
+    public Collection<UUID> getMemberIds() {
+        return partMap.keySet();
     }
 
     public int getFragmentCount() {

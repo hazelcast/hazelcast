@@ -85,8 +85,6 @@ public class CreateExecPlanNodeVisitorTest {
     private static final int[] PARTITIONS_MEMBER_2 = new int[] { 3, 4 };
     private static final Map<UUID, PartitionIdSet> PARTITION_MAPPING;
 
-    private static final long TIMEOUT = 0;
-
     private int idGenerator;
 
     static {
@@ -255,8 +253,7 @@ public class CreateExecPlanNodeVisitorTest {
             outboundEdgeMap,
             inboundEdgeMap,
             edgeInitialMemoryMap,
-            Collections.emptyList(),
-            TIMEOUT
+            Collections.emptyList()
         );
 
         operation.setRootConsumer(new TestRootResultConusmer(), ROOT_BATCH_SIZE);

@@ -72,7 +72,6 @@ public class QueryOperationsTest extends SqlTestSupport {
         assertEquals(original.getInboundEdgeMap(), restored.getInboundEdgeMap());
         assertEquals(original.getEdgeInitialMemoryMap(), restored.getEdgeInitialMemoryMap());
         assertEquals(original.getArguments(), restored.getArguments());
-        assertEquals(original.getTimeout(), restored.getTimeout());
 
         assertEquals(original.getPartition(), prepareExecute(queryId).getPartition());
         assertEquals(original.getPartition(), prepareCancel(queryId).getPartition());
@@ -218,7 +217,7 @@ public class QueryOperationsTest extends SqlTestSupport {
         long timeout = randomLong();
 
         QueryExecuteOperation res = withCallerId(new QueryExecuteOperation(
-            queryId, partitionMapping, fragments, outboundEdgeMap, inboundEdgeMap, edgeCreditMap, arguments, timeout)
+            queryId, partitionMapping, fragments, outboundEdgeMap, inboundEdgeMap, edgeCreditMap, arguments)
         );
 
         assertEquals(queryId, res.getQueryId());
@@ -228,7 +227,6 @@ public class QueryOperationsTest extends SqlTestSupport {
         assertEquals(inboundEdgeMap, res.getInboundEdgeMap());
         assertEquals(edgeCreditMap, res.getEdgeInitialMemoryMap());
         assertEquals(arguments, res.getArguments());
-        assertEquals(timeout, res.getTimeout());
 
         return res;
     }
