@@ -324,7 +324,7 @@ public final class QueryState implements QueryStateCallback {
     public Set<UUID> getParticipantsWithoutInitiator() {
         assert isInitiator();
 
-        Set<UUID> res = new HashSet<>(initiatorState.getPlan().getDataMemberIds());
+        Set<UUID> res = new HashSet<>(initiatorState.getPlan().getMemberIds());
 
         res.remove(queryId.getMemberId());
 

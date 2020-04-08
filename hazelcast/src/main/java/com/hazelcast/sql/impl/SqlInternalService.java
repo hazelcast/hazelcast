@@ -188,17 +188,15 @@ public class SqlInternalService {
             operationHandler.submitLocal(localMemberId, localOp);
 
             // Start execution on remote members.
-            for (int i = 0; i < plan.getDataMemberIds().size(); i++) {
-                UUID remoteMemberId = plan.getDataMemberIds().get(i);
-
-                if (remoteMemberId.equals(localMemberId)) {
+            for (UUID memberId : plan.getMemberIds()) {
+                if (memberId.equals(localMemberId)) {
                     continue;
                 }
 
-                QueryExecuteOperation remoteOp = operationFactory.create(state.getQueryId(), remoteMemberId);
+                QueryExecuteOperation remoteOp = operationFactory.create(state.getQueryId(), memberId);
 
-                if (!operationHandler.submit(localMemberId, remoteMemberId, remoteOp)) {
-                    throw QueryException.memberLeave(remoteMemberId);
+                if (!operationHandler.submit(localMemberId, memberId, remoteOp)) {
+                    throw QueryException.memberLeave(memberId);
                 }
             }
 

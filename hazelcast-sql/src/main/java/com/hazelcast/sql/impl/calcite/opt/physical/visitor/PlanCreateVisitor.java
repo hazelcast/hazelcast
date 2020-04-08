@@ -111,11 +111,8 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     /** Partition mapping. */
     private final Map<UUID, PartitionIdSet> partMap;
 
-    /** Data member IDs. */
-    private final List<UUID> dataMemberIds;
-
-    /** Data members in a form of set. */
-    private final Set<UUID> dataMemberIdsSet;
+    /** Participant IDs. */
+    private final Set<UUID> memberIds;
 
     /** Rel ID map. */
     private final Map<PhysicalRel, List<Integer>> relIdMap;
@@ -155,7 +152,6 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     public PlanCreateVisitor(
         UUID localMemberId,
         Map<UUID, PartitionIdSet> partMap,
-        List<UUID> dataMemberIds,
         Map<PhysicalRel, List<Integer>> relIdMap,
         String sql,
         QueryParameterMetadata parameterMetadata,
@@ -163,13 +159,12 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     ) {
         this.localMemberId = localMemberId;
         this.partMap = partMap;
-        this.dataMemberIds = dataMemberIds;
         this.relIdMap = relIdMap;
         this.sql = sql;
         this.parameterMetadata = parameterMetadata;
         this.stats = stats;
 
-        dataMemberIdsSet = new HashSet<>(dataMemberIds);
+        memberIds = new HashSet<>(partMap.keySet());
     }
 
     public Plan getPlan() {
@@ -202,7 +197,6 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
         return new Plan(
             partMap,
-            dataMemberIds,
             fragments,
             fragmentMappings,
             outboundEdgeMap,
@@ -753,6 +747,6 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
     // TODO: Data member mapping should be used only for fragments with scans!
     private PlanFragmentMapping dataMemberMapping() {
-        return new PlanFragmentMapping(dataMemberIdsSet, true);
+        return new PlanFragmentMapping(memberIds, true);
     }
 }
