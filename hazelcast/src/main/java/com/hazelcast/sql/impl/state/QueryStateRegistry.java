@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.state;
 
+import com.hazelcast.sql.impl.ClockProvider;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryMetadata;
 import com.hazelcast.sql.impl.QueryResultProducer;
@@ -37,6 +38,12 @@ public class QueryStateRegistry {
     /** IDs of locally started queries. */
     private final ConcurrentHashMap<QueryId, QueryState> states = new ConcurrentHashMap<>();
 
+    private final ClockProvider clockProvider;
+
+    public QueryStateRegistry(ClockProvider clockProvider) {
+        this.clockProvider = clockProvider;
+    }
+
     public QueryState onInitiatorQueryStarted(
         UUID localMemberId,
         long initiatorTimeout,
@@ -55,7 +62,8 @@ public class QueryStateRegistry {
             initiatorTimeout,
             initiatorPlan,
             initiatorMetadata,
-            initiatorResultProducer
+            initiatorResultProducer,
+            clockProvider
         );
 
         if (register) {
@@ -85,7 +93,8 @@ public class QueryStateRegistry {
                 state = QueryState.createDistributedState(
                     queryId,
                     localMemberId,
-                    completionCallback
+                    completionCallback,
+                    clockProvider
                 );
 
                 QueryState oldState = states.putIfAbsent(queryId, state);

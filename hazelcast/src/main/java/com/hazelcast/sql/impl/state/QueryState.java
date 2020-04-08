@@ -16,11 +16,12 @@
 
 package com.hazelcast.sql.impl.state;
 
-import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.SqlErrorCode;
+import com.hazelcast.sql.impl.ClockProvider;
+import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryMetadata;
 import com.hazelcast.sql.impl.QueryResultProducer;
-import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.plan.Plan;
 
 import java.util.Collection;
@@ -48,6 +49,9 @@ public final class QueryState implements QueryStateCallback {
     /** Distributed state. */
     private final QueryDistributedState distributedState = new QueryDistributedState();
 
+    /** Clock provider. */
+    private final ClockProvider clockProvider;
+
     /** Start time. */
     private final long startTime;
 
@@ -57,24 +61,23 @@ public final class QueryState implements QueryStateCallback {
     /** Error which caused query completion. */
     private volatile QueryException completionError;
 
-    /** Whether query check was requested. */
-    private volatile boolean queryCheckRequested;
+    /** Time when the a check was performed for the last time. */
+    private volatile long checkTime;
 
     private QueryState(
         QueryId queryId,
-        long startTime,
         UUID localMemberId,
         QueryStateCompletionCallback completionCallback,
         boolean initiator,
         long initiatorTimeout,
         Plan initiatorPlan,
         QueryMetadata initiatorMetadata,
-        QueryResultProducer initiatorRowSource
+        QueryResultProducer initiatorRowSource,
+        ClockProvider clockProvider
     ) {
         // Set common state.
         this.queryId = queryId;
         this.completionCallback = completionCallback;
-        this.startTime = startTime;
         this.localMemberId = localMemberId;
 
         if (initiator) {
@@ -88,6 +91,11 @@ public final class QueryState implements QueryStateCallback {
         } else {
             initiatorState = null;
         }
+
+        this.clockProvider = clockProvider;
+
+        startTime = clockProvider.currentTimeMillis();
+        checkTime = startTime;
     }
 
     public static QueryState createInitiatorState(
@@ -97,18 +105,19 @@ public final class QueryState implements QueryStateCallback {
         long initiatorTimeout,
         Plan initiatorPlan,
         QueryMetadata initiatorMetadata,
-        QueryResultProducer initiatorResultProducer
+        QueryResultProducer initiatorResultProducer,
+        ClockProvider clockProvider
     ) {
         return new QueryState(
             queryId,
-            System.currentTimeMillis(),
             localMemberId,
             completionCallback,
             true,
             initiatorTimeout,
             initiatorPlan,
             initiatorMetadata,
-            initiatorResultProducer
+            initiatorResultProducer,
+            clockProvider
         );
     }
 
@@ -121,18 +130,19 @@ public final class QueryState implements QueryStateCallback {
     public static QueryState createDistributedState(
         QueryId queryId,
         UUID localMemberId,
-        QueryStateCompletionCallback completionCallback
+        QueryStateCompletionCallback completionCallback,
+        ClockProvider clockProvider
     ) {
         return new QueryState(
             queryId,
-            System.currentTimeMillis(),
             localMemberId,
             completionCallback,
             false,
             -1,
             null,
             null,
-            null
+            null,
+            clockProvider
         );
     }
 
@@ -262,16 +272,13 @@ public final class QueryState implements QueryStateCallback {
      * Attempts to cancel the query if timeout has reached.
      */
     public boolean tryCancelOnTimeout() {
-        // Get timeout from either initiator state of initialized distributed state.
-        Long timeout;
-
-        if (isInitiator()) {
-            timeout = initiatorState.getTimeout();
-        } else {
-            timeout = distributedState.getTimeout();
+        if (!isInitiator()) {
+            return false;
         }
 
-        if (timeout != null && timeout > 0 && System.currentTimeMillis() > startTime + timeout) {
+        long timeout = initiatorState.getTimeout();
+
+        if (timeout > 0 && clockProvider.currentTimeMillis() > startTime + timeout) {
             cancel(QueryException.timeout(timeout));
 
             return true;
@@ -280,8 +287,13 @@ public final class QueryState implements QueryStateCallback {
         }
     }
 
+    /**
+     * Check if the query check is required for the given query.
+     *
+     * @return {@code true} if query check should be initiated, {@code false} otherwise.
+     */
     public boolean requestQueryCheck() {
-        // We never need to check queries started locally.
+        // No need to check the query that has initiator state.
         if (isInitiator()) {
             return false;
         }
@@ -292,17 +304,13 @@ public final class QueryState implements QueryStateCallback {
         }
 
         // Don't bother if the query is relatively recent.
-        if (System.currentTimeMillis() - startTime < STATE_CHECK_FREQUENCY * 2) {
+        long currentTime = clockProvider.currentTimeMillis();
+
+        if (currentTime - checkTime < STATE_CHECK_FREQUENCY * 2) {
             return false;
         }
 
-        // Staleness check already requested, do not bother.
-        if (queryCheckRequested) {
-            return false;
-        }
-
-        // Otherwise schedule the check,
-        queryCheckRequested = true;
+        checkTime = currentTime;
 
         return true;
     }

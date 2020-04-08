@@ -39,12 +39,6 @@ public class QueryDistributedState {
     /** Initialized state. */
     private volatile InitializedState initializedState;
 
-    public Long getTimeout() {
-         InitializedState initializedState0 = initializedState;
-
-         return initializedState0 != null ? initializedState0.getTimeout() : null;
-    }
-
     public boolean isStarted() {
         return initializedState != null;
     }
@@ -53,14 +47,13 @@ public class QueryDistributedState {
      * Initialization routine which is called when query start task is executed.
      *
      * @param fragments Fragment executables.
-     * @param timeout Timeout.
      */
-    public void onStart(List<QueryFragmentExecutable> fragments, long timeout) {
+    public void onStart(List<QueryFragmentExecutable> fragments) {
         lock.writeLock().lock();
 
         try {
             // Initialize the state.
-            initializedState = new InitializedState(fragments, timeout);
+            initializedState = new InitializedState(fragments);
 
             // Unwind pending batches if needed.
             boolean hadPendingBatches = false;
@@ -127,10 +120,7 @@ public class QueryDistributedState {
         /** Number of remaining fragments. */
         private final AtomicInteger remainingFragmentCount;
 
-        /** Query timeout. */
-        private final long timeout;
-
-        private InitializedState(List<QueryFragmentExecutable> fragmentExecutables, long timeout) {
+        private InitializedState(List<QueryFragmentExecutable> fragmentExecutables) {
             for (QueryFragmentExecutable fragmentExecutable : fragmentExecutables) {
                 for (Integer inboxEdgeId : fragmentExecutable.getInboxEdgeIds()) {
                     QueryFragmentExecutable oldFragmentExecutable = inboundEdgeToFragment.put(inboxEdgeId, fragmentExecutable);
@@ -146,8 +136,6 @@ public class QueryDistributedState {
             }
 
             this.remainingFragmentCount = new AtomicInteger(fragmentExecutables.size());
-
-            this.timeout = timeout;
         }
 
         private boolean onFragmentFinished() {
@@ -160,10 +148,6 @@ public class QueryDistributedState {
             } else {
                 return outboundEdgeToFragment.get(edgeId);
             }
-        }
-
-        private long getTimeout() {
-            return timeout;
         }
     }
 }

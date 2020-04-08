@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl;
 
+import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.sql.impl.client.QueryClientStateRegistry;
 import com.hazelcast.sql.impl.exec.root.BlockingRootResultConsumer;
@@ -72,6 +73,7 @@ public class SqlInternalService {
 
     public SqlInternalService(
         String instanceName,
+        ClockProvider clockProvider,
         NodeServiceProvider nodeServiceProvider,
         InternalSerializationService serializationService,
         int operationThreadCount,
@@ -84,7 +86,7 @@ public class SqlInternalService {
         memoryManager = new GlobalMemoryReservationManager(maxMemory);
 
         // Create state registries since they do not depend on anything.
-        stateRegistry = new QueryStateRegistry();
+        stateRegistry = new QueryStateRegistry(clockProvider);
         clientStateRegistry = new QueryClientStateRegistry();
 
         // Operation handler depends on state registry.
@@ -162,7 +164,6 @@ public class SqlInternalService {
         QueryExecuteOperationFactory operationFactory = new QueryExecuteOperationFactory(
             plan,
             params,
-            timeout,
             createEdgeInitialMemoryMapForPlan(plan)
         );
 
@@ -206,6 +207,10 @@ public class SqlInternalService {
 
             throw e;
         }
+    }
+
+    public void onPacket(Packet packet) {
+        operationHandler.onPacket(packet);
     }
 
     private Map<Integer, Long> createEdgeInitialMemoryMapForPlan(Plan plan) {

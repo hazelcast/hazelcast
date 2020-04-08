@@ -36,18 +36,15 @@ import static com.hazelcast.sql.impl.operation.QueryExecuteOperationFragmentMapp
 public class QueryExecuteOperationFactory {
     private final Plan plan;
     private final List<Object> args;
-    private final long timeout;
     private final Map<Integer, Long> edgeInitialMemoryMap;
 
     public QueryExecuteOperationFactory(
         Plan plan,
         List<Object> args,
-        long timeout,
         Map<Integer, Long> edgeInitialMemoryMap
     ) {
         this.plan = plan;
         this.args = args;
-        this.timeout = timeout;
         this.edgeInitialMemoryMap = edgeInitialMemoryMap;
     }
 
@@ -84,8 +81,7 @@ public class QueryExecuteOperationFactory {
             plan.getOutboundEdgeMap(),
             plan.getInboundEdgeMap(),
             edgeInitialMemoryMap,
-            args,
-            timeout
+            args
         );
     }
 }

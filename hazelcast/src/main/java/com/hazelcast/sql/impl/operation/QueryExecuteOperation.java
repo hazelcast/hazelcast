@@ -53,7 +53,6 @@ public class QueryExecuteOperation extends QueryAbstractIdAwareOperation {
     private Map<Integer, Long> edgeInitialMemoryMap;
 
     private List<Object> arguments;
-    private long timeout;
 
     /** Root fragment result consumer. Applicable only to root fragment being executed on initiator. */
     private transient RootResultConsumer rootConsumer;
@@ -70,8 +69,7 @@ public class QueryExecuteOperation extends QueryAbstractIdAwareOperation {
         Map<Integer, Integer> outboundEdgeMap,
         Map<Integer, Integer> inboundEdgeMap,
         Map<Integer, Long> edgeInitialMemoryMap,
-        List<Object> arguments,
-        long timeout
+        List<Object> arguments
     ) {
         super(queryId);
 
@@ -90,7 +88,6 @@ public class QueryExecuteOperation extends QueryAbstractIdAwareOperation {
         this.inboundEdgeMap = inboundEdgeMap;
         this.edgeInitialMemoryMap = edgeInitialMemoryMap;
         this.arguments = arguments;
-        this.timeout = timeout;
     }
 
     public Map<UUID, PartitionIdSet> getPartitionMap() {
@@ -115,10 +112,6 @@ public class QueryExecuteOperation extends QueryAbstractIdAwareOperation {
 
     public List<Object> getArguments() {
         return arguments;
-    }
-
-    public long getTimeout() {
-        return timeout;
     }
 
     public RootResultConsumer getRootConsumer() {
@@ -190,9 +183,6 @@ public class QueryExecuteOperation extends QueryAbstractIdAwareOperation {
                 out.writeObject(argument);
             }
         }
-
-        // Write timeout.
-        out.writeLong(timeout);
     }
 
     @Override
@@ -257,8 +247,5 @@ public class QueryExecuteOperation extends QueryAbstractIdAwareOperation {
                 arguments.add(in.readObject());
             }
         }
-
-        // Read timeout.
-        timeout = in.readLong();
     }
 }

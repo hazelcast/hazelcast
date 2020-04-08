@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl;
 
 import com.hazelcast.config.SqlConfig;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -33,19 +34,21 @@ import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * Base SQL service implementation which bridges optimizer implementation, public and private APIs.
  */
-public class SqlServiceProxy implements SqlService {
+public class SqlServiceProxy implements SqlService, Consumer<Packet> {
 
     private static final String OPTIMIZER_CLASS_PROPERTY_NAME = "hazelcast.sql.optimizerClass";
     private static final String OPTIMIZER_CLASS_DEFAULT = "com.hazelcast.sql.impl.calcite.CalciteSqlOptimizer";
 
     private final NodeServiceProvider nodeServiceProvider;
-    private final SqlInternalService internalService;
     private final SqlOptimizer optimizer;
     private final boolean liteMember;
+
+    private volatile SqlInternalService internalService;
 
     public SqlServiceProxy(NodeEngineImpl nodeEngine) {
         SqlConfig config = nodeEngine.getConfig().getSqlConfig();
@@ -69,6 +72,7 @@ public class SqlServiceProxy implements SqlService {
 
         internalService = new SqlInternalService(
             instanceName,
+            nodeServiceProvider,
             nodeServiceProvider,
             serializationService,
             operationThreadCount,
@@ -96,6 +100,13 @@ public class SqlServiceProxy implements SqlService {
         return internalService;
     }
 
+    /**
+     * For testing only.
+     */
+    public void setInternalService(SqlInternalService internalService) {
+        this.internalService = internalService;
+    }
+
     public SqlOptimizer getOptimizer() {
         return optimizer;
     }
@@ -111,6 +122,11 @@ public class SqlServiceProxy implements SqlService {
         } catch (Exception e) {
             throw QueryUtils.toPublicException(e, nodeServiceProvider.getLocalMemberId());
         }
+    }
+
+    @Override
+    public void accept(Packet packet) {
+        internalService.onPacket(packet);
     }
 
     private SqlCursor query0(String sql, List<Object> params, long timeout, int pageSize) {

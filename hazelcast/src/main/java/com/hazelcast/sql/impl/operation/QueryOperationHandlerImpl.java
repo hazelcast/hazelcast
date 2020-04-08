@@ -41,12 +41,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.function.Consumer;
 
 /**
  * Executes query operations.
  */
-public class QueryOperationHandlerImpl implements QueryOperationHandler, QueryStateCompletionCallback, Consumer<Packet> {
+public class QueryOperationHandlerImpl implements QueryOperationHandler, QueryStateCompletionCallback {
 
     // TODO: Understand how to calculate it properly. It should not be hardcoded.
     private static final int OUTBOX_BATCH_SIZE = 512 * 1024;
@@ -217,7 +216,7 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
         }
 
         // Initialize the distributed state.
-        state.getDistributedState().onStart(fragmentExecutables, operation.getTimeout());
+        state.getDistributedState().onStart(fragmentExecutables);
 
         // Schedule initial processing of fragments.
         for (QueryFragmentExecutable fragmentExecutable : fragmentExecutables) {
@@ -346,8 +345,7 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
         }
     }
 
-    @Override
-    public void accept(Packet packet) {
+    public void onPacket(Packet packet) {
         int partition = packet.hasPartitionHash() ? packet.getPartitionId() : QueryOperation.PARTITION_ANY;
 
         operationPool.submit(partition, QueryOperationExecutable.remote(packet));
