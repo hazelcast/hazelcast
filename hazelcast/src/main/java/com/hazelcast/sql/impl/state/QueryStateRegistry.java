@@ -19,19 +19,14 @@ package com.hazelcast.sql.impl.state;
 import com.hazelcast.sql.impl.ClockProvider;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryResultProducer;
-import com.hazelcast.sql.impl.operation.QueryCheckOperation;
-import com.hazelcast.sql.impl.operation.QueryOperationHandler;
 import com.hazelcast.sql.impl.plan.Plan;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Query state implementation.
+ * Registry that tracks active queries on a member.
  */
 public class QueryStateRegistry {
     /** IDs of locally started queries. */
@@ -113,37 +108,11 @@ public class QueryStateRegistry {
         return states.get(queryId);
     }
 
-    public void reset() {
-        states.clear();
+    public Collection<QueryState> getStates() {
+        return states.values();
     }
 
-    public void update(UUID localMemberId, Collection<UUID> memberIds, QueryOperationHandler operationHandler) {
-        Map<UUID, Collection<QueryId>> checkMap = new HashMap<>();
-
-        for (QueryState state : states.values()) {
-            // 1. Check if the query has timed out.
-            if (state.tryCancelOnTimeout()) {
-                continue;
-            }
-
-            // 2. Check whether the member required for the query has left.
-            if (state.tryCancelOnMemberLeave(memberIds)) {
-                continue;
-            }
-
-            // 3. Check whether the query is not initialized for too long. If yes, trigger check process.
-            if (state.requestQueryCheck()) {
-                QueryId queryId = state.getQueryId();
-
-                checkMap.computeIfAbsent(queryId.getMemberId(), (key) -> new ArrayList<>(1)).add(queryId);
-            }
-        }
-
-        // Send batched check requests.
-        for (Map.Entry<UUID, Collection<QueryId>> checkEntry : checkMap.entrySet()) {
-            QueryCheckOperation operation = new QueryCheckOperation(checkEntry.getValue());
-
-            operationHandler.submit(localMemberId, checkEntry.getKey(), operation);
-        }
+    public void reset() {
+        states.clear();
     }
 }

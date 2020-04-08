@@ -17,9 +17,14 @@
 package com.hazelcast.sql.impl.state;
 
 import com.hazelcast.sql.impl.NodeServiceProvider;
+import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.sql.impl.operation.QueryCheckOperation;
 import com.hazelcast.sql.impl.operation.QueryOperationHandler;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -103,10 +108,36 @@ public class QueryStateRegistryUpdater {
         }
 
         private void checkMemberState() {
-            UUID localMemberID = nodeServiceProvider.getLocalMemberId();
+            UUID localMemberId = nodeServiceProvider.getLocalMemberId();
             Collection<UUID> activeMemberIds = nodeServiceProvider.getDataMemberIds();
 
-            stateRegistry.update(localMemberID, activeMemberIds, operationHandler);
+            Map<UUID, Collection<QueryId>> checkMap = new HashMap<>();
+
+            for (QueryState state : stateRegistry.getStates()) {
+                // 1. Check if the query has timed out.
+                if (state.tryCancelOnTimeout()) {
+                    continue;
+                }
+
+                // 2. Check whether the member required for the query has left.
+                if (state.tryCancelOnMemberLeave(activeMemberIds)) {
+                    continue;
+                }
+
+                // 3. Check whether the query is not initialized for too long. If yes, trigger check process.
+                if (state.requestQueryCheck()) {
+                    QueryId queryId = state.getQueryId();
+
+                    checkMap.computeIfAbsent(queryId.getMemberId(), (key) -> new ArrayList<>(1)).add(queryId);
+                }
+            }
+
+            // Send batched check requests.
+            for (Map.Entry<UUID, Collection<QueryId>> checkEntry : checkMap.entrySet()) {
+                QueryCheckOperation operation = new QueryCheckOperation(checkEntry.getValue());
+
+                operationHandler.submit(localMemberId, checkEntry.getKey(), operation);
+            }
         }
 
         public void stop() {
