@@ -133,9 +133,13 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
         partitionMap.put(initiatorId, new PartitionIdSet(2, Collections.singletonList(1)));
         partitionMap.put(participantId, new PartitionIdSet(1, Collections.singletonList(2)));
 
-        testState = startQueryOnInitiator();
+        // Start the query with maximum timeout by default.
+        prepare(Long.MAX_VALUE);
+    }
 
-        // Prepare operations that will be used throughout the test.
+    private void prepare(long timeout) {
+        testState = startQueryOnInitiator(timeout);
+
         initiatorExecuteOperation = createExecuteOperation(initiatorId);
         participantExecuteOperation = createExecuteOperation(participantId);
 
@@ -157,6 +161,15 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
         if (factory != null) {
             factory.shutdownAll();
         }
+    }
+
+    @Test
+    public void test_initiator_timeout() {
+        stopQueryOnInitiator();
+        prepare(50L);
+
+        sendToInitiator(initiatorExecuteOperation);
+        checkNoQueryOnInitiator();
     }
 
     @Test
@@ -481,7 +494,7 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
         );
     }
 
-    private State startQueryOnInitiator() {
+    private State startQueryOnInitiator(long timeout) {
         Plan plan = new Plan(
             partitionMap,
             Collections.emptyList(),
@@ -493,7 +506,7 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
 
         QueryId queryId = initiatorService.getStateRegistry().onInitiatorQueryStarted(
             initiatorId,
-            Long.MAX_VALUE,
+            timeout,
             plan,
             new BlockingRootResultConsumer(),
             initiatorService.getOperationHandler(),
