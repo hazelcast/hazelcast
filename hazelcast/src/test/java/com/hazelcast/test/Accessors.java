@@ -73,8 +73,8 @@ public class Accessors {
         return (ClientEngineImpl) getNode(instance).getClientEngine();
     }
 
-    public static ServerConnectionManager getEndpointManager(HazelcastInstance hz) {
-        return getNode(hz).getConnectionManager();
+    public static ServerConnectionManager getConnectionManagerManager(HazelcastInstance hz) {
+        return getNode(hz).getServer().getConnectionManager(EndpointQualifier.MEMBER);
     }
 
     public static ClusterService getClusterService(HazelcastInstance hz) {

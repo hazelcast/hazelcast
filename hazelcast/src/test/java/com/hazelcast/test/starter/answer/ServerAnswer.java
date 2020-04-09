@@ -45,7 +45,7 @@ public class ServerAnswer
                     Class<?> endpointQualifierClass = arguments[0].getClass();
                     Method method = delegate.getClass().getMethod("getEndpointManager", endpointQualifierClass);
                     Object endpointManager = invoke(false, method, arguments);
-                    return mock(targetClassloader.loadClass(FirewallingServer.FirewallingEndpointManager.class.getName()),
+                    return mock(targetClassloader.loadClass(FirewallingServer.FirewallingServerConnectionManager.class.getName()),
                             new FirewallingConnectionManagerAnswer(endpointManager));
                 }
             }

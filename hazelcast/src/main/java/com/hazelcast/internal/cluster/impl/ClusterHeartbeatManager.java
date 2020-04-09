@@ -647,7 +647,7 @@ public class ClusterHeartbeatManager {
     private void logIfConnectionToEndpointIsMissing(long now, Member member) {
         long heartbeatTime = heartbeatFailureDetector.lastHeartbeat(member);
         if ((now - heartbeatTime) >= heartbeatIntervalMillis * HEART_BEAT_INTERVAL_FACTOR) {
-            Connection conn = node.getConnectionManager(MEMBER).getOrConnect(member.getAddress());
+            Connection conn = node.getServer().getConnectionManager(MEMBER).getOrConnect(member.getAddress());
             if (conn == null || !conn.isAlive()) {
                 logger.warning("This node does not have a connection to " + member);
             }

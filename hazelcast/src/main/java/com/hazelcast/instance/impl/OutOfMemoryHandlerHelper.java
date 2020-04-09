@@ -17,6 +17,7 @@
 package com.hazelcast.instance.impl;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.server.Server;
 
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 
@@ -41,9 +42,10 @@ public final class OutOfMemoryHandlerHelper {
     }
 
     private static void closeSockets(HazelcastInstanceImpl factory) {
-        if (factory.node.server != null) {
+        Server server = factory.node.getServer();
+        if (server != null) {
             try {
-                factory.node.server.shutdown();
+                server.shutdown();
             } catch (Throwable ignored) {
                 ignore(ignored);
             }

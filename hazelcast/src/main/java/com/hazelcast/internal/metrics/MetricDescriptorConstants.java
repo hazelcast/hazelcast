@@ -531,8 +531,8 @@ public final class MetricDescriptorConstants {
     public static final String TCP_METRIC_ENDPOINT_MANAGER_OPENED_COUNT = "openedCount";
     public static final String TCP_METRIC_ENDPOINT_MANAGER_CLOSED_COUNT = "closedCount";
     public static final String TCP_METRIC_ENDPOINT_MANAGER_ACCEPTED_SOCKET_COUNT = "acceptedSocketCount";
-    public static final String TCP_METRIC_UNIFIED_ENDPOINT_MANAGER_CLIENT_COUNT = "clientCount";
-    public static final String TCP_METRIC_UNIFIED_ENDPOINT_MANAGER_TEXT_COUNT = "textCount";
+    public static final String TCP_METRIC_CLIENT_COUNT = "clientCount";
+    public static final String TCP_METRIC_TEXT_COUNT = "textCount";
     // ===[/TCP]========================================================
 
     // ===[TOPIC]=======================================================

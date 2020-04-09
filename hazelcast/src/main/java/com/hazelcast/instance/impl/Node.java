@@ -64,10 +64,8 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.impl.MetricsConfigHelper;
 import com.hazelcast.internal.server.tcp.ServerSocketRegistry;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
-import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.server.Server;
 import com.hazelcast.internal.nio.Packet;
-import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.MigrationInterceptor;
@@ -685,14 +683,6 @@ public class Node {
 
     public Server getServer() {
         return server;
-    }
-
-    public ServerConnectionManager getConnectionManager() {
-        return getConnectionManager(MEMBER);
-    }
-
-    public <T extends ServerConnection> ServerConnectionManager getConnectionManager(EndpointQualifier qualifier) {
-        return server.getConnectionManager(qualifier);
     }
 
     public ClassLoader getConfigClassLoader() {

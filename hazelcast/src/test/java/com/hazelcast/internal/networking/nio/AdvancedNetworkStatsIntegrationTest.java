@@ -173,7 +173,6 @@ public class AdvancedNetworkStatsIntegrationTest extends AbstractAdvancedNetwork
     private long getBytesTransceivedFromEMs(HazelcastInstance instance, ProtocolType protocolType, Function<NetworkStats, Long> getFn) {
         Map<EndpointQualifier, NetworkStats> stats = getNode(instance)
                 .getServer()
-                .getAggregateConnectionManager()
                 .getNetworkStats();
         long bytesTransceived = 0;
         if (stats != null) {

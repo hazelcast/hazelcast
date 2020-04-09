@@ -20,9 +20,6 @@ package com.hazelcast.internal.server;
  * Stats per {@link ServerConnectionManager} for both directions of network traffic (inbound or outbound).
  * <p>
  * Stores number of bytes sent and received. Used only when Advanced Networking is enabled.
- *
- * @see ServerConnectionManager#getNetworkStats()
- * @see AggregateServerConnectionManager#getNetworkStats()
  */
 public interface NetworkStats {
 

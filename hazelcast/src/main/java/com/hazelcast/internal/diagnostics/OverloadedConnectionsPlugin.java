@@ -21,9 +21,7 @@ import com.hazelcast.internal.networking.nio.NioChannel;
 import com.hazelcast.internal.networking.nio.NioOutboundPipeline;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.server.Server;
 import com.hazelcast.internal.server.ServerConnection;
-import com.hazelcast.internal.server.AggregateServerConnectionManager;
 import com.hazelcast.internal.server.tcp.TcpServerConnection;
 import com.hazelcast.internal.util.ItemCounter;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -117,7 +115,7 @@ public class OverloadedConnectionsPlugin extends DiagnosticsPlugin {
     public void run(DiagnosticsLogWriter writer) {
         writer.startSection("OverloadedConnections");
 
-        Collection<ServerConnection> connections = getTcpIpConnections();
+        Collection<ServerConnection> connections = nodeEngine.getNode().getServer().getConnections();
         for (ServerConnection connection : connections) {
             clear();
             scan(writer, (TcpServerConnection) connection, false);
@@ -127,12 +125,6 @@ public class OverloadedConnectionsPlugin extends DiagnosticsPlugin {
         }
 
         writer.endSection();
-    }
-
-    private Collection<ServerConnection> getTcpIpConnections() {
-        Server server = nodeEngine.getNode().getServer();
-        AggregateServerConnectionManager endpointManager = server.getAggregateConnectionManager();
-        return endpointManager.getActiveConnections();
     }
 
     private void scan(DiagnosticsLogWriter writer, TcpServerConnection connection, boolean priority) {
