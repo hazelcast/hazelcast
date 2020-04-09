@@ -42,7 +42,6 @@ import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.ListRowBatch;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
-import com.hazelcast.sql.impl.state.QueryStateRegistry;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -97,8 +96,8 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
     private UUID initiatorId;
     private UUID participantId;
 
-    private SqlServiceProxy initiatorService;
-    private SqlServiceProxy participantService;
+    private SqlInternalService initiatorService;
+    private SqlInternalService participantService;
 
     private Map<UUID, PartitionIdSet> partitionMap;
 
@@ -125,11 +124,8 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
         initiatorId = initiator.getLocalEndpoint().getUuid();
         participantId = participant.getLocalEndpoint().getUuid();
 
-        initiatorService = getService(initiator);
-        participantService = getService(participant);
-
-        setInternalService(initiator, STATE_CHECK_FREQUENCY_BIG);
-        setInternalService(participant, STATE_CHECK_FREQUENCY_SMALL);
+        initiatorService = setInternalService(initiator, STATE_CHECK_FREQUENCY_BIG);
+        participantService = setInternalService(participant, STATE_CHECK_FREQUENCY_SMALL);
 
         partitionMap = new HashMap<>();
         partitionMap.put(initiatorId, new PartitionIdSet(2, Collections.singletonList(1)));
@@ -150,11 +146,8 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
         initiatorCancelOperation = createCancelOperation(participantId);
         participantCancelOperation = createCancelOperation(initiatorId);
 
-        toInitiatorChannel =
-            participantService.getInternalService().getOperationHandler().createChannel(participantId, initiatorId);
-
-        toParticipantChannel =
-            initiatorService.getInternalService().getOperationHandler().createChannel(initiatorId, participantId);
+        toInitiatorChannel = participantService.getOperationHandler().createChannel(participantId, initiatorId);
+        toParticipantChannel = initiatorService.getOperationHandler().createChannel(initiatorId, participantId);
     }
 
     @After
@@ -466,12 +459,12 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
             Collections.emptyMap()
         );
 
-        QueryId queryId = initiatorService.getInternalService().getStateRegistry().onInitiatorQueryStarted(
+        QueryId queryId = initiatorService.getStateRegistry().onInitiatorQueryStarted(
             initiatorId,
             Long.MAX_VALUE,
             plan,
             new BlockingRootResultConsumer(),
-            initiatorService.getInternalService().getOperationHandler(),
+            initiatorService.getOperationHandler(),
             true
         ).getQueryId();
 
@@ -481,7 +474,7 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
     }
 
     private void stopQueryOnInitiator() {
-        initiatorService.getInternalService().getStateRegistry().onQueryCompleted(testState.getQueryId());
+        initiatorService.getStateRegistry().onQueryCompleted(testState.getQueryId());
     }
 
     private void sendToInitiator(QueryOperation operation) {
@@ -493,13 +486,13 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
     }
 
     private void send(UUID fromId, UUID toId, QueryOperation operation) {
-        SqlServiceProxy fromService = fromId.equals(initiatorId) ? initiatorService : participantService;
+        SqlInternalService fromService = fromId.equals(initiatorId) ? initiatorService : participantService;
         QueryOperationChannel toChannel = toId.equals(initiatorId) ? toInitiatorChannel : toParticipantChannel;
 
         if (operation instanceof QueryBatchExchangeOperation) {
             toChannel.submit(operation);
         } else {
-            fromService.getInternalService().getOperationHandler().submit(
+            fromService.getOperationHandler().submit(
                 fromId,
                 toId,
                 operation
@@ -525,23 +518,19 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
         checkNoQuery(participantService);
     }
 
-    private void checkQuery(SqlServiceProxy service) {
-        QueryStateRegistry registry = service.getInternalService().getStateRegistry();
-
-        assertTrueEventually(() -> assertNotNull(registry.getState(testState.getQueryId())));
+    private void checkQuery(SqlInternalService service) {
+        assertTrueEventually(() -> assertNotNull(service.getStateRegistry().getState(testState.getQueryId())));
     }
 
-    private void checkNoQuery(SqlServiceProxy service) {
-        QueryStateRegistry registry = service.getInternalService().getStateRegistry();
-
-        assertTrueEventually(() -> assertNull(registry.getState(testState.getQueryId())));
+    private void checkNoQuery(SqlInternalService service) {
+        assertTrueEventually(() -> assertNull(service.getStateRegistry().getState(testState.getQueryId())));
     }
 
     private static SqlServiceProxy getService(HazelcastInstance instance) {
         return ((HazelcastInstanceProxy) instance).getOriginal().node.nodeEngine.getSqlService();
     }
 
-    private static void setInternalService(HazelcastInstanceProxy member, long stateCheckFrequency) {
+    private static SqlInternalService setInternalService(HazelcastInstanceProxy member, long stateCheckFrequency) {
         // Stop the old service.
         getService(member).getInternalService().shutdown();
 
@@ -566,6 +555,8 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
         internalService.start();
 
         getService(member).setInternalService(internalService);
+
+        return internalService;
     }
 
     @SuppressWarnings("unused")
