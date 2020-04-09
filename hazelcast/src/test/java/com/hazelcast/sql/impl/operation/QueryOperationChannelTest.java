@@ -19,7 +19,6 @@ package com.hazelcast.sql.impl.operation;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.nio.EndpointManager;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.sql.impl.NodeServiceProvider;
@@ -38,9 +37,9 @@ import org.junit.runner.RunWith;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.security.cert.Certificate;
 import java.util.Collection;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentMap;
 
 import static groovy.util.GroovyTestCase.assertEquals;
 
@@ -135,6 +134,11 @@ public class QueryOperationChannelTest extends SqlTestSupport {
         }
 
         @Override
+        public ConcurrentMap attributeMap() {
+            return null;
+        }
+
+        @Override
         public boolean isAlive() {
             return false;
         }
@@ -150,43 +154,23 @@ public class QueryOperationChannelTest extends SqlTestSupport {
         }
 
         @Override
-        public String getConnectionType() {
-            return null;
-        }
-
-        @Override
-        public EndpointManager getEndpointManager() {
-            return null;
-        }
-
-        @Override
-        public void setConnectionType(String connectionType) {
-            // No-op.
-        }
-
-        @Override
-        public boolean isClient() {
-            return false;
-        }
-
-        @Override
-        public InetAddress getInetAddress() {
-            return null;
-        }
-
-        @Override
         public InetSocketAddress getRemoteSocketAddress() {
             return null;
         }
 
         @Override
-        public Address getEndPoint() {
+        public Address getRemoteAddress() {
             return null;
         }
 
         @Override
-        public int getPort() {
-            return 0;
+        public void setRemoteAddress(Address remoteAddress) {
+            // No-op.
+        }
+
+        @Override
+        public InetAddress getInetAddress() {
+            return null;
         }
 
         @Override
@@ -216,11 +200,6 @@ public class QueryOperationChannelTest extends SqlTestSupport {
         @Override
         public Throwable getCloseCause() {
             return null;
-        }
-
-        @Override
-        public Certificate[] getRemoteCertificates() {
-            return new Certificate[0];
         }
     }
 }
