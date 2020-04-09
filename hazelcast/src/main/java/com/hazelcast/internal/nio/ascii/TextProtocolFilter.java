@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.nio.ascii;
 
-import com.hazelcast.internal.nio.server.ServerConnection;
+import com.hazelcast.internal.server.ServerConnection;
 
 /**
  * This interface is a text protocols policy enforcement point. It checks incoming command lines and validates if the command

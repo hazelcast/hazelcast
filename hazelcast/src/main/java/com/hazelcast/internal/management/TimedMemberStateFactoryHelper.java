@@ -25,7 +25,7 @@ import com.hazelcast.internal.management.dto.OperationServiceDTO;
 import com.hazelcast.internal.management.dto.PartitionServiceBeanDTO;
 import com.hazelcast.internal.management.dto.ProxyServiceDTO;
 import com.hazelcast.internal.monitor.impl.MemberStateImpl;
-import com.hazelcast.internal.nio.NetworkingService;
+import com.hazelcast.internal.server.Server;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.util.OperatingSystemMXBeanSupport;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
@@ -60,7 +60,7 @@ final class TimedMemberStateFactoryHelper {
     static void registerJMXBeans(HazelcastInstanceImpl instance, MemberStateImpl memberState) {
         final EventService es = instance.node.nodeEngine.getEventService();
         final OperationServiceImpl os = instance.node.nodeEngine.getOperationService();
-        final NetworkingService cm = instance.node.networkingService;
+        final Server server = instance.node.server;
         final InternalPartitionService ps = instance.node.partitionService;
         final ProxyService proxyService = instance.node.nodeEngine.getProxyService();
         final ExecutionService executionService = instance.node.nodeEngine.getExecutionService();
@@ -70,7 +70,7 @@ final class TimedMemberStateFactoryHelper {
         beans.setEventServiceBean(esBean);
         final OperationServiceDTO osBean = new OperationServiceDTO(os);
         beans.setOperationServiceBean(osBean);
-        final ConnectionManagerDTO cmBean = new ConnectionManagerDTO(cm);
+        final ConnectionManagerDTO cmBean = new ConnectionManagerDTO(server);
         beans.setConnectionManagerBean(cmBean);
         final PartitionServiceBeanDTO psBean = new PartitionServiceBeanDTO(ps, instance);
         beans.setPartitionServiceBean(psBean);

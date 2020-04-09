@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.clientside;
 
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
-import com.hazelcast.client.impl.connection.nio.ClientConnectionManagerImpl;
+import com.hazelcast.client.impl.connection.tcp.TcpClientConnectionManager;
 
 public class DefaultClientConnectionManagerFactory implements ClientConnectionManagerFactory {
 
@@ -26,6 +26,6 @@ public class DefaultClientConnectionManagerFactory implements ClientConnectionMa
 
     @Override
     public ClientConnectionManager createConnectionManager(HazelcastClientInstanceImpl client) {
-        return new ClientConnectionManagerImpl(client);
+        return new TcpClientConnectionManager(client);
     }
 }

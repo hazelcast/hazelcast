@@ -17,8 +17,8 @@
 package com.hazelcast.client.impl.spi.impl.listener;
 
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
-import com.hazelcast.client.impl.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.spi.ClientListenerService;
 import com.hazelcast.client.impl.spi.EventHandler;
@@ -331,7 +331,7 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
                 if (subscriber.isAlive()) {
                     successful = false;
                     logger.warning("Deregistration of listener with ID " + userRegistrationId
-                            + " has failed to address " + subscriber.getEndPoint(), e);
+                            + " has failed to address " + subscriber.getRemoteAddress(), e);
                 }
             }
         }

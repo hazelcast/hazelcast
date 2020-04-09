@@ -20,9 +20,9 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.cluster.Address;
-import com.hazelcast.internal.nio.server.FirewallingNetworkingService.FirewallingEndpointManager;
-import com.hazelcast.internal.nio.server.OperationPacketFilter;
-import com.hazelcast.internal.nio.server.PacketFilter;
+import com.hazelcast.internal.server.FirewallingServer.FirewallingEndpointManager;
+import com.hazelcast.internal.server.OperationPacketFilter;
+import com.hazelcast.internal.server.PacketFilter;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.internal.util.collection.IntHashSet;
 
@@ -44,7 +44,7 @@ public final class PacketFiltersUtil {
 
     public static FirewallingEndpointManager getEndpointManager(HazelcastInstance instance) {
         Node node = getNode(instance);
-        return (FirewallingEndpointManager) node.getEndpointManager();
+        return (FirewallingEndpointManager) node.getConnectionManager();
     }
 
     public static void resetPacketFiltersFrom(HazelcastInstance instance) {
@@ -95,7 +95,7 @@ public final class PacketFiltersUtil {
     private static void filterOperationsFrom(HazelcastInstance instance, int factory, List<Integer> opTypes,
             PacketFilter.Action action) {
         Node node = getNode(instance);
-        FirewallingEndpointManager em = (FirewallingEndpointManager) node.getEndpointManager();
+        FirewallingEndpointManager em = (FirewallingEndpointManager) node.getConnectionManager();
         PacketFilter packetFilter = new EndpointAgnosticPacketFilter(node.getSerializationService(), factory, opTypes, action);
         em.setPacketFilter(packetFilter);
     }
@@ -103,7 +103,7 @@ public final class PacketFiltersUtil {
     private static void filterOperationsBetween(HazelcastInstance from, Collection<Address> addresses, int factory, List<Integer> opTypes,
                                                 PacketFilter.Action action) {
         Node node = getNode(from);
-        FirewallingEndpointManager em = (FirewallingEndpointManager) node.getEndpointManager();
+        FirewallingEndpointManager em = (FirewallingEndpointManager) node.getConnectionManager();
         PacketFilter packetFilter = new EndpointAwarePacketFilter(node.getSerializationService(), addresses, factory,
                 opTypes, action);
         em.setPacketFilter(packetFilter);

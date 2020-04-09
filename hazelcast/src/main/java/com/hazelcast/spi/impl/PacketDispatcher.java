@@ -16,9 +16,9 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.nio.EndpointManager;
+import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.nio.Packet;
+import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.operationservice.OperationService;
@@ -76,9 +76,9 @@ public final class PacketDispatcher implements Consumer<Packet> {
                     eventService.accept(packet);
                     break;
                 case MEMBER_HANDSHAKE:
-                    Connection connection = packet.getConn();
-                    EndpointManager endpointManager = connection.getEndpointManager();
-                    endpointManager.accept(packet);
+                    ServerConnection connection = packet.getConn();
+                    ServerConnectionManager connectionManager = connection.getConnectionManager();
+                    connectionManager.accept(packet);
                     break;
                 case JET:
                     jetPacketConsumer.accept(packet);

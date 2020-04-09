@@ -19,9 +19,9 @@ package com.hazelcast.internal.partition;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.internal.nio.server.FirewallingNetworkingService;
-import com.hazelcast.internal.nio.server.OperationPacketFilter;
-import com.hazelcast.internal.nio.server.PacketFilter;
+import com.hazelcast.internal.server.FirewallingServer;
+import com.hazelcast.internal.server.OperationPacketFilter;
+import com.hazelcast.internal.server.PacketFilter;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
@@ -89,8 +89,8 @@ public class AntiEntropyCorrectnessTest extends PartitionCorrectnessTestSupport 
 
     public static void setBackupPacketDropFilter(HazelcastInstance instance, float blockRatio) {
         Node node = getNode(instance);
-        FirewallingNetworkingService.FirewallingEndpointManager
-                em = (FirewallingNetworkingService.FirewallingEndpointManager) node.getEndpointManager();
+        FirewallingServer.FirewallingEndpointManager
+                em = (FirewallingServer.FirewallingEndpointManager) node.getConnectionManager();
         em.setPacketFilter(new BackupPacketDropFilter(node.getSerializationService(), blockRatio));
     }
 

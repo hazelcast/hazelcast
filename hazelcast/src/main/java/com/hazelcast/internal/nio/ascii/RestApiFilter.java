@@ -19,7 +19,7 @@ package com.hazelcast.internal.nio.ascii;
 import com.hazelcast.config.RestApiConfig;
 import com.hazelcast.config.RestEndpointGroup;
 import com.hazelcast.internal.ascii.rest.HttpCommandProcessor;
-import com.hazelcast.internal.nio.server.ServerConnection;
+import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 

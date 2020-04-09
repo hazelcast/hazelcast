@@ -16,8 +16,8 @@
 
 package com.hazelcast.client.impl.statistics;
 
+import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
-import com.hazelcast.client.impl.connection.nio.ClientConnection;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
@@ -37,7 +37,7 @@ class ClusterConnectionMetricsProvider implements DynamicMetricsProvider {
         for (ClientConnection connection : clientConnectionManager.getActiveConnections()) {
             context.collect(descriptor
                             .withPrefix(CLUSTER_PREFIX_CONNECTION)
-                            .withDiscriminator(CLUSTER_DISCRIMINATOR_ENDPOINT, connection.getEndPoint().toString()),
+                            .withDiscriminator(CLUSTER_DISCRIMINATOR_ENDPOINT, connection.getRemoteAddress().toString()),
                     connection);
         }
     }

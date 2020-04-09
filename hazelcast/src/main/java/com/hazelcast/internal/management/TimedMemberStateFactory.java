@@ -67,7 +67,7 @@ import com.hazelcast.internal.monitor.impl.MemberPartitionStateImpl;
 import com.hazelcast.internal.monitor.impl.MemberStateImpl;
 import com.hazelcast.internal.monitor.impl.NodeStateImpl;
 import com.hazelcast.internal.networking.NetworkStats;
-import com.hazelcast.internal.nio.AggregateEndpointManager;
+import com.hazelcast.internal.server.AggregateServerConnectionManager;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.services.StatisticsAwareService;
@@ -203,7 +203,7 @@ public class TimedMemberStateFactory {
 
         memberState.setClientStats(getClientAttributes(node.getClientEngine().getClientStatistics()));
 
-        AggregateEndpointManager aggregateEndpointManager = node.getNetworkingService().getAggregateEndpointManager();
+        AggregateServerConnectionManager aggregateEndpointManager = node.getServer().getAggregateConnectionManager();
         memberState.setInboundNetworkStats(createAdvancedNetworkStats(aggregateEndpointManager.getNetworkStats(),
                 NetworkStats::getBytesReceived));
         memberState.setOutboundNetworkStats(createAdvancedNetworkStats(aggregateEndpointManager.getNetworkStats(),

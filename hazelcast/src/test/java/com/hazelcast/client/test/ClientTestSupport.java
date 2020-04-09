@@ -18,8 +18,8 @@ package com.hazelcast.client.test;
 
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
+import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
-import com.hazelcast.client.impl.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
@@ -44,7 +44,7 @@ public class ClientTestSupport extends HazelcastTestSupport {
         HazelcastClientInstanceImpl clientImpl = getHazelcastClientInstanceImpl(client);
         ClientConnectionManager connectionManager = clientImpl.getConnectionManager();
         Address address = instance.getCluster().getLocalMember().getAddress();
-        ((TestClientRegistry.MockClientConnectionManager) connectionManager).blockFrom(address);
+        ((TestClientRegistry.MockTcpClientConnectionManager) connectionManager).blockFrom(address);
     }
 
     /**
@@ -54,7 +54,7 @@ public class ClientTestSupport extends HazelcastTestSupport {
         HazelcastClientInstanceImpl clientImpl = getHazelcastClientInstanceImpl(client);
         ClientConnectionManager connectionManager = clientImpl.getConnectionManager();
         Address address = instance.getCluster().getLocalMember().getAddress();
-        ((TestClientRegistry.MockClientConnectionManager) connectionManager).unblockFrom(address);
+        ((TestClientRegistry.MockTcpClientConnectionManager) connectionManager).unblockFrom(address);
     }
 
     /**
@@ -64,7 +64,7 @@ public class ClientTestSupport extends HazelcastTestSupport {
         HazelcastClientInstanceImpl clientImpl = getHazelcastClientInstanceImpl(client);
         ClientConnectionManager connectionManager = clientImpl.getConnectionManager();
         Address address = instance.getCluster().getLocalMember().getAddress();
-        ((TestClientRegistry.MockClientConnectionManager) connectionManager).blockTo(address);
+        ((TestClientRegistry.MockTcpClientConnectionManager) connectionManager).blockTo(address);
     }
 
     /**
@@ -74,7 +74,7 @@ public class ClientTestSupport extends HazelcastTestSupport {
         HazelcastClientInstanceImpl clientImpl = getHazelcastClientInstanceImpl(client);
         ClientConnectionManager connectionManager = clientImpl.getConnectionManager();
         Address address = instance.getCluster().getLocalMember().getAddress();
-        ((TestClientRegistry.MockClientConnectionManager) connectionManager).unblockTo(address);
+        ((TestClientRegistry.MockTcpClientConnectionManager) connectionManager).unblockTo(address);
     }
 
     protected HazelcastClientInstanceImpl getHazelcastClientInstanceImpl(HazelcastInstance client) {

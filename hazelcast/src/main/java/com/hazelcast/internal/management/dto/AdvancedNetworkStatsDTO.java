@@ -18,7 +18,7 @@ package com.hazelcast.internal.management.dto;
 
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.internal.nio.AggregateEndpointManager;
+import com.hazelcast.internal.server.AggregateServerConnectionManager;
 import com.hazelcast.json.internal.JsonSerializable;
 
 import java.util.EnumMap;
@@ -26,7 +26,7 @@ import java.util.EnumMap;
 import static com.hazelcast.internal.util.JsonUtil.getObject;
 
 /**
- * A JSON representation of {@link AggregateEndpointManager#getNetworkStats()} grouped by protocol type.
+ * A JSON representation of {@link AggregateServerConnectionManager#getNetworkStats()} grouped by protocol type.
  */
 public class AdvancedNetworkStatsDTO implements JsonSerializable {
 

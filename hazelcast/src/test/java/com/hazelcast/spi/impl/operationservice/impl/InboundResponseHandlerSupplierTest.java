@@ -16,12 +16,12 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.internal.nio.Packet;
+import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.InboundResponseHandlerSupplier.AsyncMultithreadedResponseHandler;
@@ -136,7 +136,7 @@ public class InboundResponseHandlerSupplierTest extends HazelcastTestSupport {
         final Packet response = new Packet(serializationService.toBytes(new NormalResponse("foo", callId, 0, false)))
                 .setPacketType(Packet.Type.OPERATION)
                 .raiseFlags(FLAG_OP_RESPONSE)
-                .setConn(mock(Connection.class));
+                .setConn(mock(ServerConnection.class));
 
         supplier.get().accept(response);
 
@@ -173,7 +173,7 @@ public class InboundResponseHandlerSupplierTest extends HazelcastTestSupport {
         // the response flag isn't set; so an exception is thrown.
         Packet badResponse = new Packet(serializationService.toBytes(new NormalResponse("bad", 1, 0, false)))
                 .setPacketType(Packet.Type.OPERATION)
-                .setConn(mock(Connection.class));
+                .setConn(mock(ServerConnection.class));
 
         Consumer<Packet> responseConsumer = supplier.get();
 
@@ -182,7 +182,7 @@ public class InboundResponseHandlerSupplierTest extends HazelcastTestSupport {
         final Packet goodResponse = new Packet(serializationService.toBytes(new NormalResponse("foo", callId, 0, false)))
                 .setPacketType(Packet.Type.OPERATION)
                 .raiseFlags(FLAG_OP_RESPONSE)
-                .setConn(mock(Connection.class));
+                .setConn(mock(ServerConnection.class));
 
         responseConsumer.accept(goodResponse);
 

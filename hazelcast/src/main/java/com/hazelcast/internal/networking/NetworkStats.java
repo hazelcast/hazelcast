@@ -16,16 +16,16 @@
 
 package com.hazelcast.internal.networking;
 
-import com.hazelcast.internal.nio.AggregateEndpointManager;
-import com.hazelcast.internal.nio.EndpointManager;
+import com.hazelcast.internal.server.AggregateServerConnectionManager;
+import com.hazelcast.internal.server.ServerConnectionManager;
 
 /**
- * Stats per {@link EndpointManager} for both directions of network traffic (inbound or outbound).
+ * Stats per {@link ServerConnectionManager} for both directions of network traffic (inbound or outbound).
  * <p>
  * Stores number of bytes sent and received. Used only when Advanced Networking is enabled.
  *
- * @see EndpointManager#getNetworkStats()
- * @see AggregateEndpointManager#getNetworkStats()
+ * @see ServerConnectionManager#getNetworkStats()
+ * @see AggregateServerConnectionManager#getNetworkStats()
  */
 public interface NetworkStats {
 
