@@ -224,22 +224,6 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_initiator_E_B_L() {
-        // EXECUTE
-        sendToInitiator(initiatorExecuteOperation);
-        testState.assertStartedEventually();
-
-        // BATCH
-        sendToInitiator(initiatorBatch1Operation);
-        ListRowBatch batch = testState.assertRowsArrived(BATCH_SIZE);
-        checkMonotonicBatch(batch, 0, BATCH_SIZE);
-
-        // LEAVE
-        participant.shutdown();
-        checkNoQueryOnInitiator();
-    }
-
-    @Test
     public void test_initiator_E_L_B() {
         // EXECUTE
         sendToInitiator(initiatorExecuteOperation);
@@ -427,6 +411,21 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
     @Test
     public void test_participant_C_B1_B2_E() {
         fail("Cannot handle reordered cancel -> execute");
+    }
+
+    @Test
+    public void test_participant_E_L_B() {
+        // EXECUTE
+        sendToParticipant(participantExecuteOperation);
+        testState.assertStartedEventually();
+
+        // LEAVE
+        initiator.shutdown();
+        checkNoQueryOnParticipant();
+
+        // BATCH
+        sendToParticipant(participantBatch1Operation);
+        checkNoQueryOnParticipant();
     }
 
     private QueryExecuteOperation createExecuteOperation(UUID toMemberId) {
