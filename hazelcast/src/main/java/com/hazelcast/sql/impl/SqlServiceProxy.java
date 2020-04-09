@@ -27,12 +27,10 @@ import java.util.function.Consumer;
  */
 public class SqlServiceProxy implements Consumer<Packet> {
     /** Outbox batch size in bytes. */
-    public static final int OUTBOX_BATCH_SIZE = 512 * 1024;
+    private static final int OUTBOX_BATCH_SIZE = 512 * 1024;
 
     /** Default state check frequency. */
-    public static final long STATE_CHECK_FREQUENCY = 10_000L;
-
-    private final NodeServiceProvider nodeServiceProvider;
+    private static final long STATE_CHECK_FREQUENCY = 10_000L;
 
     private volatile SqlInternalService internalService;
 
@@ -41,7 +39,7 @@ public class SqlServiceProxy implements Consumer<Packet> {
         int operationThreadCount = Runtime.getRuntime().availableProcessors();
         int fragmentThreadCount = Runtime.getRuntime().availableProcessors();
 
-        nodeServiceProvider = new NodeServiceProviderImpl(nodeEngine);
+        NodeServiceProviderImpl nodeServiceProvider = new NodeServiceProviderImpl(nodeEngine);
 
         String instanceName = nodeEngine.getHazelcastInstance().getName();
         InternalSerializationService serializationService = (InternalSerializationService) nodeEngine.getSerializationService();

@@ -63,7 +63,6 @@ import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import static com.hazelcast.sql.impl.SqlServiceProxy.OUTBOX_BATCH_SIZE;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -77,6 +76,7 @@ import static org.junit.Assert.fail;
  *     <li>E - execute</li>
  *     <li>Bx - batch request with x ordinal</li>
  *     <li>C - cancel</li>
+ *     <li>L - leave of the other member</li>
  * </ul>
  */
 @RunWith(HazelcastSerialClassRunner.class)
@@ -86,12 +86,14 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
     private static final int EDGE_ID = 1;
     private static final int BATCH_SIZE = 100;
 
-    private static final long STATE_CHECK_FREQUENCY_SMALL = 100L;
-    private static final long STATE_CHECK_FREQUENCY_BIG = Long.MAX_VALUE;
+    private static final long STATE_CHECK_FREQUENCY = 100L;
 
     private static volatile State testState;
 
     private TestHazelcastInstanceFactory factory;
+
+    private HazelcastInstanceProxy initiator;
+    private HazelcastInstanceProxy participant;
 
     private UUID initiatorId;
     private UUID participantId;
@@ -118,14 +120,14 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
     public void before() {
         factory = new TestHazelcastInstanceFactory(2);
 
-        HazelcastInstanceProxy initiator = (HazelcastInstanceProxy) factory.newHazelcastInstance();
-        HazelcastInstanceProxy participant = (HazelcastInstanceProxy) factory.newHazelcastInstance();
+        initiator = (HazelcastInstanceProxy) factory.newHazelcastInstance();
+        participant = (HazelcastInstanceProxy) factory.newHazelcastInstance();
 
         initiatorId = initiator.getLocalEndpoint().getUuid();
         participantId = participant.getLocalEndpoint().getUuid();
 
-        initiatorService = setInternalService(initiator, STATE_CHECK_FREQUENCY_BIG);
-        participantService = setInternalService(participant, STATE_CHECK_FREQUENCY_SMALL);
+        initiatorService = setInternalService(initiator, STATE_CHECK_FREQUENCY);
+        participantService = setInternalService(participant, STATE_CHECK_FREQUENCY);
 
         partitionMap = new HashMap<>();
         partitionMap.put(initiatorId, new PartitionIdSet(2, Collections.singletonList(1)));
@@ -219,6 +221,37 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
         sendToInitiator(initiatorBatch2Operation);
         checkNoQueryOnInitiator();
         testState.assertNoRows();
+    }
+
+    @Test
+    public void test_initiator_E_B_L() {
+        // EXECUTE
+        sendToInitiator(initiatorExecuteOperation);
+        testState.assertStartedEventually();
+
+        // BATCH
+        sendToInitiator(initiatorBatch1Operation);
+        ListRowBatch batch = testState.assertRowsArrived(BATCH_SIZE);
+        checkMonotonicBatch(batch, 0, BATCH_SIZE);
+
+        // LEAVE
+        participant.shutdown();
+        checkNoQueryOnInitiator();
+    }
+
+    @Test
+    public void test_initiator_E_L_B() {
+        // EXECUTE
+        sendToInitiator(initiatorExecuteOperation);
+        testState.assertStartedEventually();
+
+        // LEAVE
+        participant.shutdown();
+        checkNoQueryOnInitiator();
+
+        // BATCH
+        sendToInitiator(initiatorBatch1Operation);
+        checkNoQueryOnInitiator();
     }
 
     @Test
@@ -548,7 +581,7 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
             serializationService,
             Runtime.getRuntime().availableProcessors(),
             Runtime.getRuntime().availableProcessors(),
-            OUTBOX_BATCH_SIZE,
+            1000,
             stateCheckFrequency
         );
 

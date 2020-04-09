@@ -247,7 +247,7 @@ public final class QueryState implements QueryStateCallback {
 
         if (isInitiator()) {
             // Initiator checks all participants.
-            if (!getParticipants().containsAll(memberIds)) {
+            if (!memberIds.containsAll(getParticipants())) {
                 missingMemberIds = new HashSet<>(getParticipants());
                 missingMemberIds.removeAll(memberIds);
             }
@@ -284,7 +284,7 @@ public final class QueryState implements QueryStateCallback {
 
         long timeout = initiatorState.getTimeout();
 
-        if (timeout > 0 && clockProvider.currentTimeMillis() > startTime + timeout) {
+        if (timeout > 0 && clockProvider.currentTimeMillis() - startTime > timeout) {
             cancel(QueryException.timeout(timeout));
 
             return true;
