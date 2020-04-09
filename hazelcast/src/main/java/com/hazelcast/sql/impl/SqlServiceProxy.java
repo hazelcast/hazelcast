@@ -23,9 +23,14 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import java.util.function.Consumer;
 
 /**
- * Base SQL service implementation which bridges optimizer implementation, public and private APIs.
+ * Base SQL service implementation that bridges optimizer implementation, public and private APIs.
  */
 public class SqlServiceProxy implements Consumer<Packet> {
+    /** Outbox batch size in bytes. */
+    public static final int OUTBOX_BATCH_SIZE = 512 * 1024;
+
+    /** Default state check frequency. */
+    public static final long STATE_CHECK_FREQUENCY = 10_000L;
 
     private final NodeServiceProvider nodeServiceProvider;
 
@@ -46,7 +51,9 @@ public class SqlServiceProxy implements Consumer<Packet> {
             nodeServiceProvider,
             serializationService,
             operationThreadCount,
-            fragmentThreadCount
+            fragmentThreadCount,
+            OUTBOX_BATCH_SIZE,
+            STATE_CHECK_FREQUENCY
         );
     }
 

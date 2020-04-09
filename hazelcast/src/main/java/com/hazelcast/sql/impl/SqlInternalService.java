@@ -38,14 +38,8 @@ import java.util.UUID;
  * Proxy for SQL service. Backed by either Calcite-based or no-op implementation.
  */
 public class SqlInternalService {
-    /** Default state check frequency. */
-    public static final long STATE_CHECK_FREQUENCY = 10_000L;
-
     /** Memory assigned to a single edge mailbox. Will be reworked to dynamic mode when memory manager is implemented. */
     private static final long MEMORY_PER_EDGE_MAILBOX = 512 * 1024;
-
-    /** Outbox batch size in bytes. */
-    private static final int OUTBOX_BATCH_SIZE = 512 * 1024;
 
     /** Default flow control factory. */
     private static final FlowControlFactory FLOW_CONTROL_FACTORY = SimpleFlowControlFactory.INSTANCE;
@@ -54,7 +48,7 @@ public class SqlInternalService {
     private final NodeServiceProvider nodeServiceProvider;
 
     /** Registry for running queries. */
-    private volatile QueryStateRegistry stateRegistry;
+    private final QueryStateRegistry stateRegistry;
 
     /** Operation manager. */
     private final QueryOperationHandlerImpl operationHandler;
@@ -67,7 +61,9 @@ public class SqlInternalService {
         NodeServiceProvider nodeServiceProvider,
         InternalSerializationService serializationService,
         int operationThreadCount,
-        int fragmentThreadCount
+        int fragmentThreadCount,
+        int outboxBatchSize,
+        long stateCheckFrequency
     ) {
         this.nodeServiceProvider = nodeServiceProvider;
 
@@ -80,7 +76,7 @@ public class SqlInternalService {
             nodeServiceProvider,
             serializationService,
             stateRegistry,
-            OUTBOX_BATCH_SIZE,
+            outboxBatchSize,
             FLOW_CONTROL_FACTORY,
             fragmentThreadCount,
             operationThreadCount
@@ -92,7 +88,7 @@ public class SqlInternalService {
             nodeServiceProvider,
             stateRegistry,
             operationHandler,
-            STATE_CHECK_FREQUENCY
+            stateCheckFrequency
         );
     }
 
@@ -186,6 +182,10 @@ public class SqlInternalService {
         }
 
         return res;
+    }
+
+    public QueryStateRegistry getStateRegistry() {
+        return stateRegistry;
     }
 
     public QueryOperationHandlerImpl getOperationHandler() {
