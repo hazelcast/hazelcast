@@ -17,16 +17,85 @@
 package com.hazelcast.sql.impl.operation;
 
 import com.hazelcast.sql.impl.SqlTestSupport;
+import org.junit.Ignore;
 import org.junit.Test;
+
+import static org.junit.Assert.fail;
 
 /**
  * A set of integration tests for query message processing on a single member.
+ * <p>
+ * Abbreviations:
+ * <ul>
+ *     <li>E - execute</li>
+ *     <li>Bx - batch request with x ordinal</li>
+ *     <li>C - cancel</li>
+ * </ul>
  */
 public class QueryOperationHandlerTest extends SqlTestSupport {
-
     @Test
-    public void testExecuteThenBatch() {
-
+    public void test_E_B1_B2_C() {
+        // TODO
     }
 
+    @Test
+    public void test_E_B1_C_B2() {
+        // TODO
+    }
+
+    @Test
+    public void test_E_C_B1_B2() {
+        // TODO
+    }
+
+    @Ignore("https://github.com/hazelcast/hazelcast/issues/16868")
+    @Test
+    public void test_C_E_B1_B2() {
+        fail("Cannot handle reordered cancel -> execute");
+    }
+
+    @Test
+    public void test_B1_E_B2_C() {
+        // TODO
+    }
+
+    @Test
+    public void test_B1_E_C_B2() {
+        // TODO
+    }
+
+    @Ignore("https://github.com/hazelcast/hazelcast/issues/16868")
+    @Test
+    public void test_B1_C_E_B2() {
+        fail("Cannot handle reordered cancel -> execute");
+    }
+
+    @Ignore("https://github.com/hazelcast/hazelcast/issues/16868")
+    @Test
+    public void test_C_B1_E_B2() {
+        fail("Cannot handle reordered cancel -> execute");
+    }
+
+    @Test
+    public void test_B1_B2_E_C() {
+        // TODO
+    }
+
+    @Ignore("https://github.com/hazelcast/hazelcast/issues/16868")
+    @Test
+    public void test_B1_B2_C_E() {
+        fail("Cannot handle reordered cancel -> execute");
+    }
+
+    @Ignore("https://github.com/hazelcast/hazelcast/issues/16868")
+    @Test
+    public void test_B1_C_B2_E() {
+        fail("Cannot handle reordered cancel -> execute");
+    }
+
+    @Ignore("https://github.com/hazelcast/hazelcast/issues/16868")
+    @Test
+    public void test_C_B1_B2_E() {
+        fail("Cannot handle reordered cancel -> execute");
+    }
 }
