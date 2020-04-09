@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.operation;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
@@ -106,6 +105,11 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
 
     private Map<UUID, PartitionIdSet> partitionMap;
 
+    private QueryExecuteOperation initiatorExecuteOperation;
+    private QueryBatchExchangeOperation initiatorBatch1Operation;
+    private QueryBatchExchangeOperation initiatorBatch2Operation;
+    private QueryCancelOperation initiatorCancelOperation;
+
     private QueryExecuteOperation participantExecuteOperation;
     private QueryBatchExchangeOperation participantBatch1Operation;
     private QueryBatchExchangeOperation participantBatch2Operation;
@@ -137,51 +141,17 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
         testState = startInitiator();
 
         // Prepare operations that will be used throughout the test.
-        PlanNode node = new ParticipantNode(
-            1,
-            new ReceivePlanNode(2, EDGE_ID, Collections.singletonList(QueryDataType.INT))
-        );
+        initiatorExecuteOperation = createExecuteOperation(initiatorId);
+        participantExecuteOperation = createExecuteOperation(participantId);
 
-        QueryExecuteOperationFragment fragment = new QueryExecuteOperationFragment(
-            node,
-            QueryExecuteOperationFragmentMapping.EXPLICIT,
-            Collections.singletonList(participantId)
-        );
+        initiatorBatch1Operation = createBatch1Operation(initiatorId);
+        participantBatch1Operation = createBatch1Operation(participantId);
 
-        participantExecuteOperation = new QueryExecuteOperation(
-            testState.getQueryId(),
-            partitionMap,
-            Collections.singletonList(fragment),
-            Collections.singletonMap(EDGE_ID, 0),
-            Collections.singletonMap(EDGE_ID, 0),
-            Collections.singletonMap(EDGE_ID, Long.MAX_VALUE),
-            Collections.emptyList()
-        );
+        initiatorBatch2Operation = createBatch2Operation(initiatorId);
+        participantBatch2Operation = createBatch2Operation(participantId);
 
-        participantBatch1Operation = new QueryBatchExchangeOperation(
-            testState.getQueryId(),
-            EDGE_ID,
-            participantId,
-            createMonotonicBatch(0, BATCH_SIZE),
-            false,
-            Long.MAX_VALUE
-        );
-
-        participantBatch2Operation = new QueryBatchExchangeOperation(
-            testState.getQueryId(),
-            EDGE_ID,
-            participantId,
-            createMonotonicBatch(BATCH_SIZE, BATCH_SIZE),
-            true,
-            Long.MAX_VALUE
-        );
-
-        participantCancelOperation = new QueryCancelOperation(
-            testState.getQueryId(),
-            SqlErrorCode.GENERIC,
-            "Error",
-            initiatorId
-        );
+        initiatorCancelOperation = createCancelOperation(participantId);
+        participantCancelOperation = createCancelOperation(initiatorId);
 
         toInitiatorChannel =
             participantService.getInternalService().getOperationHandler().createChannel(participantId, initiatorId);
@@ -370,6 +340,59 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
     @Test
     public void test_participant_C_B1_B2_E() {
         fail("Cannot handle reordered cancel -> execute");
+    }
+
+    private QueryExecuteOperation createExecuteOperation(UUID toMemberId) {
+        PlanNode node = new ParticipantNode(
+            1, new ReceivePlanNode(2, EDGE_ID, Collections.singletonList(QueryDataType.INT))
+        );
+
+        QueryExecuteOperationFragment fragment = new QueryExecuteOperationFragment(
+            node,
+            QueryExecuteOperationFragmentMapping.EXPLICIT,
+            Collections.singletonList(toMemberId)
+        );
+
+        return new QueryExecuteOperation(
+            testState.getQueryId(),
+            partitionMap,
+            Collections.singletonList(fragment),
+            Collections.singletonMap(EDGE_ID, 0),
+            Collections.singletonMap(EDGE_ID, 0),
+            Collections.singletonMap(EDGE_ID, Long.MAX_VALUE),
+            Collections.emptyList()
+        );
+    }
+
+    private QueryBatchExchangeOperation createBatch1Operation(UUID toMemberId) {
+        return new QueryBatchExchangeOperation(
+            testState.getQueryId(),
+            EDGE_ID,
+            toMemberId,
+            createMonotonicBatch(0, BATCH_SIZE),
+            false,
+            Long.MAX_VALUE
+        );
+    }
+
+    private QueryBatchExchangeOperation createBatch2Operation(UUID toMemberId) {
+        return new QueryBatchExchangeOperation(
+            testState.getQueryId(),
+            EDGE_ID,
+            toMemberId,
+            createMonotonicBatch(BATCH_SIZE, BATCH_SIZE),
+            true,
+            Long.MAX_VALUE
+        );
+    }
+
+    private QueryCancelOperation createCancelOperation(UUID fromMemberId) {
+        return new QueryCancelOperation(
+            testState.getQueryId(),
+            SqlErrorCode.GENERIC,
+            "Error",
+            fromMemberId
+        );
     }
 
     private State startInitiator() {

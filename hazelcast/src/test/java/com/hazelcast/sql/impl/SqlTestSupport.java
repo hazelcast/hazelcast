@@ -78,13 +78,13 @@ public class SqlTestSupport extends HazelcastTestSupport {
         return new ListRowBatch(rows);
     }
 
-    public static void checkMonotonicBatch(RowBatch batch, int start, int size) {
+    public static void checkMonotonicBatch(RowBatch batch, int startValue, int size) {
         assertEquals(size, batch.getRowCount());
 
         for (int i = 0; i < size; i++) {
             int value = batch.getRow(i).get(0);
 
-            assertEquals(start + i, value);
+            assertEquals(startValue + i, value);
         }
     }
 
