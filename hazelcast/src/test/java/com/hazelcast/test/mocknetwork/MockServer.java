@@ -30,14 +30,13 @@ import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.server.Server;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.server.ServerConnectionManager;
-import com.hazelcast.internal.server.AggregateServerConnectionManager;
-import com.hazelcast.internal.server.tcp.DefaultAggregateConnectionManager;
 import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 import com.hazelcast.internal.util.executor.StripedRunnable;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -48,76 +47,67 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
 import static com.hazelcast.test.HazelcastTestSupport.suspectMember;
 import static java.util.Collections.singletonMap;
 
-class MockServer
-        implements Server {
+class MockServer implements Server {
 
     private static final int RETRY_NUMBER = 5;
     private static final int DELAY_FACTOR = 100;
 
-    private final ConcurrentMap<Address, MockServerConnection> mapConnections
-            = new ConcurrentHashMap<Address, MockServerConnection>(10);
+    private final ConcurrentMap<Address, MockServerConnection> connectionMap = new ConcurrentHashMap<>(10);
     private final TestNodeRegistry nodeRegistry;
     private final Node node;
-
     private final ScheduledExecutorService scheduler;
     private final ServerContext serverContext;
     private final ILogger logger;
+    private final ServerConnectionManager connectionManager;
 
     private volatile boolean live;
-
-    private final ServerConnectionManager mockConnectionMgr;
-    private final AggregateServerConnectionManager mockAggrEndpointManager;
 
     MockServer(ServerContext serverContext, Node node, TestNodeRegistry testNodeRegistry) {
         this.serverContext = serverContext;
         this.nodeRegistry = testNodeRegistry;
         this.node = node;
-        this.mockConnectionMgr = new MockEndpointManager(this);
-        this.mockAggrEndpointManager = new DefaultAggregateConnectionManager(
-                new ConcurrentHashMap(singletonMap(MEMBER, mockConnectionMgr)));
+        this.connectionManager = new MockServerConnectionManager(this);
         this.scheduler = new ScheduledThreadPoolExecutor(4,
                 new ThreadFactoryImpl(createThreadPoolName(serverContext.getHazelcastName(), "MockConnectionManager")));
         this.logger = serverContext.getLoggingService().getLogger(MockServer.class);
     }
 
-
-    static class MockEndpointManager
+    static class MockServerConnectionManager
             implements ServerConnectionManager {
 
-        private final MockServer ns;
-        private final ConnectionLifecycleListener lifecycleListener = new MockEndpointManager.MockConnLifecycleListener();
-        private final Set<ConnectionListener> connectionListeners = new CopyOnWriteArraySet<ConnectionListener>();
+        private final MockServer server;
+        private final ConnectionLifecycleListener lifecycleListener = new MockServerConnectionManager.MockConnLifecycleListener();
+        private final Set<ConnectionListener> connectionListeners = new CopyOnWriteArraySet<>();
 
-        MockEndpointManager(MockServer ns) {
-            this.ns = ns;
+        MockServerConnectionManager(MockServer server) {
+            this.server = server;
         }
 
         @Override
         public Server getServer() {
-            return null;
+            return server;
         }
 
         @Override
         public MockServerConnection get(Address address) {
-            return ns.mapConnections.get(address);
+            return server.connectionMap.get(address);
         }
 
         @Override
         public MockServerConnection getOrConnect(Address address) {
-            MockServerConnection conn = ns.mapConnections.get(address);
+            MockServerConnection conn = server.connectionMap.get(address);
             if (conn != null && conn.isAlive()) {
                 return conn;
             }
-            if (!ns.live) {
+            if (!server.live) {
                 return null;
             }
 
-            Node targetNode = ns.nodeRegistry.getNode(address);
+            Node targetNode = server.nodeRegistry.getNode(address);
             if (targetNode == null || isTargetLeft(targetNode)) {
                 suspectAddress(address);
                 return null;
@@ -131,13 +121,9 @@ class MockServer
         }
 
         private void suspectAddress(final Address address) {
-            // see TcpServerContext#removeEndpoint()
-            ns.node.getNodeEngine().getExecutionService().execute(ExecutionService.IO_EXECUTOR, new Runnable() {
-                @Override
-                public void run() {
-                    ns.node.getClusterService().suspectAddressIfNotConnected(address);
-                }
-            });
+            // see ServerContext#removeEndpoint()
+            server.node.getNodeEngine().getExecutionService().execute(ExecutionService.IO_EXECUTOR,
+                    () -> server.node.getClusterService().suspectAddressIfNotConnected(address));
         }
 
         public static boolean isTargetLeft(Node targetNode) {
@@ -145,19 +131,19 @@ class MockServer
         }
 
         private synchronized MockServerConnection createConnection(Node targetNode) {
-            if (!ns.live) {
+            if (!server.live) {
                 throw new IllegalStateException("connection manager is not live!");
             }
 
-            Node node = ns.node;
+            Node node = server.node;
             Address local = node.getThisAddress();
             Address remote = targetNode.getThisAddress();
 
             MockServerConnection thisConnection = new MockServerConnection(lifecycleListener, remote, local,
-                    node.getNodeEngine(), targetNode.getConnectionManager());
+                    node.getNodeEngine(), targetNode.server.getConnectionManager(EndpointQualifier.MEMBER));
 
             MockServerConnection remoteConnection = new MockServerConnection(lifecycleListener, local, remote,
-                    targetNode.getNodeEngine(), node.getConnectionManager());
+                    targetNode.getNodeEngine(), node.server.getConnectionManager(EndpointQualifier.MEMBER));
 
             remoteConnection.localConnection = thisConnection;
             thisConnection.localConnection = remoteConnection;
@@ -168,8 +154,8 @@ class MockServer
                 return null;
             }
 
-            ns.mapConnections.put(remote, remoteConnection);
-            ns.logger.info("Created connection to endpoint: " + remote + ", connection: " + remoteConnection);
+            server.connectionMap.put(remote, remoteConnection);
+            server.logger.info("Created connection to endpoint: " + remote + ", connection: " + remoteConnection);
 
             if (!remoteConnection.isAlive()) {
                 // If connection is not alive after inserting it into connection map,
@@ -187,7 +173,7 @@ class MockServer
         @Override
         public synchronized boolean register(final Address remoteAddress, final ServerConnection c) {
             MockServerConnection connection = (MockServerConnection) c;
-            if (!ns.live) {
+            if (!server.live) {
                 throw new IllegalStateException("connection manager is not live!");
             }
             if (!connection.isAlive()) {
@@ -195,8 +181,8 @@ class MockServer
             }
 
             connection.setLifecycleListener(lifecycleListener);
-            ns.mapConnections.put(remoteAddress, connection);
-            ns.serverContext.getEventService().executeEventCallback(new StripedRunnable() {
+            server.connectionMap.put(remoteAddress, connection);
+            server.serverContext.getEventService().executeEventCallback(new StripedRunnable() {
                 @Override
                 public void run() {
                     for (ConnectionListener listener : connectionListeners) {
@@ -218,13 +204,11 @@ class MockServer
         }
 
         private void fireConnectionRemovedEvent(final MockServerConnection connection, final Address endPoint) {
-            if (ns.live) {
-                ns.serverContext.getEventService().executeEventCallback(new StripedRunnable() {
+            if (server.live) {
+                server.serverContext.getEventService().executeEventCallback(new StripedRunnable() {
                     @Override
                     public void run() {
-                        for (ConnectionListener listener : connectionListeners) {
-                            listener.connectionRemoved(connection);
-                        }
+                        connectionListeners.forEach(listener -> listener.connectionRemoved(connection));
                     }
 
                     @Override
@@ -237,17 +221,17 @@ class MockServer
 
         @Override
         public Collection getConnections() {
-            return ns.mapConnections.values();
+            return server.connectionMap.values();
         }
 
         @Override
         public Collection getActiveConnections() {
-            return ns.mapConnections.values();
+            return server.connectionMap.values();
         }
 
         @Override
         public boolean transmit(Packet packet, ServerConnection connection) {
-            return (connection != null && connection.write(packet));
+            return connection != null && connection.write(packet);
         }
 
         /**
@@ -269,17 +253,17 @@ class MockServer
             }
 
             int retries = sendTask.retries.get();
-            if (retries < RETRY_NUMBER && ns.serverContext.isNodeActive()) {
+            if (retries < RETRY_NUMBER && server.serverContext.isNodeActive()) {
                 getOrConnect(target, true);
                 // TODO: Caution: may break the order guarantee of the packets sent from the same thread!
                 try {
-                    ns.scheduler.schedule(sendTask, (retries + 1) * DELAY_FACTOR, TimeUnit.MILLISECONDS);
+                    server.scheduler.schedule(sendTask, (retries + 1) * DELAY_FACTOR, TimeUnit.MILLISECONDS);
                 } catch (RejectedExecutionException e) {
-                    if (ns.live) {
+                    if (server.live) {
                         throw e;
                     }
-                    if (ns.logger.isFinestEnabled()) {
-                        ns.logger.finest("Packet send task is rejected. Packet cannot be sent to " + target);
+                    if (server.logger.isFinestEnabled()) {
+                        server.logger.finest("Packet send task is rejected. Packet cannot be sent to " + target);
                     }
                 }
                 return true;
@@ -298,7 +282,7 @@ class MockServer
             @Override
             public void onConnectionClose(MockServerConnection connection, Throwable t, boolean silent) {
                 final Address endPoint = connection.getRemoteAddress();
-                if (!ns.mapConnections.remove(endPoint, connection)) {
+                if (!server.connectionMap.remove(endPoint, connection)) {
                     return;
                 }
 
@@ -312,7 +296,7 @@ class MockServer
                     remoteConnection.close("Connection closed by the other side", null);
                 }
 
-                ns.logger.info("Removed connection to endpoint: " + endPoint + ", connection: " + connection);
+                MockServerConnectionManager.this.server.logger.info("Removed connection to endpoint: " + endPoint + ", connection: " + connection);
                 fireConnectionRemovedEvent(connection, endPoint);
             }
 
@@ -333,8 +317,8 @@ class MockServer
             @Override
             public void run() {
                 int actualRetries = retries.incrementAndGet();
-                if (ns.logger.isFinestEnabled()) {
-                    ns.logger.finest("Retrying[" + actualRetries + "] packet send operation to: " + target);
+                if (server.logger.isFinestEnabled()) {
+                    server.logger.finest("Retrying[" + actualRetries + "] packet send operation to: " + target);
                 }
                 send(packet, target, this);
             }
@@ -351,7 +335,6 @@ class MockServer
             public long getBytesSent() {
                 return 0;
             }
-
         }
     }
 
@@ -361,13 +344,28 @@ class MockServer
     }
 
     @Override
-    public AggregateServerConnectionManager getAggregateConnectionManager() {
-        return mockAggrEndpointManager;
+    public Collection<ServerConnection> getConnections() {
+        return connectionManager.getConnections();
+    }
+
+    @Override
+    public Collection<ServerConnection> getActiveConnections() {
+        return connectionManager.getActiveConnections();
+    }
+
+    @Override
+    public Map<EndpointQualifier, NetworkStats> getNetworkStats() {
+        return singletonMap(EndpointQualifier.MEMBER, connectionManager.getNetworkStats());
+    }
+
+    @Override
+    public void addConnectionListener(ConnectionListener<ServerConnection> listener) {
+        connectionManager.addConnectionListener(listener);
     }
 
     @Override
     public ServerConnectionManager getConnectionManager(EndpointQualifier qualifier) {
-        return mockConnectionMgr;
+        return connectionManager;
     }
 
     @Override
@@ -389,10 +387,8 @@ class MockServer
         logger.fine("Stopping connection manager");
         live = false;
 
-        for (Connection connection : mapConnections.values()) {
-            connection.close(null, null);
-        }
-        mapConnections.clear();
+        connectionMap.values().forEach(connection -> connection.close(null, null));
+        connectionMap.clear();
 
         final Member localMember = node.getLocalMember();
         final Address thisAddress = localMember.getAddress();
@@ -420,5 +416,4 @@ class MockServer
         stop();
         scheduler.shutdownNow();
     }
-
 }

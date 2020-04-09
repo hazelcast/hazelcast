@@ -31,19 +31,19 @@ public class TcpServerConnectionManager_BasicTest
 
     @Test
     public void start() {
-        networkingServiceA.start();
+        tcpServerA.start();
 
-        assertTrue(networkingServiceA.isLive());
+        assertTrue(tcpServerA.isLive());
     }
 
     @Test
     public void start_whenAlreadyStarted_thenCallIgnored() {
         // first time
-        networkingServiceA.start();
+        tcpServerA.start();
 
         // second time
-        networkingServiceA.start();
+        tcpServerA.start();
 
-        assertTrue(networkingServiceA.isLive());
+        assertTrue(tcpServerA.isLive());
     }
 }

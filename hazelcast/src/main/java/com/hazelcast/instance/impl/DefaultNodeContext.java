@@ -151,11 +151,9 @@ public class DefaultNodeContext implements NodeContext {
         return new TcpServer(config,
                 context,
                 registry,
-                node.loggingService,
                 metricsRegistry,
                 networking,
-                node.getNodeExtension().createChannelInitializerFn(context),
-                node.getProperties());
+                node.getNodeExtension().createChannelInitializerFn(context));
     }
 
     private Networking createNetworking(Node node) {

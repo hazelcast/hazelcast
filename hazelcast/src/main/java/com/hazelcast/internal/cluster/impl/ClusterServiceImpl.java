@@ -193,7 +193,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
                 return;
             }
 
-            Connection conn = node.getConnectionManager(MEMBER).get(address);
+            Connection conn = node.server.getConnectionManager(MEMBER).get(address);
             if (conn != null && conn.isAlive()) {
                 if (logger.isFineEnabled()) {
                     logger.fine("Cannot suspect " + member + ", since there's a live connection -> " + conn);

@@ -17,9 +17,10 @@
 package com.hazelcast.internal.server;
 
 import com.hazelcast.instance.EndpointQualifier;
-import com.hazelcast.internal.server.tcp.ClientViewUnifiedEndpointManager;
-import com.hazelcast.internal.server.tcp.MemberViewUnifiedServerConnectionManager;
-import com.hazelcast.internal.server.tcp.TextViewUnifiedServerConnectionManager;
+import com.hazelcast.internal.nio.ConnectionListenable;
+
+import java.util.Collection;
+import java.util.Map;
 
 /**
  * The Server is responsible for managing {@link ServerConnection} instances.
@@ -27,7 +28,7 @@ import com.hazelcast.internal.server.tcp.TextViewUnifiedServerConnectionManager;
  * Given an {@link EndpointQualifier} an {@link ServerConnectionManager} can be retrieved
  * by {@link #getConnectionManager(EndpointQualifier)} to create or get connections on that end.
  */
-public interface Server {
+public interface Server extends ConnectionListenable<ServerConnection> {
 
     /**
      * Returns the ServerContext.
@@ -35,26 +36,32 @@ public interface Server {
     ServerContext getContext();
 
     /**
-     * Return an aggregate endpoint which acts as a view of all endpoints merged together for reporting purposes
-     * eg. Read total-connections
-     */
-    AggregateServerConnectionManager getAggregateConnectionManager();
-
-    /**
      * Returns the relevant {@link ServerConnectionManager} given an {@link EndpointQualifier}
-     * On single-endpoint setups (legacy mode), then a View relevant to the requested Endpoint is returned which purely acts
-     * as a facade to hide the API differences and maintain common signatures.
-     * eg.
-     * {@link com.hazelcast.instance.ProtocolType#MEMBER} -&gt;
-     * {@link MemberViewUnifiedServerConnectionManager}
-     * {@link com.hazelcast.instance.ProtocolType#CLIENT} -&gt;
-     * {@link ClientViewUnifiedEndpointManager}
-     * {@link com.hazelcast.instance.ProtocolType#REST} -&gt;
-     * {@link TextViewUnifiedServerConnectionManager}
-     * {@link com.hazelcast.instance.ProtocolType#MEMCACHE} -&gt;
-     * {@link TextViewUnifiedServerConnectionManager}
      */
     ServerConnectionManager getConnectionManager(EndpointQualifier qualifier);
+
+    /**
+     * Returns all connections that have been successfully established.
+     *
+     * @return active connections
+     */
+    Collection<ServerConnection> getConnections();
+
+    // todo: probably we want to get rid of this method.
+    /**
+     * Returns all active connections.
+     *
+     * @return active connections
+     */
+    Collection<ServerConnection> getActiveConnections();
+
+    /**
+     * Returns network stats for inbound and outbound traffic per {@link EndpointQualifier}.
+     * Stats are available only when Advanced Networking is enabled.
+     *
+     * @return network stats per endpoint
+     */
+    Map<EndpointQualifier, NetworkStats> getNetworkStats();
 
     /**
      * Flag indicating the liveness status of the Server

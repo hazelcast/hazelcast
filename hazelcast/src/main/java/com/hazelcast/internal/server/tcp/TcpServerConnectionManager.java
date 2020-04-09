@@ -31,6 +31,7 @@ import com.hazelcast.internal.networking.Networking;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionLifecycleListener;
 import com.hazelcast.internal.nio.ConnectionListener;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.server.ServerConnection;
@@ -42,8 +43,6 @@ import com.hazelcast.internal.util.MutableLong;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.internal.util.executor.StripedRunnable;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.LoggingService;
-import com.hazelcast.spi.properties.HazelcastProperties;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
@@ -63,6 +62,7 @@ import java.util.function.Function;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_DISCRIMINATOR_BINDADDRESS;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_DISCRIMINATOR_ENDPOINT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_CLIENT_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ENDPOINT_MANAGER_ACCEPTED_SOCKET_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ENDPOINT_MANAGER_ACTIVE_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ENDPOINT_MANAGER_CLOSED_COUNT;
@@ -71,11 +71,14 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRI
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ENDPOINT_MANAGER_IN_PROGRESS_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ENDPOINT_MANAGER_MONITOR_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ENDPOINT_MANAGER_OPENED_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_TEXT_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_PREFIX_CONNECTION;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_TAG_ENDPOINT;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
+import static com.hazelcast.internal.metrics.ProbeUnit.COUNT;
+import static com.hazelcast.internal.nio.ConnectionType.MEMCACHE_CLIENT;
+import static com.hazelcast.internal.nio.ConnectionType.REST_CLIENT;
 import static com.hazelcast.internal.nio.IOUtil.close;
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.nio.IOUtil.setChannelOptions;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
@@ -99,6 +102,12 @@ public class TcpServerConnectionManager
     @Probe(name = TCP_METRIC_ENDPOINT_MANAGER_ACTIVE_COUNT, level = MANDATORY)
     final Set<TcpServerConnection> activeConnections = newSetFromMap(new ConcurrentHashMap<>());
 
+    @Probe(name = TCP_METRIC_ENDPOINT_MANAGER_ACCEPTED_SOCKET_COUNT, level = MANDATORY)
+    final Set<Channel> acceptedChannels = newSetFromMap(new ConcurrentHashMap<>());
+
+    @Probe(name = TCP_METRIC_ENDPOINT_MANAGER_CONNECTION_LISTENER_COUNT)
+    final Set<ConnectionListener> connectionListeners = new CopyOnWriteArraySet<>();
+
     private final ILogger logger;
     private final ServerContext serverContext;
     private final EndpointConfig endpointConfig;
@@ -108,10 +117,6 @@ public class TcpServerConnectionManager
     private final TcpServerConnector connector;
     private final MemberHandshakeHandler memberHandshakeHandler;
     private final NetworkStatsImpl networkStats;
-
-    @Probe(name = TCP_METRIC_ENDPOINT_MANAGER_CONNECTION_LISTENER_COUNT)
-    private final Set<ConnectionListener> connectionListeners = new CopyOnWriteArraySet<>();
-
     private final ConstructorFunction<Address, TcpServerConnectionErrorHandler> monitorConstructor =
             endpoint -> new TcpServerConnectionErrorHandler(TcpServerConnectionManager.this, endpoint);
 
@@ -126,24 +131,19 @@ public class TcpServerConnectionManager
     @Probe(name = TCP_METRIC_ENDPOINT_MANAGER_CLOSED_COUNT)
     private final MwCounter closedCount = newMwCounter();
 
-    @Probe(name = TCP_METRIC_ENDPOINT_MANAGER_ACCEPTED_SOCKET_COUNT, level = MANDATORY)
-    private final Set<Channel> acceptedChannels = newSetFromMap(new ConcurrentHashMap<>());
-
     private final EndpointConnectionLifecycleListener connectionLifecycleListener = new EndpointConnectionLifecycleListener();
 
     TcpServerConnectionManager(TcpServer server,
                                EndpointConfig endpointConfig,
                                Function<EndpointQualifier, ChannelInitializer> channelInitializerFn,
                                ServerContext serverContext,
-                               LoggingService loggingService,
-                               HazelcastProperties properties,
                                Set<ProtocolType> supportedProtocolTypes) {
         this.server = server;
         this.endpointConfig = endpointConfig;
         this.endpointQualifier = endpointConfig != null ? endpointConfig.getQualifier() : null;
         this.channelInitializerFn = channelInitializerFn;
         this.serverContext = serverContext;
-        this.logger = loggingService.getLogger(TcpServerConnectionManager.class);
+        this.logger = serverContext.getLoggingService().getLogger(TcpServerConnectionManager.class);
         this.connector = new TcpServerConnector(this);
         this.memberHandshakeHandler = new MemberHandshakeHandler(this, serverContext, logger, supportedProtocolTypes);
         this.networkStats = endpointQualifier == null ? null : new NetworkStatsImpl();
@@ -226,9 +226,7 @@ public class TcpServerConnectionManager
             serverContext.getEventService().executeEventCallback(new StripedRunnable() {
                 @Override
                 public void run() {
-                    for (ConnectionListener listener : connectionListeners) {
-                        listener.connectionAdded(connection);
-                    }
+                    connectionListeners.forEach(listener -> listener.connectionAdded(connection));
                 }
 
                 @Override
@@ -247,9 +245,7 @@ public class TcpServerConnectionManager
             serverContext.getEventService().executeEventCallback(new StripedRunnable() {
                 @Override
                 public void run() {
-                    for (ConnectionListener listener : connectionListeners) {
-                        listener.connectionRemoved(connection);
-                    }
+                    connectionListeners.forEach(listener -> listener.connectionRemoved(connection));
                 }
 
                 @Override
@@ -261,15 +257,9 @@ public class TcpServerConnectionManager
     }
 
     public synchronized void reset(boolean cleanListeners) {
-        for (Channel socketChannel : acceptedChannels) {
-            closeResource(socketChannel);
-        }
-        for (Connection conn : connectionsMap.values()) {
-            close(conn, "EndpointManager is stopping");
-        }
-        for (Connection conn : activeConnections) {
-            close(conn, "EndpointManager is stopping");
-        }
+        acceptedChannels.forEach(IOUtil::closeResource);
+        connectionsMap.values().forEach(conn -> close(conn, "EndpointManager is stopping"));
+        activeConnections.forEach(conn -> close(conn, "EndpointManager is stopping"));
         acceptedChannels.clear();
         connectionsInProgress.clear();
         connectionsMap.clear();
@@ -283,20 +273,14 @@ public class TcpServerConnectionManager
 
     @Override
     public boolean transmit(Packet packet, ServerConnection connection) {
-        checkNotNull(packet, "Packet can't be null");
-
-        if (connection == null) {
-            return false;
-        }
-
-        return connection.write(packet);
+        checkNotNull(packet, "packet can't be null");
+        return connection != null && connection.write(packet);
     }
 
     @Override
     public boolean transmit(Packet packet, Address target) {
-        checkNotNull(packet, "Packet can't be null");
+        checkNotNull(packet, "packet can't be null");
         checkNotNull(target, "target can't be null");
-
         return send(packet, target, null);
     }
 
@@ -319,8 +303,7 @@ public class TcpServerConnectionManager
         return monitor;
     }
 
-    Channel newChannel(SocketChannel socketChannel, boolean clientMode)
-            throws IOException {
+    Channel newChannel(SocketChannel socketChannel, boolean clientMode) throws IOException {
         Networking networking = server.getNetworking();
         ChannelInitializer channelInitializer = channelInitializerFn.apply(endpointQualifier);
         assert channelInitializer != null : "Found NULL channel initializer for endpoint-qualifier " + endpointQualifier;
@@ -401,17 +384,9 @@ public class TcpServerConnectionManager
 
     @Override
     public String toString() {
-        return "TcpIpEndpointManager{" + "endpointQualifier=" + endpointQualifier + ", connectionsMap=" + connectionsMap + '}';
-    }
-
-    // test support
-    int getAcceptedChannelsSize() {
-        return acceptedChannels.size();
-    }
-
-    // test support
-    int getConnectionListenersCount() {
-        return connectionListeners.size();
+        return "TcpServerConnectionManager{"
+                + "endpointQualifier=" + endpointQualifier
+                + ", connectionsMap=" + connectionsMap + '}';
     }
 
     @Override
@@ -433,9 +408,19 @@ public class TcpServerConnectionManager
             }
         }
 
+        int clientCount = 0;
+        int textCount = 0;
         for (Map.Entry<Address, TcpServerConnection> entry : connectionsMap.entrySet()) {
             Address bindAddress = entry.getKey();
             TcpServerConnection connection = entry.getValue();
+            if (connection.isClient()) {
+                clientCount++;
+                String connectionType = connection.getConnectionType();
+                if (REST_CLIENT.equals(connectionType) || MEMCACHE_CLIENT.equals(connectionType)) {
+                    textCount++;
+                }
+            }
+
             if (connection.getRemoteAddress() != null) {
                 context.collect(rootDescriptor
                         .copy()
@@ -443,10 +428,14 @@ public class TcpServerConnectionManager
                         .withTag(TCP_TAG_ENDPOINT, connection.getRemoteAddress().toString()), connection);
             }
         }
+
+        if (endpointConfig == null) {
+            context.collect(rootDescriptor.copy(), TCP_METRIC_CLIENT_COUNT, MANDATORY, COUNT, clientCount);
+            context.collect(rootDescriptor.copy(), TCP_METRIC_TEXT_COUNT, MANDATORY, COUNT, textCount);
+        }
     }
 
-    private final class SendTask
-            implements Runnable {
+    private final class SendTask implements Runnable {
         private final Packet packet;
         private final Address target;
         private volatile int retries;
@@ -467,8 +456,7 @@ public class TcpServerConnectionManager
         }
     }
 
-    public final class EndpointConnectionLifecycleListener
-            implements ConnectionLifecycleListener<TcpServerConnection> {
+    public final class EndpointConnectionLifecycleListener implements ConnectionLifecycleListener<TcpServerConnection> {
 
         @Override
         public void onConnectionClose(TcpServerConnection connection, Throwable t, boolean silent) {
@@ -495,11 +483,9 @@ public class TcpServerConnectionManager
                 }
             }
         }
-
     }
 
     private class NetworkStatsImpl implements NetworkStats {
-
         private final AtomicLong bytesReceivedLastCalc = new AtomicLong();
         private final MwCounter bytesReceivedOnClosed = newMwCounter();
         private final AtomicLong bytesSentLastCalc = new AtomicLong();
@@ -518,10 +504,10 @@ public class TcpServerConnectionManager
         void refresh() {
             MutableLong totalReceived = MutableLong.valueOf(bytesReceivedOnClosed.get());
             MutableLong totalSent = MutableLong.valueOf(bytesSentOnClosed.get());
-            for (TcpServerConnection conn : activeConnections) {
+            activeConnections.forEach(conn -> {
                 totalReceived.value += conn.getChannel().bytesRead();
                 totalSent.value += conn.getChannel().bytesWritten();
-            }
+            });
             // counters must be monotonically increasing
             bytesReceivedLastCalc.updateAndGet((v) -> Math.max(v, totalReceived.value));
             bytesSentLastCalc.updateAndGet((v) -> Math.max(v, totalSent.value));
@@ -531,7 +517,5 @@ public class TcpServerConnectionManager
             bytesReceivedOnClosed.inc(connection.getChannel().bytesRead());
             bytesSentOnClosed.inc(connection.getChannel().bytesWritten());
         }
-
     }
-
 }

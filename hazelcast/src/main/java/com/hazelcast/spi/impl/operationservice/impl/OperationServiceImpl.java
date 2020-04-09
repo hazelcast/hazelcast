@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.core.LocalMemberResetException;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterClock;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
@@ -494,7 +495,7 @@ public final class OperationServiceImpl implements StaticMetricsProvider, LiveOp
                 serializationService,
                 nodeEngine.getThisAddress(),
                 outboundOperationHandler,
-                node.getConnectionManager());
+                node.server.getConnectionManager(EndpointQualifier.MEMBER));
     }
 
     public Invocation.Context getInvocationContext() {

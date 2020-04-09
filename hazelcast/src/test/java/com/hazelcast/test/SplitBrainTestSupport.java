@@ -237,8 +237,8 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
                 addressesToBlock.add(Accessors.getAddress(hz));
                 // block communication from these instances to the new address
                 FirewallingServer networkingService = getFireWalledNetworkingService(hz);
-                FirewallingServer.FirewallingEndpointManager endpointManager =
-                        (FirewallingServer.FirewallingEndpointManager) networkingService.getConnectionManager(MEMBER);
+                FirewallingServer.FirewallingServerConnectionManager endpointManager =
+                        (FirewallingServer.FirewallingServerConnectionManager) networkingService.getConnectionManager(MEMBER);
                 endpointManager.blockNewConnection(newMemberAddress);
                 endpointManager.closeActiveConnection(newMemberAddress);
             }
@@ -321,9 +321,9 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
         return (FirewallingServer) node.getServer();
     }
 
-    private static FirewallingServer.FirewallingEndpointManager getFireWalledEndpointManager(HazelcastInstance hz) {
+    private static FirewallingServer.FirewallingServerConnectionManager getFireWalledEndpointManager(HazelcastInstance hz) {
         Node node = Accessors.getNode(hz);
-        return (FirewallingServer.FirewallingEndpointManager)
+        return (FirewallingServer.FirewallingServerConnectionManager)
                 node.getServer().getConnectionManager(MEMBER);
     }
 
@@ -374,8 +374,8 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
     }
 
     public static void blockCommunicationBetween(HazelcastInstance h1, HazelcastInstance h2) {
-        FirewallingServer.FirewallingEndpointManager cm1 = getFireWalledEndpointManager(h1);
-        FirewallingServer.FirewallingEndpointManager cm2 = getFireWalledEndpointManager(h2);
+        FirewallingServer.FirewallingServerConnectionManager cm1 = getFireWalledEndpointManager(h1);
+        FirewallingServer.FirewallingServerConnectionManager cm2 = getFireWalledEndpointManager(h2);
         Node node1 = Accessors.getNode(h1);
         Node node2 = Accessors.getNode(h2);
         cm1.blockNewConnection(node2.getThisAddress());
@@ -385,8 +385,8 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
     }
 
     public static void unblockCommunicationBetween(HazelcastInstance h1, HazelcastInstance h2) {
-        FirewallingServer.FirewallingEndpointManager cm1 = getFireWalledEndpointManager(h1);
-        FirewallingServer.FirewallingEndpointManager cm2 = getFireWalledEndpointManager(h2);
+        FirewallingServer.FirewallingServerConnectionManager cm1 = getFireWalledEndpointManager(h1);
+        FirewallingServer.FirewallingServerConnectionManager cm2 = getFireWalledEndpointManager(h2);
         Node node1 = Accessors.getNode(h1);
         Node node2 = Accessors.getNode(h2);
         cm1.unblock(node2.getThisAddress());

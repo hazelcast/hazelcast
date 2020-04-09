@@ -17,7 +17,6 @@
 package com.hazelcast.internal.management.dto;
 
 import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.internal.server.AggregateServerConnectionManager;
 import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.server.Server;
 import com.hazelcast.json.internal.JsonSerializable;
@@ -38,11 +37,10 @@ public class ConnectionManagerDTO implements JsonSerializable {
     }
 
     public ConnectionManagerDTO(Server server) {
-        AggregateServerConnectionManager aggregate = server.getAggregateConnectionManager();
         ServerConnectionManager cem = server.getConnectionManager(CLIENT);
         this.clientConnectionCount = cem != null ? cem.getActiveConnections().size() : -1;
-        this.activeConnectionCount = aggregate.getActiveConnections().size();
-        this.connectionCount = aggregate.getConnections().size();
+        this.activeConnectionCount = server.getActiveConnections().size();
+        this.connectionCount = server.getConnections().size();
     }
 
     @Override

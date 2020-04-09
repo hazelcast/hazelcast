@@ -126,7 +126,7 @@ public class MemberHandshakeHandlerTest {
 
     // mocks
     private Channel channel;
-    private TcpServerConnectionManager endpointManager;
+    private TcpServerConnectionManager connectionManager;
 
     @Parameters
     public static List<Object> parameters() {
@@ -159,9 +159,9 @@ public class MemberHandshakeHandlerTest {
         HazelcastInstance hz = factory.newHazelcastInstance(createConfig());
         serializationService = getSerializationService(hz);
         Node node = getNode(hz);
-        endpointManager = TcpServerConnectionManager.class.cast(
-                node.getConnectionManager(EndpointQualifier.resolve(protocolType, "wan")));
-        handshakeHandler = getFieldValueReflectively(endpointManager, "memberHandshakeHandler");
+        connectionManager = TcpServerConnectionManager.class.cast(
+                node.server.getConnectionManager(EndpointQualifier.resolve(protocolType, "wan")));
+        handshakeHandler = getFieldValueReflectively(connectionManager, "memberHandshakeHandler");
 
         // setup mock channel & socket
         Socket socket = mock(Socket.class);
@@ -188,7 +188,7 @@ public class MemberHandshakeHandlerTest {
     private void assertExpectedAddressesRegistered()
             throws IllegalAccessException {
         // inspect connections in TcpIpEndpointManager
-        ConcurrentHashMap<Address, TcpServerConnection> connectionsMap = getFieldValueReflectively(endpointManager, "connectionsMap");
+        ConcurrentHashMap<Address, TcpServerConnection> connectionsMap = getFieldValueReflectively(connectionManager, "connectionsMap");
         try {
             for (Address address : expectedAddresses) {
                 assertTrue(connectionsMap.containsKey(address));
@@ -205,7 +205,7 @@ public class MemberHandshakeHandlerTest {
                 new MemberHandshake((byte) 1, localAddresses, new Address(CLIENT_SOCKET_ADDRESS), reply, uuid);
 
         Packet packet = new Packet(serializationService.toBytes(bindMessage));
-        TcpServerConnection connection = new TcpServerConnection(endpointManager, null, 1, channel);
+        TcpServerConnection connection = new TcpServerConnection(connectionManager, null, 1, channel);
         if (connectionType != null) {
             connection.setConnectionType(connectionType);
         }

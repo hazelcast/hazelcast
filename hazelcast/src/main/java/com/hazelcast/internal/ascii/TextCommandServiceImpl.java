@@ -38,7 +38,6 @@ import com.hazelcast.internal.ascii.rest.HttpHeadCommandProcessor;
 import com.hazelcast.internal.ascii.rest.HttpPostCommandProcessor;
 import com.hazelcast.internal.ascii.rest.RestValue;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.internal.server.AggregateServerConnectionManager;
 import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.server.Server;
 import com.hazelcast.internal.nio.ascii.TextEncoder;
@@ -178,9 +177,8 @@ public class TextCommandServiceImpl implements TextCommandService {
         ServerConnectionManager cm = server.getConnectionManager(MEMCACHE);
         int totalText = (cm != null ? cm.getActiveConnections().size() : 0);
 
-        AggregateServerConnectionManager aem = server.getAggregateConnectionManager();
         stats.setCurrConnections(totalText);
-        stats.setTotalConnections(aem.getActiveConnections().size());
+        stats.setTotalConnections(server.getActiveConnections().size());
         return stats;
     }
 

@@ -19,6 +19,7 @@ package com.hazelcast.internal.networking.nio.iobalancer;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.internal.networking.nio.MigratablePipeline;
 import com.hazelcast.internal.networking.nio.NioChannel;
@@ -160,31 +161,31 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
 
     private String debug(HazelcastInstance hz) {
         TcpServer networkingService = (TcpServer) getNode(hz).getServer();
-        NioNetworking threadingModel = (NioNetworking) networkingService.getNetworking();
-        ServerConnectionManager em = getNode(hz).getConnectionManager();
+        NioNetworking networking = (NioNetworking) networkingService.getNetworking();
+        ServerConnectionManager em = getNode(hz).server.getConnectionManager(EndpointQualifier.MEMBER);
 
         StringBuilder sb = new StringBuilder();
         sb.append("in owners\n");
-        for (NioThread in : threadingModel.getInputThreads()) {
+        for (NioThread in : networking.getInputThreads()) {
             sb.append(in).append(": ").append(in.getEventCount()).append("\n");
 
             for (ServerConnection connection : em.getActiveConnections()) {
                 TcpServerConnection c = (TcpServerConnection) connection;
-                NioInboundPipeline socketReader = ((NioChannel) c.getChannel()).inboundPipeline();
-                if (socketReader.owner() == in) {
-                    sb.append("\t").append(socketReader).append(" load:").append(socketReader.load()).append("\n");
+                NioInboundPipeline inboundPipeline = ((NioChannel) c.getChannel()).inboundPipeline();
+                if (inboundPipeline.owner() == in) {
+                    sb.append("\t").append(inboundPipeline).append(" load:").append(inboundPipeline.load()).append("\n");
                 }
             }
         }
         sb.append("out owners\n");
-        for (NioThread in : threadingModel.getOutputThreads()) {
+        for (NioThread in : networking.getOutputThreads()) {
             sb.append(in).append(": ").append(in.getEventCount()).append("\n");
 
             for (ServerConnection connection : em.getActiveConnections()) {
                 TcpServerConnection tcpServerConnection = (TcpServerConnection) connection;
-                NioOutboundPipeline socketWriter = ((NioChannel) tcpServerConnection.getChannel()).outboundPipeline();
-                if (socketWriter.owner() == in) {
-                    sb.append("\t").append(socketWriter).append(" load:").append(socketWriter.load()).append("\n");
+                NioOutboundPipeline outboundPipeline = ((NioChannel) tcpServerConnection.getChannel()).outboundPipeline();
+                if (outboundPipeline.owner() == in) {
+                    sb.append("\t").append(outboundPipeline).append(" load:").append(outboundPipeline.load()).append("\n");
                 }
             }
         }

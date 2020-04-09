@@ -526,7 +526,7 @@ public class ClusterJoinManager {
                 return;
             }
 
-            Connection conn = node.getConnectionManager(MEMBER).get(currentMaster);
+            Connection conn = node.server.getConnectionManager(MEMBER).get(currentMaster);
             if (conn != null && conn.isAlive()) {
                 logger.info(format("Ignoring master response %s from %s since this node has an active master %s",
                         masterAddress, callerAddress, currentMaster));
@@ -545,7 +545,7 @@ public class ClusterJoinManager {
 
     private void setMasterAndJoin(Address masterAddress) {
         clusterService.setMasterAddress(masterAddress);
-        node.getConnectionManager(MEMBER).getOrConnect(masterAddress);
+        node.server.getConnectionManager(MEMBER).getOrConnect(masterAddress);
         if (!sendJoinRequest(masterAddress, true)) {
             logger.warning("Could not create connection to possible master " + masterAddress);
         }
@@ -661,12 +661,12 @@ public class ClusterJoinManager {
             logger.warning(msg);
 
             clusterService.suspectMember(member, msg, false);
-            ServerConnection existing = node.getConnectionManager(MEMBER).get(target);
+            ServerConnection existing = node.server.getConnectionManager(MEMBER).get(target);
             if (existing != connection) {
                 if (existing != null) {
                     existing.close(msg, null);
                 }
-                node.getConnectionManager(MEMBER).register(target, connection);
+                node.server.getConnectionManager(MEMBER).register(target, connection);
             }
         }
         return true;

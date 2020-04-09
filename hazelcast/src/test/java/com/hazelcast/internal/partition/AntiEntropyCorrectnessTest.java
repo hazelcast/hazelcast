@@ -18,6 +18,7 @@ package com.hazelcast.internal.partition;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.server.FirewallingServer;
 import com.hazelcast.internal.server.OperationPacketFilter;
@@ -89,8 +90,8 @@ public class AntiEntropyCorrectnessTest extends PartitionCorrectnessTestSupport 
 
     public static void setBackupPacketDropFilter(HazelcastInstance instance, float blockRatio) {
         Node node = getNode(instance);
-        FirewallingServer.FirewallingEndpointManager
-                em = (FirewallingServer.FirewallingEndpointManager) node.getConnectionManager();
+        FirewallingServer.FirewallingServerConnectionManager
+                em = (FirewallingServer.FirewallingServerConnectionManager) node.server.getConnectionManager(EndpointQualifier.MEMBER);
         em.setPacketFilter(new BackupPacketDropFilter(node.getSerializationService(), blockRatio));
     }
 
