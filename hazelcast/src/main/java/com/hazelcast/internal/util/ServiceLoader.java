@@ -227,7 +227,13 @@ public final class ServiceLoader {
 
     /**
      * This class keeps track of available service definition URLs and
-     * the corresponding classloaders.
+     * the corresponding classloaders. It uses the URLs URI for hashing andd
+     * equality comparison, rather than the URL itself. The specifications for
+     * hashing and equality on URL are unusual, and involve blocking DNS
+     * lookups. However, the conversion from URL to URI is lossy, so if there
+     * are multiple URLs that map to the same URI, then they may be considered
+     * equal even if the URLs are not. If these are put in a HashSet, then the
+     * last added element wins.
      */
     private static final class URLDefinition {
 
@@ -249,7 +255,7 @@ public final class ServiceLoader {
             }
 
             URLDefinition that = (URLDefinition) o;
-            if (url != null ? !url.equals(that.url) : that.url != null) {
+            if (url != null ? !url.toURI().equals(that.url.toURI()) : that.url != null) {
                 return false;
             }
             return true;
@@ -257,7 +263,7 @@ public final class ServiceLoader {
 
         @Override
         public int hashCode() {
-            return url == null ? 0 : url.hashCode();
+            return url == null ? 0 : url.toURI().hashCode();
         }
     }
 
