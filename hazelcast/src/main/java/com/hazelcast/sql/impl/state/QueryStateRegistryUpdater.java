@@ -132,15 +132,11 @@ public class QueryStateRegistryUpdater {
 
                 // 2. Check whether the member required for the query has left.
                 if (state.tryCancelOnMemberLeave(activeMemberIds)) {
-                    System.out.println(">>> CANCEL ON LEAVE: " + instanceName);
-
                     continue;
                 }
 
                 // 3. Check whether the query is not initialized for too long. If yes, trigger check process.
                 if (state.requestQueryCheck(stateCheckFrequency)) {
-                    System.out.println(">>> WILL DO CHECK: " + instanceName);
-
                     QueryId queryId = state.getQueryId();
 
                     checkMap.computeIfAbsent(queryId.getMemberId(), (key) -> new ArrayList<>(1)).add(queryId);
