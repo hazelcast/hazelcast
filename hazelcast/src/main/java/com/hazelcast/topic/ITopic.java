@@ -68,6 +68,7 @@ public interface ITopic<E> extends DistributedObject {
      * {@link MessageListener#onMessage(Message)} method of the given
      * MessageListener is called.
      * More than one message listener can be added on one instance.
+     * See {@link ReliableMessageListener} to better integrate with a reliable topic.
      *
      * @param listener the MessageListener to add
      * @return returns the registration ID
