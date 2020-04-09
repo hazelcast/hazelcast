@@ -453,6 +453,9 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
         // permit count can exceed allowed parallelization count.
         replicaSyncSemaphore.drainPermits();
         replicaSyncSemaphore.release(maxParallelReplications);
+        if (logger.isFinestEnabled()) {
+            logger.finest(String.format("Reset replica sync permits to %d", maxParallelReplications));
+        }
     }
 
     void scheduleReplicaVersionSync(ExecutionService executionService) {
