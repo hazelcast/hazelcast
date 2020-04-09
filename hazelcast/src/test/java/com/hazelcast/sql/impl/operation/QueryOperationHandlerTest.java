@@ -627,7 +627,7 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
 
     private static class ParticipantExec extends AbstractUpstreamAwareExec {
 
-        public ParticipantExec(int id, Exec upstream) {
+        private ParticipantExec(int id, Exec upstream) {
             super(id, upstream);
         }
 
@@ -665,7 +665,7 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
 
         private final BlockingQueue<Row> rows = new LinkedBlockingQueue<>();
 
-        public State(QueryId queryId) {
+        private State(QueryId queryId) {
             this.queryId = queryId;
         }
 
