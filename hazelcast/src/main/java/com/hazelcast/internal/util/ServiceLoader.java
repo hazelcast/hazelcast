@@ -25,6 +25,8 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -238,10 +240,12 @@ public final class ServiceLoader {
     private static final class URLDefinition {
 
         private final URL url;
+        private final URI uri;
         private final ClassLoader classLoader;
 
-        private URLDefinition(URL url, ClassLoader classLoader) {
+        private URLDefinition(URL url, ClassLoader classLoader) throws URISyntaxException {
             this.url = url;
+            this.uri = url == null ? null : url.toURI();
             this.classLoader = classLoader;
         }
 
@@ -255,7 +259,7 @@ public final class ServiceLoader {
             }
 
             URLDefinition that = (URLDefinition) o;
-            if (url != null ? !url.toURI().equals(that.url.toURI()) : that.url != null) {
+            if (uri != null ? !uri.equals(that.uri) : that.uri != null) {
                 return false;
             }
             return true;
@@ -263,7 +267,7 @@ public final class ServiceLoader {
 
         @Override
         public int hashCode() {
-            return url == null ? 0 : url.toURI().hashCode();
+            return uri == null ? 0 : uri.hashCode();
         }
     }
 
