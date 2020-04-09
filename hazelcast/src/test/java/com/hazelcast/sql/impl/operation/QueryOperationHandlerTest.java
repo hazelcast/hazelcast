@@ -400,22 +400,12 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
         initiatorService.getInternalService().getStateRegistry().onQueryCompleted(testState.getQueryId());
     }
 
-    private void sendToParticipant(QueryOperation operation) {
-        if (operation instanceof QueryBatchExchangeOperation) {
-            toParticipantChannel.submit(operation);
-        } else {
-            initiatorService.getInternalService().getOperationHandler().submit(
-                initiatorId,
-                participantId,
-                operation
-            );
-        }
+    private void sendToInitiator(QueryOperation operation) {
+        send(participantId, initiatorId, operation);
+    }
 
-        try {
-            Thread.sleep(50L);
-        } catch (InterruptedException e) {
-            // No-op.
-        }
+    private void sendToParticipant(QueryOperation operation) {
+        send(initiatorId, participantId, operation);
     }
 
     private void send(UUID fromId, UUID toId, QueryOperation operation) {
