@@ -25,6 +25,7 @@ import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.MemberHandshake;
 import com.hazelcast.internal.networking.Channel;
+import com.hazelcast.internal.nio.ConnectionLifecycleListener;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -54,6 +55,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.instance.ProtocolType.WAN;
+import static com.hazelcast.internal.cluster.impl.MemberHandshake.SCHEMA_VERSION_2;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.Accessors.getSerializationService;
@@ -180,33 +182,38 @@ public class MemberHandshakeHandlerTest {
     }
 
     @Test
-    public void process() throws IllegalAccessException {
+    public void process() {
         handshakeHandler.process(bindMessage());
         assertExpectedAddressesRegistered();
     }
 
-    private void assertExpectedAddressesRegistered()
-            throws IllegalAccessException {
-        // inspect connections in TcpIpEndpointManager
-        ConcurrentHashMap<Address, TcpServerConnection> connectionsMap
-                = getFieldValueReflectively(connectionManager, "mappedConnections");
+    private void assertExpectedAddressesRegistered() {
+        TcpServerConnectionManager.Plane[] planes = connectionManager.planes;
         try {
             for (Address address : expectedAddresses) {
-                assertTrue(connectionsMap.containsKey(address));
+                boolean found = false;
+                for (TcpServerConnectionManager.Plane plane : planes) {
+                    if (plane.connectionMap.containsKey(address)) {
+                        found = true;
+                        break;
+                    }
+                }
+
+                assertTrue("Address " + address + " not found", found);
             }
         } catch (AssertionError error) {
             // dump complete connections map
-            System.err.println("Expected " + expectedAddresses + " but connections map contained: " + connectionsMap);
+
+            System.err.println("Expected " + expectedAddresses + " but connections map contained: " + connectionManager.connections);
             throw error;
         }
     }
 
     private Packet bindMessage() {
-        MemberHandshake bindMessage =
-                new MemberHandshake((byte) 1, localAddresses, new Address(CLIENT_SOCKET_ADDRESS), reply, uuid);
+        MemberHandshake handshake = new MemberHandshake(SCHEMA_VERSION_2, localAddresses, new Address(CLIENT_SOCKET_ADDRESS), reply, uuid, 0, 1);
 
-        Packet packet = new Packet(serializationService.toBytes(bindMessage));
-        TcpServerConnection connection = new TcpServerConnection(connectionManager, null, 1, channel);
+        Packet packet = new Packet(serializationService.toBytes(handshake));
+        TcpServerConnection connection = new TcpServerConnection(connectionManager, mock(ConnectionLifecycleListener.class), 1, channel);
         if (connectionType != null) {
             connection.setConnectionType(connectionType);
         }
