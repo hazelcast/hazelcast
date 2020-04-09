@@ -39,7 +39,7 @@ import java.util.UUID;
  */
 public class SqlInternalService {
     /** Default state check frequency. */
-    public static final long STATE_CHECK_FREQUENCY = 2000L;
+    public static final long STATE_CHECK_FREQUENCY = 10_000L;
 
     /** Memory assigned to a single edge mailbox. Will be reworked to dynamic mode when memory manager is implemented. */
     private static final long MEMORY_PER_EDGE_MAILBOX = 512 * 1024;
@@ -88,6 +88,7 @@ public class SqlInternalService {
 
         // State checker depends on state registries and operation handler.
         stateRegistryUpdater = new QueryStateRegistryUpdater(
+            instanceName,
             nodeServiceProvider,
             stateRegistry,
             operationHandler,

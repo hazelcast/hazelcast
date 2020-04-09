@@ -263,7 +263,7 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
         // We pass originating member ID here instead if caller ID to preserve the causality:
         // in the "participant1 -> co4ordinator -> participant2" flow, the second participant
         // get the ID of participant1.
-        QueryException error = QueryException.remoteError(
+        QueryException error = QueryException.error(
             operation.getErrorCode(),
             operation.getErrorMessage(),
             operation.getOriginatingMemberId()
@@ -308,7 +308,7 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
             return;
         }
 
-        QueryException error = QueryException.remoteError(
+        QueryException error = QueryException.error(
             SqlErrorCode.GENERIC,
             "Query is no longer active on coordinator.",
             operation.getCallerId()

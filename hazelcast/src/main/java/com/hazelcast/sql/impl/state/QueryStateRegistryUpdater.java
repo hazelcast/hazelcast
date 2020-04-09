@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.state;
 
 import com.hazelcast.sql.impl.NodeServiceProvider;
 import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.operation.QueryCheckOperation;
 import com.hazelcast.sql.impl.operation.QueryOperationHandler;
 
@@ -26,6 +27,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+
+import static com.hazelcast.sql.impl.QueryUtils.WORKER_TYPE_STATE_CHECKER;
 
 /**
  * Class performing periodic query state check.
@@ -44,9 +47,10 @@ public class QueryStateRegistryUpdater {
     private final long stateCheckFrequency;
 
     /** Worker performing periodic state check. */
-    private final Worker worker = new Worker();
+    private final Worker worker;
 
     public QueryStateRegistryUpdater(
+        String instanceName,
         NodeServiceProvider nodeServiceProvider,
         QueryStateRegistry stateRegistry,
         QueryOperationHandler operationHandler,
@@ -60,6 +64,8 @@ public class QueryStateRegistryUpdater {
         this.stateRegistry = stateRegistry;
         this.operationHandler = operationHandler;
         this.stateCheckFrequency = stateCheckFrequency;
+
+        worker = new Worker(instanceName);
     }
 
     public void start() {
@@ -72,8 +78,13 @@ public class QueryStateRegistryUpdater {
 
     private class Worker implements Runnable {
         private final Object startMux = new Object();
+        private final String instanceName;
         private volatile Thread thread;
         private volatile boolean stopped;
+
+        private Worker(String instanceName) {
+            this.instanceName = instanceName;
+        }
 
         public void start() {
             synchronized (startMux) {
@@ -83,7 +94,7 @@ public class QueryStateRegistryUpdater {
 
                 Thread thread = new Thread(this);
 
-                thread.setName("sql-query-state-checker");
+                thread.setName(QueryUtils.workerName(instanceName, WORKER_TYPE_STATE_CHECKER));
                 thread.setDaemon(true);
 
                 thread.start();
@@ -92,6 +103,7 @@ public class QueryStateRegistryUpdater {
             }
         }
 
+        @SuppressWarnings("BusyWait")
         @Override
         public void run() {
             while (!stopped) {
@@ -108,7 +120,6 @@ public class QueryStateRegistryUpdater {
         }
 
         private void checkMemberState() {
-            UUID localMemberId = nodeServiceProvider.getLocalMemberId();
             Collection<UUID> activeMemberIds = nodeServiceProvider.getDataMemberIds();
 
             Map<UUID, Collection<QueryId>> checkMap = new HashMap<>();
@@ -125,14 +136,16 @@ public class QueryStateRegistryUpdater {
                 }
 
                 // 3. Check whether the query is not initialized for too long. If yes, trigger check process.
-                if (state.requestQueryCheck()) {
+                if (state.requestQueryCheck(stateCheckFrequency)) {
                     QueryId queryId = state.getQueryId();
 
                     checkMap.computeIfAbsent(queryId.getMemberId(), (key) -> new ArrayList<>(1)).add(queryId);
                 }
             }
 
-            // Send batched check requests.
+            // 4. Send batched check requests.
+            UUID localMemberId = nodeServiceProvider.getLocalMemberId();
+
             for (Map.Entry<UUID, Collection<QueryId>> checkEntry : checkMap.entrySet()) {
                 QueryCheckOperation operation = new QueryCheckOperation(checkEntry.getValue());
 

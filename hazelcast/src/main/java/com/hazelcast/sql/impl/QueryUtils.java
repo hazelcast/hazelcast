@@ -21,14 +21,19 @@ package com.hazelcast.sql.impl;
  */
 public final class QueryUtils {
 
-    public static final String WORKER_TYPE_OPERATION = "operation-worker";
-    public static final String WORKER_TYPE_FRAGMENT = "fragment-worker";
+    public static final String WORKER_TYPE_OPERATION = "query-operation-thread";
+    public static final String WORKER_TYPE_FRAGMENT = "query-fragment-thread";
+    public static final String WORKER_TYPE_STATE_CHECKER = "query-state-checker";
 
     private QueryUtils() {
         // No-op.
     }
 
+    public static String workerName(String instanceName, String workerType) {
+        return instanceName + "-" + workerType;
+    }
+
     public static String workerName(String instanceName, String workerType, long index) {
-        return instanceName + "-" + workerType + "-worker-" + index;
+        return instanceName + "-" + workerType + index;
     }
 }
