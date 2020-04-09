@@ -22,7 +22,7 @@ import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.cluster.Address;
-import com.hazelcast.internal.nio.EndpointManager;
+import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -47,8 +47,8 @@ final class PartitionInvocation extends Invocation<PartitionReplica> {
                         long callTimeoutMillis,
                         boolean deserialize,
                         boolean failOnIndeterminateOperationState,
-                        EndpointManager endpointManager) {
-        super(context, op, doneCallback, tryCount, tryPauseMillis, callTimeoutMillis, deserialize, endpointManager);
+                        ServerConnectionManager connectionManager) {
+        super(context, op, doneCallback, tryCount, tryPauseMillis, callTimeoutMillis, deserialize, connectionManager);
         this.failOnIndeterminateOperationState = failOnIndeterminateOperationState && !(op instanceof ReadonlyOperation);
     }
 

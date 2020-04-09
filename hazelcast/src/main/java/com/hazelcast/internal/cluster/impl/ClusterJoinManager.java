@@ -16,37 +16,38 @@
 
 package com.hazelcast.internal.cluster.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.internal.hotrestart.InternalHotRestartService;
-import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.operations.AuthenticationFailureOp;
 import com.hazelcast.internal.cluster.impl.operations.BeforeJoinCheckFailureOp;
+import com.hazelcast.internal.cluster.impl.operations.ClusterMismatchOp;
 import com.hazelcast.internal.cluster.impl.operations.ConfigMismatchOp;
 import com.hazelcast.internal.cluster.impl.operations.FinalizeJoinOp;
-import com.hazelcast.internal.cluster.impl.operations.ClusterMismatchOp;
 import com.hazelcast.internal.cluster.impl.operations.JoinRequestOp;
 import com.hazelcast.internal.cluster.impl.operations.MasterResponseOp;
 import com.hazelcast.internal.cluster.impl.operations.MembersUpdateOp;
 import com.hazelcast.internal.cluster.impl.operations.OnJoinOp;
 import com.hazelcast.internal.cluster.impl.operations.WhoisMasterOp;
-import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.internal.partition.PartitionRuntimeState;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.hotrestart.InternalHotRestartService;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.Packet;
-import com.hazelcast.security.Credentials;
-import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.internal.server.ServerConnection;
+import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.PartitionRuntimeState;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.security.Credentials;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
 
@@ -149,7 +150,7 @@ public class ClusterJoinManager {
      * @param connection the connection to the joining node
      * @see JoinRequestOp
      */
-    public void handleJoinRequest(JoinRequest joinRequest, Connection connection) {
+    public void handleJoinRequest(JoinRequest joinRequest, ServerConnection connection) {
         if (!ensureNodeIsReady()) {
             return;
         }
@@ -247,7 +248,7 @@ public class ClusterJoinManager {
      * @param joinRequest the join request from a node attempting to join
      * @param connection  the connection of this node to the joining node
      */
-    private void executeJoinRequest(JoinRequest joinRequest, Connection connection) {
+    private void executeJoinRequest(JoinRequest joinRequest, ServerConnection connection) {
         clusterServiceLock.lock();
         try {
             if (checkJoinRequest(joinRequest, connection)) {
@@ -269,7 +270,7 @@ public class ClusterJoinManager {
     }
 
     @SuppressWarnings("checkstyle:npathcomplexity")
-    private boolean checkJoinRequest(JoinRequest joinRequest, Connection connection) {
+    private boolean checkJoinRequest(JoinRequest joinRequest, ServerConnection connection) {
         if (checkIfJoinRequestFromAnExistingMember(joinRequest, connection)) {
             return true;
         }
@@ -525,7 +526,7 @@ public class ClusterJoinManager {
                 return;
             }
 
-            Connection conn = node.getEndpointManager(MEMBER).getConnection(currentMaster);
+            Connection conn = node.getConnectionManager(MEMBER).get(currentMaster);
             if (conn != null && conn.isAlive()) {
                 logger.info(format("Ignoring master response %s from %s since this node has an active master %s",
                         masterAddress, callerAddress, currentMaster));
@@ -544,7 +545,7 @@ public class ClusterJoinManager {
 
     private void setMasterAndJoin(Address masterAddress) {
         clusterService.setMasterAddress(masterAddress);
-        node.getEndpointManager(MEMBER).getOrConnect(masterAddress);
+        node.getConnectionManager(MEMBER).getOrConnect(masterAddress);
         if (!sendJoinRequest(masterAddress, true)) {
             logger.warning("Could not create connection to possible master " + masterAddress);
         }
@@ -573,7 +574,7 @@ public class ClusterJoinManager {
      * @param connection  the connection to operation caller, to which response will be sent.
      * @see WhoisMasterOp
      */
-    public void answerWhoisMasterQuestion(JoinMessage joinMessage, Connection connection) {
+    public void answerWhoisMasterQuestion(JoinMessage joinMessage, ServerConnection connection) {
         if (!ensureValidConfiguration(joinMessage)) {
             return;
         }
@@ -620,7 +621,7 @@ public class ClusterJoinManager {
         nodeEngine.getOperationService().send(op, target);
     }
 
-    private boolean checkIfJoinRequestFromAnExistingMember(JoinMessage joinMessage, Connection connection) {
+    private boolean checkIfJoinRequestFromAnExistingMember(JoinMessage joinMessage, ServerConnection connection) {
         Address target = joinMessage.getAddress();
         MemberImpl member = clusterService.getMember(target);
         if (member == null) {
@@ -660,12 +661,12 @@ public class ClusterJoinManager {
             logger.warning(msg);
 
             clusterService.suspectMember(member, msg, false);
-            Connection existing = node.getEndpointManager(MEMBER).getConnection(target);
+            ServerConnection existing = node.getConnectionManager(MEMBER).get(target);
             if (existing != connection) {
                 if (existing != null) {
                     existing.close(msg, null);
                 }
-                node.getEndpointManager(MEMBER).registerConnection(target, connection);
+                node.getConnectionManager(MEMBER).register(target, connection);
             }
         }
         return true;

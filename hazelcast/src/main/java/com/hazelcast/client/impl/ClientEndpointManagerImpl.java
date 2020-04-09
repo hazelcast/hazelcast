@@ -22,6 +22,7 @@ import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -88,7 +89,7 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager, Dynamic
     public boolean registerEndpoint(ClientEndpoint endpoint) {
         checkNotNull(endpoint, "endpoint can't be null");
 
-        final Connection conn = endpoint.getConnection();
+        final ServerConnection conn = endpoint.getConnection();
         if (endpoints.putIfAbsent(conn, endpoint) != null) {
             return false;
         } else {

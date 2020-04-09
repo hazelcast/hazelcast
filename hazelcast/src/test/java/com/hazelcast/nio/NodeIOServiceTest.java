@@ -19,7 +19,7 @@ package com.hazelcast.nio;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.internal.nio.NodeIOService;
+import com.hazelcast.internal.server.tcp.NodeIOService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.HazelcastParallelClassRunner;

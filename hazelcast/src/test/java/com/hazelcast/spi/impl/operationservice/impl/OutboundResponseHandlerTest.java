@@ -16,15 +16,15 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.server.ServerConnectionManager;
+import com.hazelcast.internal.nio.Packet;
+import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.cluster.Address;
-import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.nio.EndpointManager;
-import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
@@ -71,8 +71,8 @@ public class OutboundResponseHandlerTest {
     private InternalSerializationService serializationService;
     private ILogger logger = Logger.getLogger(OutboundResponseHandlerTest.class);
     private Address thatAddress;
-    private EndpointManager endpointManager;
-    private Connection connection;
+    private ServerConnectionManager connectionManager;
+    private ServerConnection connection;
 
     @Parameters(name = "{0}")
     public static Object[][] parameters() {
@@ -87,9 +87,9 @@ public class OutboundResponseHandlerTest {
         Address thisAddress = new Address("127.0.0.1", 5701);
         thatAddress = new Address("127.0.0.1", 5702);
         serializationService = new DefaultSerializationServiceBuilder().setByteOrder(byteOrder).build();
-        endpointManager = mock(EndpointManager.class);
-        connection = mock(Connection.class);
-        when(connection.getEndpointManager()).thenReturn(endpointManager);
+        connectionManager = mock(ServerConnectionManager.class);
+        connection = mock(ServerConnection.class);
+        when(connection.getConnectionManager()).thenReturn(connectionManager);
         handler = new OutboundResponseHandler(thisAddress, serializationService, logger);
     }
 
@@ -99,7 +99,7 @@ public class OutboundResponseHandlerTest {
         Operation op = createDummyOperation(response.getCallId());
 
         ArgumentCaptor<Packet> argument = ArgumentCaptor.forClass(Packet.class);
-        when(endpointManager.transmit(argument.capture(), eq(thatAddress))).thenReturn(true);
+        when(connectionManager.transmit(argument.capture(), eq(thatAddress))).thenReturn(true);
 
         // make the call
         handler.sendResponse(op, response);
@@ -114,7 +114,7 @@ public class OutboundResponseHandlerTest {
         Operation op = createDummyOperation(10);
 
         ArgumentCaptor<Packet> argument = ArgumentCaptor.forClass(Packet.class);
-        when(endpointManager.transmit(argument.capture(), eq(thatAddress))).thenReturn(true);
+        when(connectionManager.transmit(argument.capture(), eq(thatAddress))).thenReturn(true);
 
         // make the call
         handler.sendResponse(op, response);
@@ -130,7 +130,7 @@ public class OutboundResponseHandlerTest {
         Operation op = createDummyOperation(10);
 
         ArgumentCaptor<Packet> argument = ArgumentCaptor.forClass(Packet.class);
-        when(endpointManager.transmit(argument.capture(), eq(thatAddress))).thenReturn(true);
+        when(connectionManager.transmit(argument.capture(), eq(thatAddress))).thenReturn(true);
 
         // make the call
         handler.sendResponse(op, response);
@@ -145,7 +145,7 @@ public class OutboundResponseHandlerTest {
         Operation op = createDummyOperation(10);
 
         ArgumentCaptor<Packet> argument = ArgumentCaptor.forClass(Packet.class);
-        when(endpointManager.transmit(argument.capture(), eq(thatAddress))).thenReturn(true);
+        when(connectionManager.transmit(argument.capture(), eq(thatAddress))).thenReturn(true);
 
         // make the call
         handler.sendResponse(op, null);
@@ -162,7 +162,7 @@ public class OutboundResponseHandlerTest {
         Operation op = createDummyOperation(10);
 
         ArgumentCaptor<Packet> argument = ArgumentCaptor.forClass(Packet.class);
-        when(endpointManager.transmit(argument.capture(), eq(thatAddress))).thenReturn(true);
+        when(connectionManager.transmit(argument.capture(), eq(thatAddress))).thenReturn(true);
 
         // make the call
         handler.sendResponse(op, response);
@@ -178,7 +178,7 @@ public class OutboundResponseHandlerTest {
         Operation op = createDummyOperation(10);
 
         ArgumentCaptor<Packet> argument = ArgumentCaptor.forClass(Packet.class);
-        when(endpointManager.transmit(argument.capture(), eq(thatAddress))).thenReturn(true);
+        when(connectionManager.transmit(argument.capture(), eq(thatAddress))).thenReturn(true);
 
         // make the call
         handler.sendResponse(op, response);
@@ -194,7 +194,7 @@ public class OutboundResponseHandlerTest {
         Operation op = createDummyOperation(10);
 
         ArgumentCaptor<Packet> argument = ArgumentCaptor.forClass(Packet.class);
-        when(endpointManager.transmit(argument.capture(), eq(thatAddress))).thenReturn(true);
+        when(connectionManager.transmit(argument.capture(), eq(thatAddress))).thenReturn(true);
 
         // make the call
         handler.sendResponse(op, exception);

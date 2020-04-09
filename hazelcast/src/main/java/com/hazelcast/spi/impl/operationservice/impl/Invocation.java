@@ -26,9 +26,10 @@ import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.internal.cluster.ClusterClock;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.nio.EndpointManager;
-import com.hazelcast.internal.nio.NetworkingService;
+import com.hazelcast.internal.server.ServerConnectionManager;
+import com.hazelcast.internal.server.Server;
 import com.hazelcast.internal.nio.Packet;
+import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.Clock;
@@ -175,7 +176,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
      */
     private int memberListVersion;
 
-    private EndpointManager endpointManager;
+    private ServerConnectionManager connectionManager;
 
     /**
      * Shows maximum number of retry counts for this Invocation.
@@ -201,7 +202,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
                long tryPauseMillis,
                long callTimeoutMillis,
                boolean deserialize,
-               EndpointManager endpointManager) {
+               ServerConnectionManager connectionManager) {
         this.context = context;
         this.op = op;
         this.taskDoneCallback = taskDoneCallback;
@@ -209,7 +210,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
         this.tryPauseMillis = tryPauseMillis;
         this.callTimeoutMillis = getCallTimeoutMillis(callTimeoutMillis);
         this.future = new InvocationFuture(this, deserialize);
-        this.endpointManager = getEndpointManager(endpointManager);
+        this.connectionManager = getEndpointManager(connectionManager);
     }
 
     @Override
@@ -592,9 +593,9 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
     }
 
     private void doInvokeRemote() {
-        assert endpointManager != null : "Endpoint manager was null";
+        assert connectionManager != null : "Endpoint manager was null";
 
-        Connection connection = endpointManager.getOrConnect(targetAddress);
+        ServerConnection connection = connectionManager.getOrConnect(targetAddress);
         this.connection = connection;
         if (!context.outboundOperationHandler.send(op, connection)) {
             notifyError(new RetryableIOException(getPacketNotSentMessage(connection)));
@@ -609,8 +610,8 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
         return "Packet not sent to -> " + targetAddress + " over " + connection;
     }
 
-    private EndpointManager getEndpointManager(EndpointManager endpointManager) {
-        return endpointManager != null ? endpointManager : context.defaultEndpointManager;
+    private ServerConnectionManager getEndpointManager(ServerConnectionManager connectionManager) {
+        return connectionManager != null ? connectionManager : context.defaultServerConnectionManager;
     }
 
     private long getCallTimeoutMillis(long callTimeoutMillis) {
@@ -817,7 +818,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
         final ManagedExecutorService asyncExecutor;
         final ClusterClock clusterClock;
         final ClusterService clusterService;
-        final NetworkingService networkingService;
+        final Server server;
         final ExecutionService executionService;
         final long defaultCallTimeoutMillis;
         final InvocationRegistry invocationRegistry;
@@ -832,13 +833,13 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
         final InternalSerializationService serializationService;
         final Address thisAddress;
         final OutboundOperationHandler outboundOperationHandler;
-        final EndpointManager defaultEndpointManager;
+        final ServerConnectionManager defaultServerConnectionManager;
 
         @SuppressWarnings("checkstyle:parameternumber")
         Context(ManagedExecutorService asyncExecutor,
                 ClusterClock clusterClock,
                 ClusterService clusterService,
-                NetworkingService networkingService,
+                Server server,
                 ExecutionService executionService,
                 long defaultCallTimeoutMillis,
                 InvocationRegistry invocationRegistry,
@@ -853,11 +854,11 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
                 InternalSerializationService serializationService,
                 Address thisAddress,
                 OutboundOperationHandler outboundOperationHandler,
-                EndpointManager endpointManager) {
+                ServerConnectionManager connectionManager) {
             this.asyncExecutor = asyncExecutor;
             this.clusterClock = clusterClock;
             this.clusterService = clusterService;
-            this.networkingService = networkingService;
+            this.server = server;
             this.executionService = executionService;
             this.defaultCallTimeoutMillis = defaultCallTimeoutMillis;
             this.invocationRegistry = invocationRegistry;
@@ -872,7 +873,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
             this.serializationService = serializationService;
             this.thisAddress = thisAddress;
             this.outboundOperationHandler = outboundOperationHandler;
-            this.defaultEndpointManager = endpointManager;
+            this.defaultServerConnectionManager = connectionManager;
         }
     }
 }

@@ -17,6 +17,7 @@
 package com.hazelcast.internal.nio;
 
 import com.hazelcast.internal.networking.OutboundFrame;
+import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.serialization.impl.HeapData;
 
 import static com.hazelcast.internal.nio.PacketIOHelper.HEADER_SIZE;
@@ -104,7 +105,7 @@ public final class Packet extends HeapData implements OutboundFrame {
     private char flags;
 
     private int partitionId;
-    private transient Connection conn;
+    private transient ServerConnection conn;
 
     public Packet() {
     }
@@ -123,7 +124,7 @@ public final class Packet extends HeapData implements OutboundFrame {
      *
      * @return the Connection. Could be null.
      */
-    public Connection getConn() {
+    public ServerConnection getConn() {
         return conn;
     }
 
@@ -136,7 +137,7 @@ public final class Packet extends HeapData implements OutboundFrame {
      * @param conn the connection.
      * @return {@code this} (for fluent interface)
      */
-    public Packet setConn(Connection conn) {
+    public Packet setConn(ServerConnection conn) {
         this.conn = conn;
         return this;
     }

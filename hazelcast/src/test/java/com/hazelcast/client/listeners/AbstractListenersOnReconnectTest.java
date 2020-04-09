@@ -19,7 +19,7 @@ package com.hazelcast.client.listeners;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.ClientTestUtil;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.connection.nio.ClientConnection;
+import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.spi.impl.listener.ClientConnectionRegistration;
 import com.hazelcast.client.impl.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.client.test.ClientTestSupport;
@@ -343,7 +343,7 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
                 for (Connection registeredSubscriber : registrations.keySet()) {
                     boolean contains = false;
                     for (Member member : members) {
-                        contains |= registeredSubscriber.getEndPoint().equals(member.getAddress());
+                        contains |= registeredSubscriber.getRemoteAddress().equals(member.getAddress());
                     }
                     assertTrue("Registered member " + registeredSubscriber + " is not in the cluster member list " + members,
                             contains);

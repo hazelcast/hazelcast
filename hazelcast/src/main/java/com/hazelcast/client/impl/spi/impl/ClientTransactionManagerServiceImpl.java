@@ -21,7 +21,7 @@ import com.hazelcast.client.HazelcastClientOfflineException;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.connection.nio.ClientConnection;
+import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.proxy.txn.TransactionContextProxy;
 import com.hazelcast.client.impl.proxy.txn.xa.XATransactionContextProxy;
 import com.hazelcast.client.impl.spi.ClientTransactionManagerService;
@@ -115,7 +115,7 @@ public class ClientTransactionManagerServiceImpl implements ClientTransactionMan
 
         while (client.getLifecycleService().isRunning()) {
             try {
-                ClientConnection connection = (ClientConnection) client.getConnectionManager().getRandomConnection();
+                ClientConnection connection = client.getConnectionManager().getRandomConnection();
                 if (connection == null) {
                     throw throwException(smartRouting);
                 }

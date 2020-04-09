@@ -49,11 +49,11 @@ class InvocationBuilderImpl extends InvocationBuilder {
             op.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
             invocation = new PartitionInvocation(
                     context, op, doneCallback, tryCount, tryPauseMillis, callTimeout, resultDeserialized,
-                    failOnIndeterminateOperationState, endpointManager);
+                    failOnIndeterminateOperationState, connectionManager);
         } else {
             invocation = new TargetInvocation(
                     context, op, target, doneCallback, tryCount, tryPauseMillis,
-                    callTimeout, resultDeserialized, endpointManager);
+                    callTimeout, resultDeserialized, connectionManager);
         }
 
         return invocation.invoke();

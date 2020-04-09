@@ -32,7 +32,7 @@ public class ClusterMismatchOp extends AbstractClusterOperation {
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         Connection connection = getConnection();
 
-        String message = "Node could not join cluster at node: " + connection.getEndPoint()
+        String message = "Node could not join cluster at node: " + connection.getRemoteAddress()
                 + " Cause: the target cluster has a different cluster-name";
 
         connection.close(message, null);

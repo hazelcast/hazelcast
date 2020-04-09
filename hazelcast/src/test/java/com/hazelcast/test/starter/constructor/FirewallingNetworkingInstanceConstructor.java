@@ -16,7 +16,7 @@
 
 package com.hazelcast.test.starter.constructor;
 
-import com.hazelcast.internal.nio.NetworkingService;
+import com.hazelcast.internal.server.Server;
 import com.hazelcast.test.starter.HazelcastStarterConstructor;
 
 import java.lang.reflect.Constructor;
@@ -35,7 +35,7 @@ public class FirewallingNetworkingInstanceConstructor extends AbstractStarterObj
     @Override
     Object createNew0(Object delegate) throws Exception {
         // obtain reference to constructor FirewallingNetworkingService(ConnectionManager, Set<Address>)
-        Constructor<?> constructor = targetClass.getDeclaredConstructor(NetworkingService.class, Set.class);
+        Constructor<?> constructor = targetClass.getDeclaredConstructor(Server.class, Set.class);
 
         Object networkingService = getFieldValueReflectively(delegate, "delegate");
         Set blockedAddresses = (Set) getFieldValueReflectively(delegate, "blockedAddresses");

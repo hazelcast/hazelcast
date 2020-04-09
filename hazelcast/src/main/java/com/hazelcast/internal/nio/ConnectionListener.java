@@ -17,12 +17,11 @@
 package com.hazelcast.internal.nio;
 
 /**
- * A listener for the {@link EndpointManager} to listen to connections
- * being added or removed.
+ * A listener to listen to connections being added or removed.
  */
-public interface ConnectionListener {
+public interface ConnectionListener<C extends Connection> {
 
-    void connectionAdded(Connection connection);
+    void connectionAdded(C connection);
 
-    void connectionRemoved(Connection connection);
+    void connectionRemoved(C connection);
 }

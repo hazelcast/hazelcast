@@ -16,19 +16,19 @@
 
 package com.hazelcast.spi.impl.operationservice;
 
-import com.hazelcast.internal.util.UUIDSerializationUtil;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.cluster.ClusterClock;
+import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.partition.InternalPartition;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.cluster.Address;
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.SilentException;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.properties.ClusterProperty;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -38,13 +38,13 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.logging.Level;
 
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.StringUtil.timeToString;
 import static com.hazelcast.spi.impl.operationservice.CallStatus.RESPONSE;
 import static com.hazelcast.spi.impl.operationservice.CallStatus.VOID;
 import static com.hazelcast.spi.impl.operationservice.CallStatus.WAIT;
 import static com.hazelcast.spi.impl.operationservice.ExceptionAction.RETRY_INVOCATION;
 import static com.hazelcast.spi.impl.operationservice.ExceptionAction.THROW_EXCEPTION;
-import static com.hazelcast.internal.util.EmptyStatement.ignore;
-import static com.hazelcast.internal.util.StringUtil.timeToString;
 
 /**
  * An operation could be compared to a {@link Runnable}. It contains logic that
@@ -86,7 +86,7 @@ public abstract class Operation implements DataSerializable {
     private transient NodeEngine nodeEngine;
     private transient Object service;
     private transient Address callerAddress;
-    private transient Connection connection;
+    private transient ServerConnection connection;
     private transient OperationResponseHandler responseHandler;
     private transient long clientCallId = -1;
 
@@ -426,12 +426,12 @@ public abstract class Operation implements DataSerializable {
         return this;
     }
 
-    public final Connection getConnection() {
+    public final ServerConnection getConnection() {
         return connection;
     }
 
     // Accessed using OperationAccessor
-    final Operation setConnection(Connection connection) {
+    final Operation setConnection(ServerConnection connection) {
         this.connection = connection;
         return this;
     }
