@@ -148,6 +148,10 @@ public final class QueryState implements QueryStateCallback {
         return localMemberId;
     }
 
+    public long getStartTime() {
+        return startTime;
+    }
+
     public boolean isInitiator() {
         return initiatorState != null;
     }
@@ -323,7 +327,7 @@ public final class QueryState implements QueryStateCallback {
      *
      * @return Query participants.
      */
-    public Set<UUID> getParticipantsWithoutInitiator() {
+    private Set<UUID> getParticipantsWithoutInitiator() {
         assert isInitiator();
 
         Set<UUID> res = new HashSet<>(initiatorState.getPlan().getMemberIds());
