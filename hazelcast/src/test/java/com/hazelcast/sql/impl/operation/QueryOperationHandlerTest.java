@@ -94,9 +94,6 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
 
     private TestHazelcastInstanceFactory factory;
 
-    private HazelcastInstanceProxy initiator;
-    private HazelcastInstanceProxy participant;
-
     private UUID initiatorId;
     private UUID participantId;
 
@@ -122,8 +119,8 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
     public void before() {
         factory = new TestHazelcastInstanceFactory(2);
 
-        initiator = (HazelcastInstanceProxy) factory.newHazelcastInstance();
-        participant = (HazelcastInstanceProxy) factory.newHazelcastInstance();
+        HazelcastInstanceProxy initiator = (HazelcastInstanceProxy) factory.newHazelcastInstance();
+        HazelcastInstanceProxy participant = (HazelcastInstanceProxy) factory.newHazelcastInstance();
 
         initiatorId = initiator.getLocalEndpoint().getUuid();
         participantId = participant.getLocalEndpoint().getUuid();
@@ -138,7 +135,7 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
         partitionMap.put(initiatorId, new PartitionIdSet(2, Collections.singletonList(1)));
         partitionMap.put(participantId, new PartitionIdSet(1, Collections.singletonList(2)));
 
-        testState = startInitiator();
+        testState = startQueryOnInitiator();
 
         // Prepare operations that will be used throughout the test.
         initiatorExecuteOperation = createExecuteOperation(initiatorId);
@@ -165,6 +162,70 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
         if (factory != null) {
             factory.shutdownAll();
         }
+    }
+
+    @Test
+    public void test_initiator_E_B1_B2_C() {
+        // EXECUTE
+        sendToInitiator(initiatorExecuteOperation);
+        testState.assertStartedEventually();
+
+        // BATCH 1
+        sendToInitiator(initiatorBatch1Operation);
+        ListRowBatch batch = testState.assertRowsArrived(BATCH_SIZE);
+        checkMonotonicBatch(batch, 0, BATCH_SIZE);
+
+        // BATCH 2
+        sendToInitiator(initiatorBatch2Operation);
+        batch = testState.assertRowsArrived(BATCH_SIZE);
+        checkMonotonicBatch(batch, BATCH_SIZE, BATCH_SIZE);
+        testState.assertCompletedEventually();
+        checkNoQueryOnInitiator();
+
+        // CANCEL
+        sendToInitiator(initiatorCancelOperation);
+        checkNoQueryOnInitiator();
+    }
+
+    @Test
+    public void test_initiator_E_B1_C_B2() {
+        // EXECUTE
+        sendToInitiator(initiatorExecuteOperation);
+        testState.assertStartedEventually();
+
+        // BATCH 1
+        sendToInitiator(initiatorBatch1Operation);
+        ListRowBatch batch = testState.assertRowsArrived(BATCH_SIZE);
+        checkMonotonicBatch(batch, 0, BATCH_SIZE);
+
+        // CANCEL
+        sendToInitiator(initiatorCancelOperation);
+        checkNoQueryOnInitiator();
+
+        // BATCH 2
+        sendToInitiator(initiatorBatch2Operation);
+        checkNoQueryOnInitiator();
+        testState.assertNoRows();
+    }
+
+    @Test
+    public void test_initiator_E_C_B1_B2() {
+        // EXECUTE
+        sendToInitiator(initiatorExecuteOperation);
+        testState.assertStartedEventually();
+
+        // CANCEL
+        sendToInitiator(initiatorCancelOperation);
+        checkNoQueryOnInitiator();
+
+        // BATCH 1
+        sendToInitiator(initiatorBatch1Operation);
+        checkNoQueryOnInitiator();
+
+        // BATCH 2
+        sendToInitiator(initiatorBatch2Operation);
+        checkNoQueryOnInitiator();
+        testState.assertNoRows();
     }
 
     @Test
@@ -208,7 +269,7 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
         // BATCH 2
         sendToParticipant(participantBatch2Operation);
         checkQueryOnParticipant();
-        stopInitiator();
+        stopQueryOnInitiator();
         checkNoQueryOnParticipant();
         testState.assertNoRows();
     }
@@ -230,7 +291,7 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
         // BATCH 2
         sendToParticipant(participantBatch2Operation);
         checkQueryOnParticipant();
-        stopInitiator();
+        stopQueryOnInitiator();
         checkNoQueryOnParticipant();
         testState.assertNoRows();
     }
@@ -282,7 +343,7 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
         // BATCH 2
         sendToParticipant(participantBatch2Operation);
         checkQueryOnParticipant();
-        stopInitiator();
+        stopQueryOnInitiator();
         checkNoQueryOnParticipant();
         testState.assertNoRows();
     }
@@ -395,7 +456,7 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
         );
     }
 
-    private State startInitiator() {
+    private State startQueryOnInitiator() {
         Plan plan = new Plan(
             partitionMap,
             Collections.emptyList(),
@@ -419,7 +480,7 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
         return testState;
     }
 
-    private void stopInitiator() {
+    private void stopQueryOnInitiator() {
         initiatorService.getInternalService().getStateRegistry().onQueryCompleted(testState.getQueryId());
     }
 
@@ -450,10 +511,6 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
         } catch (InterruptedException e) {
             // No-op.
         }
-    }
-
-    private void checkQueryOnInitiator() {
-        checkQuery(initiatorService);
     }
 
     private void checkNoQueryOnInitiator() {
