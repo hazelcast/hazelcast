@@ -21,11 +21,15 @@ import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.hazelcast.internal.metrics.MetricTarget.DIAGNOSTICS;
 import static com.hazelcast.internal.metrics.MetricTarget.JMX;
@@ -33,6 +37,8 @@ import static com.hazelcast.internal.metrics.MetricTarget.MANAGEMENT_CENTER;
 import static com.hazelcast.internal.metrics.ProbeUnit.BYTES;
 import static com.hazelcast.internal.metrics.ProbeUnit.COUNT;
 import static com.hazelcast.internal.metrics.ProbeUnit.PERCENT;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.only;
 import static org.mockito.Mockito.spy;
@@ -43,6 +49,9 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MetricsCompressorTest {
+
+    @Rule
+    public ExpectedException exception = ExpectedException.none();
 
     private final DefaultMetricDescriptorSupplier supplier = new DefaultMetricDescriptorSupplier();
     private final Supplier<? extends MetricDescriptor> supplierSpy = spy(supplier);
@@ -306,5 +315,55 @@ public class MetricsCompressorTest {
         MetricsCompressor.extractMetrics(blob, metricConsumerSpy, supplierSpy);
 
         verify(metricConsumerSpy).consumeLong(sameMetric, 43L);
+    }
+
+    @Test
+    public void testLongValue() {
+        DefaultMetricDescriptorSupplier supplier = new DefaultMetricDescriptorSupplier();
+        MetricsCompressor compressor = new MetricsCompressor();
+
+        String longPrefix = Stream.generate(() -> "a")
+                                  .limit(MetricsDictionary.MAX_WORD_LENGTH - 1)
+                                  .collect(Collectors.joining());
+        MetricDescriptor metric1 = supplier.get()
+                                           .withMetric("metricName")
+                                           .withTag("tag0", longPrefix + "0")
+                                           .withTag("tag1", longPrefix + "1");
+
+        compressor.addLong(metric1, 42);
+        byte[] blob = compressor.getBlobAndReset();
+
+        MetricConsumer metricConsumer = new MetricConsumer() {
+            @Override
+            public void consumeLong(MetricDescriptor descriptor, long value) {
+                assertEquals(42, value);
+                assertEquals("metricName", descriptor.metric());
+                assertEquals(longPrefix + "0", descriptor.tagValue("tag0"));
+                assertEquals(longPrefix + "1", descriptor.tagValue("tag1"));
+            }
+
+            @Override
+            public void consumeDouble(MetricDescriptor descriptor, double value) {
+                fail("Restored a double metric");
+            }
+        };
+
+        MetricConsumer metricConsumerSpy = spy(metricConsumer);
+        MetricsCompressor.extractMetrics(blob, metricConsumerSpy, supplierSpy);
+    }
+
+    @Test
+    public void when_tooLongValue_then_fails() {
+        DefaultMetricDescriptorSupplier supplier = new DefaultMetricDescriptorSupplier();
+        MetricsCompressor compressor = new MetricsCompressor();
+
+        String longName = Stream.generate(() -> "a")
+                                  .limit(MetricsDictionary.MAX_WORD_LENGTH + 1)
+                                  .collect(Collectors.joining());
+        MetricDescriptor metric1 = supplier.get()
+                                           .withTag("tag0", longName);
+
+        exception.expect(RuntimeException.class);
+        compressor.addLong(metric1, 42);
     }
 }
