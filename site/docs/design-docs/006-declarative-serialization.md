@@ -18,7 +18,7 @@ There are already fast and declarative serialization libraries out
 there, such as Avro or Google Protocol Buffers. We would like to reduce
 the effort to use them with Jet to the minimum.
 
-Note that we don't try to solve here the limitations of job-level
+Note that we don't try to solve the limitations of job-level
 serializers, which are:
 
 - inability to work with remote `IMap`s, `Cache`s & `IList`s
@@ -66,9 +66,8 @@ Here is the wire format:
 FQCN (Fully Qualified Class Name) has been used but any globally unique
 identifier should do the trick.
 
-Here is the comparison of implemented (potentially susceptible to
-optimize) serializer with base one (simply writing/reading plain
-Protocol Buffer message):
+Here's a comparison between implemented serializer and base one (simply
+writing/reading plain Protocol Buffer message):
 
 ```text
 Benchmark                       Mode  Cnt  Score   Error   Units
@@ -93,27 +92,28 @@ Basically an immutable mapping of FQCN to an `int` which could be
 dynamically updated/queried/cached by serializers.
 
 Beam and Flink take a different approach. Instead of encoding type id
-they rely on respectively `TypeDescriptor` and `TypeInformation` and
-inferred/user supplied type information to assign appropriate
+they rely on `TypeDescriptor`/`TypeInformation` and inferred/user
+supplied type information to assign appropriate
 `Coder`s/`TypeSerializer`s to each transformer. That not only lets them
-avoid managing type ids but also save on runtime serializer resolution.
+avoid managing type ids but also save on runtime serializer lookup.
 
 ## Considered solutions
 
 1. FQCN:
-- easiest & fastest to implement, we already have everything to make it work
-- slow & bloated
+   - easiest & fastest to implement, we already have everything to make
+   it work
+   - slow & bloated
 
 2. Id registry:
-- more CPU & memory friendly than above
-- requires yet another moving part in our serialization universe
+   - more CPU & memory friendly than above
+   - requires yet another moving part in our serialization universe
 
 3. Inferred type information:
-- does not require runtime lookup of serializer which ultimately might
-  be the fastest option
-- would require (complete?) redesign of the pipeline, most time
-  consuming to implement
-- sometimes requires input from the user
+   - does not require runtime lookup of serializer which ultimately might
+   be the fastest option
+   - would require (complete?) redesign of the pipeline, most time
+   consuming to implement
+   - sometimes requires input from the user
 
 ## Implemented solution
 
