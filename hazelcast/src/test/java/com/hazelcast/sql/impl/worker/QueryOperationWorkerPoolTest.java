@@ -23,8 +23,8 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.sql.SqlErrorCode;
-import com.hazelcast.sql.impl.LoggingQueryOperationHandler;
 import com.hazelcast.sql.impl.LocalMemberIdProvider;
+import com.hazelcast.sql.impl.LoggingQueryOperationHandler;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.TestLocalMemberIdProvider;
 import com.hazelcast.sql.impl.operation.QueryBatchExchangeOperation;
@@ -186,6 +186,7 @@ public class QueryOperationWorkerPoolTest extends HazelcastTestSupport {
 
             assertNotNull(info);
 
+            assertEquals(localMemberId, info.getSourceMemberId());
             assertEquals(remoteMemberId, info.getMemberId());
 
             QueryCancelOperation cancelOperation = info.getOperation();

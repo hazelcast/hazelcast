@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.ListRowBatch;
 import com.hazelcast.sql.impl.row.Row;
@@ -77,13 +78,13 @@ public class SqlTestSupport extends HazelcastTestSupport {
         return new ListRowBatch(rows);
     }
 
-    public static void checkMonotonicBatch(RowBatch batch, int start, int size) {
+    public static void checkMonotonicBatch(RowBatch batch, int startValue, int size) {
         assertEquals(size, batch.getRowCount());
 
         for (int i = 0; i < size; i++) {
             int value = batch.getRow(i).get(0);
 
-            assertEquals(start + i, value);
+            assertEquals(startValue + i, value);
         }
     }
 
@@ -110,5 +111,25 @@ public class SqlTestSupport extends HazelcastTestSupport {
         };
 
         return new QueryFragmentContext(args, new LoggingQueryFragmentScheduleCallback(), stateCallback);
+    }
+
+    /**
+     * Creates an opaque plan for tests where concrete values inside the plan are not important.
+     *
+     * @return Plan.
+     */
+    public static Plan opaquePlan() {
+        return new Plan(
+            Collections.emptyMap(),
+            Collections.emptyList(),
+            Collections.emptyList(),
+            Collections.emptyMap(),
+            Collections.emptyMap(),
+            Collections.emptyMap(),
+            null,
+            null,
+            null,
+            null
+        );
     }
 }
