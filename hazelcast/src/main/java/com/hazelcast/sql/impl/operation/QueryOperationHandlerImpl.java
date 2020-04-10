@@ -28,7 +28,6 @@ import com.hazelcast.sql.impl.exec.Exec;
 import com.hazelcast.sql.impl.exec.io.InboundHandler;
 import com.hazelcast.sql.impl.exec.io.OutboundHandler;
 import com.hazelcast.sql.impl.exec.io.flowcontrol.FlowControlFactory;
-import com.hazelcast.sql.impl.exec.io.flowcontrol.simple.SimpleFlowControlFactory;
 import com.hazelcast.sql.impl.state.QueryState;
 import com.hazelcast.sql.impl.state.QueryStateCompletionCallback;
 import com.hazelcast.sql.impl.state.QueryStateRegistry;
@@ -265,7 +264,7 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
         }
 
         // We pass originating member ID here instead if caller ID to preserve the causality:
-        // in the "participant1 -> co4ordinator -> participant2" flow, the second participant
+        // in the "participant1 -> coordinator -> participant2" flow, the participant2
         // get the ID of participant1.
         QueryException error = QueryException.error(
             operation.getErrorCode(),

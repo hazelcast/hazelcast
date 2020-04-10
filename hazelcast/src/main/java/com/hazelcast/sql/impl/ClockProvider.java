@@ -21,7 +21,7 @@ package com.hazelcast.sql.impl;
  */
 public interface ClockProvider {
     /**
-     * @return Current time sinct epoch in millis.
+     * @return Current time since epoch in millis.
      */
     long currentTimeMillis();
 }
