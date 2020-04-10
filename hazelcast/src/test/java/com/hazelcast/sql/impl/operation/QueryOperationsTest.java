@@ -214,7 +214,6 @@ public class QueryOperationsTest extends SqlTestSupport {
         edgeCreditMap.put(11, 12L);
 
         List<Object> arguments = Arrays.asList(randomInt(), randomString(), randomUUID());
-        long timeout = randomLong();
 
         QueryExecuteOperation res = withCallerId(new QueryExecuteOperation(
             queryId, partitionMapping, fragments, outboundEdgeMap, inboundEdgeMap, edgeCreditMap, arguments)

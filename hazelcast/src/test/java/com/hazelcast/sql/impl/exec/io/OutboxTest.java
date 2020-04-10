@@ -70,6 +70,7 @@ public class OutboxTest extends SqlTestSupport {
         assertEquals(QUERY_ID, outbox.getQueryId());
         assertEquals(EDGE_ID, outbox.getEdgeId());
         assertEquals(ROW_WIDTH, outbox.getRowWidth());
+        assertEquals(LOCAL_MEMBER_ID, outbox.getLocalMemberId());
         assertEquals(TARGET_MEMBER_ID, outbox.getTargetMemberId());
         assertEquals(BATCH_SIZE, outbox.getBatchSize());
         assertEquals(REMAINING_MEMORY, outbox.getRemainingMemory());
@@ -97,6 +98,7 @@ public class OutboxTest extends SqlTestSupport {
         assertEquals(1, operationHandler.getChannel().getSubmitCounter());
 
         LoggingQueryOperationHandler.SubmitInfo submitInfo = operationHandler.tryPollSubmitInfo();
+        assertEquals(LOCAL_MEMBER_ID, submitInfo.getSourceMemberId());
         assertEquals(TARGET_MEMBER_ID, submitInfo.getMemberId());
 
         QueryBatchExchangeOperation operation = submitInfo.getOperation();
