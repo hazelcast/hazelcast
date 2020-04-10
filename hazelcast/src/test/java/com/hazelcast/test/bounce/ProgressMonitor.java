@@ -53,7 +53,7 @@ public class ProgressMonitor {
     }
 
     public void checkProgress() {
-        long nowNanos = Timer.nanos();
+        long startNanos = Timer.nanos();
         long aggregatedProgress = 0;
         long maxLatencyNanos = 0;
         for (BounceMemberRule.TestTaskRunnable task : tasks) {
@@ -64,12 +64,12 @@ public class ProgressMonitor {
             }
             aggregatedProgress += task.getIterationCounter();
             maxLatencyNanos = Math.max(maxLatencyNanos, task.getMaxLatencyNanos());
-            long currentStaleNanos = nowNanos - lastIterationStartedTimestamp;
+            long currentStaleNanos = startNanos - lastIterationStartedTimestamp;
             if (currentStaleNanos > maximumStaleNanos) {
                 onStalenessDetected(task, currentStaleNanos);
             }
         }
-        logProgress(nowNanos, aggregatedProgress, maxLatencyNanos);
+        logProgress(startNanos, aggregatedProgress, maxLatencyNanos);
     }
 
     private void logProgress(long now, long aggregatedProgress, long maxLatencyNanos) {

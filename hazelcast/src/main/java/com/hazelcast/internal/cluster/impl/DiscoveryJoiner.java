@@ -54,7 +54,7 @@ public class DiscoveryJoiner
     @Override
     protected Collection<Address> getPossibleAddressesForInitialJoin() {
         long deadLine = System.nanoTime() + SECONDS.toNanos(maximumWaitingTimeBeforeJoinSeconds);
-        for (int i = 0; System.nanoTime() - deadLine < 0; i++) {
+        for (int i = 0; System.nanoTime() < deadLine; i++) {
             Collection<Address> possibleAddresses = getPossibleAddresses();
             if (!possibleAddresses.isEmpty()) {
                 return possibleAddresses;

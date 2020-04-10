@@ -18,7 +18,6 @@ package com.hazelcast.test.bounce;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.util.Timer;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
@@ -576,8 +575,8 @@ public class BounceMemberRule implements TestRule {
     }
 
     private void sleepSecondsWhenRunning(int seconds) {
-        long deadLine = Timer.nanos() + SECONDS.toNanos(seconds);
-        while (Timer.nanosElapsed(deadLine) < 0 && testRunning.get()) {
+        long deadLine = System.nanoTime() + SECONDS.toNanos(seconds);
+        while (System.nanoTime() < deadLine && testRunning.get()) {
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
@@ -608,12 +607,12 @@ public class BounceMemberRule implements TestRule {
         public void run() {
             while (testRunning.get()) {
                 try {
-                    long startedNanos = Timer.nanos();
+                    long startedNanos = System.nanoTime();
                     lastIterationStartedTimestamp = startedNanos;
                     currentThread = Thread.currentThread();
                     task.run();
                     iterationCounter++;
-                    long latencyNanos = Timer.nanosElapsed(startedNanos);
+                    long latencyNanos = System.nanoTime() - startedNanos;
                     maxLatencyNanos = max(maxLatencyNanos, latencyNanos);
                 } catch (Throwable t) {
                     testFailed.set(true);

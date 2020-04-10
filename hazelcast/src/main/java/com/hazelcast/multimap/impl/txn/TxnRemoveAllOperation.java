@@ -88,9 +88,9 @@ public class TxnRemoveAllOperation extends AbstractKeyBasedMultiMapOperation imp
 
     @Override
     public void afterRun() throws Exception {
-        long elapsed = Math.max(0, Timer.nanosElapsed(startTimeNanos));
+        long elapsedNanos = Math.max(0, Timer.nanosElapsed(startTimeNanos));
         MultiMapService service = getService();
-        service.getLocalMultiMapStatsImpl(name).incrementRemoveLatencyNanos(elapsed);
+        service.getLocalMultiMapStatsImpl(name).incrementRemoveLatencyNanos(elapsedNanos);
         if (removed != null) {
             for (MultiMapRecord record : removed) {
                 publishEvent(EntryEventType.REMOVED, dataKey, null, record.getObject());
