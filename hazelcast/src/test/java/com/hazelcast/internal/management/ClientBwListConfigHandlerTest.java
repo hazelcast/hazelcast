@@ -24,8 +24,8 @@ import com.hazelcast.client.impl.ClientSelectors;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.management.dto.ClientBwListDTO;
 import com.hazelcast.internal.management.dto.ClientBwListEntryDTO;
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionType;
+import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -185,7 +185,7 @@ public class ClientBwListConfigHandlerTest extends HazelcastTestSupport {
     public void testApplyConfig_emptyWhitelist_doesNotDisconnectMCClient() {
         handler.applyConfig(createConfig(Mode.WHITELIST));
 
-        Connection mockConnection = mock(Connection.class);
+        ServerConnection mockConnection = mock(ServerConnection.class);
         when(mockConnection.getConnectionType()).thenReturn(ConnectionType.MC_JAVA_CLIENT);
         ClientEndpointImpl mcClient = new ClientEndpointImpl(clientEngine, getNodeEngineImpl(instance), mockConnection);
         assertTrue(clientEngine.isClientAllowed(mcClient));

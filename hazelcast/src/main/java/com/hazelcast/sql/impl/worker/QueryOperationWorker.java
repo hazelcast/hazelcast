@@ -144,7 +144,7 @@ public class QueryOperationWorker implements Runnable {
                 // It is not easy to decide how to handle an arbitrary exception. We do not have caller coordinates, so
                 // we do not know how to notify it. We also cannot panic (i.e. kill local member), because it would be a
                 // security threat. So the only sensible solution is to log the error.
-                logger.severe("Failed to deserialize query operation received from " + packet.getConn().getEndPoint()
+                logger.severe("Failed to deserialize query operation received from " + packet.getConn().getRemoteAddress()
                     + " (will be ignored)", e);
             }
         }

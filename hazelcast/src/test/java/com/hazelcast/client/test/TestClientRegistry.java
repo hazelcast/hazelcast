@@ -20,8 +20,8 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.impl.clientside.ClientConnectionManagerFactory;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
-import com.hazelcast.client.impl.connection.nio.ClientConnection;
-import com.hazelcast.client.impl.connection.nio.ClientConnectionManagerImpl;
+import com.hazelcast.client.impl.connection.tcp.TcpClientConnection;
+import com.hazelcast.client.impl.connection.tcp.TcpClientConnectionManager;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.test.TwoWayBlockableExecutor.LockPair;
 import com.hazelcast.cluster.Address;
@@ -36,11 +36,10 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.test.mocknetwork.MockConnection;
+import com.hazelcast.test.mocknetwork.MockServerConnection;
 import com.hazelcast.test.mocknetwork.TestNodeRegistry;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.concurrent.ConcurrentHashMap;
@@ -81,12 +80,12 @@ class TestClientRegistry {
 
         @Override
         public ClientConnectionManager createConnectionManager(HazelcastClientInstanceImpl client) {
-            return new MockClientConnectionManager(client, host, ports);
+            return new MockTcpClientConnectionManager(client, host, ports);
         }
     }
 
-    class MockClientConnectionManager
-            extends ClientConnectionManagerImpl {
+    class MockTcpClientConnectionManager
+            extends TcpClientConnectionManager {
 
         private final ConcurrentHashMap<Address, LockPair> addressBlockMap = new ConcurrentHashMap<Address, LockPair>();
 
@@ -94,7 +93,7 @@ class TestClientRegistry {
         private final String host;
         private final AtomicInteger ports;
 
-        MockClientConnectionManager(HazelcastClientInstanceImpl client, String host, AtomicInteger ports) {
+        MockTcpClientConnectionManager(HazelcastClientInstanceImpl client, String host, AtomicInteger ports) {
             super(client);
             this.client = client;
             this.host = host;
@@ -115,7 +114,7 @@ class TestClientRegistry {
         }
 
         @Override
-        protected ClientConnection createSocketConnection(Address address) {
+        protected TcpClientConnection createSocketConnection(Address address) {
             checkClientActive();
             try {
                 HazelcastInstance instance = nodeRegistry.getInstance(address);
@@ -125,7 +124,7 @@ class TestClientRegistry {
                 Address localAddress = new Address(host, ports.incrementAndGet());
                 LockPair lockPair = getLockPair(address);
 
-                MockedClientConnection connection = new MockedClientConnection(client, connectionIdGen.incrementAndGet(),
+                MockedTcpClientConnection connection = new MockedTcpClientConnection(client, connectionIdGen.incrementAndGet(),
                         getNodeEngineImpl(instance), address, localAddress, lockPair);
                 LOGGER.info("Created connection to endpoint: " + address + ", connection: " + connection);
                 return connection;
@@ -180,27 +179,27 @@ class TestClientRegistry {
         }
     }
 
-    private class MockedClientConnection extends ClientConnection {
+    private class MockedTcpClientConnection extends TcpClientConnection {
 
         private final NodeEngineImpl serverNodeEngine;
         private final Address remoteAddress;
         private final Address localAddress;
         private final TwoWayBlockableExecutor executor;
-        private final MockedNodeConnection serverSideConnection;
+        private final MockedServerConnection serverConnection;
         private final String connectionType;
 
         private volatile long lastReadTime;
         private volatile long lastWriteTime;
 
-        MockedClientConnection(HazelcastClientInstanceImpl client,
-                               int connectionId, NodeEngineImpl serverNodeEngine, Address address, Address localAddress,
-                               LockPair lockPair) {
+        MockedTcpClientConnection(HazelcastClientInstanceImpl client,
+                                  int connectionId, NodeEngineImpl serverNodeEngine, Address address, Address localAddress,
+                                  LockPair lockPair) {
             super(client, connectionId);
             this.serverNodeEngine = serverNodeEngine;
             this.remoteAddress = address;
             this.localAddress = localAddress;
             this.executor = new TwoWayBlockableExecutor(lockPair);
-            this.serverSideConnection = new MockedNodeConnection(connectionId, remoteAddress,
+            this.serverConnection = new MockedServerConnection(connectionId, remoteAddress,
                     localAddress, serverNodeEngine, this);
             this.connectionType = client.getProperties().getBoolean(MC_CLIENT_MODE_PROP)
                     ? ConnectionType.MC_JAVA_CLIENT : ConnectionType.JAVA_CLIENT;
@@ -212,12 +211,12 @@ class TestClientRegistry {
                 @Override
                 public void run() {
                     lastReadTime = System.currentTimeMillis();
-                    MockedClientConnection.super.handleClientMessage(clientMessage);
+                    MockedTcpClientConnection.super.handleClientMessage(clientMessage);
                 }
 
                 @Override
                 public String toString() {
-                    return "Runnable message " + clientMessage + ", " + MockedClientConnection.this;
+                    return "Runnable message " + clientMessage + ", " + MockedTcpClientConnection.this;
                 }
             });
         }
@@ -234,15 +233,15 @@ class TestClientRegistry {
             executor.executeOutgoing(new Runnable() {
                 @Override
                 public String toString() {
-                    return "Runnable message " + frame + ", " + MockedClientConnection.this;
+                    return "Runnable message " + frame + ", " + MockedTcpClientConnection.this;
                 }
 
                 @Override
                 public void run() {
                     ClientMessage clientMessage = readFromPacket((ClientMessage) frame);
                     lastWriteTime = System.currentTimeMillis();
-                    clientMessage.setConnection(serverSideConnection);
-                    serverSideConnection.handleClientMessage(clientMessage);
+                    clientMessage.setConnection(serverConnection);
+                    serverConnection.handleClientMessage(clientMessage);
                 }
             });
             return true;
@@ -265,16 +264,6 @@ class TestClientRegistry {
         }
 
         @Override
-        public InetAddress getInetAddress() {
-            try {
-                return remoteAddress.getInetAddress();
-            } catch (UnknownHostException e) {
-                e.printStackTrace();
-                return null;
-            }
-        }
-
-        @Override
         public InetSocketAddress getRemoteSocketAddress() {
             try {
                 return remoteAddress.getInetSocketAddress();
@@ -282,11 +271,6 @@ class TestClientRegistry {
                 e.printStackTrace();
                 return null;
             }
-        }
-
-        @Override
-        public int getPort() {
-            return remoteAddress.getPort();
         }
 
         @Override
@@ -304,12 +288,12 @@ class TestClientRegistry {
             executor.executeOutgoing((new Runnable() {
                 @Override
                 public void run() {
-                    serverSideConnection.close(null, null);
+                    serverConnection.close(null, null);
                 }
 
                 @Override
                 public String toString() {
-                    return "Client Closed EOF. " + MockedClientConnection.this;
+                    return "Client Closed EOF. " + MockedTcpClientConnection.this;
                 }
             }));
             executor.shutdownIncoming();
@@ -319,20 +303,15 @@ class TestClientRegistry {
             executor.executeIncoming(new Runnable() {
                 @Override
                 public String toString() {
-                    return "Server Closed EOF. " + MockedClientConnection.this;
+                    return "Server Closed EOF. " + MockedTcpClientConnection.this;
                 }
 
                 @Override
                 public void run() {
-                    MockedClientConnection.this.close(reason, new TargetDisconnectedException("Mocked Remote socket closed"));
+                    MockedTcpClientConnection.this.close(reason, new TargetDisconnectedException("Mocked Remote socket closed"));
                 }
             });
             executor.shutdownOutgoing();
-        }
-
-        @Override
-        public String getConnectionType() {
-            return connectionType;
         }
 
         @Override
@@ -344,18 +323,19 @@ class TestClientRegistry {
         }
     }
 
-    private class MockedNodeConnection extends MockConnection {
+    private class MockedServerConnection extends MockServerConnection {
 
         private final AtomicBoolean alive = new AtomicBoolean(true);
 
-        private final MockedClientConnection responseConnection;
+        private final MockedTcpClientConnection responseConnection;
         private final int connectionId;
 
         private volatile long lastReadTimeMillis;
         private volatile long lastWriteTimeMillis;
 
-        MockedNodeConnection(int connectionId, Address localEndpoint,
-                             Address remoteEndpoint, NodeEngineImpl nodeEngine, MockedClientConnection responseConnection) {
+        MockedServerConnection(int connectionId, Address localEndpoint,
+                               Address remoteEndpoint, NodeEngineImpl nodeEngine,
+                               MockedTcpClientConnection responseConnection) {
             super(localEndpoint, remoteEndpoint, nodeEngine);
             this.responseConnection = responseConnection;
             this.connectionId = connectionId;
@@ -366,17 +346,17 @@ class TestClientRegistry {
 
         private void register() {
             Node node = remoteNodeEngine.getNode();
-            node.getEndpointManager(CLIENT).registerConnection(getEndPoint(), this);
+            node.getConnectionManager(CLIENT).register(getRemoteAddress(), this);
         }
 
         @Override
         public boolean write(OutboundFrame frame) {
-            final ClientMessage packet = (ClientMessage) frame;
+            final ClientMessage clientMessage = (ClientMessage) frame;
             if (isAlive()) {
                 lastWriteTimeMillis = System.currentTimeMillis();
-                ClientMessage newPacket = readFromPacket(packet);
-                newPacket.setConnection(responseConnection);
-                responseConnection.handleClientMessage(newPacket);
+                ClientMessage newClientMessage = readFromPacket(clientMessage);
+                newClientMessage.setConnection(responseConnection);
+                responseConnection.handleClientMessage(newClientMessage);
                 return true;
             }
             return false;
@@ -407,13 +387,13 @@ class TestClientRegistry {
                 return false;
             }
 
-            MockedNodeConnection that = (MockedNodeConnection) o;
+            MockedServerConnection that = (MockedServerConnection) o;
 
             if (connectionId != that.connectionId) {
                 return false;
             }
-            Address remoteEndpoint = getEndPoint();
-            return !(remoteEndpoint != null ? !remoteEndpoint.equals(that.getEndPoint()) : that.getEndPoint() != null);
+            Address remoteAddress = getRemoteAddress();
+            return !(remoteAddress != null ? !remoteAddress.equals(that.getRemoteAddress()) : that.getRemoteAddress() != null);
         }
 
         @Override
@@ -422,7 +402,7 @@ class TestClientRegistry {
                 return;
             }
 
-            Logger.getLogger(MockedNodeConnection.class).warning("Server connection closed: " + reason, cause);
+            Logger.getLogger(MockedServerConnection.class).warning("Server connection closed: " + reason, cause);
             super.close(reason, cause);
             responseConnection.onServerClose(reason);
         }
@@ -430,8 +410,8 @@ class TestClientRegistry {
         @Override
         public int hashCode() {
             int result = connectionId;
-            Address remoteEndpoint = getEndPoint();
-            result = 31 * result + (remoteEndpoint != null ? remoteEndpoint.hashCode() : 0);
+            Address remoteAddress = getRemoteAddress();
+            result = 31 * result + (remoteAddress != null ? remoteAddress.hashCode() : 0);
             return result;
         }
 
@@ -447,14 +427,14 @@ class TestClientRegistry {
 
         @Override
         public String getConnectionType() {
-            return responseConnection.getConnectionType();
+            return responseConnection.connectionType;
         }
 
         @Override
         public String toString() {
             return "MockedNodeConnection{"
-                    + " remoteEndpoint = " + getEndPoint()
-                    + ", localEndpoint = " + localEndpoint
+                    + " remoteAddress = " + getRemoteAddress()
+                    + ", localAddress = " + localAddress
                     + ", connectionId = " + connectionId
                     + '}';
         }

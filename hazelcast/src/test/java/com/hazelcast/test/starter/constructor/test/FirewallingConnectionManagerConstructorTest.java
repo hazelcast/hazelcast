@@ -17,8 +17,8 @@
 package com.hazelcast.test.starter.constructor.test;
 
 import com.hazelcast.cluster.Address;
-import com.hazelcast.internal.nio.NetworkingService;
-import com.hazelcast.internal.nio.server.FirewallingNetworkingService;
+import com.hazelcast.internal.server.Server;
+import com.hazelcast.internal.server.FirewallingServer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -40,16 +40,16 @@ public class FirewallingConnectionManagerConstructorTest {
 
     @Test
     public void testConstructor() throws Exception {
-        NetworkingService delegate = mock(NetworkingService.class);
+        Server delegate = mock(Server.class);
         Address address = new Address("172.16.16.1", 4223);
         Set<Address> blockedAddresses = Collections.singleton(address);
 
-        FirewallingNetworkingService ns = new FirewallingNetworkingService(delegate, blockedAddresses);
+        FirewallingServer ns = new FirewallingServer(delegate, blockedAddresses);
 
         FirewallingNetworkingInstanceConstructor constructor
-                = new FirewallingNetworkingInstanceConstructor(FirewallingNetworkingService.class);
-        FirewallingNetworkingService clonedConnectionManager
-                = (FirewallingNetworkingService) constructor.createNew(ns);
+                = new FirewallingNetworkingInstanceConstructor(FirewallingServer.class);
+        FirewallingServer clonedConnectionManager
+                = (FirewallingServer) constructor.createNew(ns);
 
         assertEquals(delegate, getFieldValueReflectively(clonedConnectionManager, "delegate"));
         assertEquals(blockedAddresses, getFieldValueReflectively(clonedConnectionManager, "blockedAddresses"));

@@ -24,7 +24,7 @@ import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricTarget;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.impl.MetricsCompressor;
-import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -57,7 +57,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     private final ClientEngine clientEngine;
     private final ILogger logger;
     private final NodeEngineImpl nodeEngine;
-    private final Connection connection;
+    private final ServerConnection connection;
     private final ConcurrentMap<UUID, TransactionContext> transactionContextMap = new ConcurrentHashMap<>();
     private final ConcurrentMap<UUID, Callable> removeListenerActions = new ConcurrentHashMap<>();
     private final SocketAddress socketAddress;
@@ -73,7 +73,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     private Set<String> labels;
     private volatile boolean destroyed;
 
-    public ClientEndpointImpl(ClientEngine clientEngine, NodeEngineImpl nodeEngine, Connection connection) {
+    public ClientEndpointImpl(ClientEngine clientEngine, NodeEngineImpl nodeEngine, ServerConnection connection) {
         this.clientEngine = clientEngine;
         this.logger = clientEngine.getLogger(getClass());
         this.nodeEngine = nodeEngine;
@@ -84,7 +84,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     }
 
     @Override
-    public Connection getConnection() {
+    public ServerConnection getConnection() {
         return connection;
     }
 

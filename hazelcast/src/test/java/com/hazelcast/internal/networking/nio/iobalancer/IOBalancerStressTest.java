@@ -26,8 +26,10 @@ import com.hazelcast.internal.networking.nio.NioInboundPipeline;
 import com.hazelcast.internal.networking.nio.NioNetworking;
 import com.hazelcast.internal.networking.nio.NioOutboundPipeline;
 import com.hazelcast.internal.networking.nio.NioThread;
-import com.hazelcast.internal.nio.EndpointManager;
-import com.hazelcast.internal.nio.server.ServerConnection;
+import com.hazelcast.internal.server.ServerConnection;
+import com.hazelcast.internal.server.ServerConnectionManager;
+import com.hazelcast.internal.server.tcp.TcpServer;
+import com.hazelcast.internal.server.tcp.TcpServerConnection;
 import com.hazelcast.map.IMap;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -89,7 +91,7 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
     }
 
     private void assertBalanced(HazelcastInstance hz) {
-        EndpointManager<ServerConnection> em = getEndpointManager(hz);
+        ServerConnectionManager em = getEndpointManager(hz);
 
         Map<NioThread, Set<MigratablePipeline>> pipelinesPerOwner = getPipelinesPerOwner(em);
 
@@ -106,10 +108,10 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
         }
     }
 
-    private Map<NioThread, Set<MigratablePipeline>> getPipelinesPerOwner(EndpointManager<ServerConnection> em) {
+    private Map<NioThread, Set<MigratablePipeline>> getPipelinesPerOwner(ServerConnectionManager em) {
         Map<NioThread, Set<MigratablePipeline>> pipelinesPerOwner = new HashMap<NioThread, Set<MigratablePipeline>>();
         for (ServerConnection connection : em.getActiveConnections()) {
-            NioChannel channel = (NioChannel) connection.getChannel();
+            NioChannel channel = (NioChannel) ((TcpServerConnection) connection).getChannel();
             add(pipelinesPerOwner, channel.inboundPipeline());
             add(pipelinesPerOwner, channel.outboundPipeline());
         }
@@ -157,8 +159,9 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
     }
 
     private String debug(HazelcastInstance hz) {
-        NioNetworking threadingModel = (NioNetworking) getNode(hz).getNetworkingService().getNetworking();
-        EndpointManager<ServerConnection> em = getNode(hz).getEndpointManager();
+        TcpServer networkingService = (TcpServer) getNode(hz).getServer();
+        NioNetworking threadingModel = (NioNetworking) networkingService.getNetworking();
+        ServerConnectionManager em = getNode(hz).getConnectionManager();
 
         StringBuilder sb = new StringBuilder();
         sb.append("in owners\n");
@@ -166,7 +169,8 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
             sb.append(in).append(": ").append(in.getEventCount()).append("\n");
 
             for (ServerConnection connection : em.getActiveConnections()) {
-                NioInboundPipeline socketReader = ((NioChannel) connection.getChannel()).inboundPipeline();
+                TcpServerConnection c = (TcpServerConnection) connection;
+                NioInboundPipeline socketReader = ((NioChannel) c.getChannel()).inboundPipeline();
                 if (socketReader.owner() == in) {
                     sb.append("\t").append(socketReader).append(" load:").append(socketReader.load()).append("\n");
                 }
@@ -177,7 +181,8 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
             sb.append(in).append(": ").append(in.getEventCount()).append("\n");
 
             for (ServerConnection connection : em.getActiveConnections()) {
-                NioOutboundPipeline socketWriter = ((NioChannel) connection.getChannel()).outboundPipeline();
+                TcpServerConnection tcpServerConnection = (TcpServerConnection) connection;
+                NioOutboundPipeline socketWriter = ((NioChannel) tcpServerConnection.getChannel()).outboundPipeline();
                 if (socketWriter.owner() == in) {
                     sb.append("\t").append(socketWriter).append(" load:").append(socketWriter.load()).append("\n");
                 }

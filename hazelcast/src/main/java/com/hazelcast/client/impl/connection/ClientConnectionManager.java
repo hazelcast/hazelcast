@@ -17,8 +17,6 @@
 package com.hazelcast.client.impl.connection;
 
 import com.hazelcast.client.HazelcastClientOfflineException;
-import com.hazelcast.client.impl.connection.nio.ClientConnection;
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListenable;
 
 import javax.annotation.Nonnull;
@@ -27,12 +25,12 @@ import java.util.Collection;
 import java.util.UUID;
 
 /**
- * Responsible for managing {@link ClientConnection} objects.
+ * Responsible for managing {@link ClientConnection}.
  */
-public interface ClientConnectionManager extends ConnectionListenable {
+public interface ClientConnectionManager extends ConnectionListenable<ClientConnection> {
 
     /**
-     * Check if client connection manager is alive.
+     * Check if ClientConnectionManager is alive.
      * ClientConnectionManager is not alive only when client is closing.
      *
      * @return true if alive, false otherwise.
@@ -43,7 +41,7 @@ public interface ClientConnectionManager extends ConnectionListenable {
      * @param uuid UUID of the member to get connection of
      * @return connection if available, null otherwise
      */
-    Connection getConnection(@Nonnull UUID uuid);
+    ClientConnection getConnection(@Nonnull UUID uuid);
 
     /**
      * Check the connected state and user connection strategy configuration to see if an invocation is allowed at the moment
@@ -61,11 +59,11 @@ public interface ClientConnectionManager extends ConnectionListenable {
     UUID getClientUuid();
 
     /**
-     * For the smart client, Random connection is chosen via LoadBalancer
-     * For the unisocket client, only connection will be returned
+     * For the smart client, Random ClientConnection is chosen via LoadBalancer
+     * For the unisocket client, the only ClientConnection will be returned
      *
-     * @return random connection if available, null otherwise
+     * @return random ClientConnection if available, null otherwise
      */
-    Connection getRandomConnection();
+    ClientConnection getRandomConnection();
 
 }

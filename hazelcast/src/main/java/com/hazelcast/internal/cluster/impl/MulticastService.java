@@ -26,7 +26,7 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.cluster.AddressChecker;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
-import com.hazelcast.internal.nio.NodeIOService;
+import com.hazelcast.internal.server.tcp.NodeIOService;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.internal.util.ByteArrayProcessor;

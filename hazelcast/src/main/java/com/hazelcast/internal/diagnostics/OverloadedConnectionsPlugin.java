@@ -19,16 +19,17 @@ package com.hazelcast.internal.diagnostics;
 import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.internal.networking.nio.NioChannel;
 import com.hazelcast.internal.networking.nio.NioOutboundPipeline;
-import com.hazelcast.internal.nio.AggregateEndpointManager;
-import com.hazelcast.internal.nio.NetworkingService;
 import com.hazelcast.internal.nio.Packet;
-import com.hazelcast.internal.nio.server.ServerConnection;
-import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.server.Server;
+import com.hazelcast.internal.server.ServerConnection;
+import com.hazelcast.internal.server.AggregateServerConnectionManager;
+import com.hazelcast.internal.server.tcp.TcpServerConnection;
+import com.hazelcast.internal.util.ItemCounter;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.util.ItemCounter;
 
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -119,22 +120,22 @@ public class OverloadedConnectionsPlugin extends DiagnosticsPlugin {
         Collection<ServerConnection> connections = getTcpIpConnections();
         for (ServerConnection connection : connections) {
             clear();
-            scan(writer, connection, false);
+            scan(writer, (TcpServerConnection) connection, false);
 
             clear();
-            scan(writer, connection, true);
+            scan(writer, (TcpServerConnection) connection, true);
         }
 
         writer.endSection();
     }
 
     private Collection<ServerConnection> getTcpIpConnections() {
-        NetworkingService networkingService = nodeEngine.getNode().getNetworkingService();
-        AggregateEndpointManager endpointManager = networkingService.getAggregateEndpointManager();
+        Server server = nodeEngine.getNode().getServer();
+        AggregateServerConnectionManager endpointManager = server.getAggregateConnectionManager();
         return endpointManager.getActiveConnections();
     }
 
-    private void scan(DiagnosticsLogWriter writer, ServerConnection connection, boolean priority) {
+    private void scan(DiagnosticsLogWriter writer, TcpServerConnection connection, boolean priority) {
         Queue<OutboundFrame> q = getOutboundQueue(connection, priority);
 
         int sampleCount = sample(q);
@@ -145,7 +146,7 @@ public class OverloadedConnectionsPlugin extends DiagnosticsPlugin {
         render(writer, connection, priority, sampleCount);
     }
 
-    private Queue<OutboundFrame> getOutboundQueue(ServerConnection connection, boolean priority) {
+    private Queue<OutboundFrame> getOutboundQueue(TcpServerConnection connection, boolean priority) {
         if (connection.getChannel() instanceof NioChannel) {
             NioChannel nioChannel = (NioChannel) connection.getChannel();
             NioOutboundPipeline outboundPipeline = nioChannel.outboundPipeline();
@@ -155,7 +156,7 @@ public class OverloadedConnectionsPlugin extends DiagnosticsPlugin {
         }
     }
 
-    private void render(DiagnosticsLogWriter writer, ServerConnection connection, boolean priority, int sampleCount) {
+    private void render(DiagnosticsLogWriter writer, TcpServerConnection connection, boolean priority, int sampleCount) {
         writer.startSection(connection.toString());
 
         writer.writeKeyValueEntry(priority ? "urgentPacketCount" : "packetCount", packets.size());

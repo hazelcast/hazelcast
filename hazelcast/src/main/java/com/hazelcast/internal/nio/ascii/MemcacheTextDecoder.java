@@ -23,7 +23,7 @@ import com.hazelcast.internal.ascii.memcache.IncrementCommandParser;
 import com.hazelcast.internal.ascii.memcache.SetCommandParser;
 import com.hazelcast.internal.ascii.memcache.SimpleCommandParser;
 import com.hazelcast.internal.ascii.memcache.TouchCommandParser;
-import com.hazelcast.internal.nio.server.ServerConnection;
+import com.hazelcast.internal.server.ServerConnection;
 
 import java.util.HashMap;
 import java.util.Map;

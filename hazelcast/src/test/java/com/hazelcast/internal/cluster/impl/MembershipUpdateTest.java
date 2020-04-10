@@ -29,7 +29,7 @@ import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.operations.MembersUpdateOp;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListener;
-import com.hazelcast.internal.nio.EndpointManager;
+import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.services.PostJoinAwareService;
 import com.hazelcast.internal.services.PreJoinAwareService;
 import com.hazelcast.nio.ObjectDataInput;
@@ -777,10 +777,10 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
 
         assertClusterSizeEventually(2, hz1, hz3);
 
-        assertNull(getEndpointManager(hz1).getConnection(target));
+        assertNull(getEndpointManager(hz1).get(target));
 
-        EndpointManager cm3 = getEndpointManager(hz3);
-        assertTrueEventually(() -> assertNull(cm3.getConnection(target)));
+        ServerConnectionManager cm3 = getEndpointManager(hz3);
+        assertTrueEventually(() -> assertNull(cm3.get(target)));
     }
 
     @Test
@@ -962,7 +962,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
 
         @Override
         public void connectionRemoved(Connection connection) {
-            if (endpoint.equals(connection.getEndPoint())) {
+            if (endpoint.equals(connection.getRemoteAddress())) {
                 latch.countDown();
             }
         }

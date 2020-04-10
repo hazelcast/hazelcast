@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.networking.nio;
 
-import com.hazelcast.internal.nio.server.ServerConnection_AbstractBasicTest;
+import com.hazelcast.internal.server.tcp.TcpServerConnection_AbstractBasicTest;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -25,7 +25,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class SelectNow_TcpIpConnection_BasicTest extends ServerConnection_AbstractBasicTest {
+public class SelectNow_TcpIpConnection_BasicTest extends TcpServerConnection_AbstractBasicTest {
 
     @Before
     public void setup() throws Exception {

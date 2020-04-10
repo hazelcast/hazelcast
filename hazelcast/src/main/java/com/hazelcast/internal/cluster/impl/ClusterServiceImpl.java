@@ -132,7 +132,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         clusterJoinManager = new ClusterJoinManager(node, this, lock);
         clusterHeartbeatManager = new ClusterHeartbeatManager(node, this, lock);
 
-        node.networkingService.getEndpointManager(MEMBER).addConnectionListener(this);
+        node.server.getConnectionManager(MEMBER).addConnectionListener(this);
         ExecutionService executionService = nodeEngine.getExecutionService();
         executionService.register(CLUSTER_EXECUTOR_NAME, 2, Integer.MAX_VALUE, ExecutorType.CACHED);
         executionService.register(SPLIT_BRAIN_HANDLER_EXECUTOR_NAME, 2, Integer.MAX_VALUE, ExecutorType.CACHED);
@@ -193,7 +193,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
                 return;
             }
 
-            Connection conn = node.getEndpointManager(MEMBER).getConnection(address);
+            Connection conn = node.getConnectionManager(MEMBER).get(address);
             if (conn != null && conn.isAlive()) {
                 if (logger.isFineEnabled()) {
                     logger.fine("Cannot suspect " + member + ", since there's a live connection -> " + conn);
@@ -498,11 +498,11 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     @Override
     public void connectionRemoved(Connection connection) {
         if (logger.isFineEnabled()) {
-            logger.fine("Removed connection to " + connection.getEndPoint());
+            logger.fine("Removed connection to " + connection.getRemoteAddress());
         }
         if (!isJoined()) {
             Address masterAddress = getMasterAddress();
-            if (masterAddress != null && masterAddress.equals(connection.getEndPoint())) {
+            if (masterAddress != null && masterAddress.equals(connection.getRemoteAddress())) {
                 setMasterAddressToJoin(null);
             }
         }

@@ -22,6 +22,7 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.PasswordCredentials;
 import com.hazelcast.security.SecurityContext;
@@ -175,7 +176,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
     }
 
     private ClientMessage prepareAuthenticatedClientMessage() {
-        Connection connection = endpoint.getConnection();
+        ServerConnection connection = endpoint.getConnection();
 
         endpoint.authenticated(clientUuid, credentials, clientVersion, clientMessage.getCorrelationId(),
                 clientName, labels);

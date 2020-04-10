@@ -17,16 +17,16 @@
 package com.hazelcast.internal.management.dto;
 
 import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.internal.nio.AggregateEndpointManager;
-import com.hazelcast.internal.nio.EndpointManager;
-import com.hazelcast.internal.nio.NetworkingService;
+import com.hazelcast.internal.server.AggregateServerConnectionManager;
+import com.hazelcast.internal.server.ServerConnectionManager;
+import com.hazelcast.internal.server.Server;
 import com.hazelcast.json.internal.JsonSerializable;
 
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 import static com.hazelcast.internal.util.JsonUtil.getInt;
 
 /**
- * A Serializable DTO for {@link NetworkingService}.
+ * A Serializable DTO for {@link Server}.
  */
 public class ConnectionManagerDTO implements JsonSerializable {
 
@@ -37,9 +37,9 @@ public class ConnectionManagerDTO implements JsonSerializable {
     public ConnectionManagerDTO() {
     }
 
-    public ConnectionManagerDTO(NetworkingService ns) {
-        AggregateEndpointManager aggregate = ns.getAggregateEndpointManager();
-        EndpointManager cem = ns.getEndpointManager(CLIENT);
+    public ConnectionManagerDTO(Server server) {
+        AggregateServerConnectionManager aggregate = server.getAggregateConnectionManager();
+        ServerConnectionManager cem = server.getConnectionManager(CLIENT);
         this.clientConnectionCount = cem != null ? cem.getActiveConnections().size() : -1;
         this.activeConnectionCount = aggregate.getActiveConnections().size();
         this.connectionCount = aggregate.getConnections().size();
