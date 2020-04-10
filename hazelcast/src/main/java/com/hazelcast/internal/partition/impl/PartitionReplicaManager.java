@@ -419,8 +419,8 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
 
         if (logger.isWarningEnabled() && acquiredPermits < permitsToRelease) {
             logger.warning(format("Found more replica sync permits than configured max number!"
-                            + " (acquired: %d, available: %d, max: %d)",
-                    acquiredPermits, availablePermits, maxParallelReplications));
+                            + " (permitsToRelease: %d, acquired: %d, available: %d, max: %d)",
+                    permitsToRelease, acquiredPermits, availablePermits, maxParallelReplications));
         }
 
         int permits = Math.min(acquiredPermits, permitsToRelease);
