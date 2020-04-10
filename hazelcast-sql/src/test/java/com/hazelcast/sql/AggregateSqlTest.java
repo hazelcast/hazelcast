@@ -93,7 +93,7 @@ public class AggregateSqlTest extends SqlTestSupport {
         assertEquals(collector.getMax(), row.getObject(4));
     }
 
-    @Test    public void testSimpleAggregateWithGroupByCollocated() {
+    @Test public void testSimpleAggregateWithGroupByCollocated() {
         Map<PersonKey, Person> personMap = member.getMap("person");
 
         Map<Long, PersonSalaryCollector> collectors = new HashMap<>();

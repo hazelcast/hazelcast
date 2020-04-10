@@ -37,7 +37,7 @@ public interface FlowControl {
      *
      * @param queryId ID of the owning query.
      * @param edgeId Edge ID.
-     * @param localMemberId Local member ID.
+     * @param localMemberId Local member ID that is presumed to be valid for the duration of query.
      * @param operationHandler Operation handler that will be used for operation.
      */
     void setup(QueryId queryId, int edgeId, UUID localMemberId, QueryOperationHandler operationHandler);

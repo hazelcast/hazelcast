@@ -83,7 +83,6 @@ public final class PacketDispatcher implements Consumer<Packet> {
                 case JET:
                     jetPacketConsumer.accept(packet);
                     break;
-
                 case SQL:
                     sqlPacketConsumer.accept(packet);
                     break;

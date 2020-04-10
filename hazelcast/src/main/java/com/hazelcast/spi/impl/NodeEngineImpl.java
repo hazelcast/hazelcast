@@ -160,7 +160,6 @@ public class NodeEngineImpl implements NodeEngine {
             this.splitBrainProtectionService = new SplitBrainProtectionServiceImpl(this);
             this.diagnostics = newDiagnostics();
             this.splitBrainMergePolicyProvider = new SplitBrainMergePolicyProvider(this);
-
             serviceManager.registerService(OperationServiceImpl.SERVICE_NAME, operationService);
             serviceManager.registerService(OperationParker.SERVICE_NAME, operationParker);
             serviceManager.registerService(UserCodeDeploymentService.SERVICE_NAME, userCodeDeploymentService);
@@ -486,9 +485,9 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     public void reset() {
+        sqlService.reset();
         operationParker.reset();
         operationService.reset();
-        sqlService.reset();
     }
 
     @SuppressWarnings("checkstyle:npathcomplexity")

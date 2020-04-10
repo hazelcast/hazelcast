@@ -34,6 +34,7 @@ import static com.hazelcast.sql.impl.operation.QueryExecuteOperationFragmentMapp
  * Factory to create query execute operations.
  */
 public class QueryExecuteOperationFactory {
+
     private final Plan plan;
     private final List<Object> args;
     private final Map<Integer, Long> edgeInitialMemoryMap;

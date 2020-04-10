@@ -40,13 +40,19 @@ import java.util.function.Consumer;
  * Base SQL service implementation which bridges optimizer implementation, public and private APIs.
  */
 public class SqlServiceProxy implements SqlService, Consumer<Packet> {
+    /** Outbox batch size in bytes. */
+    private static final int OUTBOX_BATCH_SIZE = 512 * 1024;
+
+    /** Default state check frequency. */
+    private static final long STATE_CHECK_FREQUENCY = 10_000L;
 
     private static final String OPTIMIZER_CLASS_PROPERTY_NAME = "hazelcast.sql.optimizerClass";
     private static final String OPTIMIZER_CLASS_DEFAULT = "com.hazelcast.sql.impl.calcite.CalciteSqlOptimizer";
 
-    private final NodeServiceProvider nodeServiceProvider;
     private final SqlOptimizer optimizer;
     private final boolean liteMember;
+
+    private final NodeServiceProviderImpl nodeServiceProvider;
 
     private volatile SqlInternalService internalService;
 
@@ -76,6 +82,8 @@ public class SqlServiceProxy implements SqlService, Consumer<Packet> {
             serializationService,
             operationThreadCount,
             fragmentThreadCount,
+            OUTBOX_BATCH_SIZE,
+            STATE_CHECK_FREQUENCY,
             maxMemory
         );
 

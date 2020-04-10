@@ -31,8 +31,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.sql.impl.SqlInternalService.STATE_CHECK_FREQUENCY;
-
 public final class QueryState implements QueryStateCallback {
     /** Query ID. */
     private final QueryId queryId;
@@ -154,6 +152,10 @@ public final class QueryState implements QueryStateCallback {
         return localMemberId;
     }
 
+    public long getStartTime() {
+        return startTime;
+    }
+
     public boolean isInitiator() {
         return initiatorState != null;
     }
@@ -186,33 +188,23 @@ public final class QueryState implements QueryStateCallback {
             return;
         }
 
-        // Wrap into common SQL exception if needed.
-        if (!(error instanceof QueryException)) {
-            error = QueryException.error(SqlErrorCode.GENERIC, error.getMessage(), error);
-        }
-
-        QueryException error0 = (QueryException) error;
-
-        // Calculate the originating member.
-        UUID originatingMemberId = error0.getOriginatingMemberId();
-
-        if (originatingMemberId == null) {
-            originatingMemberId = localMemberId;
-        }
+        QueryException error0 = prepareCancelError(error);
 
         // Determine members which should be notified.
         Collection<UUID> memberIds;
 
         if (isInitiator()) {
             // Cancel is performed on an initiator. Broadcast to all participants.
-            memberIds = getParticipantsWithoutInitiator();
+            memberIds = new HashSet<>(getParticipants());
+            memberIds.remove(localMemberId);
         } else {
-            // Cancel is performed on a participant.
-            if (error0.getOriginatingMemberId() == null) {
-                // The cancel was just triggered. Propagate to the initiator.
+            boolean isLocal = error0.getOriginatingMemberId().equals(localMemberId);
+
+            if (isLocal) {
+                // The cancel has been triggered locally. Notify initiator.
                 memberIds = Collections.singletonList(queryId.getMemberId());
             } else {
-                // The cancel was propagated from coordinator. Do not notify again.
+                // The cancel has been triggered remotely. No need to propagate it.
                 memberIds = Collections.emptyList();
             }
         }
@@ -224,7 +216,7 @@ public final class QueryState implements QueryStateCallback {
             queryId,
             error0.getCode(),
             error0.getMessage(),
-            originatingMemberId,
+            error0.getOriginatingMemberId(),
             memberIds
         );
 
@@ -236,40 +228,60 @@ public final class QueryState implements QueryStateCallback {
         }
     }
 
+    private QueryException prepareCancelError(Exception error) {
+        if (error instanceof QueryException) {
+            QueryException error0 = (QueryException) error;
+
+            if (error0.getOriginatingMemberId() == null) {
+                error0 = QueryException.error(error0.getCode(), error0.getMessage(), error0.getCause(), localMemberId);
+            }
+
+            return error0;
+        } else {
+            return QueryException.error(SqlErrorCode.GENERIC, error.getMessage(), error, localMemberId);
+        }
+    }
+
+    /**
+     * Cancel the query if some of its participants are down.
+     *
+     * @param memberIds Member IDs.
+     * @return {@code true} if the query cancel was initiated.
+     */
     public boolean tryCancelOnMemberLeave(Collection<UUID> memberIds) {
-        Set<UUID> missingMemberIds;
+        Set<UUID> missingMemberIds = null;
 
         if (isInitiator()) {
-            // Initiator checks the liveness of all query participants.
-            missingMemberIds = getParticipantsWithoutInitiator();
-
-            missingMemberIds.removeAll(memberIds);
+            // Initiator checks all participants.
+            if (!memberIds.containsAll(getParticipants())) {
+                missingMemberIds = new HashSet<>(getParticipants());
+                missingMemberIds.removeAll(memberIds);
+            }
         } else {
-            // Participant checks only the liveness of the initiator.
-             UUID initiatorMemberId = queryId.getMemberId();
+            // Participant checks only initiator. If it is down, we will fail the query locally. If it is up, then it will
+            // notice failure of other participants.
+            UUID initiatorMemberId = queryId.getMemberId();
 
-             if (memberIds.contains(initiatorMemberId)) {
-                 missingMemberIds = Collections.emptySet();
-             } else {
-                 missingMemberIds = memberIds.contains(initiatorMemberId)
-                                        ? Collections.emptySet() : Collections.singleton(initiatorMemberId);
-             }
+            if (!memberIds.contains(initiatorMemberId)) {
+                missingMemberIds = Collections.singleton(initiatorMemberId);
+            }
         }
 
-        // Cancel the query if some members are missing.
-        if (missingMemberIds.isEmpty()) {
+        if (missingMemberIds == null) {
             return false;
         }
 
-        QueryException error = QueryException.memberLeave(missingMemberIds);
+        assert !missingMemberIds.isEmpty();
 
-        cancel(error);
+        cancel(QueryException.memberLeave(missingMemberIds));
 
         return true;
     }
 
     /**
      * Attempts to cancel the query if timeout has reached.
+     *
+     * @return {@code true} if the query cancel was initiated.
      */
     public boolean tryCancelOnTimeout() {
         if (!isInitiator()) {
@@ -278,7 +290,7 @@ public final class QueryState implements QueryStateCallback {
 
         long timeout = initiatorState.getTimeout();
 
-        if (timeout > 0 && clockProvider.currentTimeMillis() > startTime + timeout) {
+        if (timeout > 0 && clockProvider.currentTimeMillis() - startTime > timeout) {
             cancel(QueryException.timeout(timeout));
 
             return true;
@@ -290,23 +302,25 @@ public final class QueryState implements QueryStateCallback {
     /**
      * Check if the query check is required for the given query.
      *
+     * @param checkFrequency Frequency of state checks in milliseconds.
      * @return {@code true} if query check should be initiated, {@code false} otherwise.
      */
-    public boolean requestQueryCheck() {
-        // No need to check the query that has initiator state.
+    public boolean requestQueryCheck(long checkFrequency) {
+        // No need to check the initiator because creation of its state happens-before sending of any messages,
+        // so it is never stale.
         if (isInitiator()) {
             return false;
         }
 
-        // Distributed query is initialized, no need to worry.
+        // If the state received an EXECUTE request, then no need to check it because EXECUTE happens-before any CANCEL
+        // request.
         if (distributedState.isStarted()) {
             return false;
         }
 
-        // Don't bother if the query is relatively recent.
         long currentTime = clockProvider.currentTimeMillis();
 
-        if (currentTime - checkTime < STATE_CHECK_FREQUENCY * 2) {
+        if (currentTime - checkTime < checkFrequency) {
             return false;
         }
 
@@ -324,18 +338,7 @@ public final class QueryState implements QueryStateCallback {
         }
     }
 
-    /**
-     * Get query participants. Should be invoked on initiator node only.
-     *
-     * @return Query participants.
-     */
-    public Set<UUID> getParticipantsWithoutInitiator() {
-        assert isInitiator();
-
-        Set<UUID> res = new HashSet<>(initiatorState.getPlan().getMemberIds());
-
-        res.remove(queryId.getMemberId());
-
-        return res;
+    private Collection<UUID> getParticipants() {
+        return initiatorState.getPlan().getMemberIds();
     }
 }

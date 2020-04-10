@@ -27,8 +27,8 @@ import java.util.UUID;
  */
 public final class QueryException extends HazelcastException {
 
-    private int code;
-    private UUID originatingMemberId;
+    private final int code;
+    private final UUID originatingMemberId;
 
     private QueryException(int code, String message, Throwable cause, UUID originatingMemberId) {
         super(message, cause);
@@ -37,59 +37,28 @@ public final class QueryException extends HazelcastException {
         this.originatingMemberId = originatingMemberId;
     }
 
-    /**
-     * Constructs a generic error.
-     *
-     * @param message Error message.
-     * @return Exception object.
-     */
     public static QueryException error(String message) {
         return error(message, null);
     }
 
-    /**
-     * Constructs a generic error with the cause.
-     *
-     * @param message Error message.
-     * @return Exception object.
-     */
     public static QueryException error(String message, Throwable cause) {
-        return error(SqlErrorCode.GENERIC, message, cause);
+        return error(SqlErrorCode.GENERIC, message, cause, null);
     }
 
-    /**
-     * Constructs an error with specific code.
-     *
-     * @param code Error code.
-     * @param message Error message.
-     * @return Exception object.
-     */
     public static QueryException error(int code, String message) {
-        return error(code, message, null);
+        return new QueryException(code, message, null, null);
     }
 
-    /**
-     * Constructs an error with specific code and cause.
-     *
-     * @param code Code.
-     * @param message Message.
-     * @param cause Cause.
-     * @return Exception object.
-     */
     public static QueryException error(int code, String message, Throwable cause) {
         return new QueryException(code, message, cause, null);
     }
 
-    /**
-     * Constructs an error which occurred on a remote member.
-     *
-     * @param code Code.
-     * @param message Message.
-     * @param originatingMemberId Originating member ID.
-     * @return Exception object.
-     */
-    public static QueryException remoteError(int code, String message, UUID originatingMemberId) {
+    public static QueryException error(int code, String message, UUID originatingMemberId) {
         return new QueryException(code, message, null, originatingMemberId);
+    }
+
+    public static QueryException error(int code, String message, Throwable cause, UUID originatingMemberId) {
+        return new QueryException(code, message, cause, originatingMemberId);
     }
 
     public static QueryException memberConnection(UUID memberId) {
@@ -123,6 +92,12 @@ public final class QueryException extends HazelcastException {
         return code;
     }
 
+    /**
+     * Get originator of the exception.
+     *
+     * @return ID of the member where the exception occurred or {@code null} if the exception was raised on a local member
+     *         and is not propagated yet.
+     */
     public UUID getOriginatingMemberId() {
         return originatingMemberId;
     }

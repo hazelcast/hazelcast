@@ -503,6 +503,13 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
         return exec;
     }
 
+    /**
+     * For testing only.
+     */
+    public void setExec(Exec exec) {
+        this.exec = exec;
+    }
+
     public Map<Integer, InboundHandler> getInboxes() {
         return inboxes;
     }

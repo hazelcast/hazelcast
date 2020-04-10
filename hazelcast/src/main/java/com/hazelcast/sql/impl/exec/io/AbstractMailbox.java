@@ -33,6 +33,7 @@ public abstract class AbstractMailbox {
     /** Width of a single row in bytes. */
     protected final int rowWidth;
 
+    /** Local member that is fixed throughout query execution. */
     protected UUID localMemberId;
 
     public AbstractMailbox(QueryId queryId, int edgeId, int rowWidth, UUID localMemberId) {
