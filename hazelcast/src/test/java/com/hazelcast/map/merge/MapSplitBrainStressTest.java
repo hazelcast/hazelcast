@@ -53,7 +53,8 @@ import static org.junit.Assert.assertEquals;
 public class MapSplitBrainStressTest extends SplitBrainTestSupport {
 
     @ClassRule
-    public static ChangeLoggingRule changeLoggingRule = new ChangeLoggingRule("log4j2-trace.xml");
+    public static ChangeLoggingRule changeLoggingRule
+            = new ChangeLoggingRule("log4j2-trace-map-split-brain-stress.xml");
 
     static final int ITERATION_COUNT = 50;
     static final int MAP_COUNT = 100;

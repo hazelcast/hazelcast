@@ -409,24 +409,32 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
     /**
      * Releases the previously acquired permits.
      *
-     * @param permits number of permits
+     * @param permitsToRelease number of permits
      */
-    public void releaseReplicaSyncPermits(int permits) {
-        assert permits > 0 : "Invalid permits: " + permits;
+    public void releaseReplicaSyncPermits(int permitsToRelease) {
+        assert permitsToRelease > 0 : "Invalid permits: " + permitsToRelease;
+
+        int availablePermits = availableReplicaSyncPermits();
+        int acquiredPermits = maxParallelReplications - availablePermits;
+
+        if (logger.isWarningEnabled() && acquiredPermits < permitsToRelease) {
+            logger.warning(format("Found more replica sync permits than configured max number!"
+                            + " (acquired: %d, available: %d, max: %d)",
+                    acquiredPermits, availablePermits, maxParallelReplications));
+        }
+
+        int permits = Math.min(acquiredPermits, permitsToRelease);
+        if (permits <= 0) {
+            return;
+        }
 
         replicaSyncSemaphore.release(permits);
 
         if (logger.isFinestEnabled()) {
-            int availableReplicaSyncPermits = availableReplicaSyncPermits();
-
-            logger.finest(format("Released %d replica sync permits. Available permits: %d",
-                    permits, availableReplicaSyncPermits));
-
-            if (availableReplicaSyncPermits <= maxParallelReplications) {
-                logger.finest(format("Replica sync permits exceeded the configured number! (available: %d, max: %d)",
-                        availableReplicaSyncPermits, maxParallelReplications));
-
-            }
+            int currentAvailable = availableReplicaSyncPermits();
+            logger.finest(format("Released %d replica sync permits. (acquired: %d, available: %d, max: %d)",
+                    permits, maxParallelReplications - currentAvailable,
+                    currentAvailable, maxParallelReplications));
         }
     }
 
@@ -465,12 +473,14 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
         // permit count can exceed allowed parallelization count.
         replicaSyncSemaphore.drainPermits();
         replicaSyncSemaphore.release(maxParallelReplications);
+
         if (logger.isFinestEnabled()) {
             logger.finest(format("Reset replica sync permits to %d", maxParallelReplications));
         }
     }
 
-    void scheduleReplicaVersionSync(ExecutionService executionService) {
+    void scheduleReplicaVersionSync(ExecutionService
+                                            executionService) {
         long definedBackupSyncCheckInterval = node.getProperties().getSeconds(ClusterProperty.PARTITION_BACKUP_SYNC_INTERVAL);
         long backupSyncCheckInterval = definedBackupSyncCheckInterval > 0 ? definedBackupSyncCheckInterval : 1;
 
@@ -479,11 +489,13 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
     }
 
     @Override
-    public Collection<ServiceNamespace> getNamespaces(int partitionId) {
+    public Collection<ServiceNamespace> getNamespaces(
+            int partitionId) {
         return replicaVersions[partitionId].getNamespaces();
     }
 
-    public void retainNamespaces(int partitionId, Collection<ServiceNamespace> namespaces) {
+    public void retainNamespaces(int partitionId, Collection<
+            ServiceNamespace> namespaces) {
         PartitionReplicaVersions versions = replicaVersions[partitionId];
         versions.retainNamespaces(namespaces);
     }
