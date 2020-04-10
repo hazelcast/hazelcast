@@ -16,8 +16,6 @@
 
 package com.hazelcast.sql.impl.expression;
 
-import java.util.List;
-
 /**
  * Defines expression evaluation context contract for SQL {@link Expression
  * expressions}.
@@ -27,8 +25,9 @@ import java.util.List;
 public interface ExpressionEvalContext {
 
     /**
-     * @return the query parameter arguments set in this context.
+     * @param index Argument index.
+     * @return The query argument.
      */
-    List<Object> getArguments();
+    Object getArgument(int index);
 
 }

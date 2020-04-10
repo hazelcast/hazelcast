@@ -47,8 +47,8 @@ public class QueryFragmentContextTest {
 
         QueryFragmentContext context = new QueryFragmentContext(args, fragmentScheduleCallback, stateCallback);
 
-        assertSame(args.get(0), context.getArguments().get(0));
-        assertSame(args.get(1), context.getArguments().get(1));
+        assertSame(args.get(0), context.getArgument(0));
+        assertSame(args.get(1), context.getArgument(1));
 
         context.schedule();
         assertTrue(fragmentScheduleCallback.getCount() > 0);

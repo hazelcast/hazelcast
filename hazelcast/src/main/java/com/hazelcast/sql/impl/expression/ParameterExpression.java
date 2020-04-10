@@ -46,7 +46,7 @@ public class ParameterExpression<T> implements Expression<T> {
     @SuppressWarnings("unchecked")
     @Override
     public T eval(Row row, ExpressionEvalContext context) {
-        return (T) context.getArguments().get(index);
+        return (T) context.getArgument(index);
     }
 
     @Override

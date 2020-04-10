@@ -43,8 +43,10 @@ public final class QueryFragmentContext implements ExpressionEvalContext {
     }
 
     @Override
-    public List<Object> getArguments() {
-        return arguments;
+    public Object getArgument(int index) {
+        assert index >= 0 && index < arguments.size();
+
+        return arguments.get(index);
     }
 
     public void schedule() {
