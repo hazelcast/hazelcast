@@ -330,7 +330,6 @@ public class NodeEngineImpl implements NodeEngine {
         return splitBrainProtectionService;
     }
 
-    @Override
     public SqlServiceImpl getSqlService() {
         return sqlService;
     }
