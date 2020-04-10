@@ -38,7 +38,9 @@ import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.EventListener;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -50,11 +52,13 @@ import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.Preconditions.checkInstanceOf;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.internal.util.Preconditions.checkTrueUnsupportedOperation;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
+import static java.util.Collections.emptyMap;
 
 @SuppressWarnings("checkstyle:methodcount")
 public class MultiMapProxyImpl<K, V>
@@ -132,6 +136,36 @@ public class MultiMapProxyImpl<K, V>
 
         putAllInternal(dataMap, future);
         return future;
+    }
+
+    @Override
+    public Map<K, Collection<V>> getAll(@Nullable Set<K> keys) {
+//        if (CollectionUtil.isEmpty(keys)) {
+//            // Wrap emptyMap() into unmodifiableMap to make sure put/putAll methods throw UnsupportedOperationException
+//            return Collections.unmodifiableMap(emptyMap());
+//        }
+//
+//        int keysSize = keys.size();
+//        List<Data> dataKeys = new LinkedList<>();
+//        List<Object> resultingKeyValuePairs = new ArrayList<>(keysSize * 2);
+//        //getAllInternal(keys, dataKeys, resultingKeyValuePairs);
+//
+//        Map<K, V> result = createHashMap(keysSize);
+//        for (int i = 0; i < resultingKeyValuePairs.size(); ) {
+//            K key = toObject(resultingKeyValuePairs.get(i++));
+//            V value = toObject(resultingKeyValuePairs.get(i++));
+//            result.put(key, value);
+//        }
+//        return Collections.unmodifiableMap(result);
+
+        //simplistic
+        Map<K, Collection<V>> mmap = new HashMap<>();
+        for(K key:keys){
+            Collection<V> coll = get(key);
+            mmap.put(key, coll);
+        }
+        return mmap;
+
     }
 
     @Override

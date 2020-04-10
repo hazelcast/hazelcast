@@ -130,6 +130,10 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         return future;
     }
 
+    @Override
+    public Map<K, Collection<V>> getAll(@Nullable Set<K> keys) {
+        return null;
+    }
 
     @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity", "checkstyle:methodlength"})
     private void putAllInternal(@Nonnull Map<Data, Collection<Data>> map,

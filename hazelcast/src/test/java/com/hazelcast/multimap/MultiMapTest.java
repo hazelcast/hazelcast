@@ -250,6 +250,21 @@ public class MultiMapTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testMultiMapGetAll() {
+        HazelcastInstance instance = createHazelcastInstance();
+        MultiMap<String, Integer> multiMap = instance.getMultiMap("testMultiMapGetAll");
+        Map<String, Collection<? extends Integer>> expectedMultiMap1 = new HashMap<>();
+        expectedMultiMap1.put("A", new ArrayList<>(Arrays.asList(1, 1, 1, 1, 2)));
+        expectedMultiMap1.put("B", new ArrayList<>(Arrays.asList(6, 6, 6, 9)));
+        expectedMultiMap1.put("C", new ArrayList<>(Arrays.asList(10, 10, 10, 10, 10, 15)));
+        multiMap.putAllAsync(expectedMultiMap1);
+        sleepMillis(10000);
+        Set<String> keys = new HashSet<>(Arrays.asList("A", "C"));
+        Map<String, Collection<Integer>> multiMap2 = multiMap.getAll(keys);
+        assertNotNull(multiMap2);
+    }
+
+    @Test
     public void testMultiMapClear() {
         HazelcastInstance instance = createHazelcastInstance();
         MultiMap<String, String> multiMap = instance.getMultiMap("testMultiMapClear");
