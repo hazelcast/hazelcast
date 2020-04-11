@@ -21,6 +21,8 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.core.EntryView;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.Offloadable;
 import com.hazelcast.core.ReadOnly;
 import com.hazelcast.map.listener.MapListener;
@@ -2979,7 +2981,26 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      */
     V computeIfAbsent(@Nonnull K key, @Nonnull Function<? super K, ? extends V> mappingFunction);
 
-    @Override
+    /**
+     * {@inheritDoc}
+     *
+     * <p> </p>
+     * <p>
+     *     If the supplied {@code action} is a lambda, anonymous class or an inner class,
+     *     it would be executed locally. Same would happen if it is not serializable.
+     *     This may result in multiple round-trips between hazelcast nodes.
+     *</p>
+     * <p>
+     *     Otherwise (i.e. if it is a top-level class or a member class, and it is serializable), the function <i>may be</i> sent
+     *     to the servers which own the partitions/keys. This results in a much less number of remote calls.
+     *     Note that in this case, side effects of the {@code action} may not be visible to the local JVM
+     *     If users intend to install the changed value in the map entry, the {@code action} must do so itself (e.g. by
+     *     implementing {@link HazelcastInstanceAware}, getting a reference to the map, and then performing required operation against the map)
+     * </p>
+     * <p>
+     *     When this method is invoked using a hazelcast-client instance, the {@code mappingFunction} is always executed locally
+     * </p>
+     */
     default void forEach(@Nonnull BiConsumer<? super K, ? super V> action) {
         ConcurrentMap.super.forEach(action);
     }
