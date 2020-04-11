@@ -39,6 +39,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -2977,5 +2978,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * </p>
      */
     V computeIfAbsent(@Nonnull K key, @Nonnull Function<? super K, ? extends V> mappingFunction);
+
+    @Override
+    default void forEach(@Nonnull BiConsumer<? super K, ? super V> action) {
+        ConcurrentMap.super.forEach(action);
+    }
 
 }

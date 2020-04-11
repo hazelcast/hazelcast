@@ -47,6 +47,7 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import testsubjects.StaticSerializableBiConsumer;
 
 import java.io.Serializable;
 import java.lang.reflect.ParameterizedType;
@@ -1882,6 +1883,44 @@ public class BasicMapTest extends HazelcastTestSupport {
             entry.setValue(entry.getValue() + 1);
             return true;
         }
+    }
+
+    @Test
+    public void testForEachWithALambdaFunction() {
+        final IMap<String, Integer> sourceMap = getSourceMapFor_ForEach_Test();
+        final IMap<String, Integer> targetMap = getTargetMapFor_ForEach_Test();
+
+        sourceMap.forEach((k, v) -> {
+            targetMap.put(k, v);
+        });
+
+        assertEntriesEqual(sourceMap, targetMap);
+    }
+
+    @Test
+    public void testForEachWithStaticSerializableAction() {
+        final IMap<String, Integer> sourceMap = getSourceMapFor_ForEach_Test();
+        final IMap<String, Integer> targetMap = getTargetMapFor_ForEach_Test();
+
+        StaticSerializableBiConsumer action = new StaticSerializableBiConsumer("target_map");
+        sourceMap.forEach(action);
+
+        assertEntriesEqual(sourceMap, targetMap);
+    }
+
+    private IMap<String, Integer> getSourceMapFor_ForEach_Test() {
+        final IMap<String, Integer> sourceMap = getInstance().getMap("source_map");
+        sourceMap.put("k1", 1);
+        sourceMap.put("k2", 2);
+        return sourceMap;
+    }
+
+    private IMap<String, Integer> getTargetMapFor_ForEach_Test() {
+        return getInstance().getMap("target_map");
+    }
+
+    private void assertEntriesEqual(IMap<String, Integer> sourceMap, IMap<String, Integer> targetMap) {
+        sourceMap.entrySet().forEach(e -> assertEquals(e.getValue(), targetMap.get(e.getKey())));
     }
 
 }
