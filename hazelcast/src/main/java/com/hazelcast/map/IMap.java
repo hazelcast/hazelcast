@@ -2998,7 +2998,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *     implementing {@link HazelcastInstanceAware}, getting a reference to the map, and then performing required operation against the map)
      * </p>
      * <p>
-     *     When this method is invoked using a hazelcast-client instance, the {@code mappingFunction} is always executed locally
+     *     When this method is invoked using a hazelcast-client instance, the {@code action} is always executed locally
      * </p>
      */
     default void forEach(@Nonnull BiConsumer<? super K, ? super V> action) {
