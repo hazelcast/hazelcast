@@ -25,13 +25,13 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
-import static com.hazelcast.nio.serialization.impl.DefaultPortableReaderTestStructure.PrimitivePortable.Init.FULL;
-import static com.hazelcast.nio.serialization.impl.DefaultPortableReaderTestStructure.PrimitivePortable.Init.NULL;
+import static com.hazelcast.nio.serialization.impl.PortableValueReaderTestStructure.PrimitivePortable.Init.FULL;
+import static com.hazelcast.nio.serialization.impl.PortableValueReaderTestStructure.PrimitivePortable.Init.NULL;
 import static java.util.Arrays.asList;
 
-public class DefaultPortableReaderTestStructure {
+public class PortableValueReaderTestStructure {
 
-    public enum Method {
+    public enum PrimitiveFields {
         Byte("byte_"),
         Boolean("boolean_"),
         Char("char_"),
@@ -50,55 +50,22 @@ public class DefaultPortableReaderTestStructure {
         LongArray("longs"),
         FloatArray("floats"),
         DoubleArray("doubles"),
-        UTFArray("strings"),
+        UTFArray("strings");
 
-        PortableArray("portables"),
-        Portable("portable"),
-
-        Generic("");
-
-        Method(String field) {
+        PrimitiveFields(String field) {
             this.field = field;
         }
 
         final String field;
 
-        static List<Method> getPrimitives(boolean withUTF) {
-            if (withUTF) {
-                return asList(Byte, Boolean, Char, Short, Int, Long, Float, Double, UTF);
-            } else {
-                return asList(Byte, Boolean, Char, Short, Int, Long, Float, Double);
-            }
+        static List<PrimitiveFields> getPrimitives() {
+            return asList(Byte, Boolean, Char, Short, Int, Long, Float, Double, UTF);
         }
 
-        static List<Method> getPrimitiveArrays() {
+        static List<PrimitiveFields> getPrimitiveArrays() {
             return asList(ByteArray, BooleanArray, CharArray, ShortArray, IntArray, LongArray, FloatArray, DoubleArray, UTFArray);
         }
 
-        static Method getArrayMethodFor(Method method) {
-            switch (method) {
-                case Byte:
-                    return ByteArray;
-                case Boolean:
-                    return BooleanArray;
-                case Char:
-                    return CharArray;
-                case Short:
-                    return ShortArray;
-                case Int:
-                    return IntArray;
-                case Long:
-                    return LongArray;
-                case Float:
-                    return FloatArray;
-                case Double:
-                    return DoubleArray;
-                case UTF:
-                    return UTFArray;
-                default:
-                    throw new RuntimeException("Unsupported method");
-            }
-        }
     }
 
     public static class PrimitivePortable implements Portable {
@@ -262,8 +229,8 @@ public class DefaultPortableReaderTestStructure {
             return "primitives{" + getSeed() + ", " + init + "}";
         }
 
-        Object getPrimitive(Method method) {
-            switch (method) {
+        Object getPrimitive(PrimitiveFields primitiveFields) {
+            switch (primitiveFields) {
                 case Byte:
                     return byte_;
                 case Boolean:
@@ -283,12 +250,12 @@ public class DefaultPortableReaderTestStructure {
                 case UTF:
                     return string_;
                 default:
-                    throw new RuntimeException("Unsupported method " + method);
+                    throw new RuntimeException("Unsupported method " + primitiveFields);
             }
         }
 
-        Object getPrimitiveArray(Method method) {
-            switch (method) {
+        Object getPrimitiveArray(PrimitiveFields primitiveFields) {
+            switch (primitiveFields) {
                 case Byte:
                     return bytes;
                 case Boolean:
@@ -327,7 +294,7 @@ public class DefaultPortableReaderTestStructure {
                 case UTFArray:
                     return strings;
                 default:
-                    throw new RuntimeException("Unsupported array method " + method);
+                    throw new RuntimeException("Unsupported array method " + primitiveFields);
             }
         }
     }

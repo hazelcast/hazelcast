@@ -123,12 +123,13 @@ final class PortableSerializer implements StreamSerializer<Portable> {
         return managedContext != null ? (Portable) managedContext.initialize(p) : p;
     }
 
-    DefaultPortableReader createReader(BufferObjectDataInput in) throws IOException {
+    InternalValueReader createValueReader(BufferObjectDataInput in) throws IOException {
         int factoryId = in.readInt();
         int classId = in.readInt();
         int version = in.readInt();
 
-        return createReader(in, factoryId, classId, version, version);
+        ClassDefinition cd = setupPositionAndDefinition(in, factoryId, classId, version);
+        return new InternalValueReader(this, in, cd);
     }
 
     DefaultPortableReader createMorphingReader(BufferObjectDataInput in) throws IOException {

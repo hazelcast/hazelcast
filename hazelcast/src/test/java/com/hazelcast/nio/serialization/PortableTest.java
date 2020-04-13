@@ -23,6 +23,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.PortableContext;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.impl.InternalValueReader;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -321,11 +322,11 @@ public class PortableTest {
         GrandParentPortableObject grandParent = new GrandParentPortableObject(timestamp3, parent);
 
         Data data = serializationService.toData(grandParent);
-        PortableReader reader = serializationService.createPortableReader(data);
+        InternalValueReader reader = serializationService.createPortableValueReader(data);
 
-        assertEquals(grandParent.timestamp, reader.readLong("timestamp"));
-        assertEquals(parent.timestamp, reader.readLong("child.timestamp"));
-        assertEquals(child.timestamp, reader.readLong("child.child.timestamp"));
+        assertEquals(grandParent.timestamp, reader.read("timestamp"));
+        assertEquals(parent.timestamp, reader.read("child.timestamp"));
+        assertEquals(child.timestamp, reader.read("child.child.timestamp"));
     }
 
     @Test

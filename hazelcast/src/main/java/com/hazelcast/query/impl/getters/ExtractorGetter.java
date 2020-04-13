@@ -16,8 +16,8 @@
 
 package com.hazelcast.query.impl.getters;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.query.extractor.ValueExtractor;
 import com.hazelcast.query.impl.DefaultValueCollector;
 
@@ -41,7 +41,7 @@ final class ExtractorGetter extends Getter {
         // This part will be improved in 3.7 to avoid extra allocation
         DefaultValueCollector collector = new DefaultValueCollector();
         if (target instanceof Data) {
-            extractionTarget = serializationService.createPortableReader((Data) target);
+            extractionTarget = serializationService.createPortableValueReader((Data) target);
         }
         extractor.extract(extractionTarget, arguments, collector);
         return collector.getResult();

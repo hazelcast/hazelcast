@@ -34,7 +34,6 @@ import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
-import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.partition.PartitioningStrategy;
 
 import java.io.Externalizable;
@@ -153,12 +152,12 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         return (B) data;
     }
 
-    public PortableReader createPortableReader(Data data) throws IOException {
+    public InternalValueReader createPortableValueReader(Data data) throws IOException {
         if (!data.isPortable()) {
             throw new IllegalArgumentException("Given data is not Portable! -> " + data.getType());
         }
         BufferObjectDataInput in = createObjectDataInput(data);
-        return portableSerializer.createReader(in);
+        return portableSerializer.createValueReader(in);
     }
 
     public PortableContext getPortableContext() {

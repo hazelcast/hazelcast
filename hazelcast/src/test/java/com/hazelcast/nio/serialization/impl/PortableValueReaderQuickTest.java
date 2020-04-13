@@ -17,17 +17,19 @@
 package com.hazelcast.nio.serialization.impl;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.map.IMap;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.map.EntryProcessor;
-import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.InternalValueReader;
+import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.query.impl.getters.MultiResult;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -36,17 +38,19 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
-import static com.hazelcast.nio.serialization.impl.DefaultPortableReaderQuickTest.WheelPortable.w;
+import static com.hazelcast.nio.serialization.impl.PortableValueReaderQuickTest.WheelPortable.w;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
+public class PortableValueReaderQuickTest extends HazelcastTestSupport {
 
     static final CarPortable NON_EMPTY_PORSCHE = new CarPortable("Porsche", new EnginePortable(300),
             w("front", true), w("rear", true));
@@ -56,234 +60,228 @@ public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
 
     @Test(expected = IllegalArgumentException.class)
     public void nullAttributeName() throws IOException {
-        reader(PORSCHE).readPortableArray(null);
+        reader(PORSCHE).read(null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void emptyAttributeName() throws IOException {
-        reader(PORSCHE).readPortableArray("");
+        reader(PORSCHE).read("");
     }
 
     @Test(expected = HazelcastSerializationException.class)
     public void wrongAttributeName_specialCharsNotTreatedSpecially() throws IOException {
-        reader(PORSCHE).readPortableArray("-;',;");
+        reader(PORSCHE).read("-;',;");
     }
 
     @Test(expected = HazelcastSerializationException.class)
     public void wrongAttributeName() throws IOException {
-        reader(PORSCHE).readPortableArray("wheelsss");
+        reader(PORSCHE).read("wheelsss");
     }
 
     @Test(expected = HazelcastSerializationException.class)
     public void wrongNestedAttributeName() throws IOException {
-        reader(PORSCHE).readPortableArray("wheels[0].seriall");
+        reader(PORSCHE).read("wheels[0].seriall");
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void wrongDotsExpression_middle() throws IOException {
-        reader(PORSCHE).readIntArray("wheels[0]..serial");
+        reader(PORSCHE).read("wheels[0]..serial");
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void wrongDotsExpression_end() throws IOException {
-        Portable a = reader(PORSCHE).readPortable("wheels[0].");
+        Portable a = (Portable) reader(PORSCHE).read("wheels[0].");
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void wrongDotsExpression_end_tooMany() throws IOException {
-        reader(PORSCHE).readPortable("wheels[0]...");
+        reader(PORSCHE).read("wheels[0]...");
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void wrongDotsExpression_beg() throws IOException {
-        reader(PORSCHE).readPortable(".wheels[0]");
+        reader(PORSCHE).read(".wheels[0]");
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void wrongDotsExpression_beg_tooMany() throws IOException {
-        reader(PORSCHE).readPortable("...wheels[0]");
+        reader(PORSCHE).read("...wheels[0]");
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void malformedQuantifier_leading() throws IOException {
-        reader(PORSCHE).readPortable("wheels[");
+        reader(PORSCHE).read("wheels[");
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void malformedQuantifier_middle() throws IOException {
-        reader(PORSCHE).readPortable("wheels[0");
+        reader(PORSCHE).read("wheels[0");
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void malformedQuantifier_trailing() throws IOException {
-        reader(PORSCHE).readPortable("wheels0]");
+        reader(PORSCHE).read("wheels0]");
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void malformedQuantifier_trailingNoNumber() throws IOException {
-        reader(PORSCHE).readPortable("wheels]");
+        reader(PORSCHE).read("wheels]");
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void malformedQuantifierNested_leading() throws IOException {
-        reader(PORSCHE).readPortable("wheels[0].chips[");
+        reader(PORSCHE).read("wheels[0].chips[");
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void malformedQuantifierNested_middle() throws IOException {
-        reader(PORSCHE).readPortable("wheels[0].chips[0");
+        reader(PORSCHE).read("wheels[0].chips[0");
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void malformedQuantifierNested_trailing() throws IOException {
-        reader(PORSCHE).readPortable("wheels[0].chips0]");
+        reader(PORSCHE).read("wheels[0].chips0]");
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void malformedQuantifierNested_trailingNoNumber() throws IOException {
-        reader(PORSCHE).readPortable("wheels[0].chips]");
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void wrongMethodType() throws IOException {
-        reader(PORSCHE).readPortable("wheels");
+        reader(PORSCHE).read("wheels[0].chips]");
     }
 
     @Test
     public void primitive() throws IOException {
         String expected = "Porsche";
-        assertEquals(expected, reader(PORSCHE).readUTF("name"));
+        assertEquals(expected, reader(PORSCHE).read("name"));
     }
 
     @Test
     public void nestedPrimitive() throws IOException {
         int expected = 300;
-        assertEquals(expected, reader(PORSCHE).readInt("engine.power"));
+        assertEquals(expected, reader(PORSCHE).read("engine.power"));
     }
 
     @Test
     public void portableAttribute() throws IOException {
         EnginePortable expected = PORSCHE.engine;
-        assertEquals(expected, reader(PORSCHE).readPortable("engine"));
+        assertEquals(expected, reader(PORSCHE).read("engine"));
     }
 
     @Test
     public void nestedPortableAttribute() throws IOException {
         ChipPortable expected = PORSCHE.engine.chip;
-        assertEquals(expected, reader(PORSCHE).readPortable("engine.chip"));
+        assertEquals(expected, reader(PORSCHE).read("engine.chip"));
     }
 
     @Test
     public void primitiveArrayAtTheEnd_wholeArrayFetched() throws IOException {
         String[] expected = {"911", "GT"};
-        assertArrayEquals(expected, reader(PORSCHE).readUTFArray("model"));
+        assertArrayEquals(expected, (Object[]) reader(PORSCHE).read("model"));
     }
 
     @Test
     public void primitiveArrayAtTheEnd_wholeArrayFetched_withAny() throws IOException {
         String[] expected = {"911", "GT"};
-        assertArrayEquals(expected, reader(PORSCHE).readUTFArray("model[any]"));
+        assertCollection(Arrays.asList(expected), ((MultiResult) reader(PORSCHE).read("model[any]")).getResults());
     }
 
     @Test
     public void primitiveArrayAtTheEnd_oneElementFetched() throws IOException {
         String expected = "911";
-        assertEquals(expected, reader(PORSCHE).readUTF("model[0]"));
+        assertEquals(expected, reader(PORSCHE).read("model[0]"));
     }
 
     @Test
     public void primitiveArrayAtTheEnd_lastElementFetched() throws IOException {
         String expected = "GT";
-        assertEquals(expected, reader(PORSCHE).readUTF("model[1]"));
+        assertEquals(expected, reader(PORSCHE).read("model[1]"));
     }
 
     @Test
     public void portableArray_wholeArrayFetched() throws IOException {
         Portable[] expected = PORSCHE.wheels;
-        assertArrayEquals(expected, reader(PORSCHE).readPortableArray("wheels"));
+        assertArrayEquals(expected, (Object[]) reader(PORSCHE).read("wheels"));
     }
 
     @Test
     public void portableArray_wholeArrayFetched_withAny() throws IOException {
         Portable[] expected = PORSCHE.wheels;
-        assertArrayEquals(expected, reader(PORSCHE).readPortableArray("wheels[any]"));
+        assertCollection(Arrays.asList(expected), ((MultiResult) reader(PORSCHE).read("wheels[any]")).getResults());
     }
 
     @Test
     public void portableArrayAtTheEnd_oneElementFetched() throws IOException {
         Portable expected = PORSCHE.wheels[0];
-        assertEquals(expected, reader(PORSCHE).readPortable("wheels[0]"));
+        assertEquals(expected, reader(PORSCHE).read("wheels[0]"));
     }
 
     @Test
     public void portableArrayAtTheEnd_lastElementFetched() throws IOException {
         Portable expected = PORSCHE.wheels[1];
-        assertEquals(expected, reader(PORSCHE).readPortable("wheels[1]"));
+        assertEquals(expected, reader(PORSCHE).read("wheels[1]"));
     }
 
     @Test
     public void portableArrayFirst_primitiveAtTheEnd() throws IOException {
         String expected = "rear";
-        assertEquals(expected, reader(PORSCHE).readUTF("wheels[1].name"));
+        assertEquals(expected, reader(PORSCHE).read("wheels[1].name"));
     }
 
     @Test
     public void portableArrayFirst_portableAtTheEnd() throws IOException {
         ChipPortable expected = ((WheelPortable) PORSCHE.wheels[1]).chip;
-        assertEquals(expected, reader(PORSCHE).readPortable("wheels[1].chip"));
+        assertEquals(expected, reader(PORSCHE).read("wheels[1].chip"));
     }
 
     @Test
     public void portableArrayFirst_portableArrayAtTheEnd_oneElementFetched() throws IOException {
         Portable expected = ((WheelPortable) PORSCHE.wheels[0]).chips[1];
-        assertEquals(expected, reader(PORSCHE).readPortable("wheels[0].chips[1]"));
+        assertEquals(expected, reader(PORSCHE).read("wheels[0].chips[1]"));
     }
 
     @Test
     public void portableArrayFirst_portableArrayAtTheEnd_wholeArrayFetched() throws IOException {
         Portable[] expected = ((WheelPortable) PORSCHE.wheels[0]).chips;
-        assertArrayEquals(expected, reader(PORSCHE).readPortableArray("wheels[0].chips"));
+        assertArrayEquals(expected, (Object[]) reader(PORSCHE).read("wheels[0].chips"));
     }
 
     @Test
     public void portableArrayFirst_portableArrayAtTheEnd_wholeArrayFetched_withAny() throws IOException {
-        Portable[] expected = ((WheelPortable) PORSCHE.wheels[0]).chips;
-        assertArrayEquals(expected, reader(PORSCHE).readPortableArray("wheels[0].chips[any]"));
+        assertTrue(((MultiResult) reader(PORSCHE).read("wheels[0].emptyChips[any]")).isNullEmptyTarget());
     }
 
     @Test
     public void portableArrayFirst_portableArrayInTheMiddle_primitiveAtTheEnd() throws IOException {
         int expected = 20;
-        assertEquals(expected, reader(PORSCHE).readInt("wheels[0].chips[0].power"));
+        assertEquals(expected, reader(PORSCHE).read("wheels[0].chips[0].power"));
     }
 
     @Test
     public void portableArrayFirst_primitiveArrayAtTheEnd() throws IOException {
         int expected = 12 + 5;
-        assertEquals(expected, reader(PORSCHE).readInt("wheels[0].serial[1]"));
+        assertEquals(expected, reader(PORSCHE).read("wheels[0].serial[1]"));
     }
 
     @Test(expected = HazelcastSerializationException.class)
     public void portableArrayFirst_primitiveArrayAtTheEnd2() throws IOException {
-        reader(PORSCHE).readInt("wheels[0].serial[1].x");
+        reader(PORSCHE).read("wheels[0].serial[1].x");
     }
 
     @Test
     public void portableArrayFirst_primitiveArrayAtTheEnd_wholeArrayFetched() throws IOException {
         int[] expected = ((WheelPortable) PORSCHE.wheels[0]).serial;
-        assertArrayEquals(expected, reader(PORSCHE).readIntArray("wheels[0].serial"));
+        assertArrayEquals(expected, (int[]) reader(PORSCHE).read("wheels[0].serial"));
     }
 
     @Test
     public void portableArrayFirst_primitiveArrayAtTheEnd_wholeArrayFetched_withAny() throws IOException {
         int[] expected = ((WheelPortable) PORSCHE.wheels[0]).serial;
-        assertArrayEquals(expected, reader(PORSCHE).readIntArray("wheels[0].serial[any]"));
+        List<Integer> collect = Arrays.stream(expected).boxed().collect(Collectors.toList());
+        assertCollection(collect, ((MultiResult) reader(PORSCHE).read("wheels[0].serial[any]")).getResults());
     }
 
     @Test
     public void portableArrayFirst_withAny_primitiveArrayAtTheEnd() throws IOException {
-        int[] expected = {17, 16};
-        assertArrayEquals(expected, reader(PORSCHE).readIntArray("wheels[any].serial[1]"));
+        assertCollection(Arrays.asList(17, 16), ((MultiResult) reader(PORSCHE).read("wheels[any].serial[1]")).getResults());
     }
 
     @Test
@@ -292,7 +290,7 @@ public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
                 ((WheelPortable) PORSCHE.wheels[0]).chip,
                 ((WheelPortable) PORSCHE.wheels[1]).chip,
         };
-        assertArrayEquals(expected, reader(PORSCHE).readPortableArray("wheels[any].chip"));
+        assertCollection(Arrays.asList(expected), ((MultiResult) reader(PORSCHE).read("wheels[any].chip")).getResults());
     }
 
     @Test
@@ -301,7 +299,7 @@ public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
                 ((WheelPortable) PORSCHE.wheels[0]).chips[1],
                 ((WheelPortable) PORSCHE.wheels[1]).chips[1],
         };
-        assertArrayEquals(expected, reader(PORSCHE).readPortableArray("wheels[any].chips[1]"));
+        assertCollection(Arrays.asList(expected), ((MultiResult) reader(PORSCHE).read("wheels[any].chips[1]")).getResults());
     }
 
     @Test
@@ -310,77 +308,68 @@ public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
                 "front",
                 "rear",
         };
-        assertArrayEquals(expected, reader(PORSCHE).readUTFArray("wheels[any].name"));
+        assertCollection(Arrays.asList(expected), ((MultiResult) reader(PORSCHE).read("wheels[any].name")).getResults());
     }
 
     @Test
     public void portableArrayFirst_withAny_primitiveArrayAtTheEnd6() throws IOException {
-        assertNull(reader(PORSCHE).readIntArray("wheels[1].emptyChips[any].power"));
+        assertTrue(((MultiResult) reader(PORSCHE).read("wheels[1].emptyChips[any].power")).isNullEmptyTarget());
     }
 
     @Test
     public void portableArrayFirst_withAny_primitiveArrayAtTheEnd7() throws IOException {
-        assertArrayEquals(null, reader(PORSCHE).readIntArray("wheels[1].nullChips[any].power"));
+        assertTrue(((MultiResult) reader(PORSCHE).read("wheels[1].nullChips[any].power")).isNullEmptyTarget());
     }
 
     @Test
     public void portableArrayFirst_withAny_primitiveArrayAtTheEnd8() throws IOException {
-        assertNull(reader(PORSCHE).readPortableArray("wheels[1].emptyChips[any]"));
+        assertTrue(((MultiResult) reader(PORSCHE).read("wheels[1].emptyChips[any]")).isNullEmptyTarget());
     }
 
     @Test
     public void portableArrayFirst_withAny_primitiveArrayAtTheEnd8a() throws IOException {
-        Portable[] expected = {null, null};
-        assertArrayEquals(expected, reader(PORSCHE).readPortableArray("wheels[any].emptyChips[any]"));
+        assertTrue(((MultiResult) reader(PORSCHE).read("wheels[any].emptyChips[any]")).isNullEmptyTarget());
     }
 
     @Test
     public void portableArrayFirst_withAny_primitiveArrayAtTheEnd9() throws IOException {
         Portable[] expected = {};
-        assertArrayEquals(expected, reader(PORSCHE).readPortableArray("wheels[1].emptyChips"));
+        assertArrayEquals(expected, (Object[]) reader(PORSCHE).read("wheels[1].emptyChips"));
     }
 
     @Test
     public void portableArrayFirst_withAny_primitiveArrayAtTheEnd10() throws IOException {
-        assertArrayEquals(null, reader(PORSCHE).readPortableArray("wheels[1].nullChips[any]"));
+        assertTrue(((MultiResult) reader(PORSCHE).read("wheels[1].nullChips[any]")).isNullEmptyTarget());
     }
 
     @Test
     public void portableArrayFirst_withAny_primitiveArrayAtTheEnd11() throws IOException {
-        assertArrayEquals(null, reader(PORSCHE).readPortableArray("wheels[1].nullChips"));
+        assertArrayEquals(null, (boolean[]) reader(PORSCHE).read("wheels[1].nullChips"));
     }
 
     @Test
     public void reusingTheReader_multipleCalls_stateResetCorrectly() throws IOException {
-        PortableReader reader = reader(PORSCHE);
-        assertEquals("rear", reader.readUTF("wheels[1].name"));
-        assertEquals(300, reader.readInt("engine.power"));
-        assertEquals(46, reader.readInt("wheels[0].serial[0]"));
+        InternalValueReader reader = reader(PORSCHE);
+        assertEquals("rear", reader.read("wheels[1].name"));
+        assertEquals(300, reader.read("engine.power"));
+        assertEquals(46, reader.read("wheels[0].serial[0]"));
 
-        try {
-            reader.readFloat("wheels[0].serial[0]");
-            fail();
-        } catch (Exception ignored) {
-        }
+        reader.read("wheels[0].serial[0]");
 
-        assertEquals("front", reader.readUTF("wheels[0].name"));
-        assertEquals(45, reader.readInt("wheels[1].serial[0]"));
+        assertEquals("front", reader.read("wheels[0].name"));
+        assertEquals(45, reader.read("wheels[1].serial[0]"));
 
-        try {
-            reader.readIntArray("name");
-            fail();
-        } catch (Exception ignored) {
-        }
+        reader.read("name");
 
-        assertEquals(15, reader.readInt("engine.chip.power"));
-        assertEquals("Porsche", reader.readUTF("name"));
+        assertEquals(15, reader.read("engine.chip.power"));
+        assertEquals("Porsche", reader.read("name"));
     }
 
     //
     // Utilities
     //
 
-    public PortableReader reader(Portable portable) throws IOException {
+    public InternalValueReader reader(Portable portable) throws IOException {
         Config config = new Config();
         config.getSerializationConfig().addPortableFactory(TestPortableFactory.ID,
                 new TestPortableFactory());
@@ -399,7 +388,7 @@ public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
         map.executeOnEntries(processor);
 
         InternalSerializationService ss = hz.getSerializationService();
-        return ss.createPortableReader(processor.stolenEntryData);
+        return ss.createPortableValueReader(processor.stolenEntryData);
     }
 
     public static class EntryStealingProcessor implements EntryProcessor {
