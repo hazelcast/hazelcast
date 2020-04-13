@@ -21,7 +21,6 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.core.EntryView;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.Offloadable;
 import com.hazelcast.core.ReadOnly;
@@ -2995,7 +2994,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *     to the servers which own the partitions/keys. This results in a much less number of remote calls.
      *     Note that in this case, side effects of the {@code action} may not be visible to the local JVM
      *     If users intend to install the changed value in the map entry, the {@code action} must do so itself (e.g. by
-     *     implementing {@link HazelcastInstanceAware}, getting a reference to the map, and then performing required operation against the map)
+     *     implementing {@link HazelcastInstanceAware}, getting a reference to the map, and then performing required
+     *     operation against the map)
      * </p>
      * <p>
      *     When this method is invoked using a hazelcast-client instance, the {@code action} is always executed locally
