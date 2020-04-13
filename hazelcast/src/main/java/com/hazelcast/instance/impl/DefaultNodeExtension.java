@@ -68,7 +68,7 @@ import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
 import com.hazelcast.internal.memory.DefaultMemoryStats;
 import com.hazelcast.internal.memory.MemoryStats;
-import com.hazelcast.internal.networking.ChannelInitializerProvider;
+import com.hazelcast.internal.server.tcp.ChannelInitializerProvider;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.nio.ClassLoaderUtil;

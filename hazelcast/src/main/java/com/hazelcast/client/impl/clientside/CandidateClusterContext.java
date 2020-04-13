@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.clientside;
 
 import com.hazelcast.client.impl.connection.AddressProvider;
-import com.hazelcast.internal.networking.ChannelInitializerProvider;
+import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.security.ICredentialsFactory;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
@@ -32,17 +32,17 @@ public class CandidateClusterContext {
     private final DiscoveryService discoveryService;
     private final ICredentialsFactory credentialsFactory;
     private final SocketInterceptor socketInterceptor;
-    private final ChannelInitializerProvider channelInitializerProvider;
+    private final ChannelInitializer channelInitializer;
 
     public CandidateClusterContext(String clusterName, AddressProvider addressProvider, DiscoveryService discoveryService,
                                    ICredentialsFactory credentialsFactory, SocketInterceptor socketInterceptor,
-                                   ChannelInitializerProvider channelInitializerProvider) {
+                                   ChannelInitializer channelInitializer) {
         this.clusterName = clusterName;
         this.addressProvider = addressProvider;
         this.discoveryService = discoveryService;
         this.credentialsFactory = credentialsFactory;
         this.socketInterceptor = socketInterceptor;
-        this.channelInitializerProvider = channelInitializerProvider;
+        this.channelInitializer = channelInitializer;
     }
 
     public void start() {
@@ -73,8 +73,8 @@ public class CandidateClusterContext {
         return clusterName;
     }
 
-    public ChannelInitializerProvider getChannelInitializerProvider() {
-        return channelInitializerProvider;
+    public ChannelInitializer getChannelInitializer() {
+        return channelInitializer;
     }
 
     @Override

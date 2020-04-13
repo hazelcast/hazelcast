@@ -25,7 +25,7 @@ import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.Channel;
-import com.hazelcast.internal.networking.ChannelInitializerProvider;
+import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.NetworkStats;
 import com.hazelcast.internal.networking.Networking;
 import com.hazelcast.internal.nio.Connection;
@@ -321,7 +321,9 @@ public class TcpServerConnectionManager
     Channel newChannel(SocketChannel socketChannel, boolean clientMode)
             throws IOException {
         Networking networking = server.getNetworking();
-        Channel channel = networking.register(endpointQualifier, channelInitializerProvider, socketChannel, clientMode);
+        ChannelInitializer channelInitializer = channelInitializerProvider.provide(endpointQualifier);
+        assert channelInitializer != null : "Found NULL channel initializer for endpoint-qualifier " + endpointQualifier;
+        Channel channel = networking.register(channelInitializer, socketChannel, clientMode);
         // Advanced Network
         if (endpointConfig != null) {
             setChannelOptions(channel, endpointConfig);
