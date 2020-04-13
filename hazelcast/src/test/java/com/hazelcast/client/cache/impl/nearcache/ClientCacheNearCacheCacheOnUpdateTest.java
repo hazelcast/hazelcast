@@ -45,6 +45,7 @@ import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UP
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.INVALIDATE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -53,8 +54,7 @@ public class ClientCacheNearCacheCacheOnUpdateTest extends ClientNearCacheTestSu
     private static final int NUM_OF_KEYS = 100;
 
     @Test
-    public void with_cacheOnUpdate_policy_concurrently_updated_near_cache_does_not_cause_any_miss()
-            throws InterruptedException {
+    public void with_cacheOnUpdate_policy_concurrently_updated_near_cache_does_not_cause_any_miss() {
         ICache<Integer, Integer> nearCachedClientCache = newNearCachedCache(CACHE_ON_UPDATE);
         checkNearCacheInstance(nearCachedClientCache);
 
@@ -74,8 +74,7 @@ public class ClientCacheNearCacheCacheOnUpdateTest extends ClientNearCacheTestSu
     }
 
     @Test
-    public void with_invalidate_policy_concurrently_updated_near_cache_causes_misses()
-            throws InterruptedException {
+    public void with_invalidate_policy_concurrently_updated_near_cache_causes_misses() {
         ICache<Integer, Integer> nearCachedClientCache = newNearCachedCache(INVALIDATE);
         checkNearCacheInstance(nearCachedClientCache);
 
@@ -87,7 +86,7 @@ public class ClientCacheNearCacheCacheOnUpdateTest extends ClientNearCacheTestSu
     }
 
     private static void runTest(ICache<Integer, Integer> icacheOnClient,
-                                NearCacheConfig.LocalUpdatePolicy localUpdatePolicy) throws InterruptedException {
+                                NearCacheConfig.LocalUpdatePolicy localUpdatePolicy) {
         for (int i = 0; i < NUM_OF_KEYS; i++) {
             icacheOnClient.put(i, i);
 
@@ -102,24 +101,23 @@ public class ClientCacheNearCacheCacheOnUpdateTest extends ClientNearCacheTestSu
         AtomicBoolean stop = new AtomicBoolean();
 
         Runnable getter = () -> {
+            int i = 0;
             while (!stop.get()) {
-                for (int i = 0; i < NUM_OF_KEYS; i++) {
-                    icacheOnClient.get(i);
-                }
+                icacheOnClient.get(i++ % NUM_OF_KEYS);
             }
         };
 
         Runnable putter = () -> {
+            int i = 0;
             while (!stop.get()) {
-                for (int i = 0; i < NUM_OF_KEYS; i++) {
-                    icacheOnClient.put(i, i);
-                }
+                i = i++ % NUM_OF_KEYS;
+                icacheOnClient.put(i, i);
             }
         };
 
         ExecutorService executor = Executors.newCachedThreadPool();
 
-        int numOfGetters = 3 * RuntimeAvailableProcessors.get();
+        int numOfGetters = 2 * RuntimeAvailableProcessors.get();
         for (int i = 0; i < numOfGetters; i++) {
             executor.execute(getter);
         }
@@ -130,7 +128,13 @@ public class ClientCacheNearCacheCacheOnUpdateTest extends ClientNearCacheTestSu
         stop.set(true);
 
         executor.shutdown();
-        executor.awaitTermination(120, TimeUnit.SECONDS);
+        try {
+            executor.awaitTermination(100, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            fail("InterruptedException");
+        } finally {
+            executor.shutdownNow();
+        }
     }
 
     private ICache<Integer, Integer> newNearCachedCache(NearCacheConfig.LocalUpdatePolicy localUpdatePolicy) {
