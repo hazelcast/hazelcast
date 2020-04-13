@@ -916,6 +916,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * operation to complete or register callbacks to be invoked
      * upon putAll operation completion
      * @see CompletionStage
+     *
+     * @since 4.1
      */
     CompletionStage<Void> putAllAsync(@Nonnull Map<? extends K, ? extends V> map);
 
@@ -1790,6 +1792,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * {@link com.hazelcast.map.ReachedMaxSizeException} may be thrown
      * if the write-behind queue has reached its per-node maximum
      * capacity.
+     *
+     * @since 4.1
      */
     void setAll(@Nonnull Map<? extends K, ? extends V> map);
 
@@ -1837,6 +1841,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * operation to complete or register callbacks to be invoked
      * upon setAll operation completion
      * @see CompletionStage
+     *
+     * @since 4.1
      */
     CompletionStage<Void> setAllAsync(@Nonnull Map<? extends K, ? extends V> map);
 
@@ -3030,6 +3036,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p>
      *     When this method is invoked using a hazelcast-client instance, the {@code remappingFunction} is always executed locally
      * </p>
+     *
+     * @since 4.1
      */
     V computeIfPresent(@Nonnull K key, @Nonnull BiFunction<? super K, ? super V, ? extends V> remappingFunction);
 
@@ -3052,6 +3060,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p>
      *     When this method is invoked using a hazelcast-client instance, the {@code mappingFunction} is always executed locally
      * </p>
+     *
+     * @since 4.1
      */
     V computeIfAbsent(@Nonnull K key, @Nonnull Function<? super K, ? extends V> mappingFunction);
 

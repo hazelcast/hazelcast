@@ -26,13 +26,11 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.util.Clock;
-import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryExpiredListener;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -63,6 +61,8 @@ import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -922,7 +922,7 @@ public class BasicMapTest extends HazelcastTestSupport {
     @Test
     public void testPutAllAsyncEmpty() {
         IMap<Integer, Integer> map = getInstance().getMap("testPutAllEmpty");
-        ((MapProxyImpl<Integer, Integer>) map).putAllAsync(emptyMap());
+        map.putAllAsync(emptyMap());
     }
 
     @Test
@@ -1032,7 +1032,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         for (int i = 0; i < size; i++) {
             mm.put(i, i);
         }
-        InternalCompletableFuture<Void> future = ((MapProxyImpl<Integer, Integer>) map).putAllAsync(mm);
+        CompletableFuture<Void> future = map.putAllAsync(mm).toCompletableFuture();
         assertTrueEventually(() -> assertTrue(future.isDone()));
         assertEquals(map.size(), size);
         for (int i = 0; i < size; i++) {

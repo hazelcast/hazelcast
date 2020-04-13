@@ -16,9 +16,9 @@
 
 package com.hazelcast.test.starter;
 
-import com.hazelcast.test.starter.constructor.EnumConstructor;
 import com.hazelcast.internal.util.ConcurrentReferenceHashMap;
 import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.test.starter.constructor.EnumConstructor;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.method.MethodList;
@@ -48,13 +48,13 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.internal.nio.ClassLoaderUtil.getAllInterfaces;
+import static com.hazelcast.internal.util.ConcurrentReferenceHashMap.ReferenceType.STRONG;
 import static com.hazelcast.test.starter.HazelcastAPIDelegatingClassloader.DELEGATION_WHITE_LIST;
 import static com.hazelcast.test.starter.HazelcastProxyFactory.ProxyPolicy.RETURN_SAME;
 import static com.hazelcast.test.starter.HazelcastStarterUtils.debug;
 import static com.hazelcast.test.starter.HazelcastStarterUtils.newCollectionFor;
 import static com.hazelcast.test.starter.ReflectionUtils.getConstructor;
 import static com.hazelcast.test.starter.ReflectionUtils.getReflectionsForTestPackage;
-import static com.hazelcast.internal.util.ConcurrentReferenceHashMap.ReferenceType.STRONG;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.asList;
 import static net.bytebuddy.jar.asm.Opcodes.ACC_PUBLIC;
@@ -309,20 +309,21 @@ public class HazelcastProxyFactory {
 
     private static Object toArray(ClassLoader targetClassLoader, Object arg) throws ClassNotFoundException {
         if (arg instanceof byte[]) {
-            byte[] srcArray = ((byte[]) arg);
-            byte[] targetArray = new byte[srcArray.length];
-            arraycopy(srcArray, 0, targetArray, 0, srcArray.length);
-            return targetArray;
+            return Arrays.copyOf((byte[]) arg, ((byte[]) arg).length);
         } else if (arg instanceof int[]) {
-            int[] srcArray = ((int[]) arg);
-            int[] targetArray = new int[srcArray.length];
-            arraycopy(srcArray, 0, targetArray, 0, srcArray.length);
-            return targetArray;
+            return Arrays.copyOf((int[]) arg, ((int[]) arg).length);
         } else if (arg instanceof long[]) {
-            long[] srcArray = ((long[]) arg);
-            long[] targetArray = new long[srcArray.length];
-            arraycopy(srcArray, 0, targetArray, 0, srcArray.length);
-            return targetArray;
+            return Arrays.copyOf((long[]) arg, ((long[]) arg).length);
+        } else if (arg instanceof boolean[]) {
+            return Arrays.copyOf((boolean[]) arg, ((boolean[]) arg).length);
+        } else if (arg instanceof short[]) {
+            return Arrays.copyOf((short[]) arg, ((short[]) arg).length);
+        } else if (arg instanceof float[]) {
+            return Arrays.copyOf((float[]) arg, ((float[]) arg).length);
+        } else if (arg instanceof double[]) {
+            return Arrays.copyOf((double[]) arg, ((double[]) arg).length);
+        } else if (arg instanceof char[]) {
+            return Arrays.copyOf((char[]) arg, ((char[]) arg).length);
         }
         Object[] srcArray = ((Object[]) arg);
         Class<?> targetClass = targetClassLoader.loadClass(srcArray.getClass().getComponentType().getName());

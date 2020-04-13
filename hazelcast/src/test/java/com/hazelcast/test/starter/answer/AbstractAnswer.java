@@ -264,7 +264,8 @@ abstract class AbstractAnswer implements Answer {
                 return createMockForTargetClass(result, new DataStructureElementAnswer(result));
             }
         }
-        return proxyResult ? proxyObjectForStarter(targetClassloader, result) : result;
+        return (proxyResult && !resultClass.isPrimitive())
+                ? proxyObjectForStarter(targetClassloader, result) : result;
     }
 
     /**

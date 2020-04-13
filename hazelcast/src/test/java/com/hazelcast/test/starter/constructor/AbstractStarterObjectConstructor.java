@@ -18,6 +18,8 @@ package com.hazelcast.test.starter.constructor;
 
 import com.hazelcast.internal.util.ConstructorFunction;
 
+import java.lang.invoke.MethodHandles;
+
 import static com.hazelcast.test.starter.HazelcastStarterUtils.rethrowGuardianException;
 import static com.hazelcast.test.starter.HazelcastStarterUtils.transferThrowable;
 
@@ -32,6 +34,8 @@ import static com.hazelcast.test.starter.HazelcastStarterUtils.transferThrowable
  * configuration for the classloader that loads Hazelcast version 3.8.
  */
 public abstract class AbstractStarterObjectConstructor implements ConstructorFunction<Object, Object> {
+
+    static final MethodHandles.Lookup PUBLIC_LOOKUP = MethodHandles.publicLookup();
 
     final Class<?> targetClass;
 
