@@ -40,7 +40,7 @@ import com.hazelcast.map.impl.event.EntryEventData;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
-import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueue;
+import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueueConsumer;
 import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindStore;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
@@ -1084,14 +1084,18 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             return;
         }
 
-        long now = Clock.currentTimeMillis();
-        WriteBehindQueue<DelayedEntry> writeBehindQueue
-                = ((WriteBehindStore) mapDataStore).getWriteBehindQueue();
-        List<DelayedEntry> delayedEntries = writeBehindQueue.asList();
-        for (DelayedEntry delayedEntry : delayedEntries) {
-            Record record = getRecordOrNull(toData(delayedEntry.getKey()), now, false);
-            onStore(record);
-        }
+        final long now = Clock.currentTimeMillis();
+        ((WriteBehindStore) mapDataStore).forEach(new WriteBehindQueueConsumer<DelayedEntry>() {
+            @Override
+            public void accept(DelayedEntry e) {
+                onStore(getRecordOrNull(toData(e.getKey()), now, false));
+            }
+
+            @Override
+            public void size(int size) {
+                // NOP
+            }
+        });
     }
 
     @Override

@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.mapstore.writebehind;
 
 import java.util.Collection;
-import java.util.List;
 
 /**
  * A specific queue implementation which is used for write-behind-store operations.
@@ -91,11 +90,11 @@ public interface WriteBehindQueue<E> {
     void clear();
 
     /**
-     * Returns a read-only list representation of this queue.
+     * Traverses queue and performs given action via consumer
      *
-     * @return read-only list representation of this queue.
+     * @param consumer size aware consumer
      */
-    List<E> asList();
+    void forEach(WriteBehindQueueConsumer<E> consumer);
 
     /**
      * Filters this queue according to supplied predicate.
@@ -110,5 +109,6 @@ public interface WriteBehindQueue<E> {
      * instance of supplied clazz, otherwise returns null.
      */
     <T> T unwrap(Class<T> clazz);
+
 }
 

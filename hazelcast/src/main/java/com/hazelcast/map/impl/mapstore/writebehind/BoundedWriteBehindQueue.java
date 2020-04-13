@@ -19,7 +19,6 @@ package com.hazelcast.map.impl.mapstore.writebehind;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
 
 import java.util.Collection;
-import java.util.List;
 
 /**
  * A bounded queue which throws {@link
@@ -142,14 +141,9 @@ class BoundedWriteBehindQueue<E extends DelayedEntry> implements WriteBehindQueu
         txnReservedCapacityCounter.releaseAllReservations();
     }
 
-    /**
-     * Returns unmodifiable list representation of this queue.
-     *
-     * @return read-only list representation of this queue.
-     */
     @Override
-    public List<E> asList() {
-        return queue.asList();
+    public void forEach(WriteBehindQueueConsumer<E> consumer) {
+        queue.forEach(consumer);
     }
 
     @Override

@@ -16,20 +16,17 @@
 
 package com.hazelcast.map.impl.mapstore.writebehind;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.MutableInteger;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapLoader;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
-import com.hazelcast.internal.serialization.Data;
 
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -146,14 +143,12 @@ class CyclicWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
         return collection.size();
     }
 
-    /**
-     * Returns unmodifiable list representation of this queue.
-     *
-     * @return read-only list representation of this queue.
-     */
     @Override
-    public List<DelayedEntry> asList() {
-        return Collections.unmodifiableList(new ArrayList<>(deque));
+    public void forEach(WriteBehindQueueConsumer<DelayedEntry> consumer) {
+        consumer.size(deque.size());
+        for (DelayedEntry delayedEntry : deque) {
+            consumer.accept(delayedEntry);
+        }
     }
 
     @Override

@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.services.ServiceNamespace;
@@ -35,7 +36,6 @@ import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStoreAdapter;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
@@ -43,9 +43,9 @@ import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.MapIndexInfo;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -93,7 +93,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
         storesByMapName = createHashMap(namespaces.size());
 
         loaded = createHashMap(namespaces.size());
-        mapIndexInfos = new ArrayList<>(namespaces.size());
+        mapIndexInfos = new LinkedList<>();
         for (ServiceNamespace namespace : namespaces) {
             ObjectNamespace mapNamespace = (ObjectNamespace) namespace;
             String mapName = mapNamespace.getObjectName();
@@ -274,7 +274,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
         for (int i = 0; i < size; i++) {
             String name = in.readUTF();
             int numOfRecords = in.readInt();
-            List keyRecord = new ArrayList<>(numOfRecords * 2);
+            List keyRecord = new LinkedList();
             for (int j = 0; j < numOfRecords; j++) {
                 Data dataKey = IOUtil.readData(in);
                 Record record = Records.readRecord(in);
@@ -292,7 +292,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
         }
 
         int mapIndexInfoSize = in.readInt();
-        mapIndexInfos = new ArrayList<>(mapIndexInfoSize);
+        mapIndexInfos = new LinkedList<>();
         for (int i = 0; i < mapIndexInfoSize; i++) {
             MapIndexInfo mapIndexInfo = in.readObject();
             mapIndexInfos.add(mapIndexInfo);

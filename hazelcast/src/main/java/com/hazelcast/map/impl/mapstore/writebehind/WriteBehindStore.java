@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.mapstore.writebehind;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.EntryLoader.MetadataAwareValue;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapLoader;
@@ -28,7 +29,6 @@ import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntries;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
 import com.hazelcast.map.impl.operation.NotifyMapFlushOperation;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
@@ -459,6 +459,14 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
         String mapName = mapStoreContext.getMapName();
         MapConfig mapConfig = config.findMapConfig(mapName);
         return mapConfig.getInMemoryFormat();
+    }
+
+    public void forEach(WriteBehindQueueConsumer consumer) {
+        writeBehindQueue.forEach(consumer);
+    }
+
+    public String getMapName() {
+        return mapName;
     }
 
     /**

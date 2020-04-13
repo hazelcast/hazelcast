@@ -16,14 +16,11 @@
 
 package com.hazelcast.map.impl.mapstore.writebehind;
 
-import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
@@ -145,9 +142,9 @@ class CoalescedWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
     }
 
     @Override
-    public List<DelayedEntry> asList() {
-        Collection<DelayedEntry> values = map.values();
-        return Collections.unmodifiableList(new ArrayList<>(values));
+    public void forEach(WriteBehindQueueConsumer<DelayedEntry> consumer) {
+        consumer.size(map.size());
+        map.values().forEach(consumer);
     }
 
     @Override

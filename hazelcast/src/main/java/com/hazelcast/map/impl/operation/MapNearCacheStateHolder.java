@@ -18,6 +18,8 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidator;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataGenerator;
+import com.hazelcast.internal.services.ObjectNamespace;
+import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -26,12 +28,10 @@ import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.internal.services.ObjectNamespace;
-import com.hazelcast.internal.services.ServiceNamespace;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 
@@ -70,7 +70,7 @@ public class MapNearCacheStateHolder implements IdentifiedDataSerializable {
 
         for (ServiceNamespace namespace : namespaces) {
             if (mapNameSequencePairs == emptyList()) {
-                mapNameSequencePairs = new ArrayList(namespaces.size());
+                mapNameSequencePairs = new LinkedList<>();
             }
 
             ObjectNamespace mapNamespace = (ObjectNamespace) namespace;
@@ -127,7 +127,7 @@ public class MapNearCacheStateHolder implements IdentifiedDataSerializable {
         partitionUuid = nullUuid ? null : new UUID(in.readLong(), in.readLong());
 
         int size = in.readInt();
-        mapNameSequencePairs = new ArrayList(size);
+        mapNameSequencePairs = new LinkedList<>();
         for (int i = 0; i < size; i++) {
             mapNameSequencePairs.add(in.readObject());
         }

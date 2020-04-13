@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.mapstore.writebehind;
 
 import java.util.Collection;
-import java.util.List;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
@@ -106,9 +105,9 @@ class SynchronizedWriteBehindQueue<E> implements WriteBehindQueue<E> {
     }
 
     @Override
-    public List<E> asList() {
+    public void forEach(WriteBehindQueueConsumer<E> consumer) {
         synchronized (mutex) {
-            return queue.asList();
+            queue.forEach(consumer);
         }
     }
 
