@@ -59,11 +59,11 @@ JetInstance jet = Jet.bootstrappedInstance();
 Pipeline p = Pipeline.create();
 
 p.readFrom(Sources.files(path))
-        .flatMap(line -> Traversers.traverseArray(line.toLowerCase().split("\\W+")))
-        .filter(word -> !word.isEmpty())
-        .groupingKey(word -> word)
-        .aggregate(AggregateOperations.counting())
-        .writeTo(Sinks.logger());
+ .flatMap(line -> Traversers.traverseArray(line.toLowerCase().split("\\W+")))
+ .filter(word -> !word.isEmpty())
+ .groupingKey(word -> word)
+ .aggregate(AggregateOperations.counting())
+ .writeTo(Sinks.logger());
 
 jet.newJob(p).join();
 ```
@@ -91,14 +91,14 @@ JetInstance jet = Jet.bootstrappedInstance();
 Pipeline p = Pipeline.create();
 
 p.readFrom(Sources.fileWatcher(path))
-        .withIngestionTimestamps()
-        .setLocalParallelism(1)
-        .flatMap(line -> Traversers.traverseArray(line.toLowerCase().split("\\W+")))
-        .filter(word -> !word.isEmpty())
-        .groupingKey(word -> word)
-        .window(WindowDefinition.tumbling(1000))
-        .aggregate(AggregateOperations.counting())
-        .writeTo(Sinks.logger());
+ .withIngestionTimestamps()
+ .setLocalParallelism(1)
+ .flatMap(line -> Traversers.traverseArray(line.toLowerCase().split("\\W+")))
+ .filter(word -> !word.isEmpty())
+ .groupingKey(word -> word)
+ .window(WindowDefinition.tumbling(1000))
+ .aggregate(AggregateOperations.counting())
+ .writeTo(Sinks.logger());
 
 jet.newJob(p).join();
 ```
