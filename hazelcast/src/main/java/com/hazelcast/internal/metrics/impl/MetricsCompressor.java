@@ -272,13 +272,16 @@ public class MetricsCompressor {
             }
 
             int diffLen = wordText.length() - commonLen;
-            dictionaryDos.writeInt(word.dictionaryId());
-            dictionaryDos.writeByte(commonLen);
-            dictionaryDos.writeByte(diffLen);
+            // we write to tmpDos to avoid the allocation of byte[1] in DeflaterOutputStream.write(int)
+            tmpDos.writeInt(word.dictionaryId());
+            tmpDos.writeByte(commonLen);
+            tmpDos.writeByte(diffLen);
             for (int i = commonLen; i < wordText.length(); i++) {
-                dictionaryDos.writeChar(wordText.charAt(i));
+                tmpDos.writeChar(wordText.charAt(i));
             }
             lastWord = wordText;
+            dictionaryDos.write(tmpBaos.internalBuffer(), 0, tmpBaos.size());
+            tmpBaos.reset();
         }
     }
 
