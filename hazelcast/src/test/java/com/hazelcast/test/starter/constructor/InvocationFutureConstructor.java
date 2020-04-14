@@ -17,23 +17,20 @@
 package com.hazelcast.test.starter.constructor;
 
 import com.hazelcast.test.starter.HazelcastStarterConstructor;
+import com.hazelcast.test.starter.answer.DelegatingAnswer;
 
-import java.util.concurrent.CompletableFuture;
+import static org.mockito.Mockito.mock;
 
-@HazelcastStarterConstructor(classNames = {"com.hazelcast.spi.impl.InternalCompletableFuture"})
-public class InternalCompletableFutureConstructor extends AbstractStarterObjectConstructor {
+@HazelcastStarterConstructor(classNames = "com.hazelcast.spi.impl.operationservice.impl.InvocationFuture")
+public class InvocationFutureConstructor extends AbstractStarterObjectConstructor {
 
-    public InternalCompletableFutureConstructor(Class<?> targetClass) {
+    public InvocationFutureConstructor(Class<?> targetClass) {
         super(targetClass);
     }
 
     @Override
     Object createNew0(Object delegate)
             throws Exception {
-        // it is ok to cast to JDK's CompletableFuture (as the
-        // common superclass of the classes constructed by this constructor)
-        // so long as the code that invokes the constructed instances
-        // does not use any Hazelcast-specific functionality
-        return CompletableFuture.class.cast(delegate);
+        return mock(targetClass, new DelegatingAnswer(delegate));
     }
 }
