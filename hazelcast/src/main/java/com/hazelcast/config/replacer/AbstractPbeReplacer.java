@@ -24,13 +24,13 @@ import javax.crypto.Cipher;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Properties;
 
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
-import static com.hazelcast.internal.util.StringUtil.UTF8_CHARSET;
 
 /**
  * The common parent for {@link ConfigReplacer} implementations which allow to mask values by encrypting the value. This parent
@@ -126,9 +126,9 @@ public abstract class AbstractPbeReplacer implements ConfigReplacer {
         SecureRandom secureRandom = new SecureRandom();
         byte[] salt = new byte[saltLengthBytes];
         secureRandom.nextBytes(salt);
-        byte[] encryptedVal = transform(Cipher.ENCRYPT_MODE, secretStr.getBytes(UTF8_CHARSET), salt, iterations);
-        return new String(Base64.getEncoder().encode(salt), UTF8_CHARSET) + ":" + iterations + ":"
-                + new String(Base64.getEncoder().encode(encryptedVal), UTF8_CHARSET);
+        byte[] encryptedVal = transform(Cipher.ENCRYPT_MODE, secretStr.getBytes(StandardCharsets.UTF_8), salt, iterations);
+        return new String(Base64.getEncoder().encode(salt), StandardCharsets.UTF_8) + ":" + iterations + ":"
+                + new String(Base64.getEncoder().encode(encryptedVal), StandardCharsets.UTF_8);
     }
 
     /**
@@ -141,11 +141,11 @@ public abstract class AbstractPbeReplacer implements ConfigReplacer {
     protected String decrypt(String encryptedStr) throws Exception {
         String[] split = encryptedStr.split(":");
         checkTrue(split.length == 3, "Wrong format of the encrypted variable (" + encryptedStr + ")");
-        byte[] salt = Base64.getDecoder().decode(split[0].getBytes(UTF8_CHARSET));
+        byte[] salt = Base64.getDecoder().decode(split[0].getBytes(StandardCharsets.UTF_8));
         checkTrue(salt.length == saltLengthBytes, "Salt length doesn't match.");
         int iterations = Integer.parseInt(split[1]);
-        byte[] encryptedVal = Base64.getDecoder().decode(split[2].getBytes(UTF8_CHARSET));
-        return new String(transform(Cipher.DECRYPT_MODE, encryptedVal, salt, iterations), UTF8_CHARSET);
+        byte[] encryptedVal = Base64.getDecoder().decode(split[2].getBytes(StandardCharsets.UTF_8));
+        return new String(transform(Cipher.DECRYPT_MODE, encryptedVal, salt, iterations), StandardCharsets.UTF_8);
     }
 
     /**
