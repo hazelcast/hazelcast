@@ -26,6 +26,7 @@ import java.io.InputStreamReader;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -106,13 +107,8 @@ public final class ServiceLoader {
             Set<URLDefinition> urlDefinitions = new HashSet<URLDefinition>();
             while (configs.hasMoreElements()) {
                 URL url = configs.nextElement();
-                String externalForm = url.toExternalForm()
-                                         .replace(" ", "%20")
-                                         .replace("^", "%5e");
-                URI uri = new URI(externalForm);
-
                 if (!classLoader.getClass().getName().equals(IGNORED_GLASSFISH_MAGIC_CLASSLOADER)) {
-                    urlDefinitions.add(new URLDefinition(uri, classLoader));
+                    urlDefinitions.add(new URLDefinition(url, classLoader));
                 }
             }
             return urlDefinitions;
@@ -128,7 +124,7 @@ public final class ServiceLoader {
             Set<ServiceDefinition> names = new HashSet<ServiceDefinition>();
             BufferedReader r = null;
             try {
-                URL url = urlDefinition.uri.toURL();
+                URL url = urlDefinition.url;
                 r = new BufferedReader(new InputStreamReader(url.openStream(), "UTF-8"));
                 while (true) {
                     String line = r.readLine();
@@ -233,15 +229,23 @@ public final class ServiceLoader {
 
     /**
      * This class keeps track of available service definition URLs and
-     * the corresponding classloaders.
+     * the corresponding classloaders. It uses the URLs URI for hashing andd
+     * equality comparison, rather than the URL itself. The specifications for
+     * hashing and equality on URL are unusual, and involve blocking DNS
+     * lookups. However, the conversion from URL to URI is lossy, so if there
+     * are multiple URLs that map to the same URI, then they may be considered
+     * equal even if the URLs are not. If these are put in a HashSet, then the
+     * last added element wins.
      */
     private static final class URLDefinition {
 
+        private final URL url;
         private final URI uri;
         private final ClassLoader classLoader;
 
-        private URLDefinition(URI url, ClassLoader classLoader) {
-            this.uri = url;
+        private URLDefinition(URL url, ClassLoader classLoader) throws URISyntaxException {
+            this.url = url;
+            this.uri = url == null ? null : url.toURI();
             this.classLoader = classLoader;
         }
 
