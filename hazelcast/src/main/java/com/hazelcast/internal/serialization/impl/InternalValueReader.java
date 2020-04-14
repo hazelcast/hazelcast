@@ -19,7 +19,6 @@ package com.hazelcast.internal.serialization.impl;
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.nio.serialization.ClassDefinition;
-import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.query.extractor.ValueCallback;
 import com.hazelcast.query.extractor.ValueCollector;
@@ -127,70 +126,11 @@ public final class InternalValueReader implements ValueReader {
         }
     }
 
-    private byte[] readSingleByteArray(PortablePosition position) throws IOException {
-        validateType(position, FieldType.BYTE_ARRAY);
-        in.position(position.getStreamPosition());
-        return in.readByteArray();
-    }
-
-    private boolean[] readSingleBooleanArray(PortablePosition position) throws IOException {
-        validateType(position, FieldType.BOOLEAN_ARRAY);
-        in.position(position.getStreamPosition());
-        return in.readBooleanArray();
-    }
-
-
-    private char[] readSingleCharArray(PortablePosition position) throws IOException {
-        validateType(position, FieldType.CHAR_ARRAY);
-        in.position(position.getStreamPosition());
-        return in.readCharArray();
-    }
-
-    private int[] readSingleIntArray(PortablePosition position) throws IOException {
-        validateType(position, FieldType.INT_ARRAY);
-        in.position(position.getStreamPosition());
-        return in.readIntArray();
-    }
-
-    private long[] readSingleLongArray(PortablePosition position) throws IOException {
-        validateType(position, FieldType.LONG_ARRAY);
-        in.position(position.getStreamPosition());
-        return in.readLongArray();
-    }
-
-
-    private double[] readSingleDoubleArray(PortablePosition position) throws IOException {
-        validateType(position, FieldType.DOUBLE_ARRAY);
-        in.position(position.getStreamPosition());
-        return in.readDoubleArray();
-    }
-
-    private float[] readSingleFloatArray(PortablePosition position) throws IOException {
-        validateType(position, FieldType.FLOAT_ARRAY);
-        in.position(position.getStreamPosition());
-        return in.readFloatArray();
-    }
-
-
-    private short[] readSingleShortArray(PortablePosition position) throws IOException {
-        validateType(position, FieldType.SHORT_ARRAY);
-        in.position(position.getStreamPosition());
-        return in.readShortArray();
-    }
-
-    private String[] readSingleUTFArray(PortablePosition position) throws IOException {
-        validateType(position, FieldType.UTF_ARRAY);
-        in.position(position.getStreamPosition());
-        return in.readUTFArray();
-    }
-
-    private Portable[] readSinglePortableArray(PortablePosition position) throws IOException {
-        in.position(position.getStreamPosition());
+    private Portable[] readPortableArray(PortablePosition position) throws IOException {
         if (position.getLen() == Bits.NULL_ARRAY_LENGTH) {
             return null;
         }
 
-        validateType(position, FieldType.PORTABLE_ARRAY);
         final Portable[] portables = new Portable[position.getLen()];
         for (int index = 0; index < position.getLen(); index++) {
             in.position(getPortableArrayCellPosition(in, position.getStreamPosition(), index));
@@ -233,38 +173,37 @@ public final class InternalValueReader implements ValueReader {
     @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:returncount", "unchecked"})
     private <T> T readSinglePositionFromArray(PortablePosition position) throws IOException {
         assert position.getType() != null : "Unsupported type read: null";
+        in.position(position.getStreamPosition());
         switch (position.getType()) {
             case BYTE:
             case BYTE_ARRAY:
-                return (T) Byte.valueOf(in.readByte(position.getStreamPosition()));
+                return (T) Byte.valueOf(in.readByte());
             case SHORT:
             case SHORT_ARRAY:
-                return (T) Short.valueOf(in.readShort(position.getStreamPosition()));
+                return (T) Short.valueOf(in.readShort());
             case INT:
             case INT_ARRAY:
-                return (T) Integer.valueOf(in.readInt(position.getStreamPosition()));
+                return (T) Integer.valueOf(in.readInt());
             case LONG:
             case LONG_ARRAY:
-                return (T) Long.valueOf(in.readLong(position.getStreamPosition()));
+                return (T) Long.valueOf(in.readLong());
             case FLOAT:
             case FLOAT_ARRAY:
-                return (T) Float.valueOf(in.readFloat(position.getStreamPosition()));
+                return (T) Float.valueOf(in.readFloat());
             case DOUBLE:
             case DOUBLE_ARRAY:
-                return (T) Double.valueOf(in.readDouble(position.getStreamPosition()));
+                return (T) Double.valueOf(in.readDouble());
             case BOOLEAN:
             case BOOLEAN_ARRAY:
-                return (T) Boolean.valueOf(in.readBoolean(position.getStreamPosition()));
+                return (T) Boolean.valueOf(in.readBoolean());
             case CHAR:
             case CHAR_ARRAY:
-                return (T) Character.valueOf(in.readChar(position.getStreamPosition()));
+                return (T) Character.valueOf(in.readChar());
             case UTF:
             case UTF_ARRAY:
-                in.position(position.getStreamPosition());
                 return (T) in.readUTF();
             case PORTABLE:
             case PORTABLE_ARRAY:
-                in.position(position.getStreamPosition());
                 return (T) serializer.readAndInitialize(in, position.getFactoryId(), position.getClassId());
             default:
                 throw new IllegalArgumentException("Unsupported type: " + position.getType());
@@ -274,63 +213,50 @@ public final class InternalValueReader implements ValueReader {
     @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:returncount", "unchecked"})
     private <T> T readSinglePositionFromNonArray(PortablePosition position) throws IOException {
         assert position.getType() != null : "Unsupported type read: null";
+        in.position(position.getStreamPosition());
         switch (position.getType()) {
             case BYTE:
-                return (T) Byte.valueOf(in.readByte(position.getStreamPosition()));
+                return (T) Byte.valueOf(in.readByte());
             case BYTE_ARRAY:
-                return (T) readSingleByteArray(position);
+                return (T) in.readByteArray();
             case SHORT:
-                return (T) Short.valueOf(in.readShort(position.getStreamPosition()));
+                return (T) Short.valueOf(in.readShort());
             case SHORT_ARRAY:
-                return (T) readSingleShortArray(position);
+                return (T) in.readShortArray();
             case INT:
-                return (T) Integer.valueOf(in.readInt(position.getStreamPosition()));
+                return (T) Integer.valueOf(in.readInt());
             case INT_ARRAY:
-                return (T) readSingleIntArray(position);
+                return (T) in.readIntArray();
             case LONG:
-                return (T) Long.valueOf(in.readLong(position.getStreamPosition()));
+                return (T) Long.valueOf(in.readLong());
             case LONG_ARRAY:
-                return (T) readSingleLongArray(position);
+                return (T) in.readLongArray();
             case FLOAT:
-                return (T) Float.valueOf(in.readFloat(position.getStreamPosition()));
+                return (T) Float.valueOf(in.readFloat());
             case FLOAT_ARRAY:
-                return (T) readSingleFloatArray(position);
+                return (T) in.readFloatArray();
             case DOUBLE:
-                return (T) Double.valueOf(in.readDouble(position.getStreamPosition()));
+                return (T) Double.valueOf(in.readDouble());
             case DOUBLE_ARRAY:
-                return (T) readSingleDoubleArray(position);
+                return (T) in.readDoubleArray();
             case BOOLEAN:
-                return (T) Boolean.valueOf(in.readBoolean(position.getStreamPosition()));
+                return (T) Boolean.valueOf(in.readBoolean());
             case BOOLEAN_ARRAY:
-                return (T) readSingleBooleanArray(position);
+                return (T) in.readBooleanArray();
             case CHAR:
-                return (T) Character.valueOf(in.readChar(position.getStreamPosition()));
+                return (T) Character.valueOf(in.readChar());
             case CHAR_ARRAY:
-                return (T) readSingleCharArray(position);
+                return (T) in.readCharArray();
             case UTF:
-                in.position(position.getStreamPosition());
                 return (T) in.readUTF();
             case UTF_ARRAY:
-                return (T) readSingleUTFArray(position);
+                return (T) in.readUTFArray();
             case PORTABLE:
-                in.position(position.getStreamPosition());
                 return (T) serializer.readAndInitialize(in, position.getFactoryId(), position.getClassId());
             case PORTABLE_ARRAY:
-                return (T) readSinglePortableArray(position);
+                return (T) readPortableArray(position);
             default:
                 throw new IllegalArgumentException("Unsupported type " + position.getType());
-        }
-    }
-
-    private void validateType(PortablePosition position, FieldType expectedType) {
-        FieldType returnedType = position.getType();
-        if (position.getIndex() >= 0) {
-            returnedType = returnedType != null ? returnedType.getSingleType() : null;
-        }
-        if (expectedType != returnedType) {
-            String name = returnedType != null ? returnedType.name() : null;
-            throw new IllegalArgumentException("Wrong type read! Actual: " + name + " Expected: " + expectedType.name()
-                    + ". Did you use a correct read method? E.g. readInt() for int.");
         }
     }
 }
