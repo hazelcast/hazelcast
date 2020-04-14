@@ -23,7 +23,6 @@ import com.hazelcast.config.SSLConfig;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.networking.ChannelInitializer;
-import com.hazelcast.internal.networking.ChannelInitializerProvider;
 import com.hazelcast.internal.nio.ascii.TextChannelInitializer;
 import com.hazelcast.internal.server.IOService;
 
@@ -37,7 +36,6 @@ public class DefaultChannelInitializerProvider implements ChannelInitializerProv
     private final ChannelInitializer uniChannelInitializer;
     private final Config config;
     private volatile Map<EndpointQualifier, ChannelInitializer> initializerMap;
-
 
     public DefaultChannelInitializerProvider(IOService ioService, Config config) {
         checkSslConfigAvailability(config);

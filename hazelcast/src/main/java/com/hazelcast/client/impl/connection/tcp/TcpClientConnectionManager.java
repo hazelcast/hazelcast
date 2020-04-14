@@ -50,7 +50,6 @@ import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
-import com.hazelcast.internal.networking.ChannelInitializerProvider;
 import com.hazelcast.internal.networking.nio.NioNetworking;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListener;
@@ -651,8 +650,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
 
             bindSocketToPort(socket);
 
-            ChannelInitializerProvider channelInitializer = currentClusterContext.getChannelInitializerProvider();
-            Channel channel = networking.register(null, channelInitializer, socketChannel, true);
+            Channel channel = networking.register(currentClusterContext.getChannelInitializer(), socketChannel, true);
             channel.attributeMap().put(Address.class, target);
             channel.connect(resolveAddress(target), connectionTimeoutMillis);
 

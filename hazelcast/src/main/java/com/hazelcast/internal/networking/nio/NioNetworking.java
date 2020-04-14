@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.networking.nio;
 
-import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
@@ -27,7 +26,6 @@ import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelCloseListener;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.networking.ChannelInitializer;
-import com.hazelcast.internal.networking.ChannelInitializerProvider;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.Networking;
 import com.hazelcast.internal.networking.OutboundHandler;
@@ -294,17 +292,14 @@ public final class NioNetworking implements Networking, DynamicMetricsProvider {
     }
 
     @Override
-    public Channel register(EndpointQualifier endpointQualifier,
-                            ChannelInitializerProvider channelInitializerProvider,
+    public Channel register(ChannelInitializer channelInitializer,
                             SocketChannel socketChannel,
                             boolean clientMode) throws IOException {
         if (!started.get()) {
             throw new IllegalArgumentException("Can't register a channel when networking isn't started");
         }
 
-        ChannelInitializer initializer = channelInitializerProvider.provide(endpointQualifier);
-        assert initializer != null : "Found NULL channel initializer for endpoint-qualifier " + endpointQualifier;
-        NioChannel channel = new NioChannel(socketChannel, clientMode, initializer, closeListenerExecutor);
+        NioChannel channel = new NioChannel(socketChannel, clientMode, channelInitializer, closeListenerExecutor);
 
         socketChannel.configureBlocking(false);
 

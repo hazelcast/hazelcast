@@ -107,7 +107,7 @@ class ClusterDiscoveryServiceBuilder {
             final SSLConfig sslConfig = networkConfig.getSSLConfig();
             final SocketOptions socketOptions = networkConfig.getSocketOptions();
             contexts.add(new CandidateClusterContext(config.getClusterName(), provider, discoveryService, credentialsFactory,
-                    interceptor, qualifier -> clientExtension.createChannelInitializer(sslConfig, socketOptions)));
+                    interceptor, clientExtension.createChannelInitializer(sslConfig, socketOptions)));
         }
         return new ClusterDiscoveryService(unmodifiableList(contexts), configsTryCount, lifecycleService);
     }

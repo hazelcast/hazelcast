@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.networking;
+package com.hazelcast.internal.server.tcp;
 
 import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.internal.networking.ChannelInitializer;
 
 /**
  * Initializes the Channel when the Channel is used for the first time.
