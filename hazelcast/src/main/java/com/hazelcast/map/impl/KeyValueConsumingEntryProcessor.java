@@ -21,6 +21,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Map;
 import java.util.function.BiConsumer;
@@ -39,7 +40,7 @@ public class KeyValueConsumingEntryProcessor<K, V> implements EntryProcessor<K, 
     @Override
     public V process(Map.Entry<K, V> entry) {
         action.accept(entry.getKey(), entry.getValue());
-        return entry.getValue();
+        return null;
     }
 
     @Override
@@ -62,4 +63,9 @@ public class KeyValueConsumingEntryProcessor<K, V> implements EntryProcessor<K, 
         action = in.readObject();
     }
 
+    @Nullable
+    @Override
+    public EntryProcessor<K, V, V> getBackupProcessor() {
+        return null;
+    }
 }

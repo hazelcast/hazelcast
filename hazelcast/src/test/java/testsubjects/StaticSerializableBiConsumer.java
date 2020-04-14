@@ -16,31 +16,31 @@
 
 package testsubjects;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.map.IMap;
-
+import java.io.IOException;
 import java.io.Serializable;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.function.BiConsumer;
 
-public class StaticSerializableBiConsumer implements BiConsumer<String, Integer>, Serializable, HazelcastInstanceAware {
+public class StaticSerializableBiConsumer implements BiConsumer<String, Integer>, Serializable {
 
-    private String targetMapName;
-    private transient HazelcastInstance hazelcastInstance;
+    private String outputFilePath;
 
-    public StaticSerializableBiConsumer(String targetMapName) {
-        this.targetMapName = targetMapName;
-    }
-
-    @Override
-    public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-        this.hazelcastInstance = hazelcastInstance;
+    public StaticSerializableBiConsumer(String outputFilePath) {
+        this.outputFilePath = outputFilePath;
     }
 
     @Override
     public void accept(String key, Integer value) {
-        IMap<Object, Object> map = hazelcastInstance.getMap(targetMapName);
-        map.put(key, value);
+        try {
+            Path filePath = Paths.get(this.outputFilePath);
+            String keyValue = key + "#" + value + "\n";
+            Files.write(filePath, keyValue.getBytes(), StandardOpenOption.APPEND);
+        } catch (IOException e) {
+            //Test using this consumer should fail if desired
+        }
     }
 
 }

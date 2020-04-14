@@ -49,15 +49,19 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import testsubjects.StaticSerializableBiConsumer;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -1898,14 +1902,20 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testForEachWithStaticSerializableAction() {
+    public void testForEachWithStaticSerializableAction() throws IOException {
         final IMap<String, Integer> sourceMap = getSourceMapFor_ForEach_Test();
-        final IMap<String, Integer> targetMap = getTargetMapFor_ForEach_Test();
 
-        StaticSerializableBiConsumer action = new StaticSerializableBiConsumer("target_map");
+        //Create a bi-consumer which writes both args to a file
+        File tempFile = File.createTempFile("Map", ".txt");
+        tempFile.deleteOnExit();
+        StaticSerializableBiConsumer action = new StaticSerializableBiConsumer(tempFile.getAbsolutePath());
+
         sourceMap.forEach(action);
 
-        assertEntriesEqual(sourceMap, targetMap);
+        //Verify that all map entries got written to the file
+        List<String> lines = Files.readAllLines(tempFile.toPath());
+        boolean allEntriesProcessed = sourceMap.entrySet().stream().allMatch(e -> lines.contains(e.getKey() + "#" + e.getValue()));
+        assertTrue(allEntriesProcessed);
     }
 
     private IMap<String, Integer> getSourceMapFor_ForEach_Test() {
