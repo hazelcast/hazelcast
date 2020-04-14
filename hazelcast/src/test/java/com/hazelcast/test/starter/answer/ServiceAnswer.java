@@ -20,9 +20,9 @@ import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.PreJoinCacheConfig;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.multimap.impl.MultiMapPartitionContainer;
-import com.hazelcast.internal.services.ObjectNamespace;
 import org.mockito.invocation.InvocationOnMock;
 
 import java.lang.reflect.Method;
@@ -105,6 +105,9 @@ class ServiceAnswer extends AbstractAnswer {
             return mock(MapServiceContext.class, new MapServiceContextAnswer(mapServiceContext));
         } else if (arguments.length == 0 && methodName.startsWith("isRunning")) {
             // LifecycleService
+            return invoke(invocation);
+        } else if (arguments.length == 0 && methodName.startsWith("isDiscoveryCompleted")) {
+            // RaftService
             return invoke(invocation);
         } else if (arguments.length == 0 && methodName.startsWith("get")) {
             return invoke(invocation);
