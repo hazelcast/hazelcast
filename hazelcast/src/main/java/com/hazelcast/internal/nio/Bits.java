@@ -20,6 +20,7 @@ import com.hazelcast.internal.memory.impl.EndiannessUtil;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 import static com.hazelcast.internal.memory.impl.EndiannessUtil.BYTE_ARRAY_ACCESS;
 import static com.hazelcast.internal.memory.impl.EndiannessUtil.BYTE_BUFFER_ACCESS;
@@ -71,10 +72,6 @@ public final class Bits {
      */
     public static final int CACHE_LINE_LENGTH = 64;
 
-    /**
-     * A reusable instance of the UTF-8 charset
-     */
-    public static final Charset UTF_8 = Charset.forName("UTF-8");
     /**
      * A reusable instance of the ISO Latin-1 charset
      */

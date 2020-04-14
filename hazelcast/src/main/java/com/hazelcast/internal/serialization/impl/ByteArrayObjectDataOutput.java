@@ -25,13 +25,13 @@ import com.hazelcast.internal.serialization.Data;
 
 import java.io.IOException;
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 
 import static com.hazelcast.internal.nio.Bits.CHAR_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.LONG_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.NULL_ARRAY_LENGTH;
 import static com.hazelcast.internal.nio.Bits.SHORT_SIZE_IN_BYTES;
-import static com.hazelcast.internal.nio.Bits.UTF_8;
 import static com.hazelcast.version.Version.UNKNOWN;
 
 class ByteArrayObjectDataOutput extends VersionedObjectDataOutput implements BufferObjectDataOutput {
@@ -257,7 +257,7 @@ class ByteArrayObjectDataOutput extends VersionedObjectDataOutput implements Buf
             return;
         }
 
-        byte[] utf8Bytes = str.getBytes(UTF_8);
+        byte[] utf8Bytes = str.getBytes(StandardCharsets.UTF_8);
         writeInt(utf8Bytes.length);
         ensureAvailable(utf8Bytes.length);
         write(utf8Bytes);
