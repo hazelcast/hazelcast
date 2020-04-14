@@ -17,7 +17,6 @@
 package com.hazelcast.internal.server;
 
 import com.hazelcast.instance.EndpointQualifier;
-import com.hazelcast.internal.networking.NetworkStats;
 import com.hazelcast.internal.nio.ConnectionListenable;
 
 import java.util.Collection;

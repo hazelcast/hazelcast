@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.networking;
-
-import com.hazelcast.internal.server.AggregateServerConnectionManager;
-import com.hazelcast.internal.server.ServerConnectionManager;
+package com.hazelcast.internal.server;
 
 /**
  * Stats per {@link ServerConnectionManager} for both directions of network traffic (inbound or outbound).

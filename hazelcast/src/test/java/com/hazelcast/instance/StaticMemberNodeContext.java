@@ -22,7 +22,7 @@ import com.hazelcast.instance.impl.DefaultNodeExtension;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeContext;
 import com.hazelcast.instance.impl.NodeExtension;
-import com.hazelcast.internal.networking.ServerSocketRegistry;
+import com.hazelcast.internal.server.tcp.ServerSocketRegistry;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.server.Server;
 import com.hazelcast.test.TestHazelcastInstanceFactory;

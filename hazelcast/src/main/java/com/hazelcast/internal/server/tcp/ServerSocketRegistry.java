@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.networking;
+package com.hazelcast.internal.server.tcp;
 
 import com.hazelcast.instance.EndpointQualifier;
 

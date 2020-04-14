@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.networking;
+package com.hazelcast.internal.networking.nio;
 
+import com.hazelcast.internal.networking.Channel;
+import com.hazelcast.internal.networking.ChannelCloseListener;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.internal.nio.IOUtil;

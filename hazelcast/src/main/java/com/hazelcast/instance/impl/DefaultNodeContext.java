@@ -24,7 +24,7 @@ import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.networking.Networking;
-import com.hazelcast.internal.networking.ServerSocketRegistry;
+import com.hazelcast.internal.server.tcp.ServerSocketRegistry;
 import com.hazelcast.internal.networking.nio.NioNetworking;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.server.Server;

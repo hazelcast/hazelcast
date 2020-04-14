@@ -20,7 +20,7 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.TestNodeContext;
-import com.hazelcast.internal.networking.NetworkStats;
+import com.hazelcast.internal.server.NetworkStats;
 import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.server.AggregateServerConnectionManager;

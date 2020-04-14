@@ -23,7 +23,6 @@ import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.Channel;
-import com.hazelcast.internal.networking.ServerSocketRegistry;
 import com.hazelcast.internal.networking.nio.SelectorMode;
 import com.hazelcast.internal.server.IOService;
 import com.hazelcast.internal.util.counters.SwCounter;
