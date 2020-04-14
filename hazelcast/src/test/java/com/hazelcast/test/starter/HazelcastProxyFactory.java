@@ -55,8 +55,8 @@ import static com.hazelcast.test.starter.HazelcastStarterUtils.debug;
 import static com.hazelcast.test.starter.HazelcastStarterUtils.newCollectionFor;
 import static com.hazelcast.test.starter.ReflectionUtils.getConstructor;
 import static com.hazelcast.test.starter.ReflectionUtils.getReflectionsForTestPackage;
-import static java.lang.System.arraycopy;
 import static java.util.Arrays.asList;
+import static java.util.Arrays.copyOf;
 import static net.bytebuddy.jar.asm.Opcodes.ACC_PUBLIC;
 import static net.bytebuddy.matcher.ElementMatchers.is;
 import static net.bytebuddy.matcher.ElementMatchers.isConstructor;
@@ -309,21 +309,21 @@ public class HazelcastProxyFactory {
 
     private static Object toArray(ClassLoader targetClassLoader, Object arg) throws ClassNotFoundException {
         if (arg instanceof byte[]) {
-            return Arrays.copyOf((byte[]) arg, ((byte[]) arg).length);
+            return copyOf((byte[]) arg, ((byte[]) arg).length);
         } else if (arg instanceof int[]) {
-            return Arrays.copyOf((int[]) arg, ((int[]) arg).length);
+            return copyOf((int[]) arg, ((int[]) arg).length);
         } else if (arg instanceof long[]) {
-            return Arrays.copyOf((long[]) arg, ((long[]) arg).length);
+            return copyOf((long[]) arg, ((long[]) arg).length);
         } else if (arg instanceof boolean[]) {
-            return Arrays.copyOf((boolean[]) arg, ((boolean[]) arg).length);
+            return copyOf((boolean[]) arg, ((boolean[]) arg).length);
         } else if (arg instanceof short[]) {
-            return Arrays.copyOf((short[]) arg, ((short[]) arg).length);
+            return copyOf((short[]) arg, ((short[]) arg).length);
         } else if (arg instanceof float[]) {
-            return Arrays.copyOf((float[]) arg, ((float[]) arg).length);
+            return copyOf((float[]) arg, ((float[]) arg).length);
         } else if (arg instanceof double[]) {
-            return Arrays.copyOf((double[]) arg, ((double[]) arg).length);
+            return copyOf((double[]) arg, ((double[]) arg).length);
         } else if (arg instanceof char[]) {
-            return Arrays.copyOf((char[]) arg, ((char[]) arg).length);
+            return copyOf((char[]) arg, ((char[]) arg).length);
         }
         Object[] srcArray = ((Object[]) arg);
         Class<?> targetClass = targetClassLoader.loadClass(srcArray.getClass().getComponentType().getName());

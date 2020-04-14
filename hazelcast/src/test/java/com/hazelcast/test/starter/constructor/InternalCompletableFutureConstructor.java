@@ -16,7 +16,6 @@
 
 package com.hazelcast.test.starter.constructor;
 
-import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.test.starter.HazelcastStarterConstructor;
 
 import java.util.concurrent.CompletableFuture;

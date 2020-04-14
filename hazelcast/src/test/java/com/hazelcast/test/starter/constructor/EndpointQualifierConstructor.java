@@ -23,7 +23,7 @@ import java.lang.reflect.Method;
 import static com.hazelcast.test.starter.HazelcastProxyFactory.proxyArgumentsIfNeeded;
 import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
 
-@HazelcastStarterConstructor(classNames = {"com.hazelcast.internal.cluster.impl.EndpointQualifier"})
+@HazelcastStarterConstructor(classNames = {"com.hazelcast.instance.EndpointQualifier"})
 public class EndpointQualifierConstructor extends AbstractStarterObjectConstructor {
 
     public EndpointQualifierConstructor(Class<?> targetClass) {

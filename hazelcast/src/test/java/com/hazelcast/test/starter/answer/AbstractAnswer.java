@@ -234,7 +234,7 @@ abstract class AbstractAnswer implements Answer {
      * @return the (proxied) result from the invocation
      * @throws Exception if the invocation fails
      */
-    private Object invoke(boolean proxyResult, Method delegateMethod, Object... arguments) throws Exception {
+    Object invoke(boolean proxyResult, Method delegateMethod, Object... arguments) throws Exception {
         Object result = invokeDelegateMethod(delegateMethod, arguments);
         if (result == null) {
             return null;
