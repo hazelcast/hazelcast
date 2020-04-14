@@ -68,7 +68,7 @@ import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
 import com.hazelcast.internal.memory.DefaultMemoryStats;
 import com.hazelcast.internal.memory.MemoryStats;
-import com.hazelcast.internal.server.tcp.ChannelInitializerProvider;
+import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
@@ -108,6 +108,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
@@ -315,7 +316,7 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
-    public ChannelInitializerProvider createChannelInitializerProvider(IOService ioService) {
+    public Function<EndpointQualifier, ChannelInitializer> createChannelInitializerFn(IOService ioService) {
         DefaultChannelInitializerProvider provider = new DefaultChannelInitializerProvider(ioService, node.getConfig());
         provider.init();
         return provider;

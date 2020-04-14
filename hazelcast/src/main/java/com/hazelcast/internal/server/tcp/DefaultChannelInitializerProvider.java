@@ -29,8 +29,9 @@ import com.hazelcast.internal.server.IOService;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
 
-public class DefaultChannelInitializerProvider implements ChannelInitializerProvider {
+public class DefaultChannelInitializerProvider implements Function<EndpointQualifier, ChannelInitializer> {
 
     protected final IOService ioService;
     private final ChannelInitializer uniChannelInitializer;
@@ -45,7 +46,7 @@ public class DefaultChannelInitializerProvider implements ChannelInitializerProv
     }
 
     @Override
-    public ChannelInitializer provide(EndpointQualifier qualifier) {
+    public ChannelInitializer apply(EndpointQualifier qualifier) {
         return initializerMap.isEmpty() ? provideUnifiedChannelInitializer() : initializerMap.get(qualifier);
     }
 

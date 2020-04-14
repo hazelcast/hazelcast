@@ -154,7 +154,7 @@ public class DefaultNodeContext implements NodeContext {
                 node.loggingService,
                 metricsRegistry,
                 networking,
-                node.getNodeExtension().createChannelInitializerProvider(ioService),
+                node.getNodeExtension().createChannelInitializerFn(ioService),
                 node.getProperties());
     }
 
