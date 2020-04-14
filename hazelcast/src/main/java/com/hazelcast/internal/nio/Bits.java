@@ -72,11 +72,6 @@ public final class Bits {
      */
     public static final int CACHE_LINE_LENGTH = 64;
 
-    /**
-     * A reusable instance of the ISO Latin-1 charset
-     */
-    public static final Charset ISO_8859_1 = Charset.forName("ISO-8859-1");
-
     private Bits() {
     }
 
