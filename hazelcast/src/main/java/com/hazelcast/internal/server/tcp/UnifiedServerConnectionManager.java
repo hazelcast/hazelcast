@@ -19,7 +19,6 @@ package com.hazelcast.internal.server.tcp;
 import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.networking.ChannelInitializerProvider;
 import com.hazelcast.internal.server.IOService;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.logging.LoggingService;

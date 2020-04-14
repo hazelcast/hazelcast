@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.networking;
 
-import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.networking.nio.NioNetworking;
 
 import java.io.IOException;
@@ -46,17 +45,15 @@ public interface Networking {
      * In the future we need to think about passing the socket channel because
      * it binds Networking to tcp and this is not desirable.
      *
-     * @param endpointQualifier          the endpoint qualifier for this server socket
-     * @param channelInitializerProvider the class used for initializing the Channel after creation
-     * @param socketChannel              the socketChannel to register
-     * @param clientMode                 if the channel is made in clientMode or server mode
+     * @param channelInitializer initializer for the Channel
+     * @param socketChannel      the socketChannel to register
+     * @param clientMode         if the channel is made in clientMode or server mode
      * @return the created Channel
-     * @throws IOException when something failed while registering the
-     *                     socketChannel
+     * @throws IOException           when something failed while registering the
+     *                               socketChannel
      * @throws IllegalStateException if Networking isn't running.
      */
-    Channel register(EndpointQualifier endpointQualifier,
-                     ChannelInitializerProvider channelInitializerProvider,
+    Channel register(ChannelInitializer channelInitializer,
                      SocketChannel socketChannel,
                      boolean clientMode) throws IOException;
 
