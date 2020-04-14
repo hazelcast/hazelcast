@@ -16,6 +16,25 @@
 
 package com.hazelcast.jet.config;
 
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.jet.config.ResourceType.CLASS;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 import com.hazelcast.config.MetricsConfig;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.JetException;
@@ -32,24 +51,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.spi.annotation.PrivateApi;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.io.File;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.file.Files;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Objects;
-
-import static com.hazelcast.internal.util.Preconditions.checkNotNull;
-import static com.hazelcast.jet.config.ResourceType.CLASS;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Contains the configuration specific to one Hazelcast Jet job.
@@ -82,11 +83,10 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Sets the name of the job. There can be at most one active job in the
-     * cluster with particular name, however, the name can be reused after the
-     * previous job with that name completed or failed. See {@link
-     * JetInstance#newJobIfAbsent}. An active job is a job that is running,
-     * suspended or waiting to be run.
+     * Sets the name of the job. There can be at most one active job in the cluster
+     * with particular name, however, the name can be reused after the previous job
+     * with that name completed or failed. See {@link JetInstance#newJobIfAbsent}.
+     * An active job is a job that is running, suspended or waiting to be run.
      * <p>
      * The job name is printed in logs and is visible in Jet Management Center.
      * <p>
@@ -102,37 +102,37 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Tells whether {@link #setSplitBrainProtection(boolean) split brain protection}
-     * is enabled.
+     * Tells whether {@link #setSplitBrainProtection(boolean) split brain
+     * protection} is enabled.
      */
     public boolean isSplitBrainProtectionEnabled() {
         return splitBrainProtectionEnabled;
     }
 
     /**
-     * Configures the split brain protection feature. When enabled, Jet will
-     * restart the job after a topology change only if the cluster quorum is
-     * satisfied. The quorum value is
+     * Configures the split brain protection feature. When enabled, Jet will restart
+     * the job after a topology change only if the cluster quorum is satisfied. The
+     * quorum value is
      * <p>
      * {@code cluster size at job submission time / 2 + 1}.
      * <p>
-     * The job can be restarted only if the size of the cluster after restart
-     * is at least the quorum value. Only one of the clusters formed due to a
-     * split-brain condition can satisfy the quorum. For example, if at the
-     * time of job submission the cluster size was 5 and a network partition
-     * causes two clusters with sizes 3 and 2 to form, the job will restart
-     * only on the cluster with size 3.
+     * The job can be restarted only if the size of the cluster after restart is at
+     * least the quorum value. Only one of the clusters formed due to a split-brain
+     * condition can satisfy the quorum. For example, if at the time of job
+     * submission the cluster size was 5 and a network partition causes two clusters
+     * with sizes 3 and 2 to form, the job will restart only on the cluster with
+     * size 3.
      * <p>
      * Adding new nodes to the cluster after starting the job may defeat this
-     * mechanism. For instance, if there are 5 members at submission time
-     * (i.e., the quorum value is 3) and later a new node joins, a split into
-     * two clusters of size 3 will allow the job to be restarted on both sides.
+     * mechanism. For instance, if there are 5 members at submission time (i.e., the
+     * quorum value is 3) and later a new node joins, a split into two clusters of
+     * size 3 will allow the job to be restarted on both sides.
      * <p>
      * Split-brain protection is disabled by default.
      * <p>
-     * If {@linkplain #setAutoScaling(boolean) auto scaling} is disabled and
-     * you manually {@link Job#resume} the job, the job won't start executing
-     * until the quorum is met, but will remain in the resumed state.
+     * If {@linkplain #setAutoScaling(boolean) auto scaling} is disabled and you
+     * manually {@link Job#resume} the job, the job won't start executing until the
+     * quorum is met, but will remain in the resumed state.
      *
      * @return {@code this} instance for fluent API
      */
@@ -157,10 +157,8 @@ public class JobConfig implements IdentifiedDataSerializable {
      * </pre>
      *
      * @return {@code this} instance for fluent API
-     * @see InstanceConfig#setScaleUpDelayMillis
-     * Configuring the scale-up delay
-     * @see #setProcessingGuarantee
-     * Enabling/disabling snapshots
+     * @see InstanceConfig#setScaleUpDelayMillis Configuring the scale-up delay
+     * @see #setProcessingGuarantee Enabling/disabling snapshots
      */
     public JobConfig setAutoScaling(boolean enabled) {
         this.autoScaling = enabled;
@@ -168,16 +166,16 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Returns whether auto scaling is enabled, see {@link
-     * #setAutoScaling(boolean)}.
+     * Returns whether auto scaling is enabled, see
+     * {@link #setAutoScaling(boolean)}.
      */
     public boolean isAutoScaling() {
         return autoScaling;
     }
 
     /**
-     * Returns the configured {@link
-     * #setProcessingGuarantee(ProcessingGuarantee) processing guarantee}.
+     * Returns the configured {@link #setProcessingGuarantee(ProcessingGuarantee)
+     * processing guarantee}.
      */
     @Nonnull
     public ProcessingGuarantee getProcessingGuarantee() {
@@ -185,11 +183,11 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Set the {@link ProcessingGuarantee processing guarantee} for the job.
-     * When the processing guarantee is set to <i>at-least-once</i> or
+     * Set the {@link ProcessingGuarantee processing guarantee} for the job. When
+     * the processing guarantee is set to <i>at-least-once</i> or
      * <i>exactly-once</i>, the snapshot interval can be configured via
-     * {@link #setSnapshotIntervalMillis(long)}, otherwise it will default to
-     * 10 seconds.
+     * {@link #setSnapshotIntervalMillis(long)}, otherwise it will default to 10
+     * seconds.
      * <p>
      * The default value is {@link ProcessingGuarantee#NONE}.
      *
@@ -202,18 +200,18 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Returns the configured {@link #setSnapshotIntervalMillis(long)
-     * snapshot interval}.
+     * Returns the configured {@link #setSnapshotIntervalMillis(long) snapshot
+     * interval}.
      */
     public long getSnapshotIntervalMillis() {
         return snapshotIntervalMillis;
     }
 
     /**
-     * Sets the snapshot interval in milliseconds &mdash; the interval between
-     * the completion of the previous snapshot and the start of a new one. Must
-     * be set to a positive value. This setting is only relevant with
-     * <i>at-least-once</i> or <i>exactly-once</i> processing guarantees.
+     * Sets the snapshot interval in milliseconds &mdash; the interval between the
+     * completion of the previous snapshot and the start of a new one. Must be set
+     * to a positive value. This setting is only relevant with <i>at-least-once</i>
+     * or <i>exactly-once</i> processing guarantees.
      * <p>
      * Default value is set to 10 seconds.
      *
@@ -227,19 +225,18 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Adds the given classes and recursively all their nested
-     * (inner & anonymous) classes to the Jet job's classpath. They will be
-     * accessible to all the code attached to the underlying pipeline or DAG,
-     * but not to any other code. (An important example is the {@code IMap}
-     * data source, which can instantiate only the classes from the Jet
-     * instance's classpath.)
+     * Adds the given classes and recursively all their nested (inner & anonymous)
+     * classes to the Jet job's classpath. They will be accessible to all the code
+     * attached to the underlying pipeline or DAG, but not to any other code. (An
+     * important example is the {@code IMap} data source, which can instantiate only
+     * the classes from the Jet instance's classpath.)
      * <p>
      * See also {@link #addJar} and {@link #addClasspathResource}.
      *
-     * @implNote Backing storage for this method is an {@link IMap} with a
-     * default backup count of 1. When adding big files as a resource, size
-     * the cluster accordingly in terms of memory, since each file will have 2
-     * copies inside the cluster(primary + backup replica).
+     * @implNote Backing storage for this method is an {@link IMap} with a default
+     *           backup count of 1. When adding big files as a resource, size the
+     *           cluster accordingly in terms of memory, since each file will have 2
+     *           copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
      */
@@ -251,19 +248,18 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Adds recursively all the classes and resources in given packages
-     * to the Jet job's classpath. They will be accessible to all the
-     * code attached to the underlying pipeline or DAG, but not to any
-     * other code. (An important example is the {@code IMap} data source,
-     * which can instantiate only the classes from the Jet instance's
-     * classpath.)
+     * Adds recursively all the classes and resources in given packages to the Jet
+     * job's classpath. They will be accessible to all the code attached to the
+     * underlying pipeline or DAG, but not to any other code. (An important example
+     * is the {@code IMap} data source, which can instantiate only the classes from
+     * the Jet instance's classpath.)
      * <p>
      * See also {@link #addJar} and {@link #addClasspathResource}.
      *
-     * @implNote Backing storage for this method is an {@link IMap} with a
-     * default backup count of 1. When adding big files as a resource, size
-     * the cluster accordingly in terms of memory, since each file will have
-     * copies inside the cluster(primary + backup replica).
+     * @implNote Backing storage for this method is an {@link IMap} with a default
+     *           backup count of 1. When adding big files as a resource, size the
+     *           cluster accordingly in terms of memory, since each file will have
+     *           copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
      * @since 4.1
@@ -278,19 +274,19 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Adds a JAR whose contents will be accessible to all the code attached to
-     * the underlying pipeline or DAG, but not to any other code. An important
-     * example is the {@code IMap} data source, which can instantiate only the
-     * classes from the Jet instance's classpath.)
+     * Adds a JAR whose contents will be accessible to all the code attached to the
+     * underlying pipeline or DAG, but not to any other code. An important example
+     * is the {@code IMap} data source, which can instantiate only the classes from
+     * the Jet instance's classpath.)
      * <p>
-     * This variant identifies the JAR with a URL, which must contain at least
-     * one path segment. The last path segment ("filename") will be used as the
-     * resource ID, so two JARs with the same filename will be in conflict.
+     * This variant identifies the JAR with a URL, which must contain at least one
+     * path segment. The last path segment ("filename") will be used as the resource
+     * ID, so two JARs with the same filename will be in conflict.
      *
-     * @implNote Backing storage for this method is an {@link IMap} with a
-     * default backup count of 1. When adding big files as a resource, size
-     * the cluster accordingly in terms of memory, since each file will have 2
-     * copies inside the cluster(primary + backup replica).
+     * @implNote Backing storage for this method is an {@link IMap} with a default
+     *           backup count of 1. When adding big files as a resource, size the
+     *           cluster accordingly in terms of memory, since each file will have 2
+     *           copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
      */
@@ -300,19 +296,19 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Adds a JAR whose contents will be accessible to all the code attached to
-     * the underlying pipeline or DAG, but not to any other code. An important
-     * example is the {@code IMap} data source, which can instantiate only the
-     * classes from the Jet instance's classpath.)
+     * Adds a JAR whose contents will be accessible to all the code attached to the
+     * underlying pipeline or DAG, but not to any other code. An important example
+     * is the {@code IMap} data source, which can instantiate only the classes from
+     * the Jet instance's classpath.)
      * <p>
-     * This variant identifies the JAR with a {@code File}. The filename part
-     * of the path will be used as the resource ID, so two JARs with the same
-     * filename will be in conflict.
+     * This variant identifies the JAR with a {@code File}. The filename part of the
+     * path will be used as the resource ID, so two JARs with the same filename will
+     * be in conflict.
      *
-     * @implNote Backing storage for this method is an {@link IMap} with a
-     * default backup count of 1. When adding big files as a resource, size
-     * the cluster accordingly in terms of memory, since each file will have 2
-     * copies inside the cluster(primary + backup replica).
+     * @implNote Backing storage for this method is an {@link IMap} with a default
+     *           backup count of 1. When adding big files as a resource, size the
+     *           cluster accordingly in terms of memory, since each file will have 2
+     *           copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
      */
@@ -323,19 +319,19 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Adds a JAR whose contents will be accessible to all the code attached to
-     * the underlying pipeline or DAG, but not to any other code. An important
-     * example is the {@code IMap} data source, which can instantiate only the
-     * classes from the Jet instance's classpath.)
+     * Adds a JAR whose contents will be accessible to all the code attached to the
+     * underlying pipeline or DAG, but not to any other code. An important example
+     * is the {@code IMap} data source, which can instantiate only the classes from
+     * the Jet instance's classpath.)
      * <p>
-     * This variant identifies the JAR with a path string. The filename part
-     * will be used as the resource ID, so two JARs with the same filename will
-     * be in conflict.
+     * This variant identifies the JAR with a path string. The filename part will be
+     * used as the resource ID, so two JARs with the same filename will be in
+     * conflict.
      *
-     * @implNote Backing storage for this method is an {@link IMap} with a
-     * default backup count of 1. When adding big files as a resource, size
-     * the cluster accordingly in terms of memory, since each file will have 2
-     * copies inside the cluster(primary + backup replica).
+     * @implNote Backing storage for this method is an {@link IMap} with a default
+     *           backup count of 1. When adding big files as a resource, size the
+     *           cluster accordingly in terms of memory, since each file will have 2
+     *           copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
      */
@@ -345,22 +341,21 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Adds a ZIP file with JARs whose contents will be accessible to all the
-     * code attached to the underlying pipeline or DAG, but not to any other
-     * code. (An important example is the {@code IMap} data source, which can
-     * instantiate only the classes from the Jet instance's classpath.)
+     * Adds a ZIP file with JARs whose contents will be accessible to all the code
+     * attached to the underlying pipeline or DAG, but not to any other code. (An
+     * important example is the {@code IMap} data source, which can instantiate only
+     * the classes from the Jet instance's classpath.)
      * <p>
-     * This variant identifies the ZIP file with a URL, which must contain at
-     * least one path segment. The last path segment ("filename") will be used
-     * as the resource ID, so two ZIPs with the same filename will be in
-     * conflict.
+     * This variant identifies the ZIP file with a URL, which must contain at least
+     * one path segment. The last path segment ("filename") will be used as the
+     * resource ID, so two ZIPs with the same filename will be in conflict.
      * <p>
      * The ZIP file should contain only JARs. Any other files will be ignored.
      *
-     * @implNote Backing storage for this method is an {@link IMap} with a
-     * default backup count of 1. When adding big files as a resource, size
-     * the cluster accordingly in terms of memory, since each file will have 2
-     * copies inside the cluster(primary + backup replica).
+     * @implNote Backing storage for this method is an {@link IMap} with a default
+     *           backup count of 1. When adding big files as a resource, size the
+     *           cluster accordingly in terms of memory, since each file will have 2
+     *           copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
      * @since 4.0
@@ -371,21 +366,21 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Adds a ZIP file with JARs whose contents will be accessible to all the
-     * code attached to the underlying pipeline or DAG, but not to any other
-     * code. (An important example is the {@code IMap} data source, which can
-     * instantiate only the classes from the Jet instance's classpath.)
+     * Adds a ZIP file with JARs whose contents will be accessible to all the code
+     * attached to the underlying pipeline or DAG, but not to any other code. (An
+     * important example is the {@code IMap} data source, which can instantiate only
+     * the classes from the Jet instance's classpath.)
      * <p>
-     * This variant identifies the ZIP file with a {@code File}. The filename
-     * part will be used as the resource ID, so two ZIPs with the same filename
-     * will be in conflict.
+     * This variant identifies the ZIP file with a {@code File}. The filename part
+     * will be used as the resource ID, so two ZIPs with the same filename will be
+     * in conflict.
      * <p>
      * The ZIP file should contain only JARs. Any other files will be ignored.
      *
-     * @implNote Backing storage for this method is an {@link IMap} with a
-     * default backup count of 1. When adding big files as a resource, size
-     * the cluster accordingly in terms of memory, since each file will have 2
-     * copies inside the cluster(primary + backup replica).
+     * @implNote Backing storage for this method is an {@link IMap} with a default
+     *           backup count of 1. When adding big files as a resource, size the
+     *           cluster accordingly in terms of memory, since each file will have 2
+     *           copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
      * @since 4.0
@@ -397,21 +392,21 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Adds a ZIP file with JARs whose contents will be accessible to all the
-     * code attached to the underlying pipeline or DAG, but not to any other
-     * code. (An important example is the {@code IMap} data source, which can
-     * instantiate only the classes from the Jet instance's classpath.)
+     * Adds a ZIP file with JARs whose contents will be accessible to all the code
+     * attached to the underlying pipeline or DAG, but not to any other code. (An
+     * important example is the {@code IMap} data source, which can instantiate only
+     * the classes from the Jet instance's classpath.)
      * <p>
-     * This variant identifies the ZIP file with a path string. The filename
-     * part will be used as the resource ID, so two ZIPs with the same filename
-     * will be in conflict.
+     * This variant identifies the ZIP file with a path string. The filename part
+     * will be used as the resource ID, so two ZIPs with the same filename will be
+     * in conflict.
      * <p>
      * The ZIP file should contain only JARs. Any other files will be ignored.
      *
-     * @implNote Backing storage for this method is an {@link IMap} with a
-     * default backup count of 1. When adding big files as a resource, size
-     * the cluster accordingly in terms of memory, since each file will have 2
-     * copies inside the cluster(primary + backup replica).
+     * @implNote Backing storage for this method is an {@link IMap} with a default
+     *           backup count of 1. When adding big files as a resource, size the
+     *           cluster accordingly in terms of memory, since each file will have 2
+     *           copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
      * @since 4.0
@@ -422,19 +417,17 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Adds a resource that will be available on the Jet job's classpath. All
-     * the code attached to the underlying pipeline or DAG will have access to
-     * it.
+     * Adds a resource that will be available on the Jet job's classpath. All the
+     * code attached to the underlying pipeline or DAG will have access to it.
      * <p>
-     * This variant identifies the resource with a URL, which must contain at
-     * least one path segment. The last path segment ("filename") will be used
-     * as the resource ID, so two resources with the same filename will be in
-     * conflict.
+     * This variant identifies the resource with a URL, which must contain at least
+     * one path segment. The last path segment ("filename") will be used as the
+     * resource ID, so two resources with the same filename will be in conflict.
      *
-     * @implNote Backing storage for this method is an {@link IMap} with a
-     * default backup count of 1. When adding big files as a resource, size
-     * the cluster accordingly in terms of memory, since each file will have 2
-     * copies inside the cluster(primary + backup replica).
+     * @implNote Backing storage for this method is an {@link IMap} with a default
+     *           backup count of 1. When adding big files as a resource, size the
+     *           cluster accordingly in terms of memory, since each file will have 2
+     *           copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
      */
@@ -444,15 +437,15 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Adds a resource that will be available on the Jet job's classpath. All
-     * the code attached to the underlying pipeline or DAG will have access to
-     * it. The supplied {@code id} becomes the path under which the resource is
-     * available from the class loader.
+     * Adds a resource that will be available on the Jet job's classpath. All the
+     * code attached to the underlying pipeline or DAG will have access to it. The
+     * supplied {@code id} becomes the path under which the resource is available
+     * from the class loader.
      *
-     * @implNote Backing storage for this method is an {@link IMap} with a
-     * default backup count of 1. When adding big files as a resource, size
-     * the cluster accordingly in terms of memory, since each file will have 2
-     * copies inside the cluster(primary + backup replica).
+     * @implNote Backing storage for this method is an {@link IMap} with a default
+     *           backup count of 1. When adding big files as a resource, size the
+     *           cluster accordingly in terms of memory, since each file will have 2
+     *           copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
      */
@@ -462,16 +455,16 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Adds a file that will be available as a resource on the Jet job's
-     * classpath. All the code attached to the underlying pipeline or DAG
-     * will have access to it. The file will reside in the root of the
-     * classpath, under its own filename. This means that two files with the
-     * same filename will be in conflict.
+     * Adds a file that will be available as a resource on the Jet job's classpath.
+     * All the code attached to the underlying pipeline or DAG will have access to
+     * it. The file will reside in the root of the classpath, under its own
+     * filename. This means that two files with the same filename will be in
+     * conflict.
      *
-     * @implNote Backing storage for this method is an {@link IMap} with a
-     * default backup count of 1. When adding big files as a resource, size
-     * the cluster accordingly in terms of memory, since each file will have 2
-     * copies inside the cluster(primary + backup replica).
+     * @implNote Backing storage for this method is an {@link IMap} with a default
+     *           backup count of 1. When adding big files as a resource, size the
+     *           cluster accordingly in terms of memory, since each file will have 2
+     *           copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
      */
@@ -482,15 +475,15 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Adds a file that will be available as a resource on the Jet job's
-     * classpath. All the code attached to the underlying pipeline or DAG
-     * will have access to it. The supplied {@code id} becomes the path under
-     * which the resource is available from the class loader.
+     * Adds a file that will be available as a resource on the Jet job's classpath.
+     * All the code attached to the underlying pipeline or DAG will have access to
+     * it. The supplied {@code id} becomes the path under which the resource is
+     * available from the class loader.
      *
-     * @implNote Backing storage for this method is an {@link IMap} with a
-     * default backup count of 1. When adding big files as a resource, size
-     * the cluster accordingly in terms of memory, since each file will have 2
-     * copies inside the cluster(primary + backup replica).
+     * @implNote Backing storage for this method is an {@link IMap} with a default
+     *           backup count of 1. When adding big files as a resource, size the
+     *           cluster accordingly in terms of memory, since each file will have 2
+     *           copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
      */
@@ -501,16 +494,15 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Adds a file that will be available as a resource on the Jet job's
-     * classpath. All the code attached to the underlying pipeline or DAG
-     * will have access to it. It will reside in the root of the classpath,
-     * under its own filename. This means that two files with the same filename
-     * will be in conflict.
+     * Adds a file that will be available as a resource on the Jet job's classpath.
+     * All the code attached to the underlying pipeline or DAG will have access to
+     * it. It will reside in the root of the classpath, under its own filename. This
+     * means that two files with the same filename will be in conflict.
      *
-     * @implNote Backing storage for this method is an {@link IMap} with a
-     * default backup count of 1. When adding big files as a resource, size
-     * the cluster accordingly in terms of memory, since each file will have 2
-     * copies inside the cluster(primary + backup replica).
+     * @implNote Backing storage for this method is an {@link IMap} with a default
+     *           backup count of 1. When adding big files as a resource, size the
+     *           cluster accordingly in terms of memory, since each file will have 2
+     *           copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
      */
@@ -520,15 +512,15 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Adds a file that will be available as a resource on the Jet job's
-     * classpath. All the code attached to the underlying pipeline or DAG
-     * will have access to it. The supplied {@code id} becomes the path
-     * under which the resource is available from the class loader.
+     * Adds a file that will be available as a resource on the Jet job's classpath.
+     * All the code attached to the underlying pipeline or DAG will have access to
+     * it. The supplied {@code id} becomes the path under which the resource is
+     * available from the class loader.
      *
-     * @implNote Backing storage for this method is an {@link IMap} with a
-     * default backup count of 1. When adding big files as a resource, size
-     * the cluster accordingly in terms of memory, since each file will have 2
-     * copies inside the cluster(primary + backup replica).
+     * @implNote Backing storage for this method is an {@link IMap} with a default
+     *           backup count of 1. When adding big files as a resource, size the
+     *           cluster accordingly in terms of memory, since each file will have 2
+     *           copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
      */
@@ -539,21 +531,21 @@ public class JobConfig implements IdentifiedDataSerializable {
 
     /**
      * Adds the file identified by the supplied URL as a resource that will be
-     * available to the job while it's executing in the Jet cluster. The
-     * resource's filename (the last path segment in the URL) becomes its ID,
-     * so two resources with the same filename will be in conflict.
+     * available to the job while it's executing in the Jet cluster. The resource's
+     * filename (the last path segment in the URL) becomes its ID, so two resources
+     * with the same filename will be in conflict.
      * <p>
-     * To retrieve the file from within the Jet job, call {@link
-     * ProcessorSupplier.Context#attachedFile(String) ctx.attachedFile(id)},
-     * where {@code ctx} is the {@code ProcessorSupplier} context available,
-     * for example, to {@link ServiceFactory#createContextFn()}. The file will
-     * have the same name as the one supplied here, but it will be in a
-     * temporary directory on the Jet server.
+     * To retrieve the file from within the Jet job, call
+     * {@link ProcessorSupplier.Context#attachedFile(String) ctx.attachedFile(id)},
+     * where {@code ctx} is the {@code ProcessorSupplier} context available, for
+     * example, to {@link ServiceFactory#createContextFn()}. The file will have the
+     * same name as the one supplied here, but it will be in a temporary directory
+     * on the Jet server.
      *
-     * @implNote Backing storage for this method is an {@link IMap} with a
-     * default backup count of 1. When adding big files as a resource, size
-     * the cluster accordingly in terms of memory, since each file will have 2
-     * copies inside the cluster(primary + backup replica).
+     * @implNote Backing storage for this method is an {@link IMap} with a default
+     *           backup count of 1. When adding big files as a resource, size the
+     *           cluster accordingly in terms of memory, since each file will have 2
+     *           copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
      * @since 4.0
@@ -564,21 +556,21 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Adds the file identified by the supplied URL to the list of resources
-     * that will be available to the job while it's executing in the Jet
-     * cluster. The file will be registered under the supplied ID.
+     * Adds the file identified by the supplied URL to the list of resources that
+     * will be available to the job while it's executing in the Jet cluster. The
+     * file will be registered under the supplied ID.
      * <p>
-     * To retrieve the file from within the Jet job, call {@link
-     * ProcessorSupplier.Context#attachedFile(String) ctx.attachedFile(id)},
-     * where {@code ctx} is the {@code ProcessorSupplier} context available,
-     * for example, to {@link ServiceFactory#createContextFn()}. The file will
-     * have the same name as the one supplied here, but it will be in a
-     * temporary directory on the Jet server.
+     * To retrieve the file from within the Jet job, call
+     * {@link ProcessorSupplier.Context#attachedFile(String) ctx.attachedFile(id)},
+     * where {@code ctx} is the {@code ProcessorSupplier} context available, for
+     * example, to {@link ServiceFactory#createContextFn()}. The file will have the
+     * same name as the one supplied here, but it will be in a temporary directory
+     * on the Jet server.
      *
-     * @implNote Backing storage for this method is an {@link IMap} with a
-     * default backup count of 1. When adding big files as a resource, size
-     * the cluster accordingly in terms of memory, since each file will have 2
-     * copies inside the cluster(primary + backup replica).
+     * @implNote Backing storage for this method is an {@link IMap} with a default
+     *           backup count of 1. When adding big files as a resource, size the
+     *           cluster accordingly in terms of memory, since each file will have 2
+     *           copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
      * @since 4.0
@@ -590,21 +582,21 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Adds the supplied file to the list of resources that will be available
-     * to the job while it's executing in the Jet cluster. The filename becomes
-     * the ID of the file, so two files with the same name will be in conflict.
+     * Adds the supplied file to the list of resources that will be available to the
+     * job while it's executing in the Jet cluster. The filename becomes the ID of
+     * the file, so two files with the same name will be in conflict.
      * <p>
-     * To retrieve the file from within the Jet job, call {@link
-     * ProcessorSupplier.Context#attachedFile(String) ctx.attachedFile(id)},
-     * where {@code ctx} is the {@code ProcessorSupplier} context available,
-     * for example, to {@link ServiceFactory#createContextFn()}. The file will
-     * have the same name as the one supplied here, but it will be in a
-     * temporary directory on the Jet server.
+     * To retrieve the file from within the Jet job, call
+     * {@link ProcessorSupplier.Context#attachedFile(String) ctx.attachedFile(id)},
+     * where {@code ctx} is the {@code ProcessorSupplier} context available, for
+     * example, to {@link ServiceFactory#createContextFn()}. The file will have the
+     * same name as the one supplied here, but it will be in a temporary directory
+     * on the Jet server.
      *
-     * @implNote Backing storage for this method is an {@link IMap} with a
-     * default backup count of 1. When adding big files as a resource, size
-     * the cluster accordingly in terms of memory, since each file will have 2
-     * copies inside the cluster(primary + backup replica).
+     * @implNote Backing storage for this method is an {@link IMap} with a default
+     *           backup count of 1. When adding big files as a resource, size the
+     *           cluster accordingly in terms of memory, since each file will have 2
+     *           copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
      * @since 4.0
@@ -615,21 +607,21 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Adds the supplied file to the list of files that will be available to
-     * the job while it's executing in the Jet cluster. The file will be
-     * registered under the supplied ID.
+     * Adds the supplied file to the list of files that will be available to the job
+     * while it's executing in the Jet cluster. The file will be registered under
+     * the supplied ID.
      * <p>
-     * To retrieve the file from within the Jet job, call {@link
-     * ProcessorSupplier.Context#attachedFile(String) ctx.attachedFile(id)},
-     * where {@code ctx} is the {@code ProcessorSupplier} context available,
-     * for example, to {@link ServiceFactory#createContextFn()}. The file will
-     * have the same name as the one supplied here, but it will be in a
-     * temporary directory on the Jet server.
+     * To retrieve the file from within the Jet job, call
+     * {@link ProcessorSupplier.Context#attachedFile(String) ctx.attachedFile(id)},
+     * where {@code ctx} is the {@code ProcessorSupplier} context available, for
+     * example, to {@link ServiceFactory#createContextFn()}. The file will have the
+     * same name as the one supplied here, but it will be in a temporary directory
+     * on the Jet server.
      *
-     * @implNote Backing storage for this method is an {@link IMap} with a
-     * default backup count of 1. When adding big files as a resource, size
-     * the cluster accordingly in terms of memory, since each file will have 2
-     * copies inside the cluster(primary + backup replica).
+     * @implNote Backing storage for this method is an {@link IMap} with a default
+     *           backup count of 1. When adding big files as a resource, size the
+     *           cluster accordingly in terms of memory, since each file will have 2
+     *           copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
      * @since 4.0
@@ -641,22 +633,22 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Adds the file identified by the supplied pathname to the list of
-     * files that will be available to the job while it's executing in
-     * the Jet cluster. The filename becomes the ID of the file, so two
-     * files with the same name will be in conflict.
+     * Adds the file identified by the supplied pathname to the list of files that
+     * will be available to the job while it's executing in the Jet cluster. The
+     * filename becomes the ID of the file, so two files with the same name will be
+     * in conflict.
      * <p>
-     * To retrieve the file from within the Jet job, call {@link
-     * ProcessorSupplier.Context#attachedFile(String) ctx.attachedFile(id)},
-     * where {@code ctx} is the {@code ProcessorSupplier} context available,
-     * for example, to {@link ServiceFactory#createContextFn()}. The file will
-     * have the same name as the one supplied here, but it will be in a
-     * temporary directory on the Jet server.
+     * To retrieve the file from within the Jet job, call
+     * {@link ProcessorSupplier.Context#attachedFile(String) ctx.attachedFile(id)},
+     * where {@code ctx} is the {@code ProcessorSupplier} context available, for
+     * example, to {@link ServiceFactory#createContextFn()}. The file will have the
+     * same name as the one supplied here, but it will be in a temporary directory
+     * on the Jet server.
      *
-     * @implNote Backing storage for this method is an {@link IMap} with a
-     * default backup count of 1. When adding big files as a resource, size
-     * the cluster accordingly in terms of memory, since each file will have 2
-     * copies inside the cluster(primary + backup replica).
+     * @implNote Backing storage for this method is an {@link IMap} with a default
+     *           backup count of 1. When adding big files as a resource, size the
+     *           cluster accordingly in terms of memory, since each file will have 2
+     *           copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
      * @since 4.0
@@ -667,21 +659,21 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Adds the file identified by the supplied pathname to the list of
-     * files that will be available to the job while it's executing in
-     * the Jet cluster. The file will be registered under the supplied ID.
+     * Adds the file identified by the supplied pathname to the list of files that
+     * will be available to the job while it's executing in the Jet cluster. The
+     * file will be registered under the supplied ID.
      * <p>
-     * To retrieve the file from within the Jet job, call {@link
-     * ProcessorSupplier.Context#attachedFile(String) ctx.attachedFile(id)},
-     * where {@code ctx} is the {@code ProcessorSupplier} context available,
-     * for example, to {@link ServiceFactory#createContextFn()}. The file will
-     * have the same name as the one supplied here, but it will be in a
-     * temporary directory on the Jet server.
+     * To retrieve the file from within the Jet job, call
+     * {@link ProcessorSupplier.Context#attachedFile(String) ctx.attachedFile(id)},
+     * where {@code ctx} is the {@code ProcessorSupplier} context available, for
+     * example, to {@link ServiceFactory#createContextFn()}. The file will have the
+     * same name as the one supplied here, but it will be in a temporary directory
+     * on the Jet server.
      *
-     * @implNote Backing storage for this method is an {@link IMap} with a
-     * default backup count of 1. When adding big files as a resource, size
-     * the cluster accordingly in terms of memory, since each file will have 2
-     * copies inside the cluster(primary + backup replica).
+     * @implNote Backing storage for this method is an {@link IMap} with a default
+     *           backup count of 1. When adding big files as a resource, size the
+     *           cluster accordingly in terms of memory, since each file will have 2
+     *           copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
      * @since 4.0
@@ -692,22 +684,23 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Adds the directory identified by the supplied URL to the list of
-     * directories that will be available to the job while it's executing in
-     * the Jet cluster. Directory name (the last path segment in the URL)
-     * becomes its ID, so two directories with the same name will be in
-     * conflict. {@linkplain Files#isHidden Hidden files} are ignored.
+     * Adds the directory identified by the supplied URL to the list of directories
+     * that will be available to the job while it's executing in the Jet cluster.
+     * Directory name (the last path segment in the URL) becomes its ID, so two
+     * directories with the same name will be in conflict.
+     * {@linkplain Files#isHidden Hidden files} are ignored.
      * <p>
-     * To retrieve the directory from within the Jet job, call {@link
-     * ProcessorSupplier.Context#attachedDirectory(String) ctx.attachedDirectory(id)},
-     * where {@code ctx} is the {@code ProcessorSupplier} context available,
-     * for example, to {@link ServiceFactory#createContextFn()}. It will be a
-     * temporary directory on the Jet server.
+     * To retrieve the directory from within the Jet job, call
+     * {@link ProcessorSupplier.Context#attachedDirectory(String)
+     * ctx.attachedDirectory(id)}, where {@code ctx} is the
+     * {@code ProcessorSupplier} context available, for example, to
+     * {@link ServiceFactory#createContextFn()}. It will be a temporary directory on
+     * the Jet server.
      *
-     * @implNote Backing storage for this method is an {@link IMap} with a
-     * default backup count of 1. When adding big files as a resource, size
-     * the cluster accordingly in terms of memory, since each file will have 2
-     * copies inside the cluster(primary + backup replica).
+     * @implNote Backing storage for this method is an {@link IMap} with a default
+     *           backup count of 1. When adding big files as a resource, size the
+     *           cluster accordingly in terms of memory, since each file will have 2
+     *           copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
      * @since 4.0
@@ -718,21 +711,22 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Adds the directory identified by the supplied URL to the list of
-     * directories that will be available to the job while it's executing in
-     * the Jet cluster. The directory will be registered under the supplied ID.
+     * Adds the directory identified by the supplied URL to the list of directories
+     * that will be available to the job while it's executing in the Jet cluster.
+     * The directory will be registered under the supplied ID.
      * {@linkplain Files#isHidden Hidden files} are ignored.
      * <p>
-     * To retrieve the directory from within the Jet job, call {@link
-     * ProcessorSupplier.Context#attachedDirectory(String) ctx.attachedDirectory(id)},
-     * where {@code ctx} is the {@code ProcessorSupplier} context available,
-     * for example, to {@link ServiceFactory#createContextFn()}. It will be a
-     * temporary directory on the Jet server.
+     * To retrieve the directory from within the Jet job, call
+     * {@link ProcessorSupplier.Context#attachedDirectory(String)
+     * ctx.attachedDirectory(id)}, where {@code ctx} is the
+     * {@code ProcessorSupplier} context available, for example, to
+     * {@link ServiceFactory#createContextFn()}. It will be a temporary directory on
+     * the Jet server.
      *
-     * @implNote Backing storage for this method is an {@link IMap} with a
-     * default backup count of 1. When adding big files as a resource, size
-     * the cluster accordingly in terms of memory, since each file will have 2
-     * copies inside the cluster(primary + backup replica).
+     * @implNote Backing storage for this method is an {@link IMap} with a default
+     *           backup count of 1. When adding big files as a resource, size the
+     *           cluster accordingly in terms of memory, since each file will have 2
+     *           copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
      * @since 4.0
@@ -745,22 +739,23 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Adds the directory identified by the supplied pathname to the list of
-     * files that will be available to the job while it's executing in the Jet
-     * cluster. The directory name (the last path segment) becomes its ID, so two
-     * directories with the same name will be in conflict.
-     * {@linkplain Files#isHidden Hidden files} are ignored.
+     * Adds the directory identified by the supplied pathname to the list of files
+     * that will be available to the job while it's executing in the Jet cluster.
+     * The directory name (the last path segment) becomes its ID, so two directories
+     * with the same name will be in conflict. {@linkplain Files#isHidden Hidden
+     * files} are ignored.
      * <p>
-     * To retrieve the directory from within the Jet job, call {@link
-     * ProcessorSupplier.Context#attachedDirectory(String) ctx.attachedDirectory(id)},
-     * where {@code ctx} is the {@code ProcessorSupplier} context available,
-     * for example, to {@link ServiceFactory#createContextFn()}. It will be a
-     * temporary directory on the Jet server.
+     * To retrieve the directory from within the Jet job, call
+     * {@link ProcessorSupplier.Context#attachedDirectory(String)
+     * ctx.attachedDirectory(id)}, where {@code ctx} is the
+     * {@code ProcessorSupplier} context available, for example, to
+     * {@link ServiceFactory#createContextFn()}. It will be a temporary directory on
+     * the Jet server.
      *
-     * @implNote Backing storage for this method is an {@link IMap} with a
-     * default backup count of 1. When adding big files as a resource, size
-     * the cluster accordingly in terms of memory, since each file will have 2
-     * copies inside the cluster(primary + backup replica).
+     * @implNote Backing storage for this method is an {@link IMap} with a default
+     *           backup count of 1. When adding big files as a resource, size the
+     *           cluster accordingly in terms of memory, since each file will have 2
+     *           copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
      * @since 4.0
@@ -771,21 +766,22 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Adds the directory identified by the supplied pathname to the list of
-     * files that will be available to the job while it's executing in the Jet
-     * cluster. The directory will be registered under the supplied ID.
+     * Adds the directory identified by the supplied pathname to the list of files
+     * that will be available to the job while it's executing in the Jet cluster.
+     * The directory will be registered under the supplied ID.
      * {@linkplain Files#isHidden Hidden files} are ignored.
      * <p>
-     * To retrieve the directory from within the Jet job, call {@link
-     * ProcessorSupplier.Context#attachedDirectory(String) ctx.attachedDirectory(id)},
-     * where {@code ctx} is the {@code ProcessorSupplier} context available,
-     * for example, to {@link ServiceFactory#createContextFn()}. It will be a
-     * temporary directory on the Jet server.
+     * To retrieve the directory from within the Jet job, call
+     * {@link ProcessorSupplier.Context#attachedDirectory(String)
+     * ctx.attachedDirectory(id)}, where {@code ctx} is the
+     * {@code ProcessorSupplier} context available, for example, to
+     * {@link ServiceFactory#createContextFn()}. It will be a temporary directory on
+     * the Jet server.
      *
-     * @implNote Backing storage for this method is an {@link IMap} with a
-     * default backup count of 1. When adding big files as a resource, size
-     * the cluster accordingly in terms of memory, since each file will have 2
-     * copies inside the cluster(primary + backup replica).
+     * @implNote Backing storage for this method is an {@link IMap} with a default
+     *           backup count of 1. When adding big files as a resource, size the
+     *           cluster accordingly in terms of memory, since each file will have 2
+     *           copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
      * @since 4.0
@@ -796,22 +792,22 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Adds the supplied directory to the list of files that will be available
-     * to the job while it's executing in the Jet cluster. The directory name
-     * (the last path segment) becomes its ID, so two directories with the same
-     * name will be in conflict. {@linkplain Files#isHidden Hidden files} are
-     * ignored.
+     * Adds the supplied directory to the list of files that will be available to
+     * the job while it's executing in the Jet cluster. The directory name (the last
+     * path segment) becomes its ID, so two directories with the same name will be
+     * in conflict. {@linkplain Files#isHidden Hidden files} are ignored.
      * <p>
-     * To retrieve the directory from within the Jet job, call {@link
-     * ProcessorSupplier.Context#attachedDirectory(String) ctx.attachedDirectory(id)},
-     * where {@code ctx} is the {@code ProcessorSupplier} context available,
-     * for example, to {@link ServiceFactory#createContextFn()}. It will be a
-     * temporary directory on the Jet server.
+     * To retrieve the directory from within the Jet job, call
+     * {@link ProcessorSupplier.Context#attachedDirectory(String)
+     * ctx.attachedDirectory(id)}, where {@code ctx} is the
+     * {@code ProcessorSupplier} context available, for example, to
+     * {@link ServiceFactory#createContextFn()}. It will be a temporary directory on
+     * the Jet server.
      *
-     * @implNote Backing storage for this method is an {@link IMap} with a
-     * default backup count of 1. When adding big files as a resource, size
-     * the cluster accordingly in terms of memory, since each file will have 2
-     * copies inside the cluster(primary + backup replica).
+     * @implNote Backing storage for this method is an {@link IMap} with a default
+     *           backup count of 1. When adding big files as a resource, size the
+     *           cluster accordingly in terms of memory, since each file will have 2
+     *           copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
      * @since 4.0
@@ -822,21 +818,22 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Adds the supplied directory to the list of files that will be available
-     * to the job while it's executing in the Jet cluster. The directory will
-     * be registered under the supplied ID. {@linkplain Files#isHidden Hidden
-     * files} are ignored.
+     * Adds the supplied directory to the list of files that will be available to
+     * the job while it's executing in the Jet cluster. The directory will be
+     * registered under the supplied ID. {@linkplain Files#isHidden Hidden files}
+     * are ignored.
      * <p>
-     * To retrieve the directory from within the Jet job, call {@link
-     * ProcessorSupplier.Context#attachedDirectory(String) ctx.attachedDirectory(id)},
-     * where {@code ctx} is the {@code ProcessorSupplier} context available,
-     * for example, to {@link ServiceFactory#createContextFn()}. It will be a
-     * temporary directory on the Jet server.
+     * To retrieve the directory from within the Jet job, call
+     * {@link ProcessorSupplier.Context#attachedDirectory(String)
+     * ctx.attachedDirectory(id)}, where {@code ctx} is the
+     * {@code ProcessorSupplier} context available, for example, to
+     * {@link ServiceFactory#createContextFn()}. It will be a temporary directory on
+     * the Jet server.
      *
-     * @implNote Backing storage for this method is an {@link IMap} with a
-     * default backup count of 1. When adding big files as a resource, size
-     * the cluster accordingly in terms of memory, since each file will have 2
-     * copies inside the cluster(primary + backup replica).
+     * @implNote Backing storage for this method is an {@link IMap} with a default
+     *           backup count of 1. When adding big files as a resource, size the
+     *           cluster accordingly in terms of memory, since each file will have 2
+     *           copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
      * @since 4.0
@@ -852,10 +849,10 @@ public class JobConfig implements IdentifiedDataSerializable {
      * entry that resolves to a directory and {@link #attachFile(File, String)
      * attachFile(file, id)} for every entry that resolves to a regular file.
      *
-     * @implNote Backing storage for this method is an {@link IMap} with a
-     * default backup count of 1. When adding big files as a resource, size
-     * the cluster accordingly in terms of memory, since each file will have 2
-     * copies inside the cluster(primary + backup replica).
+     * @implNote Backing storage for this method is an {@link IMap} with a default
+     *           backup count of 1. When adding big files as a resource, size the
+     *           cluster accordingly in terms of memory, since each file will have 2
+     *           copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
      */
@@ -928,9 +925,9 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Registers the given serializer for the given class for the scope of the
-     * job. It will be accessible to all the code attached to the underlying
-     * pipeline or DAG, but not to any other code.
+     * Registers the given serializer for the given class for the scope of the job.
+     * It will be accessible to all the code attached to the underlying pipeline or
+     * DAG, but not to any other code.
      * <p>
      * Serializers registered on a job level have precedence over any serializer
      * registered on a cluster level.
@@ -943,7 +940,7 @@ public class JobConfig implements IdentifiedDataSerializable {
     @Nonnull
     @EvolvingApi
     public <T, S extends StreamSerializer<?>> JobConfig registerSerializer(@Nonnull Class<T> clazz,
-                                                                           @Nonnull Class<S> serializerClass) {
+            @Nonnull Class<S> serializerClass) {
         Preconditions.checkFalse(serializerConfigs.containsKey(clazz.getName()),
                 "Serializer for " + clazz + " already registered");
         serializerConfigs.put(clazz.getName(), serializerClass.getName());
@@ -951,8 +948,7 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Returns all the registered serializer configurations. This is a private
-     * API.
+     * Returns all the registered serializer configurations. This is a private API.
      */
     @Nonnull
     @PrivateApi
@@ -975,8 +971,8 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Sets a custom {@link JobClassLoaderFactory} that will be used to load
-     * job classes and resources on Jet members.
+     * Sets a custom {@link JobClassLoaderFactory} that will be used to load job
+     * classes and resources on Jet members.
      *
      * @return {@code this} instance for fluent API
      */
@@ -995,8 +991,8 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Returns the configured {@linkplain #setInitialSnapshotName(String)
-     * initial snapshot name} or {@code null} if no initial snapshot is configured.
+     * Returns the configured {@linkplain #setInitialSnapshotName(String) initial
+     * snapshot name} or {@code null} if no initial snapshot is configured.
      */
     @Nullable
     public String getInitialSnapshotName() {
@@ -1004,17 +1000,17 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Sets the {@linkplain Job#exportSnapshot(String) exported state snapshot}
-     * name to restore the initial job state from. This state will be used for
-     * initial state and also for the case when the execution restarts before
-     * it produces first snapshot.
+     * Sets the {@linkplain Job#exportSnapshot(String) exported state snapshot} name
+     * to restore the initial job state from. This state will be used for initial
+     * state and also for the case when the execution restarts before it produces
+     * first snapshot.
      * <p>
-     * The job will use the state even if {@linkplain
-     * #setProcessingGuarantee(ProcessingGuarantee) processing guarantee} is
-     * set to {@link ProcessingGuarantee#NONE}.
+     * The job will use the state even if
+     * {@linkplain #setProcessingGuarantee(ProcessingGuarantee) processing
+     * guarantee} is set to {@link ProcessingGuarantee#NONE}.
      *
-     * @param initialSnapshotName the snapshot name given to {@link
-     *                            Job#exportSnapshot(String)}
+     * @param initialSnapshotName the snapshot name given to
+     *                            {@link Job#exportSnapshot(String)}
      * @return {@code this} instance for fluent API
      * @since 3.0
      */
@@ -1028,8 +1024,8 @@ public class JobConfig implements IdentifiedDataSerializable {
      * Sets whether metrics collection should be enabled for the job. Needs
      * {@link MetricsConfig#isEnabled()} to be on in order to function.
      * <p>
-     * Metrics for running jobs can be queried using {@link Job#getMetrics()}
-     * It's enabled by default.
+     * Metrics for running jobs can be queried using {@link Job#getMetrics()} It's
+     * enabled by default.
      *
      * @since 3.2
      */
@@ -1053,8 +1049,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      * completes. Needs both {@link MetricsConfig#isEnabled()} and
      * {@link #isMetricsEnabled()} to be on in order to function.
      * <p>
-     * If enabled, metrics can be retrieved by calling
-     * {@link Job#getMetrics()}.
+     * If enabled, metrics can be retrieved by calling {@link Job#getMetrics()}.
      * <p>
      * It's disabled by default.
      *
@@ -1065,15 +1060,15 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Sets whether metrics should be stored in the cluster after the job
-     * completes. If enabled, metrics can be retrieved for the configured
-     * job even if it's no longer running (has completed successfully, has
-     * failed, has been cancelled or suspended) by calling {@link Job#getMetrics()}.
+     * Sets whether metrics should be stored in the cluster after the job completes.
+     * If enabled, metrics can be retrieved for the configured job even if it's no
+     * longer running (has completed successfully, has failed, has been cancelled or
+     * suspended) by calling {@link Job#getMetrics()}.
      * <p>
      * If disabled, once the configured job stops running {@link Job#getMetrics()}
-     * will always return empty metrics for it, regardless of the settings
-     * for {@link MetricsConfig#setEnabled global metrics collection}
-     * or {@link JobConfig#isMetricsEnabled() per job metrics collection}.
+     * will always return empty metrics for it, regardless of the settings for
+     * {@link MetricsConfig#setEnabled global metrics collection} or
+     * {@link JobConfig#isMetricsEnabled() per job metrics collection}.
      * <p>
      * It's disabled by default.
      *
@@ -1124,7 +1119,6 @@ public class JobConfig implements IdentifiedDataSerializable {
         storeMetricsAfterJobCompletion = in.readBoolean();
     }
 
-
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -1134,24 +1128,32 @@ public class JobConfig implements IdentifiedDataSerializable {
             return false;
         }
         JobConfig jobConfig = (JobConfig) o;
-        return snapshotIntervalMillis == jobConfig.snapshotIntervalMillis &&
-                autoScaling == jobConfig.autoScaling &&
-                splitBrainProtectionEnabled == jobConfig.splitBrainProtectionEnabled &&
-                enableMetrics == jobConfig.enableMetrics &&
-                storeMetricsAfterJobCompletion == jobConfig.storeMetricsAfterJobCompletion &&
-                Objects.equals(name, jobConfig.name) &&
-                processingGuarantee == jobConfig.processingGuarantee &&
-                Objects.equals(resourceConfigs, jobConfig.resourceConfigs) &&
-                Objects.equals(serializerConfigs, jobConfig.serializerConfigs) &&
-                Objects.equals(classLoaderFactory, jobConfig.classLoaderFactory) &&
-                Objects.equals(initialSnapshotName, jobConfig.initialSnapshotName);
+        return snapshotIntervalMillis == jobConfig.snapshotIntervalMillis && autoScaling == jobConfig.autoScaling
+                && splitBrainProtectionEnabled == jobConfig.splitBrainProtectionEnabled
+                && enableMetrics == jobConfig.enableMetrics
+                && storeMetricsAfterJobCompletion == jobConfig.storeMetricsAfterJobCompletion
+                && Objects.equals(name, jobConfig.name) && processingGuarantee == jobConfig.processingGuarantee
+                && Objects.equals(resourceConfigs, jobConfig.resourceConfigs)
+                && Objects.equals(serializerConfigs, jobConfig.serializerConfigs)
+                && Objects.equals(classLoaderFactory, jobConfig.classLoaderFactory)
+                && Objects.equals(initialSnapshotName, jobConfig.initialSnapshotName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, processingGuarantee, snapshotIntervalMillis, autoScaling,
-                splitBrainProtectionEnabled, enableMetrics, storeMetricsAfterJobCompletion, resourceConfigs,
-                serializerConfigs, classLoaderFactory, initialSnapshotName
-        );
+        return Objects.hash(name, processingGuarantee, snapshotIntervalMillis, autoScaling, splitBrainProtectionEnabled,
+                enableMetrics, storeMetricsAfterJobCompletion, resourceConfigs, serializerConfigs, classLoaderFactory,
+                initialSnapshotName);
     }
+
+    @Override
+    public String toString() {
+        return "JobConfig {name=" + name + ", processingGuarantee=" + processingGuarantee + ", snapshotIntervalMillis="
+                + snapshotIntervalMillis + ", autoScaling=" + autoScaling + ", splitBrainProtectionEnabled="
+                + splitBrainProtectionEnabled + ", enableMetrics=" + enableMetrics + ", storeMetricsAfterJobCompletion="
+                + storeMetricsAfterJobCompletion + ", resourceConfigs=" + resourceConfigs + ", serializerConfigs="
+                + serializerConfigs + ", classLoaderFactory=" + classLoaderFactory + ", initialSnapshotName="
+                + initialSnapshotName + "}";
+    }
+
 }
