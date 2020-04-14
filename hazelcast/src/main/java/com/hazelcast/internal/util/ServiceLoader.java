@@ -27,6 +27,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -129,7 +130,7 @@ public final class ServiceLoader {
             BufferedReader r = null;
             try {
                 URL url = urlDefinition.uri.toURL();
-                r = new BufferedReader(new InputStreamReader(url.openStream(), "UTF-8"));
+                r = new BufferedReader(new InputStreamReader(url.openStream(), StandardCharsets.UTF_8));
                 while (true) {
                     String line = r.readLine();
                     if (line == null) {
