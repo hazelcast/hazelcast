@@ -269,7 +269,7 @@ public class MetricsCompressor {
                 // this should have been checked earlier, this is a safety check
                 throw new RuntimeException("Dictionary element too long: " + wordText);
             }
-            int maxCommonLen = Math.min(lastWord.length(), wordText.length()) & UNSIGNED_BYTE_MAX_VALUE;
+            int maxCommonLen = Math.min(lastWord.length(), wordText.length());
             int commonLen = 0;
             while (commonLen < maxCommonLen
                     && wordText.charAt(commonLen) == lastWord.charAt(commonLen)) {
