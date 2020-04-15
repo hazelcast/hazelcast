@@ -55,20 +55,12 @@ public class ClusterViewListenerService {
     private final NodeEngine nodeEngine;
     private final AtomicBoolean pushScheduled = new AtomicBoolean();
     private final Map<ClientEndpoint, Long> clusterListeningEndpoints = new ConcurrentHashMap<>();
-    private final Integer cache[];
+
+    private volatile Integer[] cache;
 
     ClusterViewListenerService(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.advancedNetworkConfigEnabled = nodeEngine.getConfig().getAdvancedNetworkConfig().isEnabled();
-        this.cache = initializeCache(nodeEngine);
-    }
-
-    private Integer[] initializeCache(NodeEngineImpl nodeEngine) {
-        Integer[] cache = new Integer[nodeEngine.getPartitionService().getPartitionCount()];
-        for (int i = 0; i < cache.length; i++) {
-            cache[i] = new Integer(i);
-        }
-        return cache;
     }
 
     private void schedulePeriodicPush() {
@@ -203,6 +195,8 @@ public class ClusterViewListenerService {
 
         int partitionCount = partitionTableView.getLength();
 
+        Integer[] cache = getOrInitCache(partitionTableView.getLength());
+
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             PartitionReplica owner = partitionTableView.getReplica(partitionId, 0);
             if (owner == null || owner.uuid() == null) {
@@ -213,6 +207,23 @@ public class ClusterViewListenerService {
                     k -> new LinkedList<>()).add(cache[partitionId]);
         }
         return partitionsMap;
+    }
+
+    private Integer[] getOrInitCache(int partitionCount) {
+        if (cache != null) {
+            return cache;
+        }
+
+        synchronized (this) {
+            if (cache == null) {
+                cache = new Integer[partitionCount];
+                for (int i = 0; i < cache.length; i++) {
+                    cache[i] = new Integer(i);
+                }
+            }
+        }
+
+        return cache;
     }
 
     //for test purpose only
