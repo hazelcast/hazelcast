@@ -26,6 +26,7 @@ import org.junit.rules.ExpectedException;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.Properties;
 
 import static com.hazelcast.config.RestEndpointGroup.CLUSTER_READ;
 import static com.hazelcast.config.RestEndpointGroup.HEALTH_CHECK;
@@ -34,6 +35,7 @@ import static com.hazelcast.instance.ProtocolType.MEMCACHE;
 import static com.hazelcast.instance.ProtocolType.WAN;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -537,6 +539,20 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
 
     public abstract void testMetricsConfigJmxDisabled();
 
+    @Test
+    public void testAuditlogConfig() {
+        Config config = buildAuditlogConfig();
+        AuditlogConfig auditlogConfig = config.getAuditlogConfig();
+        assertNotNull(auditlogConfig);
+        assertTrue(auditlogConfig.isEnabled());
+
+        assertEquals("com.acme.auditlog.AuditlogToSyslogFactory", auditlogConfig.getFactoryClassName());
+        Properties properties = auditlogConfig.getProperties();
+        assertNotNull(properties);
+        assertEquals("syslogserver.acme.com", properties.get("host"));
+        assertEquals("514", properties.get("port"));
+    }
+
     public abstract void testSqlConfig();
 
     protected static void assertAwsConfig(AwsConfig aws) {
@@ -561,4 +577,7 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     }
 
     public abstract void testPersistentMemoryDirectoryConfiguration() throws IOException;
+
+    protected abstract Config buildAuditlogConfig();
+
 }

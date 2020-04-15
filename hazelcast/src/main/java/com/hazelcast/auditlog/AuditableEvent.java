@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.auditlog;
+package com.hazelcast.auditlog;
 
 import java.util.Map;
 
@@ -29,11 +29,20 @@ public interface AuditableEvent {
     String typeId();
 
     /**
+     * Return a text description of the event.
+     * <p>
+     * <strong>Warning:</strong> Hazelcast doesn't guarantee content of the message. The value can change between versions.
+     *
      * @return Event message
      */
     String message();
 
     /**
+     * Return Map of parameters for given event.
+     * <p>
+     * <strong>Warning:</strong> Hazelcast doesn't guarantee content of the parameters Map (parameters, names, values
+     * or types used). The value can change between versions.
+     *
      * @return Event parameters. Must not be {@code null}.
      */
     Map<String, Object> parameters();

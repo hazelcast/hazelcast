@@ -14,13 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.auditlog;
+package com.hazelcast.auditlog;
 
 import java.util.Map;
 
 /**
  * Builder interface for {@link AuditableEvent} instances. The mandatory typeId is expected to be initiated by constructing the
  * builder.
+ * <p>
+ * <strong>Warning:</strong> The {@link #message(String) text message} and {@link #addParameter(String, Object) object
+ * parameters} may provide more details about the event, but Hazelcast doesn't guarantee their content (e.g. exact text value of
+ * the message, parameter names, object types used in parameters). They can change between versions.
  *
  * @see AuditlogService#eventBuilder(String)
  * @param <T> builder type

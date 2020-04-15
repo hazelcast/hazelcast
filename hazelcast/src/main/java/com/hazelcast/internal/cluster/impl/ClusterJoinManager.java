@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.cluster.impl;
 
+import com.hazelcast.auditlog.AuditlogTypeIds;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
@@ -373,14 +374,25 @@ public class ClusterJoinManager {
                 throw new SecurityException("Expecting security credentials, but credentials could not be found in join request");
             }
             String endpoint = joinRequest.getAddress().getHost();
+            Boolean passed = Boolean.FALSE;
             try {
                 String remoteClusterName = joinRequest.getConfigCheck().getClusterName();
                 LoginContext loginContext = node.securityContext.createMemberLoginContext(remoteClusterName, credentials,
                         connection);
                 loginContext.login();
+                passed = Boolean.TRUE;
             } catch (LoginException e) {
                 throw new SecurityException(format("Authentication has failed for %s @%s, cause: %s",
                         String.valueOf(credentials), endpoint, e.getMessage()));
+            } finally {
+                nodeEngine.getNode().getNodeExtension().getAuditlogService()
+                    .eventBuilder(AuditlogTypeIds.AUTHENTICATION_MEMBER)
+                    .message("Member connection authentication.")
+                    .addParameter("credentials", credentials)
+                    .addParameter("connection", connection)
+                    .addParameter("endpoint", endpoint)
+                    .addParameter("passed", passed)
+                    .log();
             }
         }
     }

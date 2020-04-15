@@ -2011,6 +2011,20 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testAuditlogConfig() {
+        Config config = new Config();
+
+        config.getAuditlogConfig()
+              .setEnabled(true)
+              .setFactoryClassName("com.acme.AuditlogToSyslog")
+              .setProperty("host", "syslogserver.acme.com")
+              .setProperty("port", "514");
+        AuditlogConfig generatedConfig = getNewConfigViaXMLGenerator(config).getAuditlogConfig();
+        assertTrue(generatedConfig + " should be compatible with " + config.getAuditlogConfig(),
+                new ConfigCompatibilityChecker.AuditlogConfigChecker().check(config.getAuditlogConfig(), generatedConfig));
+    }
+
+    @Test
     public void testUserCodeDeployment() {
         Config config = new Config();
 

@@ -43,6 +43,7 @@ import com.hazelcast.client.impl.protocol.task.dynamicconfig.RingbufferStoreConf
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.config.AdvancedNetworkConfig;
+import com.hazelcast.config.AuditlogConfig;
 import com.hazelcast.config.CRDTReplicationConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
@@ -1013,6 +1014,16 @@ public class ClientDynamicClusterConfig extends Config {
     @Override
     @Nonnull
     public Config setSqlConfig(@Nonnull SqlConfig sqlConfig) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public AuditlogConfig getAuditlogConfig() {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public Config setAuditlogConfig(AuditlogConfig auditlogConfig) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 

@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.auditlog.impl;
+package com.hazelcast.auditlog.impl;
 
 import java.util.Collections;
 import java.util.Map;
 
-import com.hazelcast.internal.auditlog.AuditableEvent;
-import com.hazelcast.internal.auditlog.EventBuilder;
-import com.hazelcast.internal.auditlog.AuditlogService;
-import com.hazelcast.internal.auditlog.Level;
+import com.hazelcast.auditlog.AuditableEvent;
+import com.hazelcast.auditlog.AuditlogService;
+import com.hazelcast.auditlog.EventBuilder;
+import com.hazelcast.auditlog.Level;
 
 public final class NoOpAuditlogService implements AuditlogService {
 

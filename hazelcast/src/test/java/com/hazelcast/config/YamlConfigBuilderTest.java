@@ -3518,4 +3518,18 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertTrue(metricsConfig.getManagementCenterConfig().isEnabled());
         assertFalse(metricsConfig.getJmxConfig().isEnabled());
     }
+
+    @Override
+    protected Config buildAuditlogConfig() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  auditlog:\n"
+                + "    enabled: true\n"
+                + "    factory-class-name: com.acme.auditlog.AuditlogToSyslogFactory\n"
+                + "    properties:\n"
+                + "      host: syslogserver.acme.com\n"
+                + "      port: 514\n"
+                + "      type: tcp\n";
+        return new InMemoryYamlConfig(yaml);
+    }
 }
