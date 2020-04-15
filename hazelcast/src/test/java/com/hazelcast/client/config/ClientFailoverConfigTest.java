@@ -20,7 +20,6 @@ import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -37,7 +36,6 @@ import static org.junit.Assert.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-@Ignore
 public class ClientFailoverConfigTest {
 
     @Rule
@@ -53,7 +51,7 @@ public class ClientFailoverConfigTest {
         assertThat(failoverConfig.getClientConfigs(), hasSize(1));
 
         ClientConfig clientConfig2 = new ClientConfig()
-            .setConnectionStrategyConfig(new ClientConnectionStrategyConfig().setReconnectMode(OFF));
+                .setConnectionStrategyConfig(new ClientConnectionStrategyConfig().setReconnectMode(OFF));
 
         expectedException.expect(InvalidConfigurationException.class);
         expectedException.expectMessage("Reconnect mode for ClientFailoverConfig must not be OFF");
@@ -64,7 +62,7 @@ public class ClientFailoverConfigTest {
     public void testSetClientConfigs_WithOffReconnectMode_ShouldThrowInvalidConfigException() {
         ClientConfig clientConfig1 = new ClientConfig();
         ClientConfig clientConfig2 = new ClientConfig()
-            .setConnectionStrategyConfig(new ClientConnectionStrategyConfig().setReconnectMode(OFF));
+                .setConnectionStrategyConfig(new ClientConnectionStrategyConfig().setReconnectMode(OFF));
 
         expectedException.expect(InvalidConfigurationException.class);
         expectedException.expectMessage("Reconnect mode for ClientFailoverConfig must not be OFF");
