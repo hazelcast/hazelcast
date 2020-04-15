@@ -27,7 +27,6 @@ import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.networking.Networking;
-import com.hazelcast.internal.networking.ServerSocketRegistry;
 import com.hazelcast.internal.server.AggregateServerConnectionManager;
 import com.hazelcast.internal.server.IOService;
 import com.hazelcast.internal.server.Server;
