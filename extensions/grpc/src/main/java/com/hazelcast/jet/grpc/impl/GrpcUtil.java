@@ -16,8 +16,12 @@
 
 package com.hazelcast.jet.grpc.impl;
 
+import com.hazelcast.logging.ILogger;
+import io.grpc.ManagedChannel;
 import io.grpc.StatusException;
 import io.grpc.StatusRuntimeException;
+
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 public final class GrpcUtil {
 
@@ -40,5 +44,21 @@ public final class GrpcUtil {
             return new StatusRuntimeExceptionJet((StatusRuntimeException) exception);
         }
         return exception;
+    }
+
+    /**
+     * Shutdowns {@link ManagedChannel}
+     * <p>
+     * Tries orderly shutdown first {@link ManagedChannel#shutdown()}, then forceful shutdown
+     * {@link ManagedChannel#shutdownNow()}.
+     */
+    public static void shutdownChannel(ManagedChannel channel, ILogger logger) throws InterruptedException {
+        if (!channel.shutdown().awaitTermination(1, SECONDS)) {
+            logger.info("gRPC client has not shut down on time");
+
+            if (!channel.shutdownNow().awaitTermination(1, SECONDS)) {
+                logger.info("gRPC client has not shut down on time, even after forceful shutdown");
+            }
+        }
     }
 }

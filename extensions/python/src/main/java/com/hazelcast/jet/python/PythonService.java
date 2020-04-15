@@ -158,12 +158,7 @@ final class PythonService {
             if (!completionLatch.await(1, SECONDS)) {
                 logger.info("gRPC call has not completed on time");
             }
-            if (!chan.shutdown().awaitTermination(1, SECONDS)) {
-                logger.info("gRPC client has not shut down on time");
-            }
-            if (!chan.shutdownNow().awaitTermination(1, SECONDS)) {
-                logger.info("gRPC client has not shut down on time, even after forceful shutdown");
-            }
+            GrpcUtil.shutdownChannel(chan, logger);
             server.stop();
         } catch (Exception e) {
             throw new JetException("PythonService.destroy() failed: " + e, e);

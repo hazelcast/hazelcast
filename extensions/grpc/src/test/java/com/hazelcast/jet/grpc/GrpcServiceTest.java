@@ -41,6 +41,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.grpc.GrpcServices.bidirectionalStreamingService;
@@ -61,9 +62,10 @@ public class GrpcServiceTest extends SimpleTestInClusterSupport {
     }
 
     @After
-    public void teardown() {
+    public void teardown() throws InterruptedException {
         if (server != null) {
-            server.shutdown() ;
+            server.shutdown();
+            server.awaitTermination(5, TimeUnit.SECONDS);
         }
     }
 
@@ -192,7 +194,7 @@ public class GrpcServiceTest extends SimpleTestInClusterSupport {
     @Test
     public void when_unary_with_faultyService() throws IOException {
         // Given
-        Server server = createServer(new FaultyGreeterServiceImpl());
+        server = createServer(new FaultyGreeterServiceImpl());
         final int port = server.getPort();
 
         Pipeline p = Pipeline.create();
@@ -256,7 +258,7 @@ public class GrpcServiceTest extends SimpleTestInClusterSupport {
 
                 @Override
                 public void onCompleted() {
-
+                    responseObserver.onCompleted();
                 }
             };
         }
