@@ -20,6 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.exec.index.IndexFilter;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.io.IOException;
@@ -40,9 +41,12 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode {
         // No-op.
     }
 
+    @SuppressWarnings("checkstyle:ParameterNumber")
     public MapIndexScanPlanNode(
         int id,
         String mapName,
+        QueryTargetDescriptor keyDescriptor,
+        QueryTargetDescriptor valueDescriptor,
         List<String> fieldNames,
         List<QueryDataType> fieldTypes,
         List<Integer> projects,
@@ -50,7 +54,7 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode {
         IndexFilter indexFilter,
         Expression<Boolean> remainderFilter
     ) {
-        super(id, mapName, fieldNames, fieldTypes, projects, remainderFilter);
+        super(id, mapName, keyDescriptor, valueDescriptor, fieldNames, fieldTypes, projects, remainderFilter);
 
         this.indexName = indexName;
         this.indexFilter = indexFilter;

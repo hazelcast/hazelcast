@@ -16,16 +16,28 @@
 
 package com.hazelcast.sql.impl.schema;
 
+import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
+
 import java.util.List;
 
 public class SqlTableSchema {
     private final String schema;
     private final String name;
+    private final QueryTargetDescriptor keyDescriptor;
+    private final QueryTargetDescriptor valueDescriptor;
     private final List<SqlTableField> fields;
 
-    public SqlTableSchema(String schema, String name, List<SqlTableField> fields) {
+    public SqlTableSchema(
+        String schema,
+        String name,
+        QueryTargetDescriptor keyDescriptor,
+        QueryTargetDescriptor valueDescriptor,
+        List<SqlTableField> fields
+    ) {
         this.schema = schema;
         this.name = name;
+        this.keyDescriptor = keyDescriptor;
+        this.valueDescriptor = valueDescriptor;
         this.fields = fields;
     }
 
@@ -35,6 +47,14 @@ public class SqlTableSchema {
 
     public String getName() {
         return name;
+    }
+
+    public QueryTargetDescriptor getKeyDescriptor() {
+        return keyDescriptor;
+    }
+
+    public QueryTargetDescriptor getValueDescriptor() {
+        return valueDescriptor;
     }
 
     public List<SqlTableField> getFields() {

@@ -85,6 +85,14 @@ public final class QueryException extends HazelcastException {
         return error(SqlErrorCode.CANCELLED_BY_USER, "Query was cancelled by user");
     }
 
+    public static QueryException dataException(String message, Throwable cause) {
+        return error(SqlErrorCode.DATA_EXCEPTION, message, cause);
+    }
+
+    public static QueryException dataException(String message) {
+        return dataException(message, null);
+    }
+
     /**
      * @return Code of the exception.
      */

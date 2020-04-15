@@ -22,7 +22,6 @@ import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.nio.Connection;
-
 import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;

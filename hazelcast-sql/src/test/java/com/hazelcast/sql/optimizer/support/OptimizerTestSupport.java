@@ -123,6 +123,8 @@ public abstract class OptimizerTestSupport {
             true,
             null,
             null,
+            null,
+            null,
             fieldTypes("f1", INT, "f2", INT, "f3", INT, "f4", INT, "f5", INT),
             null,
             new TableStatistics(100))

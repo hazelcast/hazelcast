@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.schema;
 
+import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import org.apache.calcite.rel.type.RelDataType;
@@ -75,6 +76,8 @@ public final class HazelcastTable extends AbstractTable {
     private final String distributionField;
     private final List<HazelcastTableIndex> indexes;
     private final Statistic statistic;
+    private final QueryTargetDescriptor keyDescriptor;
+    private final QueryTargetDescriptor valueDescriptor;
     private final Map<String, QueryDataType> fieldTypes;
     private final Map<String, String> fieldPaths;
 
@@ -86,6 +89,8 @@ public final class HazelcastTable extends AbstractTable {
         boolean partitioned,
         String distributionField,
         List<HazelcastTableIndex> indexes,
+        QueryTargetDescriptor keyDescriptor,
+        QueryTargetDescriptor valueDescriptor,
         Map<String, QueryDataType> fieldTypes,
         Map<String, String> fieldPaths,
         Statistic statistic
@@ -94,6 +99,8 @@ public final class HazelcastTable extends AbstractTable {
         this.name = name;
         this.partitioned = partitioned;
         this.distributionField = distributionField;
+        this.keyDescriptor = keyDescriptor;
+        this.valueDescriptor = valueDescriptor;
         this.fieldTypes = fieldTypes != null ? fieldTypes : Collections.emptyMap();
         this.fieldPaths = fieldPaths != null ? fieldPaths : Collections.emptyMap();
         this.indexes = indexes != null ? indexes : Collections.emptyList();
@@ -139,6 +146,14 @@ public final class HazelcastTable extends AbstractTable {
 
     public List<RelDataTypeField> getFieldList() {
         return rowType.getFieldList();
+    }
+
+    public QueryTargetDescriptor getKeyDescriptor() {
+        return keyDescriptor;
+    }
+
+    public QueryTargetDescriptor getValueDescriptor() {
+        return valueDescriptor;
     }
 
     @Override

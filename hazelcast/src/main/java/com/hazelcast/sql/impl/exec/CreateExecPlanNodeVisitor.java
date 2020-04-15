@@ -310,12 +310,14 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
             res = new MapScanExec(
                 node.getId(),
                 map,
-                serializationService,
                 localParts,
+                node.getKeyDescriptor(),
+                node.getValueDescriptor(),
                 node.getFieldNames(),
                 node.getFieldTypes(),
                 node.getProjects(),
-                node.getFilter()
+                node.getFilter(),
+                serializationService
             );
         }
 
@@ -336,14 +338,16 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
             res = new MapIndexScanExec(
                 node.getId(),
                 map,
-                serializationService,
                 localParts,
+                node.getKeyDescriptor(),
+                node.getValueDescriptor(),
                 node.getFieldNames(),
                 node.getFieldTypes(),
                 node.getProjects(),
                 node.getFilter(),
                 node.getIndexName(),
-                node.getIndexFilter()
+                node.getIndexFilter(),
+                serializationService
             );
         }
 
@@ -359,11 +363,13 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
         Exec res = new ReplicatedMapScanExec(
             node.getId(),
             map,
-            serializationService,
+            node.getKeyDescriptor(),
+            node.getValueDescriptor(),
             node.getFieldNames(),
             node.getFieldTypes(),
             node.getProjects(),
-            node.getFilter()
+            node.getFilter(),
+            serializationService
         );
 
         push(res);

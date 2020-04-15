@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.plan.node;
 
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.util.List;
@@ -33,12 +34,14 @@ public class ReplicatedMapScanPlanNode extends AbstractMapScanPlanNode {
     public ReplicatedMapScanPlanNode(
         int id,
         String mapName,
+        QueryTargetDescriptor keyDescriptor,
+        QueryTargetDescriptor valueDescriptor,
         List<String> fieldNames,
         List<QueryDataType> fieldTypes,
         List<Integer> projects,
         Expression<Boolean> filter
     ) {
-        super(id, mapName, fieldNames, fieldTypes, projects, filter);
+        super(id, mapName, keyDescriptor, valueDescriptor, fieldNames, fieldTypes, projects, filter);
     }
 
     @Override

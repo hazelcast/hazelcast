@@ -237,6 +237,11 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
+    public Iterator<Map.Entry<Data, Record>> iterator() {
+        return storage.mutationTolerantIterator();
+    }
+
+    @Override
     public void forEachAfterLoad(BiConsumer<Data, Record> consumer, boolean backup) {
         checkIfLoaded();
         forEach(consumer, backup);

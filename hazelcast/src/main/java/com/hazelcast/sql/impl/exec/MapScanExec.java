@@ -16,23 +16,20 @@
 
 package com.hazelcast.sql.impl.exec;
 
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
-import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
-import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.row.HeapRow;
+import com.hazelcast.sql.impl.row.ListRowBatch;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -40,96 +37,91 @@ import java.util.List;
  */
 @SuppressWarnings("rawtypes")
 public class MapScanExec extends AbstractMapScanExec {
+    /** Batch size. */
+    private static final int BATCH_SIZE = 1000;
+
     /** Underlying map. */
     private final MapProxyImpl map;
 
     /** Partitions to be scanned. */
     private final PartitionIdSet parts;
 
-    /** All rows fetched on first access. */
-    private Collection<Row> rows;
-
-    /** Iterator over rows. */
-    private Iterator<Row> rowsIter;
+    /** Records iterator. */
+    private MapScanExecIterator recordIterator;
 
     /** Current row. */
-    private Row currentRow;
+    private List<Row> currentBatch;
 
     public MapScanExec(
         int id,
         MapProxyImpl map,
-        InternalSerializationService serializationService,
         PartitionIdSet parts,
+        QueryTargetDescriptor keyDescriptor,
+        QueryTargetDescriptor valueDescriptor,
         List<String> fieldNames,
         List<QueryDataType> fieldTypes,
         List<Integer> projects,
-        Expression<Boolean> filter
+        Expression<Boolean> filter,
+        InternalSerializationService serializationService
     ) {
-        super(id, map.getName(), serializationService, fieldNames, fieldTypes, projects, filter);
+        super(id, map.getName(), keyDescriptor, valueDescriptor, fieldNames, fieldTypes, projects, filter, serializationService);
 
         this.map = map;
         this.parts = parts;
     }
 
-    @SuppressWarnings("unchecked")
+    @Override
+    protected void setup1(QueryFragmentContext ctx) {
+        recordIterator = MapScanExecUtils.createIterator(map, parts);
+    }
+
     @Override
     public IterationResult advance0() {
-        if (rows == null) {
-            rows = new ArrayList<>();
+        currentBatch = null;
 
-            for (int i = 0; i < parts.getPartitionCount(); i++) {
-                if (!parts.contains(i)) {
-                    continue;
+        while (recordIterator.tryAdvance()) {
+            HeapRow row = prepareRow(recordIterator.getKey(), recordIterator.getValue());
+
+            if (row != null) {
+                if (currentBatch == null) {
+                    currentBatch = new ArrayList<>(BATCH_SIZE);
                 }
 
-                // Per-partition stuff.
-                PartitionContainer partitionContainer = map.getMapServiceContext().getPartitionContainer(i);
+                currentBatch.add(row);
 
-                RecordStore<Record<Object>> recordStore = partitionContainer.getRecordStore(mapName);
-
-                recordStore.forEachAfterLoad((keyData, record) -> {
-                    Object valData = record.getValue();
-
-                    Object key = serializationService.toObject(keyData);
-                    Object val = valData instanceof Data ? serializationService.toObject(valData) : valData;
-
-                    HeapRow row = prepareRow(key, val);
-
-                    if (row != null) {
-                        rows.add(row);
-                    }
-                }, false);
+                if (currentBatch.size() == BATCH_SIZE) {
+                    break;
+                }
             }
-
-            rowsIter = rows.iterator();
         }
 
-        if (rowsIter.hasNext()) {
-            currentRow = rowsIter.next();
+        boolean done = currentBatch == null || !recordIterator.canAdvance();
 
-            return IterationResult.FETCHED;
-        } else {
-            currentRow = null;
-
-            return IterationResult.FETCHED_DONE;
-        }
+        return done ? IterationResult.FETCHED_DONE : IterationResult.FETCHED;
     }
 
     @Override
     public RowBatch currentBatch0() {
-        return currentRow;
+        return currentBatch != null ? new ListRowBatch(currentBatch) : null;
     }
 
     @Override
     protected void reset0() {
-        rows = null;
-        rowsIter = null;
-        currentRow = null;
+        recordIterator = null;
+        currentBatch = null;
     }
 
     @Override
     protected Extractors createExtractors() {
-        return map.getMapServiceContext().getExtractors(mapName);
+        return MapScanExecUtils.createExtractors(map);
+    }
+
+    public MapProxyImpl getMap() {
+        return map;
+    }
+
+    public PartitionIdSet getParts() {
+        return parts;
     }
 
     @Override

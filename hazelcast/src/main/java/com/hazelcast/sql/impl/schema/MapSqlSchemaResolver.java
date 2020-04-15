@@ -19,15 +19,17 @@ package com.hazelcast.sql.impl.schema;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.PortableContext;
 import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.query.QueryConstants;
+import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
+import com.hazelcast.sql.impl.extract.JavaClassQueryTargetDescriptor;
+import com.hazelcast.sql.impl.extract.PortableQueryTargetDescriptor;
+import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 
-import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -62,40 +64,59 @@ public abstract class MapSqlSchemaResolver implements SqlSchemaResolver {
     protected abstract BiTuple<Data, Object> getSample(DistributedObject object);
 
     private SqlTableSchema resolveFromSample(String mapName, Data key, Object value) {
-        List<SqlTableField> fields;
+        Map<String, SqlTableField> fieldMap = new LinkedHashMap<>();
 
-        if (key.isPortable()) {
-            fields = resolvePortableFields(key, value);
-        } else if (key.isJson()) {
-            throw new UnsupportedOperationException("JSON is not supported at the moment.");
-        } else {
-            fields = resolveObjectFields(key, value);
+        QueryTargetDescriptor valueExtractorDescriptor = resolve(value, false, fieldMap);
+        QueryTargetDescriptor keyExtractorDescriptor = resolve(key, true, fieldMap);
+
+        if (keyExtractorDescriptor == null || valueExtractorDescriptor == null) {
+            // TODO: This may happen due to serialization problem (e.g. getting Portable class definition).
+            return null;
         }
 
-        return new SqlTableSchema(getSchemaName(), mapName, fields);
+        List<SqlTableField> fields = new ArrayList<>(fieldMap.values());
+
+        return new SqlTableSchema(getSchemaName(), mapName, keyExtractorDescriptor, valueExtractorDescriptor, fields);
     }
 
-    private List<SqlTableField> resolveObjectFields(Data key, Object value) {
-        Object keyObject = ss.toObject(key);
-        Object valueObject = value instanceof Data ? ss.toObject(value) : value;
+    private QueryTargetDescriptor resolve(Object target, boolean isKey, Map<String, SqlTableField> fieldMap) {
+        try {
+            if (target instanceof Data) {
+                Data data = (Data) target;
 
-        Map<String, SqlTableField> fields = new LinkedHashMap<>();
-
-        resolveObjectFields(fields, valueObject, false);
-        resolveObjectFields(fields, keyObject, true);
-
-        return new ArrayList<>(fields.values());
+                if (data.isPortable()) {
+                    return resolvePortable(ss.getPortableContext().lookupClassDefinition(data), isKey, fieldMap);
+                } else if (data.isJson()) {
+                    // TODO: Is it worth? May be just allow for flexible schema which is filled on demand with LATE fields?
+                    throw new UnsupportedOperationException("JSON is not supported.");
+                } else {
+                    return resolveClass(ss.toObject(data).getClass(), isKey, fieldMap, false);
+                }
+            } else {
+                return resolveClass(target.getClass(), isKey, fieldMap, true);
+            }
+        } catch (Exception e) {
+            // TODO: Is it ok to ignore this exception (cannot get Portable class def, cannot serialize)?
+            return null;
+        }
     }
 
-    private void resolveObjectFields(Map<String, SqlTableField> fields, Object object, boolean isKey) {
-        // Add predefined fields.
+    private QueryTargetDescriptor resolveClass(
+        Class<?> clazz,
+        boolean isKey,
+        Map<String, SqlTableField> fields,
+        boolean objectFormat
+    ) {
+        // Add top-level object.
         String topName = isKey ? QueryConstants.KEY_ATTRIBUTE_NAME.value() : QueryConstants.THIS_ATTRIBUTE_NAME.value();
-        QueryDataType topType = QueryDataTypeUtils.resolveTypeForClass(object.getClass());
+        QueryDataType topType = QueryDataTypeUtils.resolveTypeForClass(clazz);
 
         fields.put(topName, new SqlTableField(topName, topName, topType));
 
-        // Analyze getters.
-        for (Method method : object.getClass().getMethods()) {
+        // Add fields.
+        // TODO: getDeclaredMethods?
+        // TODO: Use only public ones
+        for (Method method : clazz.getMethods()) {
             Class<?> returnType = method.getReturnType();
             if (returnType == void.class || returnType == Void.class) {
                 continue;
@@ -111,6 +132,29 @@ public abstract class MapSqlSchemaResolver implements SqlSchemaResolver {
 
             fields.putIfAbsent(name, new SqlTableField(name, resolvePath(name, isKey), type));
         }
+
+        if (objectFormat) {
+            return new JavaClassQueryTargetDescriptor(clazz.getName());
+        } else {
+            return GenericQueryTargetDescriptor.INSTANCE;
+        }
+    }
+
+    private QueryTargetDescriptor resolvePortable(ClassDefinition clazz, boolean isKey, Map<String, SqlTableField> fields) {
+        // Add top-level object.
+        String topName = isKey ? QueryConstants.KEY_ATTRIBUTE_NAME.value() : QueryConstants.THIS_ATTRIBUTE_NAME.value();
+        fields.put(topName, new SqlTableField(topName, topName, QueryDataType.OBJECT));
+
+        // Add fields.
+        for (String name : clazz.getFieldNames()) {
+            FieldType portableType = clazz.getFieldType(name);
+
+            QueryDataType type = resolvePortableType(portableType);
+
+            fields.putIfAbsent(name, new SqlTableField(name, resolvePath(name, isKey), type));
+        }
+
+        return new PortableQueryTargetDescriptor(clazz.getFactoryId(), clazz.getClassId());
     }
 
     private static String extractAttributeNameFromMethod(Method method) {
@@ -131,38 +175,6 @@ public abstract class MapSqlSchemaResolver implements SqlSchemaResolver {
         }
 
         return Character.toLowerCase(fieldNameWithWrongCase.charAt(0)) + fieldNameWithWrongCase.substring(1);
-    }
-
-    private List<SqlTableField> resolvePortableFields(Data key, Object value) {
-        // TODO: Need to ensure that __key and this are added properly.
-        assert key.isPortable();
-        assert value instanceof Data;
-
-        Map<String, SqlTableField> fields = new LinkedHashMap<>();
-
-        resolvePortableFields(fields, (Data) value, false);
-        resolvePortableFields(fields, key, true);
-
-        return new ArrayList<>(fields.values());
-    }
-
-    private void resolvePortableFields(Map<String, SqlTableField> fields, Data data, boolean isKey) {
-        try {
-            PortableContext context = ss.getPortableContext();
-
-            ClassDefinition classDefinition = context.lookupClassDefinition(data);
-
-            for (String name : classDefinition.getFieldNames()) {
-                FieldType portableType = classDefinition.getFieldType(name);
-
-                QueryDataType type = resolvePortableType(portableType);
-
-                fields.putIfAbsent(name, new SqlTableField(name, resolvePath(name, isKey), type));
-            }
-        } catch (IOException ignore) {
-            // TODO: Is it ok to ignore this exception?
-            // No-op.
-        }
     }
 
     @SuppressWarnings("checkstyle:ReturnCount")

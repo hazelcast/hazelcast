@@ -16,87 +16,80 @@
 
 package com.hazelcast.sql.impl.row;
 
-import com.hazelcast.sql.impl.exec.KeyValueRowExtractor;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.query.impl.getters.Extractors;
+import com.hazelcast.sql.impl.extract.QueryExtractor;
+import com.hazelcast.sql.impl.extract.QueryPath;
+import com.hazelcast.sql.impl.extract.QueryTarget;
+import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.sql.impl.type.converter.Converter;
-import com.hazelcast.sql.impl.type.converter.Converters;
 
-import java.util.Arrays;
 import java.util.List;
 
 /**
- * Key-value row. Appears during iteration over a data stored in map or its index.
+ * Key-value row. Appears during iteration over a data stored in map or it's index.
  */
 public final class KeyValueRow implements Row {
 
-    private static final Object NULL = new Object();
+    private final QueryTarget keyTarget;
+    private final QueryTarget valueTarget;
+    private final QueryExtractor[] fieldExtractors;
 
-    private final List<String> fieldNames;
-    private final List<QueryDataType> fieldTypes;
-    private final KeyValueRowExtractor extractor;
-
-    private final Object[] cachedColumnValues;
-    private final Class<?>[] cachedColumnClasses;
-    private final Converter[] cachedColumnConverters;
-
-    private Object key;
-    private Object value;
-
-    public KeyValueRow(List<String> fieldNames, List<QueryDataType> fieldTypes, KeyValueRowExtractor extractor) {
-        this.fieldNames = fieldNames;
-        this.fieldTypes = fieldTypes;
-        this.extractor = extractor;
-
-        cachedColumnValues = new Object[fieldNames.size()];
-        cachedColumnClasses = new Class[fieldNames.size()];
-        cachedColumnConverters = new Converter[fieldNames.size()];
+    private KeyValueRow(QueryTarget keyTarget, QueryTarget valueTarget, QueryExtractor[] fieldExtractors) {
+        this.keyTarget = keyTarget;
+        this.valueTarget = valueTarget;
+        this.fieldExtractors = fieldExtractors;
     }
 
-    public void setKeyValue(Object key, Object val) {
-        this.key = key;
-        this.value = val;
+    public static KeyValueRow create(
+        QueryTargetDescriptor keyDescriptor,
+        QueryTargetDescriptor valueDescriptor,
+        List<String> fieldPaths,
+        List<QueryDataType> fieldTypes,
+        Extractors extractors,
+        InternalSerializationService serializationService
+    ) {
+        QueryTarget keyTarget = keyDescriptor.create(serializationService, extractors, true);
+        QueryTarget valueTarget = valueDescriptor.create(serializationService, extractors, false);
 
-        Arrays.fill(cachedColumnValues, null);
+        QueryExtractor[] fieldExtractors = new QueryExtractor[fieldPaths.size()];
+
+        for (int i = 0; i < fieldPaths.size(); i++) {
+            String fieldPath = fieldPaths.get(i);
+            QueryDataType fieldType = fieldTypes.get(i);
+
+            fieldExtractors[i] = createExtractor(keyTarget, valueTarget, fieldPath, fieldType);
+        }
+
+        return new KeyValueRow(keyTarget, valueTarget, fieldExtractors);
+    }
+
+    public void setKeyValue(Object rawKey, Object rawValue) {
+        keyTarget.setTarget(rawKey);
+        valueTarget.setTarget(rawValue);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T> T get(int index) {
-        Object columnValue = cachedColumnValues[index];
-
-        if (columnValue == null) {
-            columnValue = extractor.extract(key, value, fieldNames.get(index));
-            if (columnValue != null) {
-                columnValue = convert(index, columnValue);
-            }
-
-            cachedColumnValues[index] = columnValue == null ? NULL : columnValue;
-        } else if (columnValue == NULL) {
-            columnValue = null;
-        }
-
-        return (T) columnValue;
+    public <T> T get(int idx) {
+        return (T) fieldExtractors[idx].get();
     }
 
     @Override
     public int getColumnCount() {
-        return fieldNames.size();
+        return fieldExtractors.length;
     }
 
-    private Object convert(int index, Object columnValue) {
-        Converter converter;
+    private static QueryExtractor createExtractor(
+        QueryTarget keyTarget,
+        QueryTarget valueTarget,
+        String path,
+        QueryDataType type
+    ) {
+        QueryPath path0 = QueryPath.create(path);
 
-        Class<?> clazz = columnValue.getClass();
-        if (clazz == cachedColumnClasses[index]) {
-            converter = cachedColumnConverters[index];
-        } else {
-            converter = Converters.getConverter(clazz);
+        QueryTarget target = path0.isKey() ? keyTarget : valueTarget;
 
-            cachedColumnClasses[index] = clazz;
-            cachedColumnConverters[index] = converter;
-        }
-
-        return fieldTypes.get(index).getConverter().convertToSelf(converter, columnValue);
+        return target.createExtractor(path0.getPath(), type);
     }
-
 }

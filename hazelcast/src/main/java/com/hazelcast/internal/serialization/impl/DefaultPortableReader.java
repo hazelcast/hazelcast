@@ -627,6 +627,14 @@ public class DefaultPortableReader implements ValueReader, PortableReader {
         }
     }
 
+    public int getFactoryId() {
+        return cd.getFactoryId();
+    }
+
+    public int getClassId() {
+        return cd.getClassId();
+    }
+
     private <T> MultiResult<T> readMultiPosition(List<PortablePosition> positions) throws IOException {
         MultiResult<T> result = new MultiResult<T>();
         for (PortablePosition position : positions) {

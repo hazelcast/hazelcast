@@ -42,9 +42,9 @@ public class LogicalOptimizerSubQueriesTest extends LogicalOptimizerTestSupport 
     protected HazelcastSchema createDefaultSchema() {
         Map<String, Table> tableMap = new HashMap<>();
 
-        tableMap.put("r", new HazelcastTable(null, "r", true, null, null,
+        tableMap.put("r", new HazelcastTable(null, "r", true, null, null, null, null,
                 fieldTypes("r", INT, "r1", INT, "r2", INT, "r3", INT), null, new TableStatistics(100)));
-        tableMap.put("s", new HazelcastTable(null, "s", true, null, null,
+        tableMap.put("s", new HazelcastTable(null, "s", true, null, null, null, null,
                 fieldTypes("s", INT, "s1", INT, "s2", INT, "s3", INT), null, new TableStatistics(100)));
 
         return new HazelcastSchema(tableMap);

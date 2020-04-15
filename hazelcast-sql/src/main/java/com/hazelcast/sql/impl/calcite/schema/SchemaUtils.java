@@ -170,6 +170,8 @@ public final class SchemaUtils {
                 partitioned,
                 distributionField,
                 indexes,
+                tableSchema.getKeyDescriptor(),
+                tableSchema.getValueDescriptor(),
                 fieldTypes,
                 fieldPaths,
                 new TableStatistics(rowCount)
