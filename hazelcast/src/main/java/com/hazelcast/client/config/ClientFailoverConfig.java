@@ -16,12 +16,8 @@
 
 package com.hazelcast.client.config;
 
-import com.hazelcast.config.InvalidConfigurationException;
-
 import java.util.LinkedList;
 import java.util.List;
-
-import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.OFF;
 
 /**
  * Config class to configure multiple client configs to be used by single client instance
@@ -72,8 +68,8 @@ public class ClientFailoverConfig {
     }
 
     private void validateClientConfig(ClientConfig clientConfig) {
-        if (clientConfig.getConnectionStrategyConfig().getReconnectMode() == OFF) {
-            throw new InvalidConfigurationException("Reconnect mode for ClientFailoverConfig must not be OFF");
-        }
+//        if (clientConfig.getConnectionStrategyConfig().getReconnectMode() == OFF) {
+//            throw new InvalidConfigurationException("Reconnect mode for ClientFailoverConfig must not be OFF");
+//        }
     }
 }
