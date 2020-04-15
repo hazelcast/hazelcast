@@ -18,6 +18,8 @@ package com.hazelcast.sql.impl.exec.io;
 
 import com.hazelcast.sql.impl.QueryId;
 
+import java.util.UUID;
+
 /**
  * Base class for inboxes and outboxes.
  */
@@ -31,10 +33,14 @@ public abstract class AbstractMailbox {
     /** Width of a single row in bytes. */
     protected final int rowWidth;
 
-    public AbstractMailbox(QueryId queryId, int edgeId, int rowWidth) {
+    /** Local member that is fixed throughout query execution. */
+    protected UUID localMemberId;
+
+    public AbstractMailbox(QueryId queryId, int edgeId, int rowWidth, UUID localMemberId) {
         this.queryId = queryId;
         this.edgeId = edgeId;
         this.rowWidth = rowWidth;
+        this.localMemberId = localMemberId;
     }
 
     public QueryId getQueryId() {
@@ -47,5 +53,9 @@ public abstract class AbstractMailbox {
 
     public int getRowWidth() {
         return rowWidth;
+    }
+
+    public UUID getLocalMemberId() {
+        return localMemberId;
     }
 }

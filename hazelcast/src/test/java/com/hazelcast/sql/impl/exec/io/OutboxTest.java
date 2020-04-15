@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.exec.io;
 
-import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.FaultyQueryOperationHandler;
 import com.hazelcast.sql.impl.LoggingQueryOperationHandler;
@@ -50,6 +50,7 @@ public class OutboxTest extends SqlTestSupport {
 
     private static final QueryId QUERY_ID = QueryId.create(UUID.randomUUID());
     private static final int EDGE_ID = 1;
+    private static final UUID LOCAL_MEMBER_ID = UUID.randomUUID();
     private static final UUID TARGET_MEMBER_ID = UUID.randomUUID();
 
     private static final int ROW_WIDTH = 100;
@@ -69,6 +70,7 @@ public class OutboxTest extends SqlTestSupport {
         assertEquals(QUERY_ID, outbox.getQueryId());
         assertEquals(EDGE_ID, outbox.getEdgeId());
         assertEquals(ROW_WIDTH, outbox.getRowWidth());
+        assertEquals(LOCAL_MEMBER_ID, outbox.getLocalMemberId());
         assertEquals(TARGET_MEMBER_ID, outbox.getTargetMemberId());
         assertEquals(BATCH_SIZE, outbox.getBatchSize());
         assertEquals(REMAINING_MEMORY, outbox.getRemainingMemory());
@@ -96,6 +98,7 @@ public class OutboxTest extends SqlTestSupport {
         assertEquals(1, operationHandler.getChannel().getSubmitCounter());
 
         LoggingQueryOperationHandler.SubmitInfo submitInfo = operationHandler.tryPollSubmitInfo();
+        assertEquals(LOCAL_MEMBER_ID, submitInfo.getSourceMemberId());
         assertEquals(TARGET_MEMBER_ID, submitInfo.getMemberId());
 
         QueryBatchExchangeOperation operation = submitInfo.getOperation();
@@ -111,7 +114,7 @@ public class OutboxTest extends SqlTestSupport {
             outbox.onRowBatch(EmptyRowBatch.INSTANCE, true, 0, AlwaysTrueOutboxSendQualifier.INSTANCE);
 
             fail();
-        } catch (HazelcastSqlException e) {
+        } catch (QueryException e) {
             assertEquals(SqlErrorCode.MEMBER_CONNECTION, e.getCode());
         }
     }
@@ -157,6 +160,7 @@ public class OutboxTest extends SqlTestSupport {
                 break;
             }
 
+            assertEquals(LOCAL_MEMBER_ID, submitInfo.getSourceMemberId());
             assertEquals(TARGET_MEMBER_ID, submitInfo.getMemberId());
 
             QueryBatchExchangeOperation operation = submitInfo.getOperation();
@@ -219,10 +223,11 @@ public class OutboxTest extends SqlTestSupport {
 
     private static Outbox createOutbox(QueryOperationHandler operationHandler) {
         Outbox res = new Outbox(
-            QUERY_ID,
             operationHandler,
+            QUERY_ID,
             EDGE_ID,
             ROW_WIDTH,
+            LOCAL_MEMBER_ID,
             TARGET_MEMBER_ID,
             BATCH_SIZE,
             REMAINING_MEMORY

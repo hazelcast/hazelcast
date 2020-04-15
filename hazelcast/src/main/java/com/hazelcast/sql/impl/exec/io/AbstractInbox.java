@@ -20,6 +20,8 @@ import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.exec.io.flowcontrol.FlowControl;
 import com.hazelcast.sql.impl.operation.QueryOperationHandler;
 
+import java.util.UUID;
+
 /**
  * Abstract inbox implementation.
  */
@@ -34,14 +36,15 @@ public abstract class AbstractInbox extends AbstractMailbox implements InboundHa
     private final FlowControl flowControl;
 
     protected AbstractInbox(
+        QueryOperationHandler operationHandler,
         QueryId queryId,
         int edgeId,
         int rowWidth,
-        QueryOperationHandler operationHandler,
+        UUID localMemberId,
         int remainingStreams,
         FlowControl flowControl
     ) {
-        super(queryId, edgeId, rowWidth);
+        super(queryId, edgeId, rowWidth, localMemberId);
 
         this.operationHandler = operationHandler;
         this.remainingStreams = remainingStreams;
@@ -49,7 +52,7 @@ public abstract class AbstractInbox extends AbstractMailbox implements InboundHa
     }
 
     public void setup() {
-        flowControl.setup(queryId, edgeId, operationHandler);
+        flowControl.setup(queryId, edgeId, localMemberId, operationHandler);
     }
 
     @Override

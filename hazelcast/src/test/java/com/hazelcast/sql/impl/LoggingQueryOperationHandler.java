@@ -34,8 +34,8 @@ public class LoggingQueryOperationHandler implements QueryOperationHandler {
     private volatile Channel channel;
 
     @Override
-    public boolean submit(UUID memberId, QueryOperation operation) {
-        submitInfos.add(new SubmitInfo(memberId, operation));
+    public boolean submit(UUID sourceMemberId, UUID memberId, QueryOperation operation) {
+        submitInfos.add(new SubmitInfo(sourceMemberId, memberId, operation));
 
         return true;
     }
@@ -46,8 +46,8 @@ public class LoggingQueryOperationHandler implements QueryOperationHandler {
     }
 
     @Override
-    public QueryOperationChannel createChannel(UUID memberId) {
-        Channel channel = new Channel(memberId, this);
+    public QueryOperationChannel createChannel(UUID sourceMemberId, UUID memberId) {
+        Channel channel = new Channel(sourceMemberId, memberId, this);
 
         this.channel = channel;
 
@@ -100,11 +100,13 @@ public class LoggingQueryOperationHandler implements QueryOperationHandler {
 
     public static class Channel implements QueryOperationChannel {
 
+        private final UUID sourceMemberId;
         private final UUID memberId;
         private final LoggingQueryOperationHandler handler;
         private final AtomicInteger submitCounter = new AtomicInteger();
 
-        private Channel(UUID memberId, LoggingQueryOperationHandler handler) {
+        private Channel(UUID sourceMemberId, UUID memberId, LoggingQueryOperationHandler handler) {
+            this.sourceMemberId = sourceMemberId;
             this.memberId = memberId;
             this.handler = handler;
         }
@@ -113,7 +115,7 @@ public class LoggingQueryOperationHandler implements QueryOperationHandler {
         public boolean submit(QueryOperation operation) {
             submitCounter.incrementAndGet();
 
-            return handler.submit(memberId, operation);
+            return handler.submit(sourceMemberId, memberId, operation);
         }
 
         public UUID getMemberId() {
@@ -127,12 +129,18 @@ public class LoggingQueryOperationHandler implements QueryOperationHandler {
 
     public static class SubmitInfo {
 
+        private final UUID sourceMemberId;
         private final UUID memberId;
         private final QueryOperation operation;
 
-        private SubmitInfo(UUID memberId, QueryOperation operation) {
+        private SubmitInfo(UUID sourceMemberId, UUID memberId, QueryOperation operation) {
+            this.sourceMemberId = sourceMemberId;
             this.memberId = memberId;
             this.operation = operation;
+        }
+
+        public UUID getSourceMemberId() {
+            return sourceMemberId;
         }
 
         public UUID getMemberId() {

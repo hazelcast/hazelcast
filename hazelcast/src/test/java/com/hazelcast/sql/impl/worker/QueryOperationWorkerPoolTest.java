@@ -23,8 +23,10 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.sql.SqlErrorCode;
+import com.hazelcast.sql.impl.LocalMemberIdProvider;
 import com.hazelcast.sql.impl.LoggingQueryOperationHandler;
 import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.sql.impl.TestLocalMemberIdProvider;
 import com.hazelcast.sql.impl.operation.QueryBatchExchangeOperation;
 import com.hazelcast.sql.impl.operation.QueryCancelOperation;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
@@ -160,18 +162,18 @@ public class QueryOperationWorkerPoolTest extends HazelcastTestSupport {
 
     @Test
     public void testSubmitRemoteWithDeserializationError() {
-        LoggingQueryOperationHandler operationHandler = new LoggingQueryOperationHandler();
-
-        pool = createPool(operationHandler);
-
         UUID localMemberId = UUID.randomUUID();
         UUID remoteMemberId = UUID.randomUUID();
 
-        pool.init(localMemberId);
+        LoggingQueryOperationHandler operationHandler = new LoggingQueryOperationHandler();
+        TestLocalMemberIdProvider localMemberIdProvider = new TestLocalMemberIdProvider(localMemberId);
+
+        pool = createPool(operationHandler, localMemberIdProvider);
 
         QueryBatchExchangeOperation badOperation = new QueryBatchExchangeOperation(
             QueryId.create(remoteMemberId),
             1,
+            UUID.randomUUID(),
             new ListRowBatch(Collections.singletonList(new HeapRow(new Object[]{new BadValue()}))),
             false,
             100
@@ -184,6 +186,7 @@ public class QueryOperationWorkerPoolTest extends HazelcastTestSupport {
 
             assertNotNull(info);
 
+            assertEquals(localMemberId, info.getSourceMemberId());
             assertEquals(remoteMemberId, info.getMemberId());
 
             QueryCancelOperation cancelOperation = info.getOperation();
@@ -208,9 +211,17 @@ public class QueryOperationWorkerPoolTest extends HazelcastTestSupport {
     }
 
     private QueryOperationWorkerPool createPool(QueryOperationHandler operationHandler) {
+        return createPool(operationHandler, new TestLocalMemberIdProvider(UUID.randomUUID()));
+    }
+
+    private QueryOperationWorkerPool createPool(
+        QueryOperationHandler operationHandler,
+        LocalMemberIdProvider localMemberIdProvider
+    ) {
         return new QueryOperationWorkerPool(
             "instance",
             THREAD_COUNT,
+            localMemberIdProvider,
             operationHandler,
             new DefaultSerializationServiceBuilder().build(),
             new NoLogFactory().getLogger("logger")

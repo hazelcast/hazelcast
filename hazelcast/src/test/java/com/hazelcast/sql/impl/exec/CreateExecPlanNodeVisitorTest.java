@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.exec;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.LoggingQueryOperationHandler;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.exec.io.Inbox;
@@ -67,6 +67,8 @@ import static org.junit.Assert.assertSame;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class CreateExecPlanNodeVisitorTest {
 
+    private static final UUID LOCAL_MEMBER_ID = UUID.randomUUID();
+
     private static final int ROOT_BATCH_SIZE = 1024;
     private static final int OUTBOX_BATCH_SIZE = 512 * 1024;
 
@@ -82,8 +84,6 @@ public class CreateExecPlanNodeVisitorTest {
     private static final int[] PARTITIONS_MEMBER_1 = new int[] { 1, 2 };
     private static final int[] PARTITIONS_MEMBER_2 = new int[] { 3, 4 };
     private static final Map<UUID, PartitionIdSet> PARTITION_MAPPING;
-
-    private static final long TIMEOUT = 0;
 
     private int idGenerator;
 
@@ -157,6 +157,7 @@ public class CreateExecPlanNodeVisitorTest {
         assertEquals(QUERY_ID, outbox.getQueryId());
         assertEquals(EDGE_1_ID, outbox.getEdgeId());
         assertEquals(upstreamNode.getSchema().getEstimatedRowSize(), outbox.getRowWidth());
+        assertEquals(LOCAL_MEMBER_ID, outbox.getLocalMemberId());
         assertEquals(MEMBER_ID_1, outbox.getTargetMemberId());
         assertEquals(OUTBOX_BATCH_SIZE, outbox.getBatchSize());
         assertEquals(EDGE_1_INITIAL_MEMORY, outbox.getRemainingMemory());
@@ -215,6 +216,7 @@ public class CreateExecPlanNodeVisitorTest {
         assertEquals(QUERY_ID, inbox.getQueryId());
         assertEquals(EDGE_1_ID, inbox.getEdgeId());
         assertEquals(receiveNode.getSchema().getEstimatedRowSize(), inbox.getRowWidth());
+        assertEquals(LOCAL_MEMBER_ID, inbox.getLocalMemberId());
         assertEquals(PARTITION_MAPPING.size(), inbox.getRemainingStreams());
         assertEquals(EDGE_1_INITIAL_MEMORY, ((SimpleFlowControl) inbox.getFlowControl()).getMaxMemory());
 
@@ -227,6 +229,7 @@ public class CreateExecPlanNodeVisitorTest {
     private static CreateExecPlanNodeVisitor visit(QueryExecuteOperation operation, QueryExecuteOperationFragment fragment) {
         CreateExecPlanNodeVisitor res = new CreateExecPlanNodeVisitor(
             new LoggingQueryOperationHandler(),
+            LOCAL_MEMBER_ID,
             operation,
             SimpleFlowControlFactory.INSTANCE,
             OUTBOX_BATCH_SIZE
@@ -250,8 +253,7 @@ public class CreateExecPlanNodeVisitorTest {
             outboundEdgeMap,
             inboundEdgeMap,
             edgeInitialMemoryMap,
-            Collections.emptyList(),
-            TIMEOUT
+            Collections.emptyList()
         );
 
         operation.setRootConsumer(new TestRootResultConusmer(), ROOT_BATCH_SIZE);
@@ -409,7 +411,7 @@ public class CreateExecPlanNodeVisitorTest {
         }
 
         @Override
-        public void onError(HazelcastSqlException error) {
+        public void onError(QueryException error) {
             // No-op.
         }
     }

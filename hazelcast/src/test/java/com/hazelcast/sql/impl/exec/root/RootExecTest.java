@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.exec.root;
 
-import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.UpstreamExec;
 import com.hazelcast.sql.impl.exec.IterationResult;
@@ -124,7 +124,7 @@ public class RootExecTest extends SqlTestSupport {
         }
 
         @Override
-        public void onError(HazelcastSqlException error) {
+        public void onError(QueryException error) {
             // No-op.
         }
 

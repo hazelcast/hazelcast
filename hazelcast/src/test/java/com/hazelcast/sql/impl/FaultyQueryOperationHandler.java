@@ -31,7 +31,7 @@ public final class FaultyQueryOperationHandler implements QueryOperationHandler 
     }
 
     @Override
-    public boolean submit(UUID memberId, QueryOperation operation) {
+    public boolean submit(UUID sourceMemberId, UUID memberId, QueryOperation operation) {
         return false;
     }
 
@@ -41,21 +41,23 @@ public final class FaultyQueryOperationHandler implements QueryOperationHandler 
     }
 
     @Override
-    public QueryOperationChannel createChannel(UUID memberId) {
-        return new Channel(memberId);
+    public QueryOperationChannel createChannel(UUID sourceMemberId, UUID memberId) {
+        return new Channel(sourceMemberId, memberId);
     }
 
     private class Channel implements QueryOperationChannel {
 
+        private final UUID sourceMemberId;
         private final UUID memberId;
 
-        private Channel(UUID memberId) {
+        private Channel(UUID sourceMemberId, UUID memberId) {
+            this.sourceMemberId = sourceMemberId;
             this.memberId = memberId;
         }
 
         @Override
         public boolean submit(QueryOperation operation) {
-            return FaultyQueryOperationHandler.this.submit(memberId, operation);
+            return FaultyQueryOperationHandler.this.submit(sourceMemberId, memberId, operation);
         }
     }
 }

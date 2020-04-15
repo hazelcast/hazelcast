@@ -18,10 +18,10 @@ package com.hazelcast.sql.impl.worker;
 
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.sql.impl.operation.QueryOperationHandler;
+import com.hazelcast.sql.impl.LocalMemberIdProvider;
 import com.hazelcast.sql.impl.operation.QueryOperation;
+import com.hazelcast.sql.impl.operation.QueryOperationHandler;
 
-import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -35,6 +35,7 @@ public class QueryOperationWorkerPool {
     public QueryOperationWorkerPool(
         String instanceName,
         int threadCount,
+        LocalMemberIdProvider localMemberIdProvider,
         QueryOperationHandler operationHandler,
         SerializationService serializationService,
         ILogger logger
@@ -45,15 +46,9 @@ public class QueryOperationWorkerPool {
 
         for (int i = 0; i < threadCount; i++) {
             QueryOperationWorker worker =
-                new QueryOperationWorker(operationHandler, serializationService, instanceName, i, logger);
+                new QueryOperationWorker(localMemberIdProvider, operationHandler, serializationService, instanceName, i, logger);
 
             workers[i] = worker;
-        }
-    }
-
-    public void init(UUID localMemberId) {
-        for (QueryOperationWorker worker : workers) {
-            worker.init(localMemberId);
         }
     }
 

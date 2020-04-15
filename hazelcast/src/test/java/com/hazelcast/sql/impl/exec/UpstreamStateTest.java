@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.exec;
 
-import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.HeapRow;
@@ -114,7 +114,7 @@ public class UpstreamStateTest extends SqlTestSupport {
             state.consumeBatch();
 
             fail("Must fail");
-        } catch (HazelcastSqlException e) {
+        } catch (QueryException e) {
             // No-op.
         }
     }
