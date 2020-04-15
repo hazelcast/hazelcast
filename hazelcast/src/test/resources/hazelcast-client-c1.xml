@@ -28,7 +28,7 @@
         </cluster-members>
     </network>
 
-    <connection-strategy async-start="true" reconnect-mode="OFF">
+    <connection-strategy async-start="true">
     </connection-strategy>
 
 </hazelcast-client>
