@@ -138,27 +138,31 @@ public class MetricsCompressor {
 
     public void addLong(MetricDescriptor descriptor, long value) {
         try {
+            tmpBaos.reset();
             writeDescriptor(descriptor);
             tmpDos.writeByte(ValueType.LONG.ordinal());
             tmpDos.writeLong(value);
             metricDos.write(tmpBaos.internalBuffer(), 0, tmpBaos.size());
-            tmpBaos.reset();
         } catch (IOException e) {
             // should never be thrown
             throw new RuntimeException(e);
+        } catch (LongWordException ignored) {
+            // ignore
         }
     }
 
     public void addDouble(MetricDescriptor descriptor, double value) {
         try {
+            tmpBaos.reset();
             writeDescriptor(descriptor);
             tmpDos.writeByte(ValueType.DOUBLE.ordinal());
             tmpDos.writeDouble(value);
             metricDos.write(tmpBaos.internalBuffer(), 0, tmpBaos.size());
-            tmpBaos.reset();
         } catch (IOException e) {
             // should never be thrown
             throw new RuntimeException(e);
+        } catch (LongWordException ignored) {
+            // ignore
         }
     }
 
@@ -259,6 +263,7 @@ public class MetricsCompressor {
         dictionaryDos.writeInt(words.size());
         String lastWord = "";
         for (MetricsDictionary.Word word : words) {
+            tmpBaos.reset();
             String wordText = word.word();
             if (wordText.length() > UNSIGNED_BYTE_MAX_VALUE) {
                 // this should have been checked earlier, this is a safety check
@@ -281,7 +286,6 @@ public class MetricsCompressor {
             }
             lastWord = wordText;
             dictionaryDos.write(tmpBaos.internalBuffer(), 0, tmpBaos.size());
-            tmpBaos.reset();
         }
     }
 

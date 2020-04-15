@@ -47,7 +47,7 @@ class MetricsDictionary {
     int getDictionaryId(String word) {
         requireNonNull(word);
         if (word.length() > MAX_WORD_LENGTH) {
-            throw new RuntimeException("Maximum dictionary element length is " + MAX_WORD_LENGTH + ": " + word);
+            throw new LongWordException("Maximum dictionary element length is " + MAX_WORD_LENGTH + ": " + word);
         }
 
         int nextWordId = orderedDictionary.size();

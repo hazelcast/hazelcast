@@ -18,13 +18,11 @@ package com.hazelcast.internal.metrics.impl;
 
 import com.hazelcast.internal.metrics.MetricConsumer;
 import com.hazelcast.internal.metrics.MetricDescriptor;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.function.Supplier;
@@ -46,12 +44,13 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MetricsCompressorTest {
 
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
+    private static final String LONG_NAME = Stream.generate(() -> "a")
+                                                 .limit(MetricsDictionary.MAX_WORD_LENGTH + 1)
+                                                 .collect(Collectors.joining());
 
     private final DefaultMetricDescriptorSupplier supplier = new DefaultMetricDescriptorSupplier();
     private final Supplier<? extends MetricDescriptor> supplierSpy = spy(supplier);
@@ -353,17 +352,50 @@ public class MetricsCompressorTest {
     }
 
     @Test
-    public void when_tooLongTagValue_then_fails() {
-        DefaultMetricDescriptorSupplier supplier = new DefaultMetricDescriptorSupplier();
+    public void when_tooLongWord_then_metricIgnored__tagName() {
+        when_tooLongWord_then_metricIgnored(supplier.get().withTag(LONG_NAME, "a"));
+    }
+
+    @Test
+    public void when_tooLongWord_then_metricIgnored__tagValue() {
+        when_tooLongWord_then_metricIgnored(supplier.get().withTag("n", LONG_NAME));
+    }
+
+    @Test
+    public void when_tooLongWord_then_metricIgnored__metricName() {
+        when_tooLongWord_then_metricIgnored(supplier.get().withMetric(LONG_NAME));
+    }
+
+    @Test
+    public void when_tooLongWord_then_metricIgnored__prefix() {
+        when_tooLongWord_then_metricIgnored(supplier.get().withPrefix(LONG_NAME));
+    }
+
+    @Test
+    public void when_tooLongWord_then_metricIgnored__discriminatorTag() {
+        when_tooLongWord_then_metricIgnored(supplier.get().withDiscriminator(LONG_NAME, "a"));
+    }
+
+    @Test
+    public void when_tooLongWord_then_metricIgnored__discriminatorValue() {
+        when_tooLongWord_then_metricIgnored(supplier.get().withDiscriminator("n", LONG_NAME));
+    }
+
+    private void when_tooLongWord_then_metricIgnored(MetricDescriptor badDescriptor) {
         MetricsCompressor compressor = new MetricsCompressor();
+        compressor.addLong(badDescriptor, 42);
+        assertEquals(0, compressor.count());
+        // add a good descriptor after a bad one to check that the tmp streams are reset properly
+        MetricDescriptor goodDescriptor = supplier.get();
+        compressor.addLong(goodDescriptor, 43);
+        assertEquals(1, compressor.count());
+        byte[] blob = compressor.getBlobAndReset();
 
-        String longName = Stream.generate(() -> "a")
-                                  .limit(MetricsDictionary.MAX_WORD_LENGTH + 1)
-                                  .collect(Collectors.joining());
-        MetricDescriptor metric1 = supplier.get()
-                                           .withTag("tag0", longName);
-
-        exception.expect(RuntimeException.class);
-        compressor.addLong(metric1, 42);
+        // try to decompress the metrics to see that a valid data were produced
+        MetricConsumer metricConsumerMock = mock(MetricConsumer.class);
+        MetricsCompressor.extractMetrics(blob, metricConsumerMock, supplierSpy);
+        verify(metricConsumerMock).consumeLong(goodDescriptor, 43L);
+        verifyNoMoreInteractions(metricConsumerMock);
+        verify(supplierSpy, times(1)).get();
     }
 }

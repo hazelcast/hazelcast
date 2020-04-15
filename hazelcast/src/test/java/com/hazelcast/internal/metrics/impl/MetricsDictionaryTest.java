@@ -75,7 +75,7 @@ public class MetricsDictionaryTest {
         String longWord = Stream.generate(() -> "a")
                                 .limit(MetricsDictionary.MAX_WORD_LENGTH + 1)
                                 .collect(Collectors.joining());
-        exception.expect(RuntimeException.class);
+        exception.expect(LongWordException.class);
         dictionary.getDictionaryId(longWord);
     }
 }
