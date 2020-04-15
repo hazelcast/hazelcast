@@ -3448,6 +3448,15 @@
         <collection-frequency-seconds>10</collection-frequency-seconds>
     </metrics>
 
+    <auditlog enabled="false">
+        <factory-class-name>com.acme.AuditlogToSyslogFactory</factory-class-name>
+        <properties>
+            <property name="host">syslogserver.acme.com</property>
+            <property name="port">514</property>
+            <property name="type">tcp</property>
+        </properties>
+    </auditlog>
+
     <!--
       ===== HAZELCAST INSTANCE TRACKING CONFIGURATION =====
 

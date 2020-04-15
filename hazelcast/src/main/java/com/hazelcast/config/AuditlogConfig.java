@@ -14,12 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.auditlog.impl;
+package com.hazelcast.config;
 
-public final class AuditlogTypeIds {
+/**
+ * Auditlog configuration.
+ */
+public final class AuditlogConfig extends AbstractFactoryWithPropertiesConfig<AuditlogConfig> {
 
-    public static final String CONNECTION_ASKS_PROTOCOL = "HZ-1001";
-
-    private AuditlogTypeIds() {
+    @Override
+    protected AuditlogConfig self() {
+        return this;
     }
+
 }

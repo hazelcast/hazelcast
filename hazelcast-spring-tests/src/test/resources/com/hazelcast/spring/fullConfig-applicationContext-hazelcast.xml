@@ -977,6 +977,13 @@
                 <hz:operation-pool-size>20</hz:operation-pool-size>
                 <hz:query-timeout-millis>30</hz:query-timeout-millis>
             </hz:sql>
+
+            <hz:auditlog enabled="false" factory-class-name="com.acme.AuditlogToSyslogFactory">
+                <hz:properties>
+                    <hz:property name="host">syslogserver.acme.com</hz:property>
+                    <hz:property name="port">514</hz:property>
+                </hz:properties>
+            </hz:auditlog>
         </hz:config>
     </hz:hazelcast>
 

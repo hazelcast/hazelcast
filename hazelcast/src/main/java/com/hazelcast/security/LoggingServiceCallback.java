@@ -14,11 +14,24 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.auditlog;
+package com.hazelcast.security;
+
+import javax.security.auth.callback.Callback;
+
+import com.hazelcast.logging.LoggingService;
 
 /**
- * Event importance levels.
+ * This JAAS {@link Callback} is used to retrieve a {@link LoggingService} from the current member.
  */
-public enum Level {
-    DEBUG, INFO, WARN, ERROR;
+public class LoggingServiceCallback implements Callback {
+
+    private LoggingService loggingService;
+
+    public LoggingService getLoggingService() {
+        return loggingService;
+    }
+
+    public void setLoggingService(LoggingService loggingService) {
+        this.loggingService = loggingService;
+    }
 }

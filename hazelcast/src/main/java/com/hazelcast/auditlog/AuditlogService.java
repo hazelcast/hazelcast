@@ -14,10 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.auditlog;
+package com.hazelcast.auditlog;
 
 /**
- * Service for logging {@link AuditableEvent AuditableEvents}.
+ * Service for logging {@link AuditableEvent AuditableEvents}. Standard events have their type identifiers defined as constants
+ * in the {@link AuditlogTypeIds} class.
+ * <p>
+ * The invocations on this interface may be done in performance sensitive places so the implementation should not do anything
+ * too heavy.
  */
 public interface AuditlogService {
 
@@ -48,10 +52,11 @@ public interface AuditlogService {
 
     /**
      * Returns an instance of the {@link EventBuilder} interface. It can be performance optimized (e.g. when Event Audit logging
-     * is disabled).
+     * is disabled). The {@link EventBuilder} allows creating {@link AuditableEvent auditable events} by using simple fluent
+     * API.
      *
-     * @param typeId
-     * @return
+     * @param typeId Unique identifier for given type of auditable event.
+     * @return {@link EventBuilder} instance
      */
     EventBuilder<?> eventBuilder(String typeId);
 }

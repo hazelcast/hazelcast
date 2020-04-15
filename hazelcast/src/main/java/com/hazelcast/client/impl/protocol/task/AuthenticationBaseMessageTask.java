@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.protocol.task;
 
+import com.hazelcast.auditlog.AuditlogTypeIds;
 import com.hazelcast.client.impl.protocol.AuthenticationStatus;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.cluster.Address;
@@ -126,14 +127,24 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
 
     private AuthenticationStatus authenticate(SecurityContext securityContext) {
         Connection connection = endpoint.getConnection();
+        Boolean passed = Boolean.FALSE;
         try {
             LoginContext lc = securityContext.createClientLoginContext(clusterName, credentials, connection);
             lc.login();
             endpoint.setLoginContext(lc);
+            passed = Boolean.TRUE;
             return AUTHENTICATED;
         } catch (LoginException e) {
             logger.warning(e);
             return CREDENTIALS_FAILED;
+        } finally {
+            nodeEngine.getNode().getNodeExtension().getAuditlogService()
+                .eventBuilder(AuditlogTypeIds.AUTHENTICATION_CLIENT)
+                .message("Client connection authentication.")
+                .addParameter("connection", connection)
+                .addParameter("credentials", credentials)
+                .addParameter("passed", passed)
+                .log();
         }
     }
 
