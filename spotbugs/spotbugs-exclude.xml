@@ -24,7 +24,7 @@
     </Match>
 
     <Match>
-        <Class name="~com\.hazelcast\.jet\.python\.grpc\..+" />
+        <Class name="~com\.hazelcast\.jet\.python\.impl\.grpc\..+" />
     </Match>
 
     <Match>
