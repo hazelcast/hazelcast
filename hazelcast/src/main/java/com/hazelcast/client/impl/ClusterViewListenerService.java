@@ -44,6 +44,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.client.impl.protocol.codec.ClientAddClusterViewListenerCodec.encodePartitionsViewEvent;
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 
 public class ClusterViewListenerService {
@@ -144,12 +145,8 @@ public class ClusterViewListenerService {
         InternalPartitionService partitionService = (InternalPartitionService) nodeEngine.getPartitionService();
         PartitionTableView partitionTableView = partitionService.createPartitionTableView();
         Map<UUID, List<Integer>> partitions = getPartitions(partitionTableView);
-        if (partitions.size() == 0) {
-            return null;
-        }
-        int partitionStateVersion = partitionTableView.getVersion();
-
-        return ClientAddClusterViewListenerCodec.encodePartitionsViewEvent(partitionStateVersion, partitions.entrySet());
+        return partitions.isEmpty() ? null
+                : encodePartitionsViewEvent(partitionTableView.getVersion(), partitions.entrySet());
     }
 
     private ClientMessage createMemberListViewClientMessage() {
