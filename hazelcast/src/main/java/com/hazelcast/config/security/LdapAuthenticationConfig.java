@@ -261,7 +261,7 @@ public class LdapAuthenticationConfig extends AbstractClusterLoginConfig<LdapAut
     @Override
     public String toString() {
         return "LdapAuthenticationConfig [url=" + url + ", socketFactoryClassName=" + socketFactoryClassName + ", systemUserDn="
-                + systemUserDn + ", systemUserPassword=" + systemUserPassword + ", parseDn=" + parseDn + ", roleContext="
+                + systemUserDn + ", systemUserPassword=***, parseDn=" + parseDn + ", roleContext="
                 + roleContext + ", roleFilter=" + roleFilter + ", roleMappingAttribute=" + roleMappingAttribute
                 + ", roleMappingMode=" + roleMappingMode + ", roleNameAttribute=" + roleNameAttribute
                 + ", roleRecursionMaxDepth=" + roleRecursionMaxDepth + ", roleSearchScope=" + roleSearchScope
