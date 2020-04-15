@@ -59,6 +59,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_DISCRIMINATOR_BINDADDRESS;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_DISCRIMINATOR_ENDPOINT;
@@ -102,7 +103,7 @@ public class TcpServerConnectionManager
     private final IOService ioService;
     private final EndpointConfig endpointConfig;
     private final EndpointQualifier endpointQualifier;
-    private final ChannelInitializerProvider channelInitializerProvider;
+    private final Function<EndpointQualifier, ChannelInitializer> channelInitializerFn;
     private final TcpServer server;
     private final TcpServerConnector connector;
     private final MemberHandshakeHandler memberHandshakeHandler;
@@ -132,7 +133,7 @@ public class TcpServerConnectionManager
 
     TcpServerConnectionManager(TcpServer server,
                                EndpointConfig endpointConfig,
-                               ChannelInitializerProvider channelInitializerProvider,
+                               Function<EndpointQualifier, ChannelInitializer> channelInitializerFn,
                                IOService ioService,
                                LoggingService loggingService,
                                HazelcastProperties properties,
@@ -140,7 +141,7 @@ public class TcpServerConnectionManager
         this.server = server;
         this.endpointConfig = endpointConfig;
         this.endpointQualifier = endpointConfig != null ? endpointConfig.getQualifier() : null;
-        this.channelInitializerProvider = channelInitializerProvider;
+        this.channelInitializerFn = channelInitializerFn;
         this.ioService = ioService;
         this.logger = loggingService.getLogger(TcpServerConnectionManager.class);
         this.connector = new TcpServerConnector(this);
@@ -321,7 +322,7 @@ public class TcpServerConnectionManager
     Channel newChannel(SocketChannel socketChannel, boolean clientMode)
             throws IOException {
         Networking networking = server.getNetworking();
-        ChannelInitializer channelInitializer = channelInitializerProvider.provide(endpointQualifier);
+        ChannelInitializer channelInitializer = channelInitializerFn.apply(endpointQualifier);
         assert channelInitializer != null : "Found NULL channel initializer for endpoint-qualifier " + endpointQualifier;
         Channel channel = networking.register(channelInitializer, socketChannel, clientMode);
         // Advanced Network

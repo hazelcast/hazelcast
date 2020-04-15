@@ -33,7 +33,7 @@ import com.hazelcast.internal.hotrestart.InternalHotRestartService;
 import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
 import com.hazelcast.internal.memory.MemoryStats;
-import com.hazelcast.internal.server.tcp.ChannelInitializerProvider;
+import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.server.IOService;
@@ -48,6 +48,7 @@ import com.hazelcast.version.Version;
 
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
 
 /**
  * Node extension that instantiates a {@link SamplingSerializationService} when asked to create
@@ -138,8 +139,8 @@ public class SamplingNodeExtension implements NodeExtension {
     }
 
     @Override
-    public ChannelInitializerProvider createChannelInitializerProvider(IOService ioService) {
-        return nodeExtension.createChannelInitializerProvider(ioService);
+    public Function<EndpointQualifier, ChannelInitializer> createChannelInitializerFn(IOService ioService) {
+       return nodeExtension.createChannelInitializerFn(ioService);
     }
 
     @Override

@@ -30,7 +30,7 @@ import com.hazelcast.internal.hotrestart.InternalHotRestartService;
 import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
 import com.hazelcast.internal.memory.MemoryStats;
-import com.hazelcast.internal.server.tcp.ChannelInitializerProvider;
+import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.nio.Connection;
@@ -45,6 +45,7 @@ import com.hazelcast.version.Version;
 
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
 
 /**
  * NodeExtension is a <tt>Node</tt> extension mechanism to be able to plug different implementations of
@@ -155,12 +156,12 @@ public interface NodeExtension {
 
 
     /**
-     * Creates the ChannelInitializerProvider.
+     * Creates the channel initializer function.
      *
      * @param ioService
      * @return
      */
-    ChannelInitializerProvider createChannelInitializerProvider(IOService ioService);
+    Function<EndpointQualifier, ChannelInitializer> createChannelInitializerFn(IOService ioService);
 
     /**
      * Called on thread start to inject/intercept extension specific logic,
