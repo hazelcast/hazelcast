@@ -42,7 +42,7 @@ public class MetricsDictionaryTest {
     private MetricsDictionary dictionary = new MetricsDictionary();
 
     @Test
-    public void testGrowing() {
+    public void testGrowing() throws Exception {
         for (int i = 0; i < 256; i++) {
             String word = Integer.toString(i);
             int dictionaryId = dictionary.getDictionaryId(word);
@@ -51,7 +51,7 @@ public class MetricsDictionaryTest {
     }
 
     @Test
-    public void testWordsOrdered() {
+    public void testWordsOrdered() throws Exception {
         assertEquals(0, dictionary.getDictionaryId("b"));
         assertEquals(1, dictionary.getDictionaryId("a"));
 
@@ -61,7 +61,7 @@ public class MetricsDictionaryTest {
     }
 
     @Test
-    public void testGetDictionaryIdReturnsSameIdForSameWord() {
+    public void testGetDictionaryIdReturnsSameIdForSameWord() throws Exception {
         int word1Id = dictionary.getDictionaryId("word1");
         dictionary.getDictionaryId("word2");
         dictionary.getDictionaryId("word3");
@@ -71,7 +71,7 @@ public class MetricsDictionaryTest {
     }
 
     @Test
-    public void when_tooLongWord_then_fails() {
+    public void when_tooLongWord_then_fails() throws Exception {
         String longWord = Stream.generate(() -> "a")
                                 .limit(MetricsDictionary.MAX_WORD_LENGTH + 1)
                                 .collect(Collectors.joining());

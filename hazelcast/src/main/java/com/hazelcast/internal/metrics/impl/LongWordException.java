@@ -16,9 +16,7 @@
 
 package com.hazelcast.internal.metrics.impl;
 
-import com.hazelcast.core.HazelcastException;
-
-public class LongWordException extends HazelcastException {
+public class LongWordException extends Exception {
     public LongWordException(String message) {
         super(message);
     }

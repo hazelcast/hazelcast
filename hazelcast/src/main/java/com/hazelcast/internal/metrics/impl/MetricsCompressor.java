@@ -136,7 +136,7 @@ public class MetricsCompressor {
         tmpDos = new DataOutputStream(tmpBaos);
     }
 
-    public void addLong(MetricDescriptor descriptor, long value) {
+    public void addLong(MetricDescriptor descriptor, long value) throws LongWordException {
         try {
             tmpBaos.reset();
             writeDescriptor(descriptor);
@@ -146,12 +146,10 @@ public class MetricsCompressor {
         } catch (IOException e) {
             // should never be thrown
             throw new RuntimeException(e);
-        } catch (LongWordException ignored) {
-            // ignore
         }
     }
 
-    public void addDouble(MetricDescriptor descriptor, double value) {
+    public void addDouble(MetricDescriptor descriptor, double value) throws LongWordException {
         try {
             tmpBaos.reset();
             writeDescriptor(descriptor);
@@ -161,13 +159,11 @@ public class MetricsCompressor {
         } catch (IOException e) {
             // should never be thrown
             throw new RuntimeException(e);
-        } catch (LongWordException ignored) {
-            // ignore
         }
     }
 
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
-    private void writeDescriptor(MetricDescriptor descriptor) throws IOException {
+    private void writeDescriptor(MetricDescriptor descriptor) throws IOException, LongWordException {
         int mask = calculateDescriptorMask(descriptor);
         tmpDos.writeByte(mask);
 
@@ -242,7 +238,7 @@ public class MetricsCompressor {
         return target.copy(from);
     }
 
-    private int getDictionaryId(String word) {
+    private int getDictionaryId(String word) throws LongWordException {
         if (word == null) {
             return NULL_DICTIONARY_ID;
         }

@@ -57,7 +57,7 @@ public class MetricsCompressorTest {
     private final MetricsCompressor compressor = new MetricsCompressor();
 
     @Test
-    public void testSingleLongMetric() {
+    public void testSingleLongMetric() throws Exception {
         MetricDescriptor originalMetric = supplier.get()
                                                   .withPrefix("prefix")
                                                   .withMetric("metricName")
@@ -76,7 +76,7 @@ public class MetricsCompressorTest {
     }
 
     @Test
-    public void testSingleDoubleMetric() {
+    public void testSingleDoubleMetric() throws Exception {
         MetricDescriptor originalMetric = supplier.get()
                                                   .withPrefix("prefix")
                                                   .withMetric("metricName")
@@ -95,7 +95,7 @@ public class MetricsCompressorTest {
     }
 
     @Test
-    public void testSingleMetricWithoutPrefix() {
+    public void testSingleMetricWithoutPrefix() throws Exception {
         DefaultMetricDescriptorSupplier supplier = new DefaultMetricDescriptorSupplier();
         MetricsCompressor compressor = new MetricsCompressor();
 
@@ -116,7 +116,7 @@ public class MetricsCompressorTest {
     }
 
     @Test
-    public void testSingleMetricWithoutUnit() {
+    public void testSingleMetricWithoutUnit() throws Exception {
         DefaultMetricDescriptorSupplier supplier = new DefaultMetricDescriptorSupplier();
         MetricsCompressor compressor = new MetricsCompressor();
 
@@ -137,7 +137,7 @@ public class MetricsCompressorTest {
     }
 
     @Test
-    public void testTwoMetrics_withDelta() {
+    public void testTwoMetrics_withDelta() throws Exception {
         DefaultMetricDescriptorSupplier supplier = new DefaultMetricDescriptorSupplier();
         MetricsCompressor compressor = new MetricsCompressor();
 
@@ -163,7 +163,7 @@ public class MetricsCompressorTest {
     }
 
     @Test
-    public void testTwoMetrics_fullDifferent() {
+    public void testTwoMetrics_fullDifferent() throws Exception {
         DefaultMetricDescriptorSupplier supplier = new DefaultMetricDescriptorSupplier();
         MetricsCompressor compressor = new MetricsCompressor();
 
@@ -193,7 +193,7 @@ public class MetricsCompressorTest {
     }
 
     @Test
-    public void testTwoMetrics_secondWithoutTags() {
+    public void testTwoMetrics_secondWithoutTags() throws Exception {
         DefaultMetricDescriptorSupplier supplier = new DefaultMetricDescriptorSupplier();
         MetricsCompressor compressor = new MetricsCompressor();
 
@@ -220,7 +220,7 @@ public class MetricsCompressorTest {
     }
 
     @Test
-    public void testTwoMetrics_sameExcludedTargets() {
+    public void testTwoMetrics_sameExcludedTargets() throws Exception {
         DefaultMetricDescriptorSupplier supplier = new DefaultMetricDescriptorSupplier();
         MetricsCompressor compressor = new MetricsCompressor();
 
@@ -245,7 +245,7 @@ public class MetricsCompressorTest {
     }
 
     @Test
-    public void testTwoMetrics_differentExcludedTargets() {
+    public void testTwoMetrics_differentExcludedTargets() throws Exception {
         DefaultMetricDescriptorSupplier supplier = new DefaultMetricDescriptorSupplier();
         MetricsCompressor compressor = new MetricsCompressor();
 
@@ -270,7 +270,7 @@ public class MetricsCompressorTest {
     }
 
     @Test
-    public void testModifyingExtractedDoesntImpactExtraction() {
+    public void testModifyingExtractedDoesntImpactExtraction() throws Exception {
         DefaultMetricDescriptorSupplier supplier = new DefaultMetricDescriptorSupplier();
         MetricsCompressor compressor = new MetricsCompressor();
 
@@ -317,7 +317,7 @@ public class MetricsCompressorTest {
     }
 
     @Test
-    public void testLongTagValue() {
+    public void testLongTagValue() throws Exception {
         DefaultMetricDescriptorSupplier supplier = new DefaultMetricDescriptorSupplier();
         MetricsCompressor compressor = new MetricsCompressor();
 
@@ -352,38 +352,42 @@ public class MetricsCompressorTest {
     }
 
     @Test
-    public void when_tooLongWord_then_metricIgnored__tagName() {
+    public void when_tooLongWord_then_metricIgnored__tagName() throws Exception {
         when_tooLongWord_then_metricIgnored(supplier.get().withTag(LONG_NAME, "a"));
     }
 
     @Test
-    public void when_tooLongWord_then_metricIgnored__tagValue() {
+    public void when_tooLongWord_then_metricIgnored__tagValue() throws Exception {
         when_tooLongWord_then_metricIgnored(supplier.get().withTag("n", LONG_NAME));
     }
 
     @Test
-    public void when_tooLongWord_then_metricIgnored__metricName() {
+    public void when_tooLongWord_then_metricIgnored__metricName() throws Exception {
         when_tooLongWord_then_metricIgnored(supplier.get().withMetric(LONG_NAME));
     }
 
     @Test
-    public void when_tooLongWord_then_metricIgnored__prefix() {
+    public void when_tooLongWord_then_metricIgnored__prefix() throws Exception {
         when_tooLongWord_then_metricIgnored(supplier.get().withPrefix(LONG_NAME));
     }
 
     @Test
-    public void when_tooLongWord_then_metricIgnored__discriminatorTag() {
+    public void when_tooLongWord_then_metricIgnored__discriminatorTag() throws Exception {
         when_tooLongWord_then_metricIgnored(supplier.get().withDiscriminator(LONG_NAME, "a"));
     }
 
     @Test
-    public void when_tooLongWord_then_metricIgnored__discriminatorValue() {
+    public void when_tooLongWord_then_metricIgnored__discriminatorValue() throws Exception {
         when_tooLongWord_then_metricIgnored(supplier.get().withDiscriminator("n", LONG_NAME));
     }
 
-    private void when_tooLongWord_then_metricIgnored(MetricDescriptor badDescriptor) {
+    private void when_tooLongWord_then_metricIgnored(MetricDescriptor badDescriptor) throws Exception {
         MetricsCompressor compressor = new MetricsCompressor();
-        compressor.addLong(badDescriptor, 42);
+        try {
+            compressor.addLong(badDescriptor, 42);
+            fail("should have failed");
+        } catch (LongWordException ignored) {
+        }
         assertEquals(0, compressor.count());
         // add a good descriptor after a bad one to check that the tmp streams are reset properly
         MetricDescriptor goodDescriptor = supplier.get();

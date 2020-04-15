@@ -44,10 +44,11 @@ class MetricsDictionary {
      * @param word The word to look for
      * @return the id assigned to the given word
      */
-    int getDictionaryId(String word) {
+    int getDictionaryId(String word) throws LongWordException {
         requireNonNull(word);
         if (word.length() > MAX_WORD_LENGTH) {
-            throw new LongWordException("Maximum dictionary element length is " + MAX_WORD_LENGTH + ": " + word);
+            throw new LongWordException("Too long value in the metric descriptor found, maximum is "
+                    + MAX_WORD_LENGTH + ": " + word);
         }
 
         int nextWordId = orderedDictionary.size();

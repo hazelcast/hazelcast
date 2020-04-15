@@ -16,14 +16,16 @@
 
 package com.hazelcast.internal.metrics.managementcenter;
 
+import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricTarget;
 import com.hazelcast.internal.metrics.MetricsPublisher;
-import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.impl.LongWordException;
 import com.hazelcast.internal.metrics.impl.MetricsCompressor;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 
 import javax.annotation.Nonnull;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.ObjLongConsumer;
 
 /**
@@ -35,6 +37,7 @@ public class ManagementCenterPublisher implements MetricsPublisher {
     private final ILogger logger;
     private final ObjLongConsumer<byte[]> consumer;
     private final MetricsCompressor compressor;
+    private final AtomicBoolean longWordLogged = new AtomicBoolean();
 
     public ManagementCenterPublisher(@Nonnull LoggingService loggingService, @Nonnull ObjLongConsumer<byte[]> writeFn) {
         this.consumer = writeFn;
@@ -49,15 +52,31 @@ public class ManagementCenterPublisher implements MetricsPublisher {
 
     @Override
     public void publishLong(MetricDescriptor descriptor, long value) {
-        if (descriptor.isTargetIncluded(MetricTarget.MANAGEMENT_CENTER)) {
-            compressor.addLong(descriptor, value);
+        try {
+            if (descriptor.isTargetIncluded(MetricTarget.MANAGEMENT_CENTER)) {
+                compressor.addLong(descriptor, value);
+            }
+        } catch (LongWordException e) {
+            logLongWordException(e);
         }
     }
 
     @Override
     public void publishDouble(MetricDescriptor descriptor, double value) {
-        if (descriptor.isTargetIncluded(MetricTarget.MANAGEMENT_CENTER)) {
-            compressor.addDouble(descriptor, value);
+        try {
+            if (descriptor.isTargetIncluded(MetricTarget.MANAGEMENT_CENTER)) {
+                compressor.addDouble(descriptor, value);
+            }
+        } catch (LongWordException e) {
+            logLongWordException(e);
+        }
+    }
+
+    private void logLongWordException(LongWordException e) {
+        if (longWordLogged.compareAndSet(false, true)) {
+            logger.warning(e.getMessage());
+        } else {
+            logger.fine(e.getMessage());
         }
     }
 
