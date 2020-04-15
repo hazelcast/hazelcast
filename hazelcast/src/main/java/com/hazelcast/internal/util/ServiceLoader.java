@@ -83,12 +83,12 @@ public final class ServiceLoader {
     private static Set<ServiceDefinition> getServiceDefinitions(String factoryId, ClassLoader classLoader) {
         List<ClassLoader> classLoaders = selectClassLoaders(classLoader);
 
-        Set<URLDefinition> factoryUrls = new HashSet<URLDefinition>();
+        List<URLDefinition> factoryUrls = new ArrayList<>();
         for (ClassLoader selectedClassLoader : classLoaders) {
             factoryUrls.addAll(collectFactoryUrls(factoryId, selectedClassLoader));
         }
 
-        Set<ServiceDefinition> serviceDefinitions = new HashSet<ServiceDefinition>();
+        Set<ServiceDefinition> serviceDefinitions = new HashSet<>();
         for (URLDefinition urlDefinition : factoryUrls) {
             serviceDefinitions.addAll(parse(urlDefinition));
         }
@@ -99,12 +99,12 @@ public final class ServiceLoader {
         return serviceDefinitions;
     }
 
-    private static Set<URLDefinition> collectFactoryUrls(String factoryId, ClassLoader classLoader) {
+    private static List<URLDefinition> collectFactoryUrls(String factoryId, ClassLoader classLoader) {
         String resourceName = "META-INF/services/" + factoryId;
         try {
             Enumeration<URL> configs = classLoader.getResources(resourceName);
 
-            Set<URLDefinition> urlDefinitions = new HashSet<URLDefinition>();
+            List<URLDefinition> urlDefinitions = new ArrayList<>();
             while (configs.hasMoreElements()) {
                 URL url = configs.nextElement();
                 if (!classLoader.getClass().getName().equals(IGNORED_GLASSFISH_MAGIC_CLASSLOADER)) {
@@ -116,12 +116,12 @@ public final class ServiceLoader {
         } catch (Exception e) {
             LOGGER.severe(e);
         }
-        return Collections.emptySet();
+        return Collections.emptyList();
     }
 
     private static Set<ServiceDefinition> parse(URLDefinition urlDefinition) {
         try {
-            Set<ServiceDefinition> names = new HashSet<ServiceDefinition>();
+            Set<ServiceDefinition> names = new HashSet<>();
             BufferedReader r = null;
             try {
                 URL url = urlDefinition.url;
