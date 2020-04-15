@@ -112,7 +112,7 @@ public class QueryRunner {
         // to optimize the query we need to get any index instance
         Indexes indexes = mapContainer.getIndexes();
         if (indexes == null) {
-            indexes = mapContainer.getIndexes(initialPartitions.iterator().next());
+            indexes = mapContainer.getIndexes(initialPartitions.intIterator().nextInt());
         }
         // first we optimize the query
         Predicate predicate = queryOptimizer.optimize(query.getPredicate(), indexes);

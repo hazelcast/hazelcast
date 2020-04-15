@@ -221,4 +221,15 @@ public class PartitionIdSet extends AbstractSet<Integer> {
         }
     }
 
+    public static void main(String[] args) {
+        BitSet bitSet = new BitSet();
+
+        bitSet.set(100001);
+
+        int length = bitSet.toLongArray().length;
+        System.err.println(length);
+
+
+    }
+
 }
