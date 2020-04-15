@@ -20,7 +20,7 @@ import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.InboundHandler;
-import com.hazelcast.internal.server.IOService;
+import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.server.tcp.AbstractChannelInitializer;
 import com.hazelcast.internal.server.tcp.TcpServerConnection;
@@ -31,8 +31,8 @@ public class TextChannelInitializer
 
     private final boolean rest;
 
-    public TextChannelInitializer(IOService ioService, EndpointConfig config, boolean rest) {
-        super(ioService, config);
+    public TextChannelInitializer(ServerContext serverContext, EndpointConfig config, boolean rest) {
+        super(serverContext, config);
         this.rest = rest;
     }
 

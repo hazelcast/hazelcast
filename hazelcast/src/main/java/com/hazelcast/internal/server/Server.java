@@ -30,9 +30,9 @@ import com.hazelcast.internal.server.tcp.TextViewUnifiedServerConnectionManager;
 public interface Server {
 
     /**
-     * Returns the I/O Service
+     * Returns the ServerContext.
      */
-    IOService getIoService();
+    ServerContext getContext();
 
     /**
      * Return an aggregate endpoint which acts as a view of all endpoints merged together for reporting purposes

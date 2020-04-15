@@ -51,7 +51,7 @@ public class TcpServerConnectionManager_TransmitTest
         super.setup();
         networkingServiceA.start();
 
-        ioServiceB.packetConsumer = new Consumer<Packet>() {
+        serverContextB.packetConsumer = new Consumer<Packet>() {
             @Override
             public void accept(Packet packet) {
                 packetsB.add(packet);

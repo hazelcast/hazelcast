@@ -21,7 +21,7 @@ import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.ChannelInitializer;
-import com.hazelcast.internal.server.IOService;
+import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -42,9 +42,9 @@ class UnifiedServerConnectionManager
 
     UnifiedServerConnectionManager(TcpServer root, EndpointConfig endpointConfig,
                                    Function<EndpointQualifier, ChannelInitializer> channelInitializerProvider,
-                                   IOService ioService, LoggingService loggingService,
+                                   ServerContext serverContext, LoggingService loggingService,
                                    HazelcastProperties properties) {
-        super(root, endpointConfig, channelInitializerProvider, ioService, loggingService,
+        super(root, endpointConfig, channelInitializerProvider, serverContext, loggingService,
                 properties, ProtocolType.valuesAsSet());
     }
 

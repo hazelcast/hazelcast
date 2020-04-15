@@ -21,7 +21,7 @@ import com.hazelcast.internal.ascii.rest.HttpDeleteCommandParser;
 import com.hazelcast.internal.ascii.rest.HttpGetCommandParser;
 import com.hazelcast.internal.ascii.rest.HttpHeadCommandParser;
 import com.hazelcast.internal.ascii.rest.HttpPostCommandParser;
-import com.hazelcast.internal.server.IOService;
+import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.server.ServerConnection;
 
 import java.util.HashMap;
@@ -46,7 +46,7 @@ public class RestApiTextDecoder extends TextDecoder {
     }
 
     private static RestApiFilter createFilter(ServerConnection connection) {
-        IOService ioService = connection.getConnectionManager().getServer().getIoService();
-        return new RestApiFilter(ioService.getLoggingService(), ioService.getRestApiConfig(), TEXT_PARSERS);
+        ServerContext serverContext = connection.getConnectionManager().getServer().getContext();
+        return new RestApiFilter(serverContext.getLoggingService(), serverContext.getRestApiConfig(), TEXT_PARSERS);
     }
 }

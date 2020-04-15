@@ -24,7 +24,7 @@ import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionLifecycleListener;
 import com.hazelcast.internal.nio.ConnectionType;
-import com.hazelcast.internal.server.IOService;
+import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.logging.ILogger;
 
@@ -67,7 +67,7 @@ public class TcpServerConnection implements ServerConnection {
 
     private final int connectionId;
 
-    private final IOService ioService;
+    private final ServerContext serverContext;
 
     private Address remoteAddress;
 
@@ -88,8 +88,8 @@ public class TcpServerConnection implements ServerConnection {
         this.connectionId = connectionId;
         this.connectionManager = connectionManager;
         this.lifecycleListener = lifecycleListener;
-        this.ioService = connectionManager.getServer().getIoService();
-        this.logger = ioService.getLoggingService().getLogger(TcpServerConnection.class);
+        this.serverContext = connectionManager.getServer().getContext();
+        this.logger = serverContext.getLoggingService().getLogger(TcpServerConnection.class);
         this.channel = channel;
         this.attributeMap = channel.attributeMap();
         attributeMap.put(ServerConnection.class, this);
@@ -227,7 +227,7 @@ public class TcpServerConnection implements ServerConnection {
         }
 
         lifecycleListener.onConnectionClose(this, null, false);
-        ioService.onDisconnect(remoteAddress, cause);
+        serverContext.onDisconnect(remoteAddress, cause);
         if (cause != null && errorHandler != null) {
             errorHandler.onError(cause);
         }
@@ -262,7 +262,7 @@ public class TcpServerConnection implements ServerConnection {
     }
 
     private Level resolveLogLevelOnClose() {
-        if (!ioService.isActive()) {
+        if (!serverContext.isNodeActive()) {
             return Level.FINEST;
         }
 
