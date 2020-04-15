@@ -71,7 +71,7 @@ public class MetricsDictionaryTest {
     }
 
     @Test
-    public void when_tooLongValue_then_fails() {
+    public void when_tooLongWord_then_fails() {
         String longWord = Stream.generate(() -> "a")
                                 .limit(MetricsDictionary.MAX_WORD_LENGTH + 1)
                                 .collect(Collectors.joining());

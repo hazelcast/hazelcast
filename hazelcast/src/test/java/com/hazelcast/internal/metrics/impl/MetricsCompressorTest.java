@@ -318,7 +318,7 @@ public class MetricsCompressorTest {
     }
 
     @Test
-    public void testLongValue() {
+    public void testLongTagValue() {
         DefaultMetricDescriptorSupplier supplier = new DefaultMetricDescriptorSupplier();
         MetricsCompressor compressor = new MetricsCompressor();
 
@@ -353,7 +353,7 @@ public class MetricsCompressorTest {
     }
 
     @Test
-    public void when_tooLongValue_then_fails() {
+    public void when_tooLongTagValue_then_fails() {
         DefaultMetricDescriptorSupplier supplier = new DefaultMetricDescriptorSupplier();
         MetricsCompressor compressor = new MetricsCompressor();
 
