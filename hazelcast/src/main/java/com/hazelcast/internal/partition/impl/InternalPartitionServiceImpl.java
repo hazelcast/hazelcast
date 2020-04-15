@@ -744,6 +744,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
      */
     private void updatePartitionsAndFinalizeMigrations(PartitionReplica[][] partitionTable,
             int version, Collection<MigrationInfo> completedMigrations) {
+
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             PartitionReplica[] replicas = partitionTable[partitionId];
             partitionStateManager.updateReplicas(partitionId, replicas);

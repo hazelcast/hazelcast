@@ -55,10 +55,20 @@ public class ClusterViewListenerService {
     private final NodeEngine nodeEngine;
     private final AtomicBoolean pushScheduled = new AtomicBoolean();
     private final Map<ClientEndpoint, Long> clusterListeningEndpoints = new ConcurrentHashMap<>();
+    private final Integer cache[];
 
     ClusterViewListenerService(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.advancedNetworkConfigEnabled = nodeEngine.getConfig().getAdvancedNetworkConfig().isEnabled();
+        this.cache = initializeCache(nodeEngine);
+    }
+
+    private Integer[] initializeCache(NodeEngineImpl nodeEngine) {
+        Integer[] cache = new Integer[nodeEngine.getPartitionService().getPartitionCount()];
+        for (int i = 0; i < cache.length; i++) {
+            cache[i] = new Integer(i);
+        }
+        return cache;
     }
 
     private void schedulePeriodicPush() {
@@ -200,7 +210,7 @@ public class ClusterViewListenerService {
                 return partitionsMap;
             }
             partitionsMap.computeIfAbsent(owner.uuid(),
-                    k -> new LinkedList<>()).add(partitionId);
+                    k -> new LinkedList<>()).add(cache[partitionId]);
         }
         return partitionsMap;
     }
