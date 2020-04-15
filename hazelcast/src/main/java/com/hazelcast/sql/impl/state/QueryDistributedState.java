@@ -105,7 +105,7 @@ public class QueryDistributedState {
     /**
      * Callback executed when the fragment is finished.
      *
-     * @return {@code True} if execution of the last fragment finished.
+     * @return {@code true} if execution of the last fragment finished.
      */
     public boolean onFragmentFinished() {
         assert initializedState != null;
