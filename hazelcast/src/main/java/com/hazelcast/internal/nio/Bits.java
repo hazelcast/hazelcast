@@ -19,8 +19,6 @@ package com.hazelcast.internal.nio;
 import com.hazelcast.internal.memory.impl.EndiannessUtil;
 
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 
 import static com.hazelcast.internal.memory.impl.EndiannessUtil.BYTE_ARRAY_ACCESS;
 import static com.hazelcast.internal.memory.impl.EndiannessUtil.BYTE_BUFFER_ACCESS;

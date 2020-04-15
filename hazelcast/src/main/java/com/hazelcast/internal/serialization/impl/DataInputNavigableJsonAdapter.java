@@ -93,7 +93,8 @@ public class DataInputNavigableJsonAdapter extends NavigableJsonInputAdapter {
 
     static class UTF8Reader extends Reader {
 
-        static final ThreadLocal<CharsetDecoder> DECODER_THREAD_LOCAL = ThreadLocal.withInitial(StandardCharsets.UTF_8::newDecoder);
+        static final ThreadLocal<CharsetDecoder> DECODER_THREAD_LOCAL = ThreadLocal
+          .withInitial(StandardCharsets.UTF_8::newDecoder);
 
         private final CharsetDecoder decoder;
         private final ByteBuffer inputBuffer;
