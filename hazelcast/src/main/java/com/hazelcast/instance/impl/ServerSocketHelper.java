@@ -29,7 +29,7 @@ import java.net.ServerSocket;
 import java.nio.channels.ServerSocketChannel;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.internal.server.IOService.KILO_BYTE;
+import static com.hazelcast.internal.server.ServerContext.KILO_BYTE;
 
 final class ServerSocketHelper {
 

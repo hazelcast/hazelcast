@@ -21,7 +21,7 @@ import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.cluster.impl.MemberHandshake;
 import com.hazelcast.internal.nio.Packet;
-import com.hazelcast.internal.server.IOService;
+import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.logging.ILogger;
 
 import java.util.ArrayList;
@@ -32,15 +32,18 @@ import java.util.Map;
 public class SendMemberHandshakeTask implements Runnable {
 
     private final ILogger logger;
-    private final IOService ioService;
+    private final ServerContext serverContext;
     private final TcpServerConnection connection;
     private final Address remoteAddress;
     private final boolean reply;
 
-    public SendMemberHandshakeTask(ILogger logger, IOService ioService, TcpServerConnection connection, Address remoteAddress,
+    public SendMemberHandshakeTask(ILogger logger,
+                                   ServerContext serverContext,
+                                   TcpServerConnection connection,
+                                   Address remoteAddress,
                                    boolean reply) {
         this.logger = logger;
-        this.ioService = ioService;
+        this.serverContext = serverContext;
         this.connection = connection;
         this.remoteAddress = remoteAddress;
         this.reply = reply;
@@ -49,14 +52,14 @@ public class SendMemberHandshakeTask implements Runnable {
     @Override
     public void run() {
         connection.setRemoteAddress(remoteAddress);
-        ioService.onSuccessfulConnection(remoteAddress);
+        serverContext.onSuccessfulConnection(remoteAddress);
         //make sure memberHandshake packet is the first packet sent to the end point.
         if (logger.isFinestEnabled()) {
             logger.finest("Sending memberHandshake packet to " + remoteAddress);
         }
         MemberHandshake memberHandshake
-                = new MemberHandshake((byte) 1, getConfiguredLocalAddresses(), remoteAddress, reply, ioService.getUuid());
-        byte[] bytes = ioService.getSerializationService().toBytes(memberHandshake);
+                = new MemberHandshake((byte) 1, getConfiguredLocalAddresses(), remoteAddress, reply, serverContext.getUuid());
+        byte[] bytes = serverContext.getSerializationService().toBytes(memberHandshake);
         Packet packet = new Packet(bytes).setPacketType(Packet.Type.MEMBER_HANDSHAKE);
         connection.write(packet);
         //now you can send anything...
@@ -64,7 +67,7 @@ public class SendMemberHandshakeTask implements Runnable {
 
     Map<ProtocolType, Collection<Address>> getConfiguredLocalAddresses() {
         Map<ProtocolType, Collection<Address>> addressMap = new HashMap<ProtocolType, Collection<Address>>();
-        Map<EndpointQualifier, Address> addressesPerEndpointQualifier = ioService.getThisAddresses();
+        Map<EndpointQualifier, Address> addressesPerEndpointQualifier = serverContext.getThisAddresses();
         for (Map.Entry<EndpointQualifier, Address> addressEntry : addressesPerEndpointQualifier.entrySet()) {
             Collection<Address> addresses = addressMap.get(addressEntry.getKey().getType());
             if (addresses == null) {

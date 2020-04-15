@@ -21,7 +21,7 @@ import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.nio.ascii.TextEncoder;
-import com.hazelcast.internal.server.IOService;
+import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
@@ -35,7 +35,7 @@ import static com.hazelcast.internal.nio.Protocols.CLIENT_BINARY;
 import static com.hazelcast.internal.nio.Protocols.CLUSTER;
 import static com.hazelcast.internal.nio.Protocols.PROTOCOL_LENGTH;
 import static com.hazelcast.internal.nio.ascii.TextEncoder.TEXT_ENCODER;
-import static com.hazelcast.internal.server.IOService.KILO_BYTE;
+import static com.hazelcast.internal.server.ServerContext.KILO_BYTE;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_CLIENT_SEND_BUFFER_SIZE;
 import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_SEND_BUFFER_SIZE;
@@ -52,14 +52,14 @@ import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_SEND_BUFFER_SI
 public class UnifiedProtocolEncoder
         extends OutboundHandler<Void, ByteBuffer> {
 
-    private final IOService ioService;
+    private final ServerContext serverContext;
     private final HazelcastProperties props;
     private volatile String inboundProtocol;
     private boolean clusterProtocolBuffered;
 
-    public UnifiedProtocolEncoder(IOService ioService) {
-        this.ioService = ioService;
-        this.props = ioService.properties();
+    public UnifiedProtocolEncoder(ServerContext serverContext) {
+        this.serverContext = serverContext;
+        this.props = serverContext.properties();
     }
 
     @Override
@@ -141,7 +141,7 @@ public class UnifiedProtocolEncoder
                 .setOption(SO_SNDBUF, props.getInteger(SOCKET_SEND_BUFFER_SIZE) * KILO_BYTE);
 
         ServerConnection connection = (TcpServerConnection) channel.attributeMap().get(ServerConnection.class);
-        OutboundHandler[] handlers = ioService.createOutboundHandlers(EndpointQualifier.MEMBER, connection);
+        OutboundHandler[] handlers = serverContext.createOutboundHandlers(EndpointQualifier.MEMBER, connection);
         channel.outboundPipeline().replace(this, handlers);
     }
 

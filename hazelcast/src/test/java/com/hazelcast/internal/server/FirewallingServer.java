@@ -62,8 +62,8 @@ public class FirewallingServer
     }
 
     @Override
-    public IOService getIoService() {
-        return delegate.getIoService();
+    public ServerContext getContext() {
+        return delegate.getContext();
     }
 
     @Override

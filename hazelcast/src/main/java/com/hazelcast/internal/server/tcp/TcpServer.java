@@ -29,7 +29,7 @@ import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.Networking;
 import com.hazelcast.internal.server.AggregateServerConnectionManager;
-import com.hazelcast.internal.server.IOService;
+import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.server.Server;
 import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
@@ -63,7 +63,7 @@ public final class TcpServer implements Server {
 
     private static final int SCHEDULER_POOL_SIZE = 4;
 
-    private final IOService ioService;
+    private final ServerContext context;
 
     private final ILogger logger;
 
@@ -88,24 +88,24 @@ public final class TcpServer implements Server {
     private volatile boolean live;
 
     TcpServer(Config config,
-              IOService ioService,
+              ServerContext context,
               ServerSocketRegistry registry,
               LoggingService loggingService,
               MetricsRegistry metricsRegistry,
               Networking networking,
               Function<EndpointQualifier, ChannelInitializer> channelInitializerFn) {
-        this(config, ioService, registry, loggingService, metricsRegistry, networking, channelInitializerFn, null);
+        this(config, context, registry, loggingService, metricsRegistry, networking, channelInitializerFn, null);
     }
 
     public TcpServer(Config config,
-                     IOService ioService,
+                     ServerContext context,
                      ServerSocketRegistry registry,
                      LoggingService loggingService,
                      MetricsRegistry metricsRegistry,
                      Networking networking,
                      Function<EndpointQualifier, ChannelInitializer> channelInitializerFn,
                      HazelcastProperties properties) {
-        this.ioService = ioService;
+        this.context = context;
         this.networking = networking;
         this.metricsRegistry = metricsRegistry;
         this.refreshStatsTask = new RefreshNetworkStatsTask(connectionManagers);
@@ -113,15 +113,15 @@ public final class TcpServer implements Server {
         this.registry = registry;
         this.logger = loggingService.getLogger(TcpServer.class);
         this.scheduler = new ScheduledThreadPoolExecutor(SCHEDULER_POOL_SIZE,
-                new ThreadFactoryImpl(createThreadPoolName(ioService.getHazelcastName(), "TcpIpNetworkingService")));
+                new ThreadFactoryImpl(createThreadPoolName(context.getHazelcastName(), "TcpIpNetworkingService")));
         if (registry.holdsUnifiedSocket()) {
             unifiedConnectionManager = new UnifiedServerConnectionManager(this, null, channelInitializerFn,
-                    ioService, loggingService, properties);
+                    context, loggingService, properties);
         } else {
             unifiedConnectionManager = null;
         }
 
-        initConnectionManagers(config, ioService, loggingService, channelInitializerFn, properties);
+        initConnectionManagers(config, context, loggingService, channelInitializerFn, properties);
         if (unifiedConnectionManager != null) {
             this.aggregateConnectionManager = new UnifiedAggregateConnectionManager(unifiedConnectionManager, connectionManagers);
         } else {
@@ -134,7 +134,7 @@ public final class TcpServer implements Server {
     }
 
     private void initConnectionManagers(Config config,
-                                        IOService ioService,
+                                        ServerContext serverContext,
                                         LoggingService loggingService,
                                         Function<EndpointQualifier, ChannelInitializer> channelInitializerFn,
                                         HazelcastProperties properties) {
@@ -146,7 +146,7 @@ public final class TcpServer implements Server {
         } else {
             for (EndpointConfig endpointConfig : config.getAdvancedNetworkConfig().getEndpointConfigs().values()) {
                 EndpointQualifier qualifier = endpointConfig.getQualifier();
-                ServerConnectionManager cm = newConnectionManager(ioService, endpointConfig, channelInitializerFn,
+                ServerConnectionManager cm = newConnectionManager(serverContext, endpointConfig, channelInitializerFn,
                         loggingService, properties, singleton(endpointConfig.getProtocolType()));
                 connectionManagers.put(qualifier, cm);
             }
@@ -154,19 +154,19 @@ public final class TcpServer implements Server {
     }
 
     private ServerConnectionManager newConnectionManager(
-            IOService ioService,
+            ServerContext serverContext,
             EndpointConfig endpointConfig,
             Function<EndpointQualifier, ChannelInitializer> channelInitializerFn,
             LoggingService loggingService,
             HazelcastProperties properties,
             Set<ProtocolType> supportedProtocolTypes) {
-        return new TcpServerConnectionManager(this, endpointConfig, channelInitializerFn, ioService, loggingService,
+        return new TcpServerConnectionManager(this, endpointConfig, channelInitializerFn, serverContext, loggingService,
                 properties, supportedProtocolTypes);
     }
 
     @Override
-    public IOService getIoService() {
-        return ioService;
+    public ServerContext getContext() {
+        return context;
     }
 
     public Networking getNetworking() {
@@ -287,7 +287,7 @@ public final class TcpServer implements Server {
             shutdownAcceptor();
         }
 
-        acceptorRef.set(new TcpServerAcceptor(registry, this, ioService).start());
+        acceptorRef.set(new TcpServerAcceptor(registry, this, context).start());
     }
 
     private void shutdownAcceptor() {

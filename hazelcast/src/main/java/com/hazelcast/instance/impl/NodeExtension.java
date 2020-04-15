@@ -34,7 +34,7 @@ import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.server.IOService;
+import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.ByteArrayProcessor;
@@ -140,28 +140,28 @@ public interface NodeExtension {
      * can be returned. This is the first item in the chain.
      *
      * @param connection tcp-ip connection
-     * @param ioService  IOService
+     * @param serverContext  ServerContext
      * @return the created InboundHandler.
      */
-    InboundHandler[] createInboundHandlers(EndpointQualifier qualifier, ServerConnection connection, IOService ioService);
+    InboundHandler[] createInboundHandlers(EndpointQualifier qualifier, ServerConnection connection, ServerContext context);
 
     /**
      * Creates a <tt>OutboundHandler</tt> for given <tt>Connection</tt> instance.
      *
      * @param connection tcp-ip connection
-     * @param ioService  IOService
+     * @param context  ServerContext
      * @return the created OutboundHandler
      */
-    OutboundHandler[] createOutboundHandlers(EndpointQualifier qualifier, ServerConnection connection, IOService ioService);
+    OutboundHandler[] createOutboundHandlers(EndpointQualifier qualifier, ServerConnection connection, ServerContext context);
 
 
     /**
      * Creates the channel initializer function.
      *
-     * @param ioService
+     * @param serverContext
      * @return
      */
-    Function<EndpointQualifier, ChannelInitializer> createChannelInitializerFn(IOService ioService);
+    Function<EndpointQualifier, ChannelInitializer> createChannelInitializerFn(ServerContext serverContext);
 
     /**
      * Called on thread start to inject/intercept extension specific logic,
@@ -294,10 +294,10 @@ public interface NodeExtension {
     TextCommandService createTextCommandService();
 
     /** Returns a byte array processor for incoming data on the Multicast joiner */
-    ByteArrayProcessor createMulticastInputProcessor(IOService ioService);
+    ByteArrayProcessor createMulticastInputProcessor(ServerContext serverContext);
 
     /** Returns a byte array processor for outgoing data on the Multicast joiner */
-    ByteArrayProcessor createMulticastOutputProcessor(IOService ioService);
+    ByteArrayProcessor createMulticastOutputProcessor(ServerContext serverContext);
 
     /**
      * Creates a listener for changes in dynamic data structure configurations

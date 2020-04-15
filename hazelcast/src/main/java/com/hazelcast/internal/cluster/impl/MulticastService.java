@@ -26,7 +26,7 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.cluster.AddressChecker;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
-import com.hazelcast.internal.server.tcp.NodeIOService;
+import com.hazelcast.internal.server.tcp.TcpServerContext;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.internal.util.ByteArrayProcessor;
@@ -85,9 +85,9 @@ public final class MulticastService implements Runnable {
         this.node = node;
         this.multicastSocket = multicastSocket;
 
-        NodeIOService nodeIOService = new NodeIOService(node, node.nodeEngine);
-        this.inputProcessor = node.getNodeExtension().createMulticastInputProcessor(nodeIOService);
-        this.outputProcessor = node.getNodeExtension().createMulticastOutputProcessor(nodeIOService);
+        TcpServerContext context = new TcpServerContext(node, node.nodeEngine);
+        this.inputProcessor = node.getNodeExtension().createMulticastInputProcessor(context);
+        this.outputProcessor = node.getNodeExtension().createMulticastOutputProcessor(context);
 
         this.sendOutput = node.getSerializationService().createObjectDataOutput(SEND_OUTPUT_SIZE);
 

@@ -39,11 +39,11 @@ import java.util.Map;
 import java.util.UUID;
 
 @SuppressWarnings({"checkstyle:methodcount"})
-public interface IOService {
+public interface ServerContext {
 
     int KILO_BYTE = 1024;
 
-    boolean isActive();
+    boolean isNodeActive();
 
     HazelcastProperties properties();
 

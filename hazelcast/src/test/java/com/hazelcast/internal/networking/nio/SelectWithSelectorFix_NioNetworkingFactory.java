@@ -18,7 +18,7 @@ package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.internal.server.MockIOService;
+import com.hazelcast.internal.server.MockServerContext;
 import com.hazelcast.internal.server.NetworkingFactory;
 import com.hazelcast.internal.server.tcp.TcpServerConnectionChannelErrorHandler;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -30,14 +30,14 @@ import static com.hazelcast.spi.properties.ClusterProperty.IO_OUTPUT_THREAD_COUN
 public class SelectWithSelectorFix_NioNetworkingFactory implements NetworkingFactory {
 
     @Override
-    public NioNetworking create(final MockIOService ioService, MetricsRegistry metricsRegistry) {
-        HazelcastProperties properties = ioService.properties();
-        LoggingService loggingService = ioService.loggingService;
+    public NioNetworking create(final MockServerContext serverContext, MetricsRegistry metricsRegistry) {
+        HazelcastProperties properties = serverContext.properties();
+        LoggingService loggingService = serverContext.loggingService;
         return new NioNetworking(
                 new NioNetworking.Context()
                         .loggingService(loggingService)
                         .metricsRegistry(metricsRegistry)
-                        .threadNamePrefix(ioService.getHazelcastName())
+                        .threadNamePrefix(serverContext.getHazelcastName())
                         .errorHandler(
                                 new TcpServerConnectionChannelErrorHandler(
                                         loggingService.getLogger(TcpServerConnectionChannelErrorHandler.class)))
