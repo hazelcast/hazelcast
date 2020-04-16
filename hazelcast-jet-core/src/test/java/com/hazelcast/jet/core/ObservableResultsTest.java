@@ -40,7 +40,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -52,6 +51,7 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -63,20 +63,20 @@ public class ObservableResultsTest extends TestInClusterSupport {
     private TestObserver testObserver;
     private Observable<Long> testObservable;
     private UUID registrationId;
-    private Set<Observable<?>> usedObservables;
 
     @Before
     public void before() {
-        usedObservables = new HashSet<>();
         observableName = randomName();
         testObserver = new TestObserver();
-        testObservable = getObservable(observableName);
+        testObservable = jet().getObservable(observableName);
         registrationId = testObservable.addObserver(testObserver);
     }
 
     @After
-    public void after() {
-        usedObservables.forEach(Observable::destroy);
+    @Override
+    public void after() throws Exception {
+        jet().getObservables().forEach(Observable::destroy);
+        super.after();
     }
 
     @Test
@@ -186,7 +186,7 @@ public class ObservableResultsTest extends TestInClusterSupport {
         BatchStage<Long> stage = pipeline.readFrom(TestSources.items(0L, 1L, 2L, 3L, 4L));
 
         TestObserver otherTestObserver = new TestObserver();
-        Observable<Long> otherObservable = getObservable("otherObservable");
+        Observable<Long> otherObservable = jet().getObservable("otherObservable");
         otherObservable.addObserver(otherTestObserver);
 
         stage.filter(i -> i % 2 == 0).writeTo(Sinks.observable(observableName));
@@ -285,7 +285,7 @@ public class ObservableResultsTest extends TestInClusterSupport {
 
         //when
         TestObserver otherTestObserver = new TestObserver();
-        this.<Long>getObservable(observableName).addObserver(otherTestObserver);
+        jet().<Long>getObservable(observableName).addObserver(otherTestObserver);
         //then
         assertSortedValues(otherTestObserver, 0L, 1L, 2L, 3L, 4L);
         assertError(otherTestObserver, null);
@@ -301,7 +301,7 @@ public class ObservableResultsTest extends TestInClusterSupport {
         //when
         jet().newJob(pipeline).join();
         TestObserver otherTestObserver = new TestObserver();
-        Observable<Long> lateObservable = getObservable(observableName + "late");
+        Observable<Long> lateObservable = jet().getObservable(observableName + "late");
         lateObservable.addObserver(otherTestObserver);
         //then
         assertSortedValues(otherTestObserver, 0L, 1L, 2L, 3L, 4L);
@@ -328,7 +328,7 @@ public class ObservableResultsTest extends TestInClusterSupport {
 
         //when
         TestObserver otherTestObserver = new TestObserver();
-        Observable<Long> lateObservable = getObservable(observableName);
+        Observable<Long> lateObservable = jet().getObservable(observableName);
         lateObservable.addObserver(otherTestObserver);
         //then
         assertSortedValues(testObserver);
@@ -487,7 +487,7 @@ public class ObservableResultsTest extends TestInClusterSupport {
 
         //when
         jet().newJob(pipeline).join();
-        List<Object> results = getObservable("throwables")
+        List<Object> results = jet().getObservable("throwables")
                 .toFuture(s -> {
                     Comparator<Object> comparator = Comparator.comparing(o -> ((Throwable) o).getMessage());
                     return s.sorted(comparator).collect(Collectors.toList());
@@ -504,7 +504,7 @@ public class ObservableResultsTest extends TestInClusterSupport {
     @Test
     public void configureCapacity() {
         //when
-        Observable<Object> o = newObservable();
+        Observable<Object> o = jet().newObservable();
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(TestSources.items(0L, 1L, 2L, 3L, 4L))
                 .writeTo(Sinks.observable(o));
@@ -528,14 +528,14 @@ public class ObservableResultsTest extends TestInClusterSupport {
 
     @Test
     public void configureCapacityMultipleTimes() {
-        Observable<Object> o = newObservable();
+        Observable<Object> o = jet().newObservable();
         o.configureCapacity(10);
         assertThrowsException(() -> o.configureCapacity(20), RuntimeException.class);
     }
 
     @Test
     public void unnamedObservable() {
-        Observable<Long> unnamedObservable = newObservable();
+        Observable<Long> unnamedObservable = jet().newObservable();
 
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(TestSources.items(0L, 1L, 2L, 3L, 4L))
@@ -553,15 +553,19 @@ public class ObservableResultsTest extends TestInClusterSupport {
     }
 
     @Test
-    public void getObservables() {
+    public void onlyObservedObservablesGetActivated() {
         //when
-        getObservable("a").addObserver(Observer.of(ConsumerEx.noop()));
-        getObservable("b");
-        getObservable("c").addObserver(Observer.of(ConsumerEx.noop()));
+        Observable<Object> a = jet().newObservable();
+        Observable<Object> b = jet().newObservable();
+        Observable<Object> c = jet().newObservable();
+
+        a.addObserver(Observer.of(ConsumerEx.noop()));
+        c.addObserver(Observer.of(ConsumerEx.noop()));
 
         //then
         Set<String> activeObservables = jet().getObservables().stream().map(Observable::name).collect(Collectors.toSet());
-        assertTrue(activeObservables.containsAll(Arrays.asList("a", "c")));
+        assertTrue(activeObservables.containsAll(Arrays.asList(a.name(), c.name())));
+        assertFalse(activeObservables.contains(b.name()));
     }
 
     @Test
@@ -572,7 +576,7 @@ public class ObservableResultsTest extends TestInClusterSupport {
 
         for (int i = 0; i < 20; i++) {
             TestObserver repeatedTestObserver = new TestObserver();
-            Observable<Long> repeatedObservable = getObservable("repeatedObservable");
+            Observable<Long> repeatedObservable = jet().getObservable("repeatedObservable");
             repeatedObservable.addObserver(repeatedTestObserver);
             //when
             jet().newJob(pipeline).join();
@@ -597,18 +601,6 @@ public class ObservableResultsTest extends TestInClusterSupport {
         } catch (Throwable t) {
             assertEquals(exceptionClass, t.getClass());
         }
-    }
-
-    private <T> Observable<T> newObservable() {
-        Observable<T> observable = jet().newObservable();
-        usedObservables.add(observable);
-        return observable;
-    }
-
-    private <T> Observable<T> getObservable(String name) {
-        Observable<T> observable = jet().getObservable(name);
-        usedObservables.add(observable);
-        return observable;
     }
 
     private static void assertSortedValues(TestObserver observer, Long... values) {
