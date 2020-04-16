@@ -238,7 +238,7 @@ public class MetricsCompressor {
         return target.copy(from);
     }
 
-    private int getDictionaryId(String word) throws LongWordException {
+    private int getDictionaryId(String word) {
         if (word == null) {
             return NULL_DICTIONARY_ID;
         }
