@@ -26,9 +26,6 @@ import com.hazelcast.sql.impl.explain.QueryExplain;
 import com.hazelcast.sql.impl.explain.QueryExplainResultProducer;
 import com.hazelcast.sql.impl.memory.GlobalMemoryReservationManager;
 import com.hazelcast.sql.impl.memory.MemoryPressure;
-import com.hazelcast.sql.impl.exec.io.flowcontrol.FlowControlFactory;
-import com.hazelcast.sql.impl.exec.io.flowcontrol.simple.SimpleFlowControlFactory;
-import com.hazelcast.sql.impl.exec.root.BlockingRootResultConsumer;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperationFactory;
 import com.hazelcast.sql.impl.operation.QueryOperationHandlerImpl;
@@ -48,9 +45,6 @@ import java.util.UUID;
  * Proxy for SQL service. Backed by either Calcite-based or no-op implementation.
  */
 public class SqlInternalService {
-    /** Memory assigned to a single edge mailbox. Will be reworked to dynamic mode when memory manager is implemented. */
-    private static final long MEMORY_PER_EDGE_MAILBOX = 512 * 1024;
-
     /** Default flow control factory. */
     private static final FlowControlFactory FLOW_CONTROL_FACTORY = SimpleFlowControlFactory.INSTANCE;
 
