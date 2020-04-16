@@ -83,10 +83,14 @@ public class JetCommandLineTest extends JetTestSupport {
 
     @BeforeClass
     public static void beforeClass() throws IOException {
-        testJobJarFile = Files.createTempFile("testjob-", ".jar");
-        IOUtil.copy(JetCommandLineTest.class.getResourceAsStream("testjob.jar"), testJobJarFile.toFile());
+        createJarFile();
         xmlConfiguration = new File(JetCommandLineTest.class.getResource("hazelcast-client-test.xml").getPath());
         yamlConfiguration = new File(JetCommandLineTest.class.getResource("hazelcast-client-test.yaml").getPath());
+    }
+
+    public static void createJarFile() throws IOException {
+        testJobJarFile = Files.createTempFile("testjob-", ".jar");
+        IOUtil.copy(JetCommandLineTest.class.getResourceAsStream("testjob.jar"), testJobJarFile.toFile());
     }
 
     @AfterClass
@@ -112,6 +116,16 @@ public class JetCommandLineTest extends JetTestSupport {
         sourceMap = jet.getMap(SOURCE_NAME);
         IntStream.range(0, ITEM_COUNT).forEach(i -> sourceMap.put(i, i));
         sinkList = jet.getList(SINK_NAME);
+        assertTrueEventually(() -> {
+            if (!isJarFileExists()) {
+                createJarFile();
+            }
+            assertTrue(isJarFileExists());
+        });
+    }
+
+    public boolean isJarFileExists() {
+        return Files.exists(testJobJarFile);
     }
 
     @After
