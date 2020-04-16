@@ -22,7 +22,7 @@ import com.hazelcast.internal.partition.PartitionReplicaInterceptor;
 import java.util.ArrayList;
 import java.util.List;
 
-class CompositeInterceptor implements PartitionReplicaInterceptor {
+final class CompositeInterceptor implements PartitionReplicaInterceptor {
 
     private List<PartitionReplicaInterceptor> interceptors;
 

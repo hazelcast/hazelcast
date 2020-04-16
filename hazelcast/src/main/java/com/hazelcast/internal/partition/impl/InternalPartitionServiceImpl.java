@@ -990,34 +990,13 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
     @Override
     public List<Integer> getMemberPartitions(Address target) {
         List<Integer> ownedPartitions = new LinkedList<>();
-        Integer[] cache = getOrInitCache(partitionCount);
         for (int i = 0; i < partitionCount; i++) {
             final Address owner = getPartitionOwner(i);
             if (target.equals(owner)) {
-                ownedPartitions.add(cache[i]);
+                ownedPartitions.add(i);
             }
         }
         return ownedPartitions;
-    }
-
-    volatile Integer[] cache;
-
-    private Integer[] getOrInitCache(int partitionCount) {
-
-        if (cache != null) {
-            return cache;
-        }
-
-        synchronized (this) {
-            if (cache == null) {
-                cache = new Integer[partitionCount];
-                for (int i = 0; i < cache.length; i++) {
-                    cache[i] = new Integer(i);
-                }
-            }
-        }
-
-        return cache;
     }
 
     @Override

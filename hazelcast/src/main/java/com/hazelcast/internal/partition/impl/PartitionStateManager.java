@@ -54,6 +54,8 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITION
  */
 public class PartitionStateManager {
 
+    final PerMemberPartitionReplicaInterceptor perMemberPartitionReplicaInterceptor;
+
     private final Node node;
     private final ILogger logger;
     private final InternalPartitionServiceImpl partitionService;
@@ -76,7 +78,6 @@ public class PartitionStateManager {
     // can be read and written concurrently...
     private volatile int memberGroupsSize;
 
-    final PerMemberPartitionReplicaInterceptor perMemberPartitionReplicaInterceptor;
 
     public PartitionStateManager(Node node, InternalPartitionServiceImpl partitionService) {
         this.node = node;
