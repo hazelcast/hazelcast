@@ -87,9 +87,9 @@ public abstract class AbstractChannelInitializer
         }
 
         private synchronized boolean process(TcpServerConnection connection, MemberHandshake handshake) {
-            if (logger.isFinestEnabled()) {
-                logger.finest("Handshake " + connection + ", complete message is " + handshake);
-            }
+           // if (logger.isFinestEnabled()) {
+                logger.info("Handshake " + connection + ", complete message is " + handshake);
+          //  }
 
             Map<ProtocolType, Collection<Address>> remoteAddressesPerProtocolType = handshake.getLocalAddresses();
             List<Address> allAliases = new ArrayList<Address>();
@@ -154,6 +154,7 @@ public abstract class AbstractChannelInitializer
             }
             if (remoteEndpoint == null) {
                 if (remoteAddressAliases == null) {
+                    System.out.println("==========================================");
                     throw new IllegalStateException("Remote endpoint and remote address aliases cannot be both null");
                 } else {
                     // let it fail if no remoteEndpoint and no aliases are defined
@@ -167,19 +168,19 @@ public abstract class AbstractChannelInitializer
                 new SendMemberHandshakeTask(logger, serverContext, connection, remoteEndpoint, false, planeIndex).run();
             }
 
-            if (checkAlreadyConnected(connection, remoteEndpoint)) {
+            if (checkAlreadyConnected(connection, remoteEndpoint, planeIndex)) {
                 return false;
             }
 
-            if (logger.isLoggable(Level.FINEST)) {
-                logger.finest("Registering connection " + connection + " to address " + remoteEndpoint);
-            }
+            //if (logger.isLoggable(Level.FINEST)) {
+                logger.info("Registering connection " + connection + " to address " + remoteEndpoint+" planeIndex:"+planeIndex);
+            //}
             boolean returnValue = connectionManager.register(remoteEndpoint, connection, planeIndex);
 
             if (remoteAddressAliases != null && returnValue) {
                 for (Address remoteAddressAlias : remoteAddressAliases) {
                    // if (logger.isLoggable(Level.FINEST)) {
-                        logger.info("Registering connection " + connection + " to address alias " + remoteAddressAlias);
+                        logger.info("Registering connection " + connection + " to address alias " + remoteAddressAlias+" planeIndex:"+planeIndex);
                   //  }
                     connectionManager.planes[planeIndex].connectionMap.putIfAbsent(remoteAddressAlias, connection);
                 }
@@ -188,13 +189,13 @@ public abstract class AbstractChannelInitializer
             return returnValue;
         }
 
-        private boolean checkAlreadyConnected(TcpServerConnection connection, Address remoteEndPoint) {
-            final Connection existingConnection = connectionManager.get(remoteEndPoint);
+        private boolean checkAlreadyConnected(TcpServerConnection connection, Address remoteEndPoint, int planeIndex) {
+            Connection existingConnection = connectionManager.planes[planeIndex].connectionMap.get(remoteEndPoint);
             if (existingConnection != null && existingConnection.isAlive()) {
                 if (existingConnection != connection) {
                     //if (logger.isFinestEnabled()) {
                         logger.info(existingConnection + " is already bound to " + remoteEndPoint
-                                + ", new one is " + connection);
+                                + ", new one is " + connection+" planeIndex:"+planeIndex);
                    // }
                     // todo probably it's already in activeConnections (ConnectTask , AcceptorIOThread)
                     connectionManager.activeConnections.add(connection);

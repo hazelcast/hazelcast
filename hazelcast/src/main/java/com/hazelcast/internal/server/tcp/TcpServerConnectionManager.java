@@ -37,7 +37,6 @@ import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.server.tcp.AbstractChannelInitializer.MemberHandshakeHandler;
-import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.HashUtil;
 import com.hazelcast.internal.util.MutableLong;
@@ -200,7 +199,10 @@ public class TcpServerConnectionManager
         TcpServerConnection connection = plane.connectionMap.get(address);
         if (connection == null && server.isLive()) {
             if (plane.connectionsInProgress.add(address)) {
+                System.out.println("Connection to: " + address + " streamId:" + streamId + " is not yet progress");
                 connector.asyncConnect(address, silent, plane.index);
+            } else {
+                System.out.println("Connection to: " + address + " streamId:" + streamId + " is already in progress");
             }
         }
         return connection;
@@ -384,6 +386,8 @@ public class TcpServerConnectionManager
 
         if (sendTask == null) {
             sendTask = new SendTask(packet, target, streamId);
+        } else {
+            System.out.println("");
         }
 
         int retries = sendTask.retries;

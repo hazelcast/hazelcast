@@ -150,7 +150,13 @@ public class MemberHandshake
 
     @Override
     public String toString() {
-        return "MemberHandshake{" + "schemaVersion=" + schemaVersion + ", localAddresses=" + localAddresses
-                + ", targetAddress=" + targetAddress + ", reply=" + reply + ", uuid=" + uuid + '}';
+        return "MemberHandshake{"
+                + "schemaVersion=" + schemaVersion
+                + ", localAddresses=" + localAddresses
+                + ", targetAddress=" + targetAddress
+                + ", reply=" + reply
+                + ", uuid=" + uuid
+                + ", planeIndex=" + planeIndex
+                + '}';
     }
 }
