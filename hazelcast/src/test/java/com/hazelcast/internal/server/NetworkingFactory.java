@@ -20,5 +20,5 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.networking.Networking;
 
 public interface NetworkingFactory {
-    Networking create(MockIOService ioService, MetricsRegistry metricsRegistry);
+    Networking create(MockServerContext serverContext, MetricsRegistry metricsRegistry);
 }

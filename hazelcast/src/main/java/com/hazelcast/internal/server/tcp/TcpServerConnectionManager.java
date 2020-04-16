@@ -25,14 +25,14 @@ import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.Channel;
-import com.hazelcast.internal.networking.ChannelInitializerProvider;
-import com.hazelcast.internal.networking.NetworkStats;
+import com.hazelcast.internal.networking.ChannelInitializer;
+import com.hazelcast.internal.server.NetworkStats;
 import com.hazelcast.internal.networking.Networking;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionLifecycleListener;
 import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.internal.nio.Packet;
-import com.hazelcast.internal.server.IOService;
+import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.server.tcp.AbstractChannelInitializer.MemberHandshakeHandler;
@@ -59,6 +59,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_DISCRIMINATOR_BINDADDRESS;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_DISCRIMINATOR_ENDPOINT;
@@ -99,10 +100,10 @@ public class TcpServerConnectionManager
     final Set<TcpServerConnection> activeConnections = newSetFromMap(new ConcurrentHashMap<>());
 
     private final ILogger logger;
-    private final IOService ioService;
+    private final ServerContext serverContext;
     private final EndpointConfig endpointConfig;
     private final EndpointQualifier endpointQualifier;
-    private final ChannelInitializerProvider channelInitializerProvider;
+    private final Function<EndpointQualifier, ChannelInitializer> channelInitializerFn;
     private final TcpServer server;
     private final TcpServerConnector connector;
     private final MemberHandshakeHandler memberHandshakeHandler;
@@ -132,19 +133,19 @@ public class TcpServerConnectionManager
 
     TcpServerConnectionManager(TcpServer server,
                                EndpointConfig endpointConfig,
-                               ChannelInitializerProvider channelInitializerProvider,
-                               IOService ioService,
+                               Function<EndpointQualifier, ChannelInitializer> channelInitializerFn,
+                               ServerContext serverContext,
                                LoggingService loggingService,
                                HazelcastProperties properties,
                                Set<ProtocolType> supportedProtocolTypes) {
         this.server = server;
         this.endpointConfig = endpointConfig;
         this.endpointQualifier = endpointConfig != null ? endpointConfig.getQualifier() : null;
-        this.channelInitializerProvider = channelInitializerProvider;
-        this.ioService = ioService;
+        this.channelInitializerFn = channelInitializerFn;
+        this.serverContext = serverContext;
         this.logger = loggingService.getLogger(TcpServerConnectionManager.class);
         this.connector = new TcpServerConnector(this);
-        this.memberHandshakeHandler = new MemberHandshakeHandler(this, ioService, logger, supportedProtocolTypes);
+        this.memberHandshakeHandler = new MemberHandshakeHandler(this, serverContext, logger, supportedProtocolTypes);
         this.networkStats = endpointQualifier == null ? null : new NetworkStatsImpl();
     }
 
@@ -200,7 +201,7 @@ public class TcpServerConnectionManager
     public synchronized boolean register(final Address remoteAddress, final ServerConnection c) {
         TcpServerConnection connection = (TcpServerConnection) c;
         try {
-            if (remoteAddress.equals(ioService.getThisAddress())) {
+            if (remoteAddress.equals(serverContext.getThisAddress())) {
                 return false;
             }
 
@@ -222,7 +223,7 @@ public class TcpServerConnectionManager
             }
             connectionsMap.put(remoteAddress, connection);
 
-            ioService.getEventService().executeEventCallback(new StripedRunnable() {
+            serverContext.getEventService().executeEventCallback(new StripedRunnable() {
                 @Override
                 public void run() {
                     for (ConnectionListener listener : connectionListeners) {
@@ -243,7 +244,7 @@ public class TcpServerConnectionManager
 
     private void fireConnectionRemovedEvent(final Connection connection, final Address endPoint) {
         if (server.isLive()) {
-            ioService.getEventService().executeEventCallback(new StripedRunnable() {
+            serverContext.getEventService().executeEventCallback(new StripedRunnable() {
                 @Override
                 public void run() {
                     for (ConnectionListener listener : connectionListeners) {
@@ -321,7 +322,9 @@ public class TcpServerConnectionManager
     Channel newChannel(SocketChannel socketChannel, boolean clientMode)
             throws IOException {
         Networking networking = server.getNetworking();
-        Channel channel = networking.register(endpointQualifier, channelInitializerProvider, socketChannel, clientMode);
+        ChannelInitializer channelInitializer = channelInitializerFn.apply(endpointQualifier);
+        assert channelInitializer != null : "Found NULL channel initializer for endpoint-qualifier " + endpointQualifier;
+        Channel channel = networking.register(channelInitializer, socketChannel, clientMode);
         // Advanced Network
         if (endpointConfig != null) {
             setChannelOptions(channel, endpointConfig);
@@ -336,7 +339,7 @@ public class TcpServerConnectionManager
 
     void failedConnection(Address address, Throwable t, boolean silent) {
         connectionsInProgress.remove(address);
-        ioService.onFailedConnection(address);
+        serverContext.onFailedConnection(address);
         if (!silent) {
             getErrorHandler(address, false).onError(t);
         }
@@ -379,7 +382,7 @@ public class TcpServerConnectionManager
         }
 
         int retries = sendTask.retries;
-        if (retries < RETRY_NUMBER && ioService.isActive()) {
+        if (retries < RETRY_NUMBER && serverContext.isNodeActive()) {
             getOrConnect(target, true);
             try {
                 server.scheduleDeferred(sendTask, (retries + 1) * DELAY_FACTOR, TimeUnit.MILLISECONDS);
@@ -486,7 +489,7 @@ public class TcpServerConnectionManager
             }
 
             if (t != null) {
-                ioService.onFailedConnection(endPoint);
+                serverContext.onFailedConnection(endPoint);
                 if (!silent) {
                     getErrorHandler(endPoint, false).onError(t);
                 }

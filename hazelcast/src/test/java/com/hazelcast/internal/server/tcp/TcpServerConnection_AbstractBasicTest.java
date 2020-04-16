@@ -48,7 +48,7 @@ public abstract class TcpServerConnection_AbstractBasicTest extends TcpServerCon
         super.setup();
         packetsB = Collections.synchronizedList(new ArrayList<Packet>());
         startAllNetworkingServices();
-        ioServiceB.packetConsumer = new Consumer<Packet>() {
+        serverContextB.packetConsumer = new Consumer<Packet>() {
             @Override
             public void accept(Packet packet) {
                 packetsB.add(packet);

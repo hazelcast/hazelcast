@@ -17,10 +17,11 @@
 package com.hazelcast.internal.server.tcp;
 
 import com.hazelcast.config.EndpointConfig;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.networking.ChannelInitializerProvider;
-import com.hazelcast.internal.server.IOService;
+import com.hazelcast.internal.networking.ChannelInitializer;
+import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -28,6 +29,7 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Function;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_UNIFIED_ENDPOINT_MANAGER_CLIENT_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_UNIFIED_ENDPOINT_MANAGER_TEXT_COUNT;
@@ -39,10 +41,10 @@ class UnifiedServerConnectionManager
         extends TcpServerConnectionManager {
 
     UnifiedServerConnectionManager(TcpServer root, EndpointConfig endpointConfig,
-                                   ChannelInitializerProvider channelInitializerProvider,
-                                   IOService ioService, LoggingService loggingService,
+                                   Function<EndpointQualifier, ChannelInitializer> channelInitializerProvider,
+                                   ServerContext serverContext, LoggingService loggingService,
                                    HazelcastProperties properties) {
-        super(root, endpointConfig, channelInitializerProvider, ioService, loggingService,
+        super(root, endpointConfig, channelInitializerProvider, serverContext, loggingService,
                 properties, ProtocolType.valuesAsSet());
     }
 

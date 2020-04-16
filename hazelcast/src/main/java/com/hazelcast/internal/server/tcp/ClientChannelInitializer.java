@@ -20,7 +20,7 @@ import com.hazelcast.client.impl.protocol.util.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.util.ClientMessageEncoder;
 import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.internal.networking.Channel;
-import com.hazelcast.internal.server.IOService;
+import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.server.ServerConnection;
 
 import static com.hazelcast.instance.ProtocolType.CLIENT;
@@ -28,15 +28,15 @@ import static com.hazelcast.instance.ProtocolType.CLIENT;
 public class ClientChannelInitializer
         extends AbstractChannelInitializer {
 
-    ClientChannelInitializer(IOService ioService, EndpointConfig config) {
-        super(ioService, config);
+    ClientChannelInitializer(ServerContext serverContext, EndpointConfig config) {
+        super(serverContext, config);
     }
 
     @Override
     public void initChannel(Channel channel) {
         ServerConnection connection = (TcpServerConnection) channel.attributeMap().get(ServerConnection.class);
         SingleProtocolDecoder protocolDecoder = new SingleProtocolDecoder(CLIENT,
-                new ClientMessageDecoder(connection, ioService.getClientEngine(), ioService.properties()));
+                new ClientMessageDecoder(connection, serverContext.getClientEngine(), serverContext.properties()));
 
         channel.outboundPipeline().addLast(new ClientMessageEncoder());
         channel.inboundPipeline().addLast(protocolDecoder);

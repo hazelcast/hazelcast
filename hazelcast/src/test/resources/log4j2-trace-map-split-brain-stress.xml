@@ -15,20 +15,18 @@
   ~ limitations under the License.
   -->
 
-<hazelcast-client xmlns="http://www.hazelcast.com/schema/client-config"
-                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                  xsi:schemaLocation="http://www.hazelcast.com/schema/client-config
-                  http://www.hazelcast.com/schema/client-config/hazelcast-client-config-4.1.xsd">
-
-    <cluster-name>cluster1</cluster-name>
-
-    <network>
-        <cluster-members>
-            <address>127.0.0.1:5701</address>
-        </cluster-members>
-    </network>
-
-    <connection-strategy async-start="true">
-    </connection-strategy>
-
-</hazelcast-client>
+<Configuration status="ERROR">
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout
+                    pattern="%d{ABSOLUTE} %5p |%X{test-name}| - [%c{1}] %t - %m%n"/>
+        </Console>
+    </Appenders>
+    <Loggers>
+        <Root level="INFO">
+            <AppenderRef ref="Console"/>
+        </Root>
+        <Logger name="com.hazelcast.internal.partition.impl.PartitionReplicaManager"
+                level="trace"/>
+    </Loggers>
+</Configuration>

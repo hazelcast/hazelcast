@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.networking;
 
+import com.hazelcast.internal.networking.nio.AbstractChannel;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

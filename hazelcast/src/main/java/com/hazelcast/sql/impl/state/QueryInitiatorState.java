@@ -22,7 +22,7 @@ import com.hazelcast.sql.impl.QueryResultProducer;
 import com.hazelcast.sql.impl.plan.Plan;
 
 /**
- * Query state which is specific to the initiator node only.
+ * Immutable state that is defined only on the initiator node.
  */
 public class QueryInitiatorState {
 

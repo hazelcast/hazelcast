@@ -21,12 +21,12 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeState;
-import com.hazelcast.internal.networking.NetworkStats;
+import com.hazelcast.internal.server.NetworkStats;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionLifecycleListener;
 import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.internal.nio.Packet;
-import com.hazelcast.internal.server.IOService;
+import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.server.Server;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.server.ServerConnectionManager;
@@ -65,7 +65,7 @@ class MockServer
     private final Node node;
 
     private final ScheduledExecutorService scheduler;
-    private final IOService ioService;
+    private final ServerContext serverContext;
     private final ILogger logger;
 
     private volatile boolean live;
@@ -73,16 +73,16 @@ class MockServer
     private final ServerConnectionManager mockConnectionMgr;
     private final AggregateServerConnectionManager mockAggrEndpointManager;
 
-    MockServer(IOService ioService, Node node, TestNodeRegistry testNodeRegistry) {
-        this.ioService = ioService;
+    MockServer(ServerContext serverContext, Node node, TestNodeRegistry testNodeRegistry) {
+        this.serverContext = serverContext;
         this.nodeRegistry = testNodeRegistry;
         this.node = node;
         this.mockConnectionMgr = new MockEndpointManager(this);
         this.mockAggrEndpointManager = new DefaultAggregateConnectionManager(
                 new ConcurrentHashMap(singletonMap(MEMBER, mockConnectionMgr)));
         this.scheduler = new ScheduledThreadPoolExecutor(4,
-                new ThreadFactoryImpl(createThreadPoolName(ioService.getHazelcastName(), "MockConnectionManager")));
-        this.logger = ioService.getLoggingService().getLogger(MockServer.class);
+                new ThreadFactoryImpl(createThreadPoolName(serverContext.getHazelcastName(), "MockConnectionManager")));
+        this.logger = serverContext.getLoggingService().getLogger(MockServer.class);
     }
 
 
@@ -131,7 +131,7 @@ class MockServer
         }
 
         private void suspectAddress(final Address address) {
-            // see NodeIOService#removeEndpoint()
+            // see TcpServerContext#removeEndpoint()
             ns.node.getNodeEngine().getExecutionService().execute(ExecutionService.IO_EXECUTOR, new Runnable() {
                 @Override
                 public void run() {
@@ -196,7 +196,7 @@ class MockServer
 
             connection.setLifecycleListener(lifecycleListener);
             ns.mapConnections.put(remoteAddress, connection);
-            ns.ioService.getEventService().executeEventCallback(new StripedRunnable() {
+            ns.serverContext.getEventService().executeEventCallback(new StripedRunnable() {
                 @Override
                 public void run() {
                     for (ConnectionListener listener : connectionListeners) {
@@ -219,7 +219,7 @@ class MockServer
 
         private void fireConnectionRemovedEvent(final MockServerConnection connection, final Address endPoint) {
             if (ns.live) {
-                ns.ioService.getEventService().executeEventCallback(new StripedRunnable() {
+                ns.serverContext.getEventService().executeEventCallback(new StripedRunnable() {
                     @Override
                     public void run() {
                         for (ConnectionListener listener : connectionListeners) {
@@ -269,7 +269,7 @@ class MockServer
             }
 
             int retries = sendTask.retries.get();
-            if (retries < RETRY_NUMBER && ns.ioService.isActive()) {
+            if (retries < RETRY_NUMBER && ns.serverContext.isNodeActive()) {
                 getOrConnect(target, true);
                 // TODO: Caution: may break the order guarantee of the packets sent from the same thread!
                 try {
@@ -356,8 +356,8 @@ class MockServer
     }
 
     @Override
-    public IOService getIoService() {
-        return ioService;
+    public ServerContext getContext() {
+        return serverContext;
     }
 
     @Override

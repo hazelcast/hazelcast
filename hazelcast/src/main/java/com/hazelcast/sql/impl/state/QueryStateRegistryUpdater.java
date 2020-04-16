@@ -85,7 +85,7 @@ public class QueryStateRegistryUpdater {
     private final class Worker implements Runnable {
         private final Object startMux = new Object();
         private final String instanceName;
-        private volatile Thread thread;
+        private Thread thread;
         private volatile boolean stopped;
 
         private Worker(String instanceName) {

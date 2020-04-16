@@ -68,12 +68,12 @@ import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
 import com.hazelcast.internal.memory.DefaultMemoryStats;
 import com.hazelcast.internal.memory.MemoryStats;
-import com.hazelcast.internal.networking.ChannelInitializerProvider;
+import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.server.tcp.DefaultChannelInitializerProvider;
-import com.hazelcast.internal.server.IOService;
+import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.server.tcp.PacketDecoder;
 import com.hazelcast.internal.server.tcp.PacketEncoder;
 import com.hazelcast.internal.server.ServerConnection;
@@ -108,6 +108,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
@@ -302,7 +303,7 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public InboundHandler[] createInboundHandlers(EndpointQualifier qualifier,
-                                                  ServerConnection connection, IOService ioService) {
+                                                  ServerConnection connection, ServerContext serverContext) {
         NodeEngineImpl nodeEngine = node.nodeEngine;
         PacketDecoder decoder = new PacketDecoder(connection, nodeEngine.getPacketDispatcher());
         return new InboundHandler[]{decoder};
@@ -310,13 +311,13 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public OutboundHandler[] createOutboundHandlers(EndpointQualifier qualifier,
-                                                    ServerConnection connection, IOService ioService) {
+                                                    ServerConnection connection, ServerContext serverContext) {
         return new OutboundHandler[]{new PacketEncoder()};
     }
 
     @Override
-    public ChannelInitializerProvider createChannelInitializerProvider(IOService ioService) {
-        DefaultChannelInitializerProvider provider = new DefaultChannelInitializerProvider(ioService, node.getConfig());
+    public Function<EndpointQualifier, ChannelInitializer> createChannelInitializerFn(ServerContext serverContext) {
+        DefaultChannelInitializerProvider provider = new DefaultChannelInitializerProvider(serverContext, node.getConfig());
         provider.init();
         return provider;
     }
@@ -456,12 +457,12 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
-    public ByteArrayProcessor createMulticastInputProcessor(IOService ioService) {
+    public ByteArrayProcessor createMulticastInputProcessor(ServerContext serverContext) {
         return null;
     }
 
     @Override
-    public ByteArrayProcessor createMulticastOutputProcessor(IOService ioService) {
+    public ByteArrayProcessor createMulticastOutputProcessor(ServerContext serverContext) {
         return null;
     }
 

@@ -17,7 +17,6 @@
 package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.internal.networking.AbstractChannel;
 import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.OutboundFrame;
 

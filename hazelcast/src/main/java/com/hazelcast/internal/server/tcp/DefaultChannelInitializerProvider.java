@@ -23,31 +23,30 @@ import com.hazelcast.config.SSLConfig;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.networking.ChannelInitializer;
-import com.hazelcast.internal.networking.ChannelInitializerProvider;
 import com.hazelcast.internal.nio.ascii.TextChannelInitializer;
-import com.hazelcast.internal.server.IOService;
+import com.hazelcast.internal.server.ServerContext;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
 
-public class DefaultChannelInitializerProvider implements ChannelInitializerProvider {
+public class DefaultChannelInitializerProvider implements Function<EndpointQualifier, ChannelInitializer> {
 
-    protected final IOService ioService;
+    protected final ServerContext serverContext;
     private final ChannelInitializer uniChannelInitializer;
     private final Config config;
     private volatile Map<EndpointQualifier, ChannelInitializer> initializerMap;
 
-
-    public DefaultChannelInitializerProvider(IOService ioService, Config config) {
+    public DefaultChannelInitializerProvider(ServerContext serverContext, Config config) {
         checkSslConfigAvailability(config);
-        this.ioService = ioService;
-        this.uniChannelInitializer = new UnifiedChannelInitializer(ioService);
+        this.serverContext = serverContext;
+        this.uniChannelInitializer = new UnifiedChannelInitializer(serverContext);
         this.config = config;
     }
 
     @Override
-    public ChannelInitializer provide(EndpointQualifier qualifier) {
+    public ChannelInitializer apply(EndpointQualifier qualifier) {
         return initializerMap.isEmpty() ? provideUnifiedChannelInitializer() : initializerMap.get(qualifier);
     }
 
@@ -93,15 +92,15 @@ public class DefaultChannelInitializerProvider implements ChannelInitializerProv
     }
 
     protected ChannelInitializer provideMemberChannelInitializer(EndpointConfig endpointConfig) {
-        return new MemberChannelInitializer(ioService, endpointConfig);
+        return new MemberChannelInitializer(serverContext, endpointConfig);
     }
 
     protected ChannelInitializer provideClientChannelInitializer(EndpointConfig endpointConfig) {
-        return new ClientChannelInitializer(ioService, endpointConfig);
+        return new ClientChannelInitializer(serverContext, endpointConfig);
     }
 
     protected ChannelInitializer provideTextChannelInitializer(EndpointConfig endpointConfig, boolean rest) {
-        return new TextChannelInitializer(ioService, endpointConfig, rest);
+        return new TextChannelInitializer(serverContext, endpointConfig, rest);
     }
 
     protected ChannelInitializer provideWanChannelInitializer(EndpointConfig endpointConfig) {

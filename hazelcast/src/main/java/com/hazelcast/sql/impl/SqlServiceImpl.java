@@ -37,7 +37,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 /**
- * Base SQL service implementation which bridges optimizer implementation, public and private APIs.
+ * Base SQL service implementation that bridges optimizer implementation, public and private APIs.
  */
 public class SqlServiceImpl implements SqlService, Consumer<Packet> {
     /** Outbox batch size in bytes. */

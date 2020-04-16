@@ -79,6 +79,10 @@ public abstract class AbstractExec implements Exec {
 
     protected abstract RowBatch currentBatch0();
 
+    protected void checkCancelled() {
+        ctx.checkCancelled();
+    }
+
     @Override
     public boolean canReset() {
         return false;
@@ -100,9 +104,5 @@ public abstract class AbstractExec implements Exec {
      */
     protected void reset0() {
         // No-op.
-    }
-
-    protected void checkCancelled() {
-        ctx.checkCancelled();
     }
 }

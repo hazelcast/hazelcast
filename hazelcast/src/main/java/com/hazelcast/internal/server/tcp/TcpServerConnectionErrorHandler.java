@@ -17,7 +17,7 @@
 package com.hazelcast.internal.server.tcp;
 
 import com.hazelcast.cluster.Address;
-import com.hazelcast.internal.server.IOService;
+import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.logging.ILogger;
 
 import static java.lang.System.currentTimeMillis;
@@ -25,7 +25,7 @@ import static java.lang.System.currentTimeMillis;
 public class TcpServerConnectionErrorHandler {
 
     private final ILogger logger;
-    private final IOService ioService;
+    private final ServerContext serverContext;
     private final Address endPoint;
     private final long minInterval;
     private final int maxFaults;
@@ -34,10 +34,10 @@ public class TcpServerConnectionErrorHandler {
 
     TcpServerConnectionErrorHandler(TcpServerConnectionManager connectionManager, Address endPoint) {
         this.endPoint = endPoint;
-        this.ioService = connectionManager.getServer().getIoService();
-        this.minInterval = ioService.getConnectionMonitorInterval();
-        this.maxFaults = ioService.getConnectionMonitorMaxFaults();
-        this.logger = ioService.getLoggingService().getLogger(getClass());
+        this.serverContext = connectionManager.getServer().getContext();
+        this.minInterval = serverContext.getConnectionMonitorInterval();
+        this.maxFaults = serverContext.getConnectionMonitorMaxFaults();
+        this.logger = serverContext.getLoggingService().getLogger(getClass());
     }
 
     public Address getEndPoint() {
@@ -53,7 +53,7 @@ public class TcpServerConnectionErrorHandler {
             if (faults++ >= maxFaults) {
                 String removeEndpointMessage = "Removing connection to endpoint " + endPoint + getCauseDescription(t);
                 logger.warning(removeEndpointMessage);
-                ioService.removeEndpoint(endPoint);
+                serverContext.removeEndpoint(endPoint);
             }
             lastFaultTime = now;
         }

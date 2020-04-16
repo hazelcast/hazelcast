@@ -17,7 +17,7 @@
 package com.hazelcast.internal.server.tcp;
 
 import com.hazelcast.internal.networking.Channel;
-import com.hazelcast.internal.server.IOService;
+import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Connection;
@@ -51,7 +51,7 @@ class TcpServerConnector {
     private final TcpServerConnectionManager connectionManager;
 
     private final ILogger logger;
-    private final IOService ioService;
+    private final ServerContext serverContext;
     private final int outboundPortCount;
 
     // accessed only in synchronized block
@@ -61,19 +61,19 @@ class TcpServerConnector {
 
     TcpServerConnector(TcpServerConnectionManager connectionManager) {
         this.connectionManager = connectionManager;
-        this.ioService = connectionManager.getServer().getIoService();
-        this.logger = ioService.getLoggingService().getLogger(getClass());
-        Collection<Integer> ports = ioService.getOutboundPorts(connectionManager.getEndpointQualifier());
+        this.serverContext = connectionManager.getServer().getContext();
+        this.logger = serverContext.getLoggingService().getLogger(getClass());
+        Collection<Integer> ports = serverContext.getOutboundPorts(connectionManager.getEndpointQualifier());
         this.outboundPortCount = ports.size();
         this.outboundPorts.addAll(ports);
-        HazelcastProperties properties = ioService.properties();
+        HazelcastProperties properties = serverContext.properties();
         this.socketClientBind = properties.getBoolean(SOCKET_CLIENT_BIND);
         this.socketClientBindAny = properties.getBoolean(SOCKET_CLIENT_BIND_ANY);
     }
 
     void asyncConnect(Address address, boolean silent) {
-        ioService.shouldConnectTo(address);
-        ioService.executeAsync(new ConnectTask(address, silent));
+        serverContext.shouldConnectTo(address);
+        serverContext.executeAsync(new ConnectTask(address, silent));
     }
 
     private boolean useAnyOutboundPort() {
@@ -118,10 +118,10 @@ class TcpServerConnector {
             }
 
             try {
-                Address thisAddress = ioService.getThisAddress();
+                Address thisAddress = serverContext.getThisAddress();
                 if (address.isIPv4()) {
                     // remote is IPv4; connect...
-                    tryToConnect(address.getInetSocketAddress(), ioService.getSocketConnectTimeoutSeconds(
+                    tryToConnect(address.getInetSocketAddress(), serverContext.getSocketConnectTimeoutSeconds(
                             connectionManager.getEndpointQualifier()) * MILLIS_PER_SECOND);
                 } else if (thisAddress.isIPv6() && thisAddress.getScopeId() != null) {
                     // Both remote and this addresses are IPv6.
@@ -130,7 +130,7 @@ class TcpServerConnector {
                     Inet6Address inetAddress = AddressUtil
                             .getInetAddressFor((Inet6Address) address.getInetAddress(), thisAddress.getScopeId());
                     tryToConnect(new InetSocketAddress(inetAddress, address.getPort()),
-                            ioService.getSocketConnectTimeoutSeconds(
+                            serverContext.getSocketConnectTimeoutSeconds(
                                     connectionManager.getEndpointQualifier()) * MILLIS_PER_SECOND);
                 } else {
                     // remote is IPv6 and this is either IPv4 or a global IPv6.
@@ -154,7 +154,7 @@ class TcpServerConnector {
             boolean connected = false;
             Exception error = null;
             int configuredTimeoutMillis =
-                    ioService.getSocketConnectTimeoutSeconds(connectionManager.getEndpointQualifier()) * MILLIS_PER_SECOND;
+                    serverContext.getSocketConnectTimeoutSeconds(connectionManager.getEndpointQualifier()) * MILLIS_PER_SECOND;
             int timeoutMillis = configuredTimeoutMillis > 0 && configuredTimeoutMillis < Integer.MAX_VALUE
                     ? configuredTimeoutMillis : DEFAULT_IPV6_SOCKET_CONNECT_TIMEOUT_SECONDS * MILLIS_PER_SECOND;
             for (Inet6Address inetAddress : possibleInetAddresses) {
@@ -193,10 +193,10 @@ class TcpServerConnector {
                 try {
                     channel.connect(socketAddress, timeout);
 
-                    ioService.interceptSocket(connectionManager.getEndpointQualifier(), socketChannel.socket(), false);
+                    serverContext.interceptSocket(connectionManager.getEndpointQualifier(), socketChannel.socket(), false);
 
                     connection = connectionManager.newConnection(channel, address);
-                    new SendMemberHandshakeTask(logger, ioService, connection, address, true).run();
+                    new SendMemberHandshakeTask(logger, serverContext, connection, address, true).run();
                 } catch (Exception e) {
                     closeConnection(connection, e);
                     closeSocket(socketChannel);
@@ -234,7 +234,7 @@ class TcpServerConnector {
         }
 
         private InetAddress getInetAddress() throws UnknownHostException {
-            return socketClientBindAny ? null : ioService.getThisAddress().getInetAddress();
+            return socketClientBindAny ? null : serverContext.getThisAddress().getInetAddress();
         }
 
         private void closeConnection(final Connection connection, Throwable t) {

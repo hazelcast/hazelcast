@@ -62,7 +62,7 @@ import static com.hazelcast.internal.nio.Packet.Type.MEMBER_HANDSHAKE;
 import static com.hazelcast.spi.properties.ClusterProperty.IO_INPUT_THREAD_COUNT;
 import static com.hazelcast.spi.properties.ClusterProperty.IO_OUTPUT_THREAD_COUNT;
 
-public class MockIOService implements IOService {
+public class MockServerContext implements ServerContext {
 
     public final ServerSocketChannel serverSocketChannel;
     public final Address thisAddress;
@@ -73,9 +73,9 @@ public class MockIOService implements IOService {
     public volatile Consumer<Packet> packetConsumer;
     private final ILogger logger;
 
-    public MockIOService(int port) throws Exception {
+    public MockServerContext(int port) throws Exception {
         loggingService = new LoggingServiceImpl("somegroup", "log4j2", BuildInfoProvider.getBuildInfo(), true);
-        logger = loggingService.getLogger(MockIOService.class);
+        logger = loggingService.getLogger(MockServerContext.class);
         serverSocketChannel = ServerSocketChannel.open();
         ServerSocket serverSocket = serverSocketChannel.socket();
         serverSocket.setReuseAddress(true);
@@ -103,7 +103,7 @@ public class MockIOService implements IOService {
     }
 
     @Override
-    public boolean isActive() {
+    public boolean isNodeActive() {
         return true;
     }
 

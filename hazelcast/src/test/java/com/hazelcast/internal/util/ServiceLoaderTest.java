@@ -35,11 +35,17 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.net.URLConnection;
+import java.net.URLStreamHandler;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -389,16 +395,29 @@ public class ServiceLoaderTest extends HazelcastTestSupport {
         Class<ServiceLoaderSpecialCharsTestInterface> type = ServiceLoaderSpecialCharsTestInterface.class;
         String factoryId = "com.hazelcast.ServiceLoaderSpecialCharsTestInterface";
 
-        String externalForm = ClassLoader.getSystemResource("test with special chars^")
-                .toExternalForm()
-                .replace("%20", " ")
-                .replace("%5e", "^");
-
-        URL url = new URL(externalForm + "/");
+        URL url = ClassLoader.getSystemResource("test with special chars^/");
         ClassLoader given = new URLClassLoader(new URL[]{url});
 
         Set<ServiceLoaderSpecialCharsTestInterface> implementations = new HashSet<ServiceLoaderSpecialCharsTestInterface>();
         Iterator<ServiceLoaderSpecialCharsTestInterface> iterator = ServiceLoader.iterator(type, factoryId, given);
+        while (iterator.hasNext()) {
+            implementations.add(iterator.next());
+        }
+
+        assertEquals(1, implementations.size());
+    }
+
+    @Test
+    public void loadServicesFromInMemoryClassLoader() throws Exception {
+        Class<ServiceLoaderTestInterface> type = ServiceLoaderTestInterface.class;
+        String factoryId = "com.hazelcast.InMemoryFileForTesting";
+
+        ClassLoader parent = this.getClass().getClassLoader();
+        // Handles META-INF/services/com.hazelcast.CustomServiceLoaderTestInterface
+        ClassLoader given = new CustomUrlStreamHandlerClassloader(parent);
+
+        Set<ServiceLoaderTestInterface> implementations = new HashSet<ServiceLoaderTestInterface>();
+        Iterator<ServiceLoaderTestInterface> iterator = ServiceLoader.iterator(type, factoryId, given);
         while (iterator.hasNext()) {
             implementations.add(iterator.next());
         }
@@ -509,5 +528,52 @@ public class ServiceLoaderTest extends HazelcastTestSupport {
             return null;
         }
 
+    }
+
+    /**
+     * Delegates everything to a given parent classloader, except for a single
+     * file.
+     */
+    private static class CustomUrlStreamHandlerClassloader extends ClassLoader {
+        private final String inMemoryResourceName = "META-INF/services/com.hazelcast.InMemoryFileForTesting";
+        private final String inMemoryContent = "com.hazelcast.internal.util.ServiceLoaderTest$ServiceLoaderTestInterfaceImpl";
+
+        private CustomUrlStreamHandlerClassloader(ClassLoader parent) {
+            super(parent);
+        }
+
+        @Override
+        public URL findResource(String name) {
+            if (!inMemoryResourceName.equals(name)) {
+                return null;
+            }
+            try {
+                return new URL(null, "inmemory:" + name, new URLStreamHandler() {
+                    @Override
+                    protected URLConnection openConnection(URL u) {
+                        return new URLConnection(u) {
+                            private final ByteArrayInputStream in = new ByteArrayInputStream(inMemoryContent.getBytes());
+
+                            @Override
+                            public void connect() {
+                            }
+
+                            @Override
+                            public InputStream getInputStream() {
+                                return in;
+                            }
+                        };
+                    }
+                });
+            } catch (MalformedURLException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        @Override
+        public Enumeration<URL> findResources(String name) {
+            URL resource = findResource(name);
+            return resource == null ? Collections.emptyEnumeration() : Collections.enumeration(Arrays.asList(resource));
+        }
     }
 }

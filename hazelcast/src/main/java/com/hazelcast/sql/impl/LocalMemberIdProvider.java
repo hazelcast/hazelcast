@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl;
 import java.util.UUID;
 
 /**
- * And interface to get local member ID. We use it to avoid passing {@link com.hazelcast.spi.impl.NodeEngine} everywhere.
+ * An interface to get local member ID. We use it to avoid passing {@link com.hazelcast.spi.impl.NodeEngine} everywhere.
  */
 public interface LocalMemberIdProvider {
     /**

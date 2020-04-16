@@ -25,7 +25,7 @@ import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.nio.Packet;
-import com.hazelcast.internal.server.IOService;
+import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.properties.ClusterProperty;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -45,36 +45,36 @@ import java.util.logging.Level;
 public abstract class AbstractChannelInitializer
         implements ChannelInitializer {
 
-    protected final IOService ioService;
+    protected final ServerContext serverContext;
     private final EndpointConfig config;
 
-    protected AbstractChannelInitializer(IOService ioService, EndpointConfig config) {
+    protected AbstractChannelInitializer(ServerContext serverContext, EndpointConfig config) {
         this.config = config;
-        this.ioService = ioService;
+        this.serverContext = serverContext;
     }
 
     public static final class MemberHandshakeHandler {
 
         private final TcpServerConnectionManager connectionManager;
-        private final IOService ioService;
+        private final ServerContext serverContext;
         private final ILogger logger;
         private final boolean spoofingChecks;
         private final boolean unifiedEndpointManager;
 
         private final Set<ProtocolType> supportedProtocolTypes;
 
-        public MemberHandshakeHandler(TcpServerConnectionManager connectionManager, IOService ioService, ILogger logger,
+        public MemberHandshakeHandler(TcpServerConnectionManager connectionManager, ServerContext serverContext, ILogger logger,
                                       Set<ProtocolType> supportedProtocolTypes) {
             this.connectionManager = connectionManager;
-            this.ioService = ioService;
+            this.serverContext = serverContext;
             this.logger = logger;
-            this.spoofingChecks = ioService.properties().getBoolean(ClusterProperty.BIND_SPOOFING_CHECKS);
+            this.spoofingChecks = serverContext.properties().getBoolean(ClusterProperty.BIND_SPOOFING_CHECKS);
             this.supportedProtocolTypes = supportedProtocolTypes;
             this.unifiedEndpointManager = connectionManager.getEndpointQualifier() == null;
         }
 
         public void process(Packet packet) {
-            Object o = ioService.getSerializationService().toObject(packet);
+            Object o = serverContext.getSerializationService().toObject(packet);
             TcpServerConnection connection = (TcpServerConnection) packet.getConn();
             if (connection.setHandshake()) {
                 MemberHandshake handshake = (MemberHandshake) o;
@@ -158,9 +158,9 @@ public abstract class AbstractChannelInitializer
                 }
             }
             connection.setRemoteAddress(remoteEndpoint);
-            ioService.onSuccessfulConnection(remoteEndpoint);
+            serverContext.onSuccessfulConnection(remoteEndpoint);
             if (reply) {
-                new SendMemberHandshakeTask(logger, ioService, connection, remoteEndpoint, false).run();
+                new SendMemberHandshakeTask(logger, serverContext, connection, remoteEndpoint, false).run();
             }
 
             if (checkAlreadyConnected(connection, remoteEndpoint)) {

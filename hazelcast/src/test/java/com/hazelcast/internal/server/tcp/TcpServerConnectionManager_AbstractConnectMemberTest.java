@@ -132,7 +132,7 @@ public abstract class TcpServerConnectionManager_AbstractConnectMemberTest
         assertEquals(ConnectionType.MEMBER, connBA.getConnectionType());
         assertEquals(1, networkingServiceB.getConnectionManager(MEMBER).getActiveConnections().size());
 
-        assertEquals(networkingServiceA.getIoService().getThisAddress(), connBA.getRemoteAddress());
-        assertEquals(networkingServiceB.getIoService().getThisAddress(), connAB.getRemoteAddress());
+        assertEquals(networkingServiceA.getContext().getThisAddress(), connBA.getRemoteAddress());
+        assertEquals(networkingServiceB.getContext().getThisAddress(), connAB.getRemoteAddress());
     }
 }

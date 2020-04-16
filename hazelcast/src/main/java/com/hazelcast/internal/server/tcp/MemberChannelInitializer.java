@@ -22,21 +22,21 @@ import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
-import com.hazelcast.internal.server.IOService;
+import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.server.ServerConnection;
 
 public class MemberChannelInitializer
         extends AbstractChannelInitializer {
 
-    MemberChannelInitializer(IOService ioService, EndpointConfig config) {
-        super(ioService, config);
+    MemberChannelInitializer(ServerContext serverContext, EndpointConfig config) {
+        super(serverContext, config);
     }
 
     @Override
     public void initChannel(Channel channel) {
         ServerConnection connection = (TcpServerConnection) channel.attributeMap().get(ServerConnection.class);
-        OutboundHandler[] outboundHandlers = ioService.createOutboundHandlers(EndpointQualifier.MEMBER, connection);
-        InboundHandler[] inboundHandlers = ioService.createInboundHandlers(EndpointQualifier.MEMBER, connection);
+        OutboundHandler[] outboundHandlers = serverContext.createOutboundHandlers(EndpointQualifier.MEMBER, connection);
+        InboundHandler[] inboundHandlers = serverContext.createInboundHandlers(EndpointQualifier.MEMBER, connection);
 
         MemberProtocolEncoder protocolEncoder = new MemberProtocolEncoder(outboundHandlers);
         SingleProtocolDecoder protocolDecoder = new SingleProtocolDecoder(ProtocolType.MEMBER, inboundHandlers, protocolEncoder);

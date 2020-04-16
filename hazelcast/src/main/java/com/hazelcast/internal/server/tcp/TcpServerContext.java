@@ -37,7 +37,7 @@ import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.server.IOService;
+import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.util.AddressUtil;
 import com.hazelcast.logging.LoggingService;
@@ -62,18 +62,18 @@ import static com.hazelcast.instance.EndpointQualifier.REST;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
 
 @SuppressWarnings({"checkstyle:methodcount"})
-public class NodeIOService implements IOService {
+public class TcpServerContext implements ServerContext {
 
     private final Node node;
     private final NodeEngineImpl nodeEngine;
     private final RestApiConfig restApiConfig;
     private final MemcacheProtocolConfig memcacheProtocolConfig;
 
-    public NodeIOService(Node node, NodeEngineImpl nodeEngine) {
+    public TcpServerContext(Node node, NodeEngineImpl nodeEngine) {
         this.node = node;
         this.nodeEngine = nodeEngine;
-        restApiConfig = initRestApiConfig(node.getConfig());
-        memcacheProtocolConfig = initMemcacheProtocolConfig(node.getConfig());
+        this.restApiConfig = initRestApiConfig(node.getConfig());
+        this.memcacheProtocolConfig = initMemcacheProtocolConfig(node.getConfig());
     }
 
     private static RestApiConfig initRestApiConfig(Config config) {
@@ -116,7 +116,7 @@ public class NodeIOService implements IOService {
     }
 
     @Override
-    public boolean isActive() {
+    public boolean isNodeActive() {
         return node.getState() != NodeState.SHUT_DOWN;
     }
 
