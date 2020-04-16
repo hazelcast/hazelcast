@@ -54,8 +54,6 @@ public class ClusterViewListenerService {
     private final AtomicBoolean pushScheduled = new AtomicBoolean();
     private final Map<ClientEndpoint, Long> clusterListeningEndpoints = new ConcurrentHashMap<>();
 
-    private volatile Integer[] cache;
-
     ClusterViewListenerService(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.advancedNetworkConfigEnabled = nodeEngine.getConfig().getAdvancedNetworkConfig().isEnabled();
