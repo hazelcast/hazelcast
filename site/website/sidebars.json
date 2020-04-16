@@ -65,7 +65,6 @@
       "design-docs/007-grpc-support",
       "design-docs/006-declarative-serialization",
       "design-docs/004-spring-boot-starter",
-      "design-docs/003-elasticsearch-connector",
       "design-docs/002-job-level-serialization",
       "design-docs/001-code-deployment-improvements"
     ]
