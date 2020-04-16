@@ -200,10 +200,10 @@ with different number of bytes depending on used strategy:
 
 ```text
 Strategy                                        Number of Bytes  Overhead %
-com.hazelcast.nio.serialization.StreamSerializer             26           0
-com.hazelcast.nio.serialization.Portable                    104         300
-java.io.Externalizable                                       87         234
 java.io.Serializable                                        162         523
+java.io.Externalizable                                       87         234
+com.hazelcast.nio.serialization.Portable                    104         300
+com.hazelcast.nio.serialization.StreamSerializer             26           0
 ```
 
 You can see that using plain `Serializable` can easily become a
