@@ -54,7 +54,7 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITION
  */
 public class PartitionStateManager {
 
-    final PerMemberPartitionReplicaInterceptor perMemberPartitionReplicaInterceptor;
+    final OwnedPartitionsPerMemberInterceptor ownedPartitionsPerMemberInterceptor;
 
     private final Node node;
     private final ILogger logger;
@@ -88,10 +88,10 @@ public class PartitionStateManager {
         this.partitions = new InternalPartitionImpl[partitionCount];
 
 
-        this.perMemberPartitionReplicaInterceptor = new PerMemberPartitionReplicaInterceptor(stateVersion);
+        this.ownedPartitionsPerMemberInterceptor = new OwnedPartitionsPerMemberInterceptor(stateVersion);
         PartitionReplicaInterceptor interceptor = CompositeInterceptor.create()
                 .add(new DefaultPartitionReplicaInterceptor(partitionService))
-                .add(perMemberPartitionReplicaInterceptor);
+                .add(ownedPartitionsPerMemberInterceptor);
 
         PartitionReplica localReplica = PartitionReplica.from(node.getLocalMember());
         for (int i = 0; i < partitionCount; i++) {

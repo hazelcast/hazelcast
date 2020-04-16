@@ -23,7 +23,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionReplicaStateChecker;
 import com.hazelcast.internal.partition.impl.PartitionStateManager;
-import com.hazelcast.internal.partition.impl.PerMemberPartitionReplicaInterceptor;
+import com.hazelcast.internal.partition.impl.OwnedPartitionsPerMemberInterceptor;
 import com.hazelcast.internal.partition.operation.FetchPartitionStateOperation;
 import com.hazelcast.internal.services.GracefulShutdownAwareService;
 import com.hazelcast.internal.services.ManagedService;
@@ -121,7 +121,7 @@ public interface InternalPartitionService extends IPartitionService, ManagedServ
      */
     PartitionTableView createPartitionTableView();
 
-    PerMemberPartitionReplicaInterceptor.PartitionsInfo getPartitionsInfo();
+    OwnedPartitionsPerMemberInterceptor.PartitionsInfo getPartitionsInfo();
 
     /**
      * Returns partition ID list assigned to given target if partitions are assigned when method is called.

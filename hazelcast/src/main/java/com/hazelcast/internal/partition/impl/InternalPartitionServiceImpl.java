@@ -1193,10 +1193,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
     }
 
     @Override
-    public PerMemberPartitionReplicaInterceptor.PartitionsInfo getPartitionsInfo() {
+    public OwnedPartitionsPerMemberInterceptor.PartitionsInfo getPartitionsInfo() {
         lock.lock();
         try {
-            return partitionStateManager.perMemberPartitionReplicaInterceptor.getPartitionsInfo();
+            return partitionStateManager.ownedPartitionsPerMemberInterceptor.getPartitionsInfo();
         } finally {
             lock.unlock();
         }

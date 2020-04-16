@@ -26,24 +26,28 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public final class PerMemberPartitionReplicaInterceptor implements PartitionReplicaInterceptor {
+public final class OwnedPartitionsPerMemberInterceptor implements PartitionReplicaInterceptor {
 
     private final AtomicInteger stateVersion;
-    private final Map<UUID, List<Integer>> map = new HashMap<>();
+    private final Map<UUID, List<Integer>> partitionIdsByMemberUuid = new HashMap<>();
 
-    public PerMemberPartitionReplicaInterceptor(AtomicInteger stateVersion) {
+    public OwnedPartitionsPerMemberInterceptor(AtomicInteger stateVersion) {
         this.stateVersion = stateVersion;
     }
 
     @Override
     public void replicaChanged(int partitionId, int replicaIndex,
                                PartitionReplica oldReplica, PartitionReplica newReplica) {
+        if (replicaIndex != 0) {
+            return;
+        }
+
         // TODO can both uuid or one of them be null?
         UUID oldUuid = oldReplica != null ? oldReplica.uuid() : null;
         UUID newUuid = newReplica != null ? newReplica.uuid() : null;
 
         if (oldUuid != null) {
-            map.computeIfPresent(oldUuid, (uuid, partitions) -> {
+            partitionIdsByMemberUuid.computeIfPresent(oldUuid, (uuid, partitions) -> {
                 // TODO  put a more appropriate collection, since remove is not O(1)
                 partitions.remove(Integer.valueOf(partitionId));
                 return partitions.isEmpty() ? null : partitions;
@@ -51,36 +55,43 @@ public final class PerMemberPartitionReplicaInterceptor implements PartitionRepl
         }
 
         if (newUuid != null) {
-            map.compute(newUuid, (uuid, partitions) -> {
+            partitionIdsByMemberUuid.compute(newUuid, (uuid, partitions) -> {
                 if (partitions == null) {
                     partitions = new LinkedList<>();
                 }
                 partitions.add(partitionId);
                 return partitions;
             });
-
         }
     }
 
     public PartitionsInfo getPartitionsInfo() {
-        return new PartitionsInfo(stateVersion.get(), map);
+        return new PartitionsInfo(stateVersion.get(), partitionIdsByMemberUuid);
     }
 
     public static class PartitionsInfo {
         private final int partitionStateVersion;
-        private final Map<UUID, List<Integer>> partitionIdByUuid;
+        private final Map<UUID, List<Integer>> partitionIdsByMemberUuid;
 
-        public PartitionsInfo(int partitionStateVersion, Map<UUID, List<Integer>> partitionIdByUuid) {
+        public PartitionsInfo(int partitionStateVersion, Map<UUID, List<Integer>> partitionIdsByMemberUuid) {
             this.partitionStateVersion = partitionStateVersion;
-            this.partitionIdByUuid = partitionIdByUuid;
+            this.partitionIdsByMemberUuid = partitionIdsByMemberUuid;
         }
 
         public int getPartitionStateVersion() {
             return partitionStateVersion;
         }
 
-        public Map<UUID, List<Integer>> getPartitionIdByUuid() {
-            return partitionIdByUuid;
+        public Map<UUID, List<Integer>> getPartitionIdsByMemberUuid() {
+            return partitionIdsByMemberUuid;
+        }
+
+        @Override
+        public String toString() {
+            return "PartitionsInfo{"
+                    + "partitionStateVersion=" + partitionStateVersion
+                    + ", partitionIdByUuid=" + partitionIdsByMemberUuid
+                    + '}';
         }
     }
 }

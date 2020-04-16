@@ -26,7 +26,7 @@ import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.internal.cluster.impl.MembershipManager;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.internal.partition.impl.PerMemberPartitionReplicaInterceptor;
+import com.hazelcast.internal.partition.impl.OwnedPartitionsPerMemberInterceptor;
 import com.hazelcast.internal.util.EmptyStatement;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -141,8 +141,8 @@ public class ClusterViewListenerService {
     @Nullable
     private ClientMessage createPartitionViewClientMessage() {
         InternalPartitionService partitionService = (InternalPartitionService) nodeEngine.getPartitionService();
-        PerMemberPartitionReplicaInterceptor.PartitionsInfo partitionsInfo = partitionService.getPartitionsInfo();
-        Map<UUID, List<Integer>> partitionIdByUuid = partitionsInfo.getPartitionIdByUuid();
+        OwnedPartitionsPerMemberInterceptor.PartitionsInfo partitionsInfo = partitionService.getPartitionsInfo();
+        Map<UUID, List<Integer>> partitionIdByUuid = partitionsInfo.getPartitionIdsByMemberUuid();
         int sum = 0;
         for (List<Integer> partitions : partitionIdByUuid.values()) {
             sum += partitions.size();
