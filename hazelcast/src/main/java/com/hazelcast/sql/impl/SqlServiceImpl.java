@@ -39,7 +39,7 @@ import java.util.function.Consumer;
 /**
  * Base SQL service implementation which bridges optimizer implementation, public and private APIs.
  */
-public class SqlServiceProxy implements SqlService, Consumer<Packet> {
+public class SqlServiceImpl implements SqlService, Consumer<Packet> {
     /** Outbox batch size in bytes. */
     private static final int OUTBOX_BATCH_SIZE = 512 * 1024;
 
@@ -56,7 +56,7 @@ public class SqlServiceProxy implements SqlService, Consumer<Packet> {
 
     private volatile SqlInternalService internalService;
 
-    public SqlServiceProxy(NodeEngineImpl nodeEngine) {
+    public SqlServiceImpl(NodeEngineImpl nodeEngine) {
         SqlConfig config = nodeEngine.getConfig().getSqlConfig();
 
         int operationThreadCount = config.getOperationThreadCount();

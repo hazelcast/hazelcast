@@ -21,7 +21,7 @@ import com.hazelcast.sql.SqlCursor;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.SqlCursorImpl;
-import com.hazelcast.sql.impl.SqlServiceProxy;
+import com.hazelcast.sql.impl.SqlServiceImpl;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,7 +31,7 @@ import java.util.List;
  */
 public class SqlTestSupport {
     protected Plan getPlan(HazelcastInstance target, String sql) {
-        SqlServiceProxy sqlService = (SqlServiceProxy) target.getSqlService();
+        SqlServiceImpl sqlService = (SqlServiceImpl) target.getSqlService();
 
         return sqlService.getOptimizer().prepare(sql);
     }
