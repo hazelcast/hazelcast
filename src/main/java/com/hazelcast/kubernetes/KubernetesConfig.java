@@ -26,6 +26,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 import static com.hazelcast.kubernetes.KubernetesProperties.KUBERNETES_API_RETIRES;
@@ -156,7 +157,7 @@ final class KubernetesConfig {
             byte[] data = new byte[(int) file.length()];
             is = new FileInputStream(file);
             is.read(data);
-            return new String(data, "UTF-8");
+            return new String(data, StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new RuntimeException("Could not get " + fileName, e);
         } finally {

@@ -26,6 +26,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.runner.RunWith;
@@ -268,7 +269,7 @@ public class KubernetesConfigTest {
         temp.deleteOnExit();
         BufferedWriter bufferedWriter = null;
         try {
-            bufferedWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(temp), Charset.forName("UTF-8")));
+            bufferedWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(temp), StandardCharsets.UTF_8));
             bufferedWriter.write(expectedContents);
         } finally {
             IOUtil.closeResource(bufferedWriter);

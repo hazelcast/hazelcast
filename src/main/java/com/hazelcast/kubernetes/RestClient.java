@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
@@ -97,7 +98,7 @@ final class RestClient {
                 connection.setRequestProperty(header.getKey(), header.getValue());
             }
             if (body != null) {
-                byte[] bodyData = body.getBytes("UTF-8");
+                byte[] bodyData = body.getBytes(StandardCharsets.UTF_8);
 
                 connection.setDoOutput(true);
                 connection.setRequestProperty("charset", "utf-8");
@@ -203,7 +204,7 @@ final class RestClient {
         InputStream caInput = null;
         try {
             CertificateFactory cf = CertificateFactory.getInstance("X.509");
-            caInput = new ByteArrayInputStream(caCertificate.getBytes("UTF-8"));
+            caInput = new ByteArrayInputStream(caCertificate.getBytes(StandardCharsets.UTF_8));
             return cf.generateCertificates(caInput);
         } finally {
             IOUtil.closeResource(caInput);
