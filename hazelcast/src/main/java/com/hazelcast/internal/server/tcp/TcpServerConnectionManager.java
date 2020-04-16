@@ -184,8 +184,7 @@ public class TcpServerConnectionManager
 
     @Override
     public ServerConnection get(Address address, int streamId) {
-        int planeIndex = HashUtil.hashToIndex(streamId, planeCount);
-        return planes[planeIndex].connectionMap.get(address);
+        return getPlane(streamId).connectionMap.get(address);
     }
 
     @Override
