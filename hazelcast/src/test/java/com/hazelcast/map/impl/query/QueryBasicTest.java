@@ -29,6 +29,7 @@ import com.hazelcast.nio.serialization.PortableTest.ChildPortableObject;
 import com.hazelcast.nio.serialization.PortableTest.GrandParentPortableObject;
 import com.hazelcast.nio.serialization.PortableTest.ParentPortableObject;
 import com.hazelcast.query.EntryObject;
+import com.hazelcast.query.IndexAwarePredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.Predicates;
@@ -39,6 +40,8 @@ import com.hazelcast.query.SampleTestObjects.State;
 import com.hazelcast.query.SampleTestObjects.Value;
 import com.hazelcast.query.SampleTestObjects.ValueType;
 import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.query.impl.QueryContext;
+import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -987,6 +990,17 @@ public class QueryBasicTest extends HazelcastTestSupport {
         assertEquals(1, stats.get("__key.b").getQueryCount());
         assertEquals(1, stats.get("__key.c").getQueryCount());
         assertEquals(1, stats.get("__key.d").getQueryCount());
+
+        map.values(new CustomIndexAwarePredicate("__key.a", 5));
+        map.values(new CustomIndexAwarePredicate("__key#b", 5));
+        map.values(new CustomIndexAwarePredicate("__key#c", 5));
+        map.values(new CustomIndexAwarePredicate("__key.d", 5));
+
+        stats = map.getLocalMapStats().getIndexStats();
+        assertEquals(2, stats.get("__key.a").getQueryCount());
+        assertEquals(2, stats.get("__key.b").getQueryCount());
+        assertEquals(2, stats.get("__key.c").getQueryCount());
+        assertEquals(2, stats.get("__key.d").getQueryCount());
     }
 
     private void testQueryUsingNestedPortableObject(Config config, String name) {
@@ -1034,6 +1048,33 @@ public class QueryBasicTest extends HazelcastTestSupport {
 
         public int getD() {
             return d;
+        }
+
+    }
+
+    public static class CustomIndexAwarePredicate implements IndexAwarePredicate {
+
+        private final String attribute;
+        private final Comparable value;
+
+        public CustomIndexAwarePredicate(String attribute, Comparable value) {
+            this.attribute = attribute;
+            this.value = value;
+        }
+
+        @Override
+        public boolean apply(Map.Entry mapEntry) {
+            throw new IllegalStateException("should never be called");
+        }
+
+        @Override
+        public Set<QueryableEntry> filter(QueryContext queryContext) {
+            return queryContext.getIndex(attribute).getRecords(value);
+        }
+
+        @Override
+        public boolean isIndexed(QueryContext queryContext) {
+            return true;
         }
 
     }
