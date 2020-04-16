@@ -38,16 +38,14 @@ public final class PerMemberPartitionReplicaInterceptor implements PartitionRepl
     @Override
     public void replicaChanged(int partitionId, int replicaIndex,
                                PartitionReplica oldReplica, PartitionReplica newReplica) {
-        assert newReplica != null : "newReplica is null";
-
         // TODO can both uuid or one of them be null?
         UUID oldUuid = oldReplica != null ? oldReplica.uuid() : null;
-        UUID newUuid = newReplica.uuid();
+        UUID newUuid = newReplica != null ? newReplica.uuid() : null;
 
         if (oldUuid != null) {
             map.computeIfPresent(oldUuid, (uuid, partitions) -> {
                 // TODO  put a more appropriate collection, since remove is not O(1)
-                partitions.remove(partitionId);
+                partitions.remove(Integer.valueOf(partitionId));
                 return partitions.isEmpty() ? null : partitions;
             });
         }
