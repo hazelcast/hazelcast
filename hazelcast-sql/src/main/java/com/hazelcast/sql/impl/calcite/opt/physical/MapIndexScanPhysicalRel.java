@@ -21,7 +21,7 @@ import com.hazelcast.sql.impl.calcite.opt.AbstractScanRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.PhysicalRelVisitor;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTableIndex;
-import com.hazelcast.sql.impl.exec.index.IndexFilter;
+import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCost;
 import org.apache.calcite.plan.RelOptPlanner;

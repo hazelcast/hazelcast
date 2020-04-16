@@ -14,14 +14,22 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.exec;
+package com.hazelcast.sql.impl.exec.scan;
 
-/**
- * Interface to get a value from key-value row.
- */
-public interface KeyValueRowExtractor {
-    /**
-     * Extract value from the key or value.
-     */
-    Object extract(Object key, Object val, String path);
+import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.query.impl.getters.Extractors;
+
+public final class MapScanExecUtils {
+    private MapScanExecUtils() {
+        // No-op.
+    }
+
+    public static Extractors createExtractors(MapProxyImpl<?, ?> map) {
+        return map.getMapServiceContext().getExtractors(map.getName());
+    }
+
+    public static MapScanExecIterator createIterator(MapProxyImpl<?, ?> map, PartitionIdSet parts) {
+        return new MapScanExecIterator(map, parts);
+    }
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.exec.index;
+package com.hazelcast.sql.impl.exec.scan.index;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
@@ -25,7 +25,7 @@ import com.hazelcast.query.impl.Comparison;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
-import com.hazelcast.sql.impl.exec.AbstractMapScanExec;
+import com.hazelcast.sql.impl.exec.scan.AbstractMapScanExec;
 import com.hazelcast.sql.impl.exec.IterationResult;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;

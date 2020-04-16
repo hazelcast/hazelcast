@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.exec.index;
+package com.hazelcast.sql.impl.exec.scan.index;
 
 /**
  * Index filter type.

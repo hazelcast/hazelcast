@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.exec;
+package com.hazelcast.sql.impl.exec.scan;
 
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.Clock;

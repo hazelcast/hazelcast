@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.exec;
+package com.hazelcast.sql.impl.exec.scan;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.query.impl.getters.Extractors;
+import com.hazelcast.sql.impl.exec.IterationResult;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.row.HeapRow;
