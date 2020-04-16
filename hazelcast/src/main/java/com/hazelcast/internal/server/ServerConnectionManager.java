@@ -103,20 +103,7 @@ public interface ServerConnectionManager
 
     ServerConnection getOrConnect(Address address, boolean silent, int streamId);
 
-    /**
-     * Transmits a packet to a certain connection.
-     * <p>
-     * If this method is called with a {@code null} connection, the call returns {@code false}.
-     *
-     * @param packet     the packet to transmit
-     * @param connection he connection to where the Packet should be transmitted
-     * @return {@code true} if the transmit was a success, {@code false} if a failure (there is no guarantee that the packet is
-     * actually going to be received since the packet perhaps is stuck in some buffer; it just means that it's buffered somewhere)
-     * @throws NullPointerException if the packet is {@code null}
-     */
-    boolean transmit(Packet packet, ServerConnection connection);
-
-    /**
+       /**
      * Transmits a packet to a certain address.
      * <p>
      * If the connection to the target doesn't exist yet, the system will try to make the connection. In this case

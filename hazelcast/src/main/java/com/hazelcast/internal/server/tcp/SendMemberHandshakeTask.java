@@ -36,20 +36,20 @@ public class SendMemberHandshakeTask implements Runnable {
     private final TcpServerConnection connection;
     private final Address remoteAddress;
     private final boolean reply;
-    private final int connectionIndex;
+    private final int planeIndex;
 
     public SendMemberHandshakeTask(ILogger logger,
                                    ServerContext serverContext,
                                    TcpServerConnection connection,
                                    Address remoteAddress,
                                    boolean reply,
-                                   int connectionIndex) {
+                                   int planeIndex) {
         this.logger = logger;
         this.serverContext = serverContext;
         this.connection = connection;
         this.remoteAddress = remoteAddress;
         this.reply = reply;
-        this.connectionIndex = connectionIndex;
+        this.planeIndex = planeIndex;
     }
 
     @Override
@@ -66,7 +66,7 @@ public class SendMemberHandshakeTask implements Runnable {
                 remoteAddress,
                 reply,
                 serverContext.getUuid(),
-                connectionIndex);
+                planeIndex);
         byte[] bytes = serverContext.getSerializationService().toBytes(memberHandshake);
         Packet packet = new Packet(bytes).setPacketType(Packet.Type.MEMBER_HANDSHAKE);
         connection.write(packet);

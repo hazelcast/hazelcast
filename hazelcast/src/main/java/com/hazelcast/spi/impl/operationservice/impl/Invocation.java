@@ -597,7 +597,14 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
 
         ServerConnection connection = connectionManager.getOrConnect(targetAddress, op.getPartitionId());
         this.connection = connection;
-        if (!context.outboundOperationHandler.send(op, connection)) {
+        boolean write;
+        if(connection!=null){
+            write = context.outboundOperationHandler.send(op, connection);
+        }else{
+            write = context.outboundOperationHandler.send(op, targetAddress);
+        }
+
+        if (!write) {
             notifyError(new RetryableIOException(getPacketNotSentMessage(connection)));
         }
     }

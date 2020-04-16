@@ -229,11 +229,6 @@ class MockServer implements Server {
             return server.connectionMap.values();
         }
 
-        @Override
-        public boolean transmit(Packet packet, ServerConnection connection) {
-            return connection != null && connection.write(packet);
-        }
-
         /**
          * Retries sending packet maximum 5 times until connection to target becomes available.
          */
@@ -245,7 +240,7 @@ class MockServer implements Server {
         private boolean send(Packet packet, Address target, SendTask sendTask) {
             MockServerConnection connection = get(target,0);
             if (connection != null) {
-                return transmit(packet, connection);
+                return connection.write(packet);
             }
 
             if (sendTask == null) {

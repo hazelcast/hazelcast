@@ -125,14 +125,14 @@ public abstract class AbstractChannelInitializer
                 remoteEndpoint = new Address(connection.getRemoteSocketAddress());
             }
 
-            return process0(connection, remoteEndpoint, allAliases, handshake.isReply(), handshake.getChannelIndex());
+            return process0(connection, remoteEndpoint, allAliases, handshake.isReply(), handshake.getPlaneIndex());
         }
 
         /**
          * Performs the processing of the handshake (sets the endpoint on the Connection, registers the connection)
          * without any spoofing or other validation checks.
          * When executed on the connection initiator side, the connection is registered on the remote address
-         * with which it was registered in {@link TcpServerConnectionManager#connectionsInProgress},
+         * with which it was registered in {@link TcpServerConnectionManager#connectionsInProgressArray},
          * ignoring the {@code remoteEndpoint} argument.
          *
          * @param connection           the connection that send the handshake
@@ -146,9 +146,9 @@ public abstract class AbstractChannelInitializer
                                               Address remoteEndpoint,
                                               Collection<Address> remoteAddressAliases,
                                               boolean reply,
-                                              int channelIndex) {
+                                              int planeIndex) {
             final Address remoteAddress = new Address(connection.getRemoteSocketAddress());
-            if (connectionManager.connectionsInProgress.contains(remoteAddress)) {
+            if (connectionManager.planes[planeIndex].connectionsInProgress.contains(remoteAddress)) {
                 // this is the connection initiator side --> register the connection under the address that was requested
                 remoteEndpoint = remoteAddress;
             }
@@ -161,9 +161,10 @@ public abstract class AbstractChannelInitializer
                 }
             }
             connection.setRemoteAddress(remoteEndpoint);
+            connection.setPlaneIndex(planeIndex);
             serverContext.onSuccessfulConnection(remoteEndpoint);
             if (reply) {
-                new SendMemberHandshakeTask(logger, serverContext, connection, remoteEndpoint, false, channelIndex).run();
+                new SendMemberHandshakeTask(logger, serverContext, connection, remoteEndpoint, false, planeIndex).run();
             }
 
             if (checkAlreadyConnected(connection, remoteEndpoint)) {
@@ -173,14 +174,14 @@ public abstract class AbstractChannelInitializer
             if (logger.isLoggable(Level.FINEST)) {
                 logger.finest("Registering connection " + connection + " to address " + remoteEndpoint);
             }
-            boolean returnValue = connectionManager.register(remoteEndpoint, connection, channelIndex);
+            boolean returnValue = connectionManager.register(remoteEndpoint, connection, planeIndex);
 
             if (remoteAddressAliases != null && returnValue) {
                 for (Address remoteAddressAlias : remoteAddressAliases) {
-                    if (logger.isLoggable(Level.FINEST)) {
-                        logger.finest("Registering connection " + connection + " to address alias " + remoteAddressAlias);
-                    }
-                    connectionManager.connectionsMap[channelIndex].putIfAbsent(remoteAddressAlias, connection);
+                   // if (logger.isLoggable(Level.FINEST)) {
+                        logger.info("Registering connection " + connection + " to address alias " + remoteAddressAlias);
+                  //  }
+                    connectionManager.planes[planeIndex].connectionMap.putIfAbsent(remoteAddressAlias, connection);
                 }
             }
 
@@ -191,10 +192,10 @@ public abstract class AbstractChannelInitializer
             final Connection existingConnection = connectionManager.get(remoteEndPoint);
             if (existingConnection != null && existingConnection.isAlive()) {
                 if (existingConnection != connection) {
-                    if (logger.isFinestEnabled()) {
-                        logger.finest(existingConnection + " is already bound to " + remoteEndPoint
+                    //if (logger.isFinestEnabled()) {
+                        logger.info(existingConnection + " is already bound to " + remoteEndPoint
                                 + ", new one is " + connection);
-                    }
+                   // }
                     // todo probably it's already in activeConnections (ConnectTask , AcceptorIOThread)
                     connectionManager.activeConnections.add(connection);
                 }

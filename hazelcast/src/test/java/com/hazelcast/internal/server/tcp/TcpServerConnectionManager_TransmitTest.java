@@ -50,47 +50,6 @@ public class TcpServerConnectionManager_TransmitTest
         tcpServerA.start();
     }
 
-    // =============== tests {@link TcpIpConnectionManager#write(Packet,Connection)} ===========
-
-    @Test(expected = NullPointerException.class)
-    public void withConnection_whenNullPacket() {
-        tcpServerB.start();
-
-        TcpServerConnection connection = connect(tcpServerA, addressB);
-        tcpServerA.getConnectionManager(MEMBER).transmit(null, connection);
-    }
-
-    @Test
-    public void withConnection_whenNullConnection() {
-        Packet packet = new Packet(serializationService.toBytes("foo"));
-
-        boolean result = tcpServerA.getConnectionManager(MEMBER).transmit(packet, (TcpServerConnection) null);
-
-        assertFalse(result);
-    }
-
-    @Test
-    public void withConnection_whenConnectionWriteFails() {
-        TcpServerConnection connection = mock(TcpServerConnection.class);
-        Packet packet = new Packet(serializationService.toBytes("foo"));
-        when(connection.write(packet)).thenReturn(false);
-
-        boolean result = tcpServerA.getConnectionManager(MEMBER).transmit(packet, connection);
-
-        assertFalse(result);
-    }
-
-    @Test
-    public void withConnection_whenConnectionWriteSucceeds() {
-        TcpServerConnection connection = mock(TcpServerConnection.class);
-        Packet packet = new Packet(serializationService.toBytes("foo"));
-        when(connection.write(packet)).thenReturn(true);
-
-        boolean result = tcpServerA.getConnectionManager(MEMBER).transmit(packet, connection);
-
-        assertTrue(result);
-    }
-
     // =============== tests {@link TcpIpConnectionManager#write(Packet,Address)} ===========
 
     @Test(expected = NullPointerException.class)

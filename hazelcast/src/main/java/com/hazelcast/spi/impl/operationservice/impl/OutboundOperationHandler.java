@@ -55,10 +55,10 @@ public class OutboundOperationHandler {
 
     public boolean send(Operation op, ServerConnection connection) {
         Packet packet = toPacket(op);
-        return node.getServer().getConnectionManager(MEMBER).transmit(packet, connection);
+        return connection.write(packet);
     }
 
-    public Packet toPacket(Operation op) {
+    private Packet toPacket(Operation op) {
         byte[] bytes = serializationService.toBytes(op);
         int partitionId = op.getPartitionId();
         Packet packet = new Packet(bytes, partitionId).setPacketType(Packet.Type.OPERATION);

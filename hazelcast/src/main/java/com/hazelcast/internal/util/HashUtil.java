@@ -332,7 +332,13 @@ public final class HashUtil {
      * @throws IllegalArgumentException if length is smaller than 1.
      */
     public static int hashToIndex(int hash, int length) {
+
+
         checkPositive(length, "length must be larger than 0");
+
+        if(hash==-1){
+            return 0;
+        }
 
         if (hash == Integer.MIN_VALUE) {
             return 0;

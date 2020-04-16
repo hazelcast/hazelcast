@@ -16,12 +16,12 @@
 
 package com.hazelcast.internal.server.tcp;
 
-import com.hazelcast.internal.networking.Channel;
-import com.hazelcast.internal.server.ServerContext;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.util.AddressUtil;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.io.IOException;
@@ -71,9 +71,9 @@ class TcpServerConnector {
         this.socketClientBindAny = properties.getBoolean(SOCKET_CLIENT_BIND_ANY);
     }
 
-    void asyncConnect(Address address, boolean silent, int connectionIndex) {
+    void asyncConnect(Address address, boolean silent, int planeIndex) {
         serverContext.shouldConnectTo(address);
-        serverContext.executeAsync(new ConnectTask(address, silent,connectionIndex));
+        serverContext.executeAsync(new ConnectTask(address, silent, planeIndex));
     }
 
     private boolean useAnyOutboundPort() {
@@ -98,12 +98,12 @@ class TcpServerConnector {
     private final class ConnectTask implements Runnable {
         private final Address address;
         private final boolean silent;
-        private final int connectIndex;
+        private final int planeIndex;
 
-        ConnectTask(Address address, boolean silent, int connectionIndex) {
+        ConnectTask(Address address, boolean silent, int planeIndex) {
             this.address = address;
             this.silent = silent;
-            this.connectIndex = connectionIndex;
+            this.planeIndex = planeIndex;
         }
 
         @Override
@@ -141,7 +141,7 @@ class TcpServerConnector {
                 }
             } catch (Throwable e) {
                 logger.finest(e);
-                connectionManager.failedConnection(address, e, silent);
+                connectionManager.failedConnection(address, planeIndex, e, silent);
             }
         }
 
@@ -198,7 +198,7 @@ class TcpServerConnector {
                     serverContext.interceptSocket(connectionManager.getEndpointQualifier(), socketChannel.socket(), false);
 
                     connection = connectionManager.newConnection(channel, address);
-                    new SendMemberHandshakeTask(logger, serverContext, connection, address, true, connectIndex).run();
+                    new SendMemberHandshakeTask(logger, serverContext, connection, address, true, planeIndex).run();
                 } catch (Exception e) {
                     closeConnection(connection, e);
                     closeSocket(socketChannel);

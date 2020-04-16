@@ -145,7 +145,7 @@ public class FirewallingServer
         @Override
         public void run() {
             if (connection != null) {
-                delegate.getConnectionManager(MEMBER).transmit(packet, connection);
+                connection.write(packet);
             } else {
                 delegate.getConnectionManager(MEMBER).transmit(packet, target);
             }
@@ -244,24 +244,24 @@ public class FirewallingServer
             return (long) ((max - min) * Math.random() + min);
         }
 
-        @Override
-        public boolean transmit(Packet packet, ServerConnection connection) {
-            if (connection != null) {
-                PacketFilter.Action action = applyFilter(packet, connection.getRemoteAddress());
-                switch (action) {
-                    case DROP:
-                        return true;
-                    case REJECT:
-                        return false;
-                    case DELAY:
-                        scheduledExecutor.schedule(new DelayedPacketTask(packet, connection), getDelayMs(), MILLISECONDS);
-                        return true;
-                    default:
-                        // NOP
-                }
-            }
-            return delegate.transmit(packet, connection);
-        }
+//        @Override
+//        public boolean transmit(Packet packet, ServerConnection connection) {
+//            if (connection != null) {
+//                PacketFilter.Action action = applyFilter(packet, connection.getRemoteAddress());
+//                switch (action) {
+//                    case DROP:
+//                        return true;
+//                    case REJECT:
+//                        return false;
+//                    case DELAY:
+//                        scheduledExecutor.schedule(new DelayedPacketTask(packet, connection), getDelayMs(), MILLISECONDS);
+//                        return true;
+//                    default:
+//                        // NOP
+//                }
+//            }
+//            return delegate.transmit(packet, connection);
+//        }
 
         @Override
         public boolean transmit(Packet packet, Address target, int streamId) {

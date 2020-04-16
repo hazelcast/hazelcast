@@ -80,6 +80,7 @@ public class TcpServerConnection implements ServerConnection {
     private volatile Throwable closeCause;
 
     private volatile String closeReason;
+    private int planeIndex;
 
     public TcpServerConnection(TcpServerConnectionManager connectionManager,
                                ConnectionLifecycleListener<TcpServerConnection> lifecycleListener,
@@ -301,5 +302,13 @@ public class TcpServerConnection implements ServerConnection {
                 + ", alive=" + alive
                 + ", connectionType=" + connectionType
                 + "]";
+    }
+
+    public int getPlaneIndex(){
+        return planeIndex;
+    }
+
+    public void setPlaneIndex(int planeIndex) {
+        this.planeIndex = planeIndex;
     }
 }
