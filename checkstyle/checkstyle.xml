@@ -216,6 +216,7 @@
         <module name="FallThrough"/>
         <module name="MultipleVariableDeclarations"/>
         <module name="EmptyStatement"/>
+        <module name="MissingOverride"/>
         <!--<module name="HiddenField">-->
         <!--<property name="tokens" value="VARIABLE_DEF"/>-->
         <!--</module>-->

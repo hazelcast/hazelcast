@@ -57,7 +57,7 @@ public interface BatchStage<T> extends GeneralStage<T> {
     /**
      * {@inheritDoc}
      */
-    @Nonnull
+    @Nonnull @Override
     <K> BatchStageWithKey<T, K> groupingKey(@Nonnull FunctionEx<? super T, ? extends K> keyFn);
 
     @Nonnull @Override
