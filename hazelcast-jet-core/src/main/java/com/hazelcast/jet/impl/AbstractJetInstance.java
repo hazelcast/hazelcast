@@ -170,7 +170,6 @@ public abstract class AbstractJetInstance implements JetInstance {
 
     @Override
     public void shutdown() {
-        observables.values().forEach(Observable::destroy);
         hazelcastInstance.shutdown();
     }
 

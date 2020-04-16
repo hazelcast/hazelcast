@@ -274,14 +274,14 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
      * Clean up the cluster and make it ready to run a next test. If we fail
      * to, shut it down so that next tests don't run on a messed-up cluster.
      *
-     * @param instancesToShutDown cluster instances, must contain at least
+     * @param instances cluster instances, must contain at least
      *                            one instance
      */
-    public void cleanUpCluster(JetInstance ... instancesToShutDown) {
-        for (Job job : instancesToShutDown[0].getJobs()) {
-            ditchJob(job, instancesToShutDown);
+    public void cleanUpCluster(JetInstance ... instances) {
+        for (Job job : instances[0].getJobs()) {
+            ditchJob(job, instances);
         }
-        for (DistributedObject o : instancesToShutDown[0].getHazelcastInstance().getDistributedObjects()) {
+        for (DistributedObject o : instances[0].getHazelcastInstance().getDistributedObjects()) {
             o.destroy();
         }
     }
