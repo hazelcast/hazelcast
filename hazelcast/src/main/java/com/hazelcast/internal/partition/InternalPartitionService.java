@@ -16,14 +16,15 @@
 
 package com.hazelcast.internal.partition;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionReplicaStateChecker;
 import com.hazelcast.internal.partition.impl.PartitionStateManager;
+import com.hazelcast.internal.partition.impl.PerMemberPartitionReplicaInterceptor;
 import com.hazelcast.internal.partition.operation.FetchPartitionStateOperation;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.services.GracefulShutdownAwareService;
 import com.hazelcast.internal.services.ManagedService;
 
@@ -50,9 +51,9 @@ public interface InternalPartitionService extends IPartitionService, ManagedServ
     /**
      * Number of the member groups to be used in partition assignments.
      *
+     * @return number of member groups
      * @see com.hazelcast.internal.partition.membergroup.MemberGroupFactory
      * @see com.hazelcast.config.PartitionGroupConfig
-     * @return number of member groups
      */
     int getMemberGroupsSize();
 
@@ -68,6 +69,7 @@ public interface InternalPartitionService extends IPartitionService, ManagedServ
 
     /**
      * Called when a member is added to the cluster. Triggers partition rebalancing.
+     *
      * @param member new member
      */
     void memberAdded(Member member);
@@ -75,6 +77,7 @@ public interface InternalPartitionService extends IPartitionService, ManagedServ
     /**
      * Called when a member is removed from the cluster.
      * Executes maintenance tasks, removes the member from partition table and triggers promotions.
+     *
      * @param member removed member
      */
     void memberRemoved(Member member);
@@ -113,9 +116,12 @@ public interface InternalPartitionService extends IPartitionService, ManagedServ
 
     /**
      * Creates an immutable/readonly view of partition table.
+     *
      * @return immutable view of partition table
      */
     PartitionTableView createPartitionTableView();
+
+    PerMemberPartitionReplicaInterceptor.PartitionsInfo getPartitionsInfo();
 
     /**
      * Returns partition ID list assigned to given target if partitions are assigned when method is called.

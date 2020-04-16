@@ -34,7 +34,7 @@ class CompositeInterceptor implements PartitionReplicaInterceptor {
     }
 
     public CompositeInterceptor add(PartitionReplicaInterceptor interceptor) {
-        if (interceptor == null) {
+        if (interceptors == null) {
             interceptors = new ArrayList<>();
         }
         interceptors.add(interceptor);

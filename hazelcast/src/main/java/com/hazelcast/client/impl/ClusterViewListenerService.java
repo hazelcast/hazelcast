@@ -26,8 +26,7 @@ import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.internal.cluster.impl.MembershipManager;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.internal.partition.PartitionReplica;
-import com.hazelcast.internal.partition.PartitionTableView;
+import com.hazelcast.internal.partition.impl.PerMemberPartitionReplicaInterceptor;
 import com.hazelcast.internal.util.EmptyStatement;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -35,7 +34,6 @@ import com.hazelcast.spi.impl.executionservice.ExecutionService;
 
 import javax.annotation.Nullable;
 import java.nio.channels.CancelledKeyException;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -145,10 +143,15 @@ public class ClusterViewListenerService {
     @Nullable
     private ClientMessage createPartitionViewClientMessage() {
         InternalPartitionService partitionService = (InternalPartitionService) nodeEngine.getPartitionService();
-        PartitionTableView partitionTableView = partitionService.createPartitionTableView();
-        Map<UUID, List<Integer>> partitions = getPartitions(partitionTableView);
-        return partitions.isEmpty() ? null
-                : encodePartitionsViewEvent(partitionTableView.getVersion(), partitions.entrySet());
+        PerMemberPartitionReplicaInterceptor.PartitionsInfo partitionsInfo = partitionService.getPartitionsInfo();
+        Map<UUID, List<Integer>> partitionIdByUuid = partitionsInfo.getPartitionIdByUuid();
+        int sum = 0;
+        for (List<Integer> partitions : partitionIdByUuid.values()) {
+            sum += partitions.size();
+        }
+        return sum == partitionService.getPartitionCount()
+                ? encodePartitionsViewEvent(partitionService.getPartitionStateVersion(), partitionIdByUuid.entrySet())
+                : null;
     }
 
     private ClientMessage createMemberListViewClientMessage() {
@@ -182,48 +185,6 @@ public class ClusterViewListenerService {
             // partition table contains stale entries for members which are not in the member list
             return null;
         }
-    }
-
-    /**
-     * If any partition does not have an owner, this method returns empty collection
-     *
-     * @param partitionTableView will be converted to address-&gt;partitions mapping
-     * @return address-&gt;partitions mapping, where address is the client address of the member
-     */
-    public Map<UUID, List<Integer>> getPartitions(PartitionTableView partitionTableView) {
-        Map<UUID, List<Integer>> partitionsMap = new HashMap<>();
-
-        int partitionCount = partitionTableView.getLength();
-
-        Integer[] cache = getOrInitCache(partitionTableView.getLength());
-
-        for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-            PartitionReplica owner = partitionTableView.getReplica(partitionId, 0);
-            if (owner == null || owner.uuid() == null) {
-                partitionsMap.clear();
-                return partitionsMap;
-            }
-            partitionsMap.computeIfAbsent(owner.uuid(),
-                    k -> new LinkedList<>()).add(cache[partitionId]);
-        }
-        return partitionsMap;
-    }
-
-    private Integer[] getOrInitCache(int partitionCount) {
-        if (cache != null) {
-            return cache;
-        }
-
-        synchronized (this) {
-            if (cache == null) {
-                cache = new Integer[partitionCount];
-                for (int i = 0; i < cache.length; i++) {
-                    cache[i] = new Integer(i);
-                }
-            }
-        }
-
-        return cache;
     }
 
     //for test purpose only

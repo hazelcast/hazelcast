@@ -20,9 +20,10 @@ import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionReplicaInterceptor;
 
 /**
- * PartitionReplicaInterceptor used to intercept partition changes internally.
- * Most significant responsibility of this interceptor is to increment the partition-state version on each change
- * and cancel any ongoing replica synchronization on the changed partition.
+ * PartitionReplicaInterceptor used to intercept partition changes
+ * internally. Most significant responsibility of this interceptor is
+ * to increment the partition-state version on each change and cancel
+ * any ongoing replica synchronization on the changed partition.
  */
 final class DefaultPartitionReplicaInterceptor implements PartitionReplicaInterceptor {
     private final InternalPartitionServiceImpl partitionService;
@@ -32,7 +33,8 @@ final class DefaultPartitionReplicaInterceptor implements PartitionReplicaInterc
     }
 
     @Override
-    public void replicaChanged(int partitionId, int replicaIndex, PartitionReplica oldReplica, PartitionReplica newReplica) {
+    public void replicaChanged(int partitionId, int replicaIndex,
+                               PartitionReplica oldReplica, PartitionReplica newReplica) {
         if (replicaIndex == 0) {
             partitionService.getReplicaManager().cancelReplicaSync(partitionId);
         }

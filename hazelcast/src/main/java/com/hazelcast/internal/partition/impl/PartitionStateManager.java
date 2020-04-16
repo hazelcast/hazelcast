@@ -76,6 +76,8 @@ public class PartitionStateManager {
     // can be read and written concurrently...
     private volatile int memberGroupsSize;
 
+    final PerMemberPartitionReplicaInterceptor perMemberPartitionReplicaInterceptor;
+
     public PartitionStateManager(Node node, InternalPartitionServiceImpl partitionService) {
         this.node = node;
         this.logger = node.getLogger(getClass());
@@ -84,8 +86,11 @@ public class PartitionStateManager {
         this.partitionCount = partitionService.getPartitionCount();
         this.partitions = new InternalPartitionImpl[partitionCount];
 
+
+        this.perMemberPartitionReplicaInterceptor = new PerMemberPartitionReplicaInterceptor(stateVersion);
         PartitionReplicaInterceptor interceptor = CompositeInterceptor.create()
-                .add(new DefaultPartitionReplicaInterceptor(partitionService));
+                .add(new DefaultPartitionReplicaInterceptor(partitionService))
+                .add(perMemberPartitionReplicaInterceptor);
 
         PartitionReplica localReplica = PartitionReplica.from(node.getLocalMember());
         for (int i = 0; i < partitionCount; i++) {
@@ -420,4 +425,5 @@ public class PartitionStateManager {
         }
         return new PartitionTableView(partitions, stateVersion.get());
     }
+
 }
