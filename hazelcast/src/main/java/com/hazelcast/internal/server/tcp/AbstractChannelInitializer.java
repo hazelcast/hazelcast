@@ -125,7 +125,7 @@ public abstract class AbstractChannelInitializer
                 remoteEndpoint = new Address(connection.getRemoteSocketAddress());
             }
 
-            return process0(connection, remoteEndpoint, allAliases, handshake.isReply());
+            return process0(connection, remoteEndpoint, allAliases, handshake.isReply(), handshake.getChannelIndex());
         }
 
         /**
@@ -142,8 +142,11 @@ public abstract class AbstractChannelInitializer
          */
         @SuppressWarnings({"checkstyle:npathcomplexity"})
         @SuppressFBWarnings("RV_RETURN_VALUE_OF_PUTIFABSENT_IGNORED")
-        private synchronized boolean process0(TcpServerConnection connection, Address remoteEndpoint,
-                                              Collection<Address> remoteAddressAliases, boolean reply) {
+        private synchronized boolean process0(TcpServerConnection connection,
+                                              Address remoteEndpoint,
+                                              Collection<Address> remoteAddressAliases,
+                                              boolean reply,
+                                              int channelIndex) {
             final Address remoteAddress = new Address(connection.getRemoteSocketAddress());
             if (connectionManager.connectionsInProgress.contains(remoteAddress)) {
                 // this is the connection initiator side --> register the connection under the address that was requested
@@ -160,7 +163,7 @@ public abstract class AbstractChannelInitializer
             connection.setRemoteAddress(remoteEndpoint);
             serverContext.onSuccessfulConnection(remoteEndpoint);
             if (reply) {
-                new SendMemberHandshakeTask(logger, serverContext, connection, remoteEndpoint, false).run();
+                new SendMemberHandshakeTask(logger, serverContext, connection, remoteEndpoint, false, channelIndex).run();
             }
 
             if (checkAlreadyConnected(connection, remoteEndpoint)) {
@@ -170,14 +173,14 @@ public abstract class AbstractChannelInitializer
             if (logger.isLoggable(Level.FINEST)) {
                 logger.finest("Registering connection " + connection + " to address " + remoteEndpoint);
             }
-            boolean returnValue = connectionManager.register(remoteEndpoint, connection);
+            boolean returnValue = connectionManager.register(remoteEndpoint, connection, channelIndex);
 
             if (remoteAddressAliases != null && returnValue) {
                 for (Address remoteAddressAlias : remoteAddressAliases) {
                     if (logger.isLoggable(Level.FINEST)) {
                         logger.finest("Registering connection " + connection + " to address alias " + remoteAddressAlias);
                     }
-                    connectionManager.connectionsMap.putIfAbsent(remoteAddressAlias, connection);
+                    connectionManager.connectionsMap[channelIndex].putIfAbsent(remoteAddressAlias, connection);
                 }
             }
 

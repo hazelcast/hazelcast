@@ -71,9 +71,9 @@ class TcpServerConnector {
         this.socketClientBindAny = properties.getBoolean(SOCKET_CLIENT_BIND_ANY);
     }
 
-    void asyncConnect(Address address, boolean silent) {
+    void asyncConnect(Address address, boolean silent, int connectionIndex) {
         serverContext.shouldConnectTo(address);
-        serverContext.executeAsync(new ConnectTask(address, silent));
+        serverContext.executeAsync(new ConnectTask(address, silent,connectionIndex));
     }
 
     private boolean useAnyOutboundPort() {
@@ -98,10 +98,12 @@ class TcpServerConnector {
     private final class ConnectTask implements Runnable {
         private final Address address;
         private final boolean silent;
+        private final int connectIndex;
 
-        ConnectTask(Address address, boolean silent) {
+        ConnectTask(Address address, boolean silent, int connectionIndex) {
             this.address = address;
             this.silent = silent;
+            this.connectIndex = connectionIndex;
         }
 
         @Override
@@ -196,7 +198,7 @@ class TcpServerConnector {
                     serverContext.interceptSocket(connectionManager.getEndpointQualifier(), socketChannel.socket(), false);
 
                     connection = connectionManager.newConnection(channel, address);
-                    new SendMemberHandshakeTask(logger, serverContext, connection, address, true).run();
+                    new SendMemberHandshakeTask(logger, serverContext, connection, address, true, connectIndex).run();
                 } catch (Exception e) {
                     closeConnection(connection, e);
                     closeSocket(socketChannel);

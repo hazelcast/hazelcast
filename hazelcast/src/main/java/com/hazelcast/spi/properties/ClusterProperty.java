@@ -57,6 +57,13 @@ public final class ClusterProperty {
     /**
      * Total number of partitions in the Hazelcast cluster.
      */
+    public static final HazelcastProperty CHANNEL_COUNT
+            = new HazelcastProperty("tcp.channels.per.connection", 5);
+
+
+    /**
+     * Total number of partitions in the Hazelcast cluster.
+     */
     public static final HazelcastProperty PARTITION_COUNT
             = new HazelcastProperty("hazelcast.partition.count", 271);
 

@@ -91,22 +91,22 @@ public abstract class AbstractOutOfMemoryHandlerTest extends HazelcastTestSuppor
             }
 
             @Override
-            public ServerConnection get(Address address) {
+            public ServerConnection get(Address address, int streamId) {
                 return null;
             }
 
             @Override
-            public ServerConnection getOrConnect(Address address) {
+            public ServerConnection getOrConnect(Address address, int streamId) {
                 return null;
             }
 
             @Override
-            public ServerConnection getOrConnect(Address address, boolean silent) {
+            public ServerConnection getOrConnect(Address address, boolean silent, int streamId) {
                 return null;
             }
 
             @Override
-            public boolean register(Address remoteAddress, ServerConnection connection) {
+            public boolean register(Address remoteAddress, ServerConnection connection, int streamId) {
                 return false;
             }
 
@@ -116,7 +116,7 @@ public abstract class AbstractOutOfMemoryHandlerTest extends HazelcastTestSuppor
             }
 
             @Override
-            public boolean transmit(Packet packet, Address target) {
+            public boolean transmit(Packet packet, Address target, int streamId) {
                 return false;
             }
 

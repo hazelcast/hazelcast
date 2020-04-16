@@ -191,8 +191,8 @@ public class FirewallingServer
         }
 
         @Override
-        public synchronized ServerConnection getOrConnect(Address address, boolean silent) {
-            return getOrConnect(address);
+        public synchronized ServerConnection getOrConnect(Address address, boolean silent, int streamId) {
+            return getOrConnect(address,streamId);
         }
 
         public synchronized void blockNewConnection(Address address) {
@@ -264,7 +264,7 @@ public class FirewallingServer
         }
 
         @Override
-        public boolean transmit(Packet packet, Address target) {
+        public boolean transmit(Packet packet, Address target, int streamId) {
             PacketFilter.Action action = applyFilter(packet, target);
             switch (action) {
                 case DROP:
@@ -295,18 +295,18 @@ public class FirewallingServer
         }
 
         @Override
-        public ServerConnection get(Address address) {
+        public ServerConnection get(Address address, int streamId) {
             return delegate.get(address);
         }
 
         @Override
-        public ServerConnection getOrConnect(Address address) {
+        public ServerConnection getOrConnect(Address address, int streamId) {
             return delegate.getOrConnect(address);
         }
 
         @Override
-        public boolean register(Address remoteAddress, ServerConnection connection) {
-            return delegate.register(remoteAddress, connection);
+        public boolean register(Address remoteAddress, ServerConnection connection, int streamId) {
+            return delegate.register(remoteAddress, connection, streamId);
         }
 
         @Override

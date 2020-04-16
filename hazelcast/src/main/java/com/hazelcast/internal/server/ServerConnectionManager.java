@@ -45,6 +45,11 @@ public interface ServerConnectionManager
      */
     Collection<ServerConnection> getActiveConnections();
 
+    default boolean register(Address remoteAddress, ServerConnection connection){
+        return register(remoteAddress,connection,0);
+    }
+
+
     /**
      * Registers (ie. stores) the connection for the given remote remoteAddress.
      * Once this call finishes every subsequent call to {@link #get(Address)} will return
@@ -54,7 +59,7 @@ public interface ServerConnectionManager
      * @param connection - The connection to be registered
      * @return True if the call was successful
      */
-    boolean register(Address remoteAddress, ServerConnection connection);
+    boolean register(Address remoteAddress, ServerConnection connection, int streamId);
 
     /**
      * Gets the connection for a given address. If the connection does not exist, it returns null.
@@ -62,7 +67,11 @@ public interface ServerConnectionManager
      * @param address the remote side of the connection
      * @return the found Connection, or none if one doesn't exist
      */
-    ServerConnection get(Address address);
+    default ServerConnection get(Address address){
+        return get(address, 0);
+    }
+
+    ServerConnection get(Address address, int streamId);
 
     /**
      * Gets the existing connection for a given address or connects. This call is silent.
@@ -71,7 +80,11 @@ public interface ServerConnectionManager
      * @return the found connection, or {@code null} if no connection exists
      * @see #getOrConnect(Address, boolean)
      */
-    ServerConnection getOrConnect(Address address);
+    default ServerConnection getOrConnect(Address address){
+        return getOrConnect(address, 0);
+    }
+
+    ServerConnection getOrConnect(Address address, int streamId);
 
     /**
      * Gets the existing connection for a given address. If it does not exist, the system will try to connect
@@ -84,7 +97,11 @@ public interface ServerConnectionManager
      * @param silent  if logging should be done on debug level ({@code silent=true}) or on info level ({@code silent=false})
      * @return the existing connection
      */
-    ServerConnection getOrConnect(Address address, boolean silent);
+    default ServerConnection getOrConnect(Address address, boolean silent){
+        return getOrConnect(address,silent,0);
+    }
+
+    ServerConnection getOrConnect(Address address, boolean silent, int streamId);
 
     /**
      * Transmits a packet to a certain connection.
@@ -111,7 +128,12 @@ public interface ServerConnectionManager
      * @throws NullPointerException if packet or target is null.
      * @see #transmit(Packet, Connection)
      */
-    boolean transmit(Packet packet, Address target);
+    default boolean transmit(Packet packet, Address target){
+        return transmit(packet, target,0);
+    }
+
+    boolean transmit(Packet packet, Address target, int streamId);
+
 
     /**
      * Returns network stats for inbound and outbound traffic.

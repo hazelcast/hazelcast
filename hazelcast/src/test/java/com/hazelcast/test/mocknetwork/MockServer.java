@@ -93,12 +93,12 @@ class MockServer implements Server {
         }
 
         @Override
-        public MockServerConnection get(Address address) {
+        public MockServerConnection get(Address address, int stream) {
             return server.connectionMap.get(address);
         }
 
         @Override
-        public MockServerConnection getOrConnect(Address address) {
+        public MockServerConnection getOrConnect(Address address, int stream) {
             MockServerConnection conn = server.connectionMap.get(address);
             if (conn != null && conn.isAlive()) {
                 return conn;
@@ -166,12 +166,12 @@ class MockServer implements Server {
         }
 
         @Override
-        public MockServerConnection getOrConnect(Address address, boolean silent) {
-            return getOrConnect(address);
+        public MockServerConnection getOrConnect(Address address, boolean silent, int stream) {
+            return getOrConnect(address, stream);
         }
 
         @Override
-        public synchronized boolean register(final Address remoteAddress, final ServerConnection c) {
+        public synchronized boolean register(final Address remoteAddress, final ServerConnection c, int streamId) {
             MockServerConnection connection = (MockServerConnection) c;
             if (!server.live) {
                 throw new IllegalStateException("connection manager is not live!");
@@ -238,12 +238,12 @@ class MockServer implements Server {
          * Retries sending packet maximum 5 times until connection to target becomes available.
          */
         @Override
-        public boolean transmit(Packet packet, Address target) {
+        public boolean transmit(Packet packet, Address target, int streamId) {
             return send(packet, target, null);
         }
 
         private boolean send(Packet packet, Address target, SendTask sendTask) {
-            MockServerConnection connection = get(target);
+            MockServerConnection connection = get(target,0);
             if (connection != null) {
                 return transmit(packet, connection);
             }

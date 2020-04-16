@@ -94,22 +94,22 @@ public class Invocation_ServerConnectionManagerTest
         }
 
         @Override
-        public boolean register(Address remoteAddress, ServerConnection connection) {
+        public boolean register(Address remoteAddress, ServerConnection connection, int streamId) {
             return false;
         }
 
         @Override
-        public ServerConnection get(Address address) {
+        public ServerConnection get(Address address, int streamId) {
             return null;
         }
 
         @Override
-        public ServerConnection getOrConnect(Address address) {
+        public ServerConnection getOrConnect(Address address , int streamId) {
             throw new UnsupportedOperationException(EXPECTED_MSG);
         }
 
         @Override
-        public ServerConnection getOrConnect(Address address, boolean silent) {
+        public ServerConnection getOrConnect(Address address, boolean silent, int streamId) {
             throw new UnsupportedOperationException(EXPECTED_MSG);
         }
 
@@ -119,7 +119,7 @@ public class Invocation_ServerConnectionManagerTest
         }
 
         @Override
-        public boolean transmit(Packet packet, Address target) {
+        public boolean transmit(Packet packet, Address target, int streamId) {
             return false;
         }
 

@@ -16,11 +16,11 @@
 
 package com.hazelcast.internal.cluster.impl;
 
-import com.hazelcast.instance.ProtocolType;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -46,7 +46,7 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MemberHandshakeTest {
 
-    private MemberHandshake bindMessage;
+    private MemberHandshake memberHandshake;
     private SerializationService serializationService;
     private Address targetAddress;
     private UUID uuid;
@@ -60,8 +60,8 @@ public class MemberHandshakeTest {
 
     @Test
     public void testSerialization_withMultipleLocalAddresses() throws Exception {
-        bindMessage = new MemberHandshake((byte) 1, localAddresses(), targetAddress, true, uuid);
-        Data serialized = serializationService.toData(bindMessage);
+        memberHandshake = new MemberHandshake((byte) 1, localAddresses(), targetAddress, true, uuid, 0);
+        Data serialized = serializationService.toData(memberHandshake);
         MemberHandshake deserialized = serializationService.toObject(serialized);
         assertEquals(1, deserialized.getSchemaVersion());
         assertEquals(localAddresses(), deserialized.getLocalAddresses());
@@ -71,9 +71,9 @@ public class MemberHandshakeTest {
     }
 
     @Test
-    public void testSerialization_whenBindMessageEmpty() {
-        bindMessage = new MemberHandshake();
-        Data serialized = serializationService.toData(bindMessage);
+    public void testSerialization_whenMemberHandshakeEmpty() {
+        memberHandshake = new MemberHandshake();
+        Data serialized = serializationService.toData(memberHandshake);
         MemberHandshake deserialized = serializationService.toObject(serialized);
         assertEquals(0, deserialized.getSchemaVersion());
         assertTrue(deserialized.getLocalAddresses().isEmpty());

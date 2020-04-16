@@ -49,6 +49,7 @@ import static com.hazelcast.internal.util.UUIDSerializationUtil.writeUUID;
 public class MemberHandshake
         implements IdentifiedDataSerializable {
 
+    private int channelIndex;
     private byte schemaVersion;
     private Map<ProtocolType, Collection<Address>> localAddresses;
     private Address targetAddress;
@@ -59,12 +60,17 @@ public class MemberHandshake
     }
 
     public MemberHandshake(byte schemaVersion, Map<ProtocolType, Collection<Address>> localAddresses,
-                           Address targetAddress, boolean reply, UUID uuid) {
+                           Address targetAddress, boolean reply, UUID uuid, int channelIndex) {
         this.schemaVersion = schemaVersion;
         this.localAddresses = new EnumMap<>(localAddresses);
         this.targetAddress = targetAddress;
         this.reply = reply;
         this.uuid = uuid;
+        this.channelIndex = channelIndex;
+    }
+
+    public int getChannelIndex() {
+        return channelIndex;
     }
 
     byte getSchemaVersion() {
@@ -112,6 +118,7 @@ public class MemberHandshake
             out.writeInt(addressEntry.getKey().ordinal());
             writeCollection(addressEntry.getValue(), out);
         }
+        out.writeInt(channelIndex);
     }
 
     @Override
@@ -132,6 +139,7 @@ public class MemberHandshake
             addressesPerProtocolType.put(protocolType, addresses);
         }
         this.localAddresses = addressesPerProtocolType;
+        this.channelIndex = in.readInt();
     }
 
     @Override

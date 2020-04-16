@@ -595,7 +595,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
     private void doInvokeRemote() {
         assert connectionManager != null : "Endpoint manager was null";
 
-        ServerConnection connection = connectionManager.getOrConnect(targetAddress);
+        ServerConnection connection = connectionManager.getOrConnect(targetAddress, op.getPartitionId());
         this.connection = connection;
         if (!context.outboundOperationHandler.send(op, connection)) {
             notifyError(new RetryableIOException(getPacketNotSentMessage(connection)));

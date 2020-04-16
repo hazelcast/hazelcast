@@ -201,10 +201,10 @@ public class MemberHandshakeHandlerTest {
     }
 
     private Packet bindMessage() {
-        MemberHandshake bindMessage =
-                new MemberHandshake((byte) 1, localAddresses, new Address(CLIENT_SOCKET_ADDRESS), reply, uuid);
+        MemberHandshake memberHandshake =
+                new MemberHandshake((byte) 1, localAddresses, new Address(CLIENT_SOCKET_ADDRESS), reply, uuid,0);
 
-        Packet packet = new Packet(serializationService.toBytes(bindMessage));
+        Packet packet = new Packet(serializationService.toBytes(memberHandshake));
         TcpServerConnection connection = new TcpServerConnection(connectionManager, null, 1, channel);
         if (connectionType != null) {
             connection.setConnectionType(connectionType);
