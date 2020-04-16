@@ -275,4 +275,52 @@ public class KubernetesConfigTest {
         }
         return temp.getAbsolutePath();
     }
+
+    @Test
+    public void propertyServiceNameIsEmpty() {
+        // given
+        Map<String, Comparable> properties = createProperties();
+        properties.put(SERVICE_NAME.key(), "  ");
+        String serviceDns = "service-dns";
+        properties.put(SERVICE_DNS.key(), serviceDns);
+
+        //when
+        KubernetesConfig config = new KubernetesConfig(properties);
+
+        //then
+        assertEquals(serviceDns, config.getServiceDns());
+
+    }
+
+    @Test
+    public void propertyServiceDnsIsNull() {
+        // given
+        Map<String, Comparable> properties = createProperties();
+        String serviceName = "service-name";
+        properties.put(SERVICE_NAME.key(), serviceName);
+        properties.put(SERVICE_DNS.key(), null);
+
+        //when
+        KubernetesConfig config = new KubernetesConfig(properties);
+
+        //then
+        assertEquals(serviceName, config.getServiceName());
+
+    }
+
+    @Test
+    public void emptyProperties() {
+        // given
+        Map<String, Comparable> properties = createProperties();
+        properties.put(SERVICE_LABEL_NAME.key(), "  ");
+        String serviceLabelValue = "service-label-value";
+        properties.put(SERVICE_LABEL_VALUE.key(), serviceLabelValue);
+        properties.put(SERVICE_DNS.key(), "");
+
+        //when
+        KubernetesConfig config = new KubernetesConfig(properties);
+
+        //then
+        assertEquals(serviceLabelValue, config.getServiceLabelValue());
+    }
 }
