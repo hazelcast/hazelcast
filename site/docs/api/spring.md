@@ -350,7 +350,7 @@ use system properties, `hazelcast.jet.config` for server and
 If you want to configure the underlying `HazelcastInstance`, you need
 to put `hazelcast.yaml` or `hazelcast.xml` to the classpath or to the
 root directory. You can use the config property
-`hazelcast.jet.server.config` or system property
+`hazelcast.jet.imdg.config` or system property
 `hazelcast.config` to explicitly set the configuration file.
 
 If no configuration file is present or explicitly specified, the
