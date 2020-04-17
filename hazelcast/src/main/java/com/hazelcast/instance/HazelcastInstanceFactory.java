@@ -18,9 +18,6 @@ package com.hazelcast.instance;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
-import com.hazelcast.config.XmlConfigLocator;
-import com.hazelcast.config.YamlConfigBuilder;
-import com.hazelcast.config.YamlConfigLocator;
 import com.hazelcast.core.DuplicateInstanceNameException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
