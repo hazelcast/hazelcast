@@ -49,7 +49,7 @@ public final class UnaryService<T, R> implements GrpcService<T, R> {
     private static class Observer<R> implements StreamObserver<R> {
         private final CompletableFuture<R> future;
 
-        private volatile R value ;
+        private R value ;
 
         Observer() {
             this.future = new CompletableFuture<>();
@@ -57,6 +57,7 @@ public final class UnaryService<T, R> implements GrpcService<T, R> {
 
         @Override
         public void onNext(R value) {
+            assert this.value == null : "value should not be assigned twice in unary mode";
             this.value = value;
         }
 
