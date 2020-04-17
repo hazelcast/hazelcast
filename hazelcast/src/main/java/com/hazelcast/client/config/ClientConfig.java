@@ -18,6 +18,8 @@ package com.hazelcast.client.config;
 
 import com.hazelcast.client.Client;
 import com.hazelcast.client.LoadBalancer;
+import com.hazelcast.client.config.impl.XmlClientConfigLocator;
+import com.hazelcast.client.config.impl.YamlClientConfigLocator;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.config.InvalidConfigurationException;
@@ -48,6 +50,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
+import static com.hazelcast.internal.config.DeclarativeConfigUtil.SYSPROP_CLIENT_CONFIG;
+import static com.hazelcast.internal.config.DeclarativeConfigUtil.validateSuffixInSystemProperty;
 import static com.hazelcast.internal.util.Preconditions.checkFalse;
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBaseName;
@@ -166,6 +170,42 @@ public class ClientConfig {
         labels = new HashSet<>(config.labels);
         userContext = new ConcurrentHashMap<>(config.userContext);
         metricsConfig = new ClientMetricsConfig(config.metricsConfig);
+    }
+
+    /**
+     * Populates Hazelcast {@link ClientConfig} object from an external configuration file.
+     * <p>
+     * It tries to load Hazelcast Client configuration from a list of well-known locations.
+     * When no location contains Hazelcast Client configuration then it returns default.
+     * <p>
+     * Note that the same mechanism is used when calling
+     * {@link com.hazelcast.client.HazelcastClient#newHazelcastClient()}.
+     *
+     * @return ClientConfig created from a file when exists, otherwise default.
+     */
+    public static ClientConfig load() {
+        validateSuffixInSystemProperty(SYSPROP_CLIENT_CONFIG);
+
+        XmlClientConfigLocator xmlConfigLocator = new XmlClientConfigLocator();
+        YamlClientConfigLocator yamlConfigLocator = new YamlClientConfigLocator();
+
+        if (xmlConfigLocator.locateFromSystemProperty()) {
+            // 1. Try loading XML config from the configuration provided in system property
+            return new XmlClientConfigBuilder(xmlConfigLocator).build();
+        } else if (yamlConfigLocator.locateFromSystemProperty()) {
+            // 2. Try loading YAML config from the configuration provided in system property
+            return new YamlClientConfigBuilder(yamlConfigLocator).build();
+        } else if (xmlConfigLocator.locateInWorkDirOrOnClasspath()) {
+            // 3. Try loading XML config from the working directory or from the classpath
+            return new XmlClientConfigBuilder(xmlConfigLocator).build();
+        } else if (yamlConfigLocator.locateInWorkDirOrOnClasspath()) {
+            // 4. Try loading YAML config from the working directory or from the classpath
+            return new YamlClientConfigBuilder(yamlConfigLocator).build();
+        } else {
+            // 5. Loading the default XML configuration file
+            xmlConfigLocator.locateDefault();
+            return new XmlClientConfigBuilder(xmlConfigLocator).build();
+        }
     }
 
     /**
