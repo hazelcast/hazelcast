@@ -1,5 +1,6 @@
 {
   "scripts": {
+    "replace-version": "node replace-version-config.js",
     "examples": "docusaurus-examples",
     "start": "docusaurus-start",
     "build": "docusaurus-build",
@@ -27,6 +28,7 @@
     "lint-staged": "^8.1.0",
     "markdownlint": "^0.11.0",
     "markdownlint-cli": "^0.13.0",
+    "replace-in-file": "^5.0.2",
     "markdownlint-rule-emphasis-style": "^1.0.0",
     "wait-on": "^4.0.0"
   },
