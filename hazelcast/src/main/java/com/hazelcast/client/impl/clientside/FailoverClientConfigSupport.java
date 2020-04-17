@@ -20,22 +20,10 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientFailoverConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
-import com.hazelcast.client.config.XmlClientConfigBuilder;
-import com.hazelcast.client.config.impl.XmlClientConfigLocator;
-import com.hazelcast.client.config.XmlClientFailoverConfigBuilder;
-import com.hazelcast.client.config.impl.XmlClientFailoverConfigLocator;
-import com.hazelcast.client.config.YamlClientConfigBuilder;
-import com.hazelcast.client.config.impl.YamlClientConfigLocator;
-import com.hazelcast.client.config.YamlClientFailoverConfigBuilder;
-import com.hazelcast.client.config.impl.YamlClientFailoverConfigLocator;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.HazelcastException;
 
 import java.util.List;
-
-import static com.hazelcast.internal.config.DeclarativeConfigUtil.SYSPROP_CLIENT_CONFIG;
-import static com.hazelcast.internal.config.DeclarativeConfigUtil.SYSPROP_CLIENT_FAILOVER_CONFIG;
-import static com.hazelcast.internal.config.DeclarativeConfigUtil.validateSuffixInSystemProperty;
 
 /**
  * Static methods to resolve and validate multiple client configs for blue green feature
@@ -55,7 +43,7 @@ public final class FailoverClientConfigSupport {
      * @throws InvalidConfigurationException when given config is not valid
      */
     public static ClientFailoverConfig resolveClientFailoverConfig() {
-        return resolveClientFailoverConfig(locateAndCreateClientFailoverConfig());
+        return resolveClientFailoverConfig(null);
     }
 
     /**
@@ -72,7 +60,7 @@ public final class FailoverClientConfigSupport {
      */
     public static ClientFailoverConfig resolveClientFailoverConfig(ClientFailoverConfig clientFailoverConfig) {
         if (clientFailoverConfig == null) {
-            clientFailoverConfig = locateAndCreateClientFailoverConfig();
+            clientFailoverConfig = ClientFailoverConfig.load();
         }
         checkValidAlternative(clientFailoverConfig.getClientConfigs());
         return clientFailoverConfig;
@@ -92,69 +80,7 @@ public final class FailoverClientConfigSupport {
      */
     public static ClientConfig resolveClientConfig(ClientConfig config) {
         if (config == null) {
-            return locateAndCreateClientConfig();
-        }
-        return config;
-    }
-
-    private static ClientFailoverConfig locateAndCreateClientFailoverConfig() {
-        ClientFailoverConfig config;
-
-        validateSuffixInSystemProperty(SYSPROP_CLIENT_FAILOVER_CONFIG);
-
-        XmlClientFailoverConfigLocator xmlConfigLocator = new XmlClientFailoverConfigLocator();
-        YamlClientFailoverConfigLocator yamlConfigLocator = new YamlClientFailoverConfigLocator();
-
-        if (xmlConfigLocator.locateFromSystemProperty()) {
-            // 1. Try loading XML config from the configuration provided in system property
-            config = new XmlClientFailoverConfigBuilder(xmlConfigLocator).build();
-
-        } else if (yamlConfigLocator.locateFromSystemProperty()) {
-            // 2. Try loading YAML config from the configuration provided in system property
-            config = new YamlClientFailoverConfigBuilder(yamlConfigLocator).build();
-
-        } else if (xmlConfigLocator.locateInWorkDirOrOnClasspath()) {
-            // 3. Try loading XML config from the working directory or from the classpath
-            config = new XmlClientFailoverConfigBuilder(xmlConfigLocator).build();
-
-        } else if (yamlConfigLocator.locateInWorkDirOrOnClasspath()) {
-            // 4. Try loading YAML config from the working directory or from the classpath
-            config = new YamlClientFailoverConfigBuilder(yamlConfigLocator).build();
-
-        } else {
-            throw new HazelcastException("Failed to load ClientFailoverConfig");
-        }
-        return config;
-    }
-
-    private static ClientConfig locateAndCreateClientConfig() {
-        ClientConfig config;
-
-        validateSuffixInSystemProperty(SYSPROP_CLIENT_CONFIG);
-
-        XmlClientConfigLocator xmlConfigLocator = new XmlClientConfigLocator();
-        YamlClientConfigLocator yamlConfigLocator = new YamlClientConfigLocator();
-
-        if (xmlConfigLocator.locateFromSystemProperty()) {
-            // 1. Try loading XML config from the configuration provided in system property
-            config = new XmlClientConfigBuilder(xmlConfigLocator).build();
-
-        } else if (yamlConfigLocator.locateFromSystemProperty()) {
-            // 2. Try loading YAML config from the configuration provided in system property
-            config = new YamlClientConfigBuilder(yamlConfigLocator).build();
-
-        } else if (xmlConfigLocator.locateInWorkDirOrOnClasspath()) {
-            // 3. Try loading XML config from the working directory or from the classpath
-            config = new XmlClientConfigBuilder(xmlConfigLocator).build();
-
-        } else if (yamlConfigLocator.locateInWorkDirOrOnClasspath()) {
-            // 4. Try loading YAML config from the working directory or from the classpath
-            config = new YamlClientConfigBuilder(yamlConfigLocator).build();
-
-        } else {
-            // 5. Loading the default XML configuration file
-            xmlConfigLocator.locateDefault();
-            config = new XmlClientConfigBuilder(xmlConfigLocator).build();
+            return ClientConfig.load();
         }
         return config;
     }
