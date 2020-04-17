@@ -144,11 +144,11 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                            long executionId,
                            SnapshotContext snapshotContext,
                            ConcurrentHashMap<String, File> tempDirectories,
-                           InternalSerializationService serializationService) {
+                           InternalSerializationService jobSerializationService) {
         this.nodeEngine = (NodeEngineImpl) nodeEngine;
         this.executionId = executionId;
-        initProcSuppliers(jobId, executionId, tempDirectories, serializationService);
-        initDag();
+        initProcSuppliers(jobId, executionId, tempDirectories, jobSerializationService);
+        initDag(jobSerializationService);
 
         this.ptionArrgmt = new PartitionArrangement(partitionOwners, nodeEngine.getThisAddress());
         JetInstance instance = getJetInstance(nodeEngine);
@@ -164,7 +164,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                     new ConcurrentInboundEdgeStream(ssConveyor, 0, 0, true,
                             "ssFrom:" + vertex.name()),
                     new AsyncSnapshotWriterImpl(nodeEngine, snapshotContext, vertex.name(), memberIndex, memberCount,
-                            serializationService),
+                            jobSerializationService),
                     nodeEngine.getLogger(StoreSnapshotTasklet.class.getName() + "."
                             + sanitizeLoggerNamePart(vertex.name())),
                     vertex.name(), higherPriorityVertices.contains(vertex.vertexId()));
@@ -193,13 +193,13 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                         memberIndex,
                         memberCount,
                         tempDirectories,
-                        serializationService
+                        jobSerializationService
                 );
 
                 // createOutboundEdgeStreams() populates localConveyorMap and edgeSenderConveyorMap.
                 // Also populates instance fields: senderMap, receiverMap, tasklets.
                 List<OutboundEdgeStream> outboundStreams = createOutboundEdgeStreams(
-                        vertex, localProcessorIdx, serializationService
+                        vertex, localProcessorIdx, jobSerializationService
                 );
                 List<InboundEdgeStream> inboundStreams = createInboundEdgeStreams(
                         vertex, localProcessorIdx, globalProcessorIndex
@@ -209,7 +209,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
 
                 ProcessorTasklet processorTasklet = new ProcessorTasklet(context,
                         nodeEngine.getExecutionService().getExecutor(TASKLET_INIT_CLOSE_EXECUTOR_NAME),
-                        serializationService, processor, inboundStreams, outboundStreams, snapshotContext,
+                        jobSerializationService, processor, inboundStreams, outboundStreams, snapshotContext,
                         snapshotCollector);
                 tasklets.add(processorTasklet);
                 this.processors.add(processor);
@@ -303,7 +303,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     private void initProcSuppliers(long jobId,
                                    long executionId,
                                    ConcurrentHashMap<String, File> tempDirectories,
-                                   InternalSerializationService serializationService) {
+                                   InternalSerializationService jobSerializationService) {
         JetService service = nodeEngine.getService(JetService.SERVICE_NAME);
 
         for (VertexDef vertex : vertices) {
@@ -324,7 +324,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                         memberCount,
                         jobConfig.getProcessingGuarantee(),
                         tempDirectories,
-                        serializationService
+                        jobSerializationService
                 ));
             } catch (Exception e) {
                 throw sneakyThrow(e);
@@ -332,7 +332,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         }
     }
 
-    private void initDag() {
+    private void initDag(InternalSerializationService jobSerializationService) {
         final Map<Integer, VertexDef> vMap = vertices.stream().collect(toMap(VertexDef::vertexId, v -> v));
         for (VertexDef v : vertices) {
             v.inboundEdges().forEach(e -> e.initTransientFields(vMap, v, false));
@@ -344,7 +344,9 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                 .flatMap(List::stream)
                 .map(EdgeDef::partitioner)
                 .filter(Objects::nonNull)
-                .forEach(p -> p.init(partitionService::getPartitionId));
+                .forEach(partitioner ->
+                        partitioner.init(object -> partitionService.getPartitionId(jobSerializationService.toData(object)))
+                );
     }
 
     private static Collection<? extends Processor> createProcessors(VertexDef vertexDef, int parallelism) {
@@ -361,15 +363,16 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
      * Populates {@link #senderMap} and {@link #tasklets} fields.
      */
     private List<OutboundEdgeStream> createOutboundEdgeStreams(VertexDef srcVertex, int processorIdx,
-                                                               InternalSerializationService serializationService) {
+                                                               InternalSerializationService jobSerializationService) {
         final List<OutboundEdgeStream> outboundStreams = new ArrayList<>();
         for (EdgeDef edge : srcVertex.outboundEdges()) {
             Map<Address, ConcurrentConveyor<Object>> memberToSenderConveyorMap = null;
             if (edge.isDistributed()) {
-                memberToSenderConveyorMap = memberToSenderConveyorMap(edgeSenderConveyorMap, edge, serializationService);
+                memberToSenderConveyorMap =
+                        memberToSenderConveyorMap(edgeSenderConveyorMap, edge, jobSerializationService);
             }
             outboundStreams.add(createOutboundEdgeStream(edge, processorIdx, memberToSenderConveyorMap,
-                    serializationService));
+                    jobSerializationService));
         }
         return outboundStreams;
     }
@@ -382,7 +385,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     private Map<Address, ConcurrentConveyor<Object>> memberToSenderConveyorMap(
             Map<String, Map<Address, ConcurrentConveyor<Object>>> edgeSenderConveyorMap,
             EdgeDef edge,
-            InternalSerializationService serializationService
+            InternalSerializationService jobSerializationService
     ) {
         assert edge.isDistributed() : "Edge is not distributed";
         return edgeSenderConveyorMap.computeIfAbsent(edge.edgeId(), x -> {
@@ -396,7 +399,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                 final int destVertexId = edge.destVertex().vertexId();
                 final SenderTasklet t = new SenderTasklet(inboundEdgeStream, nodeEngine, destAddr,
                         destVertexId, edge.getConfig().getPacketSizeLimit(), executionId,
-                        edge.sourceVertex().name(), edge.sourceOrdinal(), serializationService
+                        edge.sourceVertex().name(), edge.sourceOrdinal(), jobSerializationService
                 );
                 senderMap.computeIfAbsent(destVertexId, xx -> new HashMap<>())
                          .computeIfAbsent(edge.destOrdinal(), xx -> new HashMap<>())
@@ -422,10 +425,10 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     private OutboundEdgeStream createOutboundEdgeStream(EdgeDef edge,
                                                         int processorIndex,
                                                         Map<Address, ConcurrentConveyor<Object>> senderConveyorMap,
-                                                        InternalSerializationService serializationService) {
+                                                        InternalSerializationService jobSerializationService) {
         final int totalPtionCount = nodeEngine.getPartitionService().getPartitionCount();
         OutboundCollector[] outboundCollectors = createOutboundCollectors(
-                edge, processorIndex, senderConveyorMap, serializationService
+                edge, processorIndex, senderConveyorMap, jobSerializationService
         );
         OutboundCollector compositeCollector = compositeCollector(outboundCollectors, edge, totalPtionCount);
         return new OutboundEdgeStream(edge.sourceOrdinal(), compositeCollector);
@@ -434,7 +437,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     private OutboundCollector[] createOutboundCollectors(EdgeDef edge,
                                                          int processorIndex,
                                                          Map<Address, ConcurrentConveyor<Object>> senderConveyorMap,
-                                                         InternalSerializationService serializationService) {
+                                                         InternalSerializationService jobSerializationService) {
         final int upstreamParallelism = edge.sourceVertex().localParallelism();
         final int downstreamParallelism = edge.destVertex().localParallelism();
         final int numRemoteMembers = ptionArrgmt.remotePartitionAssignment.get().size();
@@ -487,7 +490,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         // allCollectors[n] where n > 0 is a collector pointing to a remote member _n_.
         final int totalPtionCount = nodeEngine.getPartitionService().getPartitionCount();
         final OutboundCollector[] allCollectors;
-        createIfAbsentReceiverTasklet(edge, ptionsPerProcessor, totalPtionCount, serializationService);
+        createIfAbsentReceiverTasklet(edge, ptionsPerProcessor, totalPtionCount, jobSerializationService);
 
         // assign remote partitions to outbound data collectors
         final Map<Address, int[]> memberToPartitions = ptionArrgmt.remotePartitionAssignment.get();
@@ -510,7 +513,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     private void createIfAbsentReceiverTasklet(EdgeDef edge,
                                                int[][] ptionsPerProcessor,
                                                int totalPtionCount,
-                                               InternalSerializationService serializationService) {
+                                               InternalSerializationService jobSerializationService) {
         final ConcurrentConveyor<Object>[] localConveyors = localConveyorMap.get(edge.edgeId());
 
         receiverMap.computeIfAbsent(edge.destVertex().vertexId(), x -> new HashMap<>())
@@ -527,7 +530,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                                    ptionsPerProcessor[n]));
                            final OutboundCollector collector = compositeCollector(collectors, edge, totalPtionCount);
                            ReceiverTasklet receiverTasklet = new ReceiverTasklet(
-                                   collector, serializationService,
+                                   collector, jobSerializationService,
                                    edge.getConfig().getReceiveWindowMultiplier(),
                                    getConfig().getInstanceConfig().getFlowControlPeriodMs(),
                                    nodeEngine.getLoggingService(), addr, edge.destOrdinal(), edge.destVertex().name());

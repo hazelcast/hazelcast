@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
@@ -737,7 +738,7 @@ public class JobTest extends SimpleTestInClusterSupport {
         DAG dag = new DAG();
         Vertex source = dag.newVertex("source", () -> new ListSource(new Value(1), new Value(2)));
         Vertex sink = dag.newVertex("sink", DiagnosticProcessors.writeLoggerP());
-        dag.edge(between(source, sink).distributed());
+        dag.edge(between(source, sink).distributed().partitioned(FunctionEx.identity()));
 
         JobConfig config = new JobConfig()
                 .registerSerializer(Value.class, ValueSerializer.class);

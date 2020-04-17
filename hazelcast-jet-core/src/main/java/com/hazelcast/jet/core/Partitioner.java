@@ -105,6 +105,7 @@ public interface Partitioner<T> extends Serializable {
      * Instances should be retrieved from {@link #defaultPartitioner()}.
      */
     final class Default implements Partitioner<Object> {
+
         private static final long serialVersionUID = 1L;
 
         transient DefaultPartitionStrategy defaultPartitioning;
