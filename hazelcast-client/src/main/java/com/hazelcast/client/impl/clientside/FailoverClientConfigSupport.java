@@ -20,14 +20,6 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientFailoverConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
-import com.hazelcast.client.config.XmlClientConfigBuilder;
-import com.hazelcast.client.config.XmlClientConfigLocator;
-import com.hazelcast.client.config.XmlClientFailoverConfigBuilder;
-import com.hazelcast.client.config.XmlClientFailoverConfigLocator;
-import com.hazelcast.client.config.YamlClientConfigBuilder;
-import com.hazelcast.client.config.YamlClientConfigLocator;
-import com.hazelcast.client.config.YamlClientFailoverConfigBuilder;
-import com.hazelcast.client.config.YamlClientFailoverConfigLocator;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.HazelcastException;
 

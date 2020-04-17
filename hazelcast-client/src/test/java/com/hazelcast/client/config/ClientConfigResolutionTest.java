@@ -16,8 +16,6 @@
 
 package com.hazelcast.client.config;
 
-import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.config.helpers.DeclarativeConfigFileHelper;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
