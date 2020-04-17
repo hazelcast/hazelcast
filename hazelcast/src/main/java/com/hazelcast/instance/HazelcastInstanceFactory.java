@@ -126,7 +126,7 @@ public final class HazelcastInstanceFactory {
      */
     public static HazelcastInstance newHazelcastInstance(Config config) {
         if (config == null) {
-            Config.load();
+            config = Config.load();
         }
 
         return newHazelcastInstance(
