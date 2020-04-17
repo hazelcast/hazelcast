@@ -31,19 +31,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import javax.management.MBeanInfo;
-import javax.management.MBeanServer;
-import javax.management.ObjectInstance;
-import javax.management.ObjectName;
-import java.lang.management.ManagementFactory;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
-import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
@@ -52,20 +39,13 @@ import static com.hazelcast.jet.core.TestProcessors.MockP;
 import static com.hazelcast.jet.core.TestProcessors.MockPMS;
 import static com.hazelcast.jet.core.TestProcessors.MockPS;
 import static com.hazelcast.jet.core.TestProcessors.reset;
-import static com.hazelcast.jet.core.test.JetAssert.assertTrue;
 import static java.util.Collections.singletonList;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class JobLifecycleMetricsTest extends JetTestSupport {
 
     private static final int MEMBER_COUNT = 2;
-
-    private static final String PREFIX = "com.hazelcast.jet";
-
-    private ObjectName objectNameWithModule;
-
-    private MBeanServer platformMBeanServer;
 
     private JetInstance[] jetInstances;
 
@@ -78,9 +58,6 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
         config.configureHazelcast(hzConfig -> hzConfig.getMetricsConfig().setCollectionFrequencySeconds(1));
 
         jetInstances = createJetMembers(config, MEMBER_COUNT);
-
-        platformMBeanServer = ManagementFactory.getPlatformMBeanServer();
-        objectNameWithModule = new ObjectName(PREFIX + ":*");
     }
 
     @After
@@ -175,23 +152,15 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
 
     @Test
     public void executionRelatedMetrics() {
-        Job job1 = jetInstances[0].newJob(batchPipeline(), new JobConfig().setStoreMetricsAfterJobCompletion(true));
-        job1.join();
-        JobMetrics metrics = job1.getMetrics();
+        Job job = jetInstances[0].newJob(batchPipeline(), new JobConfig().setStoreMetricsAfterJobCompletion(true));
+        job.join();
 
-        System.out.println(metrics);
-        List<Measurement> startTime = metrics.get(MetricNames.EXECUTION_START_TIME);
-        assertEquals(MEMBER_COUNT, startTime.size());
-        long startTimeVal = startTime.get(0).value();
-        assertTrue("startTime.value=" + startTimeVal, startTimeVal != 0);
+        JobMetricsChecker checker = new JobMetricsChecker(job);
+        long startTime = checker.assertRandomMetricValueAtLeast(MetricNames.EXECUTION_START_TIME, 1);
+        long completionTime = checker.assertRandomMetricValueAtLeast(MetricNames.EXECUTION_COMPLETION_TIME, 1);
 
-        List<Measurement> completionTime = metrics.get(MetricNames.EXECUTION_COMPLETION_TIME);
-        assertEquals(MEMBER_COUNT, completionTime.size());
-        long completionTimeVal = completionTime.get(0).value();
-        assertTrue("completionTime.value=" + completionTimeVal, completionTimeVal != 0);
-
-        assertTrue("startTime=" + startTimeVal + ", completionTime=" + completionTimeVal,
-                startTimeVal <= completionTimeVal);
+        assertTrue("startTime=" + startTime + ", completionTime=" + completionTime,
+                startTime <= completionTime);
     }
 
     private Pipeline batchPipeline() {
@@ -210,7 +179,7 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
     }
 
     private void assertJobStats(int submitted, int executionsStarted, int executionsTerminated,
-                                int completedSuccessfully, int completedWithFailure) throws Exception {
+                                int completedSuccessfully, int completedWithFailure) {
         assertJobStatsOnMember(jetInstances[0], submitted, executionsStarted, executionsTerminated,
                 completedSuccessfully, completedWithFailure);
         for (int i = 1; i < jetInstances.length; i++) {
@@ -221,36 +190,16 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
     private void assertJobStatsOnMember(JetInstance jetInstance, int submitted, int executionsStarted,
                                    int executionsTerminated, int completedSuccessfully, int completedWithFailure) {
         try {
-            assertMBeans(
-                    PREFIX + ":type=Metrics,instance=" + jetInstance.getName(),
-                    Arrays.asList(
-                            entry(MetricNames.JOBS_SUBMITTED, submitted),
-                            entry(MetricNames.JOB_EXECUTIONS_STARTED, executionsStarted),
-                            entry(MetricNames.JOB_EXECUTIONS_COMPLETED, executionsTerminated),
-                            entry(MetricNames.JOBS_COMPLETED_SUCCESSFULLY, completedSuccessfully),
-                            entry(MetricNames.JOBS_COMPLETED_WITH_FAILURE, completedWithFailure)));
+            JmxMetricsChecker jmxChecker = new JmxMetricsChecker(jetInstance.getName());
+            jmxChecker.assertMetricValue(MetricNames.JOBS_SUBMITTED, submitted);
+            jmxChecker.assertMetricValue(MetricNames.JOB_EXECUTIONS_STARTED, executionsStarted);
+            jmxChecker.assertMetricValue(MetricNames.JOB_EXECUTIONS_COMPLETED, executionsTerminated);
+            jmxChecker.assertMetricValue(MetricNames.JOBS_COMPLETED_SUCCESSFULLY, completedSuccessfully);
+            jmxChecker.assertMetricValue(MetricNames.JOBS_COMPLETED_WITH_FAILURE, completedWithFailure);
         } catch (AssertionError ae) {
             throw ae;
         } catch (Exception e) {
             throw new AssertionError(e.getMessage(), e);
-        }
-    }
-
-    private void assertMBeans(String name, List<Map.Entry<String, Number>> attributes) throws Exception {
-        Set<ObjectInstance> instances = platformMBeanServer.queryMBeans(objectNameWithModule, null);
-
-        ObjectName on = new ObjectName(name);
-
-        Map<ObjectName, ObjectInstance> instanceMap =
-                instances.stream().collect(Collectors.toMap(ObjectInstance::getObjectName, Function.identity()));
-        assertTrue("name: " + on + " not in instances " + instances, instanceMap.containsKey(on));
-
-        for (Map.Entry<String, Number> expectedAttribute : attributes) {
-            MBeanInfo mBeanInfo = platformMBeanServer.getMBeanInfo(on);
-            String key = expectedAttribute.getKey();
-            long actualAttribute = (long) platformMBeanServer.getAttribute(on, key);
-            assertEquals("Attribute '" + key + "' of '" + on + "' doesn't match",
-                    expectedAttribute.getValue().longValue(), actualAttribute);
         }
     }
 }

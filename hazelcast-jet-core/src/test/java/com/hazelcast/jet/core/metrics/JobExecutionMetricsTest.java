@@ -27,32 +27,16 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.pipeline.test.TestSources;
-import java.lang.management.ManagementFactory;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import javax.management.MBeanServer;
-import javax.management.ObjectInstance;
-import javax.management.ObjectName;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import static com.hazelcast.jet.core.JetTestSupport.assertJobStatusEventually;
 import static com.hazelcast.jet.core.JobStatus.FAILED;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static com.hazelcast.jet.core.metrics.MetricNames.EXECUTION_COMPLETION_TIME;
+import static com.hazelcast.jet.core.metrics.MetricNames.EXECUTION_START_TIME;
 
 public class JobExecutionMetricsTest extends SimpleTestInClusterSupport {
 
-    private static final String PREFIX = "com.hazelcast.jet";
     private static final long JOB_HAS_NOT_FINISHED_YET_TIME = -1;
-
-    private ObjectName objectNameWithModule;
-
-    private MBeanServer platformMBeanServer;
 
     @BeforeClass
     public static void beforeClass() {
@@ -61,72 +45,56 @@ public class JobExecutionMetricsTest extends SimpleTestInClusterSupport {
         initialize(1, config);
     }
 
-    @Before
-    public void before() throws Exception {
-        platformMBeanServer = ManagementFactory.getPlatformMBeanServer();
-        objectNameWithModule = new ObjectName(PREFIX + ":*");
-    }
-
     @Test
-    public void testExecutionMetricsBatchJob() throws Exception {
+    public void testExecutionMetricsBatchJob() {
         JobConfig jobConfig = new JobConfig();
         jobConfig.setStoreMetricsAfterJobCompletion(true);
         Job job = instance().newJob(batchPipeline(), jobConfig);
         job.join();
 
-        assertTrueEventually(() -> {
-            assertMetricProduced(job, MetricNames.EXECUTION_START_TIME);
-        });
+        JobMetricsChecker checker = new JobMetricsChecker(job);
+        assertTrueEventually(() -> checker.assertSummedMetricValueAtLeast(EXECUTION_START_TIME, 1));
 
-        JobMetrics metrics = job.getMetrics();
-        long executionStartTime = metrics.get(MetricNames.EXECUTION_START_TIME).get(0).value();
-        assertTrue(executionStartTime > 0);
-        long executionCompletionTime = metrics.get(MetricNames.EXECUTION_COMPLETION_TIME).get(0).value();
-        assertTrue(executionCompletionTime >= executionStartTime);
+        long executionStartTime = checker.assertSummedMetricValueAtLeast(EXECUTION_START_TIME, 1);
+        checker.assertSummedMetricValueAtLeast(EXECUTION_COMPLETION_TIME, executionStartTime);
     }
 
     @Test
     public void testExecutionMetricsStreamJob() throws Exception {
+
         JobConfig jobConfig = new JobConfig();
         jobConfig.setStoreMetricsAfterJobCompletion(true);
         Job job = instance().newJob(streamPipeline(), jobConfig);
 
-        assertTrueEventually(() -> {
-            assertMetricProduced(job, MetricNames.EXECUTION_START_TIME);
-        });
+        JobMetricsChecker jobChecker = new JobMetricsChecker(job);
+        assertTrueEventually(() -> jobChecker.assertSummedMetricValueAtLeast(EXECUTION_START_TIME, 1));
+        JmxMetricsChecker jmxChecker = new JmxMetricsChecker(instance().getName(), job);
 
-        ObjectName on = getObjectName(getMBeanName(job));
-
-        long executionStartTime = assertMBeanAfterJobStartAndGetExecutionStartTime(on);
+        long executionStartTime = jmxChecker.assertMetricValueAtLeast(EXECUTION_START_TIME, 1);
+        jmxChecker.assertMetricValue(EXECUTION_COMPLETION_TIME, JOB_HAS_NOT_FINISHED_YET_TIME);
 
         job.cancel();
         assertJobStatusEventually(job, FAILED);
 
-        JobMetrics metrics = job.getMetrics();
-        long executionStartTimeAfterCancel = metrics.get(MetricNames.EXECUTION_START_TIME).get(0).value();
-        assertEquals(executionStartTime, executionStartTimeAfterCancel);
-        long executionCompletionTimeAfterCancel = metrics.get(MetricNames.EXECUTION_COMPLETION_TIME).get(0).value();
-        assertTrue(executionCompletionTimeAfterCancel >= executionStartTime);
+        jobChecker.assertRandomMetricValue(EXECUTION_START_TIME, executionStartTime);
+        jobChecker.assertRandomMetricValueAtLeast(EXECUTION_COMPLETION_TIME, executionStartTime);
     }
 
     @Test
     public void testExecutionMetricsJobRestart() throws Exception {
         Job job = instance().newJob(streamPipeline());
 
-        assertTrueEventually(() -> {
-            assertMetricProduced(job, MetricNames.EXECUTION_START_TIME);
-        });
+        JobMetricsChecker jobChecker = new JobMetricsChecker(job);
+        assertTrueEventually(() -> jobChecker.assertSummedMetricValueAtLeast(EXECUTION_START_TIME, 1));
+        JmxMetricsChecker jmxChecker = new JmxMetricsChecker(instance().getName(), job);
 
-        ObjectName on = getObjectName(getMBeanName(job));
-
-        long executionStartTime = assertMBeanAfterJobStartAndGetExecutionStartTime(on);
+        long executionStartTime = jmxChecker.assertMetricValueAtLeast(EXECUTION_START_TIME, 1);
+        jmxChecker.assertMetricValue(EXECUTION_COMPLETION_TIME, JOB_HAS_NOT_FINISHED_YET_TIME);
 
         job.restart();
 
-        long executionStartTimeAfterCancel = getMBeanAttribute(on, MetricNames.EXECUTION_START_TIME);
-        assertEquals(executionStartTime, executionStartTimeAfterCancel);
-        long executionCompletionTimeAfterCancel = getMBeanAttribute(on, MetricNames.EXECUTION_COMPLETION_TIME);
-        assertEquals(JOB_HAS_NOT_FINISHED_YET_TIME, executionCompletionTimeAfterCancel);
+        jmxChecker.assertMetricValue(EXECUTION_START_TIME, executionStartTime);
+        jmxChecker.assertMetricValue(EXECUTION_COMPLETION_TIME, JOB_HAS_NOT_FINISHED_YET_TIME);
     }
 
     @Test
@@ -139,20 +107,17 @@ public class JobExecutionMetricsTest extends SimpleTestInClusterSupport {
         JobRepository jr = new JobRepository(instance());
         waitForFirstSnapshot(jr, job.getId(), 20, false);
 
-        assertTrueEventually(() -> {
-            assertMetricProduced(job, MetricNames.EXECUTION_START_TIME);
-        });
+        JobMetricsChecker jobChecker = new JobMetricsChecker(job);
+        assertTrueEventually(() -> jobChecker.assertSummedMetricValueAtLeast(EXECUTION_START_TIME, 1));
+        JmxMetricsChecker jmxChecker = new JmxMetricsChecker(instance().getName(), job);
 
-        ObjectName on = getObjectName(getMBeanName(job));
-
-        long executionStartTime = assertMBeanAfterJobStartAndGetExecutionStartTime(on);
+        long executionStartTime = jmxChecker.assertMetricValueAtLeast(EXECUTION_START_TIME, 1);
+        jmxChecker.assertMetricValue(EXECUTION_COMPLETION_TIME, JOB_HAS_NOT_FINISHED_YET_TIME);
 
         job.restart();
 
-        long executionStartTimeAfterCancel = getMBeanAttribute(on, MetricNames.EXECUTION_START_TIME);
-        assertEquals(executionStartTime, executionStartTimeAfterCancel);
-        long executionCompletionTimeAfterCancel = getMBeanAttribute(on, MetricNames.EXECUTION_COMPLETION_TIME);
-        assertEquals(JOB_HAS_NOT_FINISHED_YET_TIME, executionCompletionTimeAfterCancel);
+        jmxChecker.assertMetricValue(EXECUTION_START_TIME, executionStartTime);
+        jmxChecker.assertMetricValue(EXECUTION_COMPLETION_TIME, JOB_HAS_NOT_FINISHED_YET_TIME);
     }
 
     private Pipeline streamPipeline() {
@@ -187,48 +152,4 @@ public class JobExecutionMetricsTest extends SimpleTestInClusterSupport {
         return p;
     }
 
-    private String getMBeanName(Job job) {
-        String jobId = job.getIdString();
-        String execId = job.getMetrics().get(MetricNames.SNAPSHOT_KEYS).get(0).tag("exec");
-        StringBuilder sb = new StringBuilder();
-        sb.append(PREFIX)
-                .append(":type=Metrics,instance=")
-                .append(instance().getName())
-                .append(",tag0=\"job=")
-                .append(jobId)
-                .append("\",tag1=\"exec=")
-                .append(execId)
-                .append("\"");
-        return sb.toString();
-    }
-
-    private void assertMetricProduced(Job job, String metricName) {
-        JobMetrics metrics = job.getMetrics();
-        List<Measurement> measurements = metrics.get(metricName);
-        assertTrue(measurements.size() > 0);
-    }
-
-    private long assertMBeanAfterJobStartAndGetExecutionStartTime(ObjectName on) throws Exception {
-        long executionStartTime = getMBeanAttribute(on, MetricNames.EXECUTION_START_TIME);
-        assertTrue(executionStartTime > 0);
-        long executionCompletionTime = getMBeanAttribute(on, MetricNames.EXECUTION_COMPLETION_TIME);
-        assertEquals(JOB_HAS_NOT_FINISHED_YET_TIME, executionCompletionTime);
-        return executionStartTime;
-    }
-
-    private ObjectName getObjectName(String name) throws Exception {
-        Set<ObjectInstance> instances = platformMBeanServer.queryMBeans(objectNameWithModule, null);
-
-        ObjectName on = new ObjectName(name);
-
-        Map<ObjectName, ObjectInstance> instanceMap
-                = instances.stream().collect(Collectors.toMap(ObjectInstance::getObjectName, Function.identity()));
-        assertTrue("name: " + on + " not in instances " + instances, instanceMap.containsKey(on));
-
-        return on;
-    }
-
-    private long getMBeanAttribute(ObjectName on, String name) throws Exception {
-        return (long) platformMBeanServer.getAttribute(on, name);
-    }
 }
