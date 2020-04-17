@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.instance;
+package com.hazelcast.client.config;
 
-import com.hazelcast.config.Config;
+import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.config.helpers.DeclarativeConfigFileHelper;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -37,14 +39,12 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class HazelcastInstanceFactoryConfigResolutionTest {
-
-    private static final String SYSPROP_NAME = "hazelcast.config";
+public class ClientConfigResolutionTest {
+    private static final String SYSPROP_NAME = "hazelcast.client.config";
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
-    private HazelcastInstance instance;
     private DeclarativeConfigFileHelper helper = new DeclarativeConfigFileHelper();
 
     @Before
@@ -54,31 +54,26 @@ public class HazelcastInstanceFactoryConfigResolutionTest {
 
     @After
     public void tearDown() throws Exception {
-        if (instance != null) {
-            instance.shutdown();
-        }
         System.clearProperty(SYSPROP_NAME);
         helper.ensureTestConfigDeleted();
     }
 
     @Test
     public void testResolveSystemProperty_file_xml_loadedAsXml() throws Exception {
-        File file = helper.givenXmlConfigFileInWorkDir("foo.xml", "cluster-xml");
+        File file = helper.givenXmlClientConfigFileInWorkDir("foo.xml", "cluster-xml");
         System.setProperty(SYSPROP_NAME, file.getAbsolutePath());
 
-        instance = HazelcastInstanceFactory.newHazelcastInstance(null);
-        Config config = instance.getConfig();
+        ClientConfig config = ClientConfig.load();
 
         assertEquals("cluster-xml", config.getInstanceName());
     }
 
     @Test
     public void testResolveSystemProperty_classpath_xml_loadedAsXml() throws Exception {
-        helper.givenXmlConfigFileOnClasspath("foo.xml", "cluster-xml");
+        helper.givenXmlClientConfigFileOnClasspath("foo.xml", "cluster-xml");
         System.setProperty(SYSPROP_NAME, "classpath:foo.xml");
 
-        instance = HazelcastInstanceFactory.newHazelcastInstance(null);
-        Config config = instance.getConfig();
+        ClientConfig config = ClientConfig.load();
 
         assertEquals("cluster-xml", config.getInstanceName());
     }
@@ -86,11 +81,10 @@ public class HazelcastInstanceFactoryConfigResolutionTest {
     @Test
     public void testResolveSystemProperty_file_yaml_loadedAsYaml() throws Exception {
         assumeThatJDK8OrHigher();
-        File file = helper.givenYamlConfigFileInWorkDir("foo.yaml", "cluster-yaml");
+        File file = helper.givenYamlClientConfigFileInWorkDir("foo.yaml", "cluster-yaml");
         System.setProperty(SYSPROP_NAME, file.getAbsolutePath());
 
-        instance = HazelcastInstanceFactory.newHazelcastInstance(null);
-        Config config = instance.getConfig();
+        ClientConfig config = ClientConfig.load();
 
         assertEquals("cluster-yaml", config.getInstanceName());
     }
@@ -98,11 +92,10 @@ public class HazelcastInstanceFactoryConfigResolutionTest {
     @Test
     public void testResolveSystemProperty_classpath_yaml_loadedAsYaml() throws Exception {
         assumeThatJDK8OrHigher();
-        helper.givenYamlConfigFileOnClasspath("foo.yaml", "cluster-yaml");
+        helper.givenYamlClientConfigFileOnClasspath("foo.yaml", "cluster-yaml");
         System.setProperty(SYSPROP_NAME, "classpath:foo.yaml");
 
-        instance = HazelcastInstanceFactory.newHazelcastInstance(null);
-        Config config = instance.getConfig();
+        ClientConfig config = ClientConfig.load();
 
         assertEquals("cluster-yaml", config.getInstanceName());
     }
@@ -110,11 +103,10 @@ public class HazelcastInstanceFactoryConfigResolutionTest {
     @Test
     public void testResolveSystemProperty_file_yml_loadedAsYaml() throws Exception {
         assumeThatJDK8OrHigher();
-        File file = helper.givenYamlConfigFileInWorkDir("foo.yml", "cluster-yaml");
+        File file = helper.givenYamlClientConfigFileInWorkDir("foo.yml", "cluster-yaml");
         System.setProperty(SYSPROP_NAME, file.getAbsolutePath());
 
-        instance = HazelcastInstanceFactory.newHazelcastInstance(null);
-        Config config = instance.getConfig();
+        ClientConfig config = ClientConfig.load();
 
         assertEquals("cluster-yaml", config.getInstanceName());
     }
@@ -122,33 +114,30 @@ public class HazelcastInstanceFactoryConfigResolutionTest {
     @Test
     public void testResolveSystemProperty_classpath_yml_loadedAsYaml() throws Exception {
         assumeThatJDK8OrHigher();
-        helper.givenYamlConfigFileOnClasspath("foo.yml", "cluster-yaml");
+        helper.givenYamlClientConfigFileOnClasspath("foo.yml", "cluster-yaml");
         System.setProperty(SYSPROP_NAME, "classpath:foo.yml");
 
-        instance = HazelcastInstanceFactory.newHazelcastInstance(null);
-        Config config = instance.getConfig();
+        ClientConfig config = ClientConfig.load();
 
         assertEquals("cluster-yaml", config.getInstanceName());
     }
 
     @Test
     public void testResolveSystemProperty_file_bar_loadedAsXml() throws Exception {
-        File file = helper.givenXmlConfigFileInWorkDir("foo.bar", "cluster-bar");
+        File file = helper.givenXmlClientConfigFileInWorkDir("foo.bar", "cluster-bar");
         System.setProperty(SYSPROP_NAME, file.getAbsolutePath());
 
-        instance = HazelcastInstanceFactory.newHazelcastInstance(null);
-        Config config = instance.getConfig();
+        ClientConfig config = ClientConfig.load();
 
         assertEquals("cluster-bar", config.getInstanceName());
     }
 
     @Test
     public void testResolveSystemProperty_classpath_bar_loadedAsXml() throws Exception {
-        helper.givenXmlConfigFileOnClasspath("foo.bar", "cluster-bar");
+        helper.givenXmlClientConfigFileOnClasspath("foo.bar", "cluster-bar");
         System.setProperty(SYSPROP_NAME, "classpath:foo.bar");
 
-        instance = HazelcastInstanceFactory.newHazelcastInstance(null);
-        Config config = instance.getConfig();
+        ClientConfig config = ClientConfig.load();
 
         assertEquals("cluster-bar", config.getInstanceName());
     }
@@ -160,7 +149,7 @@ public class HazelcastInstanceFactoryConfigResolutionTest {
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage("foo.xml");
 
-        HazelcastInstanceFactory.newHazelcastInstance(null);
+        ClientConfig.load();
     }
 
     @Test
@@ -171,7 +160,7 @@ public class HazelcastInstanceFactoryConfigResolutionTest {
         expectedException.expectMessage("classpath");
         expectedException.expectMessage("foo.xml");
 
-        HazelcastInstanceFactory.newHazelcastInstance(null);
+        ClientConfig.load();
     }
 
     @Test
@@ -181,7 +170,7 @@ public class HazelcastInstanceFactoryConfigResolutionTest {
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage("foo.yaml");
 
-        HazelcastInstanceFactory.newHazelcastInstance(null);
+        ClientConfig.load();
     }
 
     @Test
@@ -192,7 +181,7 @@ public class HazelcastInstanceFactoryConfigResolutionTest {
         expectedException.expectMessage("classpath");
         expectedException.expectMessage("foo.yaml");
 
-        HazelcastInstanceFactory.newHazelcastInstance(null);
+        ClientConfig.load();
     }
 
     @Test
@@ -202,7 +191,7 @@ public class HazelcastInstanceFactoryConfigResolutionTest {
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage("foo.yml");
 
-        HazelcastInstanceFactory.newHazelcastInstance(null);
+        ClientConfig.load();
     }
 
     @Test
@@ -213,7 +202,7 @@ public class HazelcastInstanceFactoryConfigResolutionTest {
         expectedException.expectMessage("classpath");
         expectedException.expectMessage("foo.yml");
 
-        HazelcastInstanceFactory.newHazelcastInstance(null);
+        ClientConfig.load();
     }
 
     @Test
@@ -223,7 +212,7 @@ public class HazelcastInstanceFactoryConfigResolutionTest {
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage("foo.bar");
 
-        HazelcastInstanceFactory.newHazelcastInstance(null);
+        ClientConfig.load();
     }
 
     @Test
@@ -234,25 +223,23 @@ public class HazelcastInstanceFactoryConfigResolutionTest {
         expectedException.expectMessage("classpath");
         expectedException.expectMessage("foo.bar");
 
-        HazelcastInstanceFactory.newHazelcastInstance(null);
+        ClientConfig.load();
     }
 
     @Test
     public void testResolveWorkDir_xml() throws Exception {
-        helper.givenXmlConfigFileInWorkDir("cluster-xml");
+        helper.givenXmlClientConfigFileInWorkDir("cluster-xml");
 
-        instance = HazelcastInstanceFactory.newHazelcastInstance(null);
-        Config config = instance.getConfig();
+        ClientConfig config = ClientConfig.load();
 
         assertEquals("cluster-xml", config.getInstanceName());
     }
 
     @Test
     public void testResolveClasspath_xml() throws Exception {
-        helper.givenXmlConfigFileOnClasspath("cluster-xml");
+        helper.givenXmlClientConfigFileOnClasspath("cluster-xml");
 
-        instance = HazelcastInstanceFactory.newHazelcastInstance(null);
-        Config config = instance.getConfig();
+        ClientConfig config = ClientConfig.load();
 
         assertEquals("cluster-xml", config.getInstanceName());
     }
@@ -260,10 +247,9 @@ public class HazelcastInstanceFactoryConfigResolutionTest {
     @Test
     public void testResolveWorkDir_yaml() throws Exception {
         assumeThatJDK8OrHigher();
-        helper.givenYamlConfigFileInWorkDir("cluster-yaml");
+        helper.givenYamlClientConfigFileInWorkDir("cluster-yaml");
 
-        instance = HazelcastInstanceFactory.newHazelcastInstance(null);
-        Config config = instance.getConfig();
+        ClientConfig config = ClientConfig.load();
 
         assertEquals("cluster-yaml", config.getInstanceName());
     }
@@ -271,21 +257,26 @@ public class HazelcastInstanceFactoryConfigResolutionTest {
     @Test
     public void testResolveClasspath_yaml() throws Exception {
         assumeThatJDK8OrHigher();
-        helper.givenYamlConfigFileOnClasspath("cluster-yaml");
+        helper.givenYamlClientConfigFileOnClasspath("cluster-yaml");
 
-        instance = HazelcastInstanceFactory.newHazelcastInstance(null);
-        Config config = instance.getConfig();
+        ClientConfig config = ClientConfig.load();
 
         assertEquals("cluster-yaml", config.getInstanceName());
     }
 
     @Test
     public void testResolveDefault_xml() {
-        getClass().getClassLoader().getResource("hazelcast-default.xml");
+        // needed for the client
+        HazelcastInstance member = HazelcastInstanceFactory.newHazelcastInstance(null);
 
-        instance = HazelcastInstanceFactory.newHazelcastInstance(null);
-        Config config = instance.getConfig();
+        try {
+            getClass().getClassLoader().getResource("hazelcast-client-default.xml");
 
-        assertEquals("dev", config.getGroupConfig().getName());
+            ClientConfig config = ClientConfig.load();
+
+            assertEquals("dev", config.getGroupConfig().getName());
+        } finally {
+            member.shutdown();
+        }
     }
 }

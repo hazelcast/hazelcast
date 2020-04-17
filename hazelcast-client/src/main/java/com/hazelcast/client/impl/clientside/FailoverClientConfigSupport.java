@@ -52,7 +52,7 @@ public final class FailoverClientConfigSupport {
      * @throws InvalidConfigurationException when given config is not valid
      */
     public static ClientFailoverConfig resolveClientFailoverConfig() {
-        return resolveClientFailoverConfig(locateAndCreateClientFailoverConfig());
+        return resolveClientFailoverConfig(null);
     }
 
     /**
@@ -68,7 +68,7 @@ public final class FailoverClientConfigSupport {
      */
     public static ClientFailoverConfig resolveClientFailoverConfig(ClientFailoverConfig clientFailoverConfig) {
         if (clientFailoverConfig == null) {
-            clientFailoverConfig = locateAndCreateClientFailoverConfig();
+            clientFailoverConfig = ClientFailoverConfig.load();
         }
         checkValidAlternative(clientFailoverConfig.getClientConfigs());
         return clientFailoverConfig;
@@ -88,63 +88,7 @@ public final class FailoverClientConfigSupport {
      */
     public static ClientConfig resolveClientConfig(ClientConfig config) {
         if (config == null) {
-            return locateAndCreateClientConfig();
-        }
-        return config;
-    }
-
-    private static ClientFailoverConfig locateAndCreateClientFailoverConfig() {
-        ClientFailoverConfig config;
-        XmlClientFailoverConfigLocator xmlConfigLocator = new XmlClientFailoverConfigLocator();
-        YamlClientFailoverConfigLocator yamlConfigLocator = new YamlClientFailoverConfigLocator();
-
-        if (yamlConfigLocator.locateFromSystemProperty()) {
-            // 1. Try loading config if provided in system property and it is an YAML file
-            config = new YamlClientFailoverConfigBuilder(yamlConfigLocator).build();
-
-        } else if (xmlConfigLocator.locateFromSystemProperty()) {
-            // 2. Try loading config if provided in system property and it is an XML file
-            config = new XmlClientFailoverConfigBuilder(xmlConfigLocator).build();
-
-        } else if (xmlConfigLocator.locateInWorkDirOrOnClasspath()) {
-            // 3. Try loading XML config from the working directory or from the classpath
-            config = new XmlClientFailoverConfigBuilder(xmlConfigLocator).build();
-
-        } else if (yamlConfigLocator.locateInWorkDirOrOnClasspath()) {
-            // 4. Try loading YAML config from the working directory or from the classpath
-            config = new YamlClientFailoverConfigBuilder(yamlConfigLocator).build();
-
-        } else {
-            throw new HazelcastException("Failed to load ClientFailoverConfig");
-        }
-        return config;
-    }
-
-    private static ClientConfig locateAndCreateClientConfig() {
-        ClientConfig config;
-        XmlClientConfigLocator xmlConfigLocator = new XmlClientConfigLocator();
-        YamlClientConfigLocator yamlConfigLocator = new YamlClientConfigLocator();
-
-        if (yamlConfigLocator.locateFromSystemProperty()) {
-            // 1. Try loading config if provided in system property and it is an YAML file
-            config = new YamlClientConfigBuilder(yamlConfigLocator).build();
-
-        } else if (xmlConfigLocator.locateFromSystemProperty()) {
-            // 2. Try loading config if provided in system property and it is an XML file
-            config = new XmlClientConfigBuilder(xmlConfigLocator).build();
-
-        } else if (xmlConfigLocator.locateInWorkDirOrOnClasspath()) {
-            // 3. Try loading XML config from the working directory or from the classpath
-            config = new XmlClientConfigBuilder(xmlConfigLocator).build();
-
-        } else if (yamlConfigLocator.locateInWorkDirOrOnClasspath()) {
-            // 4. Try loading YAML config from the working directory or from the classpath
-            config = new YamlClientConfigBuilder(yamlConfigLocator).build();
-
-        } else {
-            // 5. Loading the default XML configuration file
-            xmlConfigLocator.locateDefault();
-            config = new XmlClientConfigBuilder(xmlConfigLocator).build();
+            return ClientConfig.load();
         }
         return config;
     }

@@ -37,6 +37,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static classloading.ThreadLeakTestUtils.assertHazelcastThreadShutdown;
 import static classloading.ThreadLeakTestUtils.getThreads;
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 
@@ -104,6 +105,13 @@ public class HazelcastInstanceFactoryTest extends HazelcastTestSupport {
             instanceFactory1.terminateAll();
             instanceFactory2.terminateAll();
         }
+    }
+
+    @Test
+    public void test_NewInstance_configLoaded() {
+        hazelcastInstance = HazelcastInstanceFactory.newHazelcastInstance(null);
+
+        assertNotNull(hazelcastInstance.getConfig());
     }
 
     @Test(expected = ExpectedRuntimeException.class)

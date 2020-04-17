@@ -14,13 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client;
+package com.hazelcast.client.config;
 
-import com.hazelcast.client.config.ClientFailoverConfig;
-import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.config.helpers.DeclarativeConfigFileHelper;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -38,14 +35,13 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class HazelcastClientFailoverConfigResolutionTest {
+public class ClientFailoverConfigResolutionTest {
 
     private static final String SYSPROP_NAME = "hazelcast.client.failover.config";
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
-    private HazelcastInstance instance;
     private DeclarativeConfigFileHelper helper = new DeclarativeConfigFileHelper();
 
     @Before
@@ -55,9 +51,6 @@ public class HazelcastClientFailoverConfigResolutionTest {
 
     @After
     public void tearDown() throws Exception {
-        if (instance != null) {
-            instance.shutdown();
-        }
         System.clearProperty(SYSPROP_NAME);
         helper.ensureTestConfigDeleted();
     }
@@ -67,8 +60,7 @@ public class HazelcastClientFailoverConfigResolutionTest {
         File file = helper.givenXmlClientFailoverConfigFileInWorkDir("foo.xml", 42);
         System.setProperty(SYSPROP_NAME, file.getAbsolutePath());
 
-        instance = HazelcastClient.newHazelcastFailoverClient();
-        ClientFailoverConfig config = getClientConfig(instance);
+        ClientFailoverConfig config = ClientFailoverConfig.load();
 
         assertEquals(42, config.getTryCount());
     }
@@ -78,8 +70,7 @@ public class HazelcastClientFailoverConfigResolutionTest {
         helper.givenXmlClientFailoverConfigFileOnClasspath("foo.xml", 42);
         System.setProperty(SYSPROP_NAME, "classpath:foo.xml");
 
-        instance = HazelcastClient.newHazelcastFailoverClient();
-        ClientFailoverConfig config = getClientConfig(instance);
+        ClientFailoverConfig config = ClientFailoverConfig.load();
 
         assertEquals(42, config.getTryCount());
     }
@@ -90,8 +81,7 @@ public class HazelcastClientFailoverConfigResolutionTest {
         File file = helper.givenYamlClientFailoverConfigFileInWorkDir("foo.yaml", 42);
         System.setProperty(SYSPROP_NAME, file.getAbsolutePath());
 
-        instance = HazelcastClient.newHazelcastFailoverClient();
-        ClientFailoverConfig config = getClientConfig(instance);
+        ClientFailoverConfig config = ClientFailoverConfig.load();
 
         assertEquals(42, config.getTryCount());
     }
@@ -102,8 +92,7 @@ public class HazelcastClientFailoverConfigResolutionTest {
         helper.givenYamlClientFailoverConfigFileOnClasspath("foo.yaml", 42);
         System.setProperty(SYSPROP_NAME, "classpath:foo.yaml");
 
-        instance = HazelcastClient.newHazelcastFailoverClient();
-        ClientFailoverConfig config = getClientConfig(instance);
+        ClientFailoverConfig config = ClientFailoverConfig.load();
 
         assertEquals(42, config.getTryCount());
     }
@@ -114,8 +103,7 @@ public class HazelcastClientFailoverConfigResolutionTest {
         File file = helper.givenYamlClientFailoverConfigFileInWorkDir("foo.yml", 42);
         System.setProperty(SYSPROP_NAME, file.getAbsolutePath());
 
-        instance = HazelcastClient.newHazelcastFailoverClient();
-        ClientFailoverConfig config = getClientConfig(instance);
+        ClientFailoverConfig config = ClientFailoverConfig.load();
 
         assertEquals(42, config.getTryCount());
     }
@@ -126,8 +114,7 @@ public class HazelcastClientFailoverConfigResolutionTest {
         helper.givenYamlClientFailoverConfigFileOnClasspath("foo.yml", 42);
         System.setProperty(SYSPROP_NAME, "classpath:foo.yml");
 
-        instance = HazelcastClient.newHazelcastFailoverClient();
-        ClientFailoverConfig config = getClientConfig(instance);
+        ClientFailoverConfig config = ClientFailoverConfig.load();
 
         assertEquals(42, config.getTryCount());
     }
@@ -137,8 +124,7 @@ public class HazelcastClientFailoverConfigResolutionTest {
         File file = helper.givenXmlClientFailoverConfigFileInWorkDir("foo.bar", 42);
         System.setProperty(SYSPROP_NAME, file.getAbsolutePath());
 
-        instance = HazelcastClient.newHazelcastFailoverClient();
-        ClientFailoverConfig config = getClientConfig(instance);
+        ClientFailoverConfig config = ClientFailoverConfig.load();
 
         assertEquals(42, config.getTryCount());
     }
@@ -148,8 +134,7 @@ public class HazelcastClientFailoverConfigResolutionTest {
         helper.givenXmlClientFailoverConfigFileOnClasspath("foo.bar", 42);
         System.setProperty(SYSPROP_NAME, "classpath:foo.bar");
 
-        instance = HazelcastClient.newHazelcastFailoverClient();
-        ClientFailoverConfig config = getClientConfig(instance);
+        ClientFailoverConfig config = ClientFailoverConfig.load();
 
         assertEquals(42, config.getTryCount());
     }
@@ -161,7 +146,7 @@ public class HazelcastClientFailoverConfigResolutionTest {
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage("foo.xml");
 
-        instance = HazelcastClient.newHazelcastFailoverClient();
+        ClientFailoverConfig.load();
     }
 
     @Test
@@ -172,7 +157,7 @@ public class HazelcastClientFailoverConfigResolutionTest {
         expectedException.expectMessage("classpath");
         expectedException.expectMessage("foo.xml");
 
-        instance = HazelcastClient.newHazelcastFailoverClient();
+        ClientFailoverConfig.load();
     }
 
     @Test
@@ -182,7 +167,7 @@ public class HazelcastClientFailoverConfigResolutionTest {
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage("foo.yaml");
 
-        instance = HazelcastClient.newHazelcastFailoverClient();
+        ClientFailoverConfig.load();
     }
 
     @Test
@@ -193,7 +178,7 @@ public class HazelcastClientFailoverConfigResolutionTest {
         expectedException.expectMessage("classpath");
         expectedException.expectMessage("foo.yaml");
 
-        instance = HazelcastClient.newHazelcastFailoverClient();
+        ClientFailoverConfig.load();
     }
 
     @Test
@@ -203,7 +188,7 @@ public class HazelcastClientFailoverConfigResolutionTest {
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage("foo.yml");
 
-        instance = HazelcastClient.newHazelcastFailoverClient();
+        ClientFailoverConfig.load();
     }
 
     @Test
@@ -214,7 +199,7 @@ public class HazelcastClientFailoverConfigResolutionTest {
         expectedException.expectMessage("classpath");
         expectedException.expectMessage("foo.yml");
 
-        instance = HazelcastClient.newHazelcastFailoverClient();
+        ClientFailoverConfig.load();
     }
 
     @Test
@@ -224,7 +209,7 @@ public class HazelcastClientFailoverConfigResolutionTest {
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage("foo.bar");
 
-        instance = HazelcastClient.newHazelcastFailoverClient();
+        ClientFailoverConfig.load();
     }
 
     @Test
@@ -235,15 +220,14 @@ public class HazelcastClientFailoverConfigResolutionTest {
         expectedException.expectMessage("classpath");
         expectedException.expectMessage("foo.bar");
 
-        instance = HazelcastClient.newHazelcastFailoverClient();
+        ClientFailoverConfig.load();
     }
 
     @Test
     public void testResolveWorkDir_xml() throws Exception {
         helper.givenXmlClientFailoverConfigFileInWorkDir(42);
 
-        instance = HazelcastClient.newHazelcastFailoverClient();
-        ClientFailoverConfig config = getClientConfig(instance);
+        ClientFailoverConfig config = ClientFailoverConfig.load();
 
         assertEquals(42, config.getTryCount());
     }
@@ -252,8 +236,7 @@ public class HazelcastClientFailoverConfigResolutionTest {
     public void testResolveClasspath_xml() throws Exception {
         helper.givenXmlClientFailoverConfigFileOnClasspath(42);
 
-        instance = HazelcastClient.newHazelcastFailoverClient();
-        ClientFailoverConfig config = getClientConfig(instance);
+        ClientFailoverConfig config = ClientFailoverConfig.load();
 
         assertEquals(42, config.getTryCount());
     }
@@ -263,8 +246,7 @@ public class HazelcastClientFailoverConfigResolutionTest {
         assumeThatJDK8OrHigher();
         helper.givenYamlClientFailoverConfigFileInWorkDir(42);
 
-        instance = HazelcastClient.newHazelcastFailoverClient();
-        ClientFailoverConfig config = getClientConfig(instance);
+        ClientFailoverConfig config = ClientFailoverConfig.load();
 
         assertEquals(42, config.getTryCount());
     }
@@ -274,8 +256,7 @@ public class HazelcastClientFailoverConfigResolutionTest {
         assumeThatJDK8OrHigher();
         helper.givenYamlClientFailoverConfigFileOnClasspath(42);
 
-        instance = HazelcastClient.newHazelcastFailoverClient();
-        ClientFailoverConfig config = getClientConfig(instance);
+        ClientFailoverConfig config = ClientFailoverConfig.load();
 
         assertEquals(42, config.getTryCount());
     }
@@ -285,10 +266,6 @@ public class HazelcastClientFailoverConfigResolutionTest {
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage("Failed to load ClientFailoverConfig");
 
-        instance = HazelcastClient.newHazelcastFailoverClient();
-    }
-
-    private ClientFailoverConfig getClientConfig(HazelcastInstance instance) {
-        return ((HazelcastClientProxy) instance).client.getFailoverConfig();
+        ClientFailoverConfig config = ClientFailoverConfig.load();
     }
 }

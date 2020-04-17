@@ -174,6 +174,40 @@ public class ClientConfig {
     }
 
     /**
+     * Populates Hazelcast {@link ClientConfig} object from an external configuration file.
+     * <p>
+     * It tries to load Hazelcast Client configuration from a list of well-known locations.
+     * When no location contains Hazelcast Client configuration then it returns default.
+     * <p>
+     * Note that the same mechanism is used when calling
+     * {@link com.hazelcast.client.HazelcastClient#newHazelcastClient()}.
+     *
+     * @return ClientConfig created from a file when exists, otherwise default.
+     */
+    public static ClientConfig load() {
+        XmlClientConfigLocator xmlConfigLocator = new XmlClientConfigLocator();
+        YamlClientConfigLocator yamlConfigLocator = new YamlClientConfigLocator();
+
+        if (xmlConfigLocator.locateFromSystemProperty()) {
+            // 1. Try loading XML config from the configuration provided in system property
+            return new XmlClientConfigBuilder(xmlConfigLocator).build();
+        } else if (yamlConfigLocator.locateFromSystemProperty()) {
+            // 2. Try loading YAML config from the configuration provided in system property
+            return new YamlClientConfigBuilder(yamlConfigLocator).build();
+        } else if (xmlConfigLocator.locateInWorkDirOrOnClasspath()) {
+            // 3. Try loading XML config from the working directory or from the classpath
+            return new XmlClientConfigBuilder(xmlConfigLocator).build();
+        } else if (yamlConfigLocator.locateInWorkDirOrOnClasspath()) {
+            // 4. Try loading YAML config from the working directory or from the classpath
+            return new YamlClientConfigBuilder(yamlConfigLocator).build();
+        } else {
+            // 5. Loading the default XML configuration file
+            xmlConfigLocator.locateDefault();
+            return new XmlClientConfigBuilder(xmlConfigLocator).build();
+        }
+    }
+
+    /**
      * Sets the pattern matcher which is used to match item names to
      * configuration objects.
      * By default the {@link MatchingPointConfigPatternMatcher} is used.
