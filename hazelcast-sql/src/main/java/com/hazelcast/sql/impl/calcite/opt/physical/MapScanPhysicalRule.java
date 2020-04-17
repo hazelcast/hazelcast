@@ -18,7 +18,6 @@ package com.hazelcast.sql.impl.calcite.opt.physical;
 
 import com.hazelcast.config.IndexType;
 import com.hazelcast.internal.util.BiTuple;
-import com.hazelcast.query.QueryConstants;
 import com.hazelcast.sql.impl.calcite.HazelcastConventions;
 import com.hazelcast.sql.impl.calcite.distribution.DistributionField;
 import com.hazelcast.sql.impl.calcite.distribution.DistributionTrait;
@@ -524,7 +523,7 @@ public final class MapScanPhysicalRule extends AbstractPhysicalRule {
         for (RelDataTypeField field : hazelcastTable.getFieldList()) {
             String path = hazelcastTable.getFieldPath(field.getName());
 
-            if (path.equals(QueryConstants.KEY_ATTRIBUTE_NAME.value())) {
+            if (path.equals(QueryPath.KEY)) {
                 // If there is no distribution field, use the whole key.
                 if (distributionFieldName == null) {
                     return Collections.singletonList(new DistributionField(index));

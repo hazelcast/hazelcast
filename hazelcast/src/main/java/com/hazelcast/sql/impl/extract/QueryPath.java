@@ -21,6 +21,9 @@ import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
 
 public final class QueryPath {
 
+    public static final String KEY = KEY_ATTRIBUTE_NAME.value();
+    public static final String VALUE = THIS_ATTRIBUTE_NAME.value();
+
     private final boolean key;
     private final String path;
 
@@ -45,10 +48,10 @@ public final class QueryPath {
         String path;
         boolean key;
 
-        if (KEY_ATTRIBUTE_NAME.value().equals(originalPath)) {
+        if (KEY.equals(originalPath)) {
             path = null;
             key = true;
-        } else if (THIS_ATTRIBUTE_NAME.value().equals(originalPath)) {
+        } else if (VALUE.equals(originalPath)) {
             path = null;
             key = false;
         } else {

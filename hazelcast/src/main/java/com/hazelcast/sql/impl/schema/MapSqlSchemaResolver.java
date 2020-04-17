@@ -22,10 +22,10 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldType;
-import com.hazelcast.query.QueryConstants;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.JavaClassQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.PortableQueryTargetDescriptor;
+import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
@@ -108,7 +108,7 @@ public abstract class MapSqlSchemaResolver implements SqlSchemaResolver {
         boolean objectFormat
     ) {
         // Add top-level object.
-        String topName = isKey ? QueryConstants.KEY_ATTRIBUTE_NAME.value() : QueryConstants.THIS_ATTRIBUTE_NAME.value();
+        String topName = isKey ? QueryPath.KEY : QueryPath.VALUE;
         QueryDataType topType = QueryDataTypeUtils.resolveTypeForClass(clazz);
 
         fields.put(topName, new SqlTableField(topName, topName, topType));
@@ -142,7 +142,7 @@ public abstract class MapSqlSchemaResolver implements SqlSchemaResolver {
 
     private QueryTargetDescriptor resolvePortable(ClassDefinition clazz, boolean isKey, Map<String, SqlTableField> fields) {
         // Add top-level object.
-        String topName = isKey ? QueryConstants.KEY_ATTRIBUTE_NAME.value() : QueryConstants.THIS_ATTRIBUTE_NAME.value();
+        String topName = isKey ? QueryPath.KEY : QueryPath.VALUE;
         fields.put(topName, new SqlTableField(topName, topName, QueryDataType.OBJECT));
 
         // Add fields.
@@ -211,6 +211,6 @@ public abstract class MapSqlSchemaResolver implements SqlSchemaResolver {
     }
 
     private static String resolvePath(String name, boolean isKey) {
-        return isKey ? QueryConstants.KEY_ATTRIBUTE_NAME.value() + "." + name : name;
+        return isKey ? QueryPath.KEY + "." + name : name;
     }
 }

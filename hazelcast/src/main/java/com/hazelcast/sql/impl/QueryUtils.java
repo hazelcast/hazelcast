@@ -24,8 +24,6 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.util.UUID;
 
-import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
-
 /**
  * Common SQL engine utility methods used by both "core" and "sql" modules.
  */
@@ -65,18 +63,6 @@ public final class QueryUtils {
         } else {
             return new HazelcastSqlException(localMemberId, SqlErrorCode.GENERIC, e.getMessage(), e);
         }
-    }
-
-    /**
-     * Extract child path from the complex key-based path. E.g. "__key.field" => "field".
-     *
-     * @param path Original path.
-     * @return Path without the key attribute or {@code null} if not a key.
-     */
-    public static String extractKeyPath(String path) {
-        String prefix = KEY_ATTRIBUTE_NAME.value() + ".";
-
-        return path.startsWith(prefix) ? path.substring(prefix.length()) : null;
     }
 
     public static boolean isExplain(String sql) {
