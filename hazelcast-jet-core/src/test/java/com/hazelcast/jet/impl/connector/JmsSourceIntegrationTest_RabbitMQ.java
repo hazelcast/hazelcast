@@ -41,4 +41,9 @@ public class JmsSourceIntegrationTest_RabbitMQ extends JmsSourceIntegrationTestB
     protected SupplierEx<ConnectionFactory> getConnectionFactory() {
         return FACTORY_SUPPLIER;
     }
+
+    @Override
+    public void stressTest_exactlyOnce_forceful_durableTopic() {
+        // ignore this test for RabbitMQ, it doesn't support JMS 2.0
+    }
 }
