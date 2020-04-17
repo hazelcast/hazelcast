@@ -65,18 +65,18 @@ public abstract class AbstractFilterExec extends AbstractUpstreamAwareExec {
                     currentRows.add(upstreamRow);
 
                     if (++count == BATCH_SIZE) {
-                        return finalize(state.isDone() ? IterationResult.FETCHED_DONE : IterationResult.FETCHED);
+                        return prepareBatch(state.isDone() ? IterationResult.FETCHED_DONE : IterationResult.FETCHED);
                     }
                 }
             }
 
             if (state.isDone()) {
-                return finalize(IterationResult.FETCHED_DONE);
+                return prepareBatch(IterationResult.FETCHED_DONE);
             }
         }
     }
 
-    private IterationResult finalize(IterationResult result) {
+    private IterationResult prepareBatch(IterationResult result) {
         currentBatch = new ListRowBatch(currentRows);
         currentRows = null;
 

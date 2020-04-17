@@ -20,8 +20,6 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
-import java.io.Serializable;
-
 /**
  * Defines expression contract for SQL.
  *
@@ -29,7 +27,7 @@ import java.io.Serializable;
  *
  * @param <T> the return type of this expression.
  */
-public interface Expression<T> extends DataSerializable, Serializable {
+public interface Expression<T> extends DataSerializable {
     /**
      * Evaluates this expression.
      *
