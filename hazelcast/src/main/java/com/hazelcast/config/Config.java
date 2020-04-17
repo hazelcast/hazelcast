@@ -204,22 +204,21 @@ public class Config {
         Config config;
         if (xmlConfigLocator.locateFromSystemProperty()) {
             // 1. Try loading XML config from the configuration provided in system property
-            config = new XmlConfigBuilder(xmlConfigLocator).build();
+            return new XmlConfigBuilder(xmlConfigLocator).build();
         } else if (yamlConfigLocator.locateFromSystemProperty()) {
             // 2. Try loading YAML config from the configuration provided in system property
-            config = new YamlConfigBuilder(yamlConfigLocator).build();
+            return new YamlConfigBuilder(yamlConfigLocator).build();
         } else if (xmlConfigLocator.locateInWorkDirOrOnClasspath()) {
             // 3. Try loading XML config from the working directory or from the classpath
-            config = new XmlConfigBuilder(xmlConfigLocator).build();
+            return new XmlConfigBuilder(xmlConfigLocator).build();
         } else if (yamlConfigLocator.locateInWorkDirOrOnClasspath()) {
             // 4. Try loading YAML config from the working directory or from the classpath
-            config = new YamlConfigBuilder(yamlConfigLocator).build();
+            return new YamlConfigBuilder(yamlConfigLocator).build();
         } else {
             // 5. Loading the default XML configuration file
             xmlConfigLocator.locateDefault();
-            config = new XmlConfigBuilder(xmlConfigLocator).build();
+            return new XmlConfigBuilder(xmlConfigLocator).build();
         }
-        return config;
     }
 
     /**
