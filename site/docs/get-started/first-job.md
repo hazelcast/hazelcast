@@ -5,7 +5,7 @@ description: How to write simple data processing code with Jet.
 
 Let's write some data processing code and have Jet run it for us.
 
-### Start a Java Project
+## Start a Java Project
 
 By now you should have some version of Java (at least 8) installed.
 You can get it from the [AdoptOpenJDK](https://adoptopenjdk.net/) website.
@@ -82,7 +82,7 @@ application {
 
 <!--END_DOCUSAURUS_CODE_TABS-->
 
-### Write Your Data Pipeline
+## Write Your Data Pipeline
 
 Unlike some other paradigms you may have met, in the world of
 distributed stream processing we specify not just the processing steps
@@ -109,7 +109,7 @@ public static void main(String[] args) {
 number. The pipeline we wrote will discard every other event and keep
 those with an even sequence number.
 
-### Start Embedded Jet and Run the Pipeline
+## Start Embedded Jet and Run the Pipeline
 
 To create a single Jet node and submit the job to it, add this code to
 **the bottom** of the `main` method:
