@@ -35,8 +35,7 @@ import java.nio.channels.SocketChannel;
 public interface Networking {
 
     /**
-     * Registers the SocketChannel to the EventLoop group and returns the
-     * created Channel.
+     * Registers the SocketChannel and returns the created Channel.
      *
      * The Channel is not yet started so that modifications can be made to the
      * channel e.g. adding attributes. Once this is done the {@link Channel#start()}
@@ -60,7 +59,7 @@ public interface Networking {
     /**
      * Restarts Networking.
      *
-     * This method can be called when the NioNetworking is started for the first time.
+     * This method can be called when the Networking is started for the first time.
      *
      * But can also be called after {@link #shutdown()} has been completed. This is useful if you
      * temporarily want to disable networking (e.g. dealing with merging). You should not call this

@@ -66,7 +66,7 @@ import com.hazelcast.internal.monitor.impl.LocalOperationStatsImpl;
 import com.hazelcast.internal.monitor.impl.MemberPartitionStateImpl;
 import com.hazelcast.internal.monitor.impl.MemberStateImpl;
 import com.hazelcast.internal.monitor.impl.NodeStateImpl;
-import com.hazelcast.internal.networking.NetworkStats;
+import com.hazelcast.internal.server.NetworkStats;
 import com.hazelcast.internal.server.AggregateServerConnectionManager;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;

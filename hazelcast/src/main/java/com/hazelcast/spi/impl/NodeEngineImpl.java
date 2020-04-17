@@ -70,6 +70,7 @@ import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.splitbrainprotection.impl.SplitBrainProtectionServiceImpl;
+import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 import com.hazelcast.version.MemberVersion;
@@ -117,6 +118,7 @@ public class NodeEngineImpl implements NodeEngine {
     private final WanReplicationService wanReplicationService;
     private final Consumer<Packet> packetDispatcher;
     private final SplitBrainProtectionServiceImpl splitBrainProtectionService;
+    private final SqlServiceImpl sqlService;
     private final Diagnostics diagnostics;
     private final SplitBrainMergePolicyProvider splitBrainMergePolicyProvider;
     private final ConcurrencyDetection concurrencyDetection;
@@ -145,13 +147,16 @@ public class NodeEngineImpl implements NodeEngine {
             }
             this.transactionManagerService = new TransactionManagerServiceImpl(this);
             this.wanReplicationService = node.getNodeExtension().createService(WanReplicationService.class);
+            this.sqlService = new SqlServiceImpl(this);
             this.packetDispatcher = new PacketDispatcher(
-                    logger,
-                    operationService.getOperationExecutor(),
-                    operationService.getInboundResponseHandlerSupplier().get(),
-                    operationService.getInvocationMonitor(),
-                    eventService,
-                    getJetPacketConsumer(node.getNodeExtension()));
+                logger,
+                operationService.getOperationExecutor(),
+                operationService.getInboundResponseHandlerSupplier().get(),
+                operationService.getInvocationMonitor(),
+                eventService,
+                getJetPacketConsumer(node.getNodeExtension()),
+                sqlService
+            );
             this.splitBrainProtectionService = new SplitBrainProtectionServiceImpl(this);
             this.diagnostics = newDiagnostics();
             this.splitBrainMergePolicyProvider = new SplitBrainMergePolicyProvider(this);
@@ -221,6 +226,7 @@ public class NodeEngineImpl implements NodeEngine {
         proxyService.init();
         operationService.start();
         splitBrainProtectionService.start();
+        sqlService.start();
 
         diagnostics.start();
         node.getNodeExtension().registerPlugins(diagnostics);
@@ -322,6 +328,10 @@ public class NodeEngineImpl implements NodeEngine {
     @Override
     public SplitBrainProtectionServiceImpl getSplitBrainProtectionService() {
         return splitBrainProtectionService;
+    }
+
+    public SqlServiceImpl getSqlService() {
+        return sqlService;
     }
 
     @Override
@@ -474,6 +484,7 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     public void reset() {
+        sqlService.reset();
         operationParker.reset();
         operationService.reset();
     }
@@ -481,6 +492,10 @@ public class NodeEngineImpl implements NodeEngine {
     @SuppressWarnings("checkstyle:npathcomplexity")
     public void shutdown(boolean terminate) {
         logger.finest("Shutting down services...");
+        if (sqlService != null) {
+            sqlService.shutdown();
+        }
+
         if (operationParker != null) {
             operationParker.shutdown();
         }

@@ -51,7 +51,7 @@ public class ClientFailoverConfigTest {
         assertThat(failoverConfig.getClientConfigs(), hasSize(1));
 
         ClientConfig clientConfig2 = new ClientConfig()
-            .setConnectionStrategyConfig(new ClientConnectionStrategyConfig().setReconnectMode(OFF));
+                .setConnectionStrategyConfig(new ClientConnectionStrategyConfig().setReconnectMode(OFF));
 
         expectedException.expect(InvalidConfigurationException.class);
         expectedException.expectMessage("Reconnect mode for ClientFailoverConfig must not be OFF");
@@ -62,7 +62,7 @@ public class ClientFailoverConfigTest {
     public void testSetClientConfigs_WithOffReconnectMode_ShouldThrowInvalidConfigException() {
         ClientConfig clientConfig1 = new ClientConfig();
         ClientConfig clientConfig2 = new ClientConfig()
-            .setConnectionStrategyConfig(new ClientConnectionStrategyConfig().setReconnectMode(OFF));
+                .setConnectionStrategyConfig(new ClientConnectionStrategyConfig().setReconnectMode(OFF));
 
         expectedException.expect(InvalidConfigurationException.class);
         expectedException.expectMessage("Reconnect mode for ClientFailoverConfig must not be OFF");

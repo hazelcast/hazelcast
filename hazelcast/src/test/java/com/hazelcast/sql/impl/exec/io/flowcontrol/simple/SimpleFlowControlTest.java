@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.exec.io.flowcontrol.simple;
 
-import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.FaultyQueryOperationHandler;
 import com.hazelcast.sql.impl.LoggingQueryOperationHandler;
@@ -79,7 +79,7 @@ public class SimpleFlowControlTest {
         int edgeId = 1;
         LoggingQueryOperationHandler operationHandler = new LoggingQueryOperationHandler();
 
-        flowControl.setup(queryId, edgeId, operationHandler);
+        flowControl.setup(queryId, edgeId, UUID.randomUUID(), operationHandler);
 
         // Test above threshold.
         UUID memberId1 = UUID.randomUUID();
@@ -140,7 +140,7 @@ public class SimpleFlowControlTest {
     @Test
     public void testCannotSend() {
         SimpleFlowControl flowControl = new SimpleFlowControl(1_000L, 0.5d);
-        flowControl.setup(QueryId.create(UUID.randomUUID()), 1, FaultyQueryOperationHandler.INSTANCE);
+        flowControl.setup(QueryId.create(UUID.randomUUID()), 1, UUID.randomUUID(), FaultyQueryOperationHandler.INSTANCE);
 
         UUID memberId = UUID.randomUUID();
 
@@ -149,7 +149,7 @@ public class SimpleFlowControlTest {
 
         try {
             flowControl.onFragmentExecutionCompleted();
-        } catch (HazelcastSqlException e) {
+        } catch (QueryException e) {
             assertEquals(SqlErrorCode.MEMBER_CONNECTION, e.getCode());
         }
     }

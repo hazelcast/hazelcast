@@ -21,6 +21,7 @@ import com.hazelcast.sql.impl.exec.io.flowcontrol.FlowControl;
 import com.hazelcast.sql.impl.operation.QueryOperationHandler;
 
 import java.util.ArrayDeque;
+import java.util.UUID;
 
 /**
  * Normal inbox which merges all incoming batches into a single stream.
@@ -30,14 +31,15 @@ public class Inbox extends AbstractInbox {
     private final ArrayDeque<InboundBatch> batches = new ArrayDeque<>();
 
     public Inbox(
+        QueryOperationHandler operationHandler,
         QueryId queryId,
         int edgeId,
         int rowWidth,
-        QueryOperationHandler operationHandler,
+        UUID localMemberId,
         int remainingStreams,
         FlowControl flowControl
     ) {
-        super(queryId, edgeId, rowWidth, operationHandler, remainingStreams, flowControl);
+        super(operationHandler, queryId, edgeId, rowWidth, localMemberId, remainingStreams, flowControl);
     }
 
     @Override

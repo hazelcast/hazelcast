@@ -19,7 +19,7 @@ package com.hazelcast.internal.server.tcp;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.ChannelOptions;
-import com.hazelcast.internal.server.IOService;
+import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import static com.hazelcast.internal.networking.ChannelOption.DIRECT_BUF;
@@ -28,7 +28,7 @@ import static com.hazelcast.internal.networking.ChannelOption.SO_LINGER;
 import static com.hazelcast.internal.networking.ChannelOption.SO_RCVBUF;
 import static com.hazelcast.internal.networking.ChannelOption.SO_SNDBUF;
 import static com.hazelcast.internal.networking.ChannelOption.TCP_NODELAY;
-import static com.hazelcast.internal.server.IOService.KILO_BYTE;
+import static com.hazelcast.internal.server.ServerContext.KILO_BYTE;
 import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_BUFFER_DIRECT;
 import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_KEEP_ALIVE;
 import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_LINGER_SECONDS;
@@ -44,12 +44,12 @@ import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_SEND_BUFFER_SI
 public class UnifiedChannelInitializer
         implements ChannelInitializer {
 
-    private final IOService ioService;
+    private final ServerContext serverContext;
     private final HazelcastProperties props;
 
-    public UnifiedChannelInitializer(IOService ioService) {
-        this.props = ioService.properties();
-        this.ioService = ioService;
+    public UnifiedChannelInitializer(ServerContext serverContext) {
+        this.props = serverContext.properties();
+        this.serverContext = serverContext;
     }
 
     @Override
@@ -62,8 +62,8 @@ public class UnifiedChannelInitializer
                 .setOption(SO_RCVBUF, props.getInteger(SOCKET_RECEIVE_BUFFER_SIZE) * KILO_BYTE)
                 .setOption(SO_LINGER, props.getSeconds(SOCKET_LINGER_SECONDS));
 
-        UnifiedProtocolEncoder encoder = new UnifiedProtocolEncoder(ioService);
-        UnifiedProtocolDecoder decoder = new UnifiedProtocolDecoder(ioService, encoder);
+        UnifiedProtocolEncoder encoder = new UnifiedProtocolEncoder(serverContext);
+        UnifiedProtocolDecoder decoder = new UnifiedProtocolDecoder(serverContext, encoder);
 
         channel.outboundPipeline().addLast(encoder);
         channel.inboundPipeline().addLast(decoder);

@@ -28,6 +28,7 @@ public final class LoggingFlowControl implements FlowControl {
 
     private final QueryId queryId;
     private final int edgeId;
+    private final UUID localMemberId;
     private final QueryOperationHandler operationHandler;
     private boolean setupInvoked;
     private boolean fragmentCallbackInvoked;
@@ -35,16 +36,18 @@ public final class LoggingFlowControl implements FlowControl {
     private BatchAddDescriptor addDescriptor;
     private BatchRemoveDescriptor removeDescriptor;
 
-    public LoggingFlowControl(QueryId queryId, int edgeId, QueryOperationHandler operationHandler) {
+    public LoggingFlowControl(QueryId queryId, int edgeId, UUID localMemberId, QueryOperationHandler operationHandler) {
         this.queryId = queryId;
         this.edgeId = edgeId;
+        this.localMemberId = localMemberId;
         this.operationHandler = operationHandler;
     }
 
     @Override
-    public void setup(QueryId queryId, int edgeId, QueryOperationHandler operationHandler) {
+    public void setup(QueryId queryId, int edgeId, UUID localMemberId, QueryOperationHandler operationHandler) {
         assertEquals(this.queryId, queryId);
         assertEquals(this.edgeId, edgeId);
+        assertEquals(this.localMemberId, localMemberId);
         assertSame(this.operationHandler, operationHandler);
 
         setupInvoked = true;

@@ -24,7 +24,7 @@ import com.hazelcast.internal.ascii.rest.HttpCommand;
 import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.nio.ConnectionType;
-import com.hazelcast.internal.server.IOService;
+import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.logging.ILogger;
@@ -60,13 +60,13 @@ public abstract class TextDecoder extends InboundHandler<ByteBuffer, Void> {
 
     public TextDecoder(ServerConnection connection, TextEncoder encoder, TextProtocolFilter textProtocolFilter,
                        TextParsers textParsers, boolean rootDecoder) {
-        IOService ioService = connection.getConnectionManager().getServer().getIoService();
-        this.textCommandService = ioService.getTextCommandService();
+        ServerContext serverContext = connection.getConnectionManager().getServer().getContext();
+        this.textCommandService = serverContext.getTextCommandService();
         this.encoder = encoder;
         this.connection = connection;
         this.textProtocolFilter = textProtocolFilter;
         this.textParsers = textParsers;
-        this.logger = ioService.getLoggingService().getLogger(getClass());
+        this.logger = serverContext.getLoggingService().getLogger(getClass());
         this.rootDecoder = rootDecoder;
     }
 

@@ -24,10 +24,10 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeContext;
 import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.instance.impl.NodeExtensionFactory;
-import com.hazelcast.internal.networking.ServerSocketRegistry;
+import com.hazelcast.internal.server.tcp.ServerSocketRegistry;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.server.Server;
-import com.hazelcast.internal.server.tcp.NodeIOService;
+import com.hazelcast.internal.server.tcp.TcpServerContext;
 import com.hazelcast.internal.server.FirewallingServer;
 import com.hazelcast.test.TestEnvironment;
 import com.hazelcast.test.compatibility.SamplingNodeExtension;
@@ -79,8 +79,8 @@ public class MockNodeContext implements NodeContext {
 
     @Override
     public Server createServer(Node node, ServerSocketRegistry serverSocketRegistry) {
-        NodeIOService ioService = new NodeIOService(node, node.nodeEngine);
-        MockServer mockNetworkingService = new MockServer(ioService, node, registry);
+        TcpServerContext serverContext = new TcpServerContext(node, node.nodeEngine);
+        MockServer mockNetworkingService = new MockServer(serverContext, node, registry);
         return new FirewallingServer(mockNetworkingService, initiallyBlockedAddresses);
     }
 

@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.exec.root;
 
-import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.worker.QueryFragmentContext;
@@ -148,7 +148,7 @@ public class BlockingRootResultConsumerTest extends HazelcastTestSupport {
         // Prepare consumer.
         BlockingRootResultConsumer consumer = new BlockingRootResultConsumer();
         AtomicInteger scheduleInvocationCount = new AtomicInteger();
-        HazelcastSqlException error = HazelcastSqlException.error("Test");
+        QueryException error = QueryException.error("Test");
 
         QueryFragmentScheduleCallback scheduleCallback = () -> {
             // Trigger an error asynchronously.
@@ -220,10 +220,10 @@ public class BlockingRootResultConsumerTest extends HazelcastTestSupport {
             }
         }
 
-        private HazelcastSqlException getError() {
-            assertTrue(error instanceof HazelcastSqlException);
+        private QueryException getError() {
+            assertTrue(error instanceof QueryException);
 
-            return (HazelcastSqlException) error;
+            return (QueryException) error;
         }
 
         private boolean hasError() {

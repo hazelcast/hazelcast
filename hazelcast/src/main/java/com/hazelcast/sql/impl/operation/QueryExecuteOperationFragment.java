@@ -52,6 +52,9 @@ public class QueryExecuteOperationFragment implements IdentifiedDataSerializable
         this.memberIds = memberIds;
     }
 
+    /**
+     * @return Operator tree or {@code null} if the fragment should not be executed on the target node.
+     */
     public PlanNode getNode() {
         return node;
     }

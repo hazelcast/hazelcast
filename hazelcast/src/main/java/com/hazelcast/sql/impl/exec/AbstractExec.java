@@ -49,6 +49,8 @@ public abstract class AbstractExec implements Exec {
 
     @Override
     public final IterationResult advance() {
+        checkCancelled();
+
         if (done) {
             throw new IllegalStateException("Iteration is finished.");
         }
@@ -76,4 +78,8 @@ public abstract class AbstractExec implements Exec {
     protected abstract IterationResult advance0();
 
     protected abstract RowBatch currentBatch0();
+
+    protected void checkCancelled() {
+        ctx.checkCancelled();
+    }
 }

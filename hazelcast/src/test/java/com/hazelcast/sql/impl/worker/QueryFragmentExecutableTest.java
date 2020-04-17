@@ -285,7 +285,14 @@ public class QueryFragmentExecutableTest extends HazelcastTestSupport {
                         QueryAbstractExchangeOperation operation;
 
                         if (ThreadLocalRandom.current().nextBoolean()) {
-                            operation = new QueryBatchExchangeOperation(queryId, edgeId, EmptyRowBatch.INSTANCE, false, counter);
+                            operation = new QueryBatchExchangeOperation(
+                                queryId,
+                                edgeId,
+                                UUID.randomUUID(),
+                                EmptyRowBatch.INSTANCE,
+                                false,
+                                counter
+                            );
                         } else {
                             operation = new QueryFlowControlExchangeOperation(queryId, edgeId, counter);
                         }

@@ -208,9 +208,9 @@ public class DeclarativeConfigFileHelper {
     }
 
     private String createFileWithDependencyImport(
-        String dependent,
-        String pathToDependency,
-        Function<String, String> fileContentWithImportResource) throws Exception {
+            String dependent,
+            String pathToDependency,
+            Function<String, String> fileContentWithImportResource) throws Exception {
         final String xmlContent = fileContentWithImportResource.apply(pathToDependency);
         givenConfigFileInWorkDir(dependent, xmlContent);
         return xmlContent;
@@ -227,7 +227,7 @@ public class DeclarativeConfigFileHelper {
         return ""
                 + HAZELCAST_CLIENT_START_TAG
                 + "  <instance-name>" + instanceName + "</instance-name>"
-                + "  <connection-strategy async-start=\"true\" reconnect-mode=\"OFF\">"
+                + "  <connection-strategy async-start=\"true\" >"
                 + "  </connection-strategy>"
                 + HAZELCAST_CLIENT_END_TAG;
     }
@@ -253,8 +253,7 @@ public class DeclarativeConfigFileHelper {
                 + "hazelcast-client:\n"
                 + "  instance-name: " + instanceName + "\n"
                 + "  connection-strategy:\n"
-                + "    async-start: true\n"
-                + "    reconnect-mode: OFF\n";
+                + "    async-start: true\n";
     }
 
     private String yamlFailoverClientConfig(int tryCount) {

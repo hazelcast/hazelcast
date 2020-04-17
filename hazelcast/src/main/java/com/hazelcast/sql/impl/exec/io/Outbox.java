@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.exec.io;
 
-import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.operation.QueryBatchExchangeOperation;
 import com.hazelcast.sql.impl.operation.QueryOperationChannel;
@@ -53,15 +53,16 @@ public class Outbox extends AbstractMailbox implements OutboundHandler {
     private long remainingMemory;
 
     public Outbox(
-        QueryId queryId,
         QueryOperationHandler operationHandler,
+        QueryId queryId,
         int edgeId,
         int rowWidth,
+        UUID localMemberId,
         UUID targetMemberId,
         int batchSize,
         long remainingMemory
     ) {
-        super(queryId, edgeId, rowWidth);
+        super(queryId, edgeId, rowWidth, localMemberId);
 
         this.operationHandler = operationHandler;
         this.targetMemberId = targetMemberId;
@@ -70,7 +71,7 @@ public class Outbox extends AbstractMailbox implements OutboundHandler {
     }
 
     public void setup() {
-        operationChannel = operationHandler.createChannel(targetMemberId);
+        operationChannel = operationHandler.createChannel(localMemberId, targetMemberId);
     }
 
     public UUID getTargetMemberId() {
@@ -161,12 +162,21 @@ public class Outbox extends AbstractMailbox implements OutboundHandler {
     private void send(boolean last) {
         RowBatch batch = new ListRowBatch(rows != null ? rows : Collections.emptyList());
 
-        QueryBatchExchangeOperation op = new QueryBatchExchangeOperation(queryId, edgeId, batch, last, remainingMemory);
+        assert batch.getRowCount() > 0 || last;
+
+        QueryBatchExchangeOperation op = new QueryBatchExchangeOperation(
+            queryId,
+            edgeId,
+            targetMemberId,
+            batch,
+            last,
+            remainingMemory
+        );
 
         boolean success = operationChannel.submit(op);
 
         if (!success) {
-            throw HazelcastSqlException.memberConnection(targetMemberId);
+            throw QueryException.memberConnection(targetMemberId);
         }
 
         rows = null;

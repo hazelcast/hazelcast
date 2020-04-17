@@ -20,7 +20,8 @@ import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.LocalMemberIdProvider;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.operation.QueryCancelOperation;
@@ -40,21 +41,22 @@ public class QueryOperationWorker implements Runnable {
 
     private static final Object POISON = new Object();
 
+    private final LocalMemberIdProvider localMemberIdProvider;
     private final QueryOperationHandler operationHandler;
     private final SerializationService ss;
     private final Thread thread;
     private final MPSCQueue<Object> queue;
     private final ILogger logger;
 
-    private UUID localMemberId;
-
     public QueryOperationWorker(
+        LocalMemberIdProvider localMemberIdProvider,
         QueryOperationHandler operationHandler,
         SerializationService ss,
         String instanceName,
         int index,
         ILogger logger
     ) {
+        this.localMemberIdProvider = localMemberIdProvider;
         this.operationHandler = operationHandler;
         this.ss = ss;
         this.logger = logger;
@@ -63,10 +65,6 @@ public class QueryOperationWorker implements Runnable {
         queue = new MPSCQueue<>(thread, null);
 
         thread.start();
-    }
-
-    public void init(UUID localMemberId) {
-        this.localMemberId = localMemberId;
     }
 
     public void submit(QueryOperationExecutable task) {
@@ -156,16 +154,19 @@ public class QueryOperationWorker implements Runnable {
 
     private void sendDeserializationError(QueryOperationDeserializationException e) {
         QueryId queryId = e.getQueryId();
-        UUID callerId = e.getCallerId();
 
-        HazelcastSqlException error = HazelcastSqlException.error("Failed to deserialize " + e.getOperationClassName()
-            + " received from " + callerId + ": " + e.getMessage(), e);
+        UUID localMemberId = localMemberIdProvider.getLocalMemberId();
+        UUID targetMemberId = e.getCallerId();
+        UUID initiatorMemberId = queryId.getMemberId();
+
+        QueryException error = QueryException.error("Failed to deserialize " + e.getOperationClassName()
+            + " received from " + targetMemberId + ": " + e.getMessage(), e);
 
         QueryCancelOperation cancelOperation =
             new QueryCancelOperation(queryId, error.getCode(), error.getMessage(), localMemberId);
 
         try {
-            operationHandler.submit(queryId.getMemberId(), cancelOperation);
+            operationHandler.submit(localMemberId, initiatorMemberId, cancelOperation);
         } catch (Exception ignore) {
             // This should never happen, since we do not transmit user objects.
         }

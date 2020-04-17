@@ -38,17 +38,19 @@ import static org.junit.Assert.assertTrue;
 public class ReceiveExecTest extends SqlTestSupport {
     @Test
     public void testReceive() {
+        UUID localMemberId = UUID.randomUUID();
         QueryId queryId = QueryId.create(UUID.randomUUID());
         int edgeId = 1;
         int rowWidth = 100;
         LoggingQueryOperationHandler operationHandler = new LoggingQueryOperationHandler();
-        LoggingFlowControl flowControl = new LoggingFlowControl(queryId, edgeId, operationHandler);
+        LoggingFlowControl flowControl = new LoggingFlowControl(queryId, edgeId, localMemberId, operationHandler);
 
         Inbox inbox = new Inbox(
+            operationHandler,
             queryId,
             edgeId,
             rowWidth,
-            operationHandler,
+            localMemberId,
             2,
             flowControl
         );

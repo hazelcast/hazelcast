@@ -19,12 +19,11 @@ package com.hazelcast.internal.server.tcp;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
-import com.hazelcast.internal.networking.ServerSocketRegistry;
 import com.hazelcast.internal.networking.nio.Select_NioNetworkingFactory;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.internal.server.MockIOService;
+import com.hazelcast.internal.server.MockServerContext;
 import com.hazelcast.internal.server.NetworkingFactory;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.server.TestDataFactory;
@@ -65,9 +64,9 @@ public abstract class TcpServerConnection_AbstractTest extends HazelcastTestSupp
     protected TcpServer networkingServiceB;
     protected TcpServer networkingServiceC;
 
-    protected MockIOService ioServiceA;
-    protected MockIOService ioServiceB;
-    protected MockIOService ioServiceC;
+    protected MockServerContext serverContextA;
+    protected MockServerContext serverContextB;
+    protected MockServerContext serverContextC;
 
     protected MetricsRegistryImpl metricsRegistryA;
     protected MetricsRegistryImpl metricsRegistryB;
@@ -81,18 +80,18 @@ public abstract class TcpServerConnection_AbstractTest extends HazelcastTestSupp
 
         metricsRegistryA = newMetricsRegistry();
         networkingServiceA = newNetworkingService(metricsRegistryA);
-        ioServiceA = (MockIOService) networkingServiceA.getIoService();
-        addressA = ioServiceA.getThisAddress();
+        serverContextA = (MockServerContext) networkingServiceA.getContext();
+        addressA = serverContextA.getThisAddress();
 
         metricsRegistryB = newMetricsRegistry();
         networkingServiceB = newNetworkingService(metricsRegistryB);
-        ioServiceB = (MockIOService) networkingServiceB.getIoService();
-        addressB = ioServiceB.getThisAddress();
+        serverContextB = (MockServerContext) networkingServiceB.getContext();
+        addressB = serverContextB.getThisAddress();
 
         metricsRegistryC = newMetricsRegistry();
         networkingServiceC = newNetworkingService(metricsRegistryC);
-        ioServiceC = (MockIOService) networkingServiceC.getIoService();
-        addressC = ioServiceC.getThisAddress();
+        serverContextC = (MockServerContext) networkingServiceC.getContext();
+        addressC = serverContextC.getThisAddress();
 
         serializationService = new DefaultSerializationServiceBuilder()
                 .addDataSerializableFactory(TestDataFactory.FACTORY_ID, new TestDataFactory())
@@ -121,10 +120,10 @@ public abstract class TcpServerConnection_AbstractTest extends HazelcastTestSupp
     }
 
     protected TcpServer newNetworkingService(MetricsRegistry metricsRegistry) throws Exception {
-        MockIOService ioService = null;
-        while (ioService == null) {
+        MockServerContext serverContext = null;
+        while (serverContext == null) {
             try {
-                ioService = new MockIOService(portNumber++);
+                serverContext = new MockServerContext(portNumber++);
             } catch (IOException e) {
                 if (portNumber >= PORT_NUMBER_UPPER_LIMIT) {
                     throw e;
@@ -132,16 +131,16 @@ public abstract class TcpServerConnection_AbstractTest extends HazelcastTestSupp
             }
         }
 
-        ServerSocketRegistry registry = new ServerSocketRegistry(singletonMap(MEMBER, ioService.serverSocketChannel), true);
+        ServerSocketRegistry registry = new ServerSocketRegistry(singletonMap(MEMBER, serverContext.serverSocketChannel), true);
 
-        final MockIOService finalIoService = ioService;
+        final MockServerContext finalServiceContext = serverContext;
         TcpServer serverNetworkingService = new TcpServer(null,
-                ioService,
+                serverContext,
                 registry,
-                ioService.loggingService,
+                serverContext.loggingService,
                 metricsRegistry,
-                networkingFactory.create(ioService, metricsRegistry),
-                qualifier -> new UnifiedChannelInitializer(finalIoService));
+                networkingFactory.create(serverContext, metricsRegistry),
+                qualifier -> new UnifiedChannelInitializer(finalServiceContext));
         return serverNetworkingService;
     }
 

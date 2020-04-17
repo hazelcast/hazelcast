@@ -49,6 +49,9 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
     /** Operation handler. */
     private final QueryOperationHandler operationHandler;
 
+    /** Local member ID. */
+    private final UUID localMemberId;
+
     /** Operation. */
     private final QueryExecuteOperation operation;
 
@@ -72,11 +75,13 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
 
     public CreateExecPlanNodeVisitor(
         QueryOperationHandler operationHandler,
+        UUID localMemberId,
         QueryExecuteOperation operation,
         FlowControlFactory flowControlFactory,
         int outboxBatchSize
     ) {
         this.operationHandler = operationHandler;
+        this.localMemberId = localMemberId;
         this.operation = operation;
         this.flowControlFactory = flowControlFactory;
         this.outboxBatchSize = outboxBatchSize;
@@ -106,10 +111,11 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
 
         // Create and register inbox.
         Inbox inbox = new Inbox(
+            operationHandler,
             operation.getQueryId(),
             edgeId,
             node.getSchema().getEstimatedRowSize(),
-            operationHandler,
+            localMemberId,
             fragmentMemberCount,
             createFlowControl(edgeId)
         );
@@ -154,10 +160,11 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
 
         for (UUID receiveMemberId : receiveFragmentMemberIds) {
             Outbox outbox = new Outbox(
-                operation.getQueryId(),
                 operationHandler,
+                operation.getQueryId(),
                 edgeId,
                 rowWidth,
+                localMemberId,
                 receiveMemberId,
                 outboxBatchSize,
                 operation.getEdgeInitialMemoryMap().get(edgeId)
@@ -182,6 +189,13 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
 
     public Exec getExec() {
         return exec;
+    }
+
+    /**
+     * For testing only.
+     */
+    public void setExec(Exec exec) {
+        this.exec = exec;
     }
 
     public Map<Integer, InboundHandler> getInboxes() {
@@ -219,6 +233,6 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
 
         assert fragment.getMapping() == QueryExecuteOperationFragmentMapping.DATA_MEMBERS;
 
-        return operation.getPartitionMapping().keySet();
+        return operation.getPartitionMap().keySet();
     }
 }

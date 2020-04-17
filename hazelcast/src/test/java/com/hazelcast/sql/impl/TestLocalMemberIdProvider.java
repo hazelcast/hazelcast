@@ -14,16 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.server.tcp;
+package com.hazelcast.sql.impl;
 
-import com.hazelcast.instance.EndpointQualifier;
-import com.hazelcast.internal.networking.ChannelInitializer;
+import java.util.UUID;
 
-/**
- * Initializes the Channel when the Channel is used for the first time.
- */
-public interface ChannelInitializerProvider {
+public class TestLocalMemberIdProvider implements LocalMemberIdProvider {
 
-    ChannelInitializer provide(EndpointQualifier qualifier);
+    private final UUID localMemberId;
 
+    public TestLocalMemberIdProvider(UUID localMemberId) {
+        this.localMemberId = localMemberId;
+    }
+
+    @Override
+    public UUID getLocalMemberId() {
+        return localMemberId;
+    }
 }

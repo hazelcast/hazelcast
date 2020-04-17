@@ -17,7 +17,7 @@
 package com.hazelcast.internal.server.tcp;
 
 import com.hazelcast.instance.EndpointQualifier;
-import com.hazelcast.internal.networking.NetworkStats;
+import com.hazelcast.internal.server.NetworkStats;
 import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.internal.server.AggregateServerConnectionManager;
 import com.hazelcast.internal.server.ServerConnection;

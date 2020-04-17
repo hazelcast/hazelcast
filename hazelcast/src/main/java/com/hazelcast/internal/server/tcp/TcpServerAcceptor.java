@@ -23,9 +23,8 @@ import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.Channel;
-import com.hazelcast.internal.networking.ServerSocketRegistry;
 import com.hazelcast.internal.networking.nio.SelectorMode;
-import com.hazelcast.internal.server.IOService;
+import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 
@@ -72,7 +71,7 @@ public class TcpServerAcceptor implements DynamicMetricsProvider {
     private final ServerSocketRegistry registry;
     private final TcpServer server;
     private final ILogger logger;
-    private final IOService ioService;
+    private final ServerContext serverContext;
     @Probe(name = TCP_METRIC_ACCEPTOR_EVENT_COUNT)
     private final SwCounter eventCount = newSwCounter();
     @Probe(name = TCP_METRIC_ACCEPTOR_EXCEPTION_COUNT)
@@ -94,11 +93,11 @@ public class TcpServerAcceptor implements DynamicMetricsProvider {
 
     private final Set<SelectionKey> selectionKeys = newSetFromMap(new ConcurrentHashMap<>());
 
-    TcpServerAcceptor(ServerSocketRegistry registry, TcpServer server, IOService ioService) {
+    TcpServerAcceptor(ServerSocketRegistry registry, TcpServer server, ServerContext serverContext) {
         this.registry = registry;
         this.server = server;
-        this.ioService = server.getIoService();
-        this.logger = ioService.getLoggingService().getLogger(getClass());
+        this.serverContext = server.getContext();
+        this.logger = serverContext.getLoggingService().getLogger(getClass());
         this.acceptorThread = new AcceptorIOThread();
     }
 
@@ -146,7 +145,7 @@ public class TcpServerAcceptor implements DynamicMetricsProvider {
     private final class AcceptorIOThread extends Thread {
 
         private AcceptorIOThread() {
-            super(createThreadPoolName(ioService.getHazelcastName(), "IO") + "Acceptor");
+            super(createThreadPoolName(serverContext.getHazelcastName(), "IO") + "Acceptor");
         }
 
         @Override
@@ -294,7 +293,7 @@ public class TcpServerAcceptor implements DynamicMetricsProvider {
                 } catch (Exception ex) {
                     logger.finest("Closing server socket failed", ex);
                 }
-                ioService.onFatalError(e);
+                serverContext.onFatalError(e);
             }
         }
 
@@ -307,8 +306,8 @@ public class TcpServerAcceptor implements DynamicMetricsProvider {
                 logger.fine("Accepting socket connection from " + channel.socket().getRemoteSocketAddress());
             }
 
-            if (ioService.isSocketInterceptorEnabled(qualifier)) {
-                ioService.executeAsync(() -> newConnection0(connectionManager, channel));
+            if (serverContext.isSocketInterceptorEnabled(qualifier)) {
+                serverContext.executeAsync(() -> newConnection0(connectionManager, channel));
             } else {
                 newConnection0(connectionManager, channel);
             }
@@ -316,7 +315,7 @@ public class TcpServerAcceptor implements DynamicMetricsProvider {
 
         private void newConnection0(TcpServerConnectionManager connectionManager, Channel channel) {
             try {
-                ioService.interceptSocket(connectionManager.getEndpointQualifier(), channel.socket(), true);
+                serverContext.interceptSocket(connectionManager.getEndpointQualifier(), channel.socket(), true);
                 connectionManager.newConnection(channel, null);
             } catch (Exception e) {
                 exceptionCount.inc();
