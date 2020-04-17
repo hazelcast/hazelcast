@@ -29,6 +29,7 @@ import java.security.Permission;
 import java.util.Map;
 
 import static com.hazelcast.map.impl.LocalMapStatsUtil.incrementOtherOperationsCount;
+import static com.hazelcast.util.MapUtil.toIntSize;
 
 public class MapSizeMessageTask
         extends AbstractMapAllPartitionsMessageTask<MapSizeCodec.RequestParameters> {
@@ -45,14 +46,14 @@ public class MapSizeMessageTask
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
-        int total = 0;
+        long total = 0;
         MapService mapService = getService(MapService.SERVICE_NAME);
         for (Object result : map.values()) {
             Integer size = (Integer) mapService.getMapServiceContext().toObject(result);
             total += size;
         }
         incrementOtherOperationsCount(mapService, parameters.name);
-        return total;
+        return toIntSize(total);
     }
 
     @Override
