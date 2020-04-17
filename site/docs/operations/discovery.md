@@ -148,21 +148,17 @@ client connections from outside of the AWS network please see
 [Hazelcast Discovery Plugin for GCP](https://github.com/hazelcast/hazelcast-gcp)
 .
 
-<!-- ## Azure Cloud -->
+## Azure Cloud
 
-<!-- Hazelcast Jet supports automatic member discovery in the Microsoft 
-Azure environment with [Hazelcast Discovery Plugin for Microsoft Azure]
-(https://github.com/hazelcast/hazelcast-azure). 
--->
+Hazelcast Jet supports automatic member discovery in the Microsoft
+Azure environment with [Hazelcast Discovery Plugin for Microsoft Azure](https://github.com/hazelcast/hazelcast-azure).
+The plugin is included in the main Hazelcast Jet distribution so no
+extra dependencies needs to be added to use it.
 
-<!-- To use Azure Cloud discovery plugin, [download the plugin]
-(https://github.com/hazelcast/hazelcast-azure/releases/download/
-v1.2.2/hazelcast-azure-1.2.2.jar)
-and add it to the `lib` folder. To use Azure discovery plugin, disable
-other join  mechanisms and enable `azure`.
--->
+To use Azure discovery plugin, disable other join  mechanisms and
+enable `azure`.
 
-<!-- ```yaml
+```yaml
 hazelcast:
   network:
     join:
@@ -170,27 +166,45 @@ hazelcast:
         enabled: false
       azure:
         enabled: true
+        tag: TAG-NAME=HZLCAST001
+        hz-port: 5701-5703
+```
+
+Hazelcast Azure Plugin uses [Azure Instance Metadata Service](https://docs.microsoft.com/en-us/azure/virtual-machines/windows/instance-metadata-service)
+to get access token and other environment details. In order to use this
+service, the plugin requires that [Azure managed identities](https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/overview)
+with the correct `READ` roles are setup. The other necessary
+information such as subscription ID and and resource group name will be
+retrieved from instance metadata service.
+
+### Clients from outside Azure
+
+Client instances might be running outside of an Azure VM which makes
+Azure Instance Metadata service unavailable. Then, client instances
+should be configured with the properties as shown below:
+
+```yaml
+hazelcast-client:
+  network:
+      azure:
+        enabled: true
+        instance-metadata-available: false
         client-id: CLIENT_ID
         tenant-id: TENANT_ID
         client-secret: CLIENT_SECRET
         subscription-id: SUB_ID
         resource-group: RESOURCE-GROUP-NAME
         scale-set: SCALE-SET-NAME
-        tag: TAG-NAME=HZLCAST001
-        hz-port: 5701-5703
-``` -->
+        use-public-ip: true
+```
 
-<!-- You will need to setup [Azure Active Directory Service Principal
-credentials] (https://azure.microsoft.com/en-us/documentation/articles/
-resource-group-create-service-principal-portal/)
+You will need to setup [Azure Active Directory Service Principal credentials](https://azure.microsoft.com/en-us/documentation/articles/resource-group-create-service-principal-portal/)
 for your Azure Subscription for this plugin to work. With the
-credentials, fill in the placeholder values above. -->
+credentials, fill in the placeholder values above.
 
-<!-- For more information on the discovery plugin regarding Zone 
+For more information on the discovery plugin regarding Zone
 Awareness and client connections from outside of the Azure network
-please see [Hazelcast Discovery Plugin for Microsoft Azure]
-(https://github.com/hazelcast/hazelcast-azure).
--->
+please see [Hazelcast Discovery Plugin for Microsoft Azure](https://github.com/hazelcast/hazelcast-azure).
 
 ## Kubernetes
 
