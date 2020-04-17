@@ -934,12 +934,14 @@ public class JobConfig implements IdentifiedDataSerializable {
      * <p>
      * Serializer must have no-arg constructor.
      *
+     * @param clazz           class to register serializer for
+     * @param serializerClass class of the serializer to be registered
      * @return {@code this} instance for fluent API
      * @since 4.1
      */
     @Nonnull
     @EvolvingApi
-    public <T, S extends StreamSerializer<?>> JobConfig registerSerializer(@Nonnull Class<T> clazz,
+    public <T, S extends StreamSerializer<T>> JobConfig registerSerializer(@Nonnull Class<T> clazz,
             @Nonnull Class<S> serializerClass) {
         Preconditions.checkFalse(serializerConfigs.containsKey(clazz.getName()),
                 "Serializer for " + clazz + " already registered");
