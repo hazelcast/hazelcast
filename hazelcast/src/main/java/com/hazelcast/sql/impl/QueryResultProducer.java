@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl;
 
-import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.row.Row;
 
 import java.util.Iterator;
@@ -38,5 +37,5 @@ public interface QueryResultProducer {
      *
      * @param error Error.
      */
-    void onError(HazelcastSqlException error);
+    void onError(QueryException error);
 }

@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.spi;
 
 import com.hazelcast.client.LoadBalancer;
-import com.hazelcast.client.impl.connection.nio.ClientConnection;
+import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.cluster.Member;

@@ -26,6 +26,18 @@ public final class SqlErrorCode {
     /** Query completed successfully. */
     public static final int OK = 0;
 
+    /** Member cannot be reached. */
+    public static final int MEMBER_CONNECTION = 1001;
+
+    /** Member has left the topology. */
+    public static final int MEMBER_LEAVE = 1002;
+
+    /** Query was cancelled due to user request. */
+    public static final int CANCELLED_BY_USER = 1003;
+
+    /** Query was cancelled due to timeout. */
+    public static final int TIMEOUT = 1004;
+
     /** An error with data conversion or transformation. */
     public static final int DATA_EXCEPTION = 2000;
 

@@ -16,20 +16,50 @@
 
 package com.hazelcast.sql.impl.exec;
 
+import com.hazelcast.sql.impl.exec.io.InboundHandler;
+import com.hazelcast.sql.impl.exec.io.Inbox;
+import com.hazelcast.sql.impl.exec.io.OutboundHandler;
+import com.hazelcast.sql.impl.exec.io.Outbox;
+import com.hazelcast.sql.impl.exec.io.ReceiveExec;
+import com.hazelcast.sql.impl.exec.io.SendExec;
+import com.hazelcast.sql.impl.exec.io.flowcontrol.FlowControl;
+import com.hazelcast.sql.impl.exec.io.flowcontrol.FlowControlFactory;
 import com.hazelcast.sql.impl.exec.root.RootExec;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
+import com.hazelcast.sql.impl.operation.QueryExecuteOperationFragment;
+import com.hazelcast.sql.impl.operation.QueryExecuteOperationFragmentMapping;
+import com.hazelcast.sql.impl.operation.QueryOperationHandler;
 import com.hazelcast.sql.impl.plan.node.PlanNode;
 import com.hazelcast.sql.impl.plan.node.PlanNodeVisitor;
 import com.hazelcast.sql.impl.plan.node.RootPlanNode;
+import com.hazelcast.sql.impl.plan.node.io.EdgeAwarePlanNode;
+import com.hazelcast.sql.impl.plan.node.io.ReceivePlanNode;
+import com.hazelcast.sql.impl.plan.node.io.RootSendPlanNode;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
- /**
+/**
  * Visitor which builds an executor for every observed physical node.
  */
 public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
+    /** Operation handler. */
+    private final QueryOperationHandler operationHandler;
+
+    /** Local member ID. */
+    private final UUID localMemberId;
+
     /** Operation. */
     private final QueryExecuteOperation operation;
+
+    /** Factory to create flow control objects. */
+    private final FlowControlFactory flowControlFactory;
+
+    /** Recommended outbox batch size in bytes. */
+    private final int outboxBatchSize;
 
     /** Stack of elements to be merged. */
     private final ArrayList<Exec> stack = new ArrayList<>(1);
@@ -37,10 +67,24 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
     /** Result. */
     private Exec exec;
 
+    /** Inboxes. */
+    private final Map<Integer, InboundHandler> inboxes = new HashMap<>();
+
+    /** Outboxes. */
+    private Map<Integer, Map<UUID, OutboundHandler>> outboxes = new HashMap<>();
+
     public CreateExecPlanNodeVisitor(
-        QueryExecuteOperation operation
+        QueryOperationHandler operationHandler,
+        UUID localMemberId,
+        QueryExecuteOperation operation,
+        FlowControlFactory flowControlFactory,
+        int outboxBatchSize
     ) {
+        this.operationHandler = operationHandler;
+        this.localMemberId = localMemberId;
         this.operation = operation;
+        this.flowControlFactory = flowControlFactory;
+        this.outboxBatchSize = outboxBatchSize;
     }
 
     @Override
@@ -56,6 +100,85 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
     }
 
     @Override
+    public void onReceiveNode(ReceivePlanNode node) {
+        // Navigate to sender exec and calculate total number of sender stripes.
+        int edgeId = node.getEdgeId();
+
+        int sendFragmentPos = operation.getOutboundEdgeMap().get(edgeId);
+        QueryExecuteOperationFragment sendFragment = operation.getFragments().get(sendFragmentPos);
+
+        int fragmentMemberCount = getFragmentMembers(sendFragment).size();
+
+        // Create and register inbox.
+        Inbox inbox = new Inbox(
+            operationHandler,
+            operation.getQueryId(),
+            edgeId,
+            node.getSchema().getEstimatedRowSize(),
+            localMemberId,
+            fragmentMemberCount,
+            createFlowControl(edgeId)
+        );
+
+        inboxes.put(edgeId, inbox);
+
+        // Instantiate executor and put it to stack.
+        ReceiveExec res = new ReceiveExec(node.getId(), inbox);
+
+        push(res);
+    }
+
+    @Override
+    public void onRootSendNode(RootSendPlanNode node) {
+        Outbox[] outboxes = prepareOutboxes(node);
+
+        assert outboxes.length == 1;
+
+        exec = new SendExec(node.getId(), pop(), outboxes[0]);
+    }
+
+    /**
+     * Prepare outboxes for the given sender node.
+     *
+     * @param node Node.
+     * @return Outboxes.
+     */
+    private Outbox[] prepareOutboxes(EdgeAwarePlanNode node) {
+        int edgeId = node.getEdgeId();
+        int rowWidth = node.getSchema().getEstimatedRowSize();
+
+        int receiveFragmentPos = operation.getInboundEdgeMap().get(edgeId);
+        QueryExecuteOperationFragment receiveFragment = operation.getFragments().get(receiveFragmentPos);
+        Collection<UUID> receiveFragmentMemberIds = getFragmentMembers(receiveFragment);
+
+        Outbox[] res = new Outbox[receiveFragmentMemberIds.size()];
+
+        int i = 0;
+
+        Map<UUID, OutboundHandler> edgeOutboxes = new HashMap<>();
+        outboxes.put(edgeId, edgeOutboxes);
+
+        for (UUID receiveMemberId : receiveFragmentMemberIds) {
+            Outbox outbox = new Outbox(
+                operationHandler,
+                operation.getQueryId(),
+                edgeId,
+                rowWidth,
+                localMemberId,
+                receiveMemberId,
+                outboxBatchSize,
+                operation.getEdgeInitialMemoryMap().get(edgeId)
+            );
+
+            edgeOutboxes.put(receiveMemberId, outbox);
+
+            res[i++] = outbox;
+        }
+
+        return res;
+    }
+
+    @Override
     public void onOtherNode(PlanNode node) {
         if (node instanceof CreateExecPlanNodeVisitorCallback) {
             ((CreateExecPlanNodeVisitorCallback) node).onVisit(this);
@@ -68,17 +191,48 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
         return exec;
     }
 
-     /**
-      * Public for testing purposes only.
-      */
+    /**
+     * For testing only.
+     */
+    public void setExec(Exec exec) {
+        this.exec = exec;
+    }
+
+    public Map<Integer, InboundHandler> getInboxes() {
+        return inboxes;
+    }
+
+    public Map<Integer, Map<UUID, OutboundHandler>> getOutboxes() {
+        return outboxes;
+    }
+
+    /**
+     * Public for testing purposes only.
+     */
     public Exec pop() {
         return stack.remove(stack.size() - 1);
     }
 
-     /**
-      * Public for testing purposes only.
-      */
+    /**
+     * Public for testing purposes only.
+     */
     public void push(Exec exec) {
         stack.add(exec);
+    }
+
+    private FlowControl createFlowControl(int edgeId) {
+        long initialMemory = operation.getEdgeInitialMemoryMap().get(edgeId);
+
+        return flowControlFactory.create(initialMemory);
+    }
+
+    private Collection<UUID> getFragmentMembers(QueryExecuteOperationFragment fragment) {
+        if (fragment.getMapping() == QueryExecuteOperationFragmentMapping.EXPLICIT) {
+            return fragment.getMemberIds();
+        }
+
+        assert fragment.getMapping() == QueryExecuteOperationFragmentMapping.DATA_MEMBERS;
+
+        return operation.getPartitionMap().keySet();
     }
 }

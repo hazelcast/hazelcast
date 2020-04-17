@@ -16,6 +16,9 @@
 
 package com.hazelcast.sql.impl.plan.node;
 
+import com.hazelcast.sql.impl.plan.node.io.ReceivePlanNode;
+import com.hazelcast.sql.impl.plan.node.io.RootSendPlanNode;
+
 /**
  * Plan node visitor. Typically used to convert the tree of plan nodes to another tree
  * (e.g. {@link com.hazelcast.sql.impl.exec.Exec}).
@@ -29,6 +32,8 @@ package com.hazelcast.sql.impl.plan.node;
  */
 public interface PlanNodeVisitor {
     void onRootNode(RootPlanNode node);
+    void onReceiveNode(ReceivePlanNode node);
+    void onRootSendNode(RootSendPlanNode node);
 
     /**
      * Callback for a node without special handlers. For testing only.

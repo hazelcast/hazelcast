@@ -18,9 +18,9 @@ package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.internal.nio.server.MockIOService;
-import com.hazelcast.internal.nio.server.NetworkingFactory;
-import com.hazelcast.internal.nio.server.ServerConnectionChannelErrorHandler;
+import com.hazelcast.internal.server.MockServerContext;
+import com.hazelcast.internal.server.NetworkingFactory;
+import com.hazelcast.internal.server.tcp.TcpServerConnectionChannelErrorHandler;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import static com.hazelcast.spi.properties.ClusterProperty.IO_BALANCER_INTERVAL_SECONDS;
@@ -30,17 +30,17 @@ import static com.hazelcast.spi.properties.ClusterProperty.IO_OUTPUT_THREAD_COUN
 public class SelectNow_NioNetworkingFactory implements NetworkingFactory {
 
     @Override
-    public NioNetworking create(final MockIOService ioService, MetricsRegistry metricsRegistry) {
-        LoggingService loggingService = ioService.loggingService;
-        HazelcastProperties properties = ioService.properties();
+    public NioNetworking create(final MockServerContext serverContext, MetricsRegistry metricsRegistry) {
+        LoggingService loggingService = serverContext.loggingService;
+        HazelcastProperties properties = serverContext.properties();
         return new NioNetworking(
                 new NioNetworking.Context()
                         .loggingService(loggingService)
                         .metricsRegistry(metricsRegistry)
-                        .threadNamePrefix(ioService.getHazelcastName())
+                        .threadNamePrefix(serverContext.getHazelcastName())
                         .errorHandler(
-                                new ServerConnectionChannelErrorHandler(
-                                        loggingService.getLogger(ServerConnectionChannelErrorHandler.class)))
+                                new TcpServerConnectionChannelErrorHandler(
+                                        loggingService.getLogger(TcpServerConnectionChannelErrorHandler.class)))
                         .inputThreadCount(properties.getInteger(IO_INPUT_THREAD_COUNT))
                         .outputThreadCount(properties.getInteger(IO_OUTPUT_THREAD_COUNT))
                         .balancerIntervalSeconds(properties.getInteger(IO_BALANCER_INTERVAL_SECONDS))

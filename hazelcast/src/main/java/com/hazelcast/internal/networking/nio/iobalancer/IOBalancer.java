@@ -22,7 +22,7 @@ import com.hazelcast.internal.networking.nio.NioInboundPipeline;
 import com.hazelcast.internal.networking.nio.NioOutboundPipeline;
 import com.hazelcast.internal.networking.nio.NioThread;
 import com.hazelcast.internal.nio.ConnectionListener;
-import com.hazelcast.internal.nio.EndpointManager;
+import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
@@ -58,7 +58,7 @@ import static com.hazelcast.spi.properties.ClusterProperty.IO_THREAD_COUNT;
  * Measuring interval can be customized via {@link ClusterProperty#IO_BALANCER_INTERVAL_SECONDS}
  *
  * It doesn't leverage {@link ConnectionListener} capability
- * provided by {@link EndpointManager} to observe connections
+ * provided by {@link ServerConnectionManager} to observe connections
  * as it has to be notified right after a physical TCP connection is created whilst
  * <code>ConnectionListener</code> is notified only after a successful (Hazelcast)
  * binding process.

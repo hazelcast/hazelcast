@@ -20,8 +20,8 @@ import com.hazelcast.internal.networking.Networking;
 import com.hazelcast.internal.networking.nio.NioNetworking;
 import com.hazelcast.internal.networking.nio.NioThread;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.internal.nio.NetworkingService;
-import com.hazelcast.internal.nio.server.ServerNetworkingService;
+import com.hazelcast.internal.server.Server;
+import com.hazelcast.internal.server.tcp.TcpServer;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
@@ -69,11 +69,11 @@ public class NetworkingImbalancePlugin extends DiagnosticsPlugin {
     }
 
     private static Networking getThreadingModel(NodeEngineImpl nodeEngine) {
-        NetworkingService networkingService = nodeEngine.getNode().getNetworkingService();
-        if (!(networkingService instanceof ServerNetworkingService)) {
+        Server server = nodeEngine.getNode().getServer();
+        if (!(server instanceof TcpServer)) {
             return null;
         }
-        return ((ServerNetworkingService) networkingService).getNetworking();
+        return ((TcpServer) server).getNetworking();
     }
 
     @Override

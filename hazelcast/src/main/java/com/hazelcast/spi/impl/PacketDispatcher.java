@@ -16,9 +16,9 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.nio.EndpointManager;
+import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.nio.Packet;
+import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.operationservice.OperationService;
@@ -41,19 +41,22 @@ public final class PacketDispatcher implements Consumer<Packet> {
     private final Consumer<Packet> jetPacketConsumer;
     private final Consumer<Packet> responseHandler;
     private final Consumer<Packet> invocationMonitor;
+    private final Consumer<Packet> sqlPacketConsumer;
 
     public PacketDispatcher(ILogger logger,
                             Consumer<Packet> operationExecutor,
                             Consumer<Packet> responseHandler,
                             Consumer<Packet> invocationMonitor,
                             Consumer<Packet> eventService,
-                            Consumer<Packet> jetPacketConsumer) {
+                            Consumer<Packet> jetPacketConsumer,
+                            Consumer<Packet> sqlPacketConsumer) {
         this.logger = logger;
         this.responseHandler = responseHandler;
         this.eventService = eventService;
         this.invocationMonitor = invocationMonitor;
         this.operationExecutor = operationExecutor;
         this.jetPacketConsumer = jetPacketConsumer;
+        this.sqlPacketConsumer = sqlPacketConsumer;
     }
 
     @Override
@@ -73,12 +76,15 @@ public final class PacketDispatcher implements Consumer<Packet> {
                     eventService.accept(packet);
                     break;
                 case MEMBER_HANDSHAKE:
-                    Connection connection = packet.getConn();
-                    EndpointManager endpointManager = connection.getEndpointManager();
-                    endpointManager.accept(packet);
+                    ServerConnection connection = packet.getConn();
+                    ServerConnectionManager connectionManager = connection.getConnectionManager();
+                    connectionManager.accept(packet);
                     break;
                 case JET:
                     jetPacketConsumer.accept(packet);
+                    break;
+                case SQL:
+                    sqlPacketConsumer.accept(packet);
                     break;
                 default:
                     logger.severe("Header flags [" + Integer.toBinaryString(packet.getFlags())

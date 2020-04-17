@@ -18,17 +18,34 @@ package com.hazelcast.internal.nio;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.networking.OutboundFrame;
-import com.hazelcast.internal.nio.server.ServerConnection;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.security.cert.Certificate;
+import java.util.concurrent.ConcurrentMap;
 
 /**
- * Represents a 'connection' between two machines. The most important implementation is the
- * {@link ServerConnection}.
+ * Represents a 'connection' between two machines.
+ *
+ * There are 2 important sub-interfaces:
+ * <ol>
+ *     <li>{@link com.hazelcast.internal.server.ServerConnection}</li>
+ *     <li>{@link com.hazelcast.client.impl.connection.ClientConnection}</li>
+ * </ol>
+ *
+ * For client or server specific behavior it is best to add the logic to these interfaces instead of in
+ * this common interface.
+ *
+ * If you need to attach data to a connection, please consider using the attributeMap instead of adding
+ * a lot of extra methods.
  */
 public interface Connection {
+
+    /**
+     * Returns an attributeMap of this connection.
+     *
+     * @return the attribute map.
+     */
+    ConcurrentMap attributeMap();
 
     /**
      * Checks if the Connection is alive.
@@ -52,38 +69,6 @@ public interface Connection {
     long lastWriteTimeMillis();
 
     /**
-     * Returns the connection type
-     * See  {@link ConnectionType} for in-house candidates. Note that a type could be provided by a custom client
-     * and it can be a string outside of {@link ConnectionType}
-     *
-     * @return the the connection type. It could be that <code>null</code> is returned.
-     */
-    String getConnectionType();
-
-    EndpointManager getEndpointManager();
-
-    /**
-     * Sets the type of the connection
-     *
-     * @param connectionType to be set
-     */
-    void setConnectionType(String connectionType);
-
-    /**
-     * Checks if it is a client connection.
-     *
-     * @return true if client connection, false otherwise.
-     */
-    boolean isClient();
-
-    /**
-     * Returns remote address of this Connection.
-     *
-     * @return the remote address. The returned value could be <code>null</code> if the connection is not alive.
-     */
-    InetAddress getInetAddress();
-
-    /**
      * Returns the address of the endpoint this Connection is connected to, or
      * <code>null</code> if it is unconnected.
      *
@@ -95,23 +80,24 @@ public interface Connection {
 
     /**
      * Gets the {@link Address} of the other side of this Connection.
-     * <p>
-     * todo: rename to get remoteAddress?
      *
      * @return the Address.
      */
-    Address getEndPoint();
+    Address getRemoteAddress();
 
     /**
-     * The remote port.
-     * <p>
-     * todo: rename to getRemotePort?  And do we need it because we already have getEndPoint which returns an address
-     * which includes port. It is only used in testing
+     * Sets the {@link Address} of the other side of this Connection.
      *
-     * @return the remote port number to which this Connection is connected, or
-     * 0 if the socket is not connected yet.
+     * @param remoteAddress the remote address.
      */
-    int getPort();
+    void setRemoteAddress(Address remoteAddress);
+
+    /**
+     * Returns remote address of this Connection.
+     *
+     * @return the remote address. The returned value could be <code>null</code> if the connection is not alive.
+     */
+    InetAddress getInetAddress();
 
     /**
      * Writes a outbound frame so it can be received by the other side of the connection. No guarantees are
@@ -181,11 +167,4 @@ public interface Connection {
      * @see #close(String, Throwable)
      */
     Throwable getCloseCause();
-
-    /**
-     * Returns certificate chain of the remote party.
-     *
-     * @return certificate chain (may be empty) or {@code null}
-     */
-    Certificate[] getRemoteCertificates();
 }

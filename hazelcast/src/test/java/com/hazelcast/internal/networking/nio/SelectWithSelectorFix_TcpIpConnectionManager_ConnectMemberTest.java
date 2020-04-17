@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.networking.nio;
 
-import com.hazelcast.internal.nio.server.ServerEndpointManager_AbstractConnectMemberTest;
+import com.hazelcast.internal.server.tcp.TcpServerConnectionManager_AbstractConnectMemberTest;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Before;
@@ -26,7 +26,7 @@ import org.junit.runner.RunWith;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
 public class SelectWithSelectorFix_TcpIpConnectionManager_ConnectMemberTest
-        extends ServerEndpointManager_AbstractConnectMemberTest {
+        extends TcpServerConnectionManager_AbstractConnectMemberTest {
 
     @Before
     public void setup() throws Exception {

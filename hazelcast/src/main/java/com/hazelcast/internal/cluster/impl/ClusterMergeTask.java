@@ -108,7 +108,7 @@ class ClusterMergeTask implements Runnable {
         // - all socket connections will be closed
         // - connection listening thread will stop
         // - no new connection will be established
-        node.networkingService.stop();
+        node.server.stop();
 
         // clear waiting operations in queue and notify invocations to retry
         node.nodeEngine.reset();
@@ -148,7 +148,7 @@ class ClusterMergeTask implements Runnable {
 
     private void rejoin() {
         // start connection-manager to setup and accept new connections
-        node.networkingService.start();
+        node.server.start();
         // re-join to the target cluster
         node.join();
     }

@@ -18,8 +18,8 @@ package com.hazelcast.client.impl.statistics;
 
 import com.hazelcast.client.config.ClientMetricsConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.connection.nio.ClientConnection;
-import com.hazelcast.client.impl.connection.nio.ClientConnectionManagerImpl;
+import com.hazelcast.client.impl.connection.tcp.TcpClientConnection;
+import com.hazelcast.client.impl.connection.tcp.TcpClientConnectionManager;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientStatisticsCodec;
 import com.hazelcast.client.impl.spi.ClientContext;
@@ -120,8 +120,8 @@ public class ClientStatisticsService {
     /**
      * @return the cluster listening connection to the server
      */
-    private ClientConnection getConnection() {
-        return (ClientConnection) client.getConnectionManager().getRandomConnection();
+    private TcpClientConnection getConnection() {
+        return (TcpClientConnection) client.getConnectionManager().getRandomConnection();
     }
 
     /**
@@ -137,7 +137,7 @@ public class ClientStatisticsService {
             metricsRegistry.collect(compositeMetricsCollector);
             publisherMetricsCollector.publishCollectedMetrics();
 
-            ClientConnection connection = getConnection();
+            TcpClientConnection connection = getConnection();
             if (connection == null) {
                 logger.finest("Cannot send client statistics to the server. No connection found.");
                 return;
@@ -323,7 +323,7 @@ public class ClientStatisticsService {
         return result;
     }
 
-    private void sendStats(long collectionTimestamp, String newStats, byte[] metricsBlob, ClientConnection ownerConnection) {
+    private void sendStats(long collectionTimestamp, String newStats, byte[] metricsBlob, TcpClientConnection ownerConnection) {
         ClientMessage request = ClientStatisticsCodec.encodeRequest(collectionTimestamp, newStats, metricsBlob);
         try {
             new ClientInvocation(client, request, null, ownerConnection).invoke();
@@ -355,7 +355,7 @@ public class ClientStatisticsService {
                 metricsRegistry.newLongGauge("executionService.userExecutorQueueSize"),
         };
 
-        void fillMetrics(long collectionTimestamp, final StringBuilder stats, final ClientConnection mainConnection) {
+        void fillMetrics(long collectionTimestamp, final StringBuilder stats, final TcpClientConnection mainConnection) {
             stats.append("lastStatisticsCollectionTime").append(KEY_VALUE_SEPARATOR).append(collectionTimestamp);
             addStat(stats, "enterprise", enterprise);
             addStat(stats, "clientType", ConnectionType.JAVA_CLIENT);
@@ -367,7 +367,7 @@ public class ClientStatisticsService {
 
             addStat(stats, "clientName", client.getName());
 
-            ClientConnectionManagerImpl connectionManager = (ClientConnectionManagerImpl) client.getConnectionManager();
+            TcpClientConnectionManager connectionManager = (TcpClientConnectionManager) client.getConnectionManager();
             Credentials credentials = connectionManager.getCurrentCredentials();
             if (credentials != null) {
                 addStat(stats, "credentials.principal", credentials.getName());

@@ -23,8 +23,8 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.internal.ascii.HTTPCommunicator;
 import com.hazelcast.internal.networking.nio.NioNetworking;
-import com.hazelcast.internal.nio.NetworkingService;
 import com.hazelcast.internal.nio.Protocols;
+import com.hazelcast.internal.server.tcp.TcpServer;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -124,7 +124,7 @@ public class IOBalancerMemoryLeakTest extends HazelcastTestSupport {
     }
 
     private static IOBalancer getIoBalancer(HazelcastInstance instance) {
-        NetworkingService ns = getNode(instance).getNetworkingService();
+        TcpServer ns = (TcpServer) getNode(instance).getServer();
         NioNetworking threadingModel = (NioNetworking) ns.getNetworking();
         return threadingModel.getIOBalancer();
     }

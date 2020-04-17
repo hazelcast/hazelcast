@@ -35,19 +35,32 @@ import java.util.UUID;
 public class QueryExecuteOperationFragment implements IdentifiedDataSerializable {
 
     private PlanNode node;
+    private QueryExecuteOperationFragmentMapping mapping;
     private Collection<UUID> memberIds;
 
     public QueryExecuteOperationFragment() {
         // No-op.
     }
 
-    public QueryExecuteOperationFragment(PlanNode node, Collection<UUID> memberIds) {
+    public QueryExecuteOperationFragment(
+        PlanNode node,
+        QueryExecuteOperationFragmentMapping mapping,
+        Collection<UUID> memberIds
+    ) {
         this.node = node;
+        this.mapping = mapping;
         this.memberIds = memberIds;
     }
 
+    /**
+     * @return Operator tree or {@code null} if the fragment should not be executed on the target node.
+     */
     public PlanNode getNode() {
         return node;
+    }
+
+    public QueryExecuteOperationFragmentMapping getMapping() {
+        return mapping;
     }
 
     public Collection<UUID> getMemberIds() {
@@ -67,17 +80,23 @@ public class QueryExecuteOperationFragment implements IdentifiedDataSerializable
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(node);
+        out.writeInt(mapping.getId());
 
-        out.writeInt(memberIds.size());
+        if (memberIds != null) {
+            out.writeInt(memberIds.size());
 
-        for (UUID mappedMemberId : memberIds) {
-            UUIDSerializationUtil.writeUUID(out, mappedMemberId);
+            for (UUID mappedMemberId : memberIds) {
+                UUIDSerializationUtil.writeUUID(out, mappedMemberId);
+            }
+        } else {
+            out.writeInt(0);
         }
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         node = in.readObject();
+        mapping = QueryExecuteOperationFragmentMapping.getById(in.readInt());
 
         int mappedMemberIdsSize = in.readInt();
 

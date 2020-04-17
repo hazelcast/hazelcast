@@ -19,7 +19,7 @@ package com.hazelcast.internal.nio;
 /**
  * Provides connection listen capabilities.
  */
-public interface ConnectionListenable {
+public interface ConnectionListenable<C extends Connection> {
 
     /**
      * Registers a ConnectionListener.
@@ -29,5 +29,5 @@ public interface ConnectionListenable {
      * @param listener the ConnectionListener to add.
      * @throws NullPointerException if listener is null.
      */
-    void addConnectionListener(ConnectionListener listener);
+    void addConnectionListener(ConnectionListener<C> listener);
 }

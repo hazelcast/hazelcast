@@ -161,8 +161,8 @@
               files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]ClientEngineImpl"/>
     <suppress checks="CyclomaticComplexity" files="com[\\/]hazelcast[\\/]client[\\/]config[\\/]YamlClientDomConfigProcessor"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]MemberImpl"/>
-    <suppress checks="ClassFanOutComplexity|ClassDataAbstractionCoupling"
-              files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]connection[\\/]nio[\\/]ClientConnectionManagerImpl"/>
+    <suppress checks="ClassFanOutComplexity|ClassDataAbstractionCoupling|MethodCount"
+              files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]connection[\\/]tcp[\\/]TcpClientConnectionManager"/>
     <suppress checks="ClassFanOutComplexity|ClassDataAbstractionCoupling|MethodCount"
               files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]spi[\\/]impl[\\/]ClientClusterViewService"/>
     <suppress checks="MagicNumber"
@@ -250,7 +250,7 @@
               files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]AbstractSerializationService"/>
     <suppress checks="ClassFanOutComplexity|ClassDataAbstractionCoupling|MethodCount|ParameterNumber"
               files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]SerializationServiceV1"/>
-    <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]nio[\\/]tcp[\\/]TcpIpConnectionManager"/>
+    <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]nio[\\/]tcp[\\/]TcpServerConnectionManager"/>
     <suppress checks="MagicNumber" files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]UnsafeObjectDataInput"/>
     <suppress checks="MagicNumber" files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]UnsafeObjectDataOutput"/>
     <suppress checks="IllegalType"

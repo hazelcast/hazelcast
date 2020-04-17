@@ -21,8 +21,8 @@ import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.exec.root.RootResultConsumer;
 
 import java.io.IOException;
@@ -37,8 +37,8 @@ import java.util.UUID;
  * Operation which is broadcasted to participating members to start query execution.
  */
 public class QueryExecuteOperation extends QueryAbstractIdAwareOperation {
-    /** Mapped ownership of partitions. */
-    private Map<UUID, PartitionIdSet> partitionMapping;
+    /** Mapped ownership of partitions. We also piggyback on this collection to get participant IDs. */
+    private Map<UUID, PartitionIdSet> partitionMap;
 
     /** Fragment descriptors. */
     private List<QueryExecuteOperationFragment> fragments;
@@ -49,11 +49,10 @@ public class QueryExecuteOperation extends QueryAbstractIdAwareOperation {
     /** Inbound edge mapping (from edge ID to owning fragment position). */
     private Map<Integer, Integer> inboundEdgeMap;
 
-    /** Map from edge ID to initial credits assigned to senders. */
-    private Map<Integer, Long> edgeCreditMap;
+    /** Map from edge ID to initial memory assigned to senders. */
+    private Map<Integer, Long> edgeInitialMemoryMap;
 
     private List<Object> arguments;
-    private long timeout;
 
     /** Root fragment result consumer. Applicable only to root fragment being executed on initiator. */
     private transient RootResultConsumer rootConsumer;
@@ -65,36 +64,34 @@ public class QueryExecuteOperation extends QueryAbstractIdAwareOperation {
 
     public QueryExecuteOperation(
         QueryId queryId,
-        Map<UUID, PartitionIdSet> partitionMapping,
+        Map<UUID, PartitionIdSet> partitionMap,
         List<QueryExecuteOperationFragment> fragments,
         Map<Integer, Integer> outboundEdgeMap,
         Map<Integer, Integer> inboundEdgeMap,
-        Map<Integer, Long> edgeCreditMap,
-        List<Object> arguments,
-        long timeout
+        Map<Integer, Long> edgeInitialMemoryMap,
+        List<Object> arguments
     ) {
         super(queryId);
 
-        assert partitionMapping != null && !partitionMapping.isEmpty() : partitionMapping;
+        assert partitionMap != null && !partitionMap.isEmpty() : partitionMap;
         assert fragments != null && fragments.size() > 0 : fragments;
         assert outboundEdgeMap != null;
         assert inboundEdgeMap != null;
         assert inboundEdgeMap.size() == outboundEdgeMap.size();
-        assert edgeCreditMap != null;
-        assert edgeCreditMap.size() == outboundEdgeMap.size();
+        assert edgeInitialMemoryMap != null;
+        assert edgeInitialMemoryMap.size() == outboundEdgeMap.size();
 
         this.queryId = queryId;
-        this.partitionMapping = partitionMapping;
+        this.partitionMap = partitionMap;
         this.fragments = fragments;
         this.outboundEdgeMap = outboundEdgeMap;
         this.inboundEdgeMap = inboundEdgeMap;
-        this.edgeCreditMap = edgeCreditMap;
+        this.edgeInitialMemoryMap = edgeInitialMemoryMap;
         this.arguments = arguments;
-        this.timeout = timeout;
     }
 
-    public Map<UUID, PartitionIdSet> getPartitionMapping() {
-        return partitionMapping;
+    public Map<UUID, PartitionIdSet> getPartitionMap() {
+        return partitionMap;
     }
 
     public List<QueryExecuteOperationFragment> getFragments() {
@@ -109,16 +106,12 @@ public class QueryExecuteOperation extends QueryAbstractIdAwareOperation {
         return inboundEdgeMap;
     }
 
-    public Map<Integer, Long> getEdgeCreditMap() {
-        return edgeCreditMap;
+    public Map<Integer, Long> getEdgeInitialMemoryMap() {
+        return edgeInitialMemoryMap;
     }
 
     public List<Object> getArguments() {
         return arguments;
-    }
-
-    public long getTimeout() {
-        return timeout;
     }
 
     public RootResultConsumer getRootConsumer() {
@@ -144,9 +137,9 @@ public class QueryExecuteOperation extends QueryAbstractIdAwareOperation {
     @Override
     protected void writeInternal1(ObjectDataOutput out) throws IOException {
         // Write partitions.
-        out.writeInt(partitionMapping.size());
+        out.writeInt(partitionMap.size());
 
-        for (Map.Entry<UUID, PartitionIdSet> entry : partitionMapping.entrySet()) {
+        for (Map.Entry<UUID, PartitionIdSet> entry : partitionMap.entrySet()) {
             UUIDSerializationUtil.writeUUID(out, entry.getKey());
             SerializationUtil.writeNullablePartitionIdSet(entry.getValue(), out);
         }
@@ -173,9 +166,9 @@ public class QueryExecuteOperation extends QueryAbstractIdAwareOperation {
             out.writeInt(entry.getValue());
         }
 
-        out.writeInt(edgeCreditMap.size());
+        out.writeInt(edgeInitialMemoryMap.size());
 
-        for (Map.Entry<Integer, Long> entry : edgeCreditMap.entrySet()) {
+        for (Map.Entry<Integer, Long> entry : edgeInitialMemoryMap.entrySet()) {
             out.writeInt(entry.getKey());
             out.writeLong(entry.getValue());
         }
@@ -190,9 +183,6 @@ public class QueryExecuteOperation extends QueryAbstractIdAwareOperation {
                 out.writeObject(argument);
             }
         }
-
-        // Write timeout.
-        out.writeLong(timeout);
     }
 
     @Override
@@ -200,13 +190,13 @@ public class QueryExecuteOperation extends QueryAbstractIdAwareOperation {
         // Read partitions.
         int partitionMappingCnt = in.readInt();
 
-        partitionMapping = new HashMap<>(partitionMappingCnt);
+        partitionMap = new HashMap<>(partitionMappingCnt);
 
         for (int i = 0; i < partitionMappingCnt; i++) {
             UUID key = UUIDSerializationUtil.readUUID(in);
             PartitionIdSet val = SerializationUtil.readNullablePartitionIdSet(in);
 
-            partitionMapping.put(key, val);
+            partitionMap.put(key, val);
         }
 
         // Read fragments.
@@ -239,10 +229,10 @@ public class QueryExecuteOperation extends QueryAbstractIdAwareOperation {
 
         int edgeCreditMapSize = in.readInt();
 
-        edgeCreditMap = new HashMap<>(edgeCreditMapSize);
+        edgeInitialMemoryMap = new HashMap<>(edgeCreditMapSize);
 
         for (int i = 0; i < edgeCreditMapSize; i++) {
-            edgeCreditMap.put(in.readInt(), in.readLong());
+            edgeInitialMemoryMap.put(in.readInt(), in.readLong());
         }
 
         // Read arguments.
@@ -257,8 +247,5 @@ public class QueryExecuteOperation extends QueryAbstractIdAwareOperation {
                 arguments.add(in.readObject());
             }
         }
-
-        // Read timeout.
-        timeout = in.readLong();
     }
 }

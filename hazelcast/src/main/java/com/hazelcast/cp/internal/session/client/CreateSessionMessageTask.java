@@ -44,7 +44,7 @@ public class CreateSessionMessageTask extends AbstractSessionMessageTask<Request
 
     @Override
     RaftOp getRaftOp() {
-        return new CreateSessionOp(connection.getEndPoint(), parameters.endpointName, CLIENT);
+        return new CreateSessionOp(connection.getRemoteAddress(), parameters.endpointName, CLIENT);
     }
 
     @Override

@@ -20,7 +20,7 @@ import com.hazelcast.client.Client;
 import com.hazelcast.client.impl.ClientImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
-import com.hazelcast.client.impl.connection.nio.ClientConnection;
+import com.hazelcast.client.impl.connection.tcp.TcpClientConnection;
 import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.client.impl.spi.ClientPartitionService;
 import com.hazelcast.cluster.Cluster;
@@ -137,7 +137,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     @Override
     public Client getLocalClient() {
         final ClientConnectionManager cm = client.getConnectionManager();
-        final ClientConnection connection = (ClientConnection) cm.getRandomConnection();
+        final TcpClientConnection connection = (TcpClientConnection) cm.getRandomConnection();
         InetSocketAddress inetSocketAddress = connection != null ? connection.getLocalSocketAddress() : null;
         UUID clientUuid = cm.getClientUuid();
         return new ClientImpl(clientUuid, inetSocketAddress, client.getName(), labels);

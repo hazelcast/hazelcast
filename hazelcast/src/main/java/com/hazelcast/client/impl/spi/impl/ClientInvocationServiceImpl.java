@@ -18,8 +18,8 @@ package com.hazelcast.client.impl.spi.impl;
 
 import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
-import com.hazelcast.client.impl.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientLocalBackupListenerCodec;
 import com.hazelcast.client.impl.spi.ClientInvocationService;
@@ -27,7 +27,6 @@ import com.hazelcast.client.impl.spi.ClientListenerService;
 import com.hazelcast.client.impl.spi.ClientPartitionService;
 import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.impl.executionservice.TaskScheduler;
@@ -179,27 +178,27 @@ public class ClientInvocationServiceImpl implements ClientInvocationService {
 
     @Override
     public boolean invoke(ClientInvocation invocation) {
-        Connection connection = connectionManager.getRandomConnection();
+        ClientConnection connection = connectionManager.getRandomConnection();
         if (connection == null) {
             if (invocationLogger.isFinestEnabled()) {
                 invocationLogger.finest("No connection found to invoke");
             }
             return false;
         }
-        return send(invocation, (ClientConnection) connection);
+        return send(invocation, connection);
     }
 
     @Override
     public boolean invokeOnTarget(ClientInvocation invocation, UUID uuid) {
         assert (uuid != null);
-        Connection connection = connectionManager.getConnection(uuid);
+        ClientConnection connection = connectionManager.getConnection(uuid);
         if (connection == null) {
             if (invocationLogger.isFinestEnabled()) {
                 invocationLogger.finest("Client is not connected to target : " + uuid);
             }
             return false;
         }
-        return send(invocation, (ClientConnection) connection);
+        return send(invocation, connection);
     }
 
     @Override
@@ -231,7 +230,7 @@ public class ClientInvocationServiceImpl implements ClientInvocationService {
         ClientMessage clientMessage = invocation.getClientMessage();
         if (!writeToConnection(connection, clientMessage)) {
             if (invocationLogger.isFinestEnabled()) {
-                invocationLogger.finest("Packet not sent to " + connection.getEndPoint() + " " + clientMessage);
+                invocationLogger.finest("Packet not sent to " + connection.getRemoteAddress() + " " + clientMessage);
             }
             return false;
         }

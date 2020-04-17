@@ -16,13 +16,13 @@
 
 package com.hazelcast.sql.impl.exec.root;
 
-import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.impl.exec.AbstractExec;
+import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.SqlTestSupport;
+import com.hazelcast.sql.impl.UpstreamExec;
 import com.hazelcast.sql.impl.exec.IterationResult;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.ListRowBatch;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.row.RowBatch;
 import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -31,13 +31,11 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
-import static com.hazelcast.test.HazelcastTestSupport.assertThrows;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
@@ -45,19 +43,19 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class RootExecTest {
+public class RootExecTest extends SqlTestSupport {
 
     private int rowCounter;
 
     @Test
     public void testAdvance() {
-        TestUpstreamExec upstream = new TestUpstreamExec(1);
+        UpstreamExec upstream = new UpstreamExec(1);
         TestConsumer consumer = new TestConsumer();
 
         RootExec exec = new RootExec(2, upstream, consumer, 8);
 
         // Make sure that the context is propagated.
-        QueryFragmentContext context = new QueryFragmentContext(Collections.emptyList(), null, null);
+        QueryFragmentContext context = emptyFragmentContext();
 
         exec.setup(context);
 
@@ -84,13 +82,11 @@ public class RootExecTest {
         assertEquals(IterationResult.FETCHED_DONE, exec.advance());
         checkRows(consumer.pollRows(), 2, 24);
         assertTrue(consumer.isLast());
-
-        assertEquals(IterationResult.FETCHED_DONE, exec.advance());
     }
 
     @Test
     public void testCurrentBatch() {
-        RootExec exec = new RootExec(2, new TestUpstreamExec(1), new TestConsumer(), 1000);
+        RootExec exec = new RootExec(2, new UpstreamExec(1), new TestConsumer(), 1000);
 
         assertThrows(UnsupportedOperationException.class, exec::currentBatch);
     }
@@ -115,54 +111,6 @@ public class RootExecTest {
         }
     }
 
-    private static final class UpstreamResult {
-        private final IterationResult result;
-        private final RowBatch batch;
-
-        private UpstreamResult(IterationResult result, RowBatch batch) {
-            this.result = result;
-            this.batch = batch;
-        }
-
-        private IterationResult getResult() {
-            return result;
-        }
-
-        private RowBatch getBatch() {
-            return batch;
-        }
-    }
-
-    private static final class TestUpstreamExec extends AbstractExec {
-
-        private final ArrayDeque<UpstreamResult> results = new ArrayDeque<>();
-        private UpstreamResult currentResult;
-
-        private TestUpstreamExec(int id) {
-            super(id);
-        }
-
-        @Override
-        protected IterationResult advance0() {
-            currentResult = results.poll();
-
-            if (currentResult == null) {
-                return IterationResult.WAIT;
-            }
-
-            return currentResult.getResult();
-        }
-
-        @Override
-        protected RowBatch currentBatch0() {
-            return currentResult.getBatch();
-        }
-
-        private void addResult(IterationResult result, RowBatch batch) {
-            results.add(new UpstreamResult(result, batch));
-        }
-    }
-
     private static final class TestConsumer implements RootResultConsumer {
 
         private QueryFragmentContext context;
@@ -176,7 +124,7 @@ public class RootExecTest {
         }
 
         @Override
-        public void onError(HazelcastSqlException error) {
+        public void onError(QueryException error) {
             // No-op.
         }
 

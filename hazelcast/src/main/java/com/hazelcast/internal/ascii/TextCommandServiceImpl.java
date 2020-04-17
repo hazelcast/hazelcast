@@ -38,9 +38,9 @@ import com.hazelcast.internal.ascii.rest.HttpHeadCommandProcessor;
 import com.hazelcast.internal.ascii.rest.HttpPostCommandProcessor;
 import com.hazelcast.internal.ascii.rest.RestValue;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.internal.nio.AggregateEndpointManager;
-import com.hazelcast.internal.nio.EndpointManager;
-import com.hazelcast.internal.nio.NetworkingService;
+import com.hazelcast.internal.server.AggregateServerConnectionManager;
+import com.hazelcast.internal.server.ServerConnectionManager;
+import com.hazelcast.internal.server.Server;
 import com.hazelcast.internal.nio.ascii.TextEncoder;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.Clock;
@@ -174,11 +174,11 @@ public class TextCommandServiceImpl implements TextCommandService {
         stats.setIncrMisses(incrementMisses.get());
         stats.setDecrHits(decrementHits.get());
         stats.setDecrMisses(decrementMisses.get());
-        NetworkingService cm = node.networkingService;
-        EndpointManager mem = cm.getEndpointManager(MEMCACHE);
-        int totalText = (mem != null ? mem.getActiveConnections().size() : 0);
+        Server server = node.server;
+        ServerConnectionManager cm = server.getConnectionManager(MEMCACHE);
+        int totalText = (cm != null ? cm.getActiveConnections().size() : 0);
 
-        AggregateEndpointManager aem = cm.getAggregateEndpointManager();
+        AggregateServerConnectionManager aem = server.getAggregateConnectionManager();
         stats.setCurrConnections(totalText);
         stats.setTotalConnections(aem.getActiveConnections().size());
         return stats;

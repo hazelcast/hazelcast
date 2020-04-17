@@ -19,7 +19,7 @@ package com.hazelcast.client.impl;
 import com.hazelcast.client.Client;
 import com.hazelcast.client.impl.statistics.ClientStatistics;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
-import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.transaction.TransactionContext;
 
@@ -78,7 +78,7 @@ public interface ClientEndpoint extends Client, DynamicMetricsProvider {
 
     Subject getSubject();
 
-    Connection getConnection();
+    ServerConnection getConnection();
 
     void setLoginContext(LoginContext lc);
 

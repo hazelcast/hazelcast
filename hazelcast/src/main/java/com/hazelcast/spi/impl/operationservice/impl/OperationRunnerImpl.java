@@ -31,8 +31,8 @@ import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.StaticMetricsProvider;
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.Packet;
+import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.serialization.Data;
@@ -412,8 +412,8 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
             currentTask = packet;
         }
 
-        Connection connection = packet.getConn();
-        Address caller = connection.getEndPoint();
+        ServerConnection connection = packet.getConn();
+        Address caller = connection.getRemoteAddress();
         try {
             Object object = nodeEngine.toObject(packet);
             Operation op = (Operation) object;
@@ -434,7 +434,7 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
         } catch (Throwable throwable) {
             // If exception happens we need to extract the callId from the bytes directly!
             long callId = extractOperationCallId(packet);
-            outboundResponseHandler.send(connection.getEndpointManager(), caller,
+            outboundResponseHandler.send(connection.getConnectionManager(), caller,
                     new ErrorResponse(throwable, callId, packet.isUrgent()));
             logOperationDeserializationException(throwable, callId);
             throw ExceptionUtil.rethrow(throwable);

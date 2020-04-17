@@ -726,7 +726,7 @@ public class MembershipManager {
     }
 
     private void closeConnection(Address address, String reason) {
-        Connection conn = node.getEndpointManager(MEMBER).getConnection(address);
+        Connection conn = node.getConnectionManager(MEMBER).get(address);
         if (conn != null) {
             conn.close(reason, null);
         }

@@ -20,11 +20,15 @@ import com.hazelcast.client.config.impl.XmlClientFailoverConfigLocator;
 import com.hazelcast.client.config.impl.YamlClientFailoverConfigLocator;
 import com.hazelcast.core.HazelcastException;
 
+import com.hazelcast.config.InvalidConfigurationException;
+
 import java.util.LinkedList;
 import java.util.List;
 
 import static com.hazelcast.internal.config.DeclarativeConfigUtil.SYSPROP_CLIENT_FAILOVER_CONFIG;
 import static com.hazelcast.internal.config.DeclarativeConfigUtil.validateSuffixInSystemProperty;
+
+import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.OFF;
 
 /**
  * Config class to configure multiple client configs to be used by single client instance
@@ -77,6 +81,7 @@ public class ClientFailoverConfig {
     }
 
     public ClientFailoverConfig addClientConfig(ClientConfig clientConfig) {
+        validateClientConfig(clientConfig);
         clientConfigs.add(clientConfig);
         return this;
     }
@@ -91,6 +96,7 @@ public class ClientFailoverConfig {
     }
 
     public ClientFailoverConfig setClientConfigs(List<ClientConfig> clientConfigs) {
+        clientConfigs.forEach(this::validateClientConfig);
         this.clientConfigs = clientConfigs;
         return this;
     }
@@ -105,5 +111,11 @@ public class ClientFailoverConfig {
                 + "tryCount=" + tryCount
                 + ", clientConfigs=" + clientConfigs
                 + '}';
+    }
+
+    private void validateClientConfig(ClientConfig clientConfig) {
+        if (clientConfig.getConnectionStrategyConfig().getReconnectMode() == OFF) {
+            throw new InvalidConfigurationException("Reconnect mode for ClientFailoverConfig must not be OFF");
+        }
     }
 }

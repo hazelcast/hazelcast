@@ -479,7 +479,7 @@ public final class OperationServiceImpl implements StaticMetricsProvider, LiveOp
                 nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR),
                 nodeEngine.getClusterService().getClusterClock(),
                 nodeEngine.getClusterService(),
-                node.networkingService,
+                node.server,
                 node.nodeEngine.getExecutionService(),
                 nodeEngine.getProperties().getMillis(OPERATION_CALL_TIMEOUT_MILLIS),
                 invocationRegistry,
@@ -494,7 +494,7 @@ public final class OperationServiceImpl implements StaticMetricsProvider, LiveOp
                 serializationService,
                 nodeEngine.getThisAddress(),
                 outboundOperationHandler,
-                node.getEndpointManager());
+                node.getConnectionManager());
     }
 
     public Invocation.Context getInvocationContext() {

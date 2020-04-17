@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.nio.ascii;
 
-import com.hazelcast.internal.nio.server.ServerConnection;
+import com.hazelcast.internal.server.ServerConnection;
 
 /**
  * This class is an all allowing implementation of {@link TextProtocolFilter}.

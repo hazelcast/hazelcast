@@ -24,11 +24,11 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeContext;
 import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.instance.impl.NodeExtensionFactory;
-import com.hazelcast.internal.networking.ServerSocketRegistry;
+import com.hazelcast.internal.server.tcp.ServerSocketRegistry;
 import com.hazelcast.cluster.Address;
-import com.hazelcast.internal.nio.NetworkingService;
-import com.hazelcast.internal.nio.NodeIOService;
-import com.hazelcast.internal.nio.server.FirewallingNetworkingService;
+import com.hazelcast.internal.server.Server;
+import com.hazelcast.internal.server.tcp.TcpServerContext;
+import com.hazelcast.internal.server.FirewallingServer;
 import com.hazelcast.test.TestEnvironment;
 import com.hazelcast.test.compatibility.SamplingNodeExtension;
 
@@ -78,10 +78,10 @@ public class MockNodeContext implements NodeContext {
     }
 
     @Override
-    public NetworkingService createNetworkingService(Node node, ServerSocketRegistry serverSocketRegistry) {
-        NodeIOService ioService = new NodeIOService(node, node.nodeEngine);
-        MockNetworkingService mockNetworkingService = new MockNetworkingService(ioService, node, registry);
-        return new FirewallingNetworkingService(mockNetworkingService, initiallyBlockedAddresses);
+    public Server createServer(Node node, ServerSocketRegistry serverSocketRegistry) {
+        TcpServerContext serverContext = new TcpServerContext(node, node.nodeEngine);
+        MockServer mockNetworkingService = new MockServer(serverContext, node, registry);
+        return new FirewallingServer(mockNetworkingService, initiallyBlockedAddresses);
     }
 
     /**

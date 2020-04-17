@@ -24,13 +24,13 @@ import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.networking.Networking;
-import com.hazelcast.internal.networking.ServerSocketRegistry;
+import com.hazelcast.internal.server.tcp.ServerSocketRegistry;
 import com.hazelcast.internal.networking.nio.NioNetworking;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
-import com.hazelcast.internal.nio.NetworkingService;
-import com.hazelcast.internal.nio.NodeIOService;
-import com.hazelcast.internal.nio.server.ServerConnectionChannelErrorHandler;
-import com.hazelcast.internal.nio.server.ServerNetworkingService;
+import com.hazelcast.internal.server.Server;
+import com.hazelcast.internal.server.tcp.TcpServerContext;
+import com.hazelcast.internal.server.tcp.TcpServerConnectionChannelErrorHandler;
+import com.hazelcast.internal.server.tcp.TcpServer;
 import com.hazelcast.internal.util.InstantiationUtils;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.impl.LoggingServiceImpl;
@@ -142,30 +142,26 @@ public class DefaultNodeContext implements NodeContext {
     }
 
     @Override
-    public NetworkingService createNetworkingService(Node node, ServerSocketRegistry registry) {
-        NodeIOService ioService = new NodeIOService(node, node.nodeEngine);
+    public Server createServer(Node node, ServerSocketRegistry registry) {
+        TcpServerContext context = new TcpServerContext(node, node.nodeEngine);
         Networking networking = createNetworking(node);
         Config config = node.getConfig();
 
         MetricsRegistry metricsRegistry = node.nodeEngine.getMetricsRegistry();
-        ServerNetworkingService tcpIpNetworkingService = new ServerNetworkingService(config,
-                ioService,
+        return new TcpServer(config,
+                context,
                 registry,
                 node.loggingService,
                 metricsRegistry,
                 networking,
-                node.getNodeExtension().createChannelInitializerProvider(ioService),
+                node.getNodeExtension().createChannelInitializerFn(context),
                 node.getProperties());
-        return tcpIpNetworkingService;
     }
 
     private Networking createNetworking(Node node) {
-
         LoggingServiceImpl loggingService = node.loggingService;
-
-        ChannelErrorHandler errorHandler
-                = new ServerConnectionChannelErrorHandler(loggingService.getLogger(ServerConnectionChannelErrorHandler.class));
-
+        ILogger logger = loggingService.getLogger(TcpServerConnectionChannelErrorHandler.class);
+        ChannelErrorHandler errorHandler = new TcpServerConnectionChannelErrorHandler(logger);
         HazelcastProperties props = node.getProperties();
 
         return new NioNetworking(

@@ -113,7 +113,7 @@ public class TcpIpJoiner extends AbstractJoiner {
             Connection connection;
             while (shouldRetry() && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
 
-                connection = node.getEndpointManager(MEMBER).getOrConnect(targetAddress);
+                connection = node.getConnectionManager(MEMBER).getOrConnect(targetAddress);
                 if (connection == null) {
                     //noinspection BusyWait
                     Thread.sleep(JOIN_RETRY_WAIT_TIME);
@@ -231,7 +231,7 @@ public class TcpIpJoiner extends AbstractJoiner {
             if (isBlacklisted(address)) {
                 continue;
             }
-            if (node.getEndpointManager(MEMBER).getConnection(address) != null) {
+            if (node.getConnectionManager(MEMBER).get(address) != null) {
                 if (thisHashCode > address.hashCode()) {
                     return false;
                 }

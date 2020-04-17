@@ -42,6 +42,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
+import static com.hazelcast.sql.impl.operation.QueryExecuteOperationFragmentMapping.EXPLICIT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -65,13 +66,12 @@ public class QueryOperationsTest extends SqlTestSupport {
 
         QueryExecuteOperation restored = serializeDeserialize(original);
         assertEquals(original.getPartition(), restored.getPartition());
-        assertEquals(original.getPartitionMapping(), restored.getPartitionMapping());
+        assertEquals(original.getPartitionMap(), restored.getPartitionMap());
         assertEquals(original.getFragments(), restored.getFragments());
         assertEquals(original.getOutboundEdgeMap(), restored.getOutboundEdgeMap());
         assertEquals(original.getInboundEdgeMap(), restored.getInboundEdgeMap());
-        assertEquals(original.getEdgeCreditMap(), restored.getEdgeCreditMap());
+        assertEquals(original.getEdgeInitialMemoryMap(), restored.getEdgeInitialMemoryMap());
         assertEquals(original.getArguments(), restored.getArguments());
-        assertEquals(original.getTimeout(), restored.getTimeout());
 
         assertEquals(original.getPartition(), prepareExecute(queryId).getPartition());
         assertEquals(original.getPartition(), prepareCancel(queryId).getPartition());
@@ -196,9 +196,9 @@ public class QueryOperationsTest extends SqlTestSupport {
         partitionMapping.put(randomUUID(), new PartitionIdSet(10));
 
         List<QueryExecuteOperationFragment> fragments = new ArrayList<>();
-        fragments.add(new QueryExecuteOperationFragment(MockPlanNode.create(1, QueryDataType.INT),
+        fragments.add(new QueryExecuteOperationFragment(MockPlanNode.create(1, QueryDataType.INT), EXPLICIT,
             Arrays.asList(randomUUID(), randomUUID())));
-        fragments.add(new QueryExecuteOperationFragment(MockPlanNode.create(2, QueryDataType.INT),
+        fragments.add(new QueryExecuteOperationFragment(MockPlanNode.create(2, QueryDataType.INT), EXPLICIT,
             Arrays.asList(randomUUID(), randomUUID())));
 
         Map<Integer, Integer> outboundEdgeMap = new HashMap<>();
@@ -214,20 +214,18 @@ public class QueryOperationsTest extends SqlTestSupport {
         edgeCreditMap.put(11, 12L);
 
         List<Object> arguments = Arrays.asList(randomInt(), randomString(), randomUUID());
-        long timeout = randomLong();
 
         QueryExecuteOperation res = withCallerId(new QueryExecuteOperation(
-            queryId, partitionMapping, fragments, outboundEdgeMap, inboundEdgeMap, edgeCreditMap, arguments, timeout)
+            queryId, partitionMapping, fragments, outboundEdgeMap, inboundEdgeMap, edgeCreditMap, arguments)
         );
 
         assertEquals(queryId, res.getQueryId());
-        assertEquals(partitionMapping, res.getPartitionMapping());
+        assertEquals(partitionMapping, res.getPartitionMap());
         assertEquals(fragments, res.getFragments());
         assertEquals(outboundEdgeMap, res.getOutboundEdgeMap());
         assertEquals(inboundEdgeMap, res.getInboundEdgeMap());
-        assertEquals(edgeCreditMap, res.getEdgeCreditMap());
+        assertEquals(edgeCreditMap, res.getEdgeInitialMemoryMap());
         assertEquals(arguments, res.getArguments());
-        assertEquals(timeout, res.getTimeout());
 
         return res;
     }
@@ -248,6 +246,8 @@ public class QueryOperationsTest extends SqlTestSupport {
     }
 
     private QueryBatchExchangeOperation prepareBatch(QueryId queryId, int edgeId) {
+        UUID targetMemberId = UUID.randomUUID();
+
         RowBatch batch = new ListRowBatch(Arrays.asList(
             new HeapRow(new Object[] { new SqlCustomClass(randomInt()), randomUUID()}),
             new HeapRow(new Object[] { new SqlCustomClass(randomInt()), randomUUID()})
@@ -257,12 +257,13 @@ public class QueryOperationsTest extends SqlTestSupport {
         long remainingMemory = randomLong();
 
         QueryBatchExchangeOperation res = withCallerId(
-            new QueryBatchExchangeOperation(queryId, edgeId, batch, last, remainingMemory)
+            new QueryBatchExchangeOperation(queryId, edgeId, targetMemberId, batch, last, remainingMemory)
         );
 
         assertTrue(res.isInbound());
         assertEquals(queryId, res.getQueryId());
         assertEquals(edgeId, res.getEdgeId());
+        assertEquals(targetMemberId, res.getTargetMemberId());
         checkBatches(batch, res.getBatch());
         assertEquals(last, res.isLast());
         assertEquals(remainingMemory, res.getRemainingMemory());

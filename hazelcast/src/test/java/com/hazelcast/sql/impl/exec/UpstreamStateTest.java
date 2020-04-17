@@ -16,13 +16,14 @@
 
 package com.hazelcast.sql.impl.exec;
 
-import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.impl.worker.QueryFragmentContext;
+import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.ListRowBatch;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
+import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -31,7 +32,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -43,7 +43,7 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class UpstreamStateTest {
+public class UpstreamStateTest extends SqlTestSupport {
     @Test
     public void testUpstreamState() {
         List<Row> rows1 = new ArrayList<>();
@@ -56,7 +56,7 @@ public class UpstreamStateTest {
         UpstreamState state = new UpstreamState(exec);
 
         // Test setup.
-        QueryFragmentContext context = new QueryFragmentContext(Collections.emptyList(), null, null);
+        QueryFragmentContext context = emptyFragmentContext();
 
         state.setup(context);
 
@@ -114,7 +114,7 @@ public class UpstreamStateTest {
             state.consumeBatch();
 
             fail("Must fail");
-        } catch (HazelcastSqlException e) {
+        } catch (QueryException e) {
             // No-op.
         }
     }
