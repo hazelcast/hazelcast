@@ -201,7 +201,6 @@ public class Config {
         XmlConfigLocator xmlConfigLocator = new XmlConfigLocator();
         YamlConfigLocator yamlConfigLocator = new YamlConfigLocator();
 
-        Config config;
         if (xmlConfigLocator.locateFromSystemProperty()) {
             // 1. Try loading XML config from the configuration provided in system property
             return new XmlConfigBuilder(xmlConfigLocator).build();

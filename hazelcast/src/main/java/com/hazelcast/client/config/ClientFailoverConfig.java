@@ -62,7 +62,6 @@ public class ClientFailoverConfig {
         XmlClientFailoverConfigLocator xmlConfigLocator = new XmlClientFailoverConfigLocator();
         YamlClientFailoverConfigLocator yamlConfigLocator = new YamlClientFailoverConfigLocator();
 
-        ClientFailoverConfig config;
         if (xmlConfigLocator.locateFromSystemProperty()) {
             // 1. Try loading XML config from the configuration provided in system property
             return new XmlClientFailoverConfigBuilder(xmlConfigLocator).build();
