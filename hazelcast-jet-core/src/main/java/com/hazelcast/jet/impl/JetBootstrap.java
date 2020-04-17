@@ -126,7 +126,12 @@ public final class JetBootstrap {
         } finally {
             JetInstance remembered = JetBootstrap.supplier.remembered();
             if (remembered != null) {
-                remembered.shutdown();
+                try {
+                    remembered.shutdown();
+                } catch (Throwable t) {
+                    System.err.println("Shutdown failed with:");
+                    t.printStackTrace();
+                }
             }
             JetBootstrap.supplier = null;
         }
