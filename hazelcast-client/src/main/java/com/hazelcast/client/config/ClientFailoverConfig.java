@@ -51,18 +51,22 @@ public class ClientFailoverConfig {
         XmlClientFailoverConfigLocator xmlConfigLocator = new XmlClientFailoverConfigLocator();
         YamlClientFailoverConfigLocator yamlConfigLocator = new YamlClientFailoverConfigLocator();
 
-        if (xmlConfigLocator.locateFromSystemProperty()) {
-            // 1. Try loading XML config from the configuration provided in system property
-            return new XmlClientFailoverConfigBuilder(xmlConfigLocator).build();
-        } else if (yamlConfigLocator.locateFromSystemProperty()) {
-            // 2. Try loading YAML config from the configuration provided in system property
+        if (yamlConfigLocator.locateFromSystemProperty()) {
+            // 1. Try loading config if provided in system property and it is an YAML file
             return new YamlClientFailoverConfigBuilder(yamlConfigLocator).build();
+
+        } else if (xmlConfigLocator.locateFromSystemProperty()) {
+            // 2. Try loading config if provided in system property and it is an XML file
+            return new XmlClientFailoverConfigBuilder(xmlConfigLocator).build();
+
         } else if (xmlConfigLocator.locateInWorkDirOrOnClasspath()) {
             // 3. Try loading XML config from the working directory or from the classpath
             return new XmlClientFailoverConfigBuilder(xmlConfigLocator).build();
+
         } else if (yamlConfigLocator.locateInWorkDirOrOnClasspath()) {
             // 4. Try loading YAML config from the working directory or from the classpath
             return new YamlClientFailoverConfigBuilder(yamlConfigLocator).build();
+
         } else {
             throw new HazelcastException("Failed to load ClientFailoverConfig");
         }

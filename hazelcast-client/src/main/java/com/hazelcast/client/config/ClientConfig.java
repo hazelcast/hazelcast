@@ -188,18 +188,22 @@ public class ClientConfig {
         XmlClientConfigLocator xmlConfigLocator = new XmlClientConfigLocator();
         YamlClientConfigLocator yamlConfigLocator = new YamlClientConfigLocator();
 
-        if (xmlConfigLocator.locateFromSystemProperty()) {
-            // 1. Try loading XML config from the configuration provided in system property
-            return new XmlClientConfigBuilder(xmlConfigLocator).build();
-        } else if (yamlConfigLocator.locateFromSystemProperty()) {
-            // 2. Try loading YAML config from the configuration provided in system property
+        if (yamlConfigLocator.locateFromSystemProperty()) {
+            // 1. Try loading config if provided in system property and it is an YAML file
             return new YamlClientConfigBuilder(yamlConfigLocator).build();
+
+        } else if (xmlConfigLocator.locateFromSystemProperty()) {
+            // 2. Try loading config if provided in system property and it is an XML file
+            return new XmlClientConfigBuilder(xmlConfigLocator).build();
+
         } else if (xmlConfigLocator.locateInWorkDirOrOnClasspath()) {
             // 3. Try loading XML config from the working directory or from the classpath
             return new XmlClientConfigBuilder(xmlConfigLocator).build();
+
         } else if (yamlConfigLocator.locateInWorkDirOrOnClasspath()) {
             // 4. Try loading YAML config from the working directory or from the classpath
             return new YamlClientConfigBuilder(yamlConfigLocator).build();
+
         } else {
             // 5. Loading the default XML configuration file
             xmlConfigLocator.locateDefault();
