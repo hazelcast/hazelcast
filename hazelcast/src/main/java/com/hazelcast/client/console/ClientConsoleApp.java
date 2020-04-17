@@ -17,8 +17,6 @@
 package com.hazelcast.client.console;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.collection.IList;
 import com.hazelcast.collection.IQueue;
@@ -1544,18 +1542,11 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     }
 
     /**
-     * Starts the test application. Loads the config from classpath hazelcast.xml,
-     * if it fails to load, will use default config.
+     * Starts the test application. It loads the client configuration using the resolution logic as described in
+     * {@link HazelcastClient#newHazelcastClient()}.
      */
     public static void main(String[] args) {
-        ClientConfig clientConfig;
-
-        try {
-            clientConfig = new XmlClientConfigBuilder().build();
-        } catch (IllegalArgumentException e) {
-            clientConfig = new ClientConfig();
-        }
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+        HazelcastInstance client = HazelcastClient.newHazelcastClient();
         ClientConsoleApp clientConsoleApp = new ClientConsoleApp(client, System.out);
         clientConsoleApp.start(args);
     }
