@@ -62,7 +62,7 @@ public class FailoverConfigTest {
                 "setQueryCacheConfigs", "getInstanceName", "setInstanceName", "getConnectionStrategyConfig",
                 "setConnectionStrategyConfig", "getUserCodeDeploymentConfig", "setUserCodeDeploymentConfig",
                 "getOrCreateQueryCacheConfig", "getOrNullQueryCacheConfig", "addLabel", "setLabels",
-                "setUserContext", "getUserContext", "equals", "hashCode");
+                "setUserContext", "getUserContext", "equals", "hashCode", "load");
         Method[] declaredMethods = ClientConfig.class.getDeclaredMethods();
         for (Method method : declaredMethods) {
             if (!method.getName().startsWith("$") && !allClientConfigMethods.contains(method.getName())) {
