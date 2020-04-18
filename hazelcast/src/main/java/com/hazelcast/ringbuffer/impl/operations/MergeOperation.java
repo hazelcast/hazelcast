@@ -93,7 +93,8 @@ public class MergeOperation extends Operation
 
         RingbufferMergeTypes mergingValue =
                 createMergingValue(serializationService, mergingRingbuffer);
-        serializationService.getManagedContext().initialize(mergePolicy);
+        mergePolicy = (SplitBrainMergePolicy<RingbufferMergeData, RingbufferMergeTypes, RingbufferMergeData>)
+            serializationService.getManagedContext().initialize(mergePolicy);
 
         resultRingbuffer = merge(existingContainer, mergingValue);
     }

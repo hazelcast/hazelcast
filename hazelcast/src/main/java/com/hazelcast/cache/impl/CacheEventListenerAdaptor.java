@@ -108,7 +108,7 @@ public class CacheEventListenerAdaptor<K, V>
         } else {
             this.cacheEntryExpiredListener = null;
         }
-        injectDependencies(cacheEntryListener);
+        cacheEntryListener = (CacheEntryListener<K, V>) injectDependencies(cacheEntryListener);
 
         Factory<CacheEntryEventFilter<? super K, ? super V>> filterFactory =
                 cacheEntryListenerConfiguration.getCacheEntryEventFilterFactory();
@@ -117,7 +117,7 @@ public class CacheEventListenerAdaptor<K, V>
         } else {
             this.filter = null;
         }
-        injectDependencies(filter);
+        filter = (CacheEntryEventFilter<? super K, ? super V>) injectDependencies(filter);
 
         this.isOldValueRequired = cacheEntryListenerConfiguration.isOldValueRequired();
     }
@@ -126,14 +126,15 @@ public class CacheEventListenerAdaptor<K, V>
             CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
         Factory<CacheEntryListener<? super K, ? super V>> cacheEntryListenerFactory =
                 cacheEntryListenerConfiguration.getCacheEntryListenerFactory();
-        injectDependencies(cacheEntryListenerFactory);
+        cacheEntryListenerFactory = (Factory<CacheEntryListener<? super K, ? super V>>)
+            injectDependencies(cacheEntryListenerFactory);
 
         return (CacheEntryListener<K, V>) cacheEntryListenerFactory.create();
     }
 
-    private void injectDependencies(Object obj) {
+    private Object injectDependencies(Object obj) {
         ManagedContext managedContext = serializationService.getManagedContext();
-        managedContext.initialize(obj);
+        return managedContext.initialize(obj);
     }
 
     @Override

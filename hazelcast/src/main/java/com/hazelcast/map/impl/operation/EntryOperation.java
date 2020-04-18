@@ -169,7 +169,7 @@ public class EntryOperation extends LockAwareOperation
 
         SerializationService serializationService = getNodeEngine().getSerializationService();
         ManagedContext managedContext = serializationService.getManagedContext();
-        managedContext.initialize(entryProcessor);
+        entryProcessor = (EntryProcessor) managedContext.initialize(entryProcessor);
     }
 
     @Override
