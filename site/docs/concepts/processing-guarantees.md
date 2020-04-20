@@ -47,7 +47,7 @@ processing pipeline:
   *N*, later stages are still working on batches *N - 1*, *N - 2* etc.
 - **Volatile State.** Jet stores aggregation state in plain `HashMap`s
   and only occasionally backs them up to the resilient
-  [`IMap`](/javadoc/4.0/com/hazelcast/map/IMap.html)
+  [`IMap`](/javadoc/{imdg-version}/com/hazelcast/map/IMap.html)
   storage.
 - **Load Balancing.** Jet often reshapes batches to better match the
   capacity of each stage.

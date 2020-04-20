@@ -62,7 +62,7 @@ observable.destroy();
 ## Clean-up
 
 Observables are backed by
-[Ringbuffers](/javadoc/4.0/com/hazelcast/ringbuffer/Ringbuffer.html)
+[Ringbuffers](/javadoc/{imdg-version}/com/hazelcast/ringbuffer/Ringbuffer.html)
 stored in the cluster which should be cleaned up by the client, once
 they are no longer necessary. They have a `destroy()` method which does
 just that. If the Observable isn’t destroyed, its memory will be leaked

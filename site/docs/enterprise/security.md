@@ -93,7 +93,7 @@ traffic. Detailed benchmarks are available upon request.
 By default Jet uses the Java implementation of SSL. For better
 performance, it is also possible to use Jet with OpenSSL instead. For
 configuring OpenSSL we recommend going through the guide in
-[Hazelcast 4.0 Reference Manual](https://docs.hazelcast.org/docs/4.0/manual/html-single/index.html#integrating-openssl-boringssl).
+[Hazelcast {imdg-version} Reference Manual](https://docs.hazelcast.org/docs/{imdg-version}/manual/html-single/index.html#integrating-openssl-boringssl).
 
 ## Remote Hazelcast Sources and Sinks
 

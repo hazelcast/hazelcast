@@ -8,12 +8,12 @@ used to monitor a Jet cluster and manage the lifecycle of the jobs
 
 ## Download Management Center
 
-You can download Hazelcast Jet Management Center [here](https://download.hazelcast.com/hazelcast-jet-management-center/hazelcast-jet-management-center-4.0.tar.gz).
+You can download Hazelcast Jet Management Center [here](https://download.hazelcast.com/hazelcast-jet-management-center/hazelcast-jet-management-center-{jet-version}.tar.gz).
 
 Once you have downloaded it, unzip it to a folder:
 
 ```bash
-tar zxvf hazelcast-jet-enterprise-4.0.tar.gz
+tar zxvf hazelcast-jet-enterprise-{jet-version}.tar.gz
 ```
 
 ## Setting License Key
@@ -120,7 +120,7 @@ below:
 2020-03-17 14:31:18.947  INFO 1 --- [           main] c.h.j.management.service.LicenseService  : License Info : License{allowedNumberOfNodes=NNN, expiryDate=MM/DD/YYYY 23:59:59, featureList=[ Management Center, Clustered JMX, Clustered Rest, Security, Hot Restart, Jet Management Center, Jet Lossless Recovery, Jet Rolling Job Upgrade, Jet Enterprise ], type=Enterprise HD, companyName=null, ownerEmail=null, keyHash=NNN, No Version Restriction}
 
 ...
-2020-03-17 14:31:17.523  INFO 1 --- [-center.event-5] c.h.c.impl.spi.ClientClusterService      : jet-management-center [jet] [4.0] [4.0]
+2020-03-17 14:31:17.523  INFO 1 --- [-center.event-5] c.h.c.impl.spi.ClientClusterService      : jet-management-center [jet] [{jet-version}] [{jet-version}]
 
 Members [1] {
     Member [172.17.0.2]:5701 - 32349cdf-8c9a-413f-8dad-80f2ef7bbcd6

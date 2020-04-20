@@ -95,7 +95,7 @@ dependency to your application:
 <!--Gradle-->
 
 ```groovy
-compile 'com.hazelcast.jet:hazelcast-jet-avro:4.0'
+compile 'com.hazelcast.jet:hazelcast-jet-avro:{jet-version}'
 ```
 
 <!--Maven-->
@@ -104,7 +104,7 @@ compile 'com.hazelcast.jet:hazelcast-jet-avro:4.0'
 <dependency>
   <groupId>com.hazelcast.jet</groupId>
   <artifactId>hazelcast-jet-avro</artifactId>
-  <version>4.0</version>
+  <version>{jet-version}</version>
 </dependency>
 ```
 
@@ -202,7 +202,7 @@ dependency to your application:
 <!--Gradle-->
 
 ```groovy
-compile 'com.hazelcast.jet:hazelcast-jet-hadoop:4.0'
+compile 'com.hazelcast.jet:hazelcast-jet-hadoop:{jet-version}'
 ```
 
 <!--Maven-->
@@ -211,7 +211,7 @@ compile 'com.hazelcast.jet:hazelcast-jet-hadoop:4.0'
 <dependency>
   <groupId>com.hazelcast.jet</groupId>
   <artifactId>hazelcast-jet-hadoop</artifactId>
-  <version>4.0</version>
+  <version>{jet-version}</version>
 </dependency>
 ```
 
@@ -279,7 +279,7 @@ application:
 <!--Gradle-->
 
 ```groovy
-compile 'com.hazelcast.jet:hazelcast-jet-s3:4.0'
+compile 'com.hazelcast.jet:hazelcast-jet-s3:{jet-version}'
 ```
 
 <!--Maven-->
@@ -288,7 +288,7 @@ compile 'com.hazelcast.jet:hazelcast-jet-s3:4.0'
 <dependency>
   <groupId>com.hazelcast.jet</groupId>
   <artifactId>hazelcast-jet-s3</artifactId>
-  <version>4.0</version>
+  <version>{jet-version}</version>
 </dependency>
 ```
 
@@ -353,7 +353,7 @@ dependency to your application:
 
 ```groovy
 
-compile 'com.hazelcast.jet:hazelcast-jet-kafka:4.0'
+compile 'com.hazelcast.jet:hazelcast-jet-kafka:{jet-version}'
 ```
 
 <!--Maven-->
@@ -362,7 +362,7 @@ compile 'com.hazelcast.jet:hazelcast-jet-kafka:4.0'
 <dependency>
   <groupId>com.hazelcast.jet</groupId>
   <artifactId>hazelcast-jet-kafka</artifactId>
-  <version>4.0</version>
+  <version>{jet-version}</version>
 </dependency>
 ```
 
@@ -1220,9 +1220,9 @@ processing even with at-least-once sinks.
 
 If Jet doesn’t natively support the data source/sink you need, you can
 build a connector for it yourself by using the
-[SourceBuilder](/javadoc/4.0/com/hazelcast/jet/pipeline/SourceBuilder.html)
+[SourceBuilder](/javadoc/{jet-version}/com/hazelcast/jet/pipeline/SourceBuilder.html)
 and
-[SinkBuilder](/javadoc/4.0/com/hazelcast/jet/pipeline/SinkBuilder.html)
+[SinkBuilder](/javadoc/{jet-version}/com/hazelcast/jet/pipeline/SinkBuilder.html)
 .
 
 ### SourceBuilder

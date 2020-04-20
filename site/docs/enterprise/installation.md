@@ -8,15 +8,15 @@ Hazelcast Jet Enterprise requires a license key to run. You can get a
 
 ## Download Hazelcast Jet
 
-Once you have a license key, download Hazelcast Jet from [here](https://download.hazelcast.com/jet-enterprise/hazelcast-jet-enterprise-4.0.tar.gz).
+Once you have a license key, download Hazelcast Jet from [here](https://download.hazelcast.com/jet-enterprise/hazelcast-jet-enterprise-{jet-version}.tar.gz).
 
 Hazelcast Jet requires a minimum of JDK 8, which can be acquired from
 [AdoptOpenJDK](https://adoptopenjdk.net/). Once you have the download,
 unzip it to a folder which we will refer from now on as `JET_HOME`.
 
 ```bash
-tar zxvf hazelcast-jet-enterprise-4.0.tar.gz
-cd hazelcast-jet-enterprise-4.0
+tar zxvf hazelcast-jet-enterprise-{jet-version}.tar.gz
+cd hazelcast-jet-enterprise-{jet-version}
 ```
 
 ## Set License Key
@@ -79,7 +79,7 @@ repositories {
     }
 }
 
-compile 'com.hazelcast.jet:hazelcast-jet-enterprise:4.0'
+compile 'com.hazelcast.jet:hazelcast-jet-enterprise:{jet-version}'
 ```
 
 <!--Maven-->
@@ -94,7 +94,7 @@ compile 'com.hazelcast.jet:hazelcast-jet-enterprise:4.0'
 <dependency>
     <groupId>com.hazelcast.jet</groupId>
     <artifactId>hazelcast-jet-enterprise</artifactId>
-    <version>4.0</version>
+    <version>{jet-version}</version>
 </dependency>
 ```
 
@@ -134,11 +134,11 @@ below instead of our example's `172.17.0.2`. Let's submit the Hello
 World application from the distribution package:
 
 ```bash
-cd hazelcast-jet-enterprise-4.0
+cd hazelcast-jet-enterprise-{jet-version}
 docker run -it -v "$(pwd)"/examples:/examples hazelcast/hazelcast-jet-enterprise jet -a 172.17.0.2 submit /examples/hello-world.jar
 ```
 
-The command mounts the local `examples` directory from `hazelcast-jet-enterprise-4.0`
+The command mounts the local `examples` directory from `hazelcast-jet-enterprise-{jet-version}`
 to the container and uses `jet submit` to submit the example JAR. While
 the job is running, it should produce output like this:
 

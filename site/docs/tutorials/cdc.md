@@ -24,8 +24,8 @@ CDC connectors for a
 The [Kafka Connect API](http://kafka.apache.org/documentation.html#connect)
 is an interface developed for Kafka, that simplifies and automates the
 integration of a new data source (or sink) with your Kafka cluster.
-Since version 4.0 Jet includes a generic Kafka Connect Source, thus
-making the integration of Debezium's connectors easy.
+Since version 4.0 Jet includes a generic Kafka Connect Source,
+thus making the integration of Debezium's connectors easy.
 
 Let's see an example, how to process change events from a MySQL database
 in Jet.
@@ -168,15 +168,15 @@ mysql> SELECT * FROM customers;
 
 ## 4. Start Hazelcast Jet
 
-1. [Download](https://github.com/hazelcast/hazelcast-jet/releases/download/v4.0/hazelcast-jet-4.0.tar.gz)
+1. [Download](https://github.com/hazelcast/hazelcast-jet/releases/download/v{jet-version}/hazelcast-jet-{jet-version}.tar.gz)
   Hazelcast Jet
 
 2. Unzip it:
 
 ```bash
 cd <where_you_downloaded_it>
-tar zxvf hazelcast-jet-4.0.tar.gz
-cd hazelcast-jet-4.0
+tar zxvf hazelcast-jet-{jet-version}.tar.gz
+cd hazelcast-jet-{jet-version}
 ```
 
 3. Start Jet:
@@ -214,7 +214,7 @@ version '1.0-SNAPSHOT'
 repositories.mavenCentral()
 
 dependencies {
-    compile 'com.hazelcast.jet:hazelcast-jet:4.0'
+    compile 'com.hazelcast.jet:hazelcast-jet:{jet-version}'
     compile 'com.hazelcast.jet.contrib:debezium:0.1'
     compile 'io.debezium:debezium-connector-mysql:1.0.0.Final'
 }
@@ -227,7 +227,7 @@ jar {
 
 shadowJar {
     dependencies {
-        exclude(dependency('com.hazelcast.jet:hazelcast-jet:4.0'))
+        exclude(dependency('com.hazelcast.jet:hazelcast-jet:{jet-version}'))
     }
 }
 ```
@@ -253,7 +253,7 @@ shadowJar {
        <dependency>
            <groupId>com.hazelcast.jet</groupId>
            <artifactId>hazelcast-jet</artifactId>
-           <version>4.0</version>
+           <version>{jet-version}</version>
        </dependency>
        <dependency>
            <groupId>com.hazelcast.jet.contrib</groupId>

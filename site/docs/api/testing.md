@@ -21,8 +21,8 @@ project:
 <!--Gradle-->
 
 ```bash
-compile 'com.hazelcast.jet:hazelcast-jet-core:4.0:tests'
-compile 'com.hazelcast:hazelcast:4.0:tests'
+compile 'com.hazelcast.jet:hazelcast-jet-core:{jet-version}:tests'
+compile 'com.hazelcast:hazelcast:{imdg-version}:tests'
 ```
 
 <!--Maven-->
@@ -31,13 +31,13 @@ compile 'com.hazelcast:hazelcast:4.0:tests'
 <dependency>
   <groupId>com.hazelcast.jet</groupId>
   <artifactId>hazelcast-jet-core</artifactId>
-  <version>4.0</version>
+  <version>{jet-version}</version>
   <classifier>tests</classifier>
 </dependency>
 <dependency>
   <groupId>com.hazelcast</groupId>
   <artifactId>hazelcast</artifactId>
-  <version>4.0</version>
+  <version>{imdg-version}</version>
   <classifier>tests</classifier>
 </dependency>
 ```
@@ -151,7 +151,7 @@ Members {size:2, ver:2} [
  Member [127.0.0.1]:5702 - 920d1b0c-0898-4b6e-9009-8f29889d6a77 this
 ]
 ....
-10:45:04.890 [ INFO] [c.h.c.i.s.ClientClusterService] [4.0]
+10:45:04.890 [ INFO] [c.h.c.i.s.ClientClusterService] [{imdg-version}]
 
 Members [2] {
  Member [127.0.0.1]:5701 - 93328d97-0975-4dfa-bf56-4d46e8a469a1

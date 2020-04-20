@@ -45,15 +45,15 @@ Python 3 on your machine.
 
 ## 3. Start Hazelcast Jet
 
-1. [Download](https://github.com/hazelcast/hazelcast-jet/releases/download/v4.0/hazelcast-jet-4.0.tar.gz)
+1. [Download](https://github.com/hazelcast/hazelcast-jet/releases/download/v{jet-version}/hazelcast-jet-{jet-version}.tar.gz)
   Hazelcast Jet
 
 2. Unzip it:
 
 ```bash
 cd <where_you_downloaded_it>
-tar zxvf hazelcast-jet-4.0.tar.gz
-cd hazelcast-jet-4.0
+tar zxvf hazelcast-jet-{jet-version}.tar.gz
+cd hazelcast-jet-{jet-version}
 ```
 
 If you already have Jet and you skipped the above steps, make sure to
@@ -62,7 +62,7 @@ follow from here on.
 3. Activate the Python plugin:
 
 ```bash
-mv opt/hazelcast-jet-python-4.0.jar lib/
+mv opt/hazelcast-jet-python-{jet-version}.jar lib/
 ```
 
 4. Start Jet:
@@ -101,8 +101,8 @@ version '1.0-SNAPSHOT'
 repositories.mavenCentral()
 
 dependencies {
-    compile 'com.hazelcast.jet:hazelcast-jet:4.0'
-    compile 'com.hazelcast.jet:hazelcast-jet-python:4.0'
+    compile 'com.hazelcast.jet:hazelcast-jet:{jet-version}'
+    compile 'com.hazelcast.jet:hazelcast-jet-python:{jet-version}'
 }
 
 jar.manifest.attributes 'Main-Class': 'org.example.JetJob'
@@ -129,12 +129,12 @@ jar.manifest.attributes 'Main-Class': 'org.example.JetJob'
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet</artifactId>
-            <version>4.0</version>
+            <version>{jet-version}</version>
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-python</artifactId>
-            <version>4.0</version>
+            <version>{jet-version}</version>
         </dependency>
     </dependencies>
 

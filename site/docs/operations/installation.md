@@ -111,6 +111,6 @@ be output during note startup as below:
 # JAVA=/usr/bin/java
 # JAVA_OPTS=--add-modules java.se --add-exports java.base/jdk.internal.ref=ALL-UNNAMED
 ..
-# CLASSPATH=/home/jet/hazelcast-jet-4.0/lib/*:
+# CLASSPATH=/home/jet/hazelcast-jet-{jet-version}/lib/*:
 ########################################
 ```

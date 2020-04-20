@@ -105,11 +105,11 @@ This lightweight contract allows us to implement `Traverser` with just a
 lambda expression. If you look at the source code of Jet processor,
 you may encounter quite complex code inside `Traverser` transforms. A
 good example is the
-[`SlidingWindowP`](https://github.com/hazelcast/hazelcast-jet/blob/v4.0/hazelcast-jet-core/src/main/java/com/hazelcast/jet/impl/processor/SlidingWindowP.java#L207)
+[`SlidingWindowP`](https://github.com/hazelcast/hazelcast-jet/blob/v{jet-version}/hazelcast-jet-core/src/main/java/com/hazelcast/jet/impl/processor/SlidingWindowP.java#L207)
 processor.
 
 At the
-[`ProcessorTasklet`](https://github.com/hazelcast/hazelcast-jet/blob/v4.0/hazelcast-jet-core/src/main/java/com/hazelcast/jet/impl/execution/ProcessorTasklet.java#L259)
+[`ProcessorTasklet`](https://github.com/hazelcast/hazelcast-jet/blob/v{jet-version}/hazelcast-jet-core/src/main/java/com/hazelcast/jet/impl/execution/ProcessorTasklet.java#L259)
 level we needed a full state machine implementation, basically
 implementing the [CPS
 transformation](https://github.com/Kotlin/KEEP/blob/master/proposals/coroutines.md#implementation-details)

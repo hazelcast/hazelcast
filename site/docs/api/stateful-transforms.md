@@ -61,10 +61,10 @@ in aggregations, such as:
 |`allOf`|Combine multiple aggregations into one aggregation (for example, if you want both sum and average)|
 
 For a complete list, please refer to the
-[AggregateOperations](/javadoc/4.0/com/hazelcast/jet/aggregate/AggregateOperations.html)
+[AggregateOperations](/javadoc/{jet-version}/com/hazelcast/jet/aggregate/AggregateOperations.html)
 class. You can also implement your own aggregate operations using the
 builder in
-[AggregateOperation](/javadoc/4.0/com/hazelcast/jet/aggregate/AggregateOperation.html)
+[AggregateOperation](/javadoc/{jet-version}/com/hazelcast/jet/aggregate/AggregateOperation.html)
 .
 
 ### groupingKey

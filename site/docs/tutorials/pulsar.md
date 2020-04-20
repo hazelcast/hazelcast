@@ -34,15 +34,15 @@ localhost:6650.
 
 ## 2. Start Hazelcast Jet
 
-1. [Download](https://github.com/hazelcast/hazelcast-jet/releases/download/v4.0/hazelcast-jet-4.0.tar.gz)
+1. [Download](https://github.com/hazelcast/hazelcast-jet/releases/download/v{jet-version}/hazelcast-jet-{jet-version}.tar.gz)
    Hazelcast Jet
 
 2. Unzip it:
 
 ```bash
 cd <where_you_downloaded_it>
-tar zxvf hazelcast-jet-4.0.tar.gz
-cd hazelcast-jet-4.0
+tar zxvf hazelcast-jet-{jet-version}.tar.gz
+cd hazelcast-jet-{jet-version}
 ```
 
 If you already have Jet and you skipped the above steps, make sure to
@@ -89,7 +89,7 @@ repositories {
 }
 
 dependencies {
-    compile 'com.hazelcast.jet:hazelcast-jet:4.0'
+    compile 'com.hazelcast.jet:hazelcast-jet:{jet-version}'
     compile 'com.hazelcast.jet-contrib:pulsar:0.1-SNAPSHOT'
     compile 'org.apache.pulsar:pulsar-client:2.5.0'
 }
@@ -102,7 +102,7 @@ jar {
 
 shadowJar {
     dependencies {
-        exclude(dependency('com.hazelcast.jet:hazelcast-jet:4.0'))
+        exclude(dependency('com.hazelcast.jet:hazelcast-jet:{jet-version}'))
     }
 }
 ```
@@ -128,7 +128,7 @@ shadowJar {
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet</artifactId>
-            <version>4.0</version>
+            <version>{jet-version}</version>
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet.contrib</groupId>
