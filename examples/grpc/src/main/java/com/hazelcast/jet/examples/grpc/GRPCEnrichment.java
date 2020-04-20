@@ -37,6 +37,7 @@ import java.io.InputStreamReader;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.Executors;
 import java.util.stream.Stream;
 
 import static com.hazelcast.function.Functions.entryValue;
@@ -86,6 +87,7 @@ public final class GRPCEnrichment {
                 .collect(toMap(Entry::getKey, e -> new Broker(e.getKey(), e.getValue())));
 
         ServerBuilder.forPort(PORT)
+                     .executor(Executors.newFixedThreadPool(4))
                      .addService(new ProductServiceImpl(productMap))
                      .addService(new BrokerServiceImpl(brokerMap))
                      .build()

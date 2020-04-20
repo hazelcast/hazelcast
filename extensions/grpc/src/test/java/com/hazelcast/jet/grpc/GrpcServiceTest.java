@@ -41,6 +41,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
@@ -236,7 +237,10 @@ public class GrpcServiceTest extends SimpleTestInClusterSupport {
     }
 
     private static Server createServer(BindableService service) throws IOException {
-        Server server = ServerBuilder.forPort(0).addService(service).build();
+        Server server = ServerBuilder.forPort(0)
+                                     .executor(Executors.newFixedThreadPool(4))
+                                     .addService(service)
+                                     .build();
         server.start();
         return server;
     }
