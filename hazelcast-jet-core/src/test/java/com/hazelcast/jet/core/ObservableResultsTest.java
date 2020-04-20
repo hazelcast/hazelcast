@@ -66,6 +66,8 @@ public class ObservableResultsTest extends TestInClusterSupport {
 
     @Before
     public void before() {
+        jet().getObservables().forEach(Observable::destroy);
+
         observableName = randomName();
         testObserver = new TestObserver();
         testObservable = jet().getObservable(observableName);
@@ -563,9 +565,11 @@ public class ObservableResultsTest extends TestInClusterSupport {
         c.addObserver(Observer.of(ConsumerEx.noop()));
 
         //then
-        Set<String> activeObservables = jet().getObservables().stream().map(Observable::name).collect(Collectors.toSet());
-        assertTrue(activeObservables.containsAll(Arrays.asList(a.name(), c.name())));
-        assertFalse(activeObservables.contains(b.name()));
+        assertTrueEventually(() -> {
+            Set<String> observables = jet().getObservables().stream().map(Observable::name).collect(Collectors.toSet());
+            assertTrue(observables.containsAll(Arrays.asList(a.name(), c.name())));
+            assertFalse(observables.contains(b.name()));
+        });
     }
 
     @Test
