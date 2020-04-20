@@ -45,11 +45,11 @@ import com.hazelcast.test.TestAwareInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 
 /**
- * Tests a possibility to use a custom YAML client configuration file with the demo client console application.
+ * End-to-end test(s) for {@link ClientConsoleApp}. The tests use real network.
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({ QuickTest.class })
-public class ClientConsoleAppConfigTest {
+public class ClientConsoleTest {
 
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
@@ -64,8 +64,12 @@ public class ClientConsoleAppConfigTest {
         factory.terminateAll();
     }
 
+    /**
+     * Tests if the application correctly connects to a Hazelcast cluster. The TCP discovery is configured by using a custom
+     * YAML client configuration file.
+     */
     @Test
-    public void connectsWhenYamlConfigSpecified() throws IOException {
+    public void connectsToHazelcastCluster() throws IOException {
         HazelcastInstance hz = factory.newHazelcastInstance(smallInstanceConfig());
         Address address = getAddress(hz);
         File cfgFile = tempFolder.newFile("hazelcast-config.yml");
