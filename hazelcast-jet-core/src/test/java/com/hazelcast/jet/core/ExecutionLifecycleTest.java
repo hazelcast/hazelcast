@@ -545,7 +545,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         Throwable causeAfter = excAfterComplete.getCause();
 
         assertEquals(causeBefore.getClass(), causeAfter.getClass());
-        assertEquals(causeBefore.getMessage(), causeAfter.getMessage());
+        assertContains(causeAfter.getMessage(), causeBefore.getMessage());
     }
 
     private void when_deserializationOnMasterFails_then_jobSubmissionFails(JetInstance instance) throws Throwable {

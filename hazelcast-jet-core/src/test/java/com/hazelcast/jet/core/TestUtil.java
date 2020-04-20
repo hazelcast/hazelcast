@@ -59,7 +59,9 @@ public final class TestUtil {
     /**
      * Asserts that {@code caught} exception is equal to {@code expected} or one of its causes.
      * <p>
-     * Exceptions are considered equal, if their {@code message}s and classes are equal.
+     * Exceptions are considered equal, if their {@code message}s and classes are equal OR if the caught exception
+     * contains expected message and exception class name (this covers cases where exception is reported as a string
+     * from already completed job).
      *
      * @param expected Expected exception
      * @param caught   Caught exception
@@ -69,7 +71,9 @@ public final class TestUtil {
         boolean found = false;
         Throwable t = caught;
         while (!found && t != null) {
-            found = Objects.equals(t.getMessage(), expected.getMessage()) && t.getClass() == expected.getClass();
+            found = Objects.equals(t.getMessage(), expected.getMessage()) && t.getClass() == expected.getClass() ||
+                    (t.getMessage().contains(expected.getMessage()) &&
+                            t.getMessage().contains(expected.getClass().getName()));
             t = t.getCause();
         }
 

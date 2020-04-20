@@ -31,6 +31,7 @@ import com.hazelcast.jet.core.metrics.JobMetrics;
 import com.hazelcast.jet.impl.deployment.IMapOutputStream;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.jet.impl.metrics.RawJobMetrics;
+import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.jet.impl.util.ImdgUtil;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
@@ -473,9 +474,13 @@ public class JobRepository {
             return null;
         }
         if (error.getClass().equals(JetException.class) && error.getMessage() != null) {
-            return error.getMessage();
+            String stackTrace = ExceptionUtil.stackTraceToString(error);
+            // The error message is later thrown as JetException
+            // Remove leading 'com.hazelcast.jet.JetException: ' from the stack trace to avoid double JetException
+            // in the final stacktrace
+            return stackTrace.substring(stackTrace.indexOf(' ') + 1);
         }
-        return error.toString();
+        return ExceptionUtil.stackTraceToString(error);
     }
 
     private static long jobIdFromMapName(String map, String prefix) {

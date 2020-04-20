@@ -175,7 +175,7 @@ public class JobSummaryTest extends JetTestSupport {
         assertEquals(1, list.size());
         JobSummary jobSummary = list.get(0);
 
-        assertEquals(msg, new JetException(jobSummary.getFailureText()).toString());
+        assertContains(new JetException(jobSummary.getFailureText()).toString(), msg);
         assertNotEquals(0, jobSummary.getCompletionTime());
     }
 

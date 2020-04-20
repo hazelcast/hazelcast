@@ -228,7 +228,7 @@ public class SuspendResumeTest extends JetTestSupport {
         assertTrueEventually(() -> {
             assertNull("JobRecord", jobRepository.getJobRecord(job.getId()));
             JobResult jobResult = jobRepository.getJobResult(job.getId());
-            assertEquals(CancellationException.class.getName(), jobResult.getFailureText());
+            assertContains(jobResult.getFailureText(), CancellationException.class.getName());
             assertFalse("Job result successful", jobResult.isSuccessful());
         });
     }
