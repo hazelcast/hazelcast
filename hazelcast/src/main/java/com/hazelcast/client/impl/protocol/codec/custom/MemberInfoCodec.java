@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("29713afaf97ff5c1ba62fa9546f2e92c")
+@Generated("78e9c77cedebd66184f46661472a888d")
 public final class MemberInfoCodec {
     private static final int UUID_FIELD_OFFSET = 0;
     private static final int LITE_MEMBER_FIELD_OFFSET = UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
@@ -44,6 +44,7 @@ public final class MemberInfoCodec {
         AddressCodec.encode(clientMessage, memberInfo.getAddress());
         MapCodec.encode(clientMessage, memberInfo.getAttributes(), StringCodec::encode, StringCodec::encode);
         MemberVersionCodec.encode(clientMessage, memberInfo.getVersion());
+        MapCodec.encode(clientMessage, memberInfo.getAddressMap(), EndpointQualifierCodec::encode, AddressCodec::encode);
 
         clientMessage.add(END_FRAME.copy());
     }
@@ -59,9 +60,15 @@ public final class MemberInfoCodec {
         com.hazelcast.cluster.Address address = AddressCodec.decode(iterator);
         java.util.Map<java.lang.String, java.lang.String> attributes = MapCodec.decode(iterator, StringCodec::decode, StringCodec::decode);
         com.hazelcast.version.MemberVersion version = MemberVersionCodec.decode(iterator);
+        boolean isAddressMapExists = false;
+        java.util.Map<com.hazelcast.instance.EndpointQualifier, com.hazelcast.cluster.Address> addressMap = null;
+        if (!iterator.peekNext().isEndFrame()) {
+            addressMap = MapCodec.decode(iterator, EndpointQualifierCodec::decode, AddressCodec::decode);
+            isAddressMapExists = true;
+        }
 
         fastForwardToEndFrame(iterator);
 
-        return new com.hazelcast.internal.cluster.MemberInfo(address, uuid, attributes, liteMember, version);
+        return new com.hazelcast.internal.cluster.MemberInfo(address, uuid, attributes, liteMember, version, isAddressMapExists, addressMap);
     }
 }

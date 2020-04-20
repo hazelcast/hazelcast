@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.protocol.compatibility;
 
+import com.google.common.collect.ImmutableMap;
 import com.hazelcast.cache.impl.CacheEventData;
 import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.protocol.codec.builtin.CustomTypeFactory;
@@ -45,6 +46,8 @@ import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.cp.internal.RaftGroupId;
+import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.management.dto.ClientBwListEntryDTO;
 import com.hazelcast.internal.management.dto.MCEventDTO;
@@ -60,6 +63,7 @@ import com.hazelcast.version.MemberVersion;
 
 import javax.transaction.xa.Xid;
 import java.lang.reflect.Array;
+import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.AbstractMap;
 import java.util.Collection;
@@ -782,7 +786,9 @@ public class ReferenceObjects {
             aBoolean, aBoolean, aBoolean, aBoolean, aHotRestartConfig, anEventJournalConfig, aString, aListOfData,
             aMergePolicyConfig, aBoolean, aListOfListenerConfigHolders);
     private static MemberVersion aMemberVersion = new MemberVersion(aByte, aByte, aByte);
-    public static Collection<MemberInfo> aListOfMemberInfos = Collections.singletonList(new MemberInfo(anAddress, aUUID, aMapOfStringToString, aBoolean, aMemberVersion));
+    public static Collection<MemberInfo> aListOfMemberInfos = Collections.singletonList(new MemberInfo(anAddress, aUUID, aMapOfStringToString, aBoolean, aMemberVersion,
+            ImmutableMap.of(EndpointQualifier.resolve(ProtocolType.WAN, "localhost"), anAddress)));
+
     public static AnchorDataListHolder anAnchorDataListHolder = new AnchorDataListHolder(aListOfIntegers, aListOfDataToData);
     public static PagingPredicateHolder aPagingPredicateHolder = new PagingPredicateHolder(anAnchorDataListHolder, aData, aData,
             anInt, anInt, aByte, aData);

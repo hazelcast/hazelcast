@@ -54,11 +54,18 @@ public final class MemberImpl
     }
 
     public MemberImpl(Address address, MemberVersion version, boolean localMember) {
-        this(singletonMap(MEMBER, address), version, localMember, null, null, false, NA_MEMBER_LIST_JOIN_VERSION, null);
+        this(singletonMap(MEMBER, address), address, version, localMember, null, null, false, NA_MEMBER_LIST_JOIN_VERSION, null);
     }
 
     public MemberImpl(Address address, MemberVersion version, boolean localMember, UUID uuid) {
-        this(singletonMap(MEMBER, address), version, localMember, uuid, null, false, NA_MEMBER_LIST_JOIN_VERSION, null);
+        this(singletonMap(MEMBER, address), address, version, localMember, uuid, null, false, NA_MEMBER_LIST_JOIN_VERSION, null);
+    }
+
+    private MemberImpl(Map<EndpointQualifier, Address> addresses, MemberVersion version, boolean localMember,
+                       UUID uuid, Map<String, String> attributes, boolean liteMember, int memberListJoinVersion,
+                       HazelcastInstanceImpl instance) {
+        this(addresses, addresses.get(MEMBER), version, localMember, uuid, attributes, liteMember, memberListJoinVersion,
+                instance);
     }
 
     public MemberImpl(MemberImpl member) {
@@ -68,10 +75,10 @@ public final class MemberImpl
         this.instance = member.instance;
     }
 
-    private MemberImpl(Map<EndpointQualifier, Address> addresses, MemberVersion version, boolean localMember,
-                       UUID uuid, Map<String, String> attributes, boolean liteMember, int memberListJoinVersion,
-                       HazelcastInstanceImpl instance) {
-        super(addresses, version, uuid, attributes, liteMember);
+    private MemberImpl(Map<EndpointQualifier, Address> addresses, Address address, MemberVersion version,
+                       boolean localMember, UUID uuid, Map<String, String> attributes, boolean liteMember,
+                       int memberListJoinVersion, HazelcastInstanceImpl instance) {
+        super(addresses, address, version, uuid, attributes, liteMember);
         this.memberListJoinVersion = memberListJoinVersion;
         this.localMember = localMember;
         this.instance = instance;
@@ -137,7 +144,8 @@ public final class MemberImpl
     }
 
     public static class Builder {
-        private final Map<EndpointQualifier, Address> addressMap;
+        private Address address;
+        private  Map<EndpointQualifier, Address> addressMap;
 
         private Map<String, String> attributes;
         private boolean localMember;
@@ -149,13 +157,18 @@ public final class MemberImpl
 
         public Builder(Address address) {
             Preconditions.isNotNull(address, "address");
-            this.addressMap = singletonMap(MEMBER, address);
+            this.address = address;
         }
 
         public Builder(Map<EndpointQualifier, Address> addresses) {
             Preconditions.isNotNull(addresses, "addresses");
             Preconditions.isNotNull(addresses.get(MEMBER), "addresses.get(MEMBER)");
             this.addressMap = addresses;
+        }
+
+        public Builder address(Address address) {
+            this.address = Preconditions.isNotNull(address, "address");
+            return this;
         }
 
         public Builder localMember(boolean localMember) {
@@ -194,7 +207,13 @@ public final class MemberImpl
         }
 
         public MemberImpl build() {
-            return new MemberImpl(addressMap, version, localMember, uuid,
+            if (addressMap == null) {
+                addressMap = singletonMap(MEMBER, address);
+            }
+            if (address == null) {
+                address = addressMap.get(MEMBER);
+            }
+            return new MemberImpl(addressMap, address, version, localMember, uuid,
                     attributes, liteMember, memberListJoinVersion, instance);
         }
     }
