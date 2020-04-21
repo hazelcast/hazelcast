@@ -82,7 +82,28 @@ public abstract class GeneralHashJoinBuilder<T0> {
      */
     public <K, T1_IN, T1> Tag<T1> add(BatchStage<T1_IN> stage, JoinClause<K, T0, T1_IN, T1> joinClause) {
         Tag<T1> tag = tag(clauses.size());
-        clauses.put(tag, new TransformAndClause<>(stage, joinClause));
+        clauses.put(tag, new TransformAndClause<>(stage, joinClause, false));
+        return tag;
+    }
+
+    /**
+     * Adds another contributing pipeline stage to the hash-join operation.
+     *
+     * If no matching items for returned {@linkplain Tag tag} is found, no
+     * records for given key will be added.
+     *
+     * @param stage the contributing stage
+     * @param joinClause specifies how to join the contributing stage
+     * @param <K> the type of the join key
+     * @param <T1_IN> the type of the contributing stage's data
+     * @param <T1> the type of result after applying the projecting transformation
+     *             to the contributing stage's data
+     * @return the tag that refers to the contributing stage
+     * @since 4.1
+     */
+    public <K, T1_IN, T1> Tag<T1> addInner(BatchStage<T1_IN> stage, JoinClause<K, T0, T1_IN, T1> joinClause) {
+        Tag<T1> tag = tag(clauses.size());
+        clauses.put(tag, new TransformAndClause<>(stage, joinClause, true));
         return tag;
     }
 
@@ -98,17 +119,23 @@ public abstract class GeneralHashJoinBuilder<T0> {
                         orderedClauses.stream().map(e -> e.getValue().transform())
                 ).collect(toList());
         // A probable javac bug forced us to extract this variable
+        // and not using method reference
         Stream<JoinClause<?, T0, ?, ?>> joinClauses = orderedClauses
                 .stream()
                 .map(e -> e.getValue().clause())
-                .map(fnAdapter::adaptJoinClause);
+                .map(joinClause -> fnAdapter.adaptJoinClause(joinClause));
+        BiFunctionEx<?, ? super ItemsByTag, ?> mapToOutputBiFn = fnAdapter.adaptHashJoinOutputFn(mapToOutputFn);
         HashJoinTransform<T0, R> hashJoinTransform = new HashJoinTransform<>(
                 upstream,
                 joinClauses.collect(toList()),
                 orderedClauses.stream()
                               .map(Entry::getKey)
                               .collect(toList()),
-                fnAdapter.adaptHashJoinOutputFn(mapToOutputFn));
+                mapToOutputBiFn,
+                orderedClauses
+                        .stream()
+                        .map(e -> e.getValue().inner)
+                        .collect(toList()));
         pipelineImpl.connect(upstream, hashJoinTransform);
         return createOutStageFn.get(hashJoinTransform, fnAdapter, pipelineImpl);
     }
@@ -122,10 +149,12 @@ public abstract class GeneralHashJoinBuilder<T0> {
     private static class TransformAndClause<K, E0, T1, T1_OUT> {
         private final Transform transform;
         private final JoinClause<K, E0, T1, T1_OUT> joinClause;
+        private final boolean inner;
 
-        TransformAndClause(GeneralStage<T1> stage, JoinClause<K, E0, T1, T1_OUT> joinClause) {
+        TransformAndClause(GeneralStage<T1> stage, JoinClause<K, E0, T1, T1_OUT> joinClause, boolean inner) {
             this.transform = transformOf(stage);
             this.joinClause = joinClause;
+            this.inner = inner;
         }
 
         Transform transform() {

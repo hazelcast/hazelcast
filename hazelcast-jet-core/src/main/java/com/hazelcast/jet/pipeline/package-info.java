@@ -72,12 +72,22 @@
  * hashtables (hence the name). It consumes the enriching streams in full
  * before ingesting any data from the primary stream.
  * <p>
- * The output is just like an SQL left-outer join: for each primary item
- * there are N output items, one for each matching item in the enriching
- * set. If an enriching set doesn't have a matching item, the output will
- * have a {@code null} instead of the enriching item. The join also allows
- * duplicate keys on both enriching and primary inputs: the output is a
- * cartesian product of all the matching entries.
+ * The output of {@code hashJoin} is just like an SQL left outer join:
+ * for each primary item there are N output items,  one for each matching
+ * item in the enriching set. If an enriching set doesn't have a matching
+ * item, the output will have a {@code null} instead of the enriching item.
+ * <p>
+ * If you need SQL inner join, then you can use the specialised
+ * {@code innerHashJoin} function, in which for each primary item with
+ * at least one match, there are N output items, one for each matching
+ * item in the enriching set. If an enriching set doesn't have a matching
+ * item, there will be no records with the given primary item. In this case
+ * the output function's arguments are always non-null.
+ *
+ * <p>
+ * The join also allows duplicate keys on both enriching and primary inputs:
+ * the output is a cartesian product of all the matching entries.
+
  * <p>
  * Example:<pre>
  * +------------------------+-----------------+---------------------------+

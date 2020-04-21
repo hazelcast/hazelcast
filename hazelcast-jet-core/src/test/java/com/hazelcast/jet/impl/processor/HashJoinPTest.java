@@ -16,10 +16,12 @@
 
 package com.hazelcast.jet.impl.processor;
 
+import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.datamodel.ItemsByTag;
+import com.hazelcast.jet.datamodel.Tag;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.function.TriFunction;
@@ -62,6 +64,7 @@ public class HashJoinPTest extends JetTestSupport {
                 singletonList(e -> e),
                 emptyList(),
                 mapToOutputBiFn,
+                null,
                 null
         );
 
@@ -89,6 +92,7 @@ public class HashJoinPTest extends JetTestSupport {
                 singletonList(enrichingSideKeyFn),
                 emptyList(),
                 mapToOutputBiFn,
+                null,
                 null
         );
 
@@ -116,7 +120,8 @@ public class HashJoinPTest extends JetTestSupport {
                 asList(e -> e, e -> e),
                 emptyList(),
                 null,
-                mapToOutputTriFn
+                mapToOutputTriFn,
+                null
         );
 
         verifyProcessor(supplier)
@@ -145,7 +150,8 @@ public class HashJoinPTest extends JetTestSupport {
                 asList(e -> e, e -> e),
                 emptyList(),
                 null,
-                mapToOutputTriFn
+                mapToOutputTriFn,
+                null
         );
 
         verifyProcessor(supplier)
@@ -183,7 +189,8 @@ public class HashJoinPTest extends JetTestSupport {
                 asList(e -> e, e -> e),
                 asList(tag0(), tag1()),
                 mapToOutputBiFn,
-                null
+                null,
+                tupleToItemsByTag()
         );
 
         verifyProcessor(supplier)
@@ -212,7 +219,8 @@ public class HashJoinPTest extends JetTestSupport {
                 asList(e -> e, e -> e),
                 asList(tag0(), tag1()),
                 mapToOutputBiFn,
-                null
+                null,
+                tupleToItemsByTag()
         );
 
         verifyProcessor(supplier)
@@ -250,6 +258,7 @@ public class HashJoinPTest extends JetTestSupport {
                 singletonList(e -> e),
                 emptyList(),
                 (l, r) -> r == null ? null : tuple2(l, r),
+                null,
                 null
         );
 
@@ -271,7 +280,8 @@ public class HashJoinPTest extends JetTestSupport {
                 asList(e -> e, e -> e),
                 emptyList(),
                 null,
-                (l, r1, r2) -> r1 == null || r2 == null ? null : tuple3(l, r1, r2)
+                (l, r1, r2) -> r1 == null || r2 == null ? null : tuple3(l, r1, r2),
+                null
         );
 
         verifyProcessor(supplier)
@@ -297,7 +307,8 @@ public class HashJoinPTest extends JetTestSupport {
                 asList(e -> e, e -> e),
                 asList(tag0(), tag1()),
                 (item, itemsByTag) -> ((ItemsByTag) itemsByTag).get(tag0()) == null ? null : tuple2(item, itemsByTag),
-                null
+                null,
+                tupleToItemsByTag()
         );
 
         verifyProcessor(supplier)
@@ -326,6 +337,7 @@ public class HashJoinPTest extends JetTestSupport {
                 singletonList(e -> e),
                 emptyList(),
                 mapToOutputBiFn,
+                null,
                 null
         );
 
@@ -359,5 +371,15 @@ public class HashJoinPTest extends JetTestSupport {
     @SafeVarargs
     private static <K, V> Map<K, Object> toMap(Tuple2<K, Object>... entries) {
         return Stream.of(entries).collect(Collectors.toMap(Tuple2::f0, Tuple2::f1));
+    }
+
+    private static BiFunctionEx<List<Tag>, Object[], ItemsByTag> tupleToItemsByTag() {
+        return (tagList, tuple) -> {
+            ItemsByTag res = new ItemsByTag();
+            for (int i = 0; i < tagList.size(); i++) {
+                res.put(tagList.get(i), tuple[i]);
+            }
+            return res;
+        };
     }
 }

@@ -165,6 +165,21 @@ public class StreamStageImpl<T> extends ComputeStageImplBase<T> implements Strea
     }
 
     @Nonnull @Override
+    public <K, T1_IN, T1, R> StreamStage<R> innerHashJoin(
+            @Nonnull BatchStage<T1_IN> stage1,
+            @Nonnull JoinClause<K, ? super T, ? super T1_IN, ? extends T1> joinClause1,
+            @Nonnull BiFunctionEx<T, T1, R> mapToOutputFn
+    ) {
+        BiFunctionEx<T, T1, R> finalOutputFn = (leftSide, rightSide) -> {
+            if (leftSide == null || rightSide == null) {
+                return null;
+            }
+            return mapToOutputFn.apply(leftSide, rightSide);
+        };
+        return attachHashJoin(stage1, joinClause1, finalOutputFn);
+    }
+
+    @Nonnull @Override
     public <K1, K2, T1_IN, T2_IN, T1, T2, R> StreamStage<R> hashJoin2(
             @Nonnull BatchStage<T1_IN> stage1,
             @Nonnull JoinClause<K1, ? super T, ? super T1_IN, ? extends T1> joinClause1,
@@ -173,6 +188,23 @@ public class StreamStageImpl<T> extends ComputeStageImplBase<T> implements Strea
             @Nonnull TriFunction<T, T1, T2, R> mapToOutputFn
     ) {
         return attachHashJoin2(stage1, joinClause1, stage2, joinClause2, mapToOutputFn);
+    }
+
+    @Nonnull @Override
+    public <K1, K2, T1_IN, T2_IN, T1, T2, R> StreamStage<R> innerHashJoin2(
+            @Nonnull BatchStage<T1_IN> stage1,
+            @Nonnull JoinClause<K1, ? super T, ? super T1_IN, ? extends T1> joinClause1,
+            @Nonnull BatchStage<T2_IN> stage2,
+            @Nonnull JoinClause<K2, ? super T, ? super T2_IN, ? extends T2> joinClause2,
+            @Nonnull TriFunction<T, T1, T2, R> mapToOutputFn
+    ) {
+        TriFunction<T, T1, T2, R> finalOutputFn = (leftSide, middle, rightSide) -> {
+            if (leftSide == null || middle == null || rightSide == null) {
+                return null;
+            }
+            return mapToOutputFn.apply(leftSide, middle, rightSide);
+        };
+        return attachHashJoin2(stage1, joinClause1, stage2, joinClause2, finalOutputFn);
     }
 
     @Nonnull @Override

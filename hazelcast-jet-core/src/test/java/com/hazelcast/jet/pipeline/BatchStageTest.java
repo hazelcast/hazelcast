@@ -31,6 +31,7 @@ import com.hazelcast.jet.datamodel.ItemsByTag;
 import com.hazelcast.jet.datamodel.Tag;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
+import com.hazelcast.jet.function.QuadFunction;
 import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.map.IMap;
@@ -62,6 +63,7 @@ import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
 import static com.hazelcast.jet.core.processor.Processors.noopP;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
+import static com.hazelcast.jet.datamodel.Tuple4.tuple4;
 import static com.hazelcast.jet.impl.pipeline.AbstractStage.transformOf;
 import static com.hazelcast.jet.pipeline.JoinClause.joinMapEntries;
 import static com.hazelcast.jet.pipeline.ServiceFactories.nonSharedService;
@@ -143,7 +145,7 @@ public class BatchStageTest extends PipelineTestSupport {
         List<Integer> input = sequence(itemCount);
         FunctionEx<BatchStage<? extends Number>, BatchStage<String>> transformFn = stage ->
                 stage.map(formatFn)
-                     .map(String::toUpperCase);
+                        .map(String::toUpperCase);
 
         // When
         BatchStage<String> mapped = batchStageFromList(input)
@@ -775,10 +777,10 @@ public class BatchStageTest extends PipelineTestSupport {
         assertEquals(
                 streamToString(
                         input.stream()
-                             .filter(i -> {
-                                 int sum = i * (i + 1) / 2;
-                                 return sum % 2 == 0;
-                             }),
+                                .filter(i -> {
+                                    int sum = i * (i + 1) / 2;
+                                    return sum % 2 == 0;
+                                }),
                         formatFn),
                 streamToString(sinkStreamOf(Integer.class), formatFn)
         );
@@ -804,14 +806,14 @@ public class BatchStageTest extends PipelineTestSupport {
         assertEquals(
                 streamToString(
                         input.stream()
-                             .map(i -> {
-                                 // Using direct formula to sum the sequence of even/odd numbers:
-                                 int first = i % 2;
-                                 long count = i / 2 + 1;
-                                 long sum = (first + i) * count / 2;
-                                 return sum % 2 == 0 ? i : null;
-                             })
-                             .filter(Objects::nonNull),
+                                .map(i -> {
+                                    // Using direct formula to sum the sequence of even/odd numbers:
+                                    int first = i % 2;
+                                    long count = i / 2 + 1;
+                                    long sum = (first + i) * count / 2;
+                                    return sum % 2 == 0 ? i : null;
+                                })
+                                .filter(Objects::nonNull),
                         formatFn),
                 streamToString(sinkStreamOf(Integer.class), formatFn)
         );
@@ -836,10 +838,10 @@ public class BatchStageTest extends PipelineTestSupport {
         assertEquals(
                 streamToString(
                         input.stream()
-                             .flatMap(i -> {
-                                 long sum = i * (i + 1) / 2;
-                                 return Stream.of(sum, sum);
-                             }),
+                                .flatMap(i -> {
+                                    long sum = i * (i + 1) / 2;
+                                    return Stream.of(sum, sum);
+                                }),
                         formatFn),
                 streamToString(sinkStreamOf(Long.class), formatFn)
         );
@@ -923,8 +925,8 @@ public class BatchStageTest extends PipelineTestSupport {
         assertEquals(0, itemCount % 2);
         Stream<Entry<Integer, Long>> expectedStream =
                 LongStream.range(1, itemCount / 2 + 1)
-                          .boxed()
-                          .flatMap(i -> Stream.of(entry(0, i), entry(1, i)));
+                        .boxed()
+                        .flatMap(i -> Stream.of(entry(0, i), entry(1, i)));
         Function<Entry<Integer, Long>, String> formatFn =
                 e -> String.format("(%04d, %04d)", e.getKey(), e.getValue());
         assertEquals(
@@ -955,8 +957,8 @@ public class BatchStageTest extends PipelineTestSupport {
     public void distinct() {
         // Given
         List<Integer> input = IntStream.range(0, 2 * itemCount)
-                                       .map(i -> i % itemCount)
-                                       .boxed().collect(toList());
+                .map(i -> i % itemCount)
+                .boxed().collect(toList());
         Collections.shuffle(input);
 
         // When
@@ -1033,6 +1035,83 @@ public class BatchStageTest extends PipelineTestSupport {
         joined.writeTo(sink);
         execute();
         assertEquals(emptyList(), new ArrayList<>(sinkList));
+    }
+
+    @Test
+    public void when_innerHashJoin_then_filterOutNulls() {
+        // Given
+        List<Integer> input = sequence(itemCount);
+        String prefix = "value-";
+        BatchStage<Entry<Integer, String>> enrichingStage = batchStageFromList(input)
+                .filter(i -> i % 2 == 0)
+                .map(i -> entry(i, prefix + i));
+
+        // When
+        BatchStage<Entry<Integer, String>> joined = batchStageFromList(input).innerHashJoin(
+                enrichingStage,
+                joinMapEntries(wholeItem()),
+                Util::entry);
+
+        // Then
+        joined.writeTo(sink);
+        execute();
+        Function<Entry<Integer, String>, String> formatFn =
+                e -> String.format("(%04d, %s)", e.getKey(), e.getValue());
+        assertEquals(
+                streamToString(input.stream().filter(e -> e % 2 == 0).map(i -> tuple2(i, prefix + i)), formatFn),
+                streamToString(sinkStreamOfEntry(), formatFn));
+    }
+
+    @Test
+    public void when_hashJoinBuilderAddInner_then_filterOutNulls() {
+        // Given
+        int itemCountLocal = 16;
+        List<Integer> input = sequence(itemCountLocal);
+        String prefixA = "A-";
+        String prefixB = "B-";
+        String prefixC = "C-";
+        String prefixD = "D-";
+        BatchStage<Entry<Integer, String>> enrichingStage1 =
+                batchStageFromList(input)
+                        .filter(e -> e <= itemCountLocal / 2)
+                        .flatMap(i -> traverseItems(entry(i, prefixA + i), entry(i, prefixB + i)));
+        BatchStage<Entry<Integer, String>> enrichingStage2 =
+                batchStageFromList(input)
+                        .filter(e -> e <= itemCountLocal / 4)
+                        .flatMap(i -> traverseItems(entry(i, prefixC + i)));
+        BatchStage<Entry<Integer, String>> enrichingStage3 =
+                batchStageFromList(input)
+                        .filter(e -> e <= itemCountLocal / 8)
+                        .flatMap(i -> traverseItems(entry(i, prefixD + i)));
+
+        // When
+        HashJoinBuilder<Integer> b = batchStageFromList(input).hashJoinBuilder();
+        Tag<String> tagA = b.addInner(enrichingStage1, joinMapEntries(wholeItem()));
+        Tag<String> tagB = b.addInner(enrichingStage2, joinMapEntries(wholeItem()));
+        Tag<String> tagC = b.add(enrichingStage3, joinMapEntries(wholeItem()));
+        GeneralStage<Tuple2<Integer, ItemsByTag>> joined =
+                b.build(Tuple2::tuple2);
+
+        // Then
+        joined.writeTo(sink);
+        execute();
+        QuadFunction<Integer, String, String, String, String> formatFn =
+                (i, v1, v2, v3) -> String.format("(%04d, %s, %s, %s)", i, v1, v2, v3);
+        int rangeForD = itemCountLocal / 8;
+        assertEquals(
+                streamToString(input.stream()
+                                .filter(i -> i <= itemCountLocal / 4)
+                                .flatMap(i -> Stream.of(
+                                        tuple4(i, prefixA, prefixC, prefixD),
+                                        tuple4(i, prefixB, prefixC, prefixD)
+                                )),
+                        t -> formatFn.apply(t.f0(), t.f1() + t.f0(), t.f2() + t.f0(),
+                                t.f0() < rangeForD ? t.f3() + t.f0() : null)),
+                streamToString(sinkList.stream().map(o -> (Tuple2<Integer, ItemsByTag>) o),
+                        t2 -> formatFn.apply(t2.f0(), t2.f1().get(tagA), t2.f1().get(tagB),
+                                t2.f0() < rangeForD ? t2.f1().get(tagC) : "null")
+                )
+        );
     }
 
     @Test
@@ -1188,8 +1267,8 @@ public class BatchStageTest extends PipelineTestSupport {
 
         // When
         p.readFrom(source)
-         .addTimestamps(o -> 0L, 0)
-         .writeTo(assertOrdered(items));
+                .addTimestamps(o -> 0L, 0)
+                .writeTo(assertOrdered(items));
 
         // Then
         execute();
@@ -1203,8 +1282,8 @@ public class BatchStageTest extends PipelineTestSupport {
         // When
         p.readFrom(Sources.batchFromProcessor("src",
                 ProcessorMetaSupplier.of(lp, ProcessorSupplier.of(noopP()))))
-         .addTimestamps(o -> 0L, 0)
-         .writeTo(Sinks.noop());
+                .addTimestamps(o -> 0L, 0)
+                .writeTo(Sinks.noop());
         DAG dag = p.toDag();
 
         // Then
@@ -1219,9 +1298,9 @@ public class BatchStageTest extends PipelineTestSupport {
 
         // When
         p.readFrom(source)
-         .setLocalParallelism(lp)
-         .addTimestamps(t -> System.currentTimeMillis(), 1000)
-         .writeTo(Sinks.noop());
+                .setLocalParallelism(lp)
+                .addTimestamps(t -> System.currentTimeMillis(), 1000)
+                .writeTo(Sinks.noop());
         DAG dag = p.toDag();
 
         // Then
@@ -1237,8 +1316,8 @@ public class BatchStageTest extends PipelineTestSupport {
 
         // When
         p.readFrom(src)
-         .addTimestamps(o -> 0L, 0)
-         .writeTo(Sinks.noop());
+                .addTimestamps(o -> 0L, 0)
+                .writeTo(Sinks.noop());
         DAG dag = p.toDag();
 
         // Then
@@ -1256,9 +1335,9 @@ public class BatchStageTest extends PipelineTestSupport {
 
         // When
         p.readFrom(source)
-         .addTimestamps(o -> 0L, 0)
-         .setLocalParallelism(lp)
-         .writeTo(Sinks.noop());
+                .addTimestamps(o -> 0L, 0)
+                .setLocalParallelism(lp)
+                .writeTo(Sinks.noop());
     }
 
 }

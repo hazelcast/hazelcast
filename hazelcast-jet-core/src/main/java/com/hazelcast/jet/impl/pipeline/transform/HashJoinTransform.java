@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl.pipeline.transform;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.datamodel.ItemsByTag;
 import com.hazelcast.jet.datamodel.Tag;
 import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.impl.pipeline.Planner;
@@ -44,6 +45,8 @@ public class HashJoinTransform<T0, R> extends AbstractTransform {
     private final BiFunctionEx mapToOutputBiFn;
     @Nullable
     private final TriFunction mapToOutputTriFn;
+    @Nullable
+    private final List<Boolean> whereNullsNotAllowed;
 
     public HashJoinTransform(
             @Nonnull List<Transform> upstream,
@@ -56,6 +59,7 @@ public class HashJoinTransform<T0, R> extends AbstractTransform {
         this.tags = tags;
         this.mapToOutputBiFn = mapToOutputBiFn;
         this.mapToOutputTriFn = null;
+        this.whereNullsNotAllowed = null;
     }
 
     public <T1, T2> HashJoinTransform(
@@ -69,6 +73,21 @@ public class HashJoinTransform<T0, R> extends AbstractTransform {
         this.tags = tags;
         this.mapToOutputBiFn = null;
         this.mapToOutputTriFn = mapToOutputTriFn;
+        this.whereNullsNotAllowed = null;
+    }
+    public HashJoinTransform(
+            @Nonnull List<Transform> upstream,
+            @Nonnull List<JoinClause<?, ? super T0, ?, ?>> clauses,
+            @Nonnull List<Tag> tags,
+            @Nonnull BiFunctionEx mapToOutputBiFn,
+            @Nonnull List<Boolean> whereNullsNotAllowed
+    ) {
+        super(upstream.size() + "-way hash-join", upstream);
+        this.clauses = clauses;
+        this.tags = tags;
+        this.mapToOutputBiFn = mapToOutputBiFn;
+        this.mapToOutputTriFn = null;
+        this.whereNullsNotAllowed = whereNullsNotAllowed;
     }
 
     //         ---------           ----------           ----------
@@ -101,8 +120,12 @@ public class HashJoinTransform<T0, R> extends AbstractTransform {
         List<Tag> tags = this.tags;
         BiFunctionEx mapToOutputBiFn = this.mapToOutputBiFn;
         TriFunction mapToOutputTriFn = this.mapToOutputTriFn;
+
+        // must be extracted to variable, probably because of serialization bug
+        BiFunctionEx<List<Tag>, Object[], ItemsByTag> tupleToItems = tupleToItemsByTag(whereNullsNotAllowed);
+
         Vertex joiner = p.addVertex(this, name() + "-joiner", localParallelism(),
-                () -> new HashJoinP<>(keyFns, tags, mapToOutputBiFn, mapToOutputTriFn)).v;
+                () -> new HashJoinP<>(keyFns, tags, mapToOutputBiFn, mapToOutputTriFn, tupleToItems)).v;
         p.dag.edge(from(primary.v, primary.nextAvailableOrdinal()).to(joiner, 0));
 
         String collectorName = name() + "-collector";
@@ -125,5 +148,18 @@ public class HashJoinTransform<T0, R> extends AbstractTransform {
                     .broadcast().priority(-1));
             collectorOrdinal++;
         }
+    }
+
+    private static BiFunctionEx<List<Tag>, Object[], ItemsByTag> tupleToItemsByTag(List<Boolean> nullsNotAllowed) {
+        return (tagList, tuple) -> {
+            ItemsByTag res = new ItemsByTag();
+            for (int i = 0; i < tagList.size(); i++) {
+                if (tuple[i] == null && nullsNotAllowed.get(i)) {
+                    return null;
+                }
+                res.put(tagList.get(i), tuple[i]);
+            }
+            return res;
+        };
     }
 }

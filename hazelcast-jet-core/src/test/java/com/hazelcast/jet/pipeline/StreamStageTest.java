@@ -1255,6 +1255,40 @@ public class StreamStageTest extends PipelineStreamTestSupport {
 
     @Test
     @SuppressWarnings("unchecked")
+    public void innerHashJoin() {
+        // Given
+        List<Integer> input = sequence(itemCount);
+        String prefixA = "A";
+        // entry(0, "A-0000"), entry(2, "A-0002"), ...
+        List<Integer> enrichingInputList = input.stream().filter(e -> e % 2 == 0).collect(toList());
+        BatchStage<Entry<Integer, String>> enrichingStage = enrichingStage(enrichingInputList, prefixA);
+
+        // When
+        @SuppressWarnings("Convert2MethodRef")
+        // there's a method ref bug in JDK
+        StreamStage<Tuple2<Integer, String>> hashJoined = streamStageFromList(input).innerHashJoin(
+                enrichingStage,
+                joinMapEntries(wholeItem()),
+                (i, valueA) -> tuple2(i, valueA)
+        );
+
+        // Then
+        hashJoined.writeTo(sink);
+        execute();
+        BiFunction<Integer, String, String> formatFn = (i, value) -> String.format("(%04d, %s)", i, value);
+        // sinkList: tuple2(0, "A-0000"), tuple2(2, "A-0002"), ...
+        assertEquals(
+                streamToString(
+                        enrichingInputList.stream().map(i -> formatFn.apply(i, ENRICHING_FORMAT_FN.apply(prefixA, i))),
+                        identity()),
+                streamToString(
+                        sinkList.stream().map(t2 -> (Tuple2<Integer, String>) t2),
+                        t2 -> formatFn.apply(t2.f0(), t2.f1()))
+        );
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
     public void hashJoin2() {
         // Given
         List<Integer> input = sequence(itemCount);
