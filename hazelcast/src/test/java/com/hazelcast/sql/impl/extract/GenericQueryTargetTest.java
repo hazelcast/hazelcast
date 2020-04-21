@@ -45,9 +45,7 @@ import static org.junit.Assert.assertTrue;
 public class GenericQueryTargetTest extends SqlTestSupport {
     @Test
     public void testTargetDescriptor() {
-        GenericQueryTargetDescriptor descriptor = new GenericQueryTargetDescriptor();
-        checkEquals(GenericQueryTargetDescriptor.INSTANCE, descriptor, true);
-        serializeAndCheck(descriptor, SqlDataSerializerHook.TARGET_DESCRIPTOR_GENERIC);
+        serializeAndCheck(new GenericQueryTargetDescriptor(), SqlDataSerializerHook.TARGET_DESCRIPTOR_GENERIC);
     }
 
     @Test
