@@ -42,7 +42,13 @@ public final class CompatibilityTestUtils {
     static {
         Map<String, Set<String>> finalMethods = new HashMap<>();
         finalMethods.put("com.hazelcast.cp.internal.session.AbstractProxySessionManager",
-                setOf("getSession"));
+                setOf("getSession", "getSessionAcquireCount"));
+        finalMethods.put("com.hazelcast.spi.impl.AbstractInvocationFuture",
+                setOf("get"));
+        finalMethods.put("com.hazelcast.cp.internal.datastructures.spi.blocking.AbstractBlockingService",
+                setOf("getRegistryOrNull"));
+        finalMethods.put("com.hazelcast.cp.internal.datastructures.spi.blocking.ResourceRegistry",
+                setOf("getWaitTimeouts"));
         FINAL_METHODS = finalMethods;
     }
 

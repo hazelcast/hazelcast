@@ -121,6 +121,13 @@ class ServiceAnswer extends AbstractAnswer {
         } else if (arguments.length == 1 && methodName.equals("getSession")) {
             // ProxySessionManagerService
             return invoke(invocation, arguments);
+        } else if (arguments.length == 2 && methodName.equals("getSessionAcquireCount")) {
+            // ProxySessionManagerService
+            return invoke(invocation, arguments);
+        } else if (arguments.length == 1 && methodName.equals("getRegistryOrNull")) {
+            // AbstractBlockingService
+            Object result = invoke(false, invocation, arguments[0]);
+            return createMockForTargetClass(result, new DelegatingAnswer(result));
         } else if (arguments.length == 0 && methodName.startsWith("get")) {
             return invoke(invocation);
         }
