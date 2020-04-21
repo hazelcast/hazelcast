@@ -109,9 +109,6 @@ public class ClientStatisticsTest extends ClientTestSupport {
         assertTrue(format("connectionTimeStat was %d, clientConnectionTime was %d (%s)",
                 connectionTimeStat, clientConnectionTime, stats), clientConnectionTime >= connectionTimeStat);
 
-        String queueSize = stats.get("executionService.userExecutorQueueSize");
-        assertNotNull(format("executionService.userExecutorQueueSize should not be null (%s)", stats), queueSize);
-
         String mapHits = stats.get(MAP_HITS_KEY);
         assertNull(format("%s should be null (%s)", MAP_HITS_KEY, stats), mapHits);
         String cacheHits = stats.get(CACHE_HITS_KEY);
