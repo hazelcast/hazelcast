@@ -23,6 +23,8 @@ import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.util.Collection;
@@ -73,6 +75,13 @@ public class NodeServiceProviderImpl implements NodeServiceProvider {
         ServerConnectionManager endpointManager = nodeEngine.getNode().getConnectionManager(EndpointQualifier.MEMBER);
 
         return endpointManager.getOrConnect(member.getAddress());
+    }
+
+    @Override
+    public MapContainer getMap(String name) {
+        MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
+
+        return mapService.getMapServiceContext().getMapContainers().get(name);
     }
 
     @Override

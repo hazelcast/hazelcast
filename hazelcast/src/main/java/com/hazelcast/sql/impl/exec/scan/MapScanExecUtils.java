@@ -14,34 +14,25 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.plan.node;
+package com.hazelcast.sql.impl.exec.scan;
 
-import com.hazelcast.sql.impl.plan.node.io.ReceivePlanNode;
-import com.hazelcast.sql.impl.plan.node.io.RootSendPlanNode;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.query.impl.getters.Extractors;
 
-public abstract class TestPlanNodeVisitorAdapter implements PlanNodeVisitor {
-    @Override
-    public void onRootNode(RootPlanNode node) {
+/**
+ * Utility class containing helper methods for map iteration. Simplifies implementation of query compiler.
+ */
+public final class MapScanExecUtils {
+    private MapScanExecUtils() {
         // No-op.
     }
 
-    @Override
-    public void onReceiveNode(ReceivePlanNode node) {
-        // No-op.
+    public static Extractors createExtractors(MapContainer map) {
+        return map.getExtractors();
     }
 
-    @Override
-    public void onRootSendNode(RootSendPlanNode node) {
-        // No-op.
-    }
-
-    @Override
-    public void onMapScanNode(MapScanPlanNode node) {
-        // No-op.
-    }
-
-    @Override
-    public void onOtherNode(PlanNode node) {
-        // No-op.
+    public static MapScanExecIterator createIterator(MapContainer map, PartitionIdSet parts) {
+        return new MapScanExecIterator(map, parts.iterator());
     }
 }

@@ -38,6 +38,12 @@ public final class SqlErrorCode {
     /** Query was cancelled due to timeout. */
     public static final int TIMEOUT = 1004;
 
+    /** An error caused by concurrent migration of partition to other member. */
+    public static final int PARTITION_MIGRATED = 1005;
+
+    /** An error caused concurrent destroy of a map. */
+    public static final int MAP_DESTROYED = 1006;
+
     /** An error with data conversion or transformation. */
     public static final int DATA_EXCEPTION = 2000;
 

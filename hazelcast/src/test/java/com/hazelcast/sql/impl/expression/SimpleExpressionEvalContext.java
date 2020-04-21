@@ -14,34 +14,29 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.plan.node;
+package com.hazelcast.sql.impl.expression;
 
-import com.hazelcast.sql.impl.plan.node.io.ReceivePlanNode;
-import com.hazelcast.sql.impl.plan.node.io.RootSendPlanNode;
+import java.util.Arrays;
+import java.util.List;
 
-public abstract class TestPlanNodeVisitorAdapter implements PlanNodeVisitor {
-    @Override
-    public void onRootNode(RootPlanNode node) {
-        // No-op.
+public final class SimpleExpressionEvalContext implements ExpressionEvalContext {
+
+    private final List<Object> args;
+
+    public static SimpleExpressionEvalContext create(Object... args) {
+        if (args == null) {
+            args = new Object[0];
+        }
+
+        return new SimpleExpressionEvalContext(Arrays.asList(args));
+    }
+
+    private SimpleExpressionEvalContext(List<Object> args) {
+        this.args = args;
     }
 
     @Override
-    public void onReceiveNode(ReceivePlanNode node) {
-        // No-op.
-    }
-
-    @Override
-    public void onRootSendNode(RootSendPlanNode node) {
-        // No-op.
-    }
-
-    @Override
-    public void onMapScanNode(MapScanPlanNode node) {
-        // No-op.
-    }
-
-    @Override
-    public void onOtherNode(PlanNode node) {
-        // No-op.
+    public Object getArgument(int index) {
+        return args.get(index);
     }
 }

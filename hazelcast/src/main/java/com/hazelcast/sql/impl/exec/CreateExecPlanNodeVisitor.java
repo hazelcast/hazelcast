@@ -16,6 +16,10 @@
 
 package com.hazelcast.sql.impl.exec;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.sql.impl.NodeServiceProvider;
 import com.hazelcast.sql.impl.exec.io.InboundHandler;
 import com.hazelcast.sql.impl.exec.io.Inbox;
 import com.hazelcast.sql.impl.exec.io.OutboundHandler;
@@ -25,10 +29,12 @@ import com.hazelcast.sql.impl.exec.io.SendExec;
 import com.hazelcast.sql.impl.exec.io.flowcontrol.FlowControl;
 import com.hazelcast.sql.impl.exec.io.flowcontrol.FlowControlFactory;
 import com.hazelcast.sql.impl.exec.root.RootExec;
+import com.hazelcast.sql.impl.exec.scan.MapScanExec;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperationFragment;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperationFragmentMapping;
 import com.hazelcast.sql.impl.operation.QueryOperationHandler;
+import com.hazelcast.sql.impl.plan.node.MapScanPlanNode;
 import com.hazelcast.sql.impl.plan.node.PlanNode;
 import com.hazelcast.sql.impl.plan.node.PlanNodeVisitor;
 import com.hazelcast.sql.impl.plan.node.RootPlanNode;
@@ -49,6 +55,12 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
     /** Operation handler. */
     private final QueryOperationHandler operationHandler;
 
+    /** Node service provider. */
+    private final NodeServiceProvider nodeServiceProvider;
+
+    /** Serialization service. */
+    private final InternalSerializationService serializationService;
+
     /** Local member ID. */
     private final UUID localMemberId;
 
@@ -57,6 +69,9 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
 
     /** Factory to create flow control objects. */
     private final FlowControlFactory flowControlFactory;
+
+    /** Partitions owned by this data node. */
+    private final PartitionIdSet localParts;
 
     /** Recommended outbox batch size in bytes. */
     private final int outboxBatchSize;
@@ -71,19 +86,25 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
     private final Map<Integer, InboundHandler> inboxes = new HashMap<>();
 
     /** Outboxes. */
-    private Map<Integer, Map<UUID, OutboundHandler>> outboxes = new HashMap<>();
+    private final Map<Integer, Map<UUID, OutboundHandler>> outboxes = new HashMap<>();
 
     public CreateExecPlanNodeVisitor(
         QueryOperationHandler operationHandler,
+        NodeServiceProvider nodeServiceProvider,
+        InternalSerializationService serializationService,
         UUID localMemberId,
         QueryExecuteOperation operation,
         FlowControlFactory flowControlFactory,
+        PartitionIdSet localParts,
         int outboxBatchSize
     ) {
         this.operationHandler = operationHandler;
+        this.nodeServiceProvider = nodeServiceProvider;
+        this.serializationService = serializationService;
         this.localMemberId = localMemberId;
         this.operation = operation;
         this.flowControlFactory = flowControlFactory;
+        this.localParts = localParts;
         this.outboxBatchSize = outboxBatchSize;
     }
 
@@ -176,6 +197,38 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
         }
 
         return res;
+    }
+
+    @Override
+    public void onMapScanNode(MapScanPlanNode node) {
+        Exec res;
+
+        if (localParts.isEmpty()) {
+            res = new EmptyExec(node.getId());
+        } else {
+            String mapName = node.getMapName();
+
+            MapContainer map = nodeServiceProvider.getMap(mapName);
+
+            if (map == null) {
+                res = new EmptyExec(node.getId());
+            } else {
+                res = new MapScanExec(
+                    node.getId(),
+                    map,
+                    localParts,
+                    node.getKeyDescriptor(),
+                    node.getValueDescriptor(),
+                    node.getFieldNames(),
+                    node.getFieldTypes(),
+                    node.getProjects(),
+                    node.getFilter(),
+                    serializationService
+                );
+            }
+        }
+
+        push(res);
     }
 
     @Override

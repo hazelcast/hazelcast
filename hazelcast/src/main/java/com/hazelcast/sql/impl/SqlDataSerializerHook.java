@@ -22,6 +22,8 @@ import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.expression.ColumnExpression;
+import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.operation.QueryBatchExchangeOperation;
 import com.hazelcast.sql.impl.operation.QueryCancelOperation;
 import com.hazelcast.sql.impl.operation.QueryCheckOperation;
@@ -29,6 +31,7 @@ import com.hazelcast.sql.impl.operation.QueryCheckResponseOperation;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperationFragment;
 import com.hazelcast.sql.impl.operation.QueryFlowControlExchangeOperation;
+import com.hazelcast.sql.impl.plan.node.MapScanPlanNode;
 import com.hazelcast.sql.impl.plan.node.RootPlanNode;
 import com.hazelcast.sql.impl.plan.node.io.ReceivePlanNode;
 import com.hazelcast.sql.impl.plan.node.io.RootSendPlanNode;
@@ -69,7 +72,13 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int NODE_ROOT_SEND = 14;
     public static final int NODE_RECEIVE = 15;
 
-    public static final int LEN = NODE_RECEIVE + 1;
+    public static final int EXPRESSION_COLUMN = 18;
+
+    public static final int NODE_MAP_SCAN = 19;
+
+    public static final int TARGET_DESCRIPTOR_GENERIC = 20;
+
+    public static final int LEN = TARGET_DESCRIPTOR_GENERIC + 1;
 
     @Override
     public int getFactoryId() {
@@ -101,6 +110,12 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[NODE_ROOT] = arg -> new RootPlanNode();
         constructors[NODE_ROOT_SEND] = arg -> new RootSendPlanNode();
         constructors[NODE_RECEIVE] = arg -> new ReceivePlanNode();
+
+        constructors[EXPRESSION_COLUMN] = arg -> new ColumnExpression<>();
+
+        constructors[NODE_MAP_SCAN] = arg -> new MapScanPlanNode();
+
+        constructors[TARGET_DESCRIPTOR_GENERIC] = arg -> GenericQueryTargetDescriptor.INSTANCE;
 
         return new ArrayDataSerializableFactory(constructors);
     }

@@ -46,6 +46,7 @@ import com.hazelcast.map.impl.record.DataRecordFactory;
 import com.hazelcast.map.impl.record.ObjectRecordFactory;
 import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
@@ -107,6 +108,8 @@ public class MapContainer {
     private volatile Evictor evictor;
 
     private boolean persistWanReplicatedData;
+
+    private volatile boolean destroyed;
 
     /**
      * Operations which are done in this constructor should obey the rules defined
@@ -390,8 +393,20 @@ public class MapContainer {
         return interceptorRegistry;
     }
 
+    /**
+     * Callback invoked before record store and indexes are destroyed. Ensures that if map iterator observes a non-destroyed
+     * state, then associated data structures are still valid.
+     */
+    public void onBeforeDestroy() {
+        destroyed = true;
+    }
+
     // callback called when the MapContainer is de-registered from MapService and destroyed - basically on map-destroy
     public void onDestroy() {
+    }
+
+    public boolean isDestoyed() {
+        return destroyed;
     }
 
     public boolean shouldCloneOnEntryProcessing(int partitionId) {
@@ -420,6 +435,10 @@ public class MapContainer {
 
     public boolean isPersistWanReplicatedData() {
         return persistWanReplicatedData;
+    }
+
+    public RecordStore<?> getRecordStore(int partitionId) {
+        return mapServiceContext.getRecordStore(partitionId, name);
     }
 
     private class ObjectToData implements Function<Object, Data> {

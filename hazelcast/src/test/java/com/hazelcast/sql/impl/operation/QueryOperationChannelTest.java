@@ -21,6 +21,7 @@ import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.sql.impl.NodeServiceProvider;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlTestSupport;
@@ -101,6 +102,11 @@ public class QueryOperationChannelTest extends SqlTestSupport {
         @Override
         public Connection getConnection(UUID memberId) {
             return connection;
+        }
+
+        @Override
+        public MapContainer getMap(String name) {
+            return null;
         }
 
         @Override

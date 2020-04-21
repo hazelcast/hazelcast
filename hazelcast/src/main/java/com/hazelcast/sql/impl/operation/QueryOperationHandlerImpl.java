@@ -189,9 +189,12 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
             // Create executors and inboxes.
             CreateExecPlanNodeVisitor visitor = new CreateExecPlanNodeVisitor(
                 this,
+                nodeServiceProvider,
+                serializationService,
                 localMemberId,
                 operation,
                 flowControlFactory,
+                operation.getPartitionMap().get(localMemberId),
                 outboxBatchSize
             );
 
@@ -261,7 +264,7 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
         }
 
         // We pass originating member ID here instead if caller ID to preserve the causality:
-        // in the "participant1 -> co4ordinator -> participant2" flow, the second participant
+        // in the "participant1 -> coordinator -> participant2" flow, the participant2
         // get the ID of participant1.
         QueryException error = QueryException.error(
             operation.getErrorCode(),

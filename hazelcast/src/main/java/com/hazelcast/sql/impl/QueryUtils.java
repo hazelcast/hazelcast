@@ -34,6 +34,6 @@ public final class QueryUtils {
     }
 
     public static String workerName(String instanceName, String workerType, long index) {
-        return instanceName + "-" + workerType + index;
+        return instanceName + "-" + workerType + "-" + index;
     }
 }
