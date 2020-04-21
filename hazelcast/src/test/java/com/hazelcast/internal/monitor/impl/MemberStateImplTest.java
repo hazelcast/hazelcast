@@ -17,12 +17,13 @@
 package com.hazelcast.internal.monitor.impl;
 
 import com.hazelcast.cache.impl.CacheStatisticsImpl;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hotrestart.BackupTaskState;
 import com.hazelcast.hotrestart.BackupTaskStatus;
-import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.management.TimedMemberState;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
 import com.hazelcast.internal.management.dto.AdvancedNetworkStatsDTO;
@@ -31,12 +32,11 @@ import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
 import com.hazelcast.internal.monitor.HotRestartState;
 import com.hazelcast.internal.monitor.NodeState;
 import com.hazelcast.internal.monitor.WanSyncState;
-import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.internal.util.Clock;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
 import com.hazelcast.wan.impl.WanSyncStatus;
@@ -175,7 +175,6 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         assertEquals(Long.valueOf(598123L), deserialized.getRuntimeProps().get("prop1"));
         assertNotNull(deserialized.getLocalMemoryStats());
         assertNotNull(deserialized.getOperationStats());
-        assertNotNull(deserialized.getMXBeans());
 
         client = deserialized.getClients().iterator().next();
         assertEquals(clientUuid, client.uuid);

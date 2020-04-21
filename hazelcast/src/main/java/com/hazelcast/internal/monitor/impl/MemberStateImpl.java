@@ -27,7 +27,6 @@ import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.internal.management.dto.AdvancedNetworkStatsDTO;
 import com.hazelcast.internal.management.dto.ClientEndPointDTO;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
-import com.hazelcast.internal.management.dto.MXBeansDTO;
 import com.hazelcast.internal.monitor.HotRestartState;
 import com.hazelcast.internal.monitor.LocalCacheStats;
 import com.hazelcast.internal.monitor.LocalFlakeIdGeneratorStats;
@@ -81,7 +80,6 @@ public class MemberStateImpl implements MemberState {
     private Map<String, LocalFlakeIdGeneratorStats> flakeIdGeneratorStats = new HashMap<>();
     private Collection<ClientEndPointDTO> clients = new HashSet<>();
     private Map<UUID, String> clientStats = new HashMap<>();
-    private MXBeansDTO beans = new MXBeansDTO();
     private LocalMemoryStats memoryStats = new LocalMemoryStatsImpl();
     private MemberPartitionState memberPartitionState = new MemberPartitionStateImpl();
     private LocalOperationStats operationStats = new LocalOperationStatsImpl();
@@ -251,15 +249,6 @@ public class MemberStateImpl implements MemberState {
         return clients;
     }
 
-    @Override
-    public MXBeansDTO getMXBeans() {
-        return beans;
-    }
-
-    public void setBeans(MXBeansDTO beans) {
-        this.beans = beans;
-    }
-
     public void setClients(Collection<ClientEndPointDTO> clients) {
         this.clients = clients;
     }
@@ -399,7 +388,6 @@ public class MemberStateImpl implements MemberState {
             clientsArray.add(client.toJson());
         }
         root.add("clients", clientsArray);
-        root.add("beans", beans.toJson());
         addJsonIfSerializable(root, "memoryStats", memoryStats);
         addJsonIfSerializable(root, "operationStats", operationStats);
         root.add("memberPartitionState", memberPartitionState.toJson());
@@ -540,8 +528,6 @@ public class MemberStateImpl implements MemberState {
             client.fromJson(jsonClient.asObject());
             clients.add(client);
         }
-        beans = new MXBeansDTO();
-        beans.fromJson(getObject(json, "beans"));
         JsonObject jsonMemoryStats = getObject(json, "memoryStats", null);
         if (jsonMemoryStats != null) {
             memoryStats = readJsonIfDeserializable(jsonMemoryStats, memoryStats);

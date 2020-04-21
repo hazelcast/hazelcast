@@ -16,17 +16,6 @@
 
 package com.hazelcast.internal.management;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
-import java.util.function.ToLongFunction;
-
-import javax.annotation.Nonnull;
-
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.client.Client;
 import com.hazelcast.client.impl.statistics.ClientStatistics;
@@ -66,10 +55,10 @@ import com.hazelcast.internal.monitor.impl.LocalOperationStatsImpl;
 import com.hazelcast.internal.monitor.impl.MemberPartitionStateImpl;
 import com.hazelcast.internal.monitor.impl.MemberStateImpl;
 import com.hazelcast.internal.monitor.impl.NodeStateImpl;
-import com.hazelcast.internal.server.NetworkStats;
-import com.hazelcast.internal.server.AggregateServerConnectionManager;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.server.AggregateServerConnectionManager;
+import com.hazelcast.internal.server.NetworkStats;
 import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.map.impl.MapService;
@@ -81,6 +70,16 @@ import com.hazelcast.topic.LocalTopicStats;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 import com.hazelcast.wan.impl.WanReplicationService;
+
+import javax.annotation.Nonnull;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import java.util.function.ToLongFunction;
 
 import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
@@ -176,7 +175,6 @@ public class TimedMemberStateFactory {
         Address thisAddress = node.getThisAddress();
         memberState.setAddress(thisAddress.getHost() + ":" + thisAddress.getPort());
         memberState.setEndpoints(node.getLocalMember().getAddressMap());
-        TimedMemberStateFactoryHelper.registerJMXBeans(instance, memberState);
 
         MemberPartitionStateImpl memberPartitionState = (MemberPartitionStateImpl) memberState.getMemberPartitionState();
         InternalPartitionService partitionService = node.getPartitionService();
