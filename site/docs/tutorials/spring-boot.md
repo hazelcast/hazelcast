@@ -1,5 +1,5 @@
 ---
-title: Spring Boot Starter 
+title: Spring Boot Starter
 description: How to auto-configure Jet in Spring Boot Application
 ---
 
@@ -32,7 +32,7 @@ version '1.0-SNAPSHOT'
 repositories.mavenCentral()
 
 dependencies {
-  compile 'com.hazelcast.jet.contrib:hazelcast-jet-spring-boot-starter:2.0.0'  
+  compile 'com.hazelcast.jet.contrib:hazelcast-jet-spring-boot-starter:2.0.0'
 }
 ```
 

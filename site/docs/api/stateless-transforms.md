@@ -102,9 +102,9 @@ StreamStage<OrderDetails> details = orders.mapUsingReplicatedMap("products",
     (order, product) -> new OrderDetails(order, product));
 ```
 
->With a `ReplicatedMap`, a lookup is always local compared to a standard
->`IMap`. The downside is that the data is replicated to all the nodes,
->consuming more memory in the cluster.
+>With a `ReplicatedMap`, as opposed to a standard `IMap`, every lookup
+is local. The downside is that the data is replicated to all the nodes,
+consuming more memory in the cluster.
 
 ## mapUsingService
 
@@ -261,11 +261,31 @@ streaming stage. The side inputs must be batch stages.
 
 ```java
 StreamStage<Order> orders = pipeline
-    .readFrom(kafka(.., "orders")).withoutTimestamps();
-BatchStage<ProductDetails>> productDetails = pipeline
-    .readFrom(files("products"));
+        .readFrom(orderSource())
+        .withoutTimestamps();
+BatchStage<ProductDetails> productDetails = pipeline
+        .readFrom(productDetailsSource());
 StreamStage<OrderDetails> joined = orders.hashJoin(productDetails,
-        onKeys(order -> order.productId, product -> product.productId),
+        onKeys(Order::productId, ProductDetails::productId),
         (order, product) -> new OrderDetails(order, product)
 );
 ```
+
+The last argument to `hashJoin` is a function that gets the input and
+the enriching item. Note that by default Jet does an outer join: if the
+enriching stream lacks a given key, the corresponding function parameter
+will be `null`. You can request an inner join as well:
+
+```java
+StreamStage<OrderDetails> joined = orders.innerHashJoin(productDetails,
+        onKeys(Order::productId, ProductDetails::productId),
+        (order, product) -> new OrderDetails(order, product)
+);
+```
+
+In this case the `product` argument is never `null` and if a given key
+is missing, the input `Order` item is filtered out.
+
+Jet also supports hash-joining with more streams at once through
+`hashJoin2` and the `hashJoinBuilder`. Refer to their documentation for
+more details.
