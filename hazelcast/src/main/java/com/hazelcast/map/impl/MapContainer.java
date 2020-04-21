@@ -437,8 +437,8 @@ public class MapContainer {
         return persistWanReplicatedData;
     }
 
-    public RecordStore<?> getRecordStore(int partitionId) {
-        return mapServiceContext.getRecordStore(partitionId, name);
+    public RecordStore<?> getExistingRecordStore(int partitionId) {
+        return mapServiceContext.getExistingRecordStore(partitionId, name);
     }
 
     private class ObjectToData implements Function<Object, Data> {
