@@ -34,6 +34,7 @@ import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.impl.ComputeIfPresentEntryProcessor;
 import com.hazelcast.map.impl.ComputeIfAbsentEntryProcessor;
+import com.hazelcast.map.impl.KeyValueConsumingEntryProcessor;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.iterator.MapPartitionIterator;
@@ -57,7 +58,6 @@ import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.version.Version;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -73,6 +73,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -1046,10 +1047,9 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
                               @Nonnull BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(key, NULL_BIFUNCTION_IS_NOT_ALLOWED);
-        Version clusterVersion = getNodeEngine().getClusterService().getClusterVersion();
 
         if (SerializationUtil.isClassStaticAndSerializable(remappingFunction)
-                && clusterVersion.isGreaterOrEqual(Versions.V4_1)) {
+                && isClusterVersionGreaterOrEqual(Versions.V4_1)) {
             ComputeIfPresentEntryProcessor<K, V> ep = new ComputeIfPresentEntryProcessor<>(remappingFunction);
             return executeOnKey(key, ep);
         } else {
@@ -1082,10 +1082,9 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     public V computeIfAbsent(@Nonnull K key, @Nonnull Function<? super K, ? extends V> mappingFunction) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(mappingFunction, NULL_FUNCTION_IS_NOT_ALLOWED);
-        Version clusterVersion = getNodeEngine().getClusterService().getClusterVersion();
 
         if (SerializationUtil.isClassStaticAndSerializable(mappingFunction)
-                && clusterVersion.isGreaterOrEqual(Versions.V4_1)) {
+                && isClusterVersionGreaterOrEqual(Versions.V4_1)) {
             ComputeIfAbsentEntryProcessor<K, V> ep = new ComputeIfAbsentEntryProcessor<>(mappingFunction);
             return executeOnKey(key, ep);
         } else {
@@ -1109,6 +1108,19 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
             return newValue;
         } else {
             return toObject(result);
+        }
+    }
+
+    @Override
+    public void forEach(@Nonnull BiConsumer<? super K, ? super V> action) {
+        checkNotNull(action, NULL_CONSUMER_IS_NOT_ALLOWED);
+
+        if (SerializationUtil.isClassStaticAndSerializable(action)
+                && isClusterVersionGreaterOrEqual(Versions.V4_1)) {
+            KeyValueConsumingEntryProcessor<K, V> ep = new KeyValueConsumingEntryProcessor<>(action);
+            executeOnEntries(ep);
+        } else {
+            super.forEach(action);
         }
     }
 

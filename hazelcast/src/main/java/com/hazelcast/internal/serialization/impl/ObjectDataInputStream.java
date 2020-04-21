@@ -26,9 +26,9 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 
 import static com.hazelcast.internal.nio.Bits.NULL_ARRAY_LENGTH;
-import static com.hazelcast.internal.nio.Bits.UTF_8;
 
 public class ObjectDataInputStream extends VersionedObjectDataInput
         implements Closeable, DataReader, SerializationServiceSupport {
@@ -303,7 +303,7 @@ public class ObjectDataInputStream extends VersionedObjectDataInput
 
         byte[] utf8Bytes = new byte[numberOfBytes];
         dataInput.readFully(utf8Bytes);
-        return new String(utf8Bytes, UTF_8);
+        return new String(utf8Bytes, StandardCharsets.UTF_8);
     }
 
     @Override

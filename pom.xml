@@ -59,7 +59,7 @@
         <maven.javadoc.plugin.excludePackageNames>
             *.impl:*.impl.*:*.internal:*.internal.*:*.operations:*.proxy:*.util:
             com.hazelcast.aws.security:*.handlermigration:*.client.connection.nio:
-            *.client.console:*.buildutils:*.client.protocol.generator:*.cluster.client:
+            *.client.console:*.client.protocol.generator:*.cluster.client:
             *.concurrent:*.collection:*.nio.ascii:*.nio.ssl:*.nio.tcp:*.partition.client:
             *.transaction.client:*.core.server:com.hazelcast.instance:com.hazelcast.PlaceHolder
         </maven.javadoc.plugin.excludePackageNames>

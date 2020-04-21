@@ -61,7 +61,7 @@ public class FailoverConfigTest {
                 "setQueryCacheConfigs", "getInstanceName", "setInstanceName", "getConnectionStrategyConfig",
                 "setConnectionStrategyConfig", "getUserCodeDeploymentConfig", "setUserCodeDeploymentConfig",
                 "getOrCreateQueryCacheConfig", "getOrNullQueryCacheConfig", "addLabel", "setLabels",
-                "setUserContext", "getUserContext", "setMetricsConfig",
+                "setUserContext", "getUserContext", "setMetricsConfig", "load",
                 "setBackupAckToClientEnabled", "isBackupAckToClientEnabled", "getMetricsConfig", "equals", "hashCode", "toString");
         Method[] declaredMethods = ClientConfig.class.getDeclaredMethods();
         for (Method method : declaredMethods) {

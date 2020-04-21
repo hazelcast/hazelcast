@@ -33,6 +33,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Enumeration;
 import java.util.Iterator;
@@ -44,7 +45,6 @@ import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.Preconditions.checkFalse;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
-import static com.hazelcast.internal.util.StringUtil.UTF8_CHARSET;
 import static com.hazelcast.internal.util.StringUtil.trim;
 import static java.lang.String.format;
 
@@ -111,8 +111,8 @@ public class EncryptionReplacer extends AbstractPbeReplacer {
                 }
             }
             if (passwordUserProperties) {
-                baos.write(System.getProperty("user.home").getBytes(UTF8_CHARSET));
-                baos.write(System.getProperty("user.name").getBytes(UTF8_CHARSET));
+                baos.write(System.getProperty("user.home").getBytes(StandardCharsets.UTF_8));
+                baos.write(System.getProperty("user.name").getBytes(StandardCharsets.UTF_8));
             }
             if (passwordNetworkInterface != null) {
                 try {
@@ -122,7 +122,7 @@ public class EncryptionReplacer extends AbstractPbeReplacer {
                     throw rethrow(e);
                 }
             }
-            return new String(Base64.getEncoder().encode(baos.toByteArray()), UTF8_CHARSET).toCharArray();
+            return new String(Base64.getEncoder().encode(baos.toByteArray()), StandardCharsets.UTF_8).toCharArray();
         } catch (Exception e) {
             throw rethrow(e);
         }

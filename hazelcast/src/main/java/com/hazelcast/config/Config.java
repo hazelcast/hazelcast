@@ -41,6 +41,8 @@ import com.hazelcast.internal.config.ScheduledExecutorConfigReadOnly;
 import com.hazelcast.internal.config.ServicesConfig;
 import com.hazelcast.internal.config.SetConfigReadOnly;
 import com.hazelcast.internal.config.TopicConfigReadOnly;
+import com.hazelcast.internal.config.XmlConfigLocator;
+import com.hazelcast.internal.config.YamlConfigLocator;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.map.IMap;
 import com.hazelcast.multimap.MultiMap;
@@ -64,6 +66,8 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.config.NearCacheConfigAccessor.initDefaultMaxSizeForOnHeapMaps;
 import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
+import static com.hazelcast.internal.config.DeclarativeConfigUtil.SYSPROP_MEMBER_CONFIG;
+import static com.hazelcast.internal.config.DeclarativeConfigUtil.validateSuffixInSystemProperty;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBaseName;
@@ -181,6 +185,41 @@ public class Config {
 
     public Config(String instanceName) {
         this.instanceName = instanceName;
+    }
+
+    /**
+     * Populates Hazelcast {@link Config} object from an external configuration file.
+     * <p>
+     * It tries to load Hazelcast configuration from a list of well-known locations.
+     * When no location contains Hazelcast configuration then it returns default.
+     * <p>
+     * Note that the same mechanism is used when calling {@link com.hazelcast.core.Hazelcast#newHazelcastInstance()}.
+     *
+     * @return Config created from a file when exists, otherwise default.
+     */
+    public static Config load() {
+        validateSuffixInSystemProperty(SYSPROP_MEMBER_CONFIG);
+
+        XmlConfigLocator xmlConfigLocator = new XmlConfigLocator();
+        YamlConfigLocator yamlConfigLocator = new YamlConfigLocator();
+
+        if (xmlConfigLocator.locateFromSystemProperty()) {
+            // 1. Try loading XML config from the configuration provided in system property
+            return new XmlConfigBuilder(xmlConfigLocator).build();
+        } else if (yamlConfigLocator.locateFromSystemProperty()) {
+            // 2. Try loading YAML config from the configuration provided in system property
+            return new YamlConfigBuilder(yamlConfigLocator).build();
+        } else if (xmlConfigLocator.locateInWorkDirOrOnClasspath()) {
+            // 3. Try loading XML config from the working directory or from the classpath
+            return new XmlConfigBuilder(xmlConfigLocator).build();
+        } else if (yamlConfigLocator.locateInWorkDirOrOnClasspath()) {
+            // 4. Try loading YAML config from the working directory or from the classpath
+            return new YamlConfigBuilder(yamlConfigLocator).build();
+        } else {
+            // 5. Loading the default XML configuration file
+            xmlConfigLocator.locateDefault();
+            return new XmlConfigBuilder(xmlConfigLocator).build();
+        }
     }
 
     /**
