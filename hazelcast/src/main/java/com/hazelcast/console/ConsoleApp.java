@@ -24,7 +24,6 @@ import com.hazelcast.collection.ItemEvent;
 import com.hazelcast.collection.ItemListener;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.FileSystemXmlConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
@@ -50,7 +49,6 @@ import java.io.FileInputStream;
 import java.io.File;
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.FileNotFoundException;
 import java.lang.management.ManagementFactory;
 import java.util.Collection;
 import java.util.HashMap;
@@ -1537,16 +1535,13 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
     /**
      * Starts the test application.
      * <p>
-     * Loads the config from classpath hazelcast.xml, if it fails to load, will use default config.
+     * It loads the Hazelcast member configuration using the resolution logic as described in
+     * {@link com.hazelcast.core.Hazelcast#newHazelcastInstance()}.
+     *
      * @throws Exception in case of any exceptional case
      */
     public static void main(String[] args) throws Exception {
-        Config config;
-        try {
-            config = new FileSystemXmlConfig("hazelcast.xml");
-        } catch (FileNotFoundException e) {
-            config = new Config();
-        }
+        Config config = Config.load();
         for (int i = 1; i <= LOAD_EXECUTORS_COUNT; i++) {
             config.addExecutorConfig(new ExecutorConfig(EXECUTOR_NAMESPACE + " " + i).setPoolSize(i));
         }
