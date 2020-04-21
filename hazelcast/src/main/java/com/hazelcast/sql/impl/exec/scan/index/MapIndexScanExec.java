@@ -19,7 +19,6 @@ package com.hazelcast.sql.impl.exec.scan.index;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.impl.MapContainer;
-import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.query.impl.Comparison;
 import com.hazelcast.query.impl.InternalIndex;
@@ -47,7 +46,7 @@ import java.util.Set;
 @SuppressWarnings("rawtypes")
 public class MapIndexScanExec extends AbstractMapScanExec {
     /** Underlying map. */
-    private final MapProxyImpl map;
+    private final MapContainer map;
 
     /** Partitions to be scanned. */
     private final PartitionIdSet parts;
@@ -70,7 +69,7 @@ public class MapIndexScanExec extends AbstractMapScanExec {
     @SuppressWarnings("checkstyle:ParameterNumber")
     public MapIndexScanExec(
         int id,
-        MapProxyImpl map,
+        MapContainer map,
         PartitionIdSet parts,
         QueryTargetDescriptor keyDescriptor,
         QueryTargetDescriptor valueDescriptor,
@@ -177,7 +176,7 @@ public class MapIndexScanExec extends AbstractMapScanExec {
 
     @Override
     protected Extractors createExtractors() {
-        return map.getMapServiceContext().getExtractors(mapName);
+        return map.getExtractors();
     }
 
     @Override

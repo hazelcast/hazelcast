@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl;
 
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapProxy;
 
 import java.util.Collection;
@@ -52,9 +52,9 @@ public interface NodeServiceProvider extends ClockProvider, LocalMemberIdProvide
 
     /**
      * @param name Map name.
-     * @return Proxy or {@code null} if doesn't exist.
+     * @return Container or {@code null} if map with the given name doesn't exist.
      */
-    MapProxyImpl<?, ?> getMap(String name);
+    MapContainer getMap(String name);
 
     /**
      * Get replicated map.

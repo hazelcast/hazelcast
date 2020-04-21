@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.exec.scan;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
-import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 
@@ -29,7 +29,7 @@ import java.util.Map;
 
 @SuppressWarnings("rawtypes")
 public class MapScanExecIterator {
-    private final MapProxyImpl map;
+    private final MapContainer map;
     private final Iterator<Integer> partsIterator;
     private final long now = Clock.currentTimeMillis();
     private RecordStore currentRecordStore;
@@ -37,7 +37,7 @@ public class MapScanExecIterator {
     private Map.Entry<Data, Record<Object>> current;
     private Map.Entry<Data, Record<Object>> next;
 
-    public MapScanExecIterator(MapProxyImpl map, PartitionIdSet parts) {
+    public MapScanExecIterator(MapContainer map, PartitionIdSet parts) {
         this.map = map;
 
         partsIterator = parts.iterator();
@@ -71,8 +71,7 @@ public class MapScanExecIterator {
                 } else {
                     int nextPart = partsIterator.next();
 
-                    currentRecordStore =
-                        map.getMapServiceContext().getPartitionContainer(nextPart).getRecordStore(map.getName());
+                    currentRecordStore = map.getRecordStore(nextPart);
 
                     currentRecordStore.checkIfLoaded();
 

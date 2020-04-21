@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.exec.scan;
 
 import com.hazelcast.internal.util.collection.PartitionIdSet;
-import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.query.impl.getters.Extractors;
 
 public final class MapScanExecUtils {
@@ -25,11 +25,11 @@ public final class MapScanExecUtils {
         // No-op.
     }
 
-    public static Extractors createExtractors(MapProxyImpl<?, ?> map) {
-        return map.getMapServiceContext().getExtractors(map.getName());
+    public static Extractors createExtractors(MapContainer map) {
+        return map.getExtractors();
     }
 
-    public static MapScanExecIterator createIterator(MapProxyImpl<?, ?> map, PartitionIdSet parts) {
+    public static MapScanExecIterator createIterator(MapContainer map, PartitionIdSet parts) {
         return new MapScanExecIterator(map, parts);
     }
 }

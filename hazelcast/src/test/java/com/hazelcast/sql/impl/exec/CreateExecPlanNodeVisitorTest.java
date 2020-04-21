@@ -234,7 +234,7 @@ public class CreateExecPlanNodeVisitorTest {
             LOCAL_MEMBER_ID,
             operation,
             SimpleFlowControlFactory.INSTANCE,
-            null,
+            new PartitionIdSet(4),
             OUTBOX_BATCH_SIZE
         );
 

@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.exec;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
-import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapProxy;
 import com.hazelcast.sql.impl.NodeServiceProvider;
 import com.hazelcast.sql.impl.exec.agg.AggregateExec;
@@ -112,7 +112,7 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
     private final Map<Integer, InboundHandler> inboxes = new HashMap<>();
 
     /** Outboxes. */
-    private Map<Integer, Map<UUID, OutboundHandler>> outboxes = new HashMap<>();
+    private final Map<Integer, Map<UUID, OutboundHandler>> outboxes = new HashMap<>();
 
     public CreateExecPlanNodeVisitor(
         QueryOperationHandler operationHandler,
@@ -301,26 +301,29 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
     public void onMapScanNode(MapScanPlanNode node) {
         Exec res;
 
-        // TODO: localParts should never be null. It should return empty partition ID set instread.
-        if (localParts == null) {
+        if (localParts.isEmpty()) {
             res = new EmptyExec(node.getId());
         } else {
             String mapName = node.getMapName();
 
-            MapProxyImpl<?, ?> map = nodeServiceProvider.getMap(mapName);
+            MapContainer map = nodeServiceProvider.getMap(mapName);
 
-            res = new MapScanExec(
-                node.getId(),
-                map,
-                localParts,
-                node.getKeyDescriptor(),
-                node.getValueDescriptor(),
-                node.getFieldNames(),
-                node.getFieldTypes(),
-                node.getProjects(),
-                node.getFilter(),
-                serializationService
-            );
+            if (map == null) {
+                res = new EmptyExec(node.getId());
+            } else {
+                res = new MapScanExec(
+                    node.getId(),
+                    map,
+                    localParts,
+                    node.getKeyDescriptor(),
+                    node.getValueDescriptor(),
+                    node.getFieldNames(),
+                    node.getFieldTypes(),
+                    node.getProjects(),
+                    node.getFilter(),
+                    serializationService
+                );
+            }
         }
 
         push(res);
@@ -330,27 +333,31 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
     public void onMapIndexScanNode(MapIndexScanPlanNode node) {
         Exec res;
 
-        if (localParts == null) {
+        if (localParts.isEmpty()) {
             res = new EmptyExec(node.getId());
         } else {
             String mapName = node.getMapName();
 
-            MapProxyImpl<?, ?> map = nodeServiceProvider.getMap(mapName);
+            MapContainer map = nodeServiceProvider.getMap(mapName);
 
-            res = new MapIndexScanExec(
-                node.getId(),
-                map,
-                localParts,
-                node.getKeyDescriptor(),
-                node.getValueDescriptor(),
-                node.getFieldNames(),
-                node.getFieldTypes(),
-                node.getProjects(),
-                node.getFilter(),
-                node.getIndexName(),
-                node.getIndexFilter(),
-                serializationService
-            );
+            if (map == null) {
+                res = new EmptyExec(node.getId());
+            } else {
+                res = new MapIndexScanExec(
+                    node.getId(),
+                    map,
+                    localParts,
+                    node.getKeyDescriptor(),
+                    node.getValueDescriptor(),
+                    node.getFieldNames(),
+                    node.getFieldTypes(),
+                    node.getProjects(),
+                    node.getFilter(),
+                    node.getIndexName(),
+                    node.getIndexFilter(),
+                    serializationService
+                );
+            }
         }
 
         push(res);
@@ -474,12 +481,18 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
     public void onReplicatedToPartitionedNode(ReplicatedToPartitionedPlanNode node) {
         Exec upstream = pop();
 
-        ReplicatedToPartitionedExec res = new ReplicatedToPartitionedExec(
-            node.getId(),
-            upstream,
-            node.getPartitioner(),
-            localParts
-        );
+        Exec res;
+
+        if (localParts.isEmpty()) {
+            res = new EmptyExec(node.getId());
+        } else {
+            res = new ReplicatedToPartitionedExec(
+                node.getId(),
+                upstream,
+                node.getPartitioner(),
+                localParts
+            );
+        }
 
         push(res);
     }

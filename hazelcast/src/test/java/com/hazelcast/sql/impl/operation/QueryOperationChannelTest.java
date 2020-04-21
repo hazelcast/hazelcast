@@ -21,7 +21,7 @@ import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapProxy;
 import com.hazelcast.sql.impl.NodeServiceProvider;
 import com.hazelcast.sql.impl.QueryId;
@@ -111,7 +111,7 @@ public class QueryOperationChannelTest extends SqlTestSupport {
         }
 
         @Override
-        public MapProxyImpl<?, ?> getMap(String name) {
+        public MapContainer getMap(String name) {
             return null;
         }
 
