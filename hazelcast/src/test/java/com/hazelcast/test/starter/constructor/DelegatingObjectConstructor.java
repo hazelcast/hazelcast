@@ -21,10 +21,11 @@ import com.hazelcast.test.starter.answer.DelegatingAnswer;
 
 import static org.mockito.Mockito.mock;
 
-@HazelcastStarterConstructor(classNames = "com.hazelcast.spi.impl.operationservice.impl.InvocationFuture")
-public class InvocationFutureConstructor extends AbstractStarterObjectConstructor {
+@HazelcastStarterConstructor(classNames = {"com.hazelcast.spi.impl.operationservice.impl.InvocationFuture",
+                                           "com.hazelcast.spi.impl.InternalCompletableFuture"})
+public class DelegatingObjectConstructor extends AbstractStarterObjectConstructor {
 
-    public InvocationFutureConstructor(Class<?> targetClass) {
+    public DelegatingObjectConstructor(Class<?> targetClass) {
         super(targetClass);
     }
 
