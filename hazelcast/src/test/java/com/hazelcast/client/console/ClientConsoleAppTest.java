@@ -35,6 +35,7 @@ import org.junit.runner.RunWith;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -185,12 +186,7 @@ public class ClientConsoleAppTest extends HazelcastTestSupport {
      * Gets content of standard output buffer.
      */
     private static String getSystemOut() {
-        try {
-            return new String(baos.toByteArray(), "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            //This should never happen. Everybody loves and supports the UTF-8
-            throw new AssertionError("Get a deep breath and continue with reading. Your Java doesn't support UTF-8.");
-        }
+        return new String(baos.toByteArray(), StandardCharsets.UTF_8);
     }
 
     /**

@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.util;
 
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -40,7 +40,7 @@ public final class MD5Util {
             if (md == null || str == null) {
                 return null;
             }
-            byte[] byteData = md.digest(str.getBytes(Charset.forName("UTF-8")));
+            byte[] byteData = md.digest(str.getBytes(StandardCharsets.UTF_8));
 
             StringBuilder sb = new StringBuilder();
             for (byte aByteData : byteData) {

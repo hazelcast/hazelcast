@@ -19,7 +19,6 @@ package com.hazelcast.internal.nio;
 import com.hazelcast.internal.memory.impl.EndiannessUtil;
 
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
 
 import static com.hazelcast.internal.memory.impl.EndiannessUtil.BYTE_ARRAY_ACCESS;
 import static com.hazelcast.internal.memory.impl.EndiannessUtil.BYTE_BUFFER_ACCESS;
@@ -70,15 +69,6 @@ public final class Bits {
      * Length of the data blocks used by the CPU cache sub-system in bytes.
      */
     public static final int CACHE_LINE_LENGTH = 64;
-
-    /**
-     * A reusable instance of the UTF-8 charset
-     */
-    public static final Charset UTF_8 = Charset.forName("UTF-8");
-    /**
-     * A reusable instance of the ISO Latin-1 charset
-     */
-    public static final Charset ISO_8859_1 = Charset.forName("ISO-8859-1");
 
     private Bits() {
     }

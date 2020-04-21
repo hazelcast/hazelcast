@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.util;
 
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -35,11 +35,6 @@ import static java.lang.Character.toLowerCase;
  * Utility class for Strings.
  */
 public final class StringUtil {
-
-    /**
-     * UTF-8 Charset
-     */
-    public static final Charset UTF8_CHARSET = Charset.forName("UTF-8");
 
     /**
      * Points to the System property 'line.separator'.
@@ -73,7 +68,7 @@ public final class StringUtil {
      * @return the string created from the byte array.
      */
     public static String bytesToString(byte[] bytes, int offset, int length) {
-        return new String(bytes, offset, length, UTF8_CHARSET);
+        return new String(bytes, offset, length, StandardCharsets.UTF_8);
     }
 
     /**
@@ -84,7 +79,7 @@ public final class StringUtil {
      */
     public static String bytesToString(byte[] bytes) {
 
-        return new String(bytes, UTF8_CHARSET);
+        return new String(bytes, StandardCharsets.UTF_8);
     }
 
     /**
@@ -94,7 +89,7 @@ public final class StringUtil {
      * @return the byte array created from the string.
      */
     public static byte[] stringToBytes(String s) {
-        return s.getBytes(UTF8_CHARSET);
+        return s.getBytes(StandardCharsets.UTF_8);
     }
 
     /**

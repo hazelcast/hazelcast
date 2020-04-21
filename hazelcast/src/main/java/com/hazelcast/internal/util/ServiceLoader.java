@@ -28,6 +28,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -71,7 +72,7 @@ public final class ServiceLoader {
 
     public static <T> Iterator<T> iterator(Class<T> expectedType, String factoryId, ClassLoader classLoader) throws Exception {
         Iterator<Class<T>> classIterator = classIterator(expectedType, factoryId, classLoader);
-        return new NewInstanceIterator<T>(classIterator);
+        return new NewInstanceIterator<>(classIterator);
     }
 
     public static <T> Iterator<Class<T>> classIterator(Class<T> expectedType, String factoryId, ClassLoader classLoader)
@@ -125,7 +126,7 @@ public final class ServiceLoader {
             BufferedReader r = null;
             try {
                 URL url = urlDefinition.url;
-                r = new BufferedReader(new InputStreamReader(url.openStream(), "UTF-8"));
+                r = new BufferedReader(new InputStreamReader(url.openStream(), StandardCharsets.UTF_8));
                 while (true) {
                     String line = r.readLine();
                     if (line == null) {
@@ -153,7 +154,7 @@ public final class ServiceLoader {
 
     static List<ClassLoader> selectClassLoaders(ClassLoader classLoader) {
         // list prevents reordering!
-        List<ClassLoader> classLoaders = new ArrayList<ClassLoader>();
+        List<ClassLoader> classLoaders = new ArrayList<>();
 
         if (classLoader != null) {
             classLoaders.add(classLoader);
