@@ -23,8 +23,6 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 /**
  * Defines expression contract for SQL.
  *
- * <p>Java serialization is needed for Jet.
- *
  * @param <T> the return type of this expression.
  */
 public interface Expression<T> extends DataSerializable {
