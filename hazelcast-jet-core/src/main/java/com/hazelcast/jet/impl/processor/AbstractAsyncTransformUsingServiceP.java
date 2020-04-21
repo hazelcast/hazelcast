@@ -25,7 +25,7 @@ public abstract class AbstractAsyncTransformUsingServiceP<C, S> extends Abstract
     /**
      * Default value for {@link #maxConcurrentOps}.
      */
-    public static final int DEFAULT_MAX_CONCURRENT_OPS = 256;
+    public static final int DEFAULT_MAX_CONCURRENT_OPS = 4;
     /**
      * Default value for {@link #preserveOrder}.
      */
