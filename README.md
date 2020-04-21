@@ -191,6 +191,12 @@ Hazelcast is available under the Apache 2 License. Please see the
 [Licensing section](http://docs.hazelcast.org/docs/latest-dev/manual/html-single/index.html#licensing)
 for more information.
 
+## Acknowledgments
+[![](https://www.yourkit.com/images/yklogo.png)](http://www.yourkit.com/)
+
+Thanks to [YourKit](http://www.yourkit.com/) for supporting open source software by providing us a free license 
+for their Java profiler  
+
 ## Copyright
 
 Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
