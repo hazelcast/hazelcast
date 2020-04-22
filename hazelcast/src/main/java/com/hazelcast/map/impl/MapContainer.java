@@ -405,7 +405,7 @@ public class MapContainer {
     public void onDestroy() {
     }
 
-    public boolean isDestoyed() {
+    public boolean isDestroyed() {
         return destroyed;
     }
 

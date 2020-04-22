@@ -175,7 +175,7 @@ public class MapScanExecTest extends SqlTestSupport {
         TreeSet<Integer> expectedResults
     ) {
         int id = 1;
-        MapContainer mapContainer = mapProxy.getMapServiceContext().getMapContainer(mapProxy.getName());
+        MapContainer mapContainer = mapProxy.getService().getMapServiceContext().getMapContainer(mapProxy.getName());
         List<String> fieldNames = Arrays.asList(QueryPath.KEY + ".val1", "val2", "val3");
         List<QueryDataType> fieldTypes = Arrays.asList(QueryDataType.INT, QueryDataType.BIGINT, QueryDataType.BIT);
         List<Integer> projects = Arrays.asList(0, 1);
@@ -267,7 +267,7 @@ public class MapScanExecTest extends SqlTestSupport {
 
         MapScanExec exec = new MapScanExec(
             1,
-            mapProxy.getMapServiceContext().getMapContainer(mapProxy.getName()),
+            mapProxy.getService().getMapServiceContext().getMapContainer(mapProxy.getName()),
             partitionIdSet,
             GenericQueryTargetDescriptor.INSTANCE,
             GenericQueryTargetDescriptor.INSTANCE,
@@ -299,7 +299,7 @@ public class MapScanExecTest extends SqlTestSupport {
 
         MapScanExec exec = new MapScanExec(
             1,
-            mapProxy.getMapServiceContext().getMapContainer(mapProxy.getName()),
+            mapProxy.getService().getMapServiceContext().getMapContainer(mapProxy.getName()),
             partitionIdSet,
             GenericQueryTargetDescriptor.INSTANCE,
             GenericQueryTargetDescriptor.INSTANCE,
@@ -337,7 +337,7 @@ public class MapScanExecTest extends SqlTestSupport {
 
         MapScanExec exec = new MapScanExec(
             1,
-            localMapProxy.getMapServiceContext().getMapContainer(localMapProxy.getName()),
+            localMapProxy.getService().getMapServiceContext().getMapContainer(localMapProxy.getName()),
             partitionIdSet,
             GenericQueryTargetDescriptor.INSTANCE,
             GenericQueryTargetDescriptor.INSTANCE,
@@ -401,7 +401,7 @@ public class MapScanExecTest extends SqlTestSupport {
 
         MapScanExec exec = new MapScanExec(
             1,
-            mapProxy.getMapServiceContext().getMapContainer(mapProxy.getName()),
+            mapProxy.getService().getMapServiceContext().getMapContainer(mapProxy.getName()),
             partitionIdSet,
             GenericQueryTargetDescriptor.INSTANCE,
             GenericQueryTargetDescriptor.INSTANCE,
@@ -471,7 +471,7 @@ public class MapScanExecTest extends SqlTestSupport {
         // Prepare executor.
         MapScanExec exec = new MapScanExec(
             1,
-            mapProxy.getMapServiceContext().getMapContainer(mapProxy.getName()),
+            mapProxy.getService().getMapServiceContext().getMapContainer(mapProxy.getName()),
             partitionIdSet,
             GenericQueryTargetDescriptor.INSTANCE,
             GenericQueryTargetDescriptor.INSTANCE,
@@ -508,7 +508,7 @@ public class MapScanExecTest extends SqlTestSupport {
 
         MapScanExec exec = new MapScanExec(
             1,
-            mapProxy.getMapServiceContext().getMapContainer(mapProxy.getName()),
+            mapProxy.getService().getMapServiceContext().getMapContainer(mapProxy.getName()),
             partitionIdSet,
             GenericQueryTargetDescriptor.INSTANCE,
             GenericQueryTargetDescriptor.INSTANCE,

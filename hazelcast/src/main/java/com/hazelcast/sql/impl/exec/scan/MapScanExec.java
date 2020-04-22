@@ -94,6 +94,8 @@ public class MapScanExec extends AbstractMapScanExec {
             }
         }
 
+        boolean done = !recordIterator.hasNext();
+
         // Check for concurrent migration
         if (!map.getMapServiceContext().getService().validateMigrationStamp(migrationStamp)) {
             throw QueryException.error(SqlErrorCode.PARTITION_MIGRATED, "Map scan failed due to concurrent partition migration "
@@ -101,11 +103,9 @@ public class MapScanExec extends AbstractMapScanExec {
         }
 
         // Check for concurrent map destroy
-        if (map.isDestoyed()) {
+        if (map.isDestroyed()) {
             throw QueryException.error(SqlErrorCode.MAP_DESTROYED, "IMap has been destroyed concurrently: " + mapName);
         }
-
-        boolean done = !recordIterator.hasNext();
 
         return done ? IterationResult.FETCHED_DONE : IterationResult.FETCHED;
     }

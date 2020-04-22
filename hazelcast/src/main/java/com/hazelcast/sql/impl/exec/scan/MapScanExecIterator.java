@@ -101,7 +101,7 @@ public class MapScanExecIterator {
 
                     currentRecordStore.checkIfLoaded();
 
-                    currentRecordStoreIterator = currentRecordStore.iterator();
+                    currentRecordStoreIterator = currentRecordStore.getStorage().mutationTolerantIterator();
                 }
             }
 

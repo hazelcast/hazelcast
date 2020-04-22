@@ -1379,10 +1379,6 @@ abstract class MapProxySupport<K, V>
         }
     }
 
-    public MapServiceContext getMapServiceContext() {
-        return mapServiceContext;
-    }
-
     private class IncrementStatsExecutionCallback<T> implements BiConsumer<T, Throwable> {
 
         private final MapOperation operation;
